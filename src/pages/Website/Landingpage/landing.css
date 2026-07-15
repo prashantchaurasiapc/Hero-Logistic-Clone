@@ -1,0 +1,105 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Landing-specific theme variables and helper classes
+   Drop this file into your project and import it where the landing is used:
+   import './landing.css'
+*/
+
+:root {
+  /* Brand palette (from tailwind.config.js) */
+  --brand-50: #FFFDF0;
+  --brand-100: #FFF9C4;
+  --brand-200: #FFF59D;
+  --brand-300: #FFEE58;
+  --brand-400: #FFE082;
+  --brand-500: #FFD400; /* Premium Brand Yellow */
+  --brand-600: #FF9A00; /* Premium Brand Orange */
+  --brand-700: #E68A00;
+  --brand-800: #CC7B00;
+  --brand-900: #995C00;
+
+  /* Dark background tokens used by the landing */
+  --darkbg: #0B0B0B;
+  --darkbg-card: #1F1F1F;
+  --darkbg-border: #2E2E2E;
+
+  /* Convenience opacities */
+  --brand-500-10: rgba(255, 212, 0, 0.10);
+  --brand-500-25-shadow: rgba(255, 212, 0, 0.20);
+}
+
+/* Background / surface helpers used inside LandingPage.jsx */
+.bg-darkbg { background-color: var(--darkbg) !important; }
+.bg-darkbg-card { background-color: var(--darkbg-card) !important; }
+.border-darkbg-border { border-color: var(--darkbg-border) !important; }
+
+/* Brand helpers */
+.text-brand-400 { color: var(--brand-400) !important; }
+.text-brand-500 { color: var(--brand-500) !important; }
+.bg-brand-500 { background-color: var(--brand-500) !important; }
+.bg-brand-500-10 { background-color: var(--brand-500-10) !important; }
+
+/* Shadow helpers copied from index.css intents */
+.shadow-brand-500\/25 { box-shadow: 0 4px 16px 0 var(--brand-500-25-shadow) !important; }
+.shadow-brand-500\/40 { box-shadow: 0 8px 24px 0 rgba(255,212,0,0.35) !important; }
+
+/* Glass & 3D visual helpers (used by landing mockups) */
+.glass {
+  background: linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.4) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.5);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+}
+
+.glass-light {
+  background: linear-gradient(135deg, rgba(248,250,252,0.7) 0%, rgba(241,245,249,0.4) 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.6);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.03);
+}
+
+.glow-hover:hover {
+  box-shadow: 0 0 25px rgba(255,212,0,0.5), inset 0 0 10px rgba(255,212,0,0.2);
+  border-color: rgba(255,212,0,0.8);
+  transform: translateY(-2px);
+  transition: all 0.3s ease;
+}
+
+.card-3d {
+  transform: perspective(1000px) rotateX(0deg) rotateY(0deg);
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.card-3d:hover {
+  transform: perspective(1000px) rotateX(2deg) rotateY(-2deg) scale3d(1.02, 1.02, 1.02);
+  box-shadow: -10px 15px 30px rgba(0,0,0,0.15);
+}
+
+.hover-lift { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+.hover-lift:hover { transform: translateY(-4px) scale(1.01); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
+
+/* Small accessibility: make sure pointer-events-none helpers exist */
+.pointer-events-none { pointer-events: none !important; }
+
+/* Custom scrollbar (matching landing theme) */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #0B0B0B; }
+::-webkit-scrollbar-thumb { background: #2E2E2E; border-radius: 9999px; }
+
+/* Basic fade/slide keyframes used by ScrollReveal wrapper */
+@keyframes fadeIn { 0% { opacity: 0; transform: scale(.95); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes fadeInUp { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
+@keyframes slideInLeft { 0% { transform: translateX(-100px); opacity: 0; } 100% { transform: translateX(0); opacity: 1; } }
+@keyframes slideInRight { 0% { transform: translateX(100px); opacity: 0; } 100% { transform: translateX(0); opacity: 1; } }
+
+.animate-fade-in { animation: fadeIn 0.6s cubic-bezier(0.16,1,0.3,1) forwards; }
+.animate-fade-in-up { animation: fadeInUp 0.8s cubic-bezier(0.16,1,0.3,1) forwards; }
+.animate-slide-in-left { animation: slideInLeft 0.8s cubic-bezier(0.16,1,0.3,1) forwards; }
+.animate-slide-in-right { animation: slideInRight 0.5s cubic-bezier(0.16,1,0.3,1) forwards; }
+
+/* Dark-mode overrides for the helpers (user toggles `dark` on <html> or body) */
+.dark .glass { background: linear-gradient(135deg, rgba(31,31,31,0.8) 0%, rgba(20,20,20,0.6) 100%); border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 8px 32px 0 rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.05); }
+.dark .glass-light { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+.dark .card-3d:hover { box-shadow: -10px 15px 30px rgba(0,0,0,0.5), 0 0 20px rgba(255,212,0,0.1); }
