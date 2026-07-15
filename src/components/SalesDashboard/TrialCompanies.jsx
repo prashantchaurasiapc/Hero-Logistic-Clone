@@ -282,63 +282,45 @@ export default function TrialCompanies() {
 
       {/* Extend Trial Modal */}
       {showExtendModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-sm overflow-hidden shadow-2xl text-left flex flex-col">
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[999] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl w-full max-w-[500px] shadow-2xl overflow-hidden animate-slide-in">
             {/* Header */}
-            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50 shrink-0">
-              <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-amber-600" /> Extend Sandbox Trial Window
-              </h3>
-              <button 
-                onClick={() => setShowExtendModal(null)} 
-                className="text-slate-450 hover:text-slate-655 cursor-pointer p-1 rounded-lg hover:bg-slate-100 transition-colors"
-              >
-                <X className="w-4.5 h-4.5" />
+            <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
+              <h2 className="text-[17px] font-bold text-slate-900">Extend Trial Workspace Term</h2>
+              <button onClick={() => setShowExtendModal(null)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Form */}
-            <form onSubmit={handleExtendSubmit} className="p-6 space-y-4 text-xs font-bold text-slate-700">
-              <div className="bg-slate-50 border border-slate-100 p-3 rounded-xl">
-                <div className="text-slate-800 font-extrabold">Company: {showExtendModal.company}</div>
-                <div className="text-slate-500 font-semibold mt-0.5">Admin: {showExtendModal.admin}</div>
-                <div className="text-[10px] text-slate-400 mt-2">Current Expiry: {showExtendModal.expiryDate} ({showExtendModal.daysRemaining} days left)</div>
-              </div>
+            {/* Body */}
+            <div className="px-6 py-6">
+              <p className="text-[14px] font-medium text-slate-600 mb-6">
+                Extend evaluation sandbox period for <span className="font-bold text-slate-900">{showExtendModal.company}</span>.
+              </p>
 
-              {/* Day count select */}
-              <div>
-                <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
-                  Select Extension Term
-                </label>
-                <select
-                  value={extensionDays}
-                  onChange={(e) => setExtensionDays(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-800 cursor-pointer"
-                >
-                  <option value="3">3 Days Extension</option>
-                  <option value="7">7 Days Extension</option>
-                  <option value="14">14 Days Extension</option>
-                  <option value="30">30 Days Extension</option>
-                </select>
-              </div>
-
-              {/* Submit Buttons */}
-              <div className="flex gap-3 pt-4 border-t border-slate-100 shrink-0">
+              <div className="flex items-center gap-3">
                 <button
-                  type="button"
-                  onClick={() => setShowExtendModal(null)}
-                  className="flex-1 bg-white hover:bg-slate-50 text-slate-700 font-extrabold text-xs py-3 rounded-xl border border-slate-250 transition-colors cursor-pointer text-center"
+                  onClick={() => {
+                    crmRepository.extendTrial(showExtendModal.id, 7);
+                    setToast({ type: 'success', text: `Trial for ${showExtendModal.company} extended by 7 days.` });
+                    setShowExtendModal(null);
+                  }}
+                  className="flex-1 bg-[#FFD500] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[13px] py-3.5 rounded-xl transition-all shadow-sm"
                 >
-                  Cancel
+                  Extend +7 Days
                 </button>
                 <button
-                  type="submit"
-                  className="flex-1 bg-[#ffcc00] hover:bg-[#e6b800] text-black font-extrabold text-xs py-3 rounded-xl transition-colors cursor-pointer text-center shadow-xs"
+                  onClick={() => {
+                    crmRepository.extendTrial(showExtendModal.id, 30);
+                    setToast({ type: 'success', text: `Trial for ${showExtendModal.company} extended by 30 days.` });
+                    setShowExtendModal(null);
+                  }}
+                  className="flex-1 bg-white hover:bg-slate-50 text-slate-700 font-extrabold text-[13px] py-3.5 rounded-xl border border-slate-200 transition-all shadow-sm"
                 >
-                  Apply Extension
+                  Extend +30 Days
                 </button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}

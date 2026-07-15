@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Plus, X, Bell, ChevronDown, Check, Briefcase,
-  CheckCircle2, AlertCircle, RefreshCw, FileText, User
+  CheckCircle2, AlertCircle, RefreshCw, FileText, User, Send, AlertTriangle
 } from 'lucide-react';
 import { crmRepository } from '../../services/crmRepository';
 import { crmStore } from '../../services/crmStore';
@@ -16,6 +16,14 @@ export default function OnboardingHandover() {
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
   const [selectedHandover, setSelectedHandover] = useState(null);
 
+  // Modal States
+  const [showAddTaskModal, setShowAddTaskModal] = useState(false);
+  const [newTaskName, setNewTaskName] = useState('');
+  
+  const [showDispatchModal, setShowDispatchModal] = useState(false);
+  const [targetRep, setTargetRep] = useState('Michael Scott (Regional Coordinator)');
+  const [handoverNotes, setHandoverNotes] = useState('');
+
   // Toast
   const [toast, setToast] = useState(null);
 
@@ -23,22 +31,21 @@ export default function OnboardingHandover() {
   useEffect(() => {
     const syncDb = () => {
       const db = crmRepository.getCrmDatabase();
-      setOnboarding(db.crmHandovers || []);
-      setLeads(crmRepository.getLeads());
+      const newOnboarding = [...(db.crmHandovers || [])];
+      setOnboarding(newOnboarding);
+      setLeads([...crmRepository.getLeads()]);
+
+      setSelectedHandover(prev => {
+        if (!prev) return null;
+        const updated = newOnboarding.find(o => o.id === prev.id);
+        if (updated) return { ...updated }; // force re-render by returning new reference
+        return null;
+      });
     };
     syncDb();
     const unsubscribe = crmStore.subscribe(syncDb);
     return () => unsubscribe();
   }, []);
-
-  // Sync selectedHandover on store updates
-  useEffect(() => {
-    if (selectedHandover) {
-      const updated = onboarding.find(o => o.id === selectedHandover.id);
-      if (updated) setSelectedHandover(updated);
-      else setSelectedHandover(null);
-    }
-  }, [onboarding]);
 
   // Toast auto-clear
   useEffect(() => {
@@ -68,8 +75,20 @@ export default function OnboardingHandover() {
   // Toggle checklist item
   const handleToggleChecklistItem = (handoverId, itemName) => {
     crmStore.updateDb((db) => {
-      const h = (db.crmOnboarding || []).find(x => x.id === handoverId);
-      if (h && h.checklist) {
+      const h = (db.crmHandovers || []).find(x => x.id === handoverId);
+      if (h) {
+        if (!h.checklist) {
+          const isDone = h.status === 'Completed';
+          h.checklist = [
+            { name: 'Company Workspace Provisioned', completed: isDone },
+            { name: 'SaaS Subscription Plan Activated', completed: isDone },
+            { name: 'Company Admin User Registered', completed: isDone },
+            { name: 'Role Permission Policies Assigned', completed: isDone },
+            { name: 'Mock Customer Inbound Data Importer', completed: isDone },
+            { name: 'Roster & ELD System Training Complete', completed: isDone },
+            { name: 'Sandbox Production Go-Live Scheduled', completed: isDone }
+          ];
+        }
         const item = h.checklist.find(c => c.name === itemName);
         if (item) item.completed = !item.completed;
 
@@ -79,6 +98,7 @@ export default function OnboardingHandover() {
         else h.status = 'In Progress';
       }
     });
+    setToast({ text: 'Onboarding checklist updated.' });
   };
 
   // Role filter
@@ -126,10 +146,10 @@ export default function OnboardingHandover() {
       </div>
 
       {/* Dual Panel Workspace */}
-      <div className="flex-grow grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-0">
+      <div className="flex-grow grid grid-cols-1 lg:grid-cols-12 gap-6">
 
         {/* LEFT: Onboarding Handovers List */}
-        <div className="lg:col-span-5 bg-white border border-slate-200/80 rounded-2xl shadow-xs flex flex-col overflow-hidden">
+        <div className="lg:col-span-5 bg-white border border-slate-200/80 rounded-2xl shadow-xs flex flex-col">
           {/* Panel Header */}
           <div className="px-5 py-4 border-b border-slate-100 shrink-0">
             <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-wider">
@@ -138,7 +158,7 @@ export default function OnboardingHandover() {
           </div>
 
           {/* List */}
-          <div className="flex-grow overflow-y-auto p-6 space-y-4 bg-slate-50/50 scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          <div className="flex-grow p-6 space-y-4 bg-slate-50/50">
             {filteredHandovers.map((h) => {
               const pct = getCompletion(h);
 
@@ -185,42 +205,42 @@ export default function OnboardingHandover() {
         </div>
 
         {/* RIGHT: Handover Detail Panel */}
-        <div className="lg:col-span-7 bg-white border border-slate-200/80 rounded-2xl shadow-xs flex flex-col overflow-hidden">
+        <div className="lg:col-span-7 bg-white border border-slate-200/80 rounded-2xl shadow-xs flex flex-col">
           {!selectedHandover ? (
-            <div className="flex-grow flex items-center justify-center text-slate-400 font-semibold text-xs select-none">
+            <div className="flex-grow flex items-center justify-center text-slate-400 font-semibold text-xs py-16 select-none">
               Select onboarding company.
             </div>
           ) : (
-            <div className="flex flex-col h-full overflow-y-auto">
+            <div className="flex flex-col h-full bg-slate-50/20">
               {/* Detail Header */}
-              <div className="px-6 py-5 border-b border-slate-100 flex flex-col shrink-0 relative">
-                <button
-                  onClick={() => setSelectedHandover(null)}
-                  className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 cursor-pointer p-1.5 rounded-lg hover:bg-slate-50 transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="text-[9px] font-black text-slate-800 uppercase tracking-widest border border-slate-200 rounded px-2 py-1 leading-none">
-                    Setup Handover Stepper
+              <div className="px-8 py-7 border-b border-slate-100 flex flex-col shrink-0 relative bg-white">
+                <div className="flex items-center justify-between mb-5">
+                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest border border-slate-200 rounded px-3 py-1.5 leading-none">
+                    SETUP HANDOVER STEPPER
                   </span>
-                  <span className="text-[9px] font-black text-[#D97706] bg-[#FFFBEB] border border-[#FDE68A] rounded-full px-3 py-1 uppercase tracking-wider leading-none">
-                    Risk: {selectedHandover.risk || 'Medium'}
+                  <span className="text-[9px] font-black text-rose-400 bg-rose-50/50 border border-rose-200/60 rounded-full px-4 py-1.5 uppercase tracking-widest leading-none">
+                    RISK: HIGH
                   </span>
                 </div>
+                
                 <div className="flex items-center gap-3">
-                  <h2 className="text-[17px] font-black text-slate-900 leading-none">{selectedHandover.company} setup Checklist</h2>
-                  <button className="text-[10px] font-black text-[#D97706] hover:text-[#B45309] uppercase tracking-wider cursor-pointer leading-none">+ Add Task</button>
+                  <h2 className="text-[20px] font-black text-slate-800 leading-none">{selectedHandover.company} setup Checklist</h2>
+                  <button 
+                    onClick={() => { setShowAddTaskModal(true); setNewTaskName(''); }} 
+                    className="text-[10px] font-black text-[#D97706] hover:text-[#B45309] uppercase tracking-wider cursor-pointer leading-none"
+                  >
+                    + ADD TASK
+                  </button>
                 </div>
-                <div className="text-[10px] font-bold text-slate-900 mt-2">
-                  Responsible Owner: {selectedHandover.owner} <span className="mx-1">•</span> Due Target Date: {selectedHandover.dueDate || selectedHandover.targetDate}
+                <div className="text-[11px] font-medium text-slate-500 mt-3">
+                  Responsible Owner: <span className="font-bold text-slate-700">{selectedHandover.owner}</span> <span className="mx-1.5">•</span> Due Target Date: <span className="font-bold text-slate-700">{selectedHandover.dueDate || selectedHandover.targetDate}</span>
                 </div>
               </div>
 
               {/* Detail Body */}
-              <div className="flex-grow px-6 py-5 overflow-y-auto scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              <div className="flex-grow px-8 py-7">
                 {/* Setup Checklist */}
-                <div className="space-y-3">
+                <div className="space-y-3.5">
                   {(selectedHandover.checklist || [
                     { name: 'Company Workspace Provisioned', completed: getCompletion(selectedHandover) === 100 },
                     { name: 'SaaS Subscription Plan Activated', completed: getCompletion(selectedHandover) === 100 },
@@ -229,77 +249,195 @@ export default function OnboardingHandover() {
                     { name: 'Mock Customer Inbound Data Importer', completed: getCompletion(selectedHandover) === 100 },
                     { name: 'Roster & ELD System Training Complete', completed: getCompletion(selectedHandover) === 100 },
                     { name: 'Sandbox Production Go-Live Scheduled', completed: getCompletion(selectedHandover) === 100 }
-                  ]).map((item, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => handleToggleChecklistItem(selectedHandover.id, item.name)}
-                      className={`w-full text-left flex items-center gap-3 p-3.5 rounded-2xl border transition-colors cursor-pointer ${
-                        item.completed ? 'border-slate-100 bg-white' : 'border-slate-200 bg-slate-50'
-                      }`}
-                    >
-                      {item.completed ? (
-                        <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-                      ) : (
-                        <div className="w-5 h-5 rounded-full border-2 border-slate-300 bg-white shrink-0" />
-                      )}
-                      <span className={`text-[13px] font-semibold ${
-                        item.completed ? 'text-slate-400 line-through decoration-slate-300' : 'text-slate-700'
-                      }`}>
-                        {item.name}
-                      </span>
-                    </button>
-                  ))}
+                  ]).map((item, idx) => {
+                    const isFocusItem = item.name === 'Role Permission Policies Assigned';
+                    const isCompleted = item.completed || (getCompletion(selectedHandover) === 100);
+                    
+                    return (
+                      <button
+                        key={idx}
+                        onClick={() => handleToggleChecklistItem(selectedHandover.id, item.name)}
+                        className={`w-full text-left flex items-center gap-4 px-6 py-4 rounded-full border transition-all cursor-pointer bg-white ${
+                          isFocusItem ? 'border-amber-200 shadow-[0_0_10px_rgba(251,191,36,0.15)]' : 'border-slate-100 hover:border-slate-200'
+                        }`}
+                      >
+                        {isCompleted ? (
+                          <CheckCircle2 className="w-[22px] h-[22px] text-emerald-500 shrink-0" strokeWidth={1.5} />
+                        ) : (
+                          <div className="w-[18px] h-[18px] rounded-[4px] border-2 border-slate-900 bg-white shrink-0 ml-[2px]" />
+                        )}
+                        <span className={`text-[13px] font-bold ${
+                          isCompleted ? 'text-slate-500' : 'text-slate-700'
+                        }`}>
+                          {item.name}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
 
                 {/* 100% Completed Footer */}
                 {getCompletion(selectedHandover) === 100 && (
-                  <div className="mt-8 bg-[#ECFDF5] border border-[#D1FAE5] rounded-2xl p-6 flex flex-col items-center text-center">
-                    <div className="w-12 h-12 bg-white border-2 border-emerald-400 rounded-full flex items-center justify-center mb-4 shadow-sm">
-                      <Check className="w-6 h-6 text-emerald-500 stroke-[3px]" />
+                  <div className="mt-8 bg-[#F4FBFA] border border-[#E0F2F1] rounded-2xl p-8 flex flex-col items-center text-center">
+                    <div className="mb-4 text-emerald-500">
+                      <CheckCircle2 className="w-10 h-10" strokeWidth={2} />
                     </div>
-                    <h3 className="text-slate-900 font-black text-[15px]">Onboarding checklist 100% Completed!</h3>
-                    <p className="text-slate-500 text-[11px] font-bold mt-1 mb-5">
+                    <h3 className="text-slate-900 font-black text-[16px]">Onboarding checklist 100% Completed!</h3>
+                    <p className="text-slate-500 text-[11px] font-medium mt-1 mb-5">
                       Tenant setup criteria validated. Click below to provision the production workspace.
                     </p>
-                    <button className="bg-[#10B981] hover:bg-[#059669] text-white font-black text-xs px-5 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-xs">
-                      <User className="w-4 h-4 shrink-0" /> Convert to Active Company Workspace
+                    <button className="bg-[#10B981] hover:bg-[#059669] text-slate-900 font-bold text-[13px] px-6 py-3 rounded-full flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-sm">
+                      <User className="w-4 h-4 shrink-0" strokeWidth={2.5} /> Convert to Active Company Workspace
                     </button>
                   </div>
                 )}
-              </div>
 
-              {/* Actions Footer (For Incomplete) */}
-              {getCompletion(selectedHandover) < 100 && (
-                <div className="px-6 py-4 border-t border-slate-100 flex items-center gap-3 shrink-0">
-                  <button
-                    onClick={() => {
-                      crmStore.updateDb((db) => {
-                        const h = (db.crmOnboarding || []).find(x => x.id === selectedHandover.id);
-                        if (h) {
-                          h.status = 'Completed';
-                          if (h.checklist) h.checklist.forEach(c => c.completed = true);
-                        }
-                      });
-                      setToast({ text: `${selectedHandover.company} workspace setup marked complete.` });
-                    }}
-                    className="flex items-center gap-2 bg-[#ffcc00] hover:bg-[#e6b800] text-black font-extrabold text-[11px] px-4 py-2.5 rounded-xl cursor-pointer transition-colors shadow-xs"
-                  >
-                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                    Mark Full Setup Complete
-                  </button>
-                  <button
-                    onClick={() => setToast({ text: `Reminder dispatched to CS team for ${selectedHandover.company}.` })}
-                    className="flex items-center gap-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-extrabold text-[11px] px-4 py-2.5 rounded-xl cursor-pointer transition-colors shadow-xs"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5 shrink-0" />
-                    Send CS Reminder
-                  </button>
-                </div>
-              )}
+                {/* Actions Footer (For Incomplete) */}
+                {getCompletion(selectedHandover) < 100 && (
+                  <>
+                    {/* Send Handover Package Button */}
+                    <div className="mt-8 mb-10">
+                      <button 
+                        onClick={() => { setShowDispatchModal(true); setTargetRep('Michael Scott (Regional Coordinator)'); setHandoverNotes(''); }} 
+                        className="bg-[#211E48] hover:bg-[#151336] text-white font-bold text-[13px] px-6 py-3 rounded-full flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-md"
+                      >
+                        <Send className="w-4 h-4 shrink-0" /> Send Handover Package
+                      </button>
+                    </div>
+
+                    {/* Pending Legal Documents Checklist */}
+                    <div>
+                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">
+                        PENDING LEGAL DOCUMENTS CHECKLIST
+                      </h3>
+                      <div className="flex flex-wrap gap-4">
+                        <button className="flex items-center gap-2 bg-[#EFE8E8] border border-[#E5D9D9] text-[#E06767] font-bold text-[12px] px-6 py-3 rounded-xl transition-colors hover:bg-[#EAE0E0]">
+                          <AlertTriangle className="w-4 h-4" strokeWidth={2.5} /> Signed SLA Contract
+                        </button>
+                        <button className="flex items-center gap-2 bg-[#EFE8E8] border border-[#E5D9D9] text-[#E06767] font-bold text-[12px] px-6 py-3 rounded-xl transition-colors hover:bg-[#EAE0E0]">
+                          <AlertTriangle className="w-4 h-4" strokeWidth={2.5} /> Company W-9 Tax File
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           )}
         </div>
       </div>
+
+      {/* Create Onboarding Task Modal */}
+      {showAddTaskModal && selectedHandover && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[999] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl w-full max-w-[500px] shadow-2xl overflow-hidden animate-slide-in">
+            {/* Header */}
+            <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
+              <h2 className="text-[17px] font-bold text-slate-900">Create Onboarding Task</h2>
+              <button onClick={() => setShowAddTaskModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="px-6 py-6">
+              <p className="text-[13px] font-medium text-slate-500 mb-6 leading-relaxed">
+                Add a custom task to the onboarding checklist for <span className="font-bold text-slate-700">{selectedHandover.company}</span>.
+              </p>
+
+              <div className="space-y-2 mb-6">
+                <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">TASK NAME</label>
+                <input
+                  type="text"
+                  value={newTaskName}
+                  onChange={(e) => setNewTaskName(e.target.value)}
+                  placeholder="e.g. Set up custom factoring rules"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-colors"
+                />
+              </div>
+
+              <button
+                onClick={() => {
+                  if (newTaskName.trim()) {
+                    crmStore.updateDb((db) => {
+                      const h = (db.crmHandovers || []).find(x => x.id === selectedHandover.id);
+                      if (h) {
+                        if (!h.checklist) h.checklist = [];
+                        h.checklist.push({ name: newTaskName, completed: false });
+                        h.status = 'In Progress';
+                      }
+                    });
+                    setToast({ type: 'success', text: `Task added to ${selectedHandover.company}.` });
+                    setShowAddTaskModal(false);
+                  }
+                }}
+                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all cursor-pointer"
+              >
+                Add Onboarding Task
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dispatch Handover Modal */}
+      {showDispatchModal && selectedHandover && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[999] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl w-full max-w-[500px] shadow-2xl overflow-hidden animate-slide-in">
+            {/* Header */}
+            <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
+              <h2 className="text-[17px] font-bold text-slate-900">Onboarding Handover package dispatch</h2>
+              <button onClick={() => setShowDispatchModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="px-6 py-6">
+              <p className="text-[13px] font-medium text-slate-500 mb-6 leading-relaxed">
+                Dispatch legal details and setup parameters to the logistics operations desk for <span className="font-bold text-slate-700">{selectedHandover.company}</span>.
+              </p>
+
+              <div className="space-y-5 mb-6">
+                <div>
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-2">TARGET REPRESENTATIVE</label>
+                  <select
+                    value={targetRep}
+                    onChange={(e) => setTargetRep(e.target.value)}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 transition-colors bg-white appearance-auto cursor-pointer"
+                  >
+                    <option value="Michael Scott (Regional Coordinator)">Michael Scott (Regional Coordinator)</option>
+                    <option value="Alex Wright (Inside Sales)">Alex Wright (Inside Sales)</option>
+                    <option value="Sarah K. (Account Management)">Sarah K. (Account Management)</option>
+                    <option value="Jan Levinson (Operations Lead)">Jan Levinson (Operations Lead)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-black text-slate-500 tracking-wider mb-2">Handover Notes / Instructions</label>
+                  <textarea
+                    value={handoverNotes}
+                    onChange={(e) => setHandoverNotes(e.target.value)}
+                    placeholder="Provide billing integration info, special customer SLA rules..."
+                    rows="3"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-colors resize-none"
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  setToast({ type: 'success', text: `Handover package dispatched to ${targetRep.split(' ')[0]}!` });
+                  setShowDispatchModal(false);
+                }}
+                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all cursor-pointer"
+              >
+                Confirm & Dispatch Handover Package
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
