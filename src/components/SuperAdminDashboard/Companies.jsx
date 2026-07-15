@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Search, Plus, Check, X, ShieldAlert, CheckCircle, ExternalLink, 
   Settings, Download, FileText, Filter, ChevronDown, RefreshCw, AlertCircle
 } from 'lucide-react';
 
 export default function Companies() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [advancedSearchOpen, setAdvancedSearchOpen] = useState(false);
   const [toast, setToast] = useState('');
@@ -46,6 +48,20 @@ export default function Companies() {
 
   // Action Menu dropdown state
   const [activeActionsMenu, setActiveActionsMenu] = useState(null); // ID of company whose menu is open
+
+  // Modals state
+  const [showEditCompanyModal, setShowEditCompanyModal] = useState(false);
+  const [showSuspendCompanyModal, setShowSuspendCompanyModal] = useState(false);
+  const [showLoginAsModal, setShowLoginAsModal] = useState(false);
+  const [showChangeSubscriptionModal, setShowChangeSubscriptionModal] = useState(false);
+  const [showManageFeaturesModal, setShowManageFeaturesModal] = useState(false);
+  const [showSendNotificationModal, setShowSendNotificationModal] = useState(false);
+  const [selectedActionCompany, setSelectedActionCompany] = useState(null);
+
+  // Inspector state
+  const [showInspector, setShowInspector] = useState(false);
+  const [selectedTenant, setSelectedTenant] = useState(null);
+  const [activeInspectorTab, setActiveInspectorTab] = useState('Overview');
 
   const columnsMenuRef = useRef(null);
   const actionsMenuRef = useRef(null);
@@ -207,6 +223,40 @@ export default function Companies() {
 
     return matchesSearch && matchesMinUsers && matchesPlan && matchesStatus;
   });
+
+  const exportCSV = () => {
+    const headers = ['COMPANY NAME', 'COMPANY ID', 'SUBSCRIPTION PLAN', 'STATUS', 'BRANCHES', 'USERS', 'DRIVERS', 'FLEET VEHICLES', 'ACTIVE LOADS', 'MONTHLY REVENUE', 'LAST LOGIN', 'TRIAL EXPIRY', 'CREATED DATE', 'ACCOUNT MANAGER'];
+    const csvRows = [headers.join(',')];
+    
+    filteredCompanies.forEach(c => {
+      csvRows.push([
+        `"${c.name}"`, 
+        `"${c.id}"`, 
+        `"${c.plan}"`, 
+        `"${c.status}"`, 
+        c.branches, 
+        c.users, 
+        c.drivers, 
+        c.vehicles, 
+        c.loads, 
+        `"$${c.mrr.toLocaleString()}"`, 
+        `"${c.lastLogin}"`, 
+        `"${c.expiry}"`, 
+        `"${c.created}"`, 
+        `"${c.manager}"`
+      ].join(','));
+    });
+
+    const blob = new Blob([csvRows.join('\\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'companies_export.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showNotification('CSV Export generated successfully.');
+  };
 
   return (
     <div className="flex-grow bg-[#F1F5F9] p-6 space-y-6 overflow-y-auto w-full text-left font-sans relative custom-scrollbar">
@@ -429,7 +479,7 @@ export default function Companies() {
             {/* Export buttons */}
             <div className="flex items-center gap-2">
               <button 
-                onClick={() => showNotification('Export generate successfully')}
+                onClick={exportCSV}
                 className="border border-amber-500 hover:bg-amber-50/10 text-yellow-600 font-extrabold text-[11px] px-3.5 py-2 rounded-xl transition-colors cursor-pointer bg-white"
               >
                 CSV Export
@@ -846,24 +896,88 @@ export default function Companies() {
                             ref={actionsMenuRef}
                             className="absolute right-6 mt-1 w-48 bg-white border border-slate-200 rounded-2xl shadow-xl p-2.5 z-40 space-y-1 text-left text-xs text-slate-700 font-bold"
                           >
-                            <button onClick={() => handleActionClick('Edit Tenant Details', c.name)} className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer">
-                              Edit Tenant Details
-                            </button>
-                            <button onClick={() => handleActionClick('Adjust Margins Cap', c.name)} className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer">
-                              Adjust Margins Cap
+                            <button 
+                              onClick={() => {
+                                setSelectedTenant(c);
+                                setActiveInspectorTab('Overview');
+                                setShowInspector(true);
+                                setActiveActionsMenu(null);
+                              }} 
+                              className="w-full text-left px-3 py-1.5 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer"
+                            >
+                              View Company
                             </button>
                             <button 
                               onClick={() => {
-                                const activeState = c.status === 'ACTIVE' ? 'HOLD' : 'ACTIVE';
-                                setCompanies(prev => prev.map(item => item.id === c.id ? { ...item, status: activeState } : item));
-                                showNotification(`Toggled status of ${c.name} to ${activeState}`);
+                                setSelectedActionCompany(c);
+                                setShowEditCompanyModal(true);
+                                setActiveActionsMenu(null);
+                              }} 
+                              className="w-full text-left px-3 py-1.5 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer"
+                            >
+                              Edit Company
+                            </button>
+                            <button 
+                              onClick={() => {
+                                setSelectedActionCompany(c);
+                                setShowSuspendCompanyModal(true);
                                 setActiveActionsMenu(null);
                               }}
-                              className={`w-full text-left px-3 py-2 rounded-lg cursor-pointer ${
-                                c.status === 'ACTIVE' ? 'hover:bg-amber-50 text-amber-600' : 'hover:bg-emerald-50 text-emerald-600'
-                              }`}
+                              className="w-full text-left px-3 py-1.5 hover:bg-rose-50 rounded-lg text-rose-500 cursor-pointer"
                             >
-                              {c.status === 'ACTIVE' ? 'Suspend Tenant' : 'Activate Tenant'}
+                              {c.status === 'ACTIVE' ? 'Suspend Company' : 'Activate Company'}
+                            </button>
+                            <button 
+                              onClick={() => {
+                                setSelectedActionCompany(c);
+                                setShowLoginAsModal(true);
+                                setActiveActionsMenu(null);
+                              }} 
+                              className="w-full text-left px-3 py-1.5 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer mt-1"
+                            >
+                              Login as Company Admin
+                            </button>
+                            <button 
+                              onClick={() => {
+                                setSelectedActionCompany(c);
+                                setShowChangeSubscriptionModal(true);
+                                setActiveActionsMenu(null);
+                              }} 
+                              className="w-full text-left px-3 py-1.5 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer"
+                            >
+                              Change Subscription
+                            </button>
+                            <button 
+                              onClick={() => {
+                                setSelectedActionCompany(c);
+                                setShowManageFeaturesModal(true);
+                                setActiveActionsMenu(null);
+                              }} 
+                              className="w-full text-left px-3 py-1.5 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer"
+                            >
+                              Manage Features
+                            </button>
+                            <button onClick={() => navigate('/admin/billing')} className="w-full text-left px-3 py-1.5 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer">
+                              View Billing
+                            </button>
+                            <button 
+                              onClick={() => {
+                                showNotification(`Sent password reset instruction email to administrator of ${c.name}.`);
+                                setActiveActionsMenu(null);
+                              }} 
+                              className="w-full text-left px-3 py-1.5 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer"
+                            >
+                              Reset Password
+                            </button>
+                            <button 
+                              onClick={() => {
+                                setSelectedActionCompany(c);
+                                setShowSendNotificationModal(true);
+                                setActiveActionsMenu(null);
+                              }} 
+                              className="w-full text-left px-3 py-1.5 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer mb-1 border-b border-slate-100"
+                            >
+                              Send Notification
                             </button>
                             <button 
                               onClick={() => {
@@ -873,9 +987,9 @@ export default function Companies() {
                                 }
                                 setActiveActionsMenu(null);
                               }}
-                              className="w-full text-left px-3 py-2 hover:bg-rose-50 rounded-lg text-rose-500 cursor-pointer"
+                              className="w-full text-left px-3 py-1.5 hover:bg-rose-50 rounded-lg text-rose-500 cursor-pointer"
                             >
-                              Delete Tenant
+                              Delete Company
                             </button>
                           </div>
                         )}
@@ -969,6 +1083,618 @@ export default function Companies() {
         </div>
       )}
 
+      {/* Configure Tenant Workspace Settings Modal */}
+      {showEditCompanyModal && selectedActionCompany && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[999] p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-[420px] overflow-hidden shadow-2xl animate-fade-in text-left">
+            <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100">
+              <h3 className="text-sm font-black text-slate-800">Configure Tenant Workspace Settings</h3>
+              <button onClick={() => setShowEditCompanyModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-5">
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">COMPANY NAME</label>
+                <input type="text" defaultValue={selectedActionCompany.name} className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">ADMINISTRATOR EMAIL</label>
+                <input type="text" defaultValue={selectedActionCompany.manager} className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SUBSCRIPTION TIER LEVEL</label>
+                <select defaultValue={selectedActionCompany.plan + ' Tier'} className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                  <option>Starter Tier</option>
+                  <option>Professional Tier</option>
+                  <option>Enterprise Tier</option>
+                </select>
+              </div>
+              <button 
+                onClick={() => {
+                  showNotification(`Configurations saved for ${selectedActionCompany.name}`);
+                  setShowEditCompanyModal(false);
+                }}
+                className="w-full mt-2 bg-[#FFB020] hover:bg-[#FFC800] text-black font-extrabold text-[13px] py-4 rounded-xl transition-all cursor-pointer shadow-sm flex flex-col items-center justify-center"
+              >
+                <Check className="w-4 h-4 mb-1" />
+                Save Configurations
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Suspend Company License Modal */}
+      {showSuspendCompanyModal && selectedActionCompany && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[999] p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-[420px] overflow-hidden shadow-2xl animate-fade-in text-left">
+            <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100">
+              <h3 className="text-sm font-black text-slate-800">Suspend Company License</h3>
+              <button onClick={() => setShowSuspendCompanyModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-5">
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SELECT COMPANY TO SUSPEND</label>
+                <select defaultValue={selectedActionCompany.name} className="w-full px-4 py-3 bg-white border border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                  <option>{selectedActionCompany.name}</option>
+                  {companies.filter(c => c.name !== selectedActionCompany.name).map(c => <option key={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+              <button 
+                onClick={() => {
+                  setCompanies(prev => prev.map(item => item.id === selectedActionCompany.id ? { ...item, status: 'HOLD' } : item));
+                  showNotification(`Suspended license for ${selectedActionCompany.name}`);
+                  setShowSuspendCompanyModal(false);
+                }}
+                className="w-full bg-[#E11D48] hover:bg-[#BE123C] text-white font-extrabold text-[13px] py-4 rounded-xl transition-all cursor-pointer shadow-sm"
+              >
+                Suspend License
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Simulate Login Session Modal */}
+      {showLoginAsModal && selectedActionCompany && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[999] p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-[420px] overflow-hidden shadow-2xl animate-fade-in text-left">
+            <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100">
+              <h3 className="text-sm font-black text-slate-800">Simulate Login Session</h3>
+              <button onClick={() => setShowLoginAsModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-5">
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SELECT COMPANY WORKSPACE</label>
+                <select 
+                  defaultValue={selectedActionCompany.name} 
+                  className="w-full px-4 py-3 bg-white border border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
+                  onChange={(e) => {
+                     const comp = companies.find(c => c.name === e.target.value);
+                     if(comp) setSelectedActionCompany(comp);
+                  }}
+                >
+                  <option disabled>-- Select Company --</option>
+                  {companies.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                </select>
+              </div>
+              <button 
+                onClick={() => {
+                  showNotification(`Logged in as admin of ${selectedActionCompany.name}`);
+                  setShowLoginAsModal(false);
+                }}
+                className="w-full bg-[#3B82F6] hover:bg-[#2563EB] text-white font-extrabold text-[13px] py-4 rounded-xl transition-all cursor-pointer shadow-sm"
+              >
+                Login as Administrator
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Change Subscription Modal */}
+      {showChangeSubscriptionModal && selectedActionCompany && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[999] p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-[420px] overflow-hidden shadow-2xl animate-fade-in text-left">
+            <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100">
+              <h3 className="text-sm font-black text-slate-800">Change Subscription for {selectedActionCompany.name}</h3>
+              <button onClick={() => setShowChangeSubscriptionModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-5">
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SELECT SUBSCRIPTION PLAN TIER</label>
+                <select 
+                  defaultValue={`${selectedActionCompany.plan} Tier - $${selectedActionCompany.mrr}/mo`}
+                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
+                >
+                  <option>Starter Tier - $499/mo</option>
+                  <option>Professional Tier - $4,910/mo</option>
+                  <option>Professional Tier - $8,500/mo</option>
+                  <option>Enterprise Tier - $28,000/mo</option>
+                </select>
+              </div>
+              <button 
+                onClick={() => {
+                  showNotification(`Subscription updated for ${selectedActionCompany.name}`);
+                  setShowChangeSubscriptionModal(false);
+                }}
+                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-black font-extrabold text-[13px] py-4 rounded-xl transition-all cursor-pointer shadow-sm mt-2"
+              >
+                Update Subscription
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manage Feature Access Modal */}
+      {showManageFeaturesModal && selectedActionCompany && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[999] p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-[420px] overflow-hidden shadow-2xl animate-fade-in text-left">
+            <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100">
+              <h3 className="text-sm font-black text-slate-800">Manage Feature Access for {selectedActionCompany.name}</h3>
+              <button onClick={() => setShowManageFeaturesModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-xs font-medium text-slate-500 mb-2">Configure custom granular policies for the company workspace instance.</p>
+              
+              <label className="flex items-center gap-3 cursor-pointer py-1">
+                <input type="checkbox" defaultChecked className="w-4 h-4 text-[#3B82F6] rounded border-slate-300 focus:ring-0 cursor-pointer" />
+                <span className="text-xs font-bold text-slate-600">GPS Geofencing Mapping</span>
+              </label>
+              
+              <label className="flex items-center gap-3 cursor-pointer py-1">
+                <input type="checkbox" defaultChecked className="w-4 h-4 text-[#3B82F6] rounded border-slate-300 focus:ring-0 cursor-pointer" />
+                <span className="text-xs font-bold text-slate-600">AI Route Dispatch Automation</span>
+              </label>
+
+              <label className="flex items-center gap-3 cursor-pointer py-1">
+                <input type="checkbox" defaultChecked className="w-4 h-4 text-[#3B82F6] rounded border-slate-300 focus:ring-0 cursor-pointer" />
+                <span className="text-xs font-bold text-slate-600">ELD Compliance Forms</span>
+              </label>
+
+              <label className="flex items-center gap-3 cursor-pointer py-1">
+                <input type="checkbox" className="w-4 h-4 text-[#3B82F6] rounded border-slate-300 focus:ring-0 cursor-pointer" />
+                <span className="text-xs font-bold text-slate-600">SMS Carrier Alerts</span>
+              </label>
+
+              <button 
+                onClick={() => {
+                  showNotification(`Features updated for ${selectedActionCompany.name}`);
+                  setShowManageFeaturesModal(false);
+                }}
+                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-black font-extrabold text-[13px] py-4 rounded-xl transition-all cursor-pointer shadow-sm mt-4"
+              >
+                Save Granular Features
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+                  {/* Broadcast Notification Modal */}
+      {showSendNotificationModal && selectedActionCompany && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[999] p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-[500px] overflow-hidden shadow-2xl animate-fade-in text-left">
+            <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100">
+              <h3 className="text-sm font-black text-slate-800">Broadcast Notification to {selectedActionCompany.name}</h3>
+              <button onClick={() => setShowSendNotificationModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-5">
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">NOTIFICATION PAYLOAD MESSAGE</label>
+                <textarea 
+                  placeholder="Type announcement message..."
+                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-medium rounded-xl focus:outline-none text-slate-800 h-24 resize-none"
+                ></textarea>
+              </div>
+              <button 
+                onClick={() => {
+                  showNotification(`Broadcast message sent to ${selectedActionCompany.name}`);
+                  setShowSendNotificationModal(false);
+                }}
+                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-black font-extrabold text-[13px] py-4 rounded-xl transition-all cursor-pointer shadow-sm mt-2"
+              >
+                Broadcast Message
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tenant Workspace Inspector Drawer */}
+      {showInspector && (
+        <div className="fixed inset-0 z-[1000] flex justify-end">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity cursor-pointer"
+            onClick={() => setShowInspector(false)}
+          ></div>
+
+          {/* Drawer Panel */}
+          <div className="relative w-full max-w-md bg-white shadow-2xl h-full flex flex-col animate-slide-left">
+            {/* Header */}
+            <div className="flex justify-between items-center p-6 border-b border-slate-100 bg-white">
+              <h3 className="text-lg font-extrabold text-slate-900">Tenant Workspace Inspector</h3>
+              <button 
+                onClick={() => setShowInspector(false)} 
+                className="text-slate-400 hover:text-slate-700 transition-colors p-1 rounded-lg hover:bg-slate-50 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-8 overflow-y-auto custom-scrollbar flex-grow space-y-8 bg-[#F8FAFC]">
+              
+              <div className="flex justify-between items-start">
+                <div>
+                  <h2 className="text-[22px] font-black text-slate-900">{selectedTenant?.name || 'Falcon Logistics LLC'}</h2>
+                  <p className="text-[10px] font-mono text-slate-400 mt-1 uppercase tracking-wider">Workspace ID: #TEN-{selectedTenant?.id || '1'}</p>
+                </div>
+                <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-bold tracking-wider ${
+                  (selectedTenant?.status || 'ACTIVE') === 'ACTIVE'
+                    ? 'text-emerald-600 bg-emerald-50 border border-emerald-200'
+                    : 'text-amber-600 bg-amber-50 border border-amber-200'
+                }`}>
+                  {selectedTenant?.status || 'ACTIVE'}
+                </span>
+              </div>
+
+              {/* Tabs */}
+              <div className="flex overflow-x-auto custom-scrollbar pb-3 gap-2 border-b border-slate-200/60 items-center">
+                {['Overview', 'Subscriptions', 'Users', 'Branches', 'Fleet', 'Loads', 'Billing', 'Support Tickets', 'Feature Access', 'Audit Log'].map(tab => (
+                  <button 
+                    key={tab}
+                    onClick={() => setActiveInspectorTab(tab)}
+                    className={`shrink-0 px-4 py-1.5 text-[11px] rounded-xl whitespace-nowrap cursor-pointer transition-colors ${
+                      activeInspectorTab === tab 
+                        ? 'bg-[#FFD400] text-slate-900 font-black shadow-sm border-2 border-slate-900'
+                        : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 font-bold border-2 border-transparent'
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+
+              {activeInspectorTab === 'Overview' && (
+                <div className="space-y-4">
+                  {/* General Information Card */}
+                  <div className="bg-white border border-slate-100 rounded-xl p-4 shadow-sm shadow-slate-200/40">
+                    <h4 className="text-[12px] font-extrabold text-slate-800 mb-3 flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                      General Information
+                    </h4>
+                    <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+                      <div>
+                        <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Account Manager</p>
+                        <p className="text-slate-800 font-bold text-[12px]">Alex W.</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Region/Country</p>
+                        <p className="text-slate-800 font-bold text-[12px]">USA</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Joined Date</p>
+                        <p className="text-slate-800 font-bold text-[12px]">03/12/2026</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Last Login</p>
+                        <p className="text-slate-800 font-bold text-[12px]">{selectedTenant?.lastActive || 'Today, 02:15 PM'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Resource Metrics Card */}
+                  <div className="bg-white border border-slate-100 rounded-xl p-4 shadow-sm shadow-slate-200/40">
+                    <h4 className="text-[12px] font-extrabold text-slate-800 mb-3 flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      Resource Metrics
+                    </h4>
+                    <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+                      <div>
+                        <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Active Users</p>
+                        <p className="text-slate-800 font-black text-sm">{selectedTenant?.users || '12'}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Total Drivers</p>
+                        <p className="text-slate-800 font-black text-sm">3</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Fleet Vehicles</p>
+                        <p className="text-slate-800 font-black text-sm">15</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Branches count</p>
+                        <p className="text-slate-800 font-black text-sm">4</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeInspectorTab === 'Subscriptions' && (
+                <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm shadow-slate-200/40">
+                  <h4 className="text-[13px] font-extrabold text-slate-800 mb-5">Subscription Licensing Contract</h4>
+                  <div className="space-y-3.5">
+                    <div className="flex gap-2 items-center">
+                      <span className="text-slate-400 text-[12px] font-bold">Current Tier Plan:</span>
+                      <span className="text-[#D97706] font-extrabold text-[12px]">Professional Plan</span>
+                    </div>
+                    <div className="flex gap-2 items-center">
+                      <span className="text-slate-400 text-[12px] font-bold">Contract Billing Rate:</span>
+                      <span className="text-slate-800 font-extrabold text-[12px]">$8,500 / month</span>
+                    </div>
+                    <div className="flex gap-2 items-center">
+                      <span className="text-slate-400 text-[12px] font-bold">Billing Cycle Period:</span>
+                      <span className="text-slate-800 font-extrabold text-[12px]">Monthly Auto-Renewal recurring</span>
+                    </div>
+                    <div className="flex gap-2 items-center">
+                      <span className="text-slate-400 text-[12px] font-bold">Next Renewal Invoice Date:</span>
+                      <span className="text-slate-800 font-extrabold text-[12px]">07/24/2026</span>
+                    </div>
+                    <div className="flex gap-2 items-center">
+                      <span className="text-slate-400 text-[12px] font-bold">Trial Expiry:</span>
+                      <span className="text-slate-800 font-extrabold text-[12px]">N/A</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeInspectorTab === 'Users' && (
+                <div>
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">REGISTERED ACCOUNT STAFF MEMBERS</h4>
+                  <div className="bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/40 overflow-hidden divide-y divide-slate-100">
+                    {[
+                      { name: 'Alexander Wright', email: 'Alex W.', role: 'Company Admin', status: 'Active' },
+                      { name: 'Operator B', email: 'operator2@falconlogisticsllc.com', role: 'Dispatcher', status: 'Active' },
+                      { name: 'Operator C', email: 'operator3@falconlogisticsllc.com', role: 'Dispatcher', status: 'Active' },
+                      { name: 'Operator D', email: 'operator4@falconlogisticsllc.com', role: 'Dispatcher', status: 'Active' },
+                      { name: 'Operator E', email: 'operator5@falconlogisticsllc.com', role: 'Dispatcher', status: 'Active' },
+                      { name: 'Operator F', email: 'operator6@falconlogisticsllc.com', role: 'Dispatcher', status: 'Active' },
+                      { name: 'Operator G', email: 'operator7@falconlogisticsllc.com', role: 'Dispatcher', status: 'Active' },
+                      { name: 'Operator H', email: 'operator8@falconlogisticsllc.com', role: 'Dispatcher', status: 'Active' },
+                    ].map(user => (
+                      <div key={user.name} className="flex justify-between items-center p-4">
+                        <div>
+                          <p className="text-[13px] font-bold text-slate-800">{user.name}</p>
+                          <p className="text-[11px] font-mono text-slate-400 mt-0.5">{user.email}</p>
+                        </div>
+                        <div className="text-right flex flex-col items-end">
+                          <p className="text-[11px] font-bold text-slate-600 mb-1">{user.role}</p>
+                          <span className="text-[9px] font-bold text-emerald-500 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full tracking-wider">{user.status}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {activeInspectorTab === 'Branches' && (
+                <div>
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">ACTIVE BRANCH TERMINALS</h4>
+                  <div className="bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/40 overflow-hidden divide-y divide-slate-100">
+                    {[
+                      { name: 'Chicago HQ Terminal', loc: 'Chicago, IL', staff: '4 Staff' },
+                      { name: 'Branch Depot 2', loc: 'Los Angeles, CA', staff: '6 Staff' },
+                      { name: 'Branch Depot 3', loc: 'Los Angeles, CA', staff: '8 Staff' },
+                      { name: 'Branch Depot 4', loc: 'Los Angeles, CA', staff: '10 Staff' },
+                    ].map(branch => (
+                      <div key={branch.name} className="flex justify-between items-center p-4">
+                        <div>
+                          <p className="text-[13px] font-bold text-slate-800">{branch.name}</p>
+                          <p className="text-[11px] font-medium text-slate-400 mt-0.5">{branch.loc}</p>
+                        </div>
+                        <div>
+                          <p className="text-[12px] font-bold text-slate-600">{branch.staff}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {activeInspectorTab === 'Fleet' && (
+                <div>
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">REGISTERED FLEET ASSET VEHICLES</h4>
+                  <div className="bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/40 overflow-hidden divide-y divide-slate-100">
+                    {[
+                      { id: 'TX-ROAD88', type: 'Semi-Truck' },
+                      { id: 'IL-HAUL42', type: 'Flatbed Trailer' },
+                      { id: 'CA-CARRI7', type: 'Semi-Truck' },
+                      { id: 'TX-1003', type: 'Flatbed Trailer' },
+                      { id: 'TX-1004', type: 'Semi-Truck' },
+                      { id: 'TX-1005', type: 'Flatbed Trailer' },
+                      { id: 'TX-1006', type: 'Semi-Truck' },
+                      { id: 'TX-1007', type: 'Flatbed Trailer' },
+                    ].map(vehicle => (
+                      <div key={vehicle.id} className="flex justify-between items-center p-4">
+                        <div>
+                          <p className="text-[13px] font-bold text-slate-800">{vehicle.id}</p>
+                          <p className="text-[11px] font-medium text-slate-400 mt-0.5">{vehicle.type}</p>
+                        </div>
+                        <div>
+                          <span className="text-[9px] font-bold text-blue-500 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full tracking-wide">Active</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {activeInspectorTab === 'Loads' && (
+                <div>
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">LOADS MANIFEST SUMMARY</h4>
+                  <div className="bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/40 overflow-hidden divide-y divide-slate-100">
+                    {[
+                      { id: 'Load LD-9400', route: 'Chicago ➔ Dallas', cargo: 'Automotive Components' },
+                      { id: 'Load LD-9401', route: 'Houston ➔ Atlanta', cargo: 'Dry Grocery Pallets' },
+                      { id: 'Load LD-9402', route: 'Chicago ➔ Dallas', cargo: 'Automotive Components' },
+                      { id: 'Load LD-9403', route: 'Houston ➔ Atlanta', cargo: 'Dry Grocery Pallets' },
+                      { id: 'Load LD-9404', route: 'Chicago ➔ Dallas', cargo: 'Automotive Components' },
+                      { id: 'Load LD-9405', route: 'Houston ➔ Atlanta', cargo: 'Dry Grocery Pallets' },
+                      { id: 'Load LD-9406', route: 'Chicago ➔ Dallas', cargo: 'Automotive Components' },
+                      { id: 'Load LD-9407', route: 'Houston ➔ Atlanta', cargo: 'Dry Grocery Pallets' },
+                    ].map(load => (
+                      <div key={load.id} className="flex justify-between items-center p-4">
+                        <div>
+                          <p className="text-[13px] font-bold text-slate-800">{load.id}</p>
+                          <p className="text-[11px] font-medium text-slate-500 mt-0.5">{load.route} ({load.cargo})</p>
+                        </div>
+                        <div>
+                          <span className="text-[9px] font-bold text-emerald-500 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full tracking-wide">In Transit</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {activeInspectorTab === 'Billing' && (
+                <div>
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">BILLING SUMMARY & LEDGER</h4>
+                  
+                  <div className="bg-white border border-slate-100 rounded-2xl p-5 mb-4 shadow-sm shadow-slate-200/40">
+                    <div className="space-y-3.5">
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400 text-[12px] font-bold">Subscription Revenue:</span>
+                        <span className="text-emerald-500 font-extrabold text-[12px]">$8500/mo</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400 text-[12px] font-bold">Annual Projected:</span>
+                        <span className="text-slate-800 font-extrabold text-[12px]">$102000/yr</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400 text-[12px] font-bold">Billing Cycle:</span>
+                        <span className="text-slate-800 font-extrabold text-[12px]">Monthly Recurring</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400 text-[12px] font-bold">Auto Renewal:</span>
+                        <span className="text-emerald-500 font-extrabold text-[12px]">Enabled</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/40 overflow-hidden divide-y divide-slate-100">
+                    {[
+                      { id: '#INV-1001A', date: '06/12/2026 - 07/12/2026', amount: '$8500', status: 'Paid', statusClass: 'text-emerald-500 bg-emerald-50' },
+                      { id: '#INV-1002A', date: '06/15/2026 - 06/29/2026', amount: '$4200', status: 'Sent', statusClass: 'text-amber-500 bg-amber-50' },
+                      { id: '#INV-1003A', date: '06/20/2026 - 07/04/2026', amount: '$3100', status: 'Draft', statusClass: 'text-amber-500 bg-amber-50' },
+                      { id: '#INV-1004A', date: '05/10/2026 - 05/24/2026', amount: '$5000', status: 'Overdue', statusClass: 'text-amber-500 bg-amber-50' },
+                    ].map(invoice => (
+                      <div key={invoice.id} className="flex justify-between items-center p-4">
+                        <div>
+                          <p className="text-[13px] font-bold text-slate-800">Invoice {invoice.id}</p>
+                          <p className="text-[11px] font-medium text-slate-400 mt-0.5">Period: {invoice.date}</p>
+                        </div>
+                        <div className="text-right flex flex-col items-end">
+                          <p className="text-[13px] font-bold text-slate-800 mb-1">{invoice.amount}</p>
+                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full tracking-wider ${invoice.statusClass}`}>{invoice.status}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {activeInspectorTab === 'Support Tickets' && (
+                <div>
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">INBOUND TICKET QUERIES RAISED</h4>
+                  <div className="bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/40 p-4 flex justify-between items-center">
+                    <div>
+                      <p className="text-[13px] font-bold text-slate-800">#1 • Invoice Factoring Delay</p>
+                      <p className="text-[11px] font-medium text-slate-400 mt-0.5">Priority: High</p>
+                    </div>
+                    <div>
+                      <span className="text-[9px] font-bold text-amber-500 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full tracking-wide">Open</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeInspectorTab === 'Feature Access' && (
+                <div>
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">VISUAL FEATURE PERMISSIONS</h4>
+                  <div className="bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/40 overflow-hidden divide-y divide-slate-50 py-1">
+                    {[
+                      { name: 'Platform Dashboard', status: 'Enabled', active: true },
+                      { name: 'Companies Workspace', status: 'Enabled', active: true },
+                      { name: 'Subscriptions Panel', status: 'Enabled', active: true },
+                      { name: 'Membership Plans', status: 'Disabled', active: false },
+                      { name: 'AI Controls Center', status: 'Disabled', active: false },
+                      { name: 'Inter-Company Transfers', status: 'Disabled', active: false },
+                      { name: 'White Label Customization', status: 'Disabled', active: false },
+                    ].map(feature => (
+                      <div key={feature.name} className="flex justify-between items-center px-5 py-3">
+                        <p className="text-[13px] font-medium text-slate-500">{feature.name}</p>
+                        <span className={`text-[12px] font-bold ${feature.active ? 'text-emerald-500' : 'text-slate-600'}`}>{feature.status}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {activeInspectorTab === 'Audit Log' && (
+                <div>
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">SUBSCRIPTION AUDIT FEED</h4>
+                  <div className="bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/40 p-5 divide-y divide-slate-100">
+                    <div className="pb-4">
+                      <p className="text-[12px] font-bold text-slate-800">Company Created</p>
+                      <p className="text-[11px] text-slate-500 mt-1">Falcon Logistics LLC provisioned successfully.</p>
+                      <p className="text-[9px] font-mono text-slate-400 mt-2">03/12/2026</p>
+                    </div>
+                    <div className="pt-4">
+                      <p className="text-[12px] font-bold text-slate-800">Database Index Sync</p>
+                      <p className="text-[11px] text-slate-500 mt-1">ElasticSearch keys auto-indexing rebuilt.</p>
+                      <p className="text-[9px] font-mono text-slate-400 mt-2">03/12/2026</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {!['Overview', 'Subscriptions', 'Users', 'Branches', 'Fleet', 'Billing', 'Support Tickets', 'Feature Access', 'Audit Log'].includes(activeInspectorTab) && (
+                <div className="bg-white border border-slate-100 rounded-2xl p-8 text-center shadow-sm shadow-slate-200/40">
+                  <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <span className="text-slate-400 font-bold text-xl">ℹ️</span>
+                  </div>
+                  <h4 className="text-sm font-extrabold text-slate-800 mb-1">{activeInspectorTab} Data</h4>
+                  <p className="text-[11px] text-slate-500">Detailed information for {activeInspectorTab.toLowerCase()} will be displayed here.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer Buttons */}
+            <div className="p-6 border-t border-slate-100 bg-white">
+              <div className="flex gap-3 mb-3">
+                <button className="flex-1 bg-[#E11D48] text-white px-4 py-3 rounded-xl text-[11px] font-bold hover:bg-[#BE123C] shadow-md shadow-rose-500/20 transition-all text-center cursor-pointer">
+                  Suspend Workspace License
+                </button>
+                <button className="flex-1 bg-[#E11D48] text-white px-4 py-3 rounded-xl text-[11px] font-bold hover:bg-[#BE123C] shadow-md shadow-rose-500/20 transition-all text-center cursor-pointer">
+                  Permanently Delete Company
+                </button>
+              </div>
+              <button 
+                onClick={() => setShowInspector(false)}
+                className="w-[150px] bg-white border border-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-[11px] font-bold hover:bg-slate-50 transition-colors text-center cursor-pointer"
+              >
+                Close Inspector
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,0 +1,446 @@
+﻿
+>       {showInspector && (
+          <div className="fixed inset-0 z-[1000] flex justify-end">
+            {/* Backdrop */}
+            <div 
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity cursor-pointer"
+              onClick={() => setShowInspector(false)}
+            ></div>
+  
+            {/* Drawer Panel */}
+            <div className="relative w-full max-w-md bg-white shadow-2xl h-full flex flex-col animate-slide-left">
+              {/* Header */}
+              <div className="flex justify-between items-center p-6 border-b border-slate-100 bg-white">
+                <h3 className="text-lg font-extrabold text-slate-900">Tenant Workspace Inspector</h3>
+                <button 
+                  onClick={() => setShowInspector(false)} 
+                  className="text-slate-400 hover:text-slate-700 transition-colors p-1 rounded-lg hover:bg-slate-50 
+cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+  
+              {/* Body */}
+              <div className="p-8 overflow-y-auto custom-scrollbar flex-grow space-y-8 bg-[#F8FAFC]">
+                
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h2 className="text-[22px] font-black text-slate-900">{selectedTenant?.name || 'Falcon Logistics 
+LLC'}</h2>
+                    <p className="text-[10px] font-mono text-slate-400 mt-1 uppercase tracking-wider">Workspace ID: 
+#TEN-{selectedTenant?.id || '1'}</p>
+                  </div>
+                  <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-bold tracking-wider ${
+                    (selectedTenant?.status || 'ACTIVE') === 'ACTIVE'
+                      ? 'text-emerald-600 bg-emerald-50 border border-emerald-200'
+                      : 'text-amber-600 bg-amber-50 border border-amber-200'
+                  }`}>
+                    {selectedTenant?.status || 'ACTIVE'}
+                  </span>
+                </div>
+  
+                {/* Tabs */}
+                <div className="flex overflow-x-auto custom-scrollbar pb-3 gap-2 border-b border-slate-200/60 
+items-center">
+                  {['Overview', 'Subscriptions', 'Users', 'Branches', 'Fleet', 'Loads', 'Billing', 'Support Tickets', 
+'Feature Access', 'Audit Log'].map(tab => (
+                    <button 
+                      key={tab}
+                      onClick={() => setActiveInspectorTab(tab)}
+                      className={`shrink-0 px-4 py-1.5 text-[11px] rounded-xl whitespace-nowrap cursor-pointer 
+transition-colors ${
+                        activeInspectorTab === tab 
+                          ? 'bg-[#FFD400] text-slate-900 font-black shadow-sm border-2 border-slate-900'
+                          : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 font-bold border-2 
+border-transparent'
+                      }`}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                </div>
+  
+                {activeInspectorTab === 'Overview' && (
+                  <div className="space-y-4">
+                    {/* General Information Card */}
+                    <div className="bg-white border border-slate-100 rounded-xl p-4 shadow-sm shadow-slate-200/40">
+                      <h4 className="text-[12px] font-extrabold text-slate-800 mb-3 flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                        General Information
+                      </h4>
+                      <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+                        <div>
+                          <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Account 
+Manager</p>
+                          <p className="text-slate-800 font-bold text-[12px]">Alex W.</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider 
+mb-0.5">Region/Country</p>
+                          <p className="text-slate-800 font-bold text-[12px]">USA</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Joined 
+Date</p>
+                          <p className="text-slate-800 font-bold text-[12px]">03/12/2026</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Last 
+Login</p>
+                          <p className="text-slate-800 font-bold text-[12px]">{selectedTenant?.lastActive || 'Today, 
+02:15 PM'}</p>
+                        </div>
+                      </div>
+                    </div>
+  
+                    {/* Resource Metrics Card */}
+                    <div className="bg-white border border-slate-100 rounded-xl p-4 shadow-sm shadow-slate-200/40">
+                      <h4 className="text-[12px] font-extrabold text-slate-800 mb-3 flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        Resource Metrics
+                      </h4>
+                      <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+                        <div>
+                          <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Active 
+Users</p>
+                          <p className="text-slate-800 font-black text-sm">{selectedTenant?.users || '12'}</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Total 
+Drivers</p>
+                          <p className="text-slate-800 font-black text-sm">3</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Fleet 
+Vehicles</p>
+                          <p className="text-slate-800 font-black text-sm">15</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Branches 
+count</p>
+                          <p className="text-slate-800 font-black text-sm">4</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+  
+                {activeInspectorTab === 'Subscriptions' && (
+                  <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm shadow-slate-200/40">
+                    <h4 className="text-[13px] font-extrabold text-slate-800 mb-5">Subscription Licensing Contract</h4>
+                    <div className="space-y-3.5">
+                      <div className="flex gap-2 items-center">
+                        <span className="text-slate-400 text-[12px] font-bold">Current Tier Plan:</span>
+                        <span className="text-[#D97706] font-extrabold text-[12px]">Professional Plan</span>
+                      </div>
+                      <div className="flex gap-2 items-center">
+                        <span className="text-slate-400 text-[12px] font-bold">Contract Billing Rate:</span>
+                        <span className="text-slate-800 font-extrabold text-[12px]">$8,500 / month</span>
+                      </div>
+                      <div className="flex gap-2 items-center">
+                        <span className="text-slate-400 text-[12px] font-bold">Billing Cycle Period:</span>
+                        <span className="text-slate-800 font-extrabold text-[12px]">Monthly Auto-Renewal 
+recurring</span>
+                      </div>
+                      <div className="flex gap-2 items-center">
+                        <span className="text-slate-400 text-[12px] font-bold">Next Renewal Invoice Date:</span>
+                        <span className="text-slate-800 font-extrabold text-[12px]">07/24/2026</span>
+                      </div>
+                      <div className="flex gap-2 items-center">
+                        <span className="text-slate-400 text-[12px] font-bold">Trial Expiry:</span>
+                        <span className="text-slate-800 font-extrabold text-[12px]">N/A</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+  
+                {activeInspectorTab === 'Users' && (
+                  <div>
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">REGISTERED 
+ACCOUNT STAFF MEMBERS</h4>
+                    <div className="bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/40 
+overflow-hidden divide-y divide-slate-100">
+                      {[
+                        { name: 'Alexander Wright', email: 'Alex W.', role: 'Company Admin', status: 'Active' },
+                        { name: 'Operator B', email: 'operator2@falconlogisticsllc.com', role: 'Dispatcher', status: 
+'Active' },
+                        { name: 'Operator C', email: 'operator3@falconlogisticsllc.com', role: 'Dispatcher', status: 
+'Active' },
+                        { name: 'Operator D', email: 'operator4@falconlogisticsllc.com', role: 'Dispatcher', status: 
+'Active' },
+                        { name: 'Operator E', email: 'operator5@falconlogisticsllc.com', role: 'Dispatcher', status: 
+'Active' },
+                        { name: 'Operator F', email: 'operator6@falconlogisticsllc.com', role: 'Dispatcher', status: 
+'Active' },
+                        { name: 'Operator G', email: 'operator7@falconlogisticsllc.com', role: 'Dispatcher', status: 
+'Active' },
+                        { name: 'Operator H', email: 'operator8@falconlogisticsllc.com', role: 'Dispatcher', status: 
+'Active' },
+                      ].map(user => (
+                        <div key={user.name} className="flex justify-between items-center p-4">
+                          <div>
+                            <p className="text-[13px] font-bold text-slate-800">{user.name}</p>
+                            <p className="text-[11px] font-mono text-slate-400 mt-0.5">{user.email}</p>
+                          </div>
+                          <div className="text-right flex flex-col items-end">
+                            <p className="text-[11px] font-bold text-slate-600 mb-1">{user.role}</p>
+                            <span className="text-[9px] font-bold text-emerald-500 bg-emerald-50 border 
+border-emerald-200 px-2 py-0.5 rounded-full tracking-wider">{user.status}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+  
+                {activeInspectorTab === 'Branches' && (
+                  <div>
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">ACTIVE BRANCH 
+TERMINALS</h4>
+                    <div className="bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/40 
+overflow-hidden divide-y divide-slate-100">
+                      {[
+                        { name: 'Chicago HQ Terminal', loc: 'Chicago, IL', staff: '4 Staff' },
+                        { name: 'Branch Depot 2', loc: 'Los Angeles, CA', staff: '6 Staff' },
+                        { name: 'Branch Depot 3', loc: 'Los Angeles, CA', staff: '8 Staff' },
+                        { name: 'Branch Depot 4', loc: 'Los Angeles, CA', staff: '10 Staff' },
+                      ].map(branch => (
+                        <div key={branch.name} className="flex justify-between items-center p-4">
+                          <div>
+                            <p className="text-[13px] font-bold text-slate-800">{branch.name}</p>
+                            <p className="text-[11px] font-medium text-slate-400 mt-0.5">{branch.loc}</p>
+                          </div>
+                          <div>
+                            <p className="text-[12px] font-bold text-slate-600">{branch.staff}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+  
+                {activeInspectorTab === 'Fleet' && (
+                  <div>
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">REGISTERED 
+FLEET ASSET VEHICLES</h4>
+                    <div className="bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/40 
+overflow-hidden divide-y divide-slate-100">
+                      {[
+                        { id: 'TX-ROAD88', type: 'Semi-Truck' },
+                        { id: 'IL-HAUL42', type: 'Flatbed Trailer' },
+                        { id: 'CA-CARRI7', type: 'Semi-Truck' },
+                        { id: 'TX-1003', type: 'Flatbed Trailer' },
+                        { id: 'TX-1004', type: 'Semi-Truck' },
+                        { id: 'TX-1005', type: 'Flatbed Trailer' },
+                        { id: 'TX-1006', type: 'Semi-Truck' },
+                        { id: 'TX-1007', type: 'Flatbed Trailer' },
+                      ].map(vehicle => (
+                        <div key={vehicle.id} className="flex justify-between items-center p-4">
+                          <div>
+                            <p className="text-[13px] font-bold text-slate-800">{vehicle.id}</p>
+                            <p className="text-[11px] font-medium text-slate-400 mt-0.5">{vehicle.type}</p>
+                          </div>
+                          <div>
+                            <span className="text-[9px] font-bold text-blue-500 bg-blue-50 border border-blue-200 px-2 
+py-0.5 rounded-full tracking-wide">Active</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+  
+                {activeInspectorTab === 'Loads' && (
+                  <div>
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">LOADS MANIFEST 
+SUMMARY</h4>
+                    <div className="bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/40 
+overflow-hidden divide-y divide-slate-100">
+                      {[
+                        { id: 'Load LD-9400', route: 'Chicago âž” Dallas', cargo: 'Automotive Components' },
+                        { id: 'Load LD-9401', route: 'Houston âž” Atlanta', cargo: 'Dry Grocery Pallets' },
+                        { id: 'Load LD-9402', route: 'Chicago âž” Dallas', cargo: 'Automotive Components' },
+                        { id: 'Load LD-9403', route: 'Houston âž” Atlanta', cargo: 'Dry Grocery Pallets' },
+                        { id: 'Load LD-9404', route: 'Chicago âž” Dallas', cargo: 'Automotive Components' },
+                        { id: 'Load LD-9405', route: 'Houston âž” Atlanta', cargo: 'Dry Grocery Pallets' },
+                        { id: 'Load LD-9406', route: 'Chicago âž” Dallas', cargo: 'Automotive Components' },
+                        { id: 'Load LD-9407', route: 'Houston âž” Atlanta', cargo: 'Dry Grocery Pallets' },
+                      ].map(load => (
+                        <div key={load.id} className="flex justify-between items-center p-4">
+                          <div>
+                            <p className="text-[13px] font-bold text-slate-800">{load.id}</p>
+                            <p className="text-[11px] font-medium text-slate-500 mt-0.5">{load.route} 
+({load.cargo})</p>
+                          </div>
+                          <div>
+                            <span className="text-[9px] font-bold text-emerald-500 bg-emerald-50 border 
+border-emerald-200 px-2 py-0.5 rounded-full tracking-wide">In Transit</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+  
+                {activeInspectorTab === 'Billing' && (
+                  <div>
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">BILLING 
+SUMMARY & LEDGER</h4>
+                    
+                    <div className="bg-white border border-slate-100 rounded-2xl p-5 mb-4 shadow-sm 
+shadow-slate-200/40">
+                      <div className="space-y-3.5">
+                        <div className="flex justify-between items-center">
+                          <span className="text-slate-400 text-[12px] font-bold">Subscription Revenue:</span>
+                          <span className="text-emerald-500 font-extrabold text-[12px]">$8500/mo</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-slate-400 text-[12px] font-bold">Annual Projected:</span>
+                          <span className="text-slate-800 font-extrabold text-[12px]">$102000/yr</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-slate-400 text-[12px] font-bold">Billing Cycle:</span>
+                          <span className="text-slate-800 font-extrabold text-[12px]">Monthly Recurring</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-slate-400 text-[12px] font-bold">Auto Renewal:</span>
+                          <span className="text-emerald-500 font-extrabold text-[12px]">Enabled</span>
+                        </div>
+                      </div>
+                    </div>
+  
+                    <div className="bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/40 
+overflow-hidden divide-y divide-slate-100">
+                      {[
+                        { id: '#INV-1001A', date: '06/12/2026 - 07/12/2026', amount: '$8500', status: 'Paid', 
+statusClass: 'text-emerald-500 bg-emerald-50' },
+                        { id: '#INV-1002A', date: '06/15/2026 - 06/29/2026', amount: '$4200', status: 'Sent', 
+statusClass: 'text-amber-500 bg-amber-50' },
+                        { id: '#INV-1003A', date: '06/20/2026 - 07/04/2026', amount: '$3100', status: 'Draft', 
+statusClass: 'text-amber-500 bg-amber-50' },
+                        { id: '#INV-1004A', date: '05/10/2026 - 05/24/2026', amount: '$5000', status: 'Overdue', 
+statusClass: 'text-amber-500 bg-amber-50' },
+                      ].map(invoice => (
+                        <div key={invoice.id} className="flex justify-between items-center p-4">
+                          <div>
+                            <p className="text-[13px] font-bold text-slate-800">Invoice {invoice.id}</p>
+                            <p className="text-[11px] font-medium text-slate-400 mt-0.5">Period: {invoice.date}</p>
+                          </div>
+                          <div className="text-right flex flex-col items-end">
+                            <p className="text-[13px] font-bold text-slate-800 mb-1">{invoice.amount}</p>
+                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full tracking-wider 
+${invoice.statusClass}`}>{invoice.status}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+  
+                {activeInspectorTab === 'Support Tickets' && (
+                  <div>
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">INBOUND TICKET 
+QUERIES RAISED</h4>
+                    <div className="bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/40 p-4 
+flex justify-between items-center">
+                      <div>
+                        <p className="text-[13px] font-bold text-slate-800">#1 â€¢ Invoice Factoring Delay</p>
+                        <p className="text-[11px] font-medium text-slate-400 mt-0.5">Priority: High</p>
+                      </div>
+                      <div>
+                        <span className="text-[9px] font-bold text-amber-500 bg-amber-50 border border-amber-200 px-2 
+py-0.5 rounded-full tracking-wide">Open</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+  
+                {activeInspectorTab === 'Feature Access' && (
+                  <div>
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">VISUAL FEATURE 
+PERMISSIONS</h4>
+                    <div className="bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/40 
+overflow-hidden divide-y divide-slate-50 py-1">
+                      {[
+                        { name: 'Platform Dashboard', status: 'Enabled', active: true },
+                        { name: 'Companies Workspace', status: 'Enabled', active: true },
+                        { name: 'Subscriptions Panel', status: 'Enabled', active: true },
+                        { name: 'Membership Plans', status: 'Disabled', active: false },
+                        { name: 'AI Controls Center', status: 'Disabled', active: false },
+                        { name: 'Inter-Company Transfers', status: 'Disabled', active: false },
+                        { name: 'White Label Customization', status: 'Disabled', active: false },
+                      ].map(feature => (
+                        <div key={feature.name} className="flex justify-between items-center px-5 py-3">
+                          <p className="text-[13px] font-medium text-slate-500">{feature.name}</p>
+                          <span className={`text-[12px] font-bold ${feature.active ? 'text-emerald-500' : 
+'text-slate-600'}`}>{feature.status}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+  
+                {activeInspectorTab === 'Audit Log' && (
+                  <div>
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">SUBSCRIPTION 
+AUDIT FEED</h4>
+                    <div className="bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/40 p-5 
+divide-y divide-slate-100">
+                      <div className="pb-4">
+                        <p className="text-[12px] font-bold text-slate-800">Company Created</p>
+                        <p className="text-[11px] text-slate-500 mt-1">Falcon Logistics LLC provisioned 
+successfully.</p>
+                        <p className="text-[9px] font-mono text-slate-400 mt-2">03/12/2026</p>
+                      </div>
+                      <div className="pt-4">
+                        <p className="text-[12px] font-bold text-slate-800">Database Index Sync</p>
+                        <p className="text-[11px] text-slate-500 mt-1">ElasticSearch keys auto-indexing rebuilt.</p>
+                        <p className="text-[9px] font-mono text-slate-400 mt-2">03/12/2026</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+  
+                {!['Overview', 'Subscriptions', 'Users', 'Branches', 'Fleet', 'Billing', 'Support Tickets', 'Feature 
+Access', 'Audit Log'].includes(activeInspectorTab) && (
+                  <div className="bg-white border border-slate-100 rounded-2xl p-8 text-center shadow-sm 
+shadow-slate-200/40">
+                    <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <span className="text-slate-400 font-bold text-xl">â„¹ï¸</span>
+                    </div>
+                    <h4 className="text-sm font-extrabold text-slate-800 mb-1">{activeInspectorTab} Data</h4>
+                    <p className="text-[11px] text-slate-500">Detailed information for 
+{activeInspectorTab.toLowerCase()} will be displayed here.</p>
+                  </div>
+                )}
+              </div>
+  
+              {/* Footer Buttons */}
+              <div className="p-6 border-t border-slate-100 bg-white">
+                <div className="flex gap-3 mb-3">
+                  <button className="flex-1 bg-[#E11D48] text-white px-4 py-3 rounded-xl text-[11px] font-bold 
+hover:bg-[#BE123C] shadow-md shadow-rose-500/20 transition-all text-center cursor-pointer">
+                    Suspend Workspace License
+                  </button>
+                  <button className="flex-1 bg-[#E11D48] text-white px-4 py-3 rounded-xl text-[11px] font-bold 
+hover:bg-[#BE123C] shadow-md shadow-rose-500/20 transition-all text-center cursor-pointer">
+                    Permanently Delete Company
+                  </button>
+                </div>
+                <button 
+                  onClick={() => setShowInspector(false)}
+                  className="w-[150px] bg-white border border-slate-200 text-slate-700 px-4 py-2.5 rounded-xl 
+text-[11px] font-bold hover:bg-slate-50 transition-colors text-center cursor-pointer"
+                >
+                  Close Inspector
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+

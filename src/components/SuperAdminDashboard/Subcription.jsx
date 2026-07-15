@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   CreditCard, Calendar, RefreshCw, ShieldAlert, ArrowUpRight, Search, 
-  Check, Edit2, Download, Filter, ChevronDown, DollarSign, Users, AlertCircle, FileText
+  Check, Edit2, Download, Filter, ChevronDown, DollarSign, Users, AlertCircle, FileText, X, CheckCircle, ArrowDownRight, Send, Layers, PauseCircle
 } from 'lucide-react';
 
 export default function Subscriptions() {
+  const navigate = useNavigate();
   const [searchCompany, setSearchCompany] = useState('');
   const [searchSubId, setSearchSubId] = useState('');
   const [selectedPlanFilter, setSelectedPlanFilter] = useState('All Plans');
@@ -14,6 +16,18 @@ export default function Subscriptions() {
   // Dropdown states
   const [activeActionsMenu, setActiveActionsMenu] = useState(null); // ID of subscription whose menu is open
   const actionsMenuRef = useRef(null);
+
+  // Modal states for Action items
+  const [selectedSub, setSelectedSub] = useState(null);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [activeViewTab, setActiveViewTab] = useState('Overview');
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showDowngradeModal, setShowDowngradeModal] = useState(false);
+  const [showPauseModal, setShowPauseModal] = useState(false);
+  const [showAssignPlanModal, setShowAssignPlanModal] = useState(false);
+  const [showGenerateInvoiceModal, setShowGenerateInvoiceModal] = useState(false);
+  const [showSendReminderModal, setShowSendReminderModal] = useState(false);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -524,48 +538,125 @@ export default function Subscriptions() {
                           ref={actionsMenuRef}
                           className="absolute right-6 mt-1 w-52 bg-white border border-slate-200 rounded-2xl shadow-xl p-2.5 z-40 space-y-1 text-left text-xs text-slate-700 font-bold"
                         >
-                          <button onClick={() => handleActionClick('View Subscription', sub.id)} className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer">
+                          <button 
+                            onClick={() => {
+                              setSelectedSub(sub);
+                              setShowViewModal(true);
+                              setActiveActionsMenu(null);
+                            }} 
+                            className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer"
+                          >
                             View Subscription
                           </button>
-                          <button onClick={() => handleActionClick('Edit Subscription', sub.id)} className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer">
+                          <button 
+                            onClick={() => {
+                              setSelectedSub(sub);
+                              setShowEditModal(true);
+                              setActiveActionsMenu(null);
+                            }} 
+                            className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer"
+                          >
                             Edit Subscription
                           </button>
                           
                           {/* Up/Down grades */}
-                          <button onClick={() => handleActionClick('Upgrade Subscription', sub.id)} className="w-full text-left px-3 py-2 hover:bg-emerald-50 rounded-lg text-emerald-600 cursor-pointer">
+                          <button 
+                            onClick={() => {
+                              setSelectedSub(sub);
+                              setShowUpgradeModal(true);
+                              setActiveActionsMenu(null);
+                            }} 
+                            className="w-full text-left px-3 py-2 hover:bg-emerald-50 rounded-lg text-emerald-600 cursor-pointer"
+                          >
                             Upgrade Subscription
                           </button>
-                          <button onClick={() => handleActionClick('Downgrade Subscription', sub.id)} className="w-full text-left px-3 py-2 hover:bg-amber-50 rounded-lg text-yellow-600 cursor-pointer">
+                          <button 
+                            onClick={() => {
+                              setSelectedSub(sub);
+                              setShowDowngradeModal(true);
+                              setActiveActionsMenu(null);
+                            }} 
+                            className="w-full text-left px-3 py-2 hover:bg-amber-50 rounded-lg text-yellow-600 cursor-pointer"
+                          >
                             Downgrade Subscription
                           </button>
 
                           {/* Pause / Resume */}
-                          <button onClick={() => handleActionClick('Pause Subscription', sub.id)} className="w-full text-left px-3 py-2 hover:bg-rose-50 rounded-lg text-rose-500 cursor-pointer">
+                          <button 
+                            onClick={() => {
+                              setSelectedSub(sub);
+                              setShowPauseModal(true);
+                              setActiveActionsMenu(null);
+                            }} 
+                            className="w-full text-left px-3 py-2 hover:bg-rose-50 rounded-lg text-rose-500 cursor-pointer"
+                          >
                             Pause Subscription
                           </button>
-                          <button onClick={() => handleActionClick('Resume Subscription', sub.id)} className="w-full text-left px-3 py-2 hover:bg-emerald-50 rounded-lg text-emerald-600 cursor-pointer">
+                          <button 
+                            onClick={() => {
+                              showNotification(`Resumed subscription ${sub.id} successfully.`);
+                              setActiveActionsMenu(null);
+                            }} 
+                            className="w-full text-left px-3 py-2 hover:bg-emerald-50 rounded-lg text-emerald-600 cursor-pointer"
+                          >
                             Resume Subscription
                           </button>
-                          <button onClick={() => handleActionClick('Cancel Auto-Renewal', sub.id)} className="w-full text-left px-3 py-2 hover:bg-rose-50 rounded-lg text-rose-500 cursor-pointer">
+                          <button 
+                            onClick={() => {
+                              showNotification(`Auto-Renewal cancelled for ${sub.company}.`);
+                              setActiveActionsMenu(null);
+                            }} 
+                            className="w-full text-left px-3 py-2 hover:bg-rose-50 rounded-lg text-rose-500 cursor-pointer"
+                          >
                             Cancel Auto-Renewal
                           </button>
 
                           {/* Divider */}
                           <div className="border-t border-slate-100 my-1" />
 
-                          <button onClick={() => handleActionClick('Renew Manually', sub.id)} className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer">
+                          <button 
+                            onClick={() => {
+                              showNotification(`Manual renewal processed for ${sub.company} invoice cycle.`);
+                              setActiveActionsMenu(null);
+                            }} 
+                            className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer"
+                          >
                             Renew Manually
                           </button>
-                          <button onClick={() => handleActionClick('Assign Plan', sub.id)} className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer">
-                            Assign Plan
+                          <button 
+                            onClick={() => {
+                              setSelectedSub(sub);
+                              setShowAssignPlanModal(true);
+                              setActiveActionsMenu(null);
+                            }} 
+                            className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer"
+                          >
+                            Change Subscription
                           </button>
-                          <button onClick={() => handleActionClick('Billing History', sub.id)} className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer">
+                          <button 
+                            onClick={() => navigate('/admin/billing')} 
+                            className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer"
+                          >
                             Billing History
                           </button>
-                          <button onClick={() => handleActionClick('Generate Invoice', sub.id)} className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer">
+                          <button 
+                            onClick={() => {
+                              setSelectedSub(sub);
+                              setShowGenerateInvoiceModal(true);
+                              setActiveActionsMenu(null);
+                            }} 
+                            className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer"
+                          >
                             Generate Invoice
                           </button>
-                          <button onClick={() => handleActionClick('Send Reminder', sub.id)} className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer">
+                          <button 
+                            onClick={() => {
+                              setSelectedSub(sub);
+                              setShowSendReminderModal(true);
+                              setActiveActionsMenu(null);
+                            }} 
+                            className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer"
+                          >
                             Send Reminder
                           </button>
                         </div>
@@ -578,6 +669,491 @@ export default function Subscriptions() {
           </table>
         </div>
       </div>
+
+      {/* 1. View Subscription Inspector Drawer (Exact Same to Same as Companies.jsx Right Side Drawer!) */}
+      {showViewModal && selectedSub && (
+        <div className="fixed inset-0 z-[1000] flex justify-end">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity cursor-pointer"
+            onClick={() => setShowViewModal(false)}
+          ></div>
+
+          {/* Drawer Panel */}
+          <div className="relative w-full max-w-md bg-white shadow-2xl h-full flex flex-col animate-slide-left z-10 text-left">
+            {/* Header */}
+            <div className="flex justify-between items-center p-6 border-b border-slate-100 bg-white">
+              <h3 className="text-lg font-extrabold text-slate-900">Subscription Workspace Inspector</h3>
+              <button 
+                onClick={() => setShowViewModal(false)} 
+                className="text-slate-400 hover:text-slate-700 transition-colors p-1 rounded-lg hover:bg-slate-50 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-8 overflow-y-auto custom-scrollbar flex-grow space-y-8 bg-[#F8FAFC]">
+              
+              <div className="flex justify-between items-start">
+                <div>
+                  <h2 className="text-[22px] font-black text-slate-900">{selectedSub.company}</h2>
+                  <p className="text-[10px] font-mono text-slate-400 mt-1 uppercase tracking-wider">Subscription ID: #{selectedSub.id}</p>
+                </div>
+                <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-bold tracking-wider ${
+                  selectedSub.status === 'ACTIVE'
+                    ? 'text-emerald-600 bg-emerald-50 border border-emerald-200'
+                    : 'text-amber-600 bg-amber-50 border border-amber-200'
+                }`}>
+                  {selectedSub.status}
+                </span>
+              </div>
+
+              {/* Tabs */}
+              <div className="flex overflow-x-auto custom-scrollbar pb-3 gap-2 border-b border-slate-200/60 items-center">
+                {['Overview', 'Plan Details', 'Billing & Cycle', 'Limits & Modules', 'Audit Log'].map(tab => (
+                  <button 
+                    key={tab}
+                    onClick={() => setActiveViewTab(tab)}
+                    className={`shrink-0 px-4 py-1.5 text-[11px] rounded-xl whitespace-nowrap cursor-pointer transition-colors ${
+                      activeViewTab === tab 
+                        ? 'bg-[#FFD400] text-slate-900 font-black shadow-sm border-2 border-slate-900'
+                        : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 font-bold border-2 border-transparent'
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+
+              {activeViewTab === 'Overview' && (
+                <div className="space-y-4 animate-fade-in">
+                  {/* General Information Card */}
+                  <div className="bg-white border border-slate-100 rounded-xl p-4 shadow-sm shadow-slate-200/40">
+                    <h4 className="text-[12px] font-extrabold text-slate-800 mb-3 flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                      General Information
+                    </h4>
+                    <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+                      <div>
+                        <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Assigned Plan</p>
+                        <p className="text-slate-800 font-bold text-[12px]">{selectedSub.plan} Tier</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Billing Period</p>
+                        <p className="text-slate-800 font-bold text-[12px]">{selectedSub.billingPeriod}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Start Date</p>
+                        <p className="text-slate-800 font-bold text-[12px] font-mono">{selectedSub.startDate}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Auto Renewal</p>
+                        <p className="text-slate-800 font-bold text-[12px]">{selectedSub.autoRenewal === 'Yes' ? 'Enabled (Active)' : 'Manual Only'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Contract MRR Metrics Card */}
+                  <div className="bg-white border border-slate-100 rounded-xl p-4 shadow-sm shadow-slate-200/40">
+                    <h4 className="text-[12px] font-extrabold text-slate-800 mb-3 flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      Contract Financials
+                    </h4>
+                    <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+                      <div>
+                        <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Monthly MRR</p>
+                        <p className="text-emerald-600 font-black text-sm font-mono">${selectedSub.amount.toLocaleString()}/mo</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Annual Projection</p>
+                        <p className="text-slate-800 font-black text-sm font-mono">${(selectedSub.amount * 12).toLocaleString()}/yr</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Next Renewal</p>
+                        <p className="text-[#0EA5E9] font-bold text-[12px] font-mono">{selectedSub.nextRenewal}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Payment Gateway</p>
+                        <p className="text-slate-800 font-bold text-[12px]">Stripe Autopay</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeViewTab === 'Plan Details' && (
+                <div className="space-y-4 animate-fade-in">
+                  <div className="bg-white border border-slate-100 rounded-xl p-5 shadow-sm space-y-3">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">TIER & CAPABILITIES</span>
+                    <h4 className="text-xl font-black text-slate-900">{selectedSub.plan} Tier Suite</h4>
+                    <p className="text-xs font-semibold text-slate-500 leading-relaxed">
+                      This subscription includes multi-branch dispatch operations, automated AI driver routing, real-time ELD compliance telematics, and white-label client portal integrations.
+                    </p>
+                    <div className="pt-2 flex items-center justify-between border-t border-slate-100">
+                      <span className="text-xs font-bold text-slate-400">Base Plan Price:</span>
+                      <span className="text-base font-black text-slate-800 font-mono">${selectedSub.amount}/month</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeViewTab === 'Billing & Cycle' && (
+                <div className="space-y-4 animate-fade-in">
+                  <div className="bg-white border border-slate-100 rounded-xl p-4 shadow-sm space-y-3">
+                    <h4 className="text-[12px] font-extrabold text-slate-800 flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#0EA5E9]"></span>
+                      Renewal & Ledger Details
+                    </h4>
+                    <div className="space-y-2 text-xs font-bold text-slate-700">
+                      <div className="flex justify-between py-1.5 border-b border-slate-50">
+                        <span className="text-slate-400">Last Invoice Issued:</span>
+                        <span className="font-mono">{selectedSub.startDate}</span>
+                      </div>
+                      <div className="flex justify-between py-1.5 border-b border-slate-50">
+                        <span className="text-slate-400">Next Scheduled Charge:</span>
+                        <span className="font-mono text-emerald-600">{selectedSub.nextRenewal}</span>
+                      </div>
+                      <div className="flex justify-between py-1.5">
+                        <span className="text-slate-400">Auto Renewal Debit:</span>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-black ${selectedSub.autoRenewal === 'Yes' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-600'}`}>
+                          {selectedSub.autoRenewal === 'Yes' ? 'ENABLED' : 'DISABLED'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeViewTab === 'Limits & Modules' && (
+                <div className="space-y-4 animate-fade-in">
+                  {selectedSub.limitOverflow ? (
+                    <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 space-y-2">
+                      <span className="text-[10px] font-black text-rose-600 uppercase flex items-center gap-1.5">
+                        <AlertCircle className="w-4 h-4" /> LIMIT OVERFLOW DETECTED
+                      </span>
+                      <p className="text-xs font-bold text-rose-800">
+                        Workspace quota exceeded: <span className="underline">{selectedSub.limitOverflow}</span>. Consider upgrading tier to add additional capacity.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-xs font-bold text-emerald-800 flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" /> All resource limits within normal operating capacity.
+                    </div>
+                  )}
+
+                  <div className="bg-white border border-slate-100 rounded-xl p-4 shadow-sm space-y-2.5">
+                    <h4 className="text-[12px] font-extrabold text-slate-800">Allocated Features</h4>
+                    <div className="grid grid-cols-1 gap-2 text-xs font-bold text-slate-700">
+                      <div className="flex items-center gap-2 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                        <CheckCircle className="w-4 h-4 text-[#0EA5E9] shrink-0" /> Multi-Branch Dispatch System
+                      </div>
+                      <div className="flex items-center gap-2 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                        <CheckCircle className="w-4 h-4 text-[#0EA5E9] shrink-0" /> AI Route Dispatch Automation
+                      </div>
+                      <div className="flex items-center gap-2 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                        <CheckCircle className="w-4 h-4 text-[#0EA5E9] shrink-0" /> Driver ELD Compliance Telematics
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeViewTab === 'Audit Log' && (
+                <div className="space-y-3 animate-fade-in">
+                  <div className="bg-white border border-slate-100 rounded-xl p-4 shadow-sm space-y-3">
+                    <h4 className="text-[12px] font-extrabold text-slate-800">Recent Subscription Actions</h4>
+                    <div className="border-l-2 border-slate-200 pl-3 space-y-3 text-xs">
+                      <div>
+                        <span className="text-[10px] font-mono text-slate-400 block">Today, 10:15 AM</span>
+                        <p className="font-bold text-slate-800">Subscription verified & status set to {selectedSub.status}.</p>
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-mono text-slate-400 block">{selectedSub.startDate}</span>
+                        <p className="font-bold text-slate-800">Contract renewed & invoice generated for {selectedSub.billingPeriod} cycle.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+            </div>
+
+            {/* Footer */}
+            <div className="p-6 border-t border-slate-100 bg-white flex gap-3">
+              <button 
+                onClick={() => {
+                  setShowViewModal(false);
+                  setShowUpgradeModal(true);
+                }}
+                className="flex-1 bg-[#FFB020] hover:bg-[#FFC800] text-black font-extrabold text-xs py-3 rounded-xl transition-all cursor-pointer shadow-sm text-center"
+              >
+                Upgrade Plan Tier
+              </button>
+              <button 
+                onClick={() => {
+                  setShowViewModal(false);
+                  navigate('/admin/billing');
+                }}
+                className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs py-3 rounded-xl transition-all cursor-pointer text-center"
+              >
+                View Ledger & Invoices
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 2. Edit Subscription Modal */}
+      {showEditModal && selectedSub && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[999] p-4">
+          <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-[540px] overflow-hidden shadow-2xl animate-fade-in text-left">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100">
+              <h3 className="text-base font-extrabold text-slate-900">Edit Subscription Settings for {selectedSub.company}</h3>
+              <button onClick={() => setShowEditModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">NEXT RENEWAL DATE</label>
+                <input 
+                  type="text" 
+                  defaultValue={selectedSub.nextRenewal} 
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-2xl focus:outline-none text-slate-800" 
+                />
+              </div>
+              <div className="flex items-center gap-3 pt-0.5">
+                <input 
+                  type="checkbox" 
+                  defaultChecked={selectedSub.autoRenewal === 'Yes'} 
+                  className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" 
+                />
+                <span className="text-xs sm:text-sm font-bold text-slate-600 cursor-pointer">
+                  Enable Auto-Renewal recurring billing
+                </span>
+              </div>
+              <button 
+                onClick={() => {
+                  showNotification(`Subscription settings for ${selectedSub.company} updated successfully.`);
+                  setShowEditModal(false);
+                }}
+                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-sm py-3 rounded-2xl shadow-sm transition-all cursor-pointer mt-1"
+              >
+                Save Subscription Settings
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Upgrade Subscription Modal */}
+      {showUpgradeModal && selectedSub && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[999] p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-[460px] overflow-hidden shadow-2xl animate-fade-in text-left">
+            <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100">
+              <h3 className="text-sm font-black text-slate-800">Upgrade Plan for {selectedSub.company}</h3>
+              <button onClick={() => setShowUpgradeModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+                <span className="text-[10px] font-black text-emerald-600 uppercase block">CURRENT → TARGET TIER</span>
+                <span className="text-sm font-black text-slate-900 mt-1 block">{selectedSub.plan} Plan ($ {selectedSub.amount}/mo) <span className="text-emerald-600">→ Enterprise ($28,000/mo)</span></span>
+              </div>
+              <p className="text-xs text-slate-500 font-medium">Pro-rata billing credit will be automatically applied to the next invoice cycle on {selectedSub.nextRenewal}.</p>
+              <button 
+                onClick={() => {
+                  showNotification(`Upgraded ${selectedSub.company} to Enterprise Tier.`);
+                  setShowUpgradeModal(false);
+                }}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[13px] py-4 rounded-xl transition-all cursor-pointer shadow-sm"
+              >
+                Confirm Upgrade ($28,000/mo)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. Downgrade Subscription Modal */}
+      {showDowngradeModal && selectedSub && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[999] p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-[460px] overflow-hidden shadow-2xl animate-fade-in text-left">
+            <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100">
+              <h3 className="text-sm font-black text-slate-800">Downgrade Plan for {selectedSub.company}</h3>
+              <button onClick={() => setShowDowngradeModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <span className="text-[10px] font-black text-amber-600 uppercase block">DOWNGRADE WARNING</span>
+                <p className="text-xs font-bold text-amber-900 mt-1">Downgrading from {selectedSub.plan} Tier may restrict active drivers and warehouse accounts.</p>
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">SELECT NEW LOWER TIER</label>
+                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800">
+                  <option>Starter Tier - $499/mo</option>
+                  <option>Basic Plan - $299/mo</option>
+                </select>
+              </div>
+              <button 
+                onClick={() => {
+                  showNotification(`Downgraded ${selectedSub.company} subscription.`);
+                  setShowDowngradeModal(false);
+                }}
+                className="w-full bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-[13px] py-4 rounded-xl transition-all cursor-pointer shadow-sm"
+              >
+                Confirm Plan Downgrade
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 5. Pause Subscription Modal */}
+      {showPauseModal && selectedSub && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[999] p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-[450px] overflow-hidden shadow-2xl animate-fade-in text-left">
+            <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100">
+              <h3 className="text-sm font-black text-slate-800">Pause License ({selectedSub.id})</h3>
+              <button onClick={() => setShowPauseModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-xs text-slate-600 font-medium">Pausing this subscription will immediately restrict login access for all administrators and drivers of <span className="font-bold text-slate-900">{selectedSub.company}</span>.</p>
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">SUSPENSION REASON</label>
+                <select className="w-full px-4 py-3 bg-white border border-slate-200 text-xs font-semibold rounded-xl focus:outline-none text-slate-800">
+                  <option>Payment Overdue / Failed Gateways</option>
+                  <option>Requested by Client Administrator</option>
+                  <option>Trial Period Ended</option>
+                  <option>Compliance Investigation</option>
+                </select>
+              </div>
+              <button 
+                onClick={() => {
+                  showNotification(`Subscription ${selectedSub.id} placed on HOLD status.`);
+                  setShowPauseModal(false);
+                }}
+                className="w-full bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-[13px] py-4 rounded-xl transition-all cursor-pointer shadow-sm mt-2"
+              >
+                Confirm License Pause
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 6. Change Subscription Modal */}
+      {showAssignPlanModal && selectedSub && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[999] p-4">
+          <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-[540px] overflow-hidden shadow-2xl animate-fade-in text-left">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100">
+              <h3 className="text-base font-extrabold text-slate-900">Change Subscription for {selectedSub.company}</h3>
+              <button onClick={() => setShowAssignPlanModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">SELECT SUBSCRIPTION PLAN TIER</label>
+                <select className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-2xl focus:outline-none text-slate-800">
+                  <option>Enterprise Tier - $1,299/mo</option>
+                  <option>Professional Tier - $699/mo</option>
+                  <option>Starter Tier - $299/mo</option>
+                  <option>Custom White-Label Tier - $4,500/mo</option>
+                </select>
+              </div>
+              <button 
+                onClick={() => {
+                  showNotification(`Subscription plan tier updated successfully for ${selectedSub.company}.`);
+                  setShowAssignPlanModal(false);
+                }}
+                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-sm py-3 rounded-2xl shadow-sm transition-all cursor-pointer mt-1"
+              >
+                Update Subscription
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 7. Generate Invoice Modal */}
+      {showGenerateInvoiceModal && selectedSub && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[999] p-4">
+          <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-[540px] overflow-hidden shadow-2xl animate-fade-in text-left">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100">
+              <h3 className="text-base font-extrabold text-slate-900 pr-4">Generate Custom Administrative Invoice for {selectedSub.company}</h3>
+              <button onClick={() => setShowGenerateInvoiceModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer shrink-0">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">INVOICE AMOUNT (USD)</label>
+                <input 
+                  type="number" 
+                  defaultValue={selectedSub.amount} 
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-2xl focus:outline-none text-slate-800 font-mono" 
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">BILLING PERIOD / DESCRIPTION</label>
+                <input 
+                  type="text" 
+                  defaultValue="Custom Administrative Invoice" 
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-2xl focus:outline-none text-slate-800" 
+                />
+              </div>
+              <button 
+                onClick={() => {
+                  showNotification(`Generated custom administrative invoice for ${selectedSub.company}.`);
+                  setShowGenerateInvoiceModal(false);
+                }}
+                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-sm py-3 rounded-2xl shadow-sm transition-all cursor-pointer mt-1"
+              >
+                Generate Invoice
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 8. Send Reminder Modal */}
+      {showSendReminderModal && selectedSub && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[999] p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-[480px] overflow-hidden shadow-2xl animate-fade-in text-left">
+            <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100">
+              <h3 className="text-sm font-black text-slate-800">Send Renewal Reminder to {selectedSub.company}</h3>
+              <button onClick={() => setShowSendReminderModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">EMAIL MESSAGE TEMPLATE</label>
+                <textarea 
+                  defaultValue={`Hello Administrator of ${selectedSub.company},\n\nThis is a friendly reminder that your ${selectedSub.plan} Tier subscription (#${selectedSub.id}) is scheduled for renewal on ${selectedSub.nextRenewal} for the amount of $${selectedSub.amount}.\n\nPlease ensure your payment method is up to date.\n\nBest,\nHero Logistics Billing Team`}
+                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-medium rounded-xl focus:outline-none text-slate-800 h-36 resize-none"
+                />
+              </div>
+              <button 
+                onClick={() => {
+                  showNotification(`Sent renewal notification email to ${selectedSub.company}.`);
+                  setShowSendReminderModal(false);
+                }}
+                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-black font-extrabold text-[13px] py-4 rounded-xl transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2"
+              >
+                <Send className="w-4 h-4" /> Send Reminder Notification
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

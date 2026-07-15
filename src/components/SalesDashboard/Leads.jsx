@@ -330,7 +330,7 @@ export default function Leads() {
           {/* Add New Lead button */}
           <button 
             onClick={openAddModal}
-            className="flex-grow sm:flex-grow-0 bg-[#F59E0B] hover:bg-[#D97706] text-black font-extrabold text-xs px-4.5 py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+            className="flex-grow sm:flex-grow-0 bg-[#ffcc00] hover:bg-[#e6b800] text-black font-extrabold text-xs px-4.5 py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
           >
             <Plus className="w-4 h-4 shrink-0 stroke-[3px]" /> Add New Lead
           </button>
@@ -354,7 +354,7 @@ export default function Leads() {
             onClick={() => { setSelectedTab(tab.key); setCurrentPage(1); }}
             className={`font-black text-[10px] tracking-wider uppercase px-4 py-2 rounded-xl transition-all shadow-xs shrink-0 border cursor-pointer ${
               selectedTab === tab.key 
-                ? 'bg-[#F59E0B] text-black border-[#D97706]' 
+                ? 'bg-[#ffcc00] text-black border-[#D97706]' 
                 : 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200'
             }`}
           >
@@ -372,7 +372,7 @@ export default function Leads() {
             value={searchQuery}
             onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
             placeholder="Search contact details."
-            className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 hover:border-slate-350 focus:border-[#F59E0B] text-xs font-semibold rounded-xl focus:outline-none placeholder:text-slate-400 text-slate-800 transition-colors"
+            className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 hover:border-slate-350 focus:border-[#ffcc00] text-xs font-semibold rounded-xl focus:outline-none placeholder:text-slate-400 text-slate-800 transition-colors"
           />
           <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
         </div>
@@ -382,7 +382,7 @@ export default function Leads() {
           <select
             value={nicheFilter}
             onChange={(e) => { setNicheFilter(e.target.value); setCurrentPage(1); }}
-            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 hover:border-slate-350 focus:border-[#F59E0B] text-xs font-bold rounded-xl focus:outline-none cursor-pointer text-slate-700 transition-colors"
+            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 hover:border-slate-350 focus:border-[#ffcc00] text-xs font-bold rounded-xl focus:outline-none cursor-pointer text-slate-700 transition-colors"
           >
             <option value="All Transport Niches">All Transport Niches</option>
             {niches.map(n => (
@@ -396,7 +396,7 @@ export default function Leads() {
           <select
             value={fleetFilter}
             onChange={(e) => { setFleetFilter(e.target.value); setCurrentPage(1); }}
-            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 hover:border-slate-350 focus:border-[#F59E0B] text-xs font-bold rounded-xl focus:outline-none cursor-pointer text-slate-700 transition-colors"
+            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 hover:border-slate-350 focus:border-[#ffcc00] text-xs font-bold rounded-xl focus:outline-none cursor-pointer text-slate-700 transition-colors"
           >
             <option value="All Fleet Sizes">All Fleet Sizes</option>
             <option value="Small (< 50 Trucks)">Small (&lt; 50 Trucks)</option>
@@ -450,7 +450,7 @@ export default function Leads() {
                         <span className="text-slate-900 font-extrabold">{lead.company}</span>
                         {/* High score sparkle star */}
                         {lead.score >= 80 && (
-                          <Sparkles className="w-3.5 h-3.5 text-[#F59E0B] fill-[#F59E0B] shrink-0" title="High Priority Lead" />
+                          <Sparkles className="w-3.5 h-3.5 text-[#e6b800] fill-[#F59E0B] shrink-0" title="High Priority Lead" />
                         )}
                       </div>
                     </td>
@@ -554,7 +554,7 @@ export default function Leads() {
                   onClick={() => setCurrentPage(i + 1)}
                   className={`w-8 h-8 rounded-lg border text-xs font-black transition-all cursor-pointer ${
                     currentPage === i + 1
-                      ? 'bg-[#F59E0B] text-black border-[#D97706] shadow-sm'
+                      ? 'bg-[#ffcc00] text-black border-[#D97706] shadow-sm'
                       : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-250'
                   }`}
                 >
@@ -653,7 +653,7 @@ export default function Leads() {
                     <select
                       value={selectedLead.stage}
                       onChange={(e) => handleUpdateStage(selectedLead.id, e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 hover:border-slate-350 focus:border-[#F59E0B] rounded-xl text-slate-850 cursor-pointer text-xs font-bold focus:outline-none transition-colors"
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 hover:border-slate-350 focus:border-[#ffcc00] rounded-xl text-slate-850 cursor-pointer text-xs font-bold focus:outline-none transition-colors"
                     >
                       <option value="New Lead">New Lead</option>
                       <option value="Contacted">Contacted</option>
@@ -947,7 +947,7 @@ export default function Leads() {
               <div className="grid grid-cols-2 gap-4 pt-4 mt-2 shrink-0">
                 <button
                   type="submit"
-                  className="w-full bg-[#FFB000] hover:bg-[#F59E0B] text-slate-900 font-bold text-[14px] py-3 rounded-[10px] transition-colors cursor-pointer text-center"
+                  className="w-full bg-[#FFB000] hover:bg-[#ffcc00] text-slate-900 font-bold text-[14px] py-3 rounded-[10px] transition-colors cursor-pointer text-center"
                 >
                   Save Lead Card
                 </button>

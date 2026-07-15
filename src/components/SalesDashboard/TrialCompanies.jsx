@@ -222,7 +222,7 @@ export default function TrialCompanies() {
                   {/* Yellow progress bar line */}
                   <div className="w-full bg-slate-100 rounded-full h-1.5">
                     <div 
-                      className="bg-[#F59E0B] h-1.5 rounded-full transition-all duration-300"
+                      className="bg-[#ffcc00] h-1.5 rounded-full transition-all duration-300"
                       style={{ width: `${progressPercent}%` }}
                     ></div>
                   </div>
@@ -253,7 +253,7 @@ export default function TrialCompanies() {
                 <div className="flex items-center justify-between shrink-0 pt-2">
                   <button 
                     onClick={() => handleLoginAsCompany(trial)}
-                    className="bg-[#F59E0B] hover:bg-[#D97706] text-black font-extrabold text-[11px] px-5 py-2.5 rounded-xl cursor-pointer transition-colors shadow-xs"
+                    className="bg-[#ffcc00] hover:bg-[#e6b800] text-black font-extrabold text-[11px] px-5 py-2.5 rounded-xl cursor-pointer transition-colors shadow-xs"
                   >
                     Login As Company
                   </button>
@@ -313,7 +313,7 @@ export default function TrialCompanies() {
                 <select
                   value={extensionDays}
                   onChange={(e) => setExtensionDays(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#F59E0B] rounded-xl focus:outline-none text-slate-800 cursor-pointer"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-800 cursor-pointer"
                 >
                   <option value="3">3 Days Extension</option>
                   <option value="7">7 Days Extension</option>
@@ -333,7 +333,7 @@ export default function TrialCompanies() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-[#F59E0B] hover:bg-[#D97706] text-black font-extrabold text-xs py-3 rounded-xl transition-colors cursor-pointer text-center shadow-xs"
+                  className="flex-1 bg-[#ffcc00] hover:bg-[#e6b800] text-black font-extrabold text-xs py-3 rounded-xl transition-colors cursor-pointer text-center shadow-xs"
                 >
                   Apply Extension
                 </button>

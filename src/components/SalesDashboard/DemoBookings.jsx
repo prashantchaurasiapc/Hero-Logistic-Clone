@@ -310,7 +310,7 @@ export default function DemoBookings() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search walkthroughs..."
-                className="mt-2 px-2.5 py-1 bg-slate-50 border border-slate-200 focus:border-[#F59E0B] text-[10px] font-bold rounded-lg focus:outline-none placeholder:text-slate-400 text-slate-800 transition-colors w-48"
+                className="mt-2 px-2.5 py-1 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] text-[10px] font-bold rounded-lg focus:outline-none placeholder:text-slate-400 text-slate-800 transition-colors w-48"
               />
             </div>
             
@@ -450,7 +450,7 @@ export default function DemoBookings() {
                   required
                   value={bookForm.leadId}
                   onChange={(e) => setBookForm({ ...bookForm, leadId: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#F59E0B] rounded-xl focus:outline-none text-slate-800 cursor-pointer"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-800 cursor-pointer"
                 >
                   {leads.map(lead => (
                     <option key={lead.id} value={lead.id}>
@@ -472,7 +472,7 @@ export default function DemoBookings() {
                     required
                     value={bookForm.date}
                     onChange={(e) => setBookForm({ ...bookForm, date: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#F59E0B] rounded-xl focus:outline-none text-slate-800"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-800"
                   />
                 </div>
                 
@@ -487,7 +487,7 @@ export default function DemoBookings() {
                     value={bookForm.time}
                     onChange={(e) => setBookForm({ ...bookForm, time: e.target.value })}
                     placeholder="e.g. 10:30 AM"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#F59E0B] rounded-xl focus:outline-none text-slate-800"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-800"
                   />
                 </div>
               </div>
@@ -500,7 +500,7 @@ export default function DemoBookings() {
                 <select
                   value={bookForm.presenter}
                   onChange={(e) => setBookForm({ ...bookForm, presenter: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#F59E0B] rounded-xl focus:outline-none text-slate-805 cursor-pointer"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-805 cursor-pointer"
                 >
                   {repsList.map(rep => (
                     <option key={rep} value={rep}>{rep}</option>
@@ -518,7 +518,7 @@ export default function DemoBookings() {
                   onChange={(e) => setBookForm({ ...bookForm, notes: e.target.value })}
                   placeholder="Focus points (e.g. Telematics, ELD compliance training...)"
                   rows="3"
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 focus:border-[#F59E0B] rounded-xl focus:outline-none text-slate-850 resize-none font-semibold"
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-850 resize-none font-semibold"
                 />
               </div>
 
@@ -533,7 +533,7 @@ export default function DemoBookings() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-[#F59E0B] hover:bg-[#D97706] text-black font-extrabold text-xs py-3 rounded-xl transition-colors cursor-pointer text-center shadow-xs"
+                  className="flex-1 bg-[#ffcc00] hover:bg-[#e6b800] text-black font-extrabold text-xs py-3 rounded-xl transition-colors cursor-pointer text-center shadow-xs"
                 >
                   Schedule Walkthrough
                 </button>
@@ -605,7 +605,7 @@ export default function DemoBookings() {
                   onChange={(e) => setFeedbackForm({ ...feedbackForm, notes: e.target.value })}
                   placeholder="Notes from presentation feedback, queries, custom integrations requested..."
                   rows="4"
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#F59E0B] rounded-xl focus:outline-none text-slate-850 resize-none font-semibold"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-850 resize-none font-semibold"
                 />
               </div>
 
@@ -620,7 +620,7 @@ export default function DemoBookings() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-[#F59E0B] hover:bg-[#D97706] text-black font-extrabold text-xs py-3 rounded-xl transition-colors cursor-pointer text-center shadow-xs"
+                  className="flex-1 bg-[#ffcc00] hover:bg-[#e6b800] text-black font-extrabold text-xs py-3 rounded-xl transition-colors cursor-pointer text-center shadow-xs"
                 >
                   Log Feedback Comments
                 </button>

@@ -267,7 +267,7 @@ export default function FollowUps() {
                   required
                   value={modalForm.leadId}
                   onChange={(e) => setModalForm({ ...modalForm, leadId: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#F59E0B] rounded-xl focus:outline-none text-slate-800 cursor-pointer"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-800 cursor-pointer"
                 >
                   {leads.map(l => (
                     <option key={l.id} value={l.id}>{l.company} ({l.name})</option>
@@ -282,7 +282,7 @@ export default function FollowUps() {
                   <select
                     value={modalForm.type}
                     onChange={(e) => setModalForm({ ...modalForm, type: e.target.value })}
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#F59E0B] rounded-xl focus:outline-none text-slate-800 cursor-pointer"
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-800 cursor-pointer"
                   >
                     <option value="Call">Phone Call</option>
                     <option value="Email">Email</option>
@@ -297,7 +297,7 @@ export default function FollowUps() {
                   <select
                     value={modalForm.priority}
                     onChange={(e) => setModalForm({ ...modalForm, priority: e.target.value })}
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#F59E0B] rounded-xl focus:outline-none text-slate-800 cursor-pointer"
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-800 cursor-pointer"
                   >
                     <option value="High">High</option>
                     <option value="Medium">Medium</option>
@@ -312,7 +312,7 @@ export default function FollowUps() {
                     type="date"
                     value={modalForm.dueDate}
                     onChange={(e) => setModalForm({ ...modalForm, dueDate: e.target.value })}
-                    className="w-full px-2.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#F59E0B] rounded-xl focus:outline-none text-slate-800"
+                    className="w-full px-2.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-800"
                   />
                 </div>
               </div>
@@ -325,7 +325,7 @@ export default function FollowUps() {
                   value={modalForm.dueTime}
                   onChange={(e) => setModalForm({ ...modalForm, dueTime: e.target.value })}
                   placeholder="e.g. 10:30 AM"
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#F59E0B] rounded-xl focus:outline-none text-slate-800"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-800"
                 />
               </div>
 
@@ -337,13 +337,13 @@ export default function FollowUps() {
                   onChange={(e) => setModalForm({ ...modalForm, notes: e.target.value })}
                   placeholder="Touchpoint context, agenda, follow-up objectives..."
                   rows="3"
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 focus:border-[#F59E0B] rounded-xl focus:outline-none text-slate-800 resize-none font-semibold"
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-800 resize-none font-semibold"
                 />
               </div>
 
               <div className="flex gap-3 pt-4 border-t border-slate-100">
                 <button type="button" onClick={() => setShowAddModal(false)} className="flex-1 bg-white hover:bg-slate-50 text-slate-700 font-extrabold text-xs py-3 rounded-xl border border-slate-200 transition-colors cursor-pointer text-center">Cancel</button>
-                <button type="submit" className="flex-1 bg-[#F59E0B] hover:bg-[#D97706] text-black font-extrabold text-xs py-3 rounded-xl transition-colors cursor-pointer text-center shadow-xs">Log Task</button>
+                <button type="submit" className="flex-1 bg-[#ffcc00] hover:bg-[#e6b800] text-black font-extrabold text-xs py-3 rounded-xl transition-colors cursor-pointer text-center shadow-xs">Log Task</button>
               </div>
             </form>
           </div>

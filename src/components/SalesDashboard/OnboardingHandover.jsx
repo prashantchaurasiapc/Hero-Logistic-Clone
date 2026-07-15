@@ -168,7 +168,7 @@ export default function OnboardingHandover() {
                   {/* Progress bar */}
                   <div className="w-full bg-slate-100 rounded-full h-1.5">
                     <div
-                      className={`${pct === 100 ? 'bg-emerald-400' : 'bg-[#F59E0B]'} h-1.5 rounded-full transition-all duration-500`}
+                      className={`${pct === 100 ? 'bg-emerald-400' : 'bg-[#ffcc00]'} h-1.5 rounded-full transition-all duration-500`}
                       style={{ width: `${pct}%` }}
                     ></div>
                   </div>
@@ -282,7 +282,7 @@ export default function OnboardingHandover() {
                       });
                       setToast({ text: `${selectedHandover.company} workspace setup marked complete.` });
                     }}
-                    className="flex items-center gap-2 bg-[#F59E0B] hover:bg-[#D97706] text-black font-extrabold text-[11px] px-4 py-2.5 rounded-xl cursor-pointer transition-colors shadow-xs"
+                    className="flex items-center gap-2 bg-[#ffcc00] hover:bg-[#e6b800] text-black font-extrabold text-[11px] px-4 py-2.5 rounded-xl cursor-pointer transition-colors shadow-xs"
                   >
                     <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
                     Mark Full Setup Complete

@@ -22,6 +22,16 @@ export default function MembershipPlans() {
   const [wizardStep, setWizardStep] = useState(1);
   const [showDeprecateModal, setShowDeprecateModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
+
+  // Versioning Drawer state
+  const [showVersioningDrawer, setShowVersioningDrawer] = useState(false);
+  const [versioningPlan, setVersioningPlan] = useState(null);
+  const [versionCompareA, setVersionCompareA] = useState('-- Select A --');
+  const [versionCompareB, setVersionCompareB] = useState('-- Select B --');
+
+  // Inspect Receipt Modal state
+  const [showReceiptModal, setShowReceiptModal] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
   
   // Promo Coupon Modal state
   const [showPromoModal, setShowPromoModal] = useState(false);
@@ -999,37 +1009,44 @@ export default function MembershipPlans() {
                           )}
                           {visibleColumns.actions && (
                             <td className="py-4 px-5 w-[260px] min-w-[260px] max-w-[260px] whitespace-nowrap text-center">
-                              <div className="flex items-center gap-1.5 justify-center">
+                              <div className="flex items-center gap-1.5 justify-center flex-wrap">
+                                {/* Configure */}
                                 <button
                                   type="button"
                                   onClick={() => handleOpenWizard('configure', p)}
-                                  className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 font-extrabold text-[11px] px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
+                                  className="inline-flex items-center border border-slate-800 bg-white hover:bg-slate-50 text-slate-900 font-black text-[11px] px-3 py-1.5 rounded-lg transition-colors cursor-pointer shadow-sm"
                                 >
                                   Configure
                                 </button>
+
+                                {/* Versioning */}
                                 <button
                                   type="button"
-                                  onClick={() => showNotification(`Initiated versioning flow for ${p.name}.`)}
-                                  className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 font-extrabold text-[11px] px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
+                                  onClick={() => { setVersioningPlan(p); setVersionCompareA('-- Select A --'); setVersionCompareB('-- Select B --'); setShowVersioningDrawer(true); }}
+                                  className="inline-flex items-center border border-slate-800 bg-white hover:bg-slate-50 text-slate-900 font-black text-[11px] px-3 py-1.5 rounded-lg transition-colors cursor-pointer shadow-sm"
                                 >
                                   Versioning
                                 </button>
+
+                                {/* Deprecate */}
                                 <button
                                   type="button"
                                   disabled={p.status === 'Deprecated'}
                                   onClick={() => handleDeprecateClick(p)}
-                                  className={`font-extrabold text-[11px] px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                                  className={`inline-flex items-center font-black text-[11px] px-3 py-1.5 rounded-lg transition-colors shadow-sm ${
                                     p.status === 'Deprecated'
-                                      ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-transparent'
-                                      : 'bg-[#64748B]/10 hover:bg-[#64748B]/20 text-[#334155]'
+                                      ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+                                      : 'border border-slate-800 bg-white hover:bg-slate-50 text-slate-900 cursor-pointer'
                                   }`}
                                 >
                                   Deprecate
                                 </button>
+
+                                {/* Delete */}
                                 <button
                                   type="button"
                                   onClick={() => handleDeletePlan(p.id, p.name)}
-                                  className="bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-xs p-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-center shadow-xs"
+                                  className="inline-flex items-center justify-center bg-rose-500 hover:bg-rose-600 text-white font-extrabold p-2 rounded-lg transition-colors cursor-pointer shadow-sm"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
@@ -1681,10 +1698,10 @@ export default function MembershipPlans() {
                         <td className="py-4 px-6 text-center">
                           <button
                             type="button"
-                            onClick={() => alert(`Inspecting receipt for Invoice: ${inv.invoiceNo}\nAmount: ${inv.amount}`)}
-                            className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 font-extrabold text-xs px-3.5 py-2 rounded-xl transition-colors cursor-pointer"
+                            onClick={() => { setSelectedInvoice(inv); setShowReceiptModal(true); }}
+                            className="border border-slate-800 bg-white hover:bg-slate-50 text-slate-900 font-black text-xs px-4 py-2 rounded-xl transition-colors cursor-pointer shadow-sm leading-tight"
                           >
-                            Inspect Receipt
+                            Inspect<br />Receipt
                           </button>
                         </td>
                       </tr>
@@ -2201,6 +2218,218 @@ export default function MembershipPlans() {
                 Launch Promotional Code
               </button>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Version Control Center Right-Side Drawer */}
+      {showVersioningDrawer && versioningPlan && (
+        <div className="fixed inset-0 z-[1000] flex justify-end">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm cursor-pointer"
+            onClick={() => setShowVersioningDrawer(false)}
+          />
+
+          {/* Drawer Panel */}
+          <div className="relative w-full max-w-md bg-white shadow-2xl h-full flex flex-col z-10 text-left">
+            {/* Header */}
+            <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100 bg-white">
+              <h3 className="text-lg font-extrabold text-slate-900">Version Control Center</h3>
+              <button
+                onClick={() => setShowVersioningDrawer(false)}
+                className="text-slate-400 hover:text-slate-700 transition-colors p-1 rounded-lg hover:bg-slate-50 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Scrollable Body */}
+            <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6 custom-scrollbar bg-white">
+
+              {/* Plan name & status */}
+              <div className="flex justify-between items-start">
+                <div>
+                  <h2 className="text-xl font-black text-slate-900">{versioningPlan.name}</h2>
+                  <p className="text-xs text-slate-400 font-semibold mt-0.5">Current version {versioningPlan.version}</p>
+                </div>
+                <span className="bg-amber-100 text-amber-700 text-[11px] font-black px-3 py-1 rounded-full border border-amber-200">
+                  {versioningPlan.status}
+                </span>
+              </div>
+
+              {/* VERSION UPDATES LOG */}
+              <div className="space-y-3">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">VERSION UPDATES LOG</p>
+
+                {/* v1.0.0 */}
+                <div className="border border-slate-200 rounded-2xl p-4 flex justify-between items-start gap-3">
+                  <div>
+                    <p className="text-sm font-black text-slate-800">Version v1.0.0</p>
+                    <p className="text-xs text-slate-500 font-semibold mt-0.5">Initial release of {versioningPlan.name} plan tier.</p>
+                    <p className="text-[10px] text-slate-400 font-bold mt-1.5">06/20/2026, 09:00:00 AM &bull; System Root</p>
+                  </div>
+                  <button
+                    onClick={() => showNotification(`Rolled back ${versioningPlan.name} to v1.0.0`)}
+                    className="shrink-0 border border-slate-200 hover:bg-slate-50 text-slate-700 font-extrabold text-xs px-4 py-1.5 rounded-xl cursor-pointer transition-colors"
+                  >
+                    Rollback
+                  </button>
+                </div>
+
+                {/* v1.1.0 */}
+                <div className="border border-slate-200 rounded-2xl p-4">
+                  <p className="text-sm font-black text-slate-800">Version v1.1.0</p>
+                  <p className="text-xs text-slate-500 font-semibold mt-0.5">Upgraded limits and added Integrations &amp; Customer Portal.</p>
+                  <p className="text-[10px] text-slate-400 font-bold mt-1.5">06/20/2026, 09:05:00 AM &bull; System Root</p>
+                </div>
+              </div>
+
+              {/* COMPARE VERSIONS SIDE-BY-SIDE */}
+              <div className="space-y-3">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">COMPARE VERSIONS SIDE-BY-SIDE</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-1.5">VERSION A</p>
+                    <div className="relative">
+                      <select
+                        value={versionCompareA}
+                        onChange={(e) => setVersionCompareA(e.target.value)}
+                        className={`w-full px-3 py-2.5 border rounded-2xl focus:outline-none focus:border-[#FFD400] text-xs font-bold appearance-none cursor-pointer pr-8 ${
+                          versionCompareA !== '-- Select A --' ? 'border-[#FFD400] border-2' : 'border-slate-200'
+                        } text-slate-700 bg-white`}
+                      >
+                        <option>-- Select A --</option>
+                        <option>v1.0.0</option>
+                        <option>v1.1.0</option>
+                      </select>
+                      <ChevronDown className="absolute right-2.5 top-3 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-1.5">VERSION B</p>
+                    <div className="relative">
+                      <select
+                        value={versionCompareB}
+                        onChange={(e) => setVersionCompareB(e.target.value)}
+                        className="w-full px-3 py-2.5 border border-slate-200 rounded-2xl focus:outline-none focus:border-[#FFD400] text-xs font-bold appearance-none cursor-pointer pr-8 text-slate-700 bg-white"
+                      >
+                        <option>-- Select B --</option>
+                        <option>v1.0.0</option>
+                        <option>v1.1.0</option>
+                      </select>
+                      <ChevronDown className="absolute right-2.5 top-3 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    if (versionCompareA === '-- Select A --' || versionCompareB === '-- Select B --') {
+                      showNotification('Please select both versions to compare.');
+                    } else {
+                      showNotification(`Comparing ${versioningPlan.name}: ${versionCompareA} vs ${versionCompareB}`);
+                    }
+                  }}
+                  className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-sm py-3 rounded-2xl shadow-sm transition-all cursor-pointer"
+                >
+                  Compare Selected Versions
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Inspect Receipt Modal */}
+      {showReceiptModal && selectedInvoice && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[1001] p-4">
+          <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-[560px] overflow-hidden shadow-2xl animate-fade-in text-left">
+            
+            {/* Modal Header */}
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100">
+              <div>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block font-mono">INVOICE RECEIPT // {selectedInvoice.invoiceNo}</span>
+                <h3 className="text-base font-extrabold text-slate-900 mt-0.5">{selectedInvoice.company}</h3>
+              </div>
+              <button onClick={() => setShowReceiptModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer p-1 rounded-lg hover:bg-slate-50">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Receipt Body */}
+            <div className="p-6 space-y-5">
+
+              {/* Status Banner */}
+              <div className={`flex items-center justify-between px-4 py-3 rounded-2xl border ${
+                selectedInvoice.status === 'Paid' ? 'bg-emerald-50 border-emerald-200' :
+                selectedInvoice.status === 'Overdue' ? 'bg-rose-50 border-rose-200' :
+                selectedInvoice.status === 'Sent' ? 'bg-amber-50 border-amber-200' :
+                'bg-slate-50 border-slate-200'
+              }`}>
+                <span className="text-xs font-bold text-slate-500">Payment Status</span>
+                <span className={`text-sm font-black uppercase tracking-wider ${
+                  selectedInvoice.status === 'Paid' ? 'text-emerald-600' :
+                  selectedInvoice.status === 'Overdue' ? 'text-rose-600' :
+                  selectedInvoice.status === 'Sent' ? 'text-amber-600' :
+                  'text-slate-600'
+                }`}>{selectedInvoice.status}</span>
+              </div>
+
+              {/* Line Items */}
+              <div className="space-y-2.5">
+                <div className="flex justify-between py-2 border-b border-slate-100">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Invoice Number</span>
+                  <span className="text-xs font-black text-slate-800 font-mono">{selectedInvoice.invoiceNo}</span>
+                </div>
+                <div className="flex justify-between py-2 border-b border-slate-100">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Company</span>
+                  <span className="text-xs font-black text-slate-800">{selectedInvoice.company}</span>
+                </div>
+                <div className="flex justify-between py-2 border-b border-slate-100">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Plan Level</span>
+                  <span className="text-xs font-black text-slate-800">{selectedInvoice.plan}</span>
+                </div>
+                <div className="flex justify-between py-2 border-b border-slate-100">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Billing Period</span>
+                  <span className="text-xs font-black text-slate-800 font-mono">{selectedInvoice.period}</span>
+                </div>
+                <div className="flex justify-between py-2 border-b border-slate-100">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Issued Date</span>
+                  <span className="text-xs font-black text-slate-800 font-mono">{selectedInvoice.date}</span>
+                </div>
+                <div className="flex justify-between py-2 border-b border-slate-100">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Payment Method</span>
+                  <span className="text-xs font-bold text-slate-700">{selectedInvoice.method}</span>
+                </div>
+
+                {/* Total */}
+                <div className="flex justify-between py-3 bg-slate-50 rounded-2xl px-4 mt-2">
+                  <span className="text-sm font-black text-slate-700">TOTAL AMOUNT</span>
+                  <span className="text-lg font-black text-emerald-600 font-mono">{selectedInvoice.amount}</span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-1">
+                <button
+                  onClick={() => {
+                    showNotification(`Invoice ${selectedInvoice.invoiceNo} downloaded as PDF.`);
+                    setShowReceiptModal(false);
+                  }}
+                  className="flex-1 bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-xs py-3 rounded-2xl shadow-sm transition-all cursor-pointer text-center"
+                >
+                  Download PDF
+                </button>
+                <button
+                  onClick={() => {
+                    showNotification(`Receipt email sent to ${selectedInvoice.company}.`);
+                    setShowReceiptModal(false);
+                  }}
+                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs py-3 rounded-2xl transition-all cursor-pointer text-center"
+                >
+                  Send via Email
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
