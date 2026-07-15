@@ -119,7 +119,7 @@
   gap: 16px;
 }
 
-/* Notification & Messages button controls matching first image */
+/* Notification & Messages button controls */
 .icon-btn-container {
   display: flex;
   align-items: center;
@@ -160,7 +160,7 @@
   line-height: 1;
 }
 
-/* User profile triggers matching first image */
+/* User profile triggers */
 .user-profile-trigger {
   display: flex;
   align-items: center;
@@ -199,7 +199,7 @@
   color: #334155;
 }
 
-/* Dropdown Card popup matching third image */
+/* Dropdown Card popup */
 .header-profile-dropdown {
   position: absolute;
   top: 54px;

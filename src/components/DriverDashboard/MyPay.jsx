@@ -1,17 +1,22 @@
 import React, { useState } from 'react';
-import { Compass, Shield, Truck, AlertTriangle, Heart, X, Phone, MessageSquare, Mic, Wifi, WifiOff, Settings, CheckSquare } from 'lucide-react';
+import { Shield, Truck, AlertTriangle, Heart, X, Phone, MessageSquare, Mic, Compass, CheckCircle2, AlertCircle, Settings, Check, Download } from 'lucide-react';
 
 export default function MyPay() {
   const [sosModalOpen, setSosModalOpen] = useState(false);
-  const [hotlineOpen, setHotlineOpen] = useState(true); // Open by default based on screenshot
+  const [hotlineOpen, setHotlineOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
-  
-  // Connection states matching screenshot
-  const [isOffline, setIsOffline] = useState(true);
-  const [offlineQueueCount, setOfflineQueueCount] = useState(0);
+  const [toastType, setToastType] = useState('success');
+  const [isOnline, setIsOnline] = useState(true);
+  const [activeSosAlert, setActiveSosAlert] = useState(null);
 
-  // Column Visibility toggle states
-  const [columnsDropdownOpen, setColumnsDropdownOpen] = useState(false);
+  // SOS states
+  const [shareGps, setShareGps] = useState(true);
+  const [autoNotify, setAutoNotify] = useState(true);
+
+  // History states
+  const [viewMode, setViewMode] = useState('DEFAULT'); // COMPACT, DEFAULT, RELAXED
+  const [columnsOpen, setColumnsOpen] = useState(false);
+  const [selectedRows, setSelectedRows] = useState([]);
   const [visibleColumns, setVisibleColumns] = useState({
     payPeriod: true,
     loggedHours: true,
@@ -19,447 +24,399 @@ export default function MyPay() {
     status: true
   });
 
-  // Spacing layout state
-  const [spacing, setSpacing] = useState('compact'); // 'compact', 'default', 'relaxed'
-
-  // SOS states
-  const [shareGps, setShareGps] = useState(true);
-  const [autoNotify, setAutoNotify] = useState(true);
-
-  // Settlement history rows
-  const [settlementRows, setSettlementRows] = useState([
-    { id: 1, period: 'Jun 01 - Jun 15, 2026', hours: '82 hrs', payout: '$1,690.00', status: 'PAID' },
-    { id: 2, period: 'May 16 - May 31, 2026', hours: '78 hrs', payout: '$1,510.00', status: 'PAID' }
-  ]);
-
-  const triggerToast = (msg) => {
+  const triggerToast = (msg, type = 'success') => {
     setToastMsg(msg);
+    setToastType(type);
     setTimeout(() => setToastMsg(''), 4000);
   };
 
-  const handleToggleColumn = (colKey) => {
-    setVisibleColumns(prev => ({
-      ...prev,
-      [colKey]: !prev[colKey]
-    }));
+  const mockData = [
+    { id: 1, payPeriod: 'Jun 01 -\nJun 15,\n2026', loggedHours: '82 hrs', payout: '$3,690.00', status: 'PAID', statusColor: 'bg-[#ECFDF5] text-[#10B981] border border-[#A7F3D0]' },
+    { id: 2, payPeriod: 'May 16 -\nMay 31,\n2026', loggedHours: '78 hrs', payout: '$3,510.00', status: 'PAID', statusColor: 'bg-[#ECFDF5] text-[#10B981] border border-[#A7F3D0]' }
+  ];
+
+  const toggleRow = (id) => {
+    setSelectedRows(prev => 
+      prev.includes(id) ? prev.filter(rowId => rowId !== id) : [...prev, id]
+    );
   };
 
-  const handleToggleConnection = () => {
-    if (isOffline) {
-      setIsOffline(false);
-      if (offlineQueueCount > 0) {
-        triggerToast(`Synced ${offlineQueueCount} queued items online.`);
-        setOfflineQueueCount(0);
-      } else {
-        triggerToast('Driver portal switched to Online Mode.');
-      }
-    } else {
-      setIsOffline(true);
-      triggerToast('Driver portal switched to Offline Mode.');
-    }
+  const toggleColumn = (col) => {
+    setVisibleColumns(prev => ({ ...prev, [col]: !prev[col] }));
   };
+
+  const payoutCards = [
+    { title: 'DAILY PAYOUT', amount: '$245.00', progress: 100, label: 'Completed runs today' },
+    { title: 'WEEKLY PAYOUT', amount: '$1,250.00', progress: 80, label: 'Weekly accumulated pay' },
+    { title: 'MONTHLY PAYOUT', amount: '$4,820.00', progress: 92, label: 'Monthly baseline earnings' },
+    { title: 'AWAITING PAYROLL', amount: '$1,420.00', progress: 100, label: 'Awaiting billing run' }
+  ];
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-[800px] mx-auto bg-gray-55 min-h-screen text-left flex flex-col space-y-6 relative pb-28">
+    <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-screen text-left flex flex-col space-y-6 relative pb-28">
+      {/* Toast Notification */}
       {toastMsg && (
-        <div className="fixed bottom-6 right-6 z-[120] bg-slate-900 text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-xl animate-fade-in">{toastMsg}</div>
+        <div className={`fixed bottom-24 right-6 z-[120] px-4 py-3 rounded-xl text-sm font-bold shadow-lg flex items-center gap-3 max-w-sm animate-fade-in border ${
+          toastType === 'error' 
+            ? 'bg-[#FEF2F2] border-[#FCA5A5] text-[#334155]' 
+            : 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46]'
+        }`}>
+          {toastType === 'error' ? (
+            <AlertCircle className="w-5 h-5 text-[#EF4444] shrink-0" strokeWidth={2.5} />
+          ) : (
+            <CheckCircle2 className="w-5 h-5 text-[#10B981] shrink-0" strokeWidth={2.5} />
+          )}
+          <span>{toastMsg}</span>
+          <button 
+            onClick={() => setToastMsg('')} 
+            className={`ml-auto cursor-pointer pl-2 ${toastType === 'error' ? 'text-gray-400 hover:text-gray-600' : 'text-[#059669] hover:text-[#047857]'}`}
+          >
+            <X className="w-4 h-4" strokeWidth={2.5} />
+          </button>
+        </div>
       )}
 
-      {/* Connection status tag */}
-      <div className="flex justify-center">
-        <button 
-          onClick={handleToggleConnection}
-          className={`px-4 py-2 rounded-2xl flex items-center gap-2 text-xs font-bold shadow-3xs cursor-pointer transition-all border ${
-            isOffline 
-              ? 'bg-[#FEF3C7] border-[#FDE68A] text-[#B45309]' 
-              : 'bg-[#ECFDF5] border-[#A7F3D0] text-[#047857]'
-          }`}
-          title="Toggle network online/offline mode"
-        >
-          <span>Connection Status:</span>
-          <span className={`px-2 py-0.5 rounded-lg text-[9px] uppercase tracking-wider flex items-center gap-1 text-white ${
-            isOffline ? 'bg-amber-600' : 'bg-emerald-600'
-          }`}>
-            {isOffline ? 'Offline Mode' : 'Online Mode'} 
-            {isOffline ? <WifiOff className="w-3 h-3" /> : <Wifi className="w-3 h-3" />}
+      {/* Connection status toggle */}
+      <div className="flex flex-col items-center gap-2 w-full">
+        <div className="w-full flex justify-between items-center p-3 bg-white border border-gray-150 rounded-2xl shadow-sm">
+          <span className="text-sm font-bold text-gray-600 flex items-center gap-2">
+            <svg className="w-4 h-4 text-amber-500 rotate-45" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <polygon points="3 11 22 2 13 21 11 13 3 11" />
+            </svg>
+            Connection Status:
           </span>
-        </button>
-      </div>
-
-      {/* Offline Alert Box */}
-      {isOffline && (
-        <div className="bg-[#FEF3C7] border border-[#FDE68A] p-3.5 rounded-2xl flex items-center gap-2 text-[#B45309] text-xs font-bold shadow-3xs text-left animate-pulse">
-          <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600" />
-          <span>Offline Active | {offlineQueueCount} items queued</span>
-        </div>
-      )}
-
-      {/* Header */}
-      <div className="bg-white border border-gray-150 rounded-3xl p-6 flex justify-between items-center shadow-3xs">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none">Driver Portal</h1>
-            <span className="text-xl font-bold text-gray-400">•</span>
-            <span className="text-xl font-black text-gray-800">earnings</span>
-          </div>
-          <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider mt-1.5">ELD & logistics operations controls.</p>
-        </div>
-        <div className="w-8 h-8 rounded-full bg-amber-50 border border-amber-100 flex items-center justify-center text-[#D97706] cursor-pointer" title="Driver Controls">
-          <Compass className="w-4 h-4" />
-        </div>
-      </div>
-
-      {/* Earnings Grid (4 KPI Cards in 2x2 format) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Daily Payout */}
-        <div className="bg-white p-5 rounded-3xl border border-gray-150 shadow-3xs text-left space-y-3">
-          <span className="text-[9px] font-black text-gray-400 uppercase tracking-wider block">DAILY PAYOUT</span>
-          <h3 className="text-2xl font-black text-gray-900">$245.00</h3>
-          <div>
-            <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden">
-              <div className="h-full bg-[#FFD400] w-[100%]"></div>
-            </div>
-            <div className="flex justify-between items-center text-[8px] font-bold text-gray-400 mt-1">
-              <span>Progress</span>
-              <span>100%</span>
-            </div>
-          </div>
-          <span className="text-[10px] text-gray-505 font-semibold block pt-1">Completed runs today</span>
+          <button
+            onClick={() => {
+              setIsOnline(prev => !prev);
+              triggerToast(isOnline ? 'Connection switched to Offline Mode.' : 'Connection restored to Online Mode.');
+            }}
+            className={`px-4 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-bold border cursor-pointer transition-all ${
+              isOnline
+                ? 'bg-[#E6F4EA] border-[#CEEAD6] text-[#137333]'
+                : 'bg-[#FFFBEB] border-[#000000] border-2 text-[#D97706]'
+            }`}
+          >
+            <span>{isOnline ? 'Online Mode' : 'Offline Mode'}</span>
+            <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-white text-[9px] ${isOnline ? 'bg-emerald-500' : 'bg-[#D97706]'}`}>
+              {isOnline ? '🌐' : '−'}
+            </span>
+          </button>
         </div>
 
-        {/* Weekly Payout */}
-        <div className="bg-white p-5 rounded-3xl border border-gray-150 shadow-3xs text-left space-y-3">
-          <span className="text-[9px] font-black text-gray-400 uppercase tracking-wider block">WEEKLY PAYOUT</span>
-          <h3 className="text-2xl font-black text-gray-900">$1,250.00</h3>
-          <div>
-            <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden">
-              <div className="h-full bg-[#FFD400] w-[68%]"></div>
-            </div>
-            <div className="flex justify-between items-center text-[8px] font-bold text-gray-400 mt-1">
-              <span>Progress</span>
-              <span>68%</span>
-            </div>
-          </div>
-          <span className="text-[10px] text-gray-505 font-semibold block pt-1">Weekly accumulated pay</span>
-        </div>
-
-        {/* Monthly Payout */}
-        <div className="bg-white p-5 rounded-3xl border border-gray-150 shadow-3xs text-left space-y-3">
-          <span className="text-[9px] font-black text-gray-400 uppercase tracking-wider block">MONTHLY PAYOUT</span>
-          <h3 className="text-2xl font-black text-gray-900">$4,820.00</h3>
-          <div>
-            <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden">
-              <div className="h-full bg-[#FFD400] w-[92%]"></div>
-            </div>
-            <div className="flex justify-between items-center text-[8px] font-bold text-gray-400 mt-1">
-              <span>Progress</span>
-              <span>92%</span>
-            </div>
-          </div>
-          <span className="text-[10px] text-gray-505 font-semibold block pt-1">Monthly baseline earnings</span>
-        </div>
-
-        {/* Awaiting Payroll */}
-        <div className="bg-white p-5 rounded-3xl border border-gray-150 shadow-3xs text-left space-y-3">
-          <span className="text-[9px] font-black text-gray-400 uppercase tracking-wider block">AWAITING PAYROLL</span>
-          <h3 className="text-2xl font-black text-gray-900">$1,420.00</h3>
-          <div>
-            <div className="w-full h-1 bg-gray-100 rounded-full overflow-hidden">
-              <div className="h-full bg-[#FFD400] w-[100%]"></div>
-            </div>
-            <div className="flex justify-between items-center text-[8px] font-bold text-gray-400 mt-1">
-              <span>Progress</span>
-              <span>100%</span>
-            </div>
-          </div>
-          <span className="text-[10px] text-gray-505 font-semibold block pt-1">Awaiting billing run</span>
-        </div>
-      </div>
-
-      {/* Bonus Summary Overview */}
-      <div className="bg-white border border-gray-150 rounded-3xl p-5 shadow-3xs text-left space-y-4">
-        <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider block">BONUS SUMMARY OVERVIEW</span>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="p-4 border border-emerald-100 bg-emerald-50/10 rounded-2xl flex justify-between items-center">
-            <span className="text-xs font-bold text-gray-800">Safety Performance Bonus</span>
-            <span className="text-sm font-black text-emerald-655">+$150.00</span>
-          </div>
-          <div className="p-4 border border-emerald-100 bg-emerald-50/10 rounded-2xl flex justify-between items-center">
-            <span className="text-xs font-bold text-gray-800">On-Time Dispatch Bonus</span>
-            <span className="text-sm font-black text-emerald-655">+$200.00</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Settlement History & Payments Log Table Panel */}
-      <div className="bg-white border border-gray-150 rounded-3xl p-6 shadow-3xs text-left space-y-5 relative">
-        
-        <div className="flex justify-between items-center pb-2 border-b border-gray-55 flex-wrap gap-3">
-          <span className="text-[10px] font-black text-gray-900 tracking-wider block uppercase">Settlement History & Payments Log</span>
-          
-          <div className="flex items-center gap-3">
-            {/* Spacing controllers list */}
-            <div className="flex border border-gray-200 p-0.5 rounded-lg bg-gray-55 shrink-0">
-              {['COMPACT', 'DEFAULT', 'RELAXED'].map((sp) => (
-                <button
-                  key={sp}
-                  onClick={() => setSpacing(sp.toLowerCase())}
-                  className={`px-2.5 py-1 rounded text-[8px] font-black tracking-wider transition-all cursor-pointer ${
-                    spacing === sp.toLowerCase() 
-                      ? 'bg-[#FFD400] text-black shadow-3xs' 
-                      : 'text-gray-400 hover:text-gray-655 bg-transparent'
-                  }`}
-                >
-                  {sp}
-                </button>
-              ))}
-            </div>
-
-            {/* Columns configure button */}
-            <button 
-              onClick={() => setColumnsDropdownOpen(!columnsDropdownOpen)}
-              className="px-3.5 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-500 hover:text-black cursor-pointer shadow-3xs bg-white shrink-0 flex items-center gap-1.5 text-[9px] font-black"
-            >
-              <Settings className="w-3.5 h-3.5" /> COLUMNS
-            </button>
-          </div>
-        </div>
-
-        {/* COLUMN VISIBILITY DROPDOWN CARD (IMAGE 2) */}
-        {columnsDropdownOpen && (
-          <div className="absolute right-6 top-16 bg-white border border-gray-150 rounded-2xl p-4 shadow-xl z-50 w-52 text-left space-y-3.5 animate-in fade-in zoom-in-95 duration-150">
-            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block pb-1 border-b border-gray-50">COLUMN VISIBILITY</span>
-            <div className="space-y-3">
-              <label className="flex items-center gap-2.5 text-xs font-bold text-gray-800 cursor-pointer select-none">
-                <input 
-                  type="checkbox" 
-                  checked={visibleColumns.payPeriod}
-                  onChange={() => handleToggleColumn('payPeriod')}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
-                />
-                <span>Pay Period</span>
-              </label>
-
-              <label className="flex items-center gap-2.5 text-xs font-bold text-gray-800 cursor-pointer select-none">
-                <input 
-                  type="checkbox" 
-                  checked={visibleColumns.loggedHours}
-                  onChange={() => handleToggleColumn('loggedHours')}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
-                />
-                <span>Logged Hours</span>
-              </label>
-
-              <label className="flex items-center gap-2.5 text-xs font-bold text-gray-800 cursor-pointer select-none">
-                <input 
-                  type="checkbox" 
-                  checked={visibleColumns.payout}
-                  onChange={() => handleToggleColumn('payout')}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
-                />
-                <span>Payout</span>
-              </label>
-
-              <label className="flex items-center gap-2.5 text-xs font-bold text-gray-800 cursor-pointer select-none">
-                <input 
-                  type="checkbox" 
-                  checked={visibleColumns.status}
-                  onChange={() => handleToggleColumn('status')}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
-                />
-                <span>Status</span>
-              </label>
-            </div>
-            
-            <button 
-              onClick={() => setColumnsDropdownOpen(false)}
-              className="w-full bg-[#FFD400] text-black font-bold text-[9px] py-1.5 rounded-lg text-center uppercase tracking-wider cursor-pointer"
-            >
-              Apply Columns
-            </button>
+        {/* Offline Banner */}
+        {!isOnline && (
+          <div className="w-full bg-[#FFFBEB] border border-[#FDE047] px-4 py-3 rounded-2xl flex items-center text-[#D97706] text-xs font-bold shadow-sm">
+            <AlertTriangle className="w-4 h-4 mr-2 shrink-0" strokeWidth={2.5} />
+            <span>Offline Active</span>
+            <span className="mx-2 text-[#D97706] opacity-50">|</span>
+            <span>0 items queued</span>
           </div>
         )}
 
-        {/* Dynamic Spacing Table layout */}
-        <div className="space-y-3">
-          <div className="grid grid-cols-12 text-[10px] font-bold text-gray-400 uppercase tracking-wider px-4">
-            <span className="col-span-1"></span>
-            {visibleColumns.payPeriod && <span className="col-span-4 text-left">PAY PERIOD</span>}
-            {visibleColumns.loggedHours && <span className="col-span-3 text-left">LOGGED HOURS</span>}
-            {visibleColumns.payout && <span className="col-span-2 text-left">PAYOUT</span>}
-            {visibleColumns.status && <span className="col-span-2 text-right">STATUS</span>}
+        {/* SOS ACTIVE Banner */}
+        {activeSosAlert && (
+          <div className="w-full bg-[#FEE2E2] border border-[#FCA5A5] px-4 py-2 rounded-2xl flex items-center justify-between text-[#EF4444] text-xs font-bold shadow-sm">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-[#EF4444] shrink-0" strokeWidth={2.5} />
+              <span>🚨 SOS ACTIVE: {activeSosAlert}</span>
+            </div>
+            <button
+              onClick={() => setActiveSosAlert(null)}
+              className="bg-[#EF4444] text-black font-extrabold px-3 py-1 rounded-full text-xs hover:bg-red-650 cursor-pointer shadow-sm"
+            >
+              Clear
+            </button>
           </div>
+        )}
+      </div>
 
-          <div className="divide-y divide-gray-55 border border-gray-150 rounded-2xl overflow-hidden bg-white shadow-3xs">
-            {settlementRows.map((row) => (
-              <div 
-                key={row.id} 
-                className={`grid grid-cols-12 items-center px-4 hover:bg-gray-50/50 transition-colors ${
-                  spacing === 'compact' ? 'py-2' :
-                  spacing === 'relaxed' ? 'py-4.5' :
-                  'py-3'
-                }`}
-              >
-                <div className="col-span-1 flex items-center justify-start">
-                  <input type="checkbox" className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5 cursor-pointer" />
-                </div>
-                {visibleColumns.payPeriod && <span className="col-span-4 text-xs font-bold text-gray-900 text-left">{row.period}</span>}
-                {visibleColumns.loggedHours && <span className="col-span-3 text-xs font-bold text-gray-755 text-left">{row.hours}</span>}
-                {visibleColumns.payout && <span className="col-span-2 text-xs font-bold text-[#D97706] text-left">{row.payout}</span>}
-                {visibleColumns.status && (
-                  <div className="col-span-2 text-right">
-                    <span className="px-2 py-0.5 rounded text-[8px] font-bold tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-100">
-                      {row.status}
-                    </span>
-                  </div>
-                )}
-              </div>
-            ))}
+      <div className="w-full space-y-6">
+        {/* Header */}
+        <div className="bg-white border border-gray-150 rounded-3xl p-6 flex justify-between items-center shadow-sm">
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-black text-[#0F172A] tracking-tight leading-none">Driver Portal</h1>
+              <span className="text-xl font-bold text-[#0F172A]">•</span>
+              <span className="text-2xl font-black text-[#0F172A]">earnings</span>
+            </div>
+            <p className="text-[#64748B] text-sm font-medium mt-1">ELD &amp; logistics operations controls.</p>
+          </div>
+          <div className="w-12 h-12 rounded-full bg-[#FFFBEB] flex items-center justify-center text-[#D97706] shrink-0">
+            <Compass className="w-6 h-6" />
           </div>
         </div>
 
+        {/* Payout Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {payoutCards.map((card, i) => (
+            <div key={i} className="bg-white rounded-[2rem] p-8 shadow-sm border border-gray-100 flex flex-col justify-between">
+              <div>
+                <h3 className="text-[11px] font-black text-gray-500 uppercase tracking-widest mb-3">{card.title}</h3>
+                <div className="text-4xl font-black text-[#0F172A] mb-8">{card.amount}</div>
+              </div>
+              <div>
+                <div className="flex justify-between items-center text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">
+                  <span>Progress</span>
+                  <span>{card.progress}%</span>
+                </div>
+                <div className="w-full bg-gray-100 h-1.5 rounded-full mb-4">
+                  <div className="bg-[#FFD400] h-1.5 rounded-full" style={{ width: `${card.progress}%` }}></div>
+                </div>
+                <p className="text-sm font-bold text-[#64748B]">{card.label}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Bonus Summary */}
+        <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100">
+          <h3 className="text-[11px] font-black text-[#D97706] uppercase tracking-widest mb-4 ml-2">BONUS SUMMARY OVERVIEW</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="border border-gray-100 rounded-2xl p-5">
+              <p className="text-sm font-medium text-gray-500 mb-1">Safety Performance Bonus</p>
+              <p className="text-lg font-black text-[#10B981]">+$150.00</p>
+            </div>
+            <div className="border border-gray-100 rounded-2xl p-5">
+              <p className="text-sm font-medium text-gray-500 mb-1">On-Time Dispatch Bonus</p>
+              <p className="text-lg font-black text-[#10B981]">+$200.00</p>
+            </div>
+          </div>
+        </div>
+
+        {/* History Section */}
+        <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-gray-100 flex flex-col space-y-6">
+          <h2 className="text-lg font-black text-[#0F172A] leading-tight">Settlement History &amp; Payments Log</h2>
+          
+          {selectedRows.length > 0 && (
+            <div className="bg-[#FFFBEB] border border-[#FEF08A] rounded-2xl p-2 px-4 flex items-center justify-between w-max gap-4 shadow-sm">
+              <span className="text-xs font-black text-[#D97706] tracking-widest uppercase">{selectedRows.length} SELECTED</span>
+              <button 
+                onClick={() => triggerToast('Exporting to CSV...')}
+                className="flex items-center gap-1.5 text-[#D97706] text-xs font-black bg-white px-3 py-1.5 rounded-xl border border-[#FDE047] hover:bg-yellow-50 transition-colors cursor-pointer"
+              >
+                <Download className="w-4 h-4" /> CSV Export
+              </button>
+            </div>
+          )}
+          
+          <div className="flex justify-between items-center bg-white border border-gray-150 p-2 rounded-2xl shadow-sm w-fit gap-6">
+            <div className="flex bg-gray-50 rounded-xl p-1">
+              {['COMPACT', 'DEFAULT', 'RELAXED'].map(mode => (
+                <button
+                  key={mode}
+                  onClick={() => setViewMode(mode)}
+                  className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
+                    viewMode === mode 
+                      ? 'bg-[#FFD400] border-2 border-black text-black shadow-sm' 
+                      : 'text-[#64748B] hover:text-[#0F172A]'
+                  }`}
+                >
+                  {mode}
+                </button>
+              ))}
+            </div>
+            
+            <div className="relative">
+              <button 
+                onClick={() => setColumnsOpen(!columnsOpen)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${columnsOpen ? 'border-[#0F172A] text-[#0F172A] bg-gray-50' : 'border-gray-200 text-[#64748B] hover:bg-gray-50'}`}
+              >
+                <Settings className="w-4 h-4" />
+                COLUMNS
+              </button>
+              
+              {columnsOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-xl z-10 p-4 flex flex-col gap-3">
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">COLUMN VISIBILITY</span>
+                  {[
+                    { key: 'payPeriod', label: 'Pay Period' },
+                    { key: 'loggedHours', label: 'Logged Hours' },
+                    { key: 'payout', label: 'Payout' },
+                    { key: 'status', label: 'Status' }
+                  ].map(col => (
+                    <label key={col.key} className="flex items-center gap-3 text-sm font-bold text-[#64748B] cursor-pointer">
+                      <div className={`w-5 h-5 rounded flex items-center justify-center border transition-colors ${visibleColumns[col.key] ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}>
+                        {visibleColumns[col.key] && <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
+                      </div>
+                      <input 
+                        type="checkbox" 
+                        checked={visibleColumns[col.key]} 
+                        onChange={() => toggleColumn(col.key)} 
+                        className="hidden"
+                      />
+                      {col.label}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="border border-gray-150 rounded-2xl overflow-hidden shadow-sm mt-2">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-gray-100 bg-gray-50/50">
+                  <th className="p-4 w-12 text-center">
+                    <button 
+                      onClick={() => setSelectedRows(selectedRows.length === mockData.length ? [] : mockData.map(d => d.id))}
+                      className="cursor-pointer"
+                    >
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selectedRows.length === mockData.length ? 'border-[#0F172A] bg-[#0F172A] text-white' : 'border-[#94A3B8]'}`}>
+                        {selectedRows.length === mockData.length && <Check className="w-3 h-3" strokeWidth={4} />}
+                      </div>
+                    </button>
+                  </th>
+                  {visibleColumns.payPeriod && <th className="p-4 text-[10px] font-black text-[#64748B] uppercase tracking-widest">PAY PERIOD</th>}
+                  {visibleColumns.loggedHours && <th className="p-4 text-[10px] font-black text-[#64748B] uppercase tracking-widest">LOGGED HOURS</th>}
+                  {visibleColumns.payout && <th className="p-4 text-[10px] font-black text-[#64748B] uppercase tracking-widest">PAYOUT</th>}
+                  {visibleColumns.status && <th className="p-4 text-[10px] font-black text-[#64748B] uppercase tracking-widest">STATUS</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {mockData.map((row, index) => {
+                  const isSelected = selectedRows.includes(row.id);
+                  return (
+                  <tr key={index} className={`border-b border-gray-50 hover:bg-gray-50/50 transition-colors ${
+                    viewMode === 'COMPACT' ? 'text-xs' : viewMode === 'RELAXED' ? 'text-lg' : 'text-sm'
+                  } ${isSelected ? 'bg-gray-50' : ''}`}>
+                    <td className={`p-4 text-center align-middle ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
+                      <button 
+                        onClick={() => toggleRow(row.id)}
+                        className="cursor-pointer"
+                      >
+                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${isSelected ? 'border-[#0F172A] bg-[#0F172A] text-white' : 'border-[#94A3B8]'}`}>
+                           {isSelected && <Check className="w-3 h-3" strokeWidth={4} />}
+                        </div>
+                      </button>
+                    </td>
+                    {visibleColumns.payPeriod && (
+                      <td className={`p-4 font-black text-[#0F172A] align-middle leading-snug whitespace-pre-line ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
+                        {row.payPeriod}
+                      </td>
+                    )}
+                    {visibleColumns.loggedHours && (
+                      <td className={`p-4 font-bold text-[#334155] align-middle ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
+                        {row.loggedHours}
+                      </td>
+                    )}
+                    {visibleColumns.payout && (
+                      <td className={`p-4 font-black text-[#D97706] align-middle ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
+                        {row.payout}
+                      </td>
+                    )}
+                    {visibleColumns.status && (
+                      <td className={`p-4 align-middle ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
+                        <span className={`px-3 py-1.5 rounded-full text-[10px] font-black tracking-wider uppercase ${row.statusColor}`}>
+                          {row.status}
+                        </span>
+                      </td>
+                    )}
+                  </tr>
+                )})}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
-      {/* FLOAT FLOATING SOS BUTTON */}
+      {/* Floating Buttons */}
       <div className="fixed bottom-6 right-6 flex flex-col items-center gap-3 z-[100]">
-        <button 
+        <button
           onClick={() => setSosModalOpen(true)}
-          className="w-12 h-12 bg-white border border-red-200 hover:bg-red-50 text-red-500 rounded-full flex items-center justify-center font-bold text-xs shadow-lg cursor-pointer transition-all border-t-2"
+          className="w-12 h-12 bg-white border-2 border-red-200 hover:bg-red-50 text-red-500 rounded-full flex items-center justify-center font-bold text-xs shadow-lg cursor-pointer transition-all"
         >
           SOS
         </button>
-
-        {/* Floating Hotline toggle shortcut button */}
-        <button 
-          onClick={() => hotlineOpen ? setHotlineOpen(false) : setHotlineOpen(true)}
-          className="w-12 h-12 bg-[#FFD400] hover:bg-yellow-400 text-black rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all z-[120]"
+        <button
+          onClick={() => setHotlineOpen(true)}
+          className="w-12 h-12 bg-[#FFD400] hover:bg-yellow-400 text-black rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all"
         >
-          {hotlineOpen ? <X className="w-5 h-5 text-black" strokeWidth={2.5} /> : <MessageSquare className="w-5 h-5" />}
+          <MessageSquare className="w-5 h-5" />
         </button>
       </div>
 
       {/* SOS EMERGENCY PANEL MODAL */}
       {sosModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-[110] p-4">
-          <div className="bg-white rounded-3xl border border-gray-100 max-w-md w-full p-6 shadow-xl text-left animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center mb-5 pb-2 border-b border-gray-55">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[110] p-4">
+          <div className="bg-white rounded-3xl border border-gray-100 max-w-md w-full p-6 shadow-xl text-left">
+            <div className="flex justify-between items-center mb-5 pb-2 border-b border-gray-50">
               <h2 className="text-base font-bold text-gray-900">Emergency Dispatch SOS Panel</h2>
               <button onClick={() => setSosModalOpen(false)} className="p-1.5 hover:bg-gray-100 rounded-full cursor-pointer"><X size={18} /></button>
             </div>
-            
-            <p className="text-xs text-gray-455 leading-relaxed mb-5 font-semibold">
+            <p className="text-xs text-gray-500 leading-relaxed mb-5">
               Triggering an emergency alerts the dispatch operations center immediately and logs active tracking.
             </p>
-
             <div className="grid grid-cols-2 gap-4">
-              <button 
-                onClick={() => { triggerToast('EMERGENCY: Panic alert sent.'); setSosModalOpen(false); }}
-                className="p-5 bg-red-50/70 border border-red-100 rounded-2xl hover:bg-red-100 transition-colors flex flex-col items-center justify-center gap-2 cursor-pointer font-bold text-red-650"
-              >
-                <Shield className="w-5 h-5 text-red-500 shrink-0" />
-                <span className="text-xs uppercase tracking-wide">Panic Button</span>
-              </button>
-              <button 
-                onClick={() => { triggerToast('ALERT: Breakdown reported.'); setSosModalOpen(false); }}
-                className="p-5 bg-[#FFFBEB] border border-amber-250 rounded-2xl hover:bg-[#FEF3C7] transition-colors flex flex-col items-center justify-center gap-2 cursor-pointer font-bold text-[#D97706]"
-              >
-                <Truck className="w-5 h-5 text-amber-500 shrink-0" />
-                <span className="text-xs uppercase tracking-wide">Breakdown</span>
-              </button>
-              <button 
-                onClick={() => { triggerToast('EMERGENCY: Accident logged.'); setSosModalOpen(false); }}
-                className="p-5 bg-red-50/70 border border-red-100 rounded-2xl hover:bg-red-100 transition-colors flex flex-col items-center justify-center gap-2 cursor-pointer font-bold text-red-650"
-              >
-                <AlertTriangle className="w-5 h-5 text-red-500 shrink-0" />
-                <span className="text-xs uppercase tracking-wide">Accident</span>
-              </button>
-              <button 
-                onClick={() => { triggerToast('EMERGENCY: Medical assistance requested.'); setSosModalOpen(false); }}
-                className="p-5 bg-red-50/70 border border-red-100 rounded-2xl hover:bg-red-100 transition-colors flex flex-col items-center justify-center gap-2 cursor-pointer font-bold text-red-650"
-              >
-                <Heart className="w-5 h-5 text-red-500 shrink-0" />
-                <span className="text-xs uppercase tracking-wide">Medical</span>
-              </button>
+              {[
+                { icon: <Shield className="w-5 h-5 text-red-500" />, label: 'Panic Button', color: 'bg-red-50/70 border-red-100 text-red-500', msg: 'Panic Alert dispatched!' },
+                { icon: <Truck className="w-5 h-5 text-amber-500" />, label: 'Breakdown', color: 'bg-[#FFFBEB] border-amber-200 text-[#D97706]', msg: 'Breakdown Alert dispatched!' },
+                { icon: <AlertTriangle className="w-5 h-5 text-red-500" />, label: 'Accident', color: 'bg-red-50/70 border-red-100 text-red-500', msg: 'Accident Alert dispatched!' },
+                { icon: <Heart className="w-5 h-5 text-red-500" />, label: 'Medical', color: 'bg-red-50/70 border-red-100 text-red-500', msg: 'Medical Emergency Alert dispatched!' },
+              ].map(({ icon, label, color, msg }) => (
+                <button
+                  key={label}
+                  onClick={() => {
+                    setActiveSosAlert(msg);
+                    triggerToast(`SOS ACTIVE: ${msg}`);
+                    setSosModalOpen(false);
+                  }}
+                  className={`p-5 border rounded-2xl hover:opacity-90 transition-opacity flex flex-col items-center justify-center gap-2 cursor-pointer ${color}`}
+                >
+                  {icon}
+                  <span className="text-xs font-medium">{label}</span>
+                </button>
+              ))}
             </div>
-
-            <div className="mt-5 pt-4 border-t border-gray-55 space-y-3">
-              <div className="flex justify-between items-center text-xs font-bold text-gray-800">
+            <div className="mt-5 pt-4 border-t border-gray-50 space-y-3">
+              <div className="flex justify-between items-center text-xs text-gray-800">
                 <span>Share Live GPS Tracking</span>
-                <input 
-                  type="checkbox"
-                  checked={shareGps}
-                  onChange={e => setShareGps(e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
-                />
+                <input type="checkbox" checked={shareGps} onChange={e => setShareGps(e.target.checked)} className="rounded border-gray-300 text-blue-600 w-4 h-4 cursor-pointer" />
               </div>
-              <div className="flex justify-between items-center text-xs font-bold text-gray-800">
+              <div className="flex justify-between items-center text-xs text-gray-800">
                 <span>Auto-Notify Dispatch Center</span>
-                <input 
-                  type="checkbox"
-                  checked={autoNotify}
-                  onChange={e => setAutoNotify(e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
-                />
+                <input type="checkbox" checked={autoNotify} onChange={e => setAutoNotify(e.target.checked)} className="rounded border-gray-300 text-blue-600 w-4 h-4 cursor-pointer" />
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* HOTLINE SHORTCUTS OVERLAY PANEL */}
+      {/* HOTLINE SHORTCUTS PANEL */}
       {hotlineOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-[110] flex items-end sm:items-center justify-center p-4">
-          <div className="bg-transparent max-w-xs w-full flex flex-col items-center gap-4 animate-in fade-in slide-in-from-bottom-10 duration-200">
-            
-            {/* The Hotline Card */}
-            <div className="bg-white border border-gray-150 rounded-3xl p-5 shadow-2xl w-full text-left space-y-4">
-              <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block pb-1 border-b border-gray-55">HOTLINE SHORTCUTS</span>
-              
-              <div className="space-y-3.5 text-xs font-bold text-gray-700">
-                <button 
-                  onClick={() => { triggerToast('Dialing dispatcher hotline...'); setHotlineOpen(false); }}
-                  className="w-full py-1 text-left hover:text-black transition-colors flex items-center gap-3"
-                >
-                  <Phone className="w-4 h-4 text-gray-400" />
-                  <span>Call Dispatch</span>
-                </button>
-                <button 
-                  onClick={() => { triggerToast('Opening dispatch message console...'); setHotlineOpen(false); }}
-                  className="w-full py-1 text-left hover:text-black transition-colors flex items-center gap-3"
-                >
-                  <MessageSquare className="w-4 h-4 text-gray-400" />
-                  <span>Message Dispatch</span>
-                </button>
-                <button 
-                  onClick={() => { triggerToast('Voice note recorder active.'); setHotlineOpen(false); }}
-                  className="w-full py-1 text-left hover:text-black transition-colors flex items-center gap-3"
-                >
-                  <Mic className="w-4 h-4 text-gray-400" />
-                  <span>Voice Note</span>
-                </button>
-                <div className="w-full h-px bg-gray-100"></div>
-                <button 
-                  onClick={() => { triggerToast('Speech to text active.'); setHotlineOpen(false); }}
-                  className="w-full py-1 text-left hover:text-black transition-colors flex items-center gap-3"
-                >
-                  <span className="text-gray-455">🎙️</span>
-                  <span>Voice-to-Text</span>
-                </button>
+        <div className="fixed inset-0 z-[110]" onClick={() => setHotlineOpen(false)}>
+          <div
+            className="absolute bottom-6 right-6 flex flex-col items-end gap-3"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-2xl w-52 text-left space-y-3">
+              <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block pb-2 border-b border-gray-100">HOTLINE SHORTCUTS</span>
+              <div className="space-y-3 text-sm text-gray-700">
+                {[
+                  { icon: <Phone className="w-4 h-4 text-gray-400 shrink-0" />, label: 'Call Dispatch', msg: 'Dialing dispatcher hotline...' },
+                  { icon: <MessageSquare className="w-4 h-4 text-gray-400 shrink-0" />, label: 'Message Dispatch', msg: 'Opening dispatch message console...' },
+                  { icon: <Mic className="w-4 h-4 text-gray-400 shrink-0" />, label: 'Voice Note', msg: 'Voice note recorder active.' },
+                  { icon: <span className="w-4 h-4 text-gray-400 shrink-0 flex items-center justify-center text-xs">🎙</span>, label: 'Voice-to-Text', msg: 'Speech to text active.' },
+                ].map(({ icon, label, msg }) => (
+                  <button
+                    key={label}
+                    onClick={() => { triggerToast(msg); setHotlineOpen(false); }}
+                    className="w-full text-left hover:text-black transition-colors flex items-center gap-3"
+                  >
+                    {icon}
+                    <span>{label}</span>
+                  </button>
+                ))}
               </div>
             </div>
-
-            {/* Circular Close X Button underneath */}
-            <button 
+            <button
               onClick={() => setHotlineOpen(false)}
               className="w-12 h-12 bg-[#FFD400] hover:bg-yellow-400 text-black rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all shrink-0"
             >
               <X className="w-5 h-5" strokeWidth={2.5} />
             </button>
-
           </div>
         </div>
       )}
-
     </div>
   );
 }

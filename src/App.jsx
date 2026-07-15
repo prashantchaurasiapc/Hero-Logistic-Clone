@@ -10,6 +10,18 @@ import SalesDashboard from './components/SalesDashboard/SalesDashboard';
 import CompanyAdminDashboard from './pages/Layout/Dashboard/CompanyAdminDashboard';
 import DispatcherDashboard from './pages/Layout/Dashboard/DispatcherDashboard';
 import DriverDashboard from './pages/Layout/Dashboard/DriverDashboard';
+import StartWorkFinish from './components/DriverDashboard/StartWorkFinish';
+import Jobs from './components/DriverDashboard/Jobs';
+import NearbyServices from './components/DriverDashboard/NearbyServices';
+import Notifications from './components/DriverDashboard/Notifications';
+import Documents from './components/DriverDashboard/Documents';
+import CreateDraftLoad from './components/DriverDashboard/CreateDraftLoad';
+import AddExpense from './components/DriverDashboard/AddExpense';
+import MyPay from './components/DriverDashboard/MyPay';
+import ContactDispatch from './components/DriverDashboard/ContactDispatch';
+import LeaveManagement from './components/DriverDashboard/LeaveManagement';
+import IncidentReporting from './components/DriverDashboard/IncidentReporting';
+import MaintenanceRequest from './components/DriverDashboard/MaintenanceRequest';
 import Login from './pages/Website/Login';
 import LandingPage from './pages/Website/Landingpage/LandingPage';
 import OnboardingWizard from './pages/Website/Landingpage/OnboardingWizard';
@@ -80,18 +92,8 @@ import CommunicationDepot from './components/Dispatcher/CommunicationDepot';
 import SystemSettings from './components/Dispatcher/SystemSettings';
 
 // Driver placeholders
-const WorkStatus = () => <div style={{ padding: '24px' }}><h2>Work Status</h2></div>;
+// WorkStatus now uses the real StartWorkFinish component (imported above)
 const DriverJobs = () => <div style={{ padding: '24px' }}><h2>Jobs</h2></div>;
-const NearbyServices = () => <div style={{ padding: '24px' }}><h2>Nearby Services</h2></div>;
-const DriverNotifications = () => <div style={{ padding: '24px' }}><h2>Notifications</h2></div>;
-const DriverDocuments = () => <div style={{ padding: '24px' }}><h2>Documents</h2></div>;
-const CreateDraftLoad = () => <div style={{ padding: '24px' }}><h2>Create Draft Load</h2></div>;
-const AddExpense = () => <div style={{ padding: '24px' }}><h2>Add Expense</h2></div>;
-const MyPay = () => <div style={{ padding: '24px' }}><h2>My Pay</h2></div>;
-const DriverContactDispatch = () => <div style={{ padding: '24px' }}><h2>Contact Dispatch</h2></div>;
-const LeaveManagement = () => <div style={{ padding: '24px' }}><h2>Leave Management</h2></div>;
-const IncidentReporting = () => <div style={{ padding: '24px' }}><h2>Incident Reporting</h2></div>;
-const MaintenanceRequest = () => <div style={{ padding: '24px' }}><h2>Maintenance Request</h2></div>;
 
 // Warehouse placeholders
 const Inbound = () => <div style={{ padding: '24px' }}><h2>Inbound</h2></div>;
@@ -130,11 +132,11 @@ const AccountsReports = () => <div style={{ padding: '24px' }}><h2>Reports</h2><
 // Customer placeholders
 const MyLoads = () => <div style={{ padding: '24px' }}><h2>My Loads</h2></div>;
 const TrackDelivery = () => <div style={{ padding: '24px' }}><h2>Track Delivery</h2></div>;
-const Documents = () => <div style={{ padding: '24px' }}><h2>Documents</h2></div>;
+const CustomerDocuments = () => <div style={{ padding: '24px' }}><h2>Documents</h2></div>;
 const Invoices = () => <div style={{ padding: '24px' }}><h2>Invoices</h2></div>;
 const CustomerPayments = () => <div style={{ padding: '24px' }}><h2>Payments</h2></div>;
 const LoadRequests = () => <div style={{ padding: '24px' }}><h2>Load Requests</h2></div>;
-const Notifications = () => <div style={{ padding: '24px' }}><h2>Notifications</h2></div>;
+const CustomerNotifications = () => <div style={{ padding: '24px' }}><h2>Notifications</h2></div>;
 const DispatcherChat = () => <div style={{ padding: '24px' }}><h2>Dispatcher Chat</h2></div>;
 const Support = () => <div style={{ padding: '24px' }}><h2>Support</h2></div>;
 const CustomerSettings = () => <div style={{ padding: '24px' }}><h2>Settings</h2></div>;
@@ -221,15 +223,15 @@ function App() {
 
         {/* ===== DRIVER ===== */}
         <Route path="/driver" element={<DashboardLayout role="driver" />}>
-          <Route path="work-status" element={<WorkStatus />} />
-          <Route path="jobs" element={<DriverDashboard />} />
+          <Route path="work-status" element={<StartWorkFinish />} />
+          <Route path="jobs" element={<Jobs />} />
           <Route path="nearby-services" element={<NearbyServices />} />
-          <Route path="notifications" element={<DriverNotifications />} />
-          <Route path="documents" element={<DriverDocuments />} />
+          <Route path="notifications" element={<Notifications />} />
+          <Route path="documents" element={<Documents />} />
           <Route path="create-draft-load" element={<CreateDraftLoad />} />
           <Route path="add-expense" element={<AddExpense />} />
           <Route path="my-pay" element={<MyPay />} />
-          <Route path="contact-dispatch" element={<DriverContactDispatch />} />
+          <Route path="contact-dispatch" element={<ContactDispatch />} />
           <Route path="leave-management" element={<LeaveManagement />} />
           <Route path="incident-reporting" element={<IncidentReporting />} />
           <Route path="maintenance-request" element={<MaintenanceRequest />} />
@@ -283,11 +285,11 @@ function App() {
           <Route path="dashboard" element={<CustomerDashboard />} />
           <Route path="my-loads" element={<MyLoads />} />
           <Route path="track-delivery" element={<TrackDelivery />} />
-          <Route path="documents" element={<Documents />} />
+          <Route path="documents" element={<CustomerDocuments />} />
           <Route path="invoices" element={<Invoices />} />
           <Route path="payments" element={<CustomerPayments />} />
           <Route path="load-requests" element={<LoadRequests />} />
-          <Route path="notifications" element={<Notifications />} />
+          <Route path="notifications" element={<CustomerNotifications />} />
           <Route path="dispatcher-chat" element={<DispatcherChat />} />
           <Route path="support" element={<Support />} />
           <Route path="settings" element={<CustomerSettings />} />

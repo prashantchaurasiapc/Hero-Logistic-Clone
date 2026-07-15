@@ -7,7 +7,7 @@ export default function StartWork() {
   const [toastMsg, setToastMsg] = useState('');
   
   // Start shift checklist states
-  const [tractor, setTractor] = useState('TX-CAB002 (Kenworth T680)');
+  const [tractor, setTractor] = useState('TX-ROAD88 (Freightliner Cascadia)');
   const [trailer, setTrailer] = useState('TR-4022 (Flatbed 48ft)');
   const [odometer, setOdometer] = useState('124500');
   const [fuel, setFuel] = useState('85');
@@ -18,6 +18,10 @@ export default function StartWork() {
   // SOS panel states
   const [shareGps, setShareGps] = useState(true);
   const [autoNotify, setAutoNotify] = useState(true);
+
+  // Connection status toggle
+  const [isOnline, setIsOnline] = useState(true);
+  const [activeSosAlert, setActiveSosAlert] = useState(null);
 
   const triggerToast = (msg) => {
     setToastMsg(msg);
@@ -35,19 +39,67 @@ export default function StartWork() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-[800px] mx-auto bg-gray-50 min-h-screen text-left flex flex-col space-y-6 relative pb-28">
+    <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-screen text-left flex flex-col space-y-6 relative pb-28">
       {toastMsg && (
         <div className="fixed bottom-6 right-6 z-[120] bg-slate-900 text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-xl animate-fade-in">{toastMsg}</div>
       )}
 
-      {/* Connection status tag */}
-      <div className="flex justify-center">
-        <div className="bg-[#ECFDF5] border border-[#A7F3D0] px-4 py-2 rounded-2xl flex items-center gap-2 text-[#047857] text-xs font-bold shadow-3xs">
-          <span>Connection Status:</span>
-          <span className="bg-[#059669] text-white px-2 py-0.5 rounded-lg text-[9px] uppercase tracking-wider flex items-center gap-1">
-            Online Mode <Wifi className="w-3 h-3" />
+      {/* Connection status toggle */}
+      <div className="flex flex-col items-center gap-2 w-full">
+        <div className="w-full flex justify-between items-center p-3 bg-white border border-gray-150 rounded-2xl shadow-sm">
+          <span className="text-sm font-bold text-gray-600 flex items-center gap-2">
+            <svg className="w-4 h-4 text-amber-500 rotate-45" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <polygon points="3 11 22 2 13 21 11 13 3 11" />
+            </svg>
+            Connection Status:
           </span>
+          <button
+            onClick={() => {
+              setIsOnline(prev => !prev);
+              triggerToast(isOnline ? 'Connection switched to Offline Mode.' : 'Connection restored to Online Mode.');
+            }}
+            className={`px-4 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-bold border cursor-pointer transition-all ${
+              isOnline
+                ? 'bg-[#E6F4EA] border-[#CEEAD6] text-[#137333]'
+                : 'bg-[#FEF7E0] border-[#FEEFC3] text-[#B06000]'
+            }`}
+          >
+            <span>{isOnline ? 'Online Mode' : 'Offline Mode'}</span>
+            <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-white text-[9px] ${isOnline ? 'bg-emerald-500' : 'bg-amber-500'}`}>
+              {isOnline ? '🌐' : '−'}
+            </span>
+          </button>
         </div>
+
+        {/* Offline Banner */}
+        {!isOnline && (
+          <div className="w-full bg-[#FFFBEB] border border-[#FCD34D] px-4 py-3 rounded-2xl flex items-center gap-2 text-[#92400E] text-xs font-bold shadow-sm">
+            <span className="text-[#F59E0B] text-sm">⚠</span>
+            <span>Offline Active</span>
+            <span className="text-[#B45309]">|</span>
+            <span>0 items queued</span>
+          </div>
+        )}
+
+        {/* SOS ACTIVE Banner (Matching screenshot) */}
+        {activeSosAlert && (
+          <div className="w-full bg-[#FEE2E2] border border-[#FCA5A5] px-4 py-2 rounded-2xl flex items-center justify-between text-[#EF4444] text-xs font-bold shadow-sm">
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-[#EF4444] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <span>🚨 SOS ACTIVE: {activeSosAlert}</span>
+            </div>
+            <button
+              onClick={() => setActiveSosAlert(null)}
+              className="bg-[#EF4444] text-black font-extrabold px-3 py-1 rounded-full text-xs hover:bg-red-650 cursor-pointer shadow-sm"
+            >
+              Clear
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Header */}
@@ -70,7 +122,11 @@ export default function StartWork() {
         <div className="text-left">
           <span className="text-[9px] font-black text-gray-400 tracking-wider block uppercase mb-1">SHIFT LOGGING SYSTEM</span>
           <div className="flex items-center gap-2">
-            <span className={`w-3.5 h-3.5 rounded-full border-2 ${shiftActive ? 'bg-emerald-500 border-emerald-600' : 'bg-gray-100 border-gray-300'}`}></span>
+            {shiftActive ? (
+              <span className="w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-emerald-600 shrink-0"></span>
+            ) : (
+              <span className="text-base leading-none" style={{filter: 'hue-rotate(200deg) saturate(0.6) brightness(0.85)'}}>🌙</span>
+            )}
             <span className="text-xs font-bold text-gray-900">{shiftActive ? 'Shift Active (On Duty)' : 'Shift Inactive (Off Duty)'}</span>
           </div>
         </div>
@@ -140,7 +196,7 @@ export default function StartWork() {
               onChange={e => setTractor(e.target.value)}
               className="w-full px-4 py-2.5 border border-gray-250 rounded-xl text-xs font-bold text-gray-900 focus:outline-none bg-white cursor-pointer"
             >
-              <option value="TX-CAB002 (Kenworth T680)">TX-CAB002 (Kenworth T680)</option>
+              <option value="TX-ROAD88 (Freightliner Cascadia)">TX-ROAD88 (Freightliner Cascadia)</option>
             </select>
           </div>
 
@@ -155,7 +211,7 @@ export default function StartWork() {
             </select>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <div>
               <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">INITIAL ODOMETER READING (MILES)</label>
               <input 
@@ -178,7 +234,7 @@ export default function StartWork() {
 
           <div className="space-y-3 pt-2">
             <div className="flex justify-between items-center py-2.5 border-b border-gray-50">
-              <span className="text-xs font-bold text-gray-800">Verify Pre-Trip DVIR completed</span>
+              <span className="text-xs text-gray-800">Verify Pre-Trip DVIR completed</span>
               <input 
                 type="checkbox"
                 checked={dvirChecked}
@@ -187,7 +243,7 @@ export default function StartWork() {
               />
             </div>
             <div className="flex justify-between items-center py-2.5 border-b border-gray-50">
-              <span className="text-xs font-bold text-gray-800">Confirm Regulatory ELD connection</span>
+              <span className="text-xs text-gray-800">Confirm Regulatory ELD connection</span>
               <input 
                 type="checkbox"
                 checked={eldChecked}
@@ -206,7 +262,7 @@ export default function StartWork() {
             <button 
               type="button"
               onClick={() => triggerToast('GPS coordinates reset and locked.')}
-              className="bg-emerald-600 text-white font-bold text-[9px] py-1.5 px-3 rounded-lg flex items-center justify-center cursor-pointer shadow-3xs hover:bg-emerald-700 transition-colors"
+              className="bg-emerald-700 text-white font-bold text-[9px] py-1.5 px-3 rounded-lg flex items-center justify-center cursor-pointer shadow-sm hover:bg-emerald-800 transition-colors"
             >
               Lock Reset
             </button>
@@ -249,43 +305,34 @@ export default function StartWork() {
               <button onClick={() => setSosModalOpen(false)} className="p-1.5 hover:bg-gray-100 rounded-full cursor-pointer"><X size={18} /></button>
             </div>
             
-            <p className="text-xs text-gray-450 leading-relaxed mb-5 font-semibold">
+            <p className="text-xs text-gray-500 leading-relaxed mb-5">
               Triggering an emergency alerts the dispatch operations center immediately and logs active tracking.
             </p>
 
             <div className="grid grid-cols-2 gap-4">
-              <button 
-                onClick={() => { triggerToast('EMERGENCY: Panic alert sent.'); setSosModalOpen(false); }}
-                className="p-5 bg-red-50/70 border border-red-100 rounded-2xl hover:bg-red-100 transition-colors flex flex-col items-center justify-center gap-2 cursor-pointer font-bold text-red-650"
-              >
-                <Shield className="w-5 h-5 text-red-500 shrink-0" />
-                <span className="text-xs uppercase tracking-wide">Panic Button</span>
-              </button>
-              <button 
-                onClick={() => { triggerToast('ALERT: Breakdown reported.'); setSosModalOpen(false); }}
-                className="p-5 bg-[#FFFBEB] border border-amber-200 rounded-2xl hover:bg-[#FEF3C7] transition-colors flex flex-col items-center justify-center gap-2 cursor-pointer font-bold text-[#D97706]"
-              >
-                <Truck className="w-5 h-5 text-amber-500 shrink-0" />
-                <span className="text-xs uppercase tracking-wide">Breakdown</span>
-              </button>
-              <button 
-                onClick={() => { triggerToast('EMERGENCY: Accident logged.'); setSosModalOpen(false); }}
-                className="p-5 bg-red-50/70 border border-red-100 rounded-2xl hover:bg-red-100 transition-colors flex flex-col items-center justify-center gap-2 cursor-pointer font-bold text-red-650"
-              >
-                <AlertTriangle className="w-5 h-5 text-red-500 shrink-0" />
-                <span className="text-xs uppercase tracking-wide">Accident</span>
-              </button>
-              <button 
-                onClick={() => { triggerToast('EMERGENCY: Medical assistance requested.'); setSosModalOpen(false); }}
-                className="p-5 bg-red-50/70 border border-red-100 rounded-2xl hover:bg-red-100 transition-colors flex flex-col items-center justify-center gap-2 cursor-pointer font-bold text-red-650"
-              >
-                <Heart className="w-5 h-5 text-red-500 shrink-0" />
-                <span className="text-xs uppercase tracking-wide">Medical</span>
-              </button>
+              {[
+                { icon: <Shield className="w-5 h-5 text-red-500" />, label: 'Panic Button', color: 'bg-red-50/70 border-red-100 text-red-500', msg: 'Panic Alert dispatched!' },
+                { icon: <Truck className="w-5 h-5 text-amber-500" />, label: 'Breakdown', color: 'bg-[#FFFBEB] border-amber-200 text-[#D97706]', msg: 'Breakdown Alert dispatched!' },
+                { icon: <AlertTriangle className="w-5 h-5 text-red-500" />, label: 'Accident', color: 'bg-red-50/70 border-red-100 text-red-500', msg: 'Accident Alert dispatched!' },
+                { icon: <Heart className="w-5 h-5 text-red-500" />, label: 'Medical', color: 'bg-red-50/70 border-red-100 text-red-500', msg: 'Medical Emergency Alert dispatched!' },
+              ].map(({ icon, label, color, msg }) => (
+                <button
+                  key={label}
+                  onClick={() => {
+                    setActiveSosAlert(msg);
+                    triggerToast(`SOS ACTIVE: ${msg}`);
+                    setSosModalOpen(false);
+                  }}
+                  className={`p-5 border rounded-2xl hover:opacity-90 transition-opacity flex flex-col items-center justify-center gap-2 cursor-pointer ${color}`}
+                >
+                  {icon}
+                  <span className="text-xs font-medium">{label}</span>
+                </button>
+              ))}
             </div>
 
             <div className="mt-5 pt-4 border-t border-gray-50 space-y-3">
-              <div className="flex justify-between items-center text-xs font-bold text-gray-800">
+              <div className="flex justify-between items-center text-xs text-gray-800">
                 <span>Share Live GPS Tracking</span>
                 <input 
                   type="checkbox"
@@ -294,12 +341,12 @@ export default function StartWork() {
                   className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
                 />
               </div>
-              <div className="flex justify-between items-center text-xs font-bold text-gray-800">
+              <div className="flex justify-between items-center text-xs text-gray-800">
                 <span>Auto-Notify Dispatch Center</span>
                 <input 
                   type="checkbox"
                   checked={autoNotify}
-                  onChange={e => setNotifyDispatcherState(e.target.checked)}
+                  onChange={e => setAutoNotify(e.target.checked)}
                   className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
                 />
               </div>
@@ -310,54 +357,54 @@ export default function StartWork() {
 
       {/* HOTLINE SHORTCUTS OVERLAY PANEL */}
       {hotlineOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-[110] flex items-end sm:items-center justify-center p-4">
-          <div className="bg-transparent max-w-xs w-full flex flex-col items-center gap-4 animate-in fade-in slide-in-from-bottom-10 duration-200">
-            
+        <div className="fixed inset-0 z-[110]" onClick={() => setHotlineOpen(false)}>
+          <div
+            className="absolute bottom-6 right-6 flex flex-col items-end gap-3"
+            onClick={e => e.stopPropagation()}
+          >
             {/* The Hotline Card */}
-            <div className="bg-white border border-gray-150 rounded-3xl p-5 shadow-2xl w-full text-left space-y-4">
-              <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block pb-1 border-b border-gray-50">HOTLINE SHORTCUTS</span>
+            <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-2xl w-52 text-left space-y-3">
+              <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block pb-2 border-b border-gray-100">HOTLINE SHORTCUTS</span>
               
-              <div className="space-y-3.5 text-xs font-bold text-gray-700">
+              <div className="space-y-3 text-sm text-gray-700">
                 <button 
                   onClick={() => { triggerToast('Dialing dispatcher hotline...'); setHotlineOpen(false); }}
-                  className="w-full py-1 text-left hover:text-black transition-colors flex items-center gap-3"
+                  className="w-full text-left hover:text-black transition-colors flex items-center gap-3"
                 >
-                  <Phone className="w-4 h-4 text-gray-400" />
+                  <Phone className="w-4 h-4 text-gray-400 shrink-0" />
                   <span>Call Dispatch</span>
                 </button>
                 <button 
                   onClick={() => { triggerToast('Opening dispatch message console...'); setHotlineOpen(false); }}
-                  className="w-full py-1 text-left hover:text-black transition-colors flex items-center gap-3"
+                  className="w-full text-left hover:text-black transition-colors flex items-center gap-3"
                 >
-                  <MessageSquare className="w-4 h-4 text-gray-400" />
+                  <MessageSquare className="w-4 h-4 text-gray-400 shrink-0" />
                   <span>Message Dispatch</span>
                 </button>
                 <button 
                   onClick={() => { triggerToast('Voice note recorder active.'); setHotlineOpen(false); }}
-                  className="w-full py-1 text-left hover:text-black transition-colors flex items-center gap-3"
+                  className="w-full text-left hover:text-black transition-colors flex items-center gap-3"
                 >
-                  <Mic className="w-4 h-4 text-gray-400" />
+                  <Mic className="w-4 h-4 text-gray-400 shrink-0" />
                   <span>Voice Note</span>
                 </button>
-                <div className="w-full h-px bg-gray-100"></div>
                 <button 
                   onClick={() => { triggerToast('Speech to text active.'); setHotlineOpen(false); }}
-                  className="w-full py-1 text-left hover:text-black transition-colors flex items-center gap-3"
+                  className="w-full text-left hover:text-black transition-colors flex items-center gap-3"
                 >
-                  <span className="text-gray-400">🎙️</span>
+                  <span className="w-4 h-4 text-gray-400 shrink-0 flex items-center justify-center text-xs">🎙</span>
                   <span>Voice-to-Text</span>
                 </button>
               </div>
             </div>
 
-            {/* Circular Close X Button underneath */}
+            {/* Circular Close X Button */}
             <button 
               onClick={() => setHotlineOpen(false)}
               className="w-12 h-12 bg-[#FFD400] hover:bg-yellow-400 text-black rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all shrink-0"
             >
               <X className="w-5 h-5" strokeWidth={2.5} />
             </button>
-
           </div>
         </div>
       )}

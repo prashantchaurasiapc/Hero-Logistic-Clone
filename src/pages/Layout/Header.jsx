@@ -27,6 +27,17 @@ const Header = () => {
     };
   }, []);
 
+  // Determine role label based on current route
+  const getRoleLabel = () => {
+    if (location.pathname.startsWith('/driver')) return 'Driver';
+    if (location.pathname.startsWith('/dispatcher')) return 'Dispatcher';
+    if (location.pathname.startsWith('/warehouse')) return 'Warehouse';
+    if (location.pathname.startsWith('/company-admin')) return 'Company Admin';
+    if (location.pathname.startsWith('/super-admin')) return 'Super Admin';
+    if (location.pathname.startsWith('/sales')) return 'Sales';
+    return 'Admin';
+  };
+
   return (
     <header className="header">
       <div className="header-left">
@@ -74,12 +85,12 @@ const Header = () => {
           <ChevronDown className={`dropdown-icon w-4 h-4 transition-transform duration-250 ${showDropdown ? 'rotate-180' : ''}`} />
         </div>
 
-        {/* Dropdown Menu (3rd Image Match) */}
+        {/* Dropdown Menu */}
         {showDropdown && (
           <div className="header-profile-dropdown animate-fade-in">
             <div className="dropdown-header-info">
               <span className="dropdown-info-name">Admin</span>
-              <span className="dropdown-info-role">Dispatcher • admin@hero.com</span>
+              <span className="dropdown-info-role">{getRoleLabel()} • admin@hero.com</span>
             </div>
             
             <div className="dropdown-menu-divider"></div>
@@ -88,7 +99,7 @@ const Header = () => {
             <button 
               onClick={() => {
                 setShowDropdown(false);
-                navigate('/dispatcher/system-settings');
+                alert('Profile Settings');
               }}
               className="dropdown-menu-item"
             >
@@ -100,7 +111,7 @@ const Header = () => {
             <button 
               onClick={() => {
                 setShowDropdown(false);
-                alert("Signing out dispatcher account...");
+                navigate('/login');
               }}
               className="dropdown-menu-item signout-btn"
             >

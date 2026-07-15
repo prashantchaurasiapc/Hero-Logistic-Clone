@@ -1,466 +1,448 @@
 import React, { useState } from 'react';
-import { Compass, AlertTriangle, X, Phone, MessageSquare, Mic, Wifi, WifiOff, Upload, Settings, CheckCircle2, Shield, Heart, Truck, FileText } from 'lucide-react';
+import { Shield, Truck, AlertTriangle, Heart, X, Phone, MessageSquare, Mic, Compass, CheckCircle2, AlertCircle, Settings, Check, Upload, Download } from 'lucide-react';
 
 export default function IncidentReporting() {
   const [sosModalOpen, setSosModalOpen] = useState(false);
-  const [hotlineOpen, setHotlineOpen] = useState(true); // Open by default based on screenshot
+  const [hotlineOpen, setHotlineOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
-  
-  // Connection states matching screenshot
-  const [isOffline, setIsOffline] = useState(true);
-  const [offlineQueueCount, setOfflineQueueCount] = useState(0);
+  const [toastType, setToastType] = useState('success');
+  const [isOnline, setIsOnline] = useState(true);
+  const [activeSosAlert, setActiveSosAlert] = useState(null);
 
   // Form states
   const [category, setCategory] = useState('Highway Road Accident');
   const [description, setDescription] = useState('');
-  const [attachedPhoto, setAttachedPhoto] = useState(null);
+  const [photoAttached, setPhotoAttached] = useState(false);
+  
+  // SOS states
+  const [shareGps, setShareGps] = useState(true);
+  const [autoNotify, setAutoNotify] = useState(true);
 
-  // Spacing layout state
-  const [spacing, setSpacing] = useState('default'); // 'compact', 'default', 'relaxed'
-
-  // Columns visibility state
-  const [columnsDropdownOpen, setColumnsDropdownOpen] = useState(false);
+  // History states
+  const [viewMode, setViewMode] = useState('DEFAULT'); // COMPACT, DEFAULT, RELAXED
+  const [columnsOpen, setColumnsOpen] = useState(false);
+  const [selectedRows, setSelectedRows] = useState([]);
   const [visibleColumns, setVisibleColumns] = useState({
     category: true,
     loggedDate: true,
     status: true
   });
 
-  // SOS states
-  const [shareGps, setShareGps] = useState(true);
-  const [autoNotify, setAutoNotify] = useState(true);
-
-  // Incidents history
-  const [incidents, setIncidents] = useState([
-    { id: 1, category: 'Cargo Damage', date: '06/12/2026', status: 'UNDER REVIEW' }
-  ]);
-
-  const triggerToast = (msg) => {
+  const triggerToast = (msg, type = 'success') => {
     setToastMsg(msg);
+    setToastType(type);
     setTimeout(() => setToastMsg(''), 4000);
   };
 
-  const handleToggleColumn = (colKey) => {
-    setVisibleColumns(prev => ({
-      ...prev,
-      [colKey]: !prev[colKey]
-    }));
+  const handlePhotoUpload = () => {
+    setPhotoAttached(true);
+    triggerToast('Incident proof photo attached.', 'success');
   };
 
-  const handlePhotoSelect = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setAttachedPhoto(file.name);
-      triggerToast(`Photo ${file.name} attached to incident file.`);
-    }
-  };
-
-  const handleSubmitReport = (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (!description.trim()) {
-      triggerToast('Error: Please provide details in incident description.');
+      triggerToast('Please provide a description.', 'error');
       return;
     }
-
-    const currentDate = new Date().toLocaleDateString('en-GB'); // dd/mm/yyyy format
-    const newIncident = {
-      id: incidents.length + 1,
-      category,
-      date: currentDate,
-      status: 'UNDER REVIEW'
-    };
-
-    setIncidents([newIncident, ...incidents]);
-    triggerToast(`Incident report for ${category} submitted successfully.`);
-    
-    // Reset Form
+    triggerToast('Incident report successfully submitted.', 'success');
     setDescription('');
-    setAttachedPhoto(null);
-
-    if (isOffline) {
-      setOfflineQueueCount(prev => prev + 1);
-    }
+    setPhotoAttached(false);
   };
 
-  const handleToggleConnection = () => {
-    if (isOffline) {
-      setIsOffline(false);
-      if (offlineQueueCount > 0) {
-        triggerToast(`Synced ${offlineQueueCount} queued incident reports online.`);
-        setOfflineQueueCount(0);
-      } else {
-        triggerToast('Driver portal switched to Online Mode.');
-      }
-    } else {
-      setIsOffline(true);
-      triggerToast('Driver portal switched to Offline Mode.');
-    }
+  const mockData = [
+    { id: 1, category: 'Cargo\nDamage', loggedDate: '06/12/2026', status: 'UNDER\nREVIEW', statusColor: 'bg-gray-100 text-[#64748B] border border-gray-200 text-center leading-tight' }
+  ];
+
+  const toggleRow = (id) => {
+    setSelectedRows(prev => 
+      prev.includes(id) ? prev.filter(rowId => rowId !== id) : [...prev, id]
+    );
+  };
+
+  const toggleColumn = (col) => {
+    setVisibleColumns(prev => ({ ...prev, [col]: !prev[col] }));
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-[800px] mx-auto bg-gray-55 min-h-screen text-left flex flex-col space-y-6 relative pb-28">
+    <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-screen text-left flex flex-col space-y-6 relative pb-28">
+      {/* Toast Notification */}
       {toastMsg && (
-        <div className="fixed bottom-6 right-6 z-[120] bg-slate-900 text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-xl animate-fade-in">{toastMsg}</div>
-      )}
-
-      {/* Connection status tag */}
-      <div className="flex justify-center">
-        <button 
-          onClick={handleToggleConnection}
-          className={`px-4 py-2 rounded-2xl flex items-center gap-2 text-xs font-bold shadow-3xs cursor-pointer transition-all border ${
-            isOffline 
-              ? 'bg-[#FEF3C7] border-[#FDE68A] text-[#B45309]' 
-              : 'bg-[#ECFDF5] border-[#A7F3D0] text-[#047857]'
-          }`}
-          title="Toggle network online/offline mode"
-        >
-          <span>Connection Status:</span>
-          <span className={`px-2 py-0.5 rounded-lg text-[9px] uppercase tracking-wider flex items-center gap-1 text-white ${
-            isOffline ? 'bg-amber-600' : 'bg-emerald-600'
-          }`}>
-            {isOffline ? 'Offline Mode' : 'Online Mode'} 
-            {isOffline ? <WifiOff className="w-3 h-3" /> : <Wifi className="w-3 h-3" />}
-          </span>
-        </button>
-      </div>
-
-      {/* Offline Alert Box */}
-      {isOffline && (
-        <div className="bg-[#FEF3C7] border border-[#FDE68A] p-3.5 rounded-2xl flex items-center gap-2 text-[#B45309] text-xs font-bold shadow-3xs text-left animate-pulse">
-          <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600" />
-          <span>Offline Active | {offlineQueueCount} items queued</span>
-        </div>
-      )}
-
-      {/* Header */}
-      <div className="bg-white border border-gray-150 rounded-3xl p-6 flex justify-between items-center shadow-3xs">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none">Driver Portal</h1>
-            <span className="text-xl font-bold text-gray-400">•</span>
-            <span className="text-xl font-black text-gray-800">incidents</span>
-          </div>
-          <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider mt-1.5">ELD & logistics operations controls.</p>
-        </div>
-        <div className="w-8 h-8 rounded-full bg-amber-50 border border-amber-100 flex items-center justify-center text-[#D97706] cursor-pointer" title="Driver Controls">
-          <Compass className="w-4 h-4" />
-        </div>
-      </div>
-
-      {/* Incident Logger Title Card */}
-      <div className="bg-white border border-gray-150 rounded-3xl p-5 shadow-3xs flex items-center gap-4 relative overflow-hidden">
-        <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#FFD400]"></div>
-        <div className="pl-2">
-          <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
-            Incident Logger
-          </h2>
-          <p className="text-gray-455 text-[10px] font-bold mt-1 uppercase tracking-wider">File digital accident reports and cargo/trailer defect logs.</p>
-        </div>
-      </div>
-
-      {/* Log New Incident Report Form Card */}
-      <div className="bg-white border border-gray-150 rounded-3xl p-6 shadow-3xs text-left space-y-5">
-        <span className="text-[10px] font-black text-gray-405 block tracking-wider uppercase">LOG NEW INCIDENT REPORT</span>
-
-        <form onSubmit={handleSubmitReport} className="space-y-4">
-          <div>
-            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">INCIDENT CATEGORY TYPE</label>
-            <select
-              value={category}
-              onChange={e => setCategory(e.target.value)}
-              className="w-full px-4 py-2.5 border border-gray-250 rounded-xl text-xs font-bold text-gray-900 focus:outline-none bg-white cursor-pointer"
-            >
-              <option value="Highway Road Accident">Highway Road Accident</option>
-              <option value="Cargo Damage">Cargo Damage</option>
-              <option value="Trailer Defect">Trailer Defect</option>
-              <option value="Breakdown / Engine Failure">Breakdown / Engine Failure</option>
-              <option value="Fuel Theft / Siphoning">Fuel Theft / Siphoning</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">INCIDENT DESCRIPTION</label>
-            <textarea
-              rows={3}
-              placeholder="Type incident crash/exception details..."
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-              className="w-full px-4 py-2.5 border border-gray-250 rounded-xl text-xs font-bold text-gray-900 focus:outline-none resize-none"
-            />
-          </div>
-
-          {/* Attach incident photos box */}
-          <div className="relative border border-dashed border-gray-250 rounded-2xl p-6 text-center hover:bg-gray-55/50 cursor-pointer select-none transition-colors">
-            <Upload className="w-5 h-5 text-gray-400 mx-auto mb-1.5" />
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
-              {attachedPhoto ? `Attached: ${attachedPhoto} ✓` : 'Attach Incident Photos'}
-            </span>
-            <input 
-              type="file"
-              onChange={handlePhotoSelect}
-              className="absolute inset-0 opacity-0 cursor-pointer" 
-            />
-          </div>
-
+        <div className={`fixed bottom-24 right-6 z-[120] px-4 py-3 rounded-xl text-sm font-bold shadow-lg flex items-center gap-3 max-w-sm animate-fade-in border ${
+          toastType === 'error' 
+            ? 'bg-[#FEF2F2] border-[#FCA5A5] text-[#334155]' 
+            : 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46]'
+        }`}>
+          {toastType === 'error' ? (
+            <AlertCircle className="w-5 h-5 text-[#EF4444] shrink-0" strokeWidth={2.5} />
+          ) : (
+            <CheckCircle2 className="w-5 h-5 text-[#10B981] shrink-0" strokeWidth={2.5} />
+          )}
+          <span>{toastMsg}</span>
           <button 
-            type="submit"
-            className="w-full bg-[#EF4444] hover:bg-red-650 text-white font-bold text-xs py-3 rounded-xl transition-all shadow-xs cursor-pointer text-center uppercase"
+            onClick={() => setToastMsg('')} 
+            className={`ml-auto cursor-pointer pl-2 ${toastType === 'error' ? 'text-gray-400 hover:text-gray-600' : 'text-[#059669] hover:text-[#047857]'}`}
           >
-            Submit Incident Report
+            <X className="w-4 h-4" strokeWidth={2.5} />
           </button>
-        </form>
-      </div>
+        </div>
+      )}
 
-      {/* Incident Log Registry History Table */}
-      <div className="bg-white border border-gray-150 rounded-3xl p-6 shadow-3xs text-left space-y-5 relative">
-        <div className="flex justify-between items-center pb-2 border-b border-gray-55 flex-wrap gap-3">
-          <span className="text-[10px] font-black text-gray-900 tracking-wider block uppercase">INCIDENT LOG REGISTRY</span>
-          
-          <div className="flex items-center gap-3">
-            {/* Spacing controllers list */}
-            <div className="flex border border-gray-200 p-0.5 rounded-lg bg-gray-55 shrink-0">
-              {['COMPACT', 'DEFAULT', 'RELAXED'].map((sp) => (
-                <button
-                  key={sp}
-                  onClick={() => setSpacing(sp.toLowerCase())}
-                  className={`px-2.5 py-1 rounded text-[8px] font-black tracking-wider transition-all cursor-pointer ${
-                    spacing === sp.toLowerCase() 
-                      ? 'bg-[#FFD400] text-black shadow-3xs' 
-                      : 'text-gray-400 hover:text-gray-655 bg-transparent'
-                  }`}
-                >
-                  {sp}
-                </button>
-              ))}
-            </div>
-
-            {/* Columns Visibility configurations */}
-            <button 
-              onClick={() => setColumnsDropdownOpen(!columnsDropdownOpen)}
-              className="px-3.5 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-55 text-gray-500 hover:text-black cursor-pointer shadow-3xs bg-white shrink-0 flex items-center gap-1.5 text-[9px] font-black"
-            >
-              <Settings className="w-3.5 h-3.5" /> COLUMNS
-            </button>
-          </div>
+      {/* Connection status toggle */}
+      <div className="flex flex-col items-center gap-2 w-full">
+        <div className="w-full flex justify-between items-center p-3 bg-white border border-gray-150 rounded-2xl shadow-sm">
+          <span className="text-sm font-bold text-gray-600 flex items-center gap-2">
+            <svg className="w-4 h-4 text-amber-500 rotate-45" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <polygon points="3 11 22 2 13 21 11 13 3 11" />
+            </svg>
+            Connection Status:
+          </span>
+          <button
+            onClick={() => {
+              setIsOnline(prev => !prev);
+              triggerToast(isOnline ? 'Connection switched to Offline Mode.' : 'Connection restored to Online Mode.');
+            }}
+            className={`px-4 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-bold border cursor-pointer transition-all ${
+              isOnline
+                ? 'bg-[#E6F4EA] border-[#CEEAD6] text-[#137333]'
+                : 'bg-[#FFFBEB] border-[#000000] border-2 text-[#D97706]'
+            }`}
+          >
+            <span>{isOnline ? 'Online Mode' : 'Offline Mode'}</span>
+            <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-white text-[9px] ${isOnline ? 'bg-emerald-500' : 'bg-[#D97706]'}`}>
+              {isOnline ? '🌐' : '−'}
+            </span>
+          </button>
         </div>
 
-        {/* Columns visibility card panel */}
-        {columnsDropdownOpen && (
-          <div className="absolute right-6 top-16 bg-white border border-gray-150 rounded-2xl p-4 shadow-xl z-50 w-48 text-left space-y-3.5 animate-in fade-in zoom-in-95 duration-150">
-            <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block pb-1 border-b border-gray-50">COLUMN VISIBILITY</span>
-            <div className="space-y-3">
-              <label className="flex items-center gap-2.5 text-xs font-bold text-gray-800 cursor-pointer select-none">
-                <input 
-                  type="checkbox" 
-                  checked={visibleColumns.category}
-                  onChange={() => handleToggleColumn('category')}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
-                />
-                <span>Category</span>
-              </label>
-
-              <label className="flex items-center gap-2.5 text-xs font-bold text-gray-800 cursor-pointer select-none">
-                <input 
-                  type="checkbox" 
-                  checked={visibleColumns.loggedDate}
-                  onChange={() => handleToggleColumn('loggedDate')}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
-                />
-                <span>Logged Date</span>
-              </label>
-
-              <label className="flex items-center gap-2.5 text-xs font-bold text-gray-800 cursor-pointer select-none">
-                <input 
-                  type="checkbox" 
-                  checked={visibleColumns.status}
-                  onChange={() => handleToggleColumn('status')}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
-                />
-                <span>Status</span>
-              </label>
-            </div>
+        {/* Offline Banner */}
+        {!isOnline && (
+          <div className="w-full bg-[#FFFBEB] border border-[#FDE047] px-4 py-3 rounded-2xl flex items-center text-[#D97706] text-xs font-bold shadow-sm">
+            <AlertTriangle className="w-4 h-4 mr-2 shrink-0" strokeWidth={2.5} />
+            <span>Offline Active</span>
+            <span className="mx-2 text-[#D97706] opacity-50">|</span>
+            <span>0 items queued</span>
           </div>
         )}
 
-        {/* Spacing rows list */}
-        <div className="space-y-3">
-          <div className="grid grid-cols-12 text-[10px] font-bold text-gray-400 uppercase tracking-wider px-4">
-            <span className="col-span-1"></span>
-            {visibleColumns.category && <span className="col-span-4 text-left">CATEGORY</span>}
-            {visibleColumns.loggedDate && <span className="col-span-4 text-left">LOGGED DATE</span>}
-            {visibleColumns.status && <span className="col-span-3 text-right">STATUS</span>}
+        {/* SOS ACTIVE Banner */}
+        {activeSosAlert && (
+          <div className="w-full bg-[#FEE2E2] border border-[#FCA5A5] px-4 py-2 rounded-2xl flex items-center justify-between text-[#EF4444] text-xs font-bold shadow-sm">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-[#EF4444] shrink-0" strokeWidth={2.5} />
+              <span>🚨 SOS ACTIVE: {activeSosAlert}</span>
+            </div>
+            <button
+              onClick={() => setActiveSosAlert(null)}
+              className="bg-[#EF4444] text-black font-extrabold px-3 py-1 rounded-full text-xs hover:bg-red-650 cursor-pointer shadow-sm"
+            >
+              Clear
+            </button>
           </div>
+        )}
+      </div>
 
-          <div className="divide-y divide-gray-55 border border-gray-150 rounded-2xl overflow-hidden bg-white shadow-3xs">
-            {incidents.map((item) => (
-              <div 
-                key={item.id} 
-                className={`grid grid-cols-12 items-center px-4 hover:bg-gray-55/50 transition-colors ${
-                  spacing === 'compact' ? 'py-2' :
-                  spacing === 'relaxed' ? 'py-4.5' :
-                  'py-3'
-                }`}
-              >
-                <div className="col-span-1 flex items-center justify-start">
-                  <input type="checkbox" className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5 cursor-pointer" />
-                </div>
-                {visibleColumns.category && <span className="col-span-4 text-xs font-bold text-gray-900 text-left">{item.category}</span>}
-                {visibleColumns.loggedDate && <span className="col-span-4 text-xs font-bold text-gray-700 text-left">{item.date}</span>}
-                {visibleColumns.status && (
-                  <div className="col-span-3 text-right">
-                    <span className="px-2.5 py-0.5 rounded text-[8px] font-bold tracking-wider bg-gray-100 text-gray-655 border border-gray-200">
-                      {item.status}
-                    </span>
-                  </div>
-                )}
-              </div>
-            ))}
+      <div className="w-full space-y-6">
+        {/* Header */}
+        <div className="bg-white border border-gray-150 rounded-3xl p-6 flex justify-between items-center shadow-sm">
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-black text-[#0F172A] tracking-tight leading-none">Driver Portal</h1>
+              <span className="text-xl font-bold text-[#0F172A]">•</span>
+              <span className="text-2xl font-black text-[#0F172A]">incidents</span>
+            </div>
+            <p className="text-[#64748B] text-sm font-medium mt-1">ELD &amp; logistics operations controls.</p>
+          </div>
+          <div className="w-12 h-12 rounded-full bg-[#FFFBEB] flex items-center justify-center text-[#D97706] shrink-0">
+            <Compass className="w-6 h-6" />
           </div>
         </div>
 
+        {/* Top Banner */}
+        <div className="bg-[#FFFBEB] border border-[#FEF08A] rounded-[2rem] p-6 shadow-sm">
+          <div className="flex items-center gap-2 mb-2">
+            <Shield className="w-5 h-5 text-[#D97706]" strokeWidth={2.5} />
+            <h2 className="text-base font-black text-[#0F172A]">Incident Logger</h2>
+          </div>
+          <p className="text-sm font-medium text-[#64748B]">File digital accident reports and cargo/trailer defect logs.</p>
+        </div>
+
+        {/* Form Section */}
+        <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-gray-100 flex flex-col space-y-6">
+          <h3 className="text-[11px] font-black text-[#64748B] uppercase tracking-widest">LOG NEW INCIDENT REPORT</h3>
+          
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block text-[11px] font-black text-[#64748B] uppercase tracking-widest mb-2">INCIDENT CATEGORY TYPE</label>
+              <select 
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full bg-white border border-gray-200 text-gray-900 text-sm font-medium rounded-2xl focus:ring-2 focus:ring-yellow-400 focus:border-transparent p-3.5 outline-none appearance-none cursor-pointer"
+              >
+                <option value="Highway Road Accident">Highway Road Accident</option>
+                <option value="Truck / Trailer Defects">Truck / Trailer Defects</option>
+                <option value="Cargo Damage Exception">Cargo Damage Exception</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-black text-[#64748B] uppercase tracking-widest mb-2">INCIDENT DESCRIPTION</label>
+              <textarea 
+                placeholder="Type incident crash/exception details..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={3}
+                className="w-full bg-white border border-gray-200 text-gray-900 text-sm font-medium rounded-2xl focus:ring-2 focus:ring-yellow-400 focus:border-transparent p-3.5 outline-none resize-none"
+              ></textarea>
+            </div>
+
+            <button 
+              type="button"
+              onClick={handlePhotoUpload}
+              className="w-full bg-white border-2 border-dashed border-gray-200 hover:border-gray-300 rounded-2xl p-6 flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors"
+            >
+              <Upload className="w-6 h-6 text-[#64748B]" strokeWidth={2} />
+              <span className="text-sm font-bold text-[#64748B]">
+                {photoAttached ? 'Photo Attached ✓' : 'Attach Incident Photos'}
+              </span>
+            </button>
+
+            <button 
+              type="submit"
+              className="w-full bg-[#E11D48] hover:bg-rose-700 text-white font-black py-4 px-6 rounded-2xl transition-all shadow-[0_4px_14px_0_rgba(225,29,72,0.39)] hover:shadow-[0_6px_20px_rgba(225,29,72,0.23)] active:scale-[0.98]"
+            >
+              Submit Incident Report
+            </button>
+          </form>
+        </div>
+
+        {/* History Section */}
+        <div className="flex flex-col space-y-4">
+          <h3 className="text-[11px] font-black text-[#64748B] uppercase tracking-widest pl-2">INCIDENT LOG REGISTRY</h3>
+          
+          {selectedRows.length > 0 && (
+            <div className="bg-[#FFFBEB] border border-[#FEF08A] rounded-2xl p-2 px-4 flex items-center justify-between w-max gap-4 shadow-sm mb-2">
+              <span className="text-xs font-black text-[#D97706] tracking-widest uppercase">{selectedRows.length} SELECTED</span>
+              <button 
+                onClick={() => triggerToast('Exporting to CSV...')}
+                className="flex items-center gap-1.5 text-[#D97706] text-xs font-black bg-transparent hover:bg-yellow-50 px-3 py-1.5 rounded-xl border border-transparent hover:border-[#FDE047] transition-colors cursor-pointer"
+              >
+                <Download className="w-4 h-4" /> CSV Export
+              </button>
+            </div>
+          )}
+          
+          <div className="flex justify-between items-center bg-white border border-gray-150 p-2 rounded-2xl shadow-sm w-fit gap-6">
+            <div className="flex bg-gray-50 rounded-xl p-1">
+              {['COMPACT', 'DEFAULT', 'RELAXED'].map(mode => (
+                <button
+                  key={mode}
+                  onClick={() => setViewMode(mode)}
+                  className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
+                    viewMode === mode 
+                      ? 'bg-[#FFD400] border-2 border-black text-black shadow-sm' 
+                      : 'text-[#64748B] hover:text-[#0F172A]'
+                  }`}
+                >
+                  {mode}
+                </button>
+              ))}
+            </div>
+            
+            <div className="relative">
+              <button 
+                onClick={() => setColumnsOpen(!columnsOpen)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${columnsOpen ? 'border-[#0F172A] text-[#0F172A] bg-gray-50' : 'border-gray-200 text-[#64748B] hover:bg-gray-50'}`}
+              >
+                <Settings className="w-4 h-4" />
+                COLUMNS
+              </button>
+              
+              {columnsOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-xl z-10 p-4 flex flex-col gap-3">
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">COLUMN VISIBILITY</span>
+                  {[
+                    { key: 'category', label: 'Category' },
+                    { key: 'loggedDate', label: 'Logged Date' },
+                    { key: 'status', label: 'Status' }
+                  ].map(col => (
+                    <label key={col.key} className="flex items-center gap-3 text-sm font-bold text-[#64748B] cursor-pointer">
+                      <div className={`w-5 h-5 rounded flex items-center justify-center border transition-colors ${visibleColumns[col.key] ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}>
+                        {visibleColumns[col.key] && <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
+                      </div>
+                      <input 
+                        type="checkbox" 
+                        checked={visibleColumns[col.key]} 
+                        onChange={() => toggleColumn(col.key)} 
+                        className="hidden"
+                      />
+                      {col.label}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-white border border-gray-150 rounded-2xl overflow-hidden shadow-sm mt-2">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-gray-100 bg-white">
+                  <th className="p-4 w-12 text-center">
+                    <button 
+                      onClick={() => setSelectedRows(selectedRows.length === mockData.length ? [] : mockData.map(d => d.id))}
+                      className="cursor-pointer"
+                    >
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selectedRows.length === mockData.length ? 'border-[#0F172A] bg-[#0F172A] text-white' : 'border-[#94A3B8]'}`}>
+                        {selectedRows.length === mockData.length && <Check className="w-3 h-3" strokeWidth={4} />}
+                      </div>
+                    </button>
+                  </th>
+                  {visibleColumns.category && <th className="p-4 text-[10px] font-black text-[#64748B] uppercase tracking-widest">CATEGORY</th>}
+                  {visibleColumns.loggedDate && <th className="p-4 text-[10px] font-black text-[#64748B] uppercase tracking-widest">LOGGED DATE</th>}
+                  {visibleColumns.status && <th className="p-4 text-[10px] font-black text-[#64748B] uppercase tracking-widest">STATUS</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {mockData.map((row, index) => {
+                  const isSelected = selectedRows.includes(row.id);
+                  return (
+                  <tr key={index} className={`border-b border-gray-50 hover:bg-[#FFFBEB]/50 transition-colors ${
+                    viewMode === 'COMPACT' ? 'text-xs' : viewMode === 'RELAXED' ? 'text-lg' : 'text-sm'
+                  } ${isSelected ? 'bg-[#FFFBEB]' : ''}`}>
+                    <td className={`p-4 text-center align-middle ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
+                      <button 
+                        onClick={() => toggleRow(row.id)}
+                        className="cursor-pointer"
+                      >
+                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${isSelected ? 'border-[#D97706] text-[#D97706]' : 'border-[#94A3B8]'}`}>
+                           {isSelected && <Check className="w-3 h-3" strokeWidth={4} />}
+                        </div>
+                      </button>
+                    </td>
+                    {visibleColumns.category && (
+                      <td className={`p-4 font-black text-[#0F172A] align-middle whitespace-pre-line ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
+                        {row.category}
+                      </td>
+                    )}
+                    {visibleColumns.loggedDate && (
+                      <td className={`p-4 font-black text-[#334155] align-middle ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
+                        {row.loggedDate}
+                      </td>
+                    )}
+                    {visibleColumns.status && (
+                      <td className={`p-4 align-middle ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
+                        <span className={`inline-block px-3 py-1.5 rounded-xl text-[10px] font-black tracking-wider uppercase whitespace-pre-line ${row.statusColor}`}>
+                          {row.status}
+                        </span>
+                      </td>
+                    )}
+                  </tr>
+                )})}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
-      {/* FLOAT FLOATING SOS BUTTON */}
+      {/* Floating Buttons */}
       <div className="fixed bottom-6 right-6 flex flex-col items-center gap-3 z-[100]">
-        <button 
+        <button
           onClick={() => setSosModalOpen(true)}
-          className="w-12 h-12 bg-white border border-red-200 hover:bg-red-55 text-red-500 rounded-full flex items-center justify-center font-bold text-xs shadow-lg cursor-pointer transition-all border-t-2"
+          className="w-12 h-12 bg-white border-2 border-red-200 hover:bg-red-50 text-red-500 rounded-full flex items-center justify-center font-bold text-xs shadow-lg cursor-pointer transition-all"
         >
           SOS
         </button>
-
-        {/* Floating Hotline toggle shortcut button */}
-        <button 
-          onClick={() => hotlineOpen ? setHotlineOpen(false) : setHotlineOpen(true)}
-          className="w-12 h-12 bg-[#FFD400] hover:bg-yellow-400 text-black rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all z-[120]"
+        <button
+          onClick={() => setHotlineOpen(true)}
+          className="w-12 h-12 bg-[#FFD400] hover:bg-yellow-400 text-black rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all"
         >
-          {hotlineOpen ? <X className="w-5 h-5 text-black" strokeWidth={2.5} /> : <MessageSquare className="w-5 h-5" />}
+          <MessageSquare className="w-5 h-5" />
         </button>
       </div>
 
       {/* SOS EMERGENCY PANEL MODAL */}
       {sosModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-[110] p-4">
-          <div className="bg-white rounded-3xl border border-gray-100 max-w-md w-full p-6 shadow-xl text-left animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center mb-5 pb-2 border-b border-gray-55">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[110] p-4">
+          <div className="bg-white rounded-3xl border border-gray-100 max-w-md w-full p-6 shadow-xl text-left">
+            <div className="flex justify-between items-center mb-5 pb-2 border-b border-gray-50">
               <h2 className="text-base font-bold text-gray-900">Emergency Dispatch SOS Panel</h2>
               <button onClick={() => setSosModalOpen(false)} className="p-1.5 hover:bg-gray-100 rounded-full cursor-pointer"><X size={18} /></button>
             </div>
-            
-            <p className="text-xs text-gray-455 leading-relaxed mb-5 font-semibold">
+            <p className="text-xs text-gray-500 leading-relaxed mb-5">
               Triggering an emergency alerts the dispatch operations center immediately and logs active tracking.
             </p>
-
             <div className="grid grid-cols-2 gap-4">
-              <button 
-                onClick={() => { triggerToast('EMERGENCY: Panic alert sent.'); setSosModalOpen(false); }}
-                className="p-5 bg-red-50/70 border border-red-100 rounded-2xl hover:bg-red-100 transition-colors flex flex-col items-center justify-center gap-2 cursor-pointer font-bold text-red-655"
-              >
-                <Shield className="w-5 h-5 text-red-500 shrink-0" />
-                <span className="text-xs uppercase tracking-wide">Panic Button</span>
-              </button>
-              <button 
-                onClick={() => { triggerToast('ALERT: Breakdown reported.'); setSosModalOpen(false); }}
-                className="p-5 bg-[#FFFBEB] border border-amber-250 rounded-2xl hover:bg-[#FEF3C7] transition-colors flex flex-col items-center justify-center gap-2 cursor-pointer font-bold text-[#D97706]"
-              >
-                <Truck className="w-5 h-5 text-amber-500 shrink-0" />
-                <span className="text-xs uppercase tracking-wide">Breakdown</span>
-              </button>
-              <button 
-                onClick={() => { triggerToast('EMERGENCY: Accident logged.'); setSosModalOpen(false); }}
-                className="p-5 bg-red-50/70 border border-red-100 rounded-2xl hover:bg-red-100 transition-colors flex flex-col items-center justify-center gap-2 cursor-pointer font-bold text-red-655"
-              >
-                <AlertTriangle className="w-5 h-5 text-red-500 shrink-0" />
-                <span className="text-xs uppercase tracking-wide">Accident</span>
-              </button>
-              <button 
-                onClick={() => { triggerToast('EMERGENCY: Medical assistance requested.'); setSosModalOpen(false); }}
-                className="p-5 bg-red-50/70 border border-red-100 rounded-2xl hover:bg-red-100 transition-colors flex flex-col items-center justify-center gap-2 cursor-pointer font-bold text-red-655"
-              >
-                <Heart className="w-5 h-5 text-red-500 shrink-0" />
-                <span className="text-xs uppercase tracking-wide">Medical</span>
-              </button>
+              {[
+                { icon: <Shield className="w-5 h-5 text-red-500" />, label: 'Panic Button', color: 'bg-red-50/70 border-red-100 text-red-500', msg: 'Panic Alert dispatched!' },
+                { icon: <Truck className="w-5 h-5 text-amber-500" />, label: 'Breakdown', color: 'bg-[#FFFBEB] border-amber-200 text-[#D97706]', msg: 'Breakdown Alert dispatched!' },
+                { icon: <AlertTriangle className="w-5 h-5 text-red-500" />, label: 'Accident', color: 'bg-red-50/70 border-red-100 text-red-500', msg: 'Accident Alert dispatched!' },
+                { icon: <Heart className="w-5 h-5 text-red-500" />, label: 'Medical', color: 'bg-red-50/70 border-red-100 text-red-500', msg: 'Medical Emergency Alert dispatched!' },
+              ].map(({ icon, label, color, msg }) => (
+                <button
+                  key={label}
+                  onClick={() => {
+                    setActiveSosAlert(msg);
+                    triggerToast(`SOS ACTIVE: ${msg}`);
+                    setSosModalOpen(false);
+                  }}
+                  className={`p-5 border rounded-2xl hover:opacity-90 transition-opacity flex flex-col items-center justify-center gap-2 cursor-pointer ${color}`}
+                >
+                  {icon}
+                  <span className="text-xs font-medium">{label}</span>
+                </button>
+              ))}
             </div>
-
-            <div className="mt-5 pt-4 border-t border-gray-55 space-y-3">
-              <div className="flex justify-between items-center text-xs font-bold text-gray-800">
+            <div className="mt-5 pt-4 border-t border-gray-50 space-y-3">
+              <div className="flex justify-between items-center text-xs text-gray-800">
                 <span>Share Live GPS Tracking</span>
-                <input 
-                  type="checkbox"
-                  checked={shareGps}
-                  onChange={e => setShareGps(e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
-                />
+                <input type="checkbox" checked={shareGps} onChange={e => setShareGps(e.target.checked)} className="rounded border-gray-300 text-blue-600 w-4 h-4 cursor-pointer" />
               </div>
-              <div className="flex justify-between items-center text-xs font-bold text-gray-800">
+              <div className="flex justify-between items-center text-xs text-gray-800">
                 <span>Auto-Notify Dispatch Center</span>
-                <input 
-                  type="checkbox"
-                  checked={autoNotify}
-                  onChange={e => setAutoNotify(e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
-                />
+                <input type="checkbox" checked={autoNotify} onChange={e => setAutoNotify(e.target.checked)} className="rounded border-gray-300 text-blue-600 w-4 h-4 cursor-pointer" />
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* HOTLINE SHORTCUTS OVERLAY PANEL */}
+      {/* HOTLINE SHORTCUTS PANEL */}
       {hotlineOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-[110] flex items-end sm:items-center justify-center p-4">
-          <div className="bg-transparent max-w-xs w-full flex flex-col items-center gap-4 animate-in fade-in slide-in-from-bottom-10 duration-200">
-            
-            {/* The Hotline Card */}
-            <div className="bg-white border border-gray-150 rounded-3xl p-5 shadow-2xl w-full text-left space-y-4">
-              <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block pb-1 border-b border-gray-55">HOTLINE SHORTCUTS</span>
-              
-              <div className="space-y-3.5 text-xs font-bold text-gray-700">
-                <button 
-                  onClick={() => { triggerToast('Dialing dispatcher hotline...'); setHotlineOpen(false); }}
-                  className="w-full py-1 text-left hover:text-black transition-colors flex items-center gap-3"
-                >
-                  <Phone className="w-4 h-4 text-gray-400" />
-                  <span>Call Dispatch</span>
-                </button>
-                <button 
-                  onClick={() => { triggerToast('Opening dispatch message console...'); setHotlineOpen(false); }}
-                  className="w-full py-1 text-left hover:text-black transition-colors flex items-center gap-3"
-                >
-                  <MessageSquare className="w-4 h-4 text-gray-400" />
-                  <span>Message Dispatch</span>
-                </button>
-                <button 
-                  onClick={() => { triggerToast('Voice note recorder active.'); setHotlineOpen(false); }}
-                  className="w-full py-1 text-left hover:text-black transition-colors flex items-center gap-3"
-                >
-                  <Mic className="w-4 h-4 text-gray-400" />
-                  <span>Voice Note</span>
-                </button>
-                <div className="w-full h-px bg-gray-100"></div>
-                <button 
-                  onClick={() => { triggerToast('Speech to text active.'); setHotlineOpen(false); }}
-                  className="w-full py-1 text-left hover:text-black transition-colors flex items-center gap-3"
-                >
-                  <span className="text-gray-455">🎙️</span>
-                  <span>Voice-to-Text</span>
-                </button>
+        <div className="fixed inset-0 z-[110]" onClick={() => setHotlineOpen(false)}>
+          <div
+            className="absolute bottom-6 right-6 flex flex-col items-end gap-3"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-2xl w-52 text-left space-y-3">
+              <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block pb-2 border-b border-gray-100">HOTLINE SHORTCUTS</span>
+              <div className="space-y-3 text-sm text-gray-700">
+                {[
+                  { icon: <Phone className="w-4 h-4 text-gray-400 shrink-0" />, label: 'Call Dispatch', msg: 'Dialing dispatcher hotline...' },
+                  { icon: <MessageSquare className="w-4 h-4 text-gray-400 shrink-0" />, label: 'Message Dispatch', msg: 'Opening dispatch message console...' },
+                  { icon: <Mic className="w-4 h-4 text-gray-400 shrink-0" />, label: 'Voice Note', msg: 'Voice note recorder active.' },
+                  { icon: <span className="w-4 h-4 text-gray-400 shrink-0 flex items-center justify-center text-xs">🎙</span>, label: 'Voice-to-Text', msg: 'Speech to text active.' },
+                ].map(({ icon, label, msg }) => (
+                  <button
+                    key={label}
+                    onClick={() => { triggerToast(msg); setHotlineOpen(false); }}
+                    className="w-full text-left hover:text-black transition-colors flex items-center gap-3"
+                  >
+                    {icon}
+                    <span>{label}</span>
+                  </button>
+                ))}
               </div>
             </div>
-
-            {/* Circular Close X Button underneath */}
-            <button 
+            <button
               onClick={() => setHotlineOpen(false)}
               className="w-12 h-12 bg-[#FFD400] hover:bg-yellow-400 text-black rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all shrink-0"
             >
               <X className="w-5 h-5" strokeWidth={2.5} />
             </button>
-
           </div>
         </div>
       )}
-
     </div>
   );
 }

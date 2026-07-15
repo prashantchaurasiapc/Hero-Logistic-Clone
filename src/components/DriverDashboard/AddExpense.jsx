@@ -1,7 +1,7 @@
-import React, { useState, useRef } from 'react';
-import { Shield, Truck, AlertTriangle, Heart, X, Phone, MessageSquare, Mic, Compass, CheckCircle2, AlertCircle, Settings, Check, Calendar, Download } from 'lucide-react';
+import React, { useState } from 'react';
+import { Shield, Truck, AlertTriangle, Heart, X, Phone, MessageSquare, Mic, Compass, Upload, CheckCircle2, AlertCircle, Settings, Check, Download, CheckSquare, Square } from 'lucide-react';
 
-export default function LeaveManagement() {
+export default function AddExpense() {
   const [sosModalOpen, setSosModalOpen] = useState(false);
   const [hotlineOpen, setHotlineOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
@@ -10,14 +10,9 @@ export default function LeaveManagement() {
   const [activeSosAlert, setActiveSosAlert] = useState(null);
 
   // Form states
-  const [leaveType, setLeaveType] = useState('Annual / Vacation Leave');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [reason, setReason] = useState('');
-  
-  // Validation state
-  const [showErrorPopup, setShowErrorPopup] = useState(false);
-  const dateInputRef = useRef(null);
+  const [amount, setAmount] = useState('150');
+  const [category, setCategory] = useState('Diesel Fuel purchase');
+  const [receiptUploaded, setReceiptUploaded] = useState(false);
 
   // SOS states
   const [shareGps, setShareGps] = useState(true);
@@ -28,9 +23,9 @@ export default function LeaveManagement() {
   const [columnsOpen, setColumnsOpen] = useState(false);
   const [selectedRows, setSelectedRows] = useState([]);
   const [visibleColumns, setVisibleColumns] = useState({
-    type: true,
-    dates: true,
-    status: true
+    category: true,
+    amount: true,
+    state: true
   });
 
   const triggerToast = (msg, type = 'success') => {
@@ -39,29 +34,25 @@ export default function LeaveManagement() {
     setTimeout(() => setToastMsg(''), 4000);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!startDate) {
-      setShowErrorPopup(true);
-      if (dateInputRef.current) {
-        dateInputRef.current.focus();
-      }
-      return;
-    }
-    
-    setShowErrorPopup(false);
-    triggerToast('Successfully submitted', 'success');
-    
-    // Reset form
-    setStartDate('');
-    setEndDate('');
-    setReason('');
+  const handleUploadReceipt = () => {
+    setReceiptUploaded(true);
+    triggerToast('Receipt file uploaded.', 'success');
+  };
+
+  const handleAddExpense = () => {
+    triggerToast('Expense logged successfully.', 'success');
+  };
+
+  const handleAiAction = (action) => {
+    triggerToast(`AI Result ${action}.`, 'success');
   };
 
   const mockData = [
-    { id: 1, type: 'Annual Leave', dates: '07/04/2026 -\n07/06/2026', status: 'APPROVED', statusColor: 'bg-gray-100 text-[#64748B] border border-gray-200' },
-    { id: 2, type: 'Sick Leave', dates: '06/05/2026 -\n06/06/2026', status: 'APPROVED', statusColor: 'bg-gray-100 text-[#64748B] border border-gray-200' }
+    { id: 1, category: 'Fuel', amount: '$320.00', state: 'APPROVED', stateColor: 'bg-gray-100 text-gray-500 font-bold border border-gray-200' },
+    { id: 2, category: 'Tolls', amount: '$42.50', state: 'PENDING', stateColor: 'bg-[#FFFBEB] text-[#F59E0B] font-bold border border-[#FEF08A]' }
   ];
+
+  const getMockData = () => mockData;
 
   const toggleRow = (id) => {
     setSelectedRows(prev => 
@@ -151,106 +142,105 @@ export default function LeaveManagement() {
         )}
       </div>
 
-      <div className="w-full space-y-6">
-        {/* Header */}
-        <div className="bg-white border border-gray-150 rounded-3xl p-6 flex justify-between items-center shadow-sm">
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-black text-[#0F172A] tracking-tight leading-none">Driver Portal</h1>
-              <span className="text-xl font-bold text-[#0F172A]">•</span>
-              <span className="text-2xl font-black text-[#0F172A]">leave management</span>
-            </div>
-            <p className="text-[#64748B] text-sm font-medium mt-1">ELD &amp; logistics operations controls.</p>
+      {/* Header */}
+      <div className="bg-white border border-gray-150 rounded-3xl p-6 flex justify-between items-center shadow-sm">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none">Driver Portal</h1>
+            <span className="text-xl font-bold text-gray-400">•</span>
+            <span className="text-xl font-black text-gray-800">add expense</span>
           </div>
-          <div className="w-12 h-12 rounded-full bg-[#FFFBEB] flex items-center justify-center text-[#D97706] shrink-0">
-            <Compass className="w-6 h-6" />
-          </div>
+          <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider mt-1.5">ELD &amp; logistics operations controls.</p>
         </div>
-
-        {/* Top Banner */}
-        <div className="bg-white border border-[#FEF08A] rounded-[2rem] p-6 shadow-sm">
-          <div className="flex items-center gap-2 mb-2">
-            <Calendar className="w-5 h-5 text-[#D97706]" strokeWidth={2.5} />
-            <h2 className="text-base font-black text-[#0F172A]">Leave Management</h2>
-          </div>
-          <p className="text-sm font-medium text-[#64748B]">Request vacation or medical rest logs.</p>
+        <div className="w-10 h-10 rounded-full bg-[#FFFBEB] flex items-center justify-center text-[#D97706] shrink-0">
+          <Compass className="w-5 h-5" />
         </div>
+      </div>
 
-        {/* Form Section */}
-        <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-gray-100 flex flex-col space-y-6">
-          <h3 className="text-[11px] font-black text-[#64748B] uppercase tracking-widest">REQUEST TIME OFF</h3>
-          
-          <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl">
+        {/* Main Form Card */}
+        <div className="bg-white border border-gray-100 rounded-3xl p-6 md:p-8 shadow-sm text-left w-full h-fit">
+          <h2 className="text-lg font-black text-[#0F172A] leading-tight mb-6">Log Trip Expense</h2>
+
+          <div className="space-y-6">
             <div>
-              <label className="block text-[11px] font-black text-[#64748B] uppercase tracking-widest mb-2">LEAVE CATEGORY TYPE</label>
+              <label className="block text-[11px] font-black text-gray-500 uppercase tracking-widest mb-2">
+                EXPENSE AMOUNT SPENT (USD)
+              </label>
+              <input 
+                type="text" 
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-black text-gray-500 uppercase tracking-widest mb-2">
+                EXPENSE CATEGORY
+              </label>
               <select 
-                value={leaveType}
-                onChange={(e) => setLeaveType(e.target.value)}
-                className="w-full bg-white border border-gray-200 text-gray-900 text-sm font-medium rounded-2xl focus:ring-2 focus:ring-yellow-400 focus:border-transparent p-3.5 outline-none appearance-none cursor-pointer"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-semibold text-gray-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none bg-white cursor-pointer"
               >
-                <option value="Annual / Vacation Leave">Annual / Vacation Leave</option>
-                <option value="Medical / Sick Leave">Medical / Sick Leave</option>
-                <option value="Personal Leave">Personal Leave</option>
+                <option>Diesel Fuel purchase</option>
+                <option>Tolls</option>
+                <option>Maintenance</option>
+                <option>Meals</option>
               </select>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="relative">
-                <label className="block text-[11px] font-black text-[#64748B] uppercase tracking-widest mb-2">START DATE</label>
-                <input 
-                  type="date"
-                  ref={dateInputRef}
-                  value={startDate}
-                  onChange={(e) => {
-                    setStartDate(e.target.value);
-                    if(e.target.value) setShowErrorPopup(false);
-                  }}
-                  className={`w-full bg-white border ${showErrorPopup ? 'border-[#EAB308] ring-2 ring-yellow-200 ring-opacity-50' : 'border-gray-200'} text-gray-900 text-sm font-medium rounded-2xl focus:ring-2 focus:ring-yellow-400 focus:border-transparent p-3.5 outline-none`}
-                />
-                
-                {/* Custom Error Popup Validation styling */}
-                {showErrorPopup && (
-                  <div className="absolute top-[85px] left-0 mt-1 z-10 w-fit bg-white border border-gray-200 rounded-lg shadow-xl p-3 flex items-center gap-2 animate-fade-in before:content-[''] before:absolute before:-top-[6px] before:left-6 before:w-3 before:h-3 before:bg-white before:border-l before:border-t before:border-gray-200 before:rotate-45">
-                    <div className="bg-[#EA580C] w-6 h-6 rounded flex items-center justify-center text-white font-bold shrink-0">!</div>
-                    <span className="text-sm font-medium text-gray-800 whitespace-nowrap">Please fill out this field.</span>
-                  </div>
-                )}
-              </div>
-              
-              <div>
-                <label className="block text-[11px] font-black text-[#64748B] uppercase tracking-widest mb-2">END DATE</label>
-                <input 
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full bg-white border border-gray-200 text-gray-900 text-sm font-medium rounded-2xl focus:ring-2 focus:ring-yellow-400 focus:border-transparent p-3.5 outline-none"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-black text-[#64748B] uppercase tracking-widest mb-2">REASON DETAILS</label>
-              <textarea 
-                placeholder="Describe leave justification..."
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                rows={3}
-                className="w-full bg-white border border-gray-200 text-gray-900 text-sm font-medium rounded-2xl focus:ring-2 focus:ring-yellow-400 focus:border-transparent p-3.5 outline-none resize-none"
-              ></textarea>
-            </div>
-
-            <button 
-              type="submit"
-              className="w-full bg-[#F59E0B] hover:bg-[#D97706] text-black font-black py-4 px-6 rounded-2xl transition-all shadow-md active:scale-[0.98]"
+            <div 
+              onClick={handleUploadReceipt}
+              className={`border border-dashed rounded-2xl p-6 flex flex-col items-center justify-center text-center transition-colors cursor-pointer ${receiptUploaded ? 'border-gray-200 bg-gray-50' : 'border-gray-300 hover:bg-gray-50'}`}
             >
-              Submit Leave Request
-            </button>
-          </form>
+              <Upload className="w-5 h-5 text-gray-500 mb-2" strokeWidth={2} />
+              <span className="text-xs font-bold text-gray-500">
+                {receiptUploaded ? 'Receipt Uploaded ✓' : 'Upload Receipt Image'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <button 
+                onClick={handleAddExpense}
+                className="w-full bg-[#FFB000] text-black font-black text-sm py-3.5 px-4 rounded-xl hover:bg-[#F59E0B] transition-all shadow-sm border border-[#FFB000] cursor-pointer"
+              >
+                Add Expense
+              </button>
+              <button 
+                onClick={handleUploadReceipt}
+                className="w-full bg-white text-[#D97706] font-bold text-sm py-3.5 px-4 rounded-xl hover:bg-yellow-50 transition-all border border-amber-200 cursor-pointer"
+              >
+                Upload Receipt
+              </button>
+            </div>
+
+            {/* AI Receipt Reader Extract */}
+            <div className="mt-6 border border-gray-200 rounded-2xl p-5">
+              <h3 className="text-[10px] font-black text-[#D97706] uppercase tracking-widest mb-1">AI RECEIPT READER EXTRACT</h3>
+              <p className="text-sm font-black text-gray-900">Expense detected: $420.50</p>
+              <p className="text-xs text-gray-500 font-mono mb-4">Source: Pilot Travel Center</p>
+              
+              <div className="flex items-center gap-4 text-xs font-bold">
+                <span className="text-gray-600">Review AI Result</span>
+                <button onClick={() => handleAiAction('Confirmed')} className="bg-[#FFD400] text-black px-4 py-1.5 rounded hover:bg-yellow-400 transition-colors cursor-pointer">
+                  Confirm
+                </button>
+                <button onClick={() => handleAiAction('Editing')} className="text-gray-600 hover:text-black transition-colors cursor-pointer">
+                  Edit
+                </button>
+                <button onClick={() => handleAiAction('Rejected')} className="bg-red-50 text-red-500 px-4 py-1.5 rounded hover:bg-red-100 transition-colors cursor-pointer">
+                  Reject
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* History Section */}
-        <div className="flex flex-col space-y-4">
-          <h3 className="text-[11px] font-black text-[#64748B] uppercase tracking-widest pl-2">LEAVE REQUEST HISTORY</h3>
+        <div className="w-full h-fit flex flex-col space-y-4">
+          <h3 className="text-[11px] font-black text-gray-500 uppercase tracking-widest pl-2">LOGGED EXPENSES HISTORY</h3>
           
           {selectedRows.length > 0 && (
             <div className="bg-[#FFFBEB] border border-[#FEF08A] rounded-2xl p-2 px-4 flex items-center justify-between w-max gap-4 shadow-sm">
@@ -264,7 +254,7 @@ export default function LeaveManagement() {
             </div>
           )}
           
-          <div className="flex justify-between items-center bg-white border border-gray-150 p-2 rounded-2xl shadow-sm w-fit gap-6">
+          <div className="flex justify-between items-center bg-white border border-gray-150 p-2 rounded-2xl shadow-sm">
             <div className="flex bg-gray-50 rounded-xl p-1">
               {['COMPACT', 'DEFAULT', 'RELAXED'].map(mode => (
                 <button
@@ -272,8 +262,8 @@ export default function LeaveManagement() {
                   onClick={() => setViewMode(mode)}
                   className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
                     viewMode === mode 
-                      ? 'bg-[#FFD400] border-2 border-black text-black shadow-sm' 
-                      : 'text-[#64748B] hover:text-[#0F172A]'
+                      ? 'bg-[#FFD400] text-black shadow-sm' 
+                      : 'text-gray-500 hover:text-gray-800'
                   }`}
                 >
                   {mode}
@@ -284,7 +274,7 @@ export default function LeaveManagement() {
             <div className="relative">
               <button 
                 onClick={() => setColumnsOpen(!columnsOpen)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${columnsOpen ? 'border-[#0F172A] text-[#0F172A] bg-gray-50' : 'border-gray-200 text-[#64748B] hover:bg-gray-50'}`}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${columnsOpen ? 'border-gray-800 text-gray-800 bg-gray-50' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}
               >
                 <Settings className="w-4 h-4" />
                 COLUMNS
@@ -294,11 +284,11 @@ export default function LeaveManagement() {
                 <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-xl z-10 p-4 flex flex-col gap-3">
                   <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">COLUMN VISIBILITY</span>
                   {[
-                    { key: 'type', label: 'Type' },
-                    { key: 'dates', label: 'Dates' },
-                    { key: 'status', label: 'Status' }
+                    { key: 'category', label: 'Category' },
+                    { key: 'amount', label: 'Amount' },
+                    { key: 'state', label: 'State' }
                   ].map(col => (
-                    <label key={col.key} className="flex items-center gap-3 text-sm font-bold text-[#64748B] cursor-pointer">
+                    <label key={col.key} className="flex items-center gap-3 text-sm font-bold text-gray-600 cursor-pointer">
                       <div className={`w-5 h-5 rounded flex items-center justify-center border transition-colors ${visibleColumns[col.key] ? 'bg-blue-600 border-blue-600' : 'border-gray-300'}`}>
                         {visibleColumns[col.key] && <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
                       </div>
@@ -316,56 +306,57 @@ export default function LeaveManagement() {
             </div>
           </div>
 
-          <div className="bg-white border border-gray-150 rounded-2xl overflow-hidden shadow-sm mt-2">
+          <div className="bg-white border border-gray-150 rounded-2xl overflow-hidden shadow-sm">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-gray-100 bg-white">
+                <tr className="border-b border-gray-100 bg-gray-50/50">
                   <th className="p-4 w-12 text-center">
                     <button 
-                      onClick={() => setSelectedRows(selectedRows.length === mockData.length ? [] : mockData.map(d => d.id))}
+                      onClick={() => setSelectedRows(selectedRows.length === getMockData().length ? [] : getMockData().map(d => d.id))}
                       className="cursor-pointer"
                     >
-                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selectedRows.length === mockData.length ? 'border-[#0F172A] bg-[#0F172A] text-white' : 'border-[#94A3B8]'}`}>
-                        {selectedRows.length === mockData.length && <Check className="w-3 h-3" strokeWidth={4} />}
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selectedRows.length === getMockData().length ? 'border-[#D97706] text-[#D97706]' : 'border-gray-400'}`}>
+                        {selectedRows.length === getMockData().length && <Check className="w-3 h-3" strokeWidth={4} />}
                       </div>
                     </button>
                   </th>
-                  {visibleColumns.type && <th className="p-4 text-[10px] font-black text-[#64748B] uppercase tracking-widest">TYPE</th>}
-                  {visibleColumns.dates && <th className="p-4 text-[10px] font-black text-[#64748B] uppercase tracking-widest">DATES</th>}
-                  {visibleColumns.status && <th className="p-4 text-[10px] font-black text-[#64748B] uppercase tracking-widest">STATUS</th>}
+                  {visibleColumns.category && <th className="p-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">CATEGORY</th>}
+                  {visibleColumns.amount && <th className="p-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">AMOUNT</th>}
+                  {visibleColumns.state && <th className="p-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">STATE</th>}
                 </tr>
               </thead>
               <tbody>
-                {mockData.map((row, index) => {
+                {getMockData().map((row, index) => {
                   const isSelected = selectedRows.includes(row.id);
                   return (
                   <tr key={index} className={`border-b border-gray-50 hover:bg-gray-50/50 transition-colors ${
-                    viewMode === 'COMPACT' ? 'text-xs' : viewMode === 'RELAXED' ? 'text-lg' : 'text-sm'
-                  } ${isSelected ? 'bg-gray-50' : ''}`}>
-                    <td className={`p-4 text-center align-middle ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
+                    viewMode === 'COMPACT' ? 'text-xs' : viewMode === 'RELAXED' ? 'text-base' : 'text-sm'
+                  } ${isSelected ? 'bg-[#FFFDF4]' : ''}`}>
+                    <td className={`p-4 text-center ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-6' : 'py-5'}`}>
                       <button 
                         onClick={() => toggleRow(row.id)}
                         className="cursor-pointer"
                       >
-                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${isSelected ? 'border-[#0F172A] bg-[#0F172A] text-white' : 'border-[#94A3B8]'}`}>
+                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${isSelected ? 'border-[#D97706] text-[#D97706]' : 'border-gray-400'}`}>
                            {isSelected && <Check className="w-3 h-3" strokeWidth={4} />}
                         </div>
                       </button>
                     </td>
-                    {visibleColumns.type && (
-                      <td className={`p-4 font-black text-[#0F172A] align-middle ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
-                        {row.type}
+                    {visibleColumns.category && (
+                      <td className={`p-4 font-bold text-gray-900 ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-6' : 'py-5'}`}>
+                        {row.category}
+                        {row.date && <div className="text-xs text-gray-400 font-medium mt-1">{row.date}</div>}
                       </td>
                     )}
-                    {visibleColumns.dates && (
-                      <td className={`p-4 font-black text-[#334155] align-middle whitespace-pre-line ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
-                        {row.dates}
+                    {visibleColumns.amount && (
+                      <td className={`p-4 font-black text-gray-500 ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-6' : 'py-5'}`}>
+                        {row.amount}
                       </td>
                     )}
-                    {visibleColumns.status && (
-                      <td className={`p-4 align-middle ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
-                        <span className={`px-3 py-1.5 rounded-full text-[10px] font-black tracking-wider uppercase ${row.statusColor}`}>
-                          {row.status}
+                    {visibleColumns.state && (
+                      <td className={`p-4 ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-6' : 'py-5'}`}>
+                        <span className={`px-3 py-1 rounded-full text-[10px] tracking-wider uppercase ${row.stateColor}`}>
+                          {row.state}
                         </span>
                       </td>
                     )}
