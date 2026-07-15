@@ -68,12 +68,12 @@ import SafetyChecklists from './components/CompanyAdmin/SafetyChecklists';
 import DeliveryIssues from './components/CompanyAdmin/DeliveryIssues';
 
 // Dispatcher components
-import CommandCenter from './components/Dispatcher/CommandCenter';
+import CommandCenter from './components/Dispatcher/CommandCentre';
 import DispatcherLoads from './components/Dispatcher/Loads';
 import LoadInbox from './components/Dispatcher/LoadInbox';
 import TerminalWorkspace from './components/Dispatcher/TerminalWorkspace';
 import FleetMonitor from './components/Dispatcher/FleetMonitor';
-import FleetAssets from './components/Dispatcher/FleetAssets';
+import FleetAssets from './components/Dispatcher/FleetAssest';
 import AssetInventory from './components/Dispatcher/AssetInventory';
 import RosterControl from './components/Dispatcher/RosterControl';
 import CommunicationDepot from './components/Dispatcher/CommunicationDepot';
