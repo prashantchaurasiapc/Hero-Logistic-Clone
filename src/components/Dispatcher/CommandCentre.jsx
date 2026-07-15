@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
-import { Search, Plus, MapPin, Navigation, Bell, AlertTriangle, Play, CheckCircle2, Siren, ArrowRight, User, ArrowLeft, ArrowUpRight, ShieldAlert, FileText, ChevronRight, MoreVertical, X, Calendar, Clipboard, Camera, PlusCircle, Trash2 } from 'lucide-react';
+import { 
+  Search, Plus, MapPin, Navigation, Bell, AlertTriangle, Play, 
+  CheckCircle2, Siren, ArrowRight, User, ArrowLeft, ArrowUpRight, 
+  ShieldAlert, FileText, ChevronRight, MoreVertical, X, Calendar, 
+  Clipboard, Camera, PlusCircle, Trash2, Menu, MessageSquare, ChevronDown 
+} from 'lucide-react';
 
 export default function CommandCentre() {
   const [view, setView] = useState('dashboard'); // 'dashboard' or 'create-console'
@@ -111,7 +116,7 @@ export default function CommandCentre() {
       triggerToast('Warning: Please provide addresses for route stops.', 'warning');
     }
 
-    const newLoadId = `SHP-${Math.floor(20485 + Math.random() * 100)}`;
+    const newLoadId = `SHP-${Math.floor(20485 + Math.random() * 105)}`;
     const primaryClient = declaredItems[0]?.client || 'Acme Corp';
     const startPoint = stops[0]?.address || 'Sydney Depot';
     const endPoint = stops[stops.length - 1]?.address || 'Melbourne Depot';
@@ -140,122 +145,125 @@ export default function CommandCentre() {
   );
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto bg-white min-h-screen text-left flex flex-col space-y-6">
+    <div className="w-full min-h-screen bg-[#F8FAFC] px-8 py-8 space-y-6 text-left font-sans antialiased text-slate-800">
       {/* Toast Notification */}
       {toastMsg && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-xl animate-fade-in">{toastMsg}</div>
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-xl animate-fade-in">
+          {toastMsg}
+        </div>
       )}
 
-      {/* DASHBOARD VIEW */}
       {view === 'dashboard' ? (
         <>
-          {/* Header */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-2">
-            <div className="text-left">
-              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-0.5">DISPATCHER</span>
-              <span className="text-xs font-bold text-gray-505 tracking-wider block mb-1">LIVE DISPATCH OPERATIONS</span>
-              <h1 className="text-2xl font-bold text-gray-900 tracking-tight leading-none mb-1">Command Center</h1>
-              <p className="text-gray-500 text-xs">FLEET INTELLIGENCE HQ</p>
+          {/* Page Sub-Header Row */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-left">
+            <div>
+              <h1 className="text-3xl font-black text-slate-900 tracking-tight leading-none">
+                Command Center
+              </h1>
+              <p className="text-xs font-black text-slate-400 uppercase tracking-widest mt-1.5">
+                FLEET INTELLIGENCE HQ
+              </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
-              <div className="relative">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <div className="flex items-center gap-3 w-full md:w-auto">
+              <div className="relative w-full md:w-64">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-indigo-650" />
                 <input
                   type="text"
                   placeholder="Search ID, Driver, Client..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full sm:w-60 pl-9 pr-4 py-2 bg-white border border-gray-255 rounded-xl text-xs font-bold text-gray-755 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
+                  className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-brand-500 focus:border-brand-500 shadow-sm"
                 />
               </div>
               <button 
                 onClick={() => setView('create-console')}
-                className="bg-[#FFD400] hover:bg-yellow-400 text-black font-bold text-xs py-2.5 px-5 rounded-xl transition-all shadow-xs cursor-pointer text-center whitespace-nowrap"
+                className="bg-[#FFA000] hover:bg-[#FF9000] text-black font-extrabold text-xs py-3 px-6 rounded-xl transition-all shadow-sm cursor-pointer whitespace-nowrap tracking-wider uppercase"
               >
                 CREATE LOAD
               </button>
             </div>
           </div>
 
-          {/* KPI Cards Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* KPI CARDS ROW */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Active Loads */}
-            <div className="bg-white p-5 rounded-3xl border border-gray-150 flex flex-col justify-between shadow-3xs h-32">
+            <div className="bg-white p-6 rounded-[24px] border border-slate-100 flex flex-col justify-between shadow-[0_8px_30px_rgb(0,0,0,0.015)] h-32 text-left transition-all hover:shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
               <div className="flex justify-between items-start">
-                <div className="p-2.5 rounded-full shrink-0 bg-amber-50 text-amber-500 border border-gray-100 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-lg">
                   📦
                 </div>
-                <span className="px-2 py-0.5 text-[8px] font-bold rounded-lg bg-blue-50 text-blue-600 border border-blue-100">
+                <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-lg bg-blue-50 text-blue-600 border border-blue-100/50">
                   +12%
                 </span>
               </div>
-              <div className="text-left">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">ACTIVE LOADS</p>
-                <h3 className="text-2xl font-bold text-gray-900 leading-tight mt-0.5">{activeMovements.length}</h3>
+              <div>
+                <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">ACTIVE LOADS</p>
+                <h3 className="text-3xl font-black text-slate-900 leading-tight mt-0.5">{activeMovements.length}</h3>
               </div>
             </div>
 
             {/* Drivers Online */}
-            <div className="bg-white p-5 rounded-3xl border border-gray-150 flex flex-col justify-between shadow-3xs h-32">
+            <div className="bg-white p-6 rounded-[24px] border border-slate-100 flex flex-col justify-between shadow-[0_8px_30px_rgb(0,0,0,0.015)] h-32 text-left transition-all hover:shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
               <div className="flex justify-between items-start">
-                <div className="p-2.5 rounded-full shrink-0 bg-emerald-50 text-emerald-500 border border-gray-100 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-lg">
                   🚚
                 </div>
-                <span className="px-2 py-0.5 text-[8px] font-bold rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100">
+                <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100/50">
                   LIVE
                 </span>
               </div>
-              <div className="text-left">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">DRIVERS ONLINE</p>
-                <h3 className="text-2xl font-bold text-gray-900 leading-tight mt-0.5">18</h3>
+              <div>
+                <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">DRIVERS ONLINE</p>
+                <h3 className="text-3xl font-black text-slate-900 leading-tight mt-0.5">18</h3>
               </div>
             </div>
 
             {/* Pending Assignment */}
-            <div className="bg-white p-5 rounded-3xl border border-gray-150 flex flex-col justify-between shadow-3xs h-32">
+            <div className="bg-white p-6 rounded-[24px] border border-slate-100 flex flex-col justify-between shadow-[0_8px_30px_rgb(0,0,0,0.015)] h-32 text-left transition-all hover:shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
               <div className="flex justify-between items-start">
-                <div className="p-2.5 rounded-full shrink-0 bg-amber-50 text-amber-600 border border-gray-100 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-lg">
                   ⚠️
                 </div>
-                <span className="px-2 py-0.5 text-[8px] font-bold rounded-lg bg-amber-55 text-amber-600 border border-amber-100">
+                <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-lg bg-amber-50 text-amber-600 border border-amber-100/50">
                   URGENT
                 </span>
               </div>
-              <div className="text-left">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">PENDING ASSIGNMENT</p>
-                <h3 className="text-2xl font-bold text-gray-900 leading-tight mt-0.5">04</h3>
+              <div>
+                <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">PENDING ASSIGNMENT</p>
+                <h3 className="text-3xl font-black text-slate-900 leading-tight mt-0.5">04</h3>
               </div>
             </div>
 
             {/* Critical Alerts */}
-            <div className="bg-white p-5 rounded-3xl border border-gray-150 flex flex-col justify-between shadow-3xs h-32">
+            <div className="bg-white p-6 rounded-[24px] border border-slate-100 flex flex-col justify-between shadow-[0_8px_30px_rgb(0,0,0,0.015)] h-32 text-left transition-all hover:shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
               <div className="flex justify-between items-start">
-                <div className="p-2.5 rounded-full shrink-0 bg-red-50 text-red-500 border border-gray-100 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-lg">
                   🚨
                 </div>
-                <span className="px-2 py-0.5 text-[8px] font-bold rounded-lg bg-red-50 text-red-600 border border-red-100">
+                <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-lg bg-red-50 text-red-650 border border-red-100/50">
                   FIX NOW
                 </span>
               </div>
-              <div className="text-left">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">CRITICAL ALERTS</p>
-                <h3 className="text-2xl font-bold text-gray-900 leading-tight mt-0.5">02</h3>
+              <div>
+                <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">CRITICAL ALERTS</p>
+                <h3 className="text-3xl font-black text-slate-900 leading-tight mt-0.5">02</h3>
               </div>
             </div>
           </div>
 
-          {/* Table & Side Cards Columns */}
+          {/* TWO COLUMN GRID CONTENT */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
             
-            {/* Active Movements Card */}
-            <div className="lg:col-span-2 bg-white rounded-3xl border border-gray-150 shadow-3xs overflow-hidden">
-              <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-white">
-                <h3 className="font-bold text-gray-955 text-xs uppercase tracking-wider flex items-center gap-2">
-                  <span className="w-5 h-5 bg-purple-50 text-purple-650 rounded-lg flex items-center justify-center shrink-0 border border-purple-100">📊</span>
+            {/* Active Movements (Table Column) */}
+            <div className="lg:col-span-2 bg-white rounded-[24px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.015)] overflow-hidden">
+              <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-white">
+                <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-2">
+                  <span className="w-6 h-6 bg-purple-50 text-purple-650 rounded-lg flex items-center justify-center shrink-0 border border-purple-100">📊</span>
                   Active Movements
                 </h3>
-                <button className="px-3.5 py-1.5 border border-gray-200 text-gray-500 hover:text-gray-900 rounded-xl text-[10px] font-bold cursor-pointer transition-colors hover:bg-gray-50 shadow-3xs">
+                <button className="px-4 py-1.5 border border-slate-200 text-slate-500 hover:text-slate-900 rounded-full text-[10px] font-bold cursor-pointer transition-colors hover:bg-slate-50 shadow-3xs">
                   LIVE TRACKING
                 </button>
               </div>
@@ -263,53 +271,63 @@ export default function CommandCentre() {
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-gray-50/40 border-b border-gray-100">
-                      <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-left">LOAD ID</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-left">ROUTE / STATUS</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-left">RESOURCE</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">ACTION</th>
+                    <tr className="bg-slate-50/40 border-b border-slate-100">
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-left">LOAD ID</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-left">ROUTE / STATUS</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-left">RESOURCE</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-right pr-10">ACTION</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y divide-slate-100">
                     {filteredMovements.map((movement, i) => (
-                      <tr key={i} className="hover:bg-gray-50/30 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap text-left">
-                          <span className="text-xs font-bold text-gray-955 block">{movement.id}</span>
-                          <span className="text-[10px] text-gray-400 font-semibold">{movement.client}</span>
+                      <tr key={i} className="hover:bg-slate-50/30 transition-colors">
+                        <td className="px-6 py-5 whitespace-nowrap text-left align-middle">
+                          <span className="text-xs font-bold text-slate-900 block leading-tight">{movement.id}</span>
+                          <span className="text-[10px] text-slate-400 font-semibold mt-0.5 block leading-none">{movement.client}</span>
                         </td>
-                        <td className="px-6 py-4 text-left">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-xs font-bold text-gray-900">{movement.from}</span>
-                            <ArrowRight className="w-3.5 h-3.5 text-gray-400" />
-                            <span className="text-xs font-bold text-gray-900">{movement.to}</span>
+                        <td className="px-6 py-5 text-left align-middle">
+                          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                            <span>{movement.from}</span>
+                            <span className="text-slate-400">→</span>
+                            <span>{movement.to}</span>
                           </div>
-                          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                            <span className={`px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${
-                              movement.status === 'IN TRANSIT' ? 'bg-blue-50 text-blue-600 border border-blue-100' :
-                              movement.status === 'ARRIVING SOON' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
-                              movement.status === 'IN SORTING' ? 'bg-purple-50 text-purple-600 border border-purple-100' :
-                              'bg-gray-50 text-gray-500 border border-gray-200'
+                          <div className="flex items-center gap-2 mt-1.5">
+                            <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider leading-none ${
+                              movement.status === 'IN TRANSIT' ? 'bg-blue-50 text-blue-600 border border-blue-100/50' :
+                              movement.status === 'ARRIVING SOON' ? 'bg-amber-50 text-amber-600 border border-amber-100/50' :
+                              movement.status === 'IN SORTING' ? 'bg-purple-50 text-purple-600 border border-purple-100/50' :
+                              'bg-slate-50 text-slate-550 border border-slate-200'
                             }`}>
                               {movement.status}
                             </span>
-                            <span className="text-[10px] text-gray-400 font-semibold flex items-center gap-1">
-                              <MapPin className="w-3 h-3 text-red-500" /> {movement.terminal}
+                            <span className="text-[10px] text-slate-400 font-semibold flex items-center gap-1">
+                              <MapPin className="w-3.5 h-3.5 text-red-500 shrink-0" /> {movement.terminal}
                             </span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-left">
-                          <div className="flex items-center gap-2.5">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 bg-blue-50 text-blue-650 border border-blue-100`}>
-                              {movement.avatar}
-                            </div>
+                        <td className="px-6 py-5 whitespace-nowrap text-left align-middle">
+                          <div className="flex items-center gap-3">
+                            {movement.driver === 'Unassigned' ? (
+                              <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center font-bold text-xs shrink-0 text-[#FFD400]">
+                                ?
+                              </div>
+                            ) : (
+                              <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-bold text-xs shrink-0 text-slate-700">
+                                {movement.avatar}
+                              </div>
+                            )}
                             <div>
-                              <span className={`text-xs font-bold block ${movement.driver === 'Unassigned' ? 'text-red-500' : 'text-gray-900'}`}>{movement.driver}</span>
-                              <span className="text-[10px] text-gray-400 font-semibold block">{movement.vehicle}</span>
+                              <span className={`text-xs font-bold block ${movement.driver === 'Unassigned' ? 'text-red-500' : 'text-slate-850'}`}>
+                                {movement.driver}
+                              </span>
+                              <span className="text-[10px] text-slate-400 font-semibold block mt-0.5 leading-none">
+                                {movement.vehicle}
+                              </span>
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right">
-                          <button className="px-3.5 py-1.5 border border-gray-200 text-gray-700 hover:text-black rounded-lg text-xs font-bold transition-all cursor-pointer hover:bg-gray-50 shadow-3xs">
+                        <td className="px-6 py-5 whitespace-nowrap text-right pr-10 align-middle">
+                          <button className="px-4 py-1.5 border border-slate-200 text-slate-650 hover:text-black rounded-full text-xs font-bold transition-all cursor-pointer hover:bg-slate-50 shadow-3xs uppercase tracking-wider">
                             MANAGE
                           </button>
                         </td>
@@ -320,38 +338,38 @@ export default function CommandCentre() {
               </div>
             </div>
 
-            {/* Right Cards Stack */}
+            {/* Right Stack Panel (Fleet Map / Critical Logs) */}
             <div className="space-y-6 lg:col-span-1">
               {/* Fleet Map Card */}
-              <div className="bg-white rounded-3xl border border-[#FFD400] p-6 shadow-3xs text-left relative overflow-hidden flex flex-col justify-between h-40">
+              <div className="bg-white rounded-[24px] border border-[#FFD400] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.01)] text-left flex flex-col justify-between h-40">
                 <div className="flex justify-between items-center">
-                  <h3 className="font-bold text-gray-955 text-xs uppercase tracking-wider flex items-center gap-2">
+                  <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-2">
                     <MapPin className="w-4 h-4 text-red-500" />
                     Fleet Map
                   </h3>
-                  <ArrowRight className="w-4 h-4 text-gray-400 hover:text-black cursor-pointer transition-colors" />
+                  <ArrowRight className="w-4 h-4 text-slate-450 hover:text-black cursor-pointer transition-colors" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">LIVE NETWORK MONITOR</p>
-                  <h3 className="text-3xl font-bold text-gray-955 leading-none mt-1">18</h3>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">LIVE NETWORK MONITOR</p>
+                  <h3 className="text-4xl font-black text-slate-900 leading-none mt-2">18</h3>
                 </div>
               </div>
 
               {/* Critical Logs Card */}
-              <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-3xs text-left space-y-4">
-                <h3 className="font-bold text-gray-955 text-xs uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-gray-50">
+              <div className="bg-white rounded-[24px] border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.01)] text-left space-y-4">
+                <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-50">
                   <Bell className="w-4 h-4 text-red-500" />
                   Critical Logs
                 </h3>
                 
                 <div className="space-y-3">
-                  <div className="p-3.5 bg-white border border-gray-150 rounded-2xl shadow-3xs text-left">
-                    <p className="text-xs font-bold text-gray-955">SHP-20483 geofence breach.</p>
-                    <span className="text-[9px] text-gray-400 font-semibold block mt-1">4m ago</span>
+                  <div className="p-3.5 bg-white border border-slate-100 rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.005)] text-left transition-all hover:border-slate-200">
+                    <p className="text-xs font-bold text-slate-800">SHP-20483 geofence breach.</p>
+                    <span className="text-[9px] text-slate-450 font-semibold block mt-1">4m ago</span>
                   </div>
-                  <div className="p-3.5 bg-white border border-gray-150 rounded-2xl shadow-3xs text-left">
-                    <p className="text-xs font-bold text-gray-955">Unassigned SHP-20484 timeout.</p>
-                    <span className="text-[9px] text-gray-400 font-semibold block mt-1">12m ago</span>
+                  <div className="p-3.5 bg-white border border-slate-100 rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.005)] text-left transition-all hover:border-slate-200">
+                    <p className="text-xs font-bold text-slate-800">Unassigned SHP-20484 timeout.</p>
+                    <span className="text-[9px] text-slate-455 font-semibold block mt-1">12m ago</span>
                   </div>
                 </div>
               </div>
@@ -363,20 +381,22 @@ export default function CommandCentre() {
         /* CREATE LOAD CONSOLE VIEW */
         <div className="space-y-6">
           {/* Console Header Bar */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-gray-100">
-            <div className="flex items-center gap-4 text-left">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-slate-200/80 text-left">
+            <div className="flex items-center gap-4">
               <button 
                 onClick={() => setView('dashboard')}
-                className="w-10 h-10 rounded-full border border-gray-250 flex items-center justify-center hover:bg-gray-55 cursor-pointer shadow-3xs"
+                className="w-10 h-10 rounded-full border border-slate-250 flex items-center justify-center hover:bg-slate-50 cursor-pointer shadow-3xs"
               >
-                <ArrowLeft className="w-5 h-5 text-gray-700" />
+                <ArrowLeft className="w-5 h-5 text-slate-700" />
               </button>
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-xl font-bold text-gray-900 tracking-tight leading-none">CREATE LOAD</h1>
+                  <h1 className="text-xl font-bold text-slate-900 tracking-tight leading-none">CREATE LOAD</h1>
                   <span className="text-xl font-black text-[#FFB800]">CONSOLE</span>
                 </div>
-                <p className="text-gray-450 text-[10px] font-bold uppercase tracking-wider mt-1">OPERATIONAL DE-SORTING LOAD LOGS & STEPS STACKS</p>
+                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mt-1.5">
+                  OPERATIONAL DE-SORTING LOAD LOGS & STEPS STACKS
+                </p>
               </div>
             </div>
 
@@ -386,7 +406,7 @@ export default function CommandCentre() {
                   setView('dashboard');
                   triggerToast('Draft saved successfully.');
                 }}
-                className="px-5 py-2.5 border border-gray-205 hover:bg-gray-50 text-gray-700 font-bold text-xs rounded-xl cursor-pointer transition-colors shadow-3xs bg-white"
+                className="px-5 py-2.5 border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl cursor-pointer transition-colors shadow-3xs bg-white"
               >
                 SAVE DRAFT
               </button>
@@ -406,40 +426,40 @@ export default function CommandCentre() {
             <div className="lg:col-span-8 space-y-6">
               
               {/* Step 1: Route Stops */}
-              <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-3xs text-left">
-                <div className="flex justify-between items-center mb-6 pb-3 border-b border-gray-50">
-                  <h3 className="font-bold text-gray-950 text-xs uppercase tracking-wider flex items-center gap-2">
+              <div className="bg-white rounded-[24px] border border-slate-100 p-6 shadow-sm text-left">
+                <div className="flex justify-between items-center mb-6 pb-3 border-b border-slate-50">
+                  <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-2">
                     <span className="text-xs">🚚</span>
                     STEP 1: CONFIGURE ROUTE STOPS
                   </h3>
                   <button 
                     type="button" 
                     onClick={handleAddStop}
-                    className="bg-purple-650 hover:bg-purple-700 text-white font-bold text-[10px] py-1.5 px-3 rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
+                    className="bg-indigo-650 hover:bg-indigo-700 text-white font-bold text-[10px] py-1.5 px-3 rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" /> ADD STOP
                   </button>
                 </div>
 
                 {/* Timeline Stops list */}
-                <div className="relative pl-6 space-y-6 before:content-[''] before:absolute before:left-[11px] before:top-2 before:bottom-8 before:w-0.5 before:border-l-2 before:border-dashed before:border-gray-200">
+                <div className="relative pl-6 space-y-6 before:content-[''] before:absolute before:left-[11px] before:top-2 before:bottom-8 before:w-0.5 before:border-l-2 before:border-dashed before:border-slate-200">
                   {stops.map((stop, idx) => (
                     <div key={stop.id} className="relative space-y-4">
                       {/* Timeline dot marker */}
                       <span className="absolute -left-[20px] top-1.5 w-3.5 h-3.5 rounded-full bg-black border-2 border-white shadow-xs z-10"></span>
 
                       {/* Card fields */}
-                      <div className="p-4 border border-gray-150 rounded-2xl bg-white space-y-4">
+                      <div className="p-4 border border-slate-100 rounded-2xl bg-white space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5">STEP TYPE</label>
+                            <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">STEP TYPE</label>
                             <select 
                               value={stop.type}
                               onChange={(e) => {
                                 const val = e.target.value;
                                 setStops(prev => prev.map(s => s.id === stop.id ? { ...s, type: val } : s));
                               }}
-                              className="w-full px-3 py-2 border border-gray-250 rounded-xl text-xs font-bold focus:outline-none bg-white cursor-pointer text-gray-900"
+                              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none bg-white cursor-pointer text-slate-800"
                             >
                               <option value="Pickup">Pickup</option>
                               <option value="Drop">Drop</option>
@@ -447,7 +467,7 @@ export default function CommandCentre() {
                           </div>
 
                           <div>
-                            <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5">ADDRESS / GEOMAP</label>
+                            <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">ADDRESS / GEOMAP</label>
                             <div className="relative">
                               <MapPin className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-pink-500 shrink-0" />
                               <input 
@@ -458,7 +478,7 @@ export default function CommandCentre() {
                                   const val = e.target.value;
                                   setStops(prev => prev.map(s => s.id === stop.id ? { ...s, address: val } : s));
                                 }}
-                                className="w-full pl-9 pr-4 py-2 border border-gray-250 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
+                                className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
                               />
                             </div>
                           </div>
@@ -466,9 +486,9 @@ export default function CommandCentre() {
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <div>
-                            <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5">CONTACT NAME</label>
+                            <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">CONTACT NAME</label>
                             <div className="relative">
-                              <User className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                              <User className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-450" />
                               <input 
                                 type="text"
                                 placeholder="Receiver/Sender Name"
@@ -477,12 +497,12 @@ export default function CommandCentre() {
                                   const val = e.target.value;
                                   setStops(prev => prev.map(s => s.id === stop.id ? { ...s, contact: val } : s));
                                 }}
-                                className="w-full pl-9 pr-4 py-2 border border-gray-250 rounded-xl text-xs font-bold text-gray-900 focus:outline-none"
+                                className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none"
                               />
                             </div>
                           </div>
                           <div>
-                            <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5">PHONE</label>
+                            <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">PHONE</label>
                             <input 
                               type="text"
                               placeholder="+61..."
@@ -491,13 +511,13 @@ export default function CommandCentre() {
                                 const val = e.target.value;
                                 setStops(prev => prev.map(s => s.id === stop.id ? { ...s, phone: val } : s));
                               }}
-                              className="w-full px-3.5 py-2 border border-gray-250 rounded-xl text-xs font-bold text-gray-900 focus:outline-none"
+                              className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none"
                             />
                           </div>
                           <div>
-                            <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5">RECEIVE TIME</label>
+                            <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">RECEIVE TIME</label>
                             <div className="relative">
-                              <Calendar className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                              <Calendar className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-455" />
                               <input 
                                 type="text"
                                 placeholder="DD-MM-YYYY --:--"
@@ -506,7 +526,7 @@ export default function CommandCentre() {
                                   const val = e.target.value;
                                   setStops(prev => prev.map(s => s.id === stop.id ? { ...s, time: val } : s));
                                 }}
-                                className="w-full pl-9 pr-4 py-2 border border-gray-250 rounded-xl text-xs font-bold text-gray-900 focus:outline-none"
+                                className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none"
                               />
                             </div>
                           </div>
@@ -518,9 +538,9 @@ export default function CommandCentre() {
               </div>
 
               {/* Step 2: Items / Cars declaration */}
-              <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-3xs text-left space-y-5">
-                <div className="flex justify-between items-center mb-2 pb-3 border-b border-gray-50">
-                  <h3 className="font-bold text-gray-955 text-xs uppercase tracking-wider flex items-center gap-2">
+              <div className="bg-white rounded-[24px] border border-slate-100 p-6 shadow-sm text-left space-y-5">
+                <div className="flex justify-between items-center mb-2 pb-3 border-b border-slate-50">
+                  <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-2">
                     <span className="text-xs">📦</span>
                     STEP 2: DECLARE ITEMS / CARS
                   </h3>
@@ -536,10 +556,10 @@ export default function CommandCentre() {
                 {declaredItems.map((item, idx) => (
                   <div key={item.id} className="space-y-4">
                     <span className="text-xs font-black text-amber-500 uppercase tracking-wide">ITEM ENTRY #{item.id}</span>
-                    <div className="p-4 border border-gray-150 rounded-2xl bg-white space-y-4">
+                    <div className="p-4 border border-slate-100 rounded-2xl bg-white space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                          <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5">CUSTOMER / OWNER</label>
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">CUSTOMER / OWNER</label>
                           <input 
                             type="text"
                             value={item.client}
@@ -547,31 +567,31 @@ export default function CommandCentre() {
                               const val = e.target.value;
                               setDeclaredItems(prev => prev.map(d => d.id === item.id ? { ...d, client: val } : d));
                             }}
-                            className="w-full px-3.5 py-2 border border-gray-250 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
+                            className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-850 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
                           />
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5">LINK PICKUP STOP</label>
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">LINK PICKUP STOP</label>
                           <select 
                             value={item.pickupStop}
                             onChange={(e) => {
                               const val = e.target.value;
                               setDeclaredItems(prev => prev.map(d => d.id === item.id ? { ...d, pickupStop: val } : d));
                             }}
-                            className="w-full px-3 py-2 border border-gray-250 rounded-xl text-xs font-bold text-gray-900 focus:outline-none bg-white cursor-pointer"
+                            className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-850 focus:outline-none bg-white cursor-pointer"
                           >
                             <option>Step #1 Pickup (No Address)</option>
                           </select>
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5">LINK DROP-OFF STOP</label>
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">LINK DROP-OFF STOP</label>
                           <select 
                             value={item.dropStop}
                             onChange={(e) => {
                               const val = e.target.value;
                               setDeclaredItems(prev => prev.map(d => d.id === item.id ? { ...d, dropStop: val } : d));
                             }}
-                            className="w-full px-3 py-2 border border-gray-250 rounded-xl text-xs font-bold text-gray-900 focus:outline-none bg-white cursor-pointer"
+                            className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-850 focus:outline-none bg-white cursor-pointer"
                           >
                             <option>Step #2 Drop (No Address)</option>
                           </select>
@@ -580,7 +600,7 @@ export default function CommandCentre() {
 
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div className="md:col-span-3">
-                          <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5">ITEM DESCRIPTION / IDENTIFICATION</label>
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">ITEM DESCRIPTION / IDENTIFICATION</label>
                           <input 
                             type="text"
                             placeholder="e.g. 2023 Toyota Hilux or General..."
@@ -589,13 +609,13 @@ export default function CommandCentre() {
                               const val = e.target.value;
                               setDeclaredItems(prev => prev.map(d => d.id === item.id ? { ...d, desc: val } : d));
                             }}
-                            className="w-full px-3.5 py-2 border border-gray-250 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
+                            className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-850 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
                           />
                         </div>
                         <div className="md:col-span-1">
-                          <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1.5">WEIGHT (KG)</label>
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">WEIGHT (KG)</label>
                           <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">⚖️</span>
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-450 text-xs">⚖️</span>
                             <input 
                               type="text"
                               placeholder="e.g. 1500"
@@ -604,7 +624,7 @@ export default function CommandCentre() {
                                 const val = e.target.value;
                                 setDeclaredItems(prev => prev.map(d => d.id === item.id ? { ...d, weight: val } : d));
                               }}
-                              className="w-full pl-9 pr-4 py-2 border border-gray-250 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
+                              className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-850 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
                             />
                           </div>
                         </div>
@@ -620,31 +640,31 @@ export default function CommandCentre() {
             <div className="lg:col-span-4 space-y-6">
               
               {/* Load Specifications Card */}
-              <div className="bg-[#0B0F17] rounded-3xl p-6 text-white text-left space-y-4 shadow-md">
+              <div className="bg-[#0B0F17] rounded-[24px] p-6 text-white text-left space-y-4 shadow-md">
                 <span className="text-[10px] font-black text-amber-500 tracking-wider block uppercase">LOAD SPECIFICATIONS</span>
                 
                 <div>
-                  <label className="block text-[9px] font-bold text-gray-400 tracking-wider uppercase mb-1.5">CUSTOMER REF NUMBER</label>
+                  <label className="block text-[9px] font-bold text-slate-400 tracking-wider uppercase mb-1.5">CUSTOMER REF NUMBER</label>
                   <input 
                     type="text"
                     value={customerRef}
                     onChange={(e) => setCustomerRef(e.target.value)}
-                    className="w-full px-3.5 py-2 bg-white text-gray-900 rounded-xl text-xs font-bold focus:outline-none border-none"
+                    className="w-full px-3.5 py-2 bg-white text-slate-900 rounded-xl text-xs font-bold focus:outline-none border-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[9px] font-bold text-gray-400 tracking-wider uppercase mb-1.5">PRIORITY TAG</label>
+                  <label className="block text-[9px] font-bold text-slate-400 tracking-wider uppercase mb-1.5">PRIORITY TAG</label>
                   <div className="flex gap-2">
                     {['MANUAL', 'EXPRESS', 'NIGHT'].map((pTag) => (
                       <button
                         key={pTag}
                         type="button"
                         onClick={() => setPriorityTag(pTag)}
-                        className={`flex-1 py-2 text-[10px] font-bold rounded-xl transition-all cursor-pointer text-center ${
+                        className={`flex-1 py-2.5 text-[10px] font-bold rounded-xl transition-all cursor-pointer text-center ${
                           priorityTag === pTag 
                             ? 'bg-[#FFD400] text-black border-none' 
-                            : 'bg-white text-gray-900 hover:bg-gray-50'
+                            : 'bg-white text-slate-900 hover:bg-slate-50'
                         }`}
                       >
                         {pTag}
@@ -654,50 +674,50 @@ export default function CommandCentre() {
                 </div>
 
                 <div>
-                  <label className="block text-[9px] font-bold text-gray-400 tracking-wider uppercase mb-1.5">SHIPPING DEADLINE</label>
+                  <label className="block text-[9px] font-bold text-slate-400 tracking-wider uppercase mb-1.5">SHIPPING DEADLINE</label>
                   <div className="relative">
-                    <Calendar className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 shrink-0" />
+                    <Calendar className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-450 shrink-0" />
                     <input 
                       type="text"
                       placeholder="DD-MM-YYYY --:--"
                       value={shippingDeadline}
                       onChange={(e) => setShippingDeadline(e.target.value)}
-                      className="w-full pl-9 pr-4 py-2 bg-white text-gray-900 rounded-xl text-xs font-bold focus:outline-none border-none"
+                      className="w-full pl-9 pr-4 py-2 bg-white text-slate-900 rounded-xl text-xs font-bold focus:outline-none border-none"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Documents & Photos upload box */}
-              <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-3xs text-left space-y-4">
-                <span className="text-[10px] font-bold text-gray-400 tracking-wider block uppercase">DOCUMENTS & PHOTOS</span>
+              <div className="bg-white rounded-[24px] border border-slate-100 p-6 shadow-sm text-left space-y-4">
+                <span className="text-[10px] font-bold text-slate-400 tracking-wider block uppercase">DOCUMENTS & PHOTOS</span>
                 <div className="grid grid-cols-2 gap-4">
                   <div 
                     onClick={() => triggerToast('Select and upload manifest pdf...')}
-                    className="border border-dashed border-gray-250 p-5 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-gray-50 transition-colors cursor-pointer select-none"
+                    className="border border-dashed border-slate-200 p-5 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-slate-50 transition-colors cursor-pointer select-none"
                   >
-                    <Clipboard className="w-5 h-5 text-blue-550 shrink-0" />
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">MANIFEST</span>
+                    <Clipboard className="w-5 h-5 text-indigo-500 shrink-0" />
+                    <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wide">MANIFEST</span>
                   </div>
                   <div 
                     onClick={() => triggerToast('Select and upload cargo photos...')}
-                    className="border border-dashed border-gray-250 p-5 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-gray-50 transition-colors cursor-pointer select-none"
+                    className="border border-dashed border-slate-200 p-5 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-slate-50 transition-colors cursor-pointer select-none"
                   >
-                    <Camera className="w-5 h-5" />
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">PHOTOS</span>
+                    <Camera className="w-5 h-5 text-slate-650" />
+                    <span className="text-[10px] font-bold text-slate-455 uppercase tracking-wide">PHOTOS</span>
                   </div>
                 </div>
               </div>
 
               {/* Internal Dispatch Notes */}
-              <div className="bg-white rounded-3xl border border-gray-150 p-6 shadow-3xs text-left space-y-4">
-                <span className="text-[10px] font-bold text-gray-400 tracking-wider block uppercase">INTERNAL DISPATCH NOTES</span>
+              <div className="bg-white rounded-[24px] border border-slate-100 p-6 shadow-sm text-left space-y-4">
+                <span className="text-[10px] font-bold text-slate-400 tracking-wider block uppercase">INTERNAL DISPATCH NOTES</span>
                 <textarea
                   placeholder="Data-codes, site rules, or special procedures..."
                   value={internalNotes}
                   onChange={(e) => setInternalNotes(e.target.value)}
                   rows={4}
-                  className="w-full p-4 border border-gray-250 rounded-2xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#FFD400] resize-none"
+                  className="w-full p-4 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#FFD400] resize-none"
                 />
               </div>
 
