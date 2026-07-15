@@ -337,7 +337,7 @@ export default function Proposals() {
                   required
                   value={modalForm.leadId}
                   onChange={(e) => setModalForm({ ...modalForm, leadId: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#F59E0B] rounded-xl focus:outline-none text-slate-800 cursor-pointer"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-800 cursor-pointer"
                 >
                   {leads.map(l => (
                     <option key={l.id} value={l.id}>{l.company} ({l.name})</option>
@@ -354,7 +354,7 @@ export default function Proposals() {
                     min="0"
                     value={modalForm.value}
                     onChange={(e) => setModalForm({ ...modalForm, value: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#F59E0B] rounded-xl focus:outline-none text-slate-800"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-800"
                   />
                 </div>
 
@@ -367,7 +367,7 @@ export default function Proposals() {
                     max="50"
                     value={modalForm.discount}
                     onChange={(e) => setModalForm({ ...modalForm, discount: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#F59E0B] rounded-xl focus:outline-none text-slate-800"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-800"
                   />
                 </div>
 
@@ -377,7 +377,7 @@ export default function Proposals() {
                   <select
                     value={modalForm.validity}
                     onChange={(e) => setModalForm({ ...modalForm, validity: e.target.value })}
-                    className="w-full px-2.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#F59E0B] rounded-xl focus:outline-none text-slate-800 cursor-pointer"
+                    className="w-full px-2.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-800 cursor-pointer"
                   >
                     <option value="14 Days">14 Days</option>
                     <option value="30 Days">30 Days</option>
@@ -395,7 +395,7 @@ export default function Proposals() {
                   onChange={(e) => setModalForm({ ...modalForm, notes: e.target.value })}
                   placeholder="Additional terms, negotiation context..."
                   rows="3"
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 focus:border-[#F59E0B] rounded-xl focus:outline-none text-slate-800 resize-none font-semibold"
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-800 resize-none font-semibold"
                 />
               </div>
 
@@ -409,7 +409,7 @@ export default function Proposals() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-[#F59E0B] hover:bg-[#D97706] text-black font-extrabold text-xs py-3 rounded-xl transition-colors cursor-pointer text-center shadow-xs"
+                  className="flex-1 bg-[#ffcc00] hover:bg-[#e6b800] text-black font-extrabold text-xs py-3 rounded-xl transition-colors cursor-pointer text-center shadow-xs"
                 >
                   Save Draft Proposal
                 </button>

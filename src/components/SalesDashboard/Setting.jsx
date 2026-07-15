@@ -153,77 +153,15 @@ export default function Settings() {
         </div>
       )}
 
-      {/* Header Container */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0 bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-2">
         <div>
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none">
-              Settings
-            </h1>
-            <div className="bg-[#FEF3C7] text-[#92400E] px-2.5 py-1 text-[9px] rounded-lg border border-[#FDE68A] uppercase font-black leading-none flex flex-col items-center justify-center shrink-0">
-              <span className="text-[7px] text-[#B45309] font-bold tracking-wider mb-0.5">Enterprise</span>
-              <span>Logistics</span>
-            </div>
-            <span className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] px-2.5 py-1 rounded-full font-extrabold shrink-0">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              Shift: Sales Active
-            </span>
-          </div>
-          <p className="text-xs text-slate-500 mt-2 font-medium">
+          <h1 className="text-2xl font-black text-slate-900 mb-1">
+            Settings
+          </h1>
+          <p className="text-sm font-medium text-slate-500">
             Complete end-to-end client conversion console backed by secure localStorage registry tables.
           </p>
-        </div>
-
-        <div className="flex items-center gap-3 w-full md:w-auto flex-wrap sm:flex-nowrap">
-          {/* Role Dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => setShowRoleDropdown(!showRoleDropdown)}
-              className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-800 text-[10px] px-3.5 py-2 rounded-xl font-black hover:bg-amber-100 cursor-pointer shadow-xs whitespace-nowrap"
-            >
-              Role: {activeRole === 'Sales Director' ? 'Sales Director (Full Access)' : `${activeRole} (Sales Rep)`}
-              <ChevronDown className="w-3.5 h-3.5 text-amber-700 shrink-0" />
-            </button>
-            {showRoleDropdown && (
-              <div className="absolute right-0 mt-1.5 w-64 bg-white border border-slate-200 rounded-xl shadow-xl z-50 py-1.5 text-xs text-slate-700">
-                <div className="px-3 py-1 text-[9px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100 mb-1">Select Session Identity</div>
-                <button
-                  onClick={() => { setActiveRole('Sales Director'); setShowRoleDropdown(false); }}
-                  className={`w-full px-3 py-2 text-left font-bold hover:bg-slate-50 flex items-center justify-between ${activeRole === 'Sales Director' ? 'text-amber-700 bg-amber-50/50' : ''}`}
-                >
-                  Sales Director (Full Access)
-                  {activeRole === 'Sales Director' && <Check className="w-3.5 h-3.5" />}
-                </button>
-                {repsList.map(rep => (
-                  <button
-                    key={rep}
-                    onClick={() => { setActiveRole(rep); setShowRoleDropdown(false); }}
-                    className={`w-full px-3 py-2 text-left font-bold hover:bg-slate-50 flex items-center justify-between ${activeRole === rep ? 'text-amber-700 bg-amber-50/50' : ''}`}
-                  >
-                    {rep} (Sales Rep)
-                    {activeRole === rep && <Check className="w-3.5 h-3.5" />}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Bell */}
-          <button className="bg-white hover:bg-slate-50 border border-slate-200 rounded-xl p-2 text-slate-500 hover:text-slate-800 cursor-pointer relative shadow-xs shrink-0">
-            <Bell className="w-4 h-4" />
-            <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-rose-500 border-2 border-white"></span>
-          </button>
-
-          {/* Add New Lead */}
-          <button
-            onClick={() => alert("Intake new lead from Leads Console Database")}
-            className="flex-grow sm:flex-grow-0 bg-[#F59E0B] hover:bg-[#D97706] text-black font-extrabold text-xs px-4 py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
-          >
-            <Plus className="w-4 h-4 shrink-0 stroke-[3px]" /> Add New Lead
-          </button>
         </div>
       </div>
 
@@ -250,7 +188,7 @@ export default function Settings() {
                 <select
                   value={selectedTemplate}
                   onChange={(e) => handleSelectTemplate(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#F59E0B] rounded-xl focus:outline-none text-slate-800 text-xs font-semibold appearance-none cursor-pointer pr-8"
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-800 text-xs font-semibold appearance-none cursor-pointer pr-8"
                 >
                   {Object.keys(DEFAULT_TEMPLATES).map(name => (
                     <option key={name} value={name}>{name}</option>
@@ -269,7 +207,7 @@ export default function Settings() {
                 type="text"
                 value={templateSubject}
                 onChange={(e) => setTemplateSubject(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#F59E0B] rounded-xl focus:outline-none text-slate-800 text-xs font-semibold"
+                className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-800 text-xs font-semibold"
               />
             </div>
 
@@ -282,7 +220,7 @@ export default function Settings() {
                 rows="7"
                 value={templateBody}
                 onChange={(e) => setTemplateBody(e.target.value)}
-                className="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 focus:border-[#F59E0B] rounded-xl focus:outline-none text-slate-700 text-[11px] font-mono resize-none leading-relaxed"
+                className="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-700 text-[11px] font-mono resize-none leading-relaxed"
               />
               <p className="text-[9px] text-slate-400 font-semibold mt-1.5">
                 Available merge tags: {'{{contact_name}}'}, {'{{company_name}}'}, {'{{rep_name}}'}
@@ -292,7 +230,7 @@ export default function Settings() {
             {/* Save Button */}
             <button
               onClick={handleSaveTemplate}
-              className="w-full bg-[#F59E0B] hover:bg-[#D97706] text-black font-extrabold text-xs py-3 rounded-xl flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-xs"
+              className="w-full bg-[#ffcc00] hover:bg-[#e6b800] text-black font-extrabold text-xs py-3 rounded-xl flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-xs"
             >
               <FileText className="w-4 h-4 shrink-0" />
               Save Template Configuration
@@ -336,11 +274,11 @@ export default function Settings() {
                 onChange={(e) => setNewStageInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddStage()}
                 placeholder="New stage title..."
-                className="flex-grow px-4 py-2.5 bg-white border border-slate-200 focus:border-[#F59E0B] rounded-xl focus:outline-none text-slate-800 text-[11px] font-semibold"
+                className="flex-grow px-4 py-2.5 bg-white border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-800 text-[11px] font-semibold"
               />
               <button
                 onClick={handleAddStage}
-                className="px-5 py-2.5 bg-white border border-slate-200 rounded-xl text-[#F59E0B] font-extrabold text-[11px] cursor-pointer hover:border-[#F59E0B] transition-colors whitespace-nowrap"
+                className="px-5 py-2.5 bg-white border border-slate-200 rounded-xl text-[#e6b800] font-extrabold text-[11px] cursor-pointer hover:border-[#ffcc00] transition-colors whitespace-nowrap"
               >
                 Add
               </button>
@@ -378,11 +316,11 @@ export default function Settings() {
                 onChange={(e) => setNewSourceInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddSource()}
                 placeholder="New acquisition source..."
-                className="flex-grow px-4 py-2.5 bg-white border border-slate-200 focus:border-[#F59E0B] rounded-xl focus:outline-none text-slate-800 text-[11px] font-semibold"
+                className="flex-grow px-4 py-2.5 bg-white border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-800 text-[11px] font-semibold"
               />
               <button
                 onClick={handleAddSource}
-                className="px-5 py-2.5 bg-white border border-slate-200 rounded-xl text-[#F59E0B] font-extrabold text-[11px] cursor-pointer hover:border-[#F59E0B] transition-colors whitespace-nowrap"
+                className="px-5 py-2.5 bg-white border border-slate-200 rounded-xl text-[#e6b800] font-extrabold text-[11px] cursor-pointer hover:border-[#ffcc00] transition-colors whitespace-nowrap"
               >
                 Add
               </button>

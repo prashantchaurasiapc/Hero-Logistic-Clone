@@ -197,7 +197,7 @@ export default function SalesDashboard() {
                 <button className="bg-purple-600 text-white text-[10px] font-bold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-1.5 hover:bg-purple-700 transition-colors">
                   <Star className="w-3.5 h-3.5" /> Recommend Plan
                 </button>
-                <button className="bg-[#FFD400] text-black text-[10px] font-bold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-1.5 hover:bg-[#FFC800] transition-colors">
+                <button className="bg-[#ffcc00] text-black text-[10px] font-bold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-1.5 hover:bg-[#e6b800] transition-colors">
                   <Calendar className="w-3.5 h-3.5" /> Book Demo
                 </button>
                 <button className="bg-slate-800 text-white text-[10px] font-bold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-1.5 hover:bg-slate-900 transition-colors">
@@ -437,7 +437,7 @@ export default function SalesDashboard() {
 
               <button 
                 onClick={() => setShowAddTaskModal(false)}
-                className="w-full bg-[#FFB300] hover:bg-[#FFA000] text-black font-extrabold text-sm py-4 rounded-xl shadow-sm transition-colors mt-2"
+                className="w-full bg-[#ffcc00] hover:bg-[#e6b800] text-black font-extrabold text-sm py-4 rounded-xl shadow-sm transition-colors mt-2"
               >
                 Create Task checklist
               </button>

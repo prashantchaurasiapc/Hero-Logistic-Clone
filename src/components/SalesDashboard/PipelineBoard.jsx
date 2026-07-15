@@ -274,7 +274,7 @@ export default function PipelineBoard() {
               onDrop={(e) => handleCardDrop(e, colStage)}
               className={`w-72 rounded-2xl p-4 flex flex-col shrink-0 min-h-[400px] border transition-all ${
                 isDraggingOver 
-                  ? 'bg-amber-50/50 border-[#F59E0B] border-dashed shadow-inner scale-[1.01]' 
+                  ? 'bg-amber-50/50 border-[#ffcc00] border-dashed shadow-inner scale-[1.01]' 
                   : 'bg-slate-50 border-slate-200/60'
               }`}
             >
@@ -546,7 +546,7 @@ export default function PipelineBoard() {
                     value={modalForm.company}
                     onChange={(e) => setModalForm({ ...modalForm, company: e.target.value })}
                     placeholder="e.g. Vance Refrigeration"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#F59E0B] rounded-xl focus:outline-none text-slate-800"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-800"
                   />
                 </div>
                 
@@ -561,7 +561,7 @@ export default function PipelineBoard() {
                     value={modalForm.name}
                     onChange={(e) => setModalForm({ ...modalForm, name: e.target.value })}
                     placeholder="e.g. Robert Vance"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#F59E0B] rounded-xl focus:outline-none text-slate-800"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-800"
                   />
                 </div>
               </div>
@@ -578,7 +578,7 @@ export default function PipelineBoard() {
                     value={modalForm.email}
                     onChange={(e) => setModalForm({ ...modalForm, email: e.target.value })}
                     placeholder="e.g. robertvance@vance.com"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#F59E0B] rounded-xl focus:outline-none text-slate-800"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-800"
                   />
                 </div>
 
@@ -592,7 +592,7 @@ export default function PipelineBoard() {
                     value={modalForm.phone}
                     onChange={(e) => setModalForm({ ...modalForm, phone: e.target.value })}
                     placeholder="e.g. 555-0101"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#F59E0B] rounded-xl focus:outline-none text-slate-800"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-800"
                   />
                 </div>
               </div>
@@ -608,7 +608,7 @@ export default function PipelineBoard() {
                     min="1"
                     value={modalForm.fleetSize}
                     onChange={(e) => setModalForm({ ...modalForm, fleetSize: parseInt(e.target.value) || 0 })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#F59E0B] rounded-xl focus:outline-none text-slate-800"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-800"
                   />
                 </div>
                 
@@ -620,7 +620,7 @@ export default function PipelineBoard() {
                   <select
                     value={modalForm.niche}
                     onChange={(e) => setModalForm({ ...modalForm, niche: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#F59E0B] rounded-xl focus:outline-none text-slate-800 cursor-pointer"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-800 cursor-pointer"
                   >
                     {niches.map(n => (
                       <option key={n} value={n}>{n}</option>
@@ -638,7 +638,7 @@ export default function PipelineBoard() {
                     min="0"
                     value={modalForm.revenue}
                     onChange={(e) => setModalForm({ ...modalForm, revenue: parseInt(e.target.value) || 0 })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#F59E0B] rounded-xl focus:outline-none text-slate-800"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-800"
                   />
                 </div>
               </div>
@@ -652,7 +652,7 @@ export default function PipelineBoard() {
                   <select
                     value={modalForm.stage}
                     onChange={(e) => setModalForm({ ...modalForm, stage: e.target.value })}
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#F59E0B] rounded-xl focus:outline-none text-slate-800 cursor-pointer"
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-800 cursor-pointer"
                   >
                     {columnsList.map(c => (
                       <option key={c} value={c}>{c}</option>
@@ -671,7 +671,7 @@ export default function PipelineBoard() {
                     max="100"
                     value={modalForm.score}
                     onChange={(e) => setModalForm({ ...modalForm, score: Math.min(100, Math.max(0, parseInt(e.target.value) || 0)) })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#F59E0B] rounded-xl focus:outline-none text-slate-800"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-800"
                   />
                 </div>
 
@@ -683,7 +683,7 @@ export default function PipelineBoard() {
                   <select
                     value={modalForm.rep}
                     onChange={(e) => setModalForm({ ...modalForm, rep: e.target.value })}
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#F59E0B] text-slate-800 cursor-pointer rounded-xl focus:outline-none"
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] text-slate-800 cursor-pointer rounded-xl focus:outline-none"
                   >
                     {repsList.map(rep => (
                       <option key={rep} value={rep}>{rep}</option>
@@ -702,7 +702,7 @@ export default function PipelineBoard() {
                   onChange={(e) => setModalForm({ ...modalForm, notes: e.target.value })}
                   placeholder="Describe main requirements or software pain points..."
                   rows="3"
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 focus:border-[#F59E0B] rounded-xl focus:outline-none text-slate-850 text-xs font-semibold resize-none"
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-850 text-xs font-semibold resize-none"
                 />
               </div>
 
@@ -717,7 +717,7 @@ export default function PipelineBoard() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-[#F59E0B] hover:bg-[#D97706] text-black font-extrabold text-xs py-3 rounded-xl transition-colors cursor-pointer text-center shadow-xs"
+                  className="flex-1 bg-[#ffcc00] hover:bg-[#e6b800] text-black font-extrabold text-xs py-3 rounded-xl transition-colors cursor-pointer text-center shadow-xs"
                 >
                   Intake Lead Profile
                 </button>

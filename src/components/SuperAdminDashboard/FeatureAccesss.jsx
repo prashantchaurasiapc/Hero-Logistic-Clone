@@ -10,6 +10,12 @@ export default function FeatureAccess() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [toast, setToast] = useState('');
 
+  // Configure / Licensing Policy Drawer State
+  const [showConfigureDrawer, setShowConfigureDrawer] = useState(false);
+  const [configureFeature, setConfigureFeature] = useState(null);
+  const [configureTab, setConfigureTab] = useState('Overview');
+  const [showBumpForm, setShowBumpForm] = useState(true);
+
   // Modal Wizard State
   const [modalStep, setModalStep] = useState(1);
   const [newFeatName, setNewFeatName] = useState('');
@@ -42,7 +48,12 @@ export default function FeatureAccess() {
       name: 'Admin Panel Base Shell', 
       version: 'v1.0.0', 
       desc: 'Global navigation, theme styling engines, and...', 
+      fullDesc: 'Global navigation, theme styling engines, and sidebar layouts.',
       category: 'Platform', 
+      requiredModules: 'Platform Base',
+      apiLoad: '120,000 requests',
+      storage: '0.5 GB',
+      footprint: 'Low',
       plans: { Starter: true, Pro: true, Enterprise: true, Custom: true }, 
       addon: 'No', 
       licensing: 'Core', 
@@ -55,7 +66,12 @@ export default function FeatureAccess() {
       name: 'Role-Based Access Controllers', 
       version: 'v1.0.0', 
       desc: 'Custom operator/dispatcher permissions, adm...', 
+      fullDesc: 'Custom operator/dispatcher permissions, admin role matrices, and access policies.',
       category: 'Platform', 
+      requiredModules: 'Platform Base',
+      apiLoad: '85,000 requests',
+      storage: '0.3 GB',
+      footprint: 'Low',
       plans: { Starter: true, Pro: true, Enterprise: true, Custom: true }, 
       addon: 'No', 
       licensing: 'Core', 
@@ -68,8 +84,13 @@ export default function FeatureAccess() {
       name: 'Interactive Operations Map', 
       version: 'v1.2.0', 
       desc: 'Real-time coordinate plotting for routes, deliv...', 
+      fullDesc: 'Real-time coordinate plotting for routes, delivery stops, and fleet movement visualization.',
       dependsOn: 'feat-gps-pings',
       category: 'Operations', 
+      requiredModules: 'GPS Tracking',
+      apiLoad: '210,000 requests',
+      storage: '2.1 GB',
+      footprint: 'Medium',
       plans: { Starter: true, Pro: true, Enterprise: true, Custom: true }, 
       addon: 'No', 
       licensing: 'Core', 
@@ -82,7 +103,12 @@ export default function FeatureAccess() {
       name: 'Fleet Asset Maintenance Logs', 
       version: 'v1.0.0', 
       desc: 'Vehicles, trailers, registrations, inspections an...', 
+      fullDesc: 'Vehicles, trailers, registrations, inspections and maintenance scheduling logs.',
       category: 'Fleet', 
+      requiredModules: 'Fleet Management',
+      apiLoad: '95,000 requests',
+      storage: '4.8 GB',
+      footprint: 'Low',
       plans: { Starter: true, Pro: true, Enterprise: true, Custom: true }, 
       addon: 'No', 
       licensing: 'Core', 
@@ -95,8 +121,13 @@ export default function FeatureAccess() {
       name: 'ELD Driver Log Profiles', 
       version: 'v1.1.0', 
       desc: 'Compliance, training, licenses, drug screening...', 
+      fullDesc: 'Compliance, training, licenses, drug screening, and ELD trainer logs.',
       dependsOn: 'feat-fleet-logs',
       category: 'Drivers', 
+      requiredModules: 'Driver Management',
+      apiLoad: '75,000 requests',
+      storage: '18.5 GB',
+      footprint: 'Low',
       plans: { Starter: true, Pro: true, Enterprise: true, Custom: true }, 
       addon: 'No', 
       licensing: 'Core', 
@@ -109,8 +140,13 @@ export default function FeatureAccess() {
       name: 'Dispatch Scheduling Board', 
       version: 'v1.3.0', 
       desc: 'Drag & drop load assignments, driver scheduli...', 
+      fullDesc: 'Drag & drop load assignments, driver scheduling, and live dispatch board.',
       dependsOn: 'feat-drivers-eld',
       category: 'Dispatch', 
+      requiredModules: 'Dispatch Core',
+      apiLoad: '140,000 requests',
+      storage: '3.2 GB',
+      footprint: 'Medium',
       plans: { Starter: true, Pro: true, Enterprise: true, Custom: true }, 
       addon: 'No', 
       licensing: 'Core', 
@@ -123,7 +159,12 @@ export default function FeatureAccess() {
       name: 'Load Booking Registry', 
       version: 'v1.0.0', 
       desc: 'Loads registry, route confirmation logs, BOL, a...', 
+      fullDesc: 'Loads registry, route confirmation logs, BOL, and carrier contract storage.',
       category: 'Loads', 
+      requiredModules: 'Load Management',
+      apiLoad: '160,000 requests',
+      storage: '5.5 GB',
+      footprint: 'Low',
       plans: { Starter: true, Pro: true, Enterprise: true, Custom: true }, 
       addon: 'No', 
       licensing: 'Core', 
@@ -136,7 +177,12 @@ export default function FeatureAccess() {
       name: 'White-Label Brand Theme Configurations', 
       version: 'v1.0.0', 
       desc: 'Admin styling settings parameters (branded p...', 
+      fullDesc: 'Admin styling settings parameters for branded portal themes and custom logo integrations.',
       category: 'Administration', 
+      requiredModules: 'Theme Engine',
+      apiLoad: '30,000 requests',
+      storage: '1.2 GB',
+      footprint: 'Low',
       plans: { Starter: false, Pro: false, Enterprise: true, Custom: true }, 
       addon: 'No', 
       licensing: 'Premium', 
@@ -149,7 +195,12 @@ export default function FeatureAccess() {
       name: 'Developer Sandbox Credentials Access', 
       version: 'v1.0.0', 
       desc: 'Generate developer credentials sandbox API k...', 
+      fullDesc: 'Generate developer credentials, sandbox API keys, and test environment access.',
       category: 'API', 
+      requiredModules: 'API Gateway',
+      apiLoad: '50,000 requests',
+      storage: '0.8 GB',
+      footprint: 'Low',
       plans: { Starter: false, Pro: false, Enterprise: true, Custom: true }, 
       addon: 'No', 
       licensing: 'Enterprise Only', 
@@ -162,8 +213,13 @@ export default function FeatureAccess() {
       name: 'Live Application Event Debug Logs Logger', 
       version: 'v1.0.0', 
       desc: 'Developer debug console logging REST API ca...', 
+      fullDesc: 'Developer debug console logging, REST API call tracing, and event pipeline monitoring.',
       dependsOn: 'feat-api-gateway',
       category: 'Developer Tools', 
+      requiredModules: 'API Gateway',
+      apiLoad: '25,000 requests',
+      storage: '2.4 GB',
+      footprint: 'Low',
       plans: { Starter: false, Pro: false, Enterprise: true, Custom: true }, 
       addon: 'No', 
       licensing: 'Enterprise Only', 
@@ -176,7 +232,12 @@ export default function FeatureAccess() {
       name: 'Billing Ledger Gateway', 
       version: 'v1.0.0', 
       desc: 'Financial invoices processing queues.', 
+      fullDesc: 'Financial invoices processing queues, payment gateway webhooks, and ledger reconciliation.',
       category: 'Billing', 
+      requiredModules: 'Billing Engine',
+      apiLoad: '90,000 requests',
+      storage: '3.6 GB',
+      footprint: 'Low',
       plans: { Starter: true, Pro: true, Enterprise: true, Custom: true }, 
       addon: 'No', 
       licensing: 'Core', 
@@ -189,7 +250,12 @@ export default function FeatureAccess() {
       name: 'CRM Leads Sales Tracker', 
       version: 'v1.0.0', 
       desc: 'Prospect trackers, conversions trackers, and d...', 
+      fullDesc: 'Prospect trackers, conversion pipelines, deal logs and sales performance dashboards.',
       category: 'CRM', 
+      requiredModules: 'CRM Engine',
+      apiLoad: '45,000 requests',
+      storage: '1.8 GB',
+      footprint: 'Low',
       plans: { Starter: true, Pro: true, Enterprise: true, Custom: true }, 
       addon: 'No', 
       licensing: 'Core', 
@@ -202,7 +268,12 @@ export default function FeatureAccess() {
       name: 'Shipper Customer Gateway', 
       version: 'v1.1.0', 
       desc: 'Customer load booking screens, shipment trac...', 
+      fullDesc: 'Customer load booking screens, shipment tracking, and self-service support portal.',
       category: 'Customer Portal', 
+      requiredModules: 'Portal Engine',
+      apiLoad: '65,000 requests',
+      storage: '2.9 GB',
+      footprint: 'Low',
       plans: { Starter: false, Pro: true, Enterprise: true, Custom: true }, 
       addon: 'No', 
       licensing: 'Premium', 
@@ -215,7 +286,12 @@ export default function FeatureAccess() {
       name: 'Real-time GPS Tracking Gateway', 
       version: 'v1.0.0', 
       desc: 'High-frequency GPS ping coordinate pipelines.', 
+      fullDesc: 'High-frequency GPS ping coordinate pipelines, geofencing alerts, and live map feeds.',
       category: 'Tracking', 
+      requiredModules: 'GPS Engine',
+      apiLoad: '350,000 requests',
+      storage: '7.2 GB',
+      footprint: 'Medium',
       plans: { Starter: true, Pro: true, Enterprise: true, Custom: true }, 
       addon: 'No', 
       licensing: 'Core', 
@@ -288,7 +364,9 @@ export default function FeatureAccess() {
 
   // Actions Callbacks (Configure, Clone, Delete)
   const handleConfigure = (feat) => {
-    showNotification(`Configuring parameters for "${feat.name}"...`);
+    setConfigureFeature(feat);
+    setConfigureTab('Overview');
+    setShowConfigureDrawer(true);
   };
 
   const handleClone = (feat) => {
@@ -1168,6 +1246,240 @@ export default function FeatureAccess() {
                 </>
               )}
             </form>
+          </div>
+        </div>
+      )}
+      {/* Licensing Policy Configure Right-Side Drawer */}
+      {showConfigureDrawer && configureFeature && (
+        <div className="fixed inset-0 z-[1000] flex justify-end">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm cursor-pointer"
+            onClick={() => setShowConfigureDrawer(false)}
+          />
+
+          {/* Drawer Panel */}
+          <div className="relative w-full max-w-md bg-white shadow-2xl h-full flex flex-col z-10 text-left">
+
+            {/* Header */}
+            <div className="flex justify-between items-start px-6 py-5 border-b border-slate-100 bg-white">
+              <div className="pr-3">
+                <h3 className="text-base font-extrabold text-slate-900 leading-tight">Licensing Policy: {configureFeature.name}</h3>
+              </div>
+              <button
+                onClick={() => setShowConfigureDrawer(false)}
+                className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-50 cursor-pointer shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex gap-2 px-6 pt-4 pb-2 border-b border-slate-100">
+              {['Overview', 'Company Overrides', 'Analytics', 'Versioning'].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setConfigureTab(tab)}
+                  className={`px-3 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer whitespace-nowrap ${
+                    configureTab === tab
+                      ? 'bg-[#FFD400] text-black border-black border-2 font-black'
+                      : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+
+            {/* Scrollable Tab Content */}
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4 custom-scrollbar">
+
+              {/* ── OVERVIEW TAB ── */}
+              {configureTab === 'Overview' && (
+                <div className="space-y-3">
+                  {/* Description */}
+                  <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/50">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">DESCRIPTION</p>
+                    <p className="text-xs font-semibold text-slate-700 leading-relaxed">{configureFeature.fullDesc || configureFeature.desc}</p>
+                  </div>
+
+                  {/* 2-col grid */}
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div className="border border-slate-200 rounded-2xl p-3.5 bg-slate-50/50">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">LICENSING CATEGORY</p>
+                      <p className="text-sm font-black text-slate-900">{configureFeature.category}</p>
+                    </div>
+                    <div className="border border-slate-200 rounded-2xl p-3.5 bg-slate-50/50">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">REQUIRED MODULES</p>
+                      <p className="text-sm font-black text-slate-900">{configureFeature.requiredModules || `${configureFeature.category} Base`}</p>
+                    </div>
+                    <div className="border border-slate-200 rounded-2xl p-3.5 bg-slate-50/50">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">EST. MONTHLY API LOAD</p>
+                      <p className="text-sm font-black text-amber-500">{configureFeature.apiLoad || `${(configureFeature.usage * 68).toLocaleString()} requests`}</p>
+                    </div>
+                    <div className="border border-slate-200 rounded-2xl p-3.5 bg-slate-50/50">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">STORAGE CAPACITY SIZE</p>
+                      <p className="text-sm font-black text-emerald-500">{configureFeature.storage || `${(configureFeature.companies * 3.7).toFixed(1)} GB`}</p>
+                    </div>
+                    <div className="border border-slate-200 rounded-2xl p-3.5 bg-slate-50/50">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">PERFORMANCE FOOTPRINT</p>
+                      <p className="text-sm font-black text-slate-900">{configureFeature.footprint || (configureFeature.usage > 1000 ? 'Medium' : 'Low')}</p>
+                    </div>
+                    <div className="border border-slate-200 rounded-2xl p-3.5 bg-slate-50/50">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">LICENSING TIER TYPE</p>
+                      <p className="text-sm font-black text-slate-900">{configureFeature.licensing}</p>
+                    </div>
+                  </div>
+
+                  {/* Feature Dependencies — always shown */}
+                  <div className="border border-slate-200 rounded-2xl p-3.5 bg-slate-50/50">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2">FEATURE DEPENDENCIES MATRIX</p>
+                    {configureFeature.dependsOn ? (
+                      <span className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-700 text-xs font-bold px-3 py-1 rounded-full">
+                        🔗 {configureFeature.dependsOn}
+                      </span>
+                    ) : (
+                      <p className="text-xs text-slate-500 font-semibold italic">No active dependencies mapped.</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* ── COMPANY OVERRIDES TAB ── */}
+              {configureTab === 'Company Overrides' && (
+                <div className="space-y-4">
+                  <div className="border border-slate-200 rounded-2xl p-4">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">ASSIGNED COMPANY MANUAL OVERRIDES</p>
+                    <p className="text-xs text-slate-500 font-semibold italic">No company override rules active for this feature.</p>
+                  </div>
+
+                  <div className="border border-slate-700 rounded-2xl p-5 space-y-3 bg-slate-700">
+                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-wider">CREATE TENANT ACCESS OVERRIDE</p>
+                    <select className="w-full px-3 py-2.5 border border-slate-500 bg-slate-600 text-white font-semibold text-xs rounded-xl focus:outline-none focus:border-[#FFD400] cursor-pointer">
+                      <option>-- Select Tenant Workspace --</option>
+                      <option>Apex Logistics LLC</option>
+                      <option>Falcon Logistics LLC</option>
+                      <option>Swift Cargo Express</option>
+                      <option>Global Shipping Solutions</option>
+                    </select>
+                    <div className="grid grid-cols-2 gap-2">
+                      <select className="px-3 py-2.5 border border-slate-500 bg-slate-600 text-white font-semibold text-xs rounded-xl focus:outline-none cursor-pointer">
+                        <option>Force Enabled</option>
+                        <option>Force Disabled</option>
+                      </select>
+                      <select className="px-3 py-2.5 border border-slate-500 bg-slate-600 text-white font-semibold text-xs rounded-xl focus:outline-none cursor-pointer">
+                        <option>Manual Admin Override</option>
+                        <option>Billing Exception</option>
+                      </select>
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="e.g., Billing exception, Beta tester group..."
+                      className="w-full px-3 py-2.5 border border-slate-500 bg-slate-600 text-white placeholder:text-slate-400 font-semibold text-xs rounded-xl focus:outline-none"
+                    />
+                    <button
+                      onClick={() => showNotification(`Override rule created for ${configureFeature.name}.`)}
+                      className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-sm py-3 rounded-2xl transition-all cursor-pointer"
+                    >
+                      Create Override Rule
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ── ANALYTICS TAB ── */}
+              {configureTab === 'Analytics' && (
+                <div className="space-y-4">
+                  {/* KPI Row */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="border border-slate-200 rounded-2xl p-4 text-center">
+                      <p className="text-[10px] font-bold text-slate-400 mb-1">Adoption</p>
+                      <p className="text-lg font-black text-slate-900">{Math.min(98, Math.round((configureFeature.companies / 5) * 100))}%</p>
+                    </div>
+                    <div className="border border-slate-200 rounded-2xl p-4 text-center">
+                      <p className="text-[10px] font-bold text-slate-400 mb-1">MoM Growth</p>
+                      <p className="text-lg font-black text-emerald-500">+2.1%</p>
+                    </div>
+                    <div className="border border-slate-200 rounded-2xl p-4 text-center">
+                      <p className="text-[10px] font-bold text-slate-400 mb-1">Utilization</p>
+                      <p className="text-lg font-black text-emerald-500">{Math.min(99, Math.round(configureFeature.usage / 20))}%</p>
+                    </div>
+                  </div>
+
+                  {/* Revenue Estimate */}
+                  <div className="border border-slate-200 rounded-2xl p-4 space-y-2">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">ESTIMATED FEATURE REVENUE</p>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-bold text-slate-600">Monthly Yield:</span>
+                      <span className="text-sm font-black text-slate-900">${(configureFeature.companies * 40).toLocaleString()}</span>
+                    </div>
+                    <p className="text-[10px] text-slate-400 font-semibold">Calculated as: Companies Using x weighted premium features value.</p>
+                  </div>
+                </div>
+              )}
+
+              {/* ── VERSIONING TAB ── */}
+              {configureTab === 'Versioning' && (
+                <div className="space-y-4">
+                  {/* Header */}
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">RELEASE VERSION LOGS</p>
+                    <button 
+                      onClick={() => setShowBumpForm(true)}
+                      className="bg-[#FFD400] hover:bg-[#F2C900] text-slate-900 font-bold text-xs px-4 py-2 rounded-xl shadow-[0_2px_10px_rgba(255,212,0,0.3)] transition-all flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <span>+</span> Bump Version
+                    </button>
+                  </div>
+
+                  {/* Bump Version Form */}
+                  {showBumpForm && (
+                    <div className="border border-slate-200 rounded-[1.25rem] p-4 bg-white space-y-4">
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">TARGET VERSION STRING</p>
+                        <input 
+                          type="text" 
+                          placeholder="e.g. 1.2.0" 
+                          className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400] transition-colors placeholder:text-slate-400"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">CHANGE LOG DESCRIPTION</p>
+                        <input 
+                          type="text" 
+                          placeholder="e.g. Bug fixes and performance boost..." 
+                          className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400] transition-colors placeholder:text-slate-400"
+                        />
+                      </div>
+                      <div className="flex items-center gap-3 pt-1">
+                        <button 
+                          onClick={() => setShowBumpForm(false)}
+                          className="px-5 py-2 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer shadow-sm"
+                        >
+                          Cancel
+                        </button>
+                        <button 
+                          onClick={() => { setShowBumpForm(false); showNotification('Version bumped successfully'); }}
+                          className="px-5 py-2 text-xs font-bold text-slate-900 bg-[#FFD400] hover:bg-[#F2C900] rounded-xl shadow-[0_2px_10px_rgba(255,212,0,0.3)] transition-colors cursor-pointer"
+                        >
+                          Bump Version
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* History Item */}
+                  <div className="border border-slate-200 rounded-[1.25rem] p-5 bg-white space-y-2.5 shadow-sm">
+                    <div>
+                      <p className="text-[13px] font-black text-slate-800">Version v1.0.0</p>
+                      <p className="font-mono text-[9px] text-slate-400 font-semibold mt-1 uppercase tracking-wider">Published by System Root on 01/10/2026</p>
+                    </div>
+                    <p className="text-xs font-semibold text-slate-500">Initial base template release.</p>
+                  </div>
+                </div>
+              )}
+
+            </div>
           </div>
         </div>
       )}

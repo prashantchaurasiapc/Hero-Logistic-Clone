@@ -78,77 +78,15 @@ export default function SalesReports() {
   return (
     <div className="flex-grow bg-[#F8FAFC] p-6 space-y-6 overflow-y-auto w-full text-left font-sans flex flex-col h-full min-h-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
 
-      {/* Header Container */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0 bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-2">
         <div>
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none">
-              Sales Report
-            </h1>
-            <div className="bg-[#FEF3C7] text-[#92400E] px-2.5 py-1 text-[9px] rounded-lg border border-[#FDE68A] uppercase font-black leading-none flex flex-col items-center justify-center shrink-0">
-              <span className="text-[7px] text-[#B45309] font-bold tracking-wider mb-0.5">Enterprise</span>
-              <span>Logistics</span>
-            </div>
-            <span className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] px-2.5 py-1 rounded-full font-extrabold shrink-0">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              Shift: Sales Active
-            </span>
-          </div>
-          <p className="text-xs text-slate-500 mt-2 font-medium">
+          <h1 className="text-2xl font-black text-slate-900 mb-1">
+            Sales Report
+          </h1>
+          <p className="text-sm font-medium text-slate-500">
             Complete end-to-end client conversion console backed by secure localStorage registry tables.
           </p>
-        </div>
-
-        <div className="flex items-center gap-3 w-full md:w-auto flex-wrap sm:flex-nowrap">
-          {/* Role Dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => setShowRoleDropdown(!showRoleDropdown)}
-              className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-800 text-[10px] px-3.5 py-2 rounded-xl font-black hover:bg-amber-100 cursor-pointer shadow-xs whitespace-nowrap"
-            >
-              Role: {activeRole === 'Sales Director' ? 'Sales Director (Full Access)' : `${activeRole} (Sales Rep)`}
-              <ChevronDown className="w-3.5 h-3.5 text-amber-700 shrink-0" />
-            </button>
-            {showRoleDropdown && (
-              <div className="absolute right-0 mt-1.5 w-64 bg-white border border-slate-200 rounded-xl shadow-xl z-50 py-1.5 text-xs text-slate-700">
-                <div className="px-3 py-1 text-[9px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100 mb-1">Select Session Identity</div>
-                <button
-                  onClick={() => { setActiveRole('Sales Director'); setShowRoleDropdown(false); }}
-                  className={`w-full px-3 py-2 text-left font-bold hover:bg-slate-50 flex items-center justify-between ${activeRole === 'Sales Director' ? 'text-amber-700 bg-amber-50/50' : ''}`}
-                >
-                  Sales Director (Full Access)
-                  {activeRole === 'Sales Director' && <Check className="w-3.5 h-3.5" />}
-                </button>
-                {repsList.map(rep => (
-                  <button
-                    key={rep}
-                    onClick={() => { setActiveRole(rep); setShowRoleDropdown(false); }}
-                    className={`w-full px-3 py-2 text-left font-bold hover:bg-slate-50 flex items-center justify-between ${activeRole === rep ? 'text-amber-700 bg-amber-50/50' : ''}`}
-                  >
-                    {rep} (Sales Rep)
-                    {activeRole === rep && <Check className="w-3.5 h-3.5" />}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Bell */}
-          <button className="bg-white hover:bg-slate-50 border border-slate-200 rounded-xl p-2 text-slate-500 hover:text-slate-800 cursor-pointer relative shadow-xs shrink-0">
-            <Bell className="w-4 h-4" />
-            <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-rose-500 border-2 border-white"></span>
-          </button>
-
-          {/* Add New Lead */}
-          <button
-            onClick={() => alert("Intake new lead from Leads Console Database")}
-            className="flex-grow sm:flex-grow-0 bg-[#F59E0B] hover:bg-[#D97706] text-black font-extrabold text-xs px-4 py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
-          >
-            <Plus className="w-4 h-4 shrink-0 stroke-[3px]" /> Add New Lead
-          </button>
         </div>
       </div>
 
@@ -163,7 +101,7 @@ export default function SalesReports() {
               onClick={() => setActiveTab(tab)}
               className={`px-4 py-2 rounded-[8px] text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap border ${
                 activeTab === tab
-                  ? 'bg-[#FFC107] text-slate-900 border-[#FFC107]'
+                  ? 'bg-[#ffcc00] text-slate-900 border-[#ffcc00]'
                   : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
               }`}
             >
@@ -191,7 +129,7 @@ export default function SalesReports() {
               {/* Stat Boxes */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 shrink-0">
                 <div className="border border-slate-200 rounded-xl p-4 text-center">
-                  <div className="text-2xl font-black text-[#F59E0B]">{newLeadsCount}</div>
+                  <div className="text-2xl font-black text-[#e6b800]">{newLeadsCount}</div>
                   <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">New Leads</div>
                 </div>
                 <div className="border border-slate-200 rounded-xl p-4 text-center">
@@ -284,7 +222,7 @@ export default function SalesReports() {
               {/* Stat Boxes below chart */}
               <div className="grid grid-cols-3 gap-4 shrink-0">
                 <div className="border border-slate-200 rounded-2xl p-6 text-center shadow-xs">
-                  <div className="text-3xl font-black text-[#F59E0B]">10%</div>
+                  <div className="text-3xl font-black text-[#e6b800]">10%</div>
                   <div className="text-[11px] font-black text-slate-500 uppercase tracking-widest mt-1">CONVERSION RATE</div>
                 </div>
                 <div className="border border-slate-200 rounded-2xl p-6 text-center shadow-xs">
@@ -292,7 +230,7 @@ export default function SalesReports() {
                   <div className="text-[11px] font-black text-slate-500 uppercase tracking-widest mt-1">DEMO → TRIAL RATE</div>
                 </div>
                 <div className="border border-slate-200 rounded-2xl p-6 text-center shadow-xs">
-                  <div className="text-3xl font-black text-[#F59E0B]">33%</div>
+                  <div className="text-3xl font-black text-[#e6b800]">33%</div>
                   <div className="text-[11px] font-black text-slate-500 uppercase tracking-widest mt-1">PROPOSAL ACCEPT RATE</div>
                 </div>
               </div>
@@ -308,7 +246,7 @@ export default function SalesReports() {
 
               <div className="grid grid-cols-3 gap-4 shrink-0">
                 <div className="border border-slate-200 rounded-2xl p-6 text-center shadow-xs">
-                  <div className="text-3xl font-black text-[#F59E0B]">$124,071</div>
+                  <div className="text-3xl font-black text-[#e6b800]">$124,071</div>
                   <div className="text-[11px] font-black text-slate-500 uppercase tracking-widest mt-1">MONTHLY MRR</div>
                 </div>
                 <div className="border border-slate-200 rounded-2xl p-6 text-center shadow-xs">
@@ -316,7 +254,7 @@ export default function SalesReports() {
                   <div className="text-[11px] font-black text-slate-500 uppercase tracking-widest mt-1">ANNUAL ARR</div>
                 </div>
                 <div className="border border-slate-200 rounded-2xl p-6 text-center shadow-xs">
-                  <div className="text-3xl font-black text-[#F59E0B]">$306,960</div>
+                  <div className="text-3xl font-black text-[#e6b800]">$306,960</div>
                   <div className="text-[11px] font-black text-slate-500 uppercase tracking-widest mt-1">PIPELINE VALUE</div>
                 </div>
               </div>
@@ -346,7 +284,7 @@ export default function SalesReports() {
                   const maxVal = 60000;
                   return data.map(item => (
                     <div key={item.label} className="relative z-10 w-full flex flex-col items-center justify-end h-full group cursor-pointer">
-                      <div className="w-[90%] rounded-t-sm bg-[#FFD54F] hover:bg-[#FFC107] transition-all border border-[#FFC107]" style={{ height: `${(item.value / maxVal) * 100}%` }}></div>
+                      <div className="w-[90%] rounded-t-sm bg-[#FFD54F] hover:bg-[#ffcc00] transition-all border border-[#ffcc00]" style={{ height: `${(item.value / maxVal) * 100}%` }}></div>
                       <span className="absolute -bottom-6 text-[9px] text-slate-400 font-semibold">{item.label}</span>
                     </div>
                   ));
@@ -367,7 +305,7 @@ export default function SalesReports() {
                   <div className="text-[11px] font-black text-slate-500 uppercase tracking-widest mt-1">TOTAL DEMOS</div>
                 </div>
                 <div className="border border-slate-200 rounded-2xl p-6 text-center shadow-xs">
-                  <div className="text-3xl font-black text-[#F59E0B]">{demos.filter(d => d.status === 'Upcoming').length}</div>
+                  <div className="text-3xl font-black text-[#e6b800]">{demos.filter(d => d.status === 'Upcoming').length}</div>
                   <div className="text-[11px] font-black text-slate-500 uppercase tracking-widest mt-1">UPCOMING</div>
                 </div>
                 <div className="border border-slate-200 rounded-2xl p-6 text-center shadow-xs">
@@ -426,7 +364,7 @@ export default function SalesReports() {
                   <div className="text-[11px] font-black text-slate-500 uppercase tracking-widest mt-1">EXPIRED</div>
                 </div>
                 <div className="border border-slate-200 rounded-2xl p-6 text-center shadow-xs">
-                  <div className="text-3xl font-black text-[#F59E0B]">{trials.filter(t => t.daysRemaining <= 3 && t.status === 'Active').length}</div>
+                  <div className="text-3xl font-black text-[#e6b800]">{trials.filter(t => t.daysRemaining <= 3 && t.status === 'Active').length}</div>
                   <div className="text-[11px] font-black text-slate-500 uppercase tracking-widest mt-1">EXPIRING SOON</div>
                 </div>
               </div>
@@ -445,7 +383,7 @@ export default function SalesReports() {
                             <span className="text-[11px] font-black font-mono text-slate-800">{t.daysRemaining}</span>
                           </div>
                           <div className="w-16 h-1 bg-slate-200 rounded-full flex justify-end">
-                            <div className="h-1 bg-[#FFC107] rounded-full" style={{ width: `${(t.daysRemaining / 14) * 100}%` }}></div>
+                            <div className="h-1 bg-[#ffcc00] rounded-full" style={{ width: `${(t.daysRemaining / 14) * 100}%` }}></div>
                           </div>
                         </div>
                         <span className="px-2.5 py-1 rounded-[6px] text-[9px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-50">
@@ -472,7 +410,7 @@ export default function SalesReports() {
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div className="border border-slate-200 rounded-xl p-4 text-center">
-                  <div className="text-xl font-black text-[#F59E0B]">{proposals.filter(p => p.status === 'Sent').length}</div>
+                  <div className="text-xl font-black text-[#e6b800]">{proposals.filter(p => p.status === 'Sent').length}</div>
                   <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Sent</div>
                 </div>
                 <div className="border border-slate-200 rounded-xl p-4 text-center">
@@ -544,7 +482,7 @@ export default function SalesReports() {
                       <tr key={r.rep} className="hover:bg-slate-50/50">
                         <td className="py-3 px-4 font-extrabold text-slate-900">{r.rep}</td>
                         <td className="py-3 px-4 text-right font-black text-slate-700 font-mono">{r.total}</td>
-                        <td className="py-3 px-4 text-right font-black text-[#F59E0B] font-mono">{r.pipeline}</td>
+                        <td className="py-3 px-4 text-right font-black text-[#e6b800] font-mono">{r.pipeline}</td>
                         <td className="py-3 px-4 text-right font-black text-emerald-600 font-mono">{r.won}</td>
                         <td className="py-3 px-4 text-right font-black text-[#D97706] font-mono">${r.revenue.toLocaleString()}/mo</td>
                       </tr>
@@ -569,7 +507,7 @@ export default function SalesReports() {
                   <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Total Leads</div>
                 </div>
                 <div className="border border-slate-200 rounded-xl p-4 text-center">
-                  <div className="text-xl font-black text-[#F59E0B]">{demos.length}</div>
+                  <div className="text-xl font-black text-[#e6b800]">{demos.length}</div>
                   <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Demos Logged</div>
                 </div>
                 <div className="border border-slate-200 rounded-xl p-4 text-center">

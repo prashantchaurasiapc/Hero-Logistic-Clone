@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Plus, AlertCircle, RefreshCw, UserCheck, Pen, Hexagon, Check, XSquare, Settings, Square, FileText, X
 } from 'lucide-react';
@@ -7,6 +8,8 @@ import {
 } from 'recharts';
 
 export default function PlatformDashboard() {
+  const navigate = useNavigate();
+
   // KPI Data
   const kpis = [
     { title: 'ACTIVE COMPANIES', value: '4', desc: 'SaaS instances online', status: 'Stable', statusColor: 'text-slate-400 bg-slate-100' },
@@ -32,10 +35,10 @@ export default function PlatformDashboard() {
   // Recent Tenants Data matching Image 2
   const recentTenants = [
     { id: 1, name: 'Falcon Logistics LLC', plan: 'Professional', status: 'ACTIVE', users: '12', mrr: '$8,500', trialExpiry: 'N/A', lastActive: 'Today, 02:15 PM' },
-    { id: 2, name: 'Swift Cargo Express', plan: 'Professional', status: 'ACTIVE', users: '2', mrr: '$499', trialExpiry: '07/15/2026', lastActive: 'Yesterday, 04:30 PM' },
-    { id: 3, name: 'Apex Logistics LLC', plan: 'Enterprise', status: 'ACTIVE', users: '45', mrr: '$12,500', trialExpiry: 'N/A', lastActive: 'Today, 10:23 AM' },
-    { id: 4, name: 'Blue Sky Shipping', plan: 'Starter', status: 'SUSPENDED', users: '6', mrr: '$3,800', trialExpiry: '03 Feb 2025', lastActive: '03 Feb 2025' },
-    { id: 5, name: 'Logistics LLC', plan: 'Professional', status: 'ACTIVE', users: '16', mrr: '$4,910', trialExpiry: 'N/A', lastActive: 'Today, 01:10 PM' },
+    { id: 2, name: 'Swift Cargo Express', plan: 'Starter', status: 'ACTIVE', users: '2', mrr: '$1,500', trialExpiry: '07/15/2026', lastActive: 'Yesterday, 04:30 PM' },
+    { id: 3, name: 'Global Shipping Solutions', plan: 'Enterprise', status: 'ACTIVE', users: '84', mrr: '$28,000', trialExpiry: 'N/A', lastActive: 'Today, 03:24 PM' },
+    { id: 4, name: 'Texas Hotshot Carriers', plan: 'Starter', status: 'HOLD', users: '4', mrr: '$0', trialExpiry: '06/15/2026', lastActive: 'Yesterday, 10:15 AM' },
+    { id: 5, name: 'Apex Logistics LLC', plan: 'Professional', status: 'ACTIVE', users: '16', mrr: '$4,910', trialExpiry: 'N/A', lastActive: 'Today, 01:10 PM' },
   ];
 
   // Density and Columns states
@@ -79,6 +82,10 @@ export default function PlatformDashboard() {
   const [showEnableFeatureModal, setShowEnableFeatureModal] = useState(false);
   const [showDisableFeatureModal, setShowDisableFeatureModal] = useState(false);
   const [showWhiteLabelModal, setShowWhiteLabelModal] = useState(false);
+
+  const [showInspector, setShowInspector] = useState(false);
+  const [selectedTenant, setSelectedTenant] = useState(null);
+  const [activeInspectorTab, setActiveInspectorTab] = useState('Overview');
 
   const [tenantName, setTenantName] = useState('');
   const [managerEmail, setManagerEmail] = useState('');
@@ -290,7 +297,7 @@ export default function PlatformDashboard() {
               </div>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse whitespace-nowrap">
                 <thead>
                   <tr className="border-b border-slate-100">
@@ -304,6 +311,7 @@ export default function PlatformDashboard() {
                     {visibleColumns.monthlyRevenue && <th className="py-4 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">MONTHLY REVENUE</th>}
                     {visibleColumns.trialExpiry && <th className="py-4 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">TRIAL EXPIRY</th>}
                     {visibleColumns.lastLogin && <th className="py-4 px-6 text-[11px] font-bold text-slate-500 uppercase tracking-wider">LAST LOGIN</th>}
+                    <th className="py-4 px-6 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">ACTIONS</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
@@ -324,9 +332,12 @@ export default function PlatformDashboard() {
                       )}
                       {visibleColumns.status && (
                         <td className={`${getDensityPadding()} px-4`}>
-                          <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-bold tracking-wider ${tenant.status === 'ACTIVE'
-                              ? 'text-emerald-700 bg-emerald-50 border border-emerald-200'
-                              : 'text-rose-700 bg-rose-50 border border-rose-200'
+                          <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-bold tracking-wider ${
+                              tenant.status === 'ACTIVE'
+                                ? 'text-emerald-700 bg-emerald-50 border border-emerald-200'
+                                : tenant.status === 'HOLD'
+                                ? 'text-amber-700 bg-amber-50 border border-amber-200'
+                                : 'text-rose-700 bg-rose-50 border border-rose-200'
                             }`}>
                             {tenant.status}
                           </span>
@@ -352,6 +363,31 @@ export default function PlatformDashboard() {
                           <span className="text-[12px] font-medium text-slate-500">{tenant.lastActive}</span>
                         </td>
                       )}
+                      <td className={`${getDensityPadding()} px-6 align-middle`}>
+                        <div className="flex flex-col gap-1.5 items-center w-[90px] mx-auto py-1">
+                          <button 
+                            onClick={() => { setSelectedTenant(tenant); setShowInspector(true); }}
+                            className="w-full py-1.5 px-2 border border-slate-200 text-slate-700 font-bold text-[10px] rounded-full hover:bg-slate-50 transition-colors bg-white cursor-pointer"
+                          >
+                            View
+                          </button>
+                          {tenant.status === 'HOLD' ? (
+                            <button onClick={() => setShowReactivateCompanyModal(true)} className="w-full py-1.5 px-2 bg-[#10B981] text-white font-bold text-[10px] rounded-full hover:bg-[#059669] transition-colors shadow-sm shadow-[#10B981]/20">
+                              Reactivate
+                            </button>
+                          ) : (
+                            <button onClick={() => setShowSuspendCompanyModal(true)} className="w-full py-1.5 px-2 bg-[#E11D48] text-white font-bold text-[10px] rounded-full hover:bg-[#BE123C] transition-colors shadow-sm shadow-[#E11D48]/20">
+                              Suspend
+                            </button>
+                          )}
+                          <button onClick={() => setShowLoginAsModal(true)} className="w-full py-1.5 px-2 border border-[#FFD400] text-[#D97706] font-bold text-[10px] rounded-full hover:bg-amber-50 transition-colors bg-white">
+                            Login As
+                          </button>
+                          <button onClick={() => navigate('/admin/billing')} className="w-full py-1.5 px-2 border border-slate-200 text-slate-700 font-bold text-[10px] rounded-full hover:bg-slate-50 transition-colors bg-white cursor-pointer">
+                            Billing
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -369,16 +405,28 @@ export default function PlatformDashboard() {
             <p className="text-[11px] font-medium text-slate-400 mb-8">Quick administrative platform workflows.</p>
 
             <div className="grid grid-cols-2 gap-3.5">
-              <button className="flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-orange-500 shadow-md shadow-orange-500/30 text-slate-900 hover:scale-[1.02] font-bold text-[10px] py-2.5 px-3 rounded-2xl transition-all cursor-pointer">
+              <button 
+                onClick={() => setShowAddCompanyModal(true)} 
+                className="flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-orange-500 shadow-md shadow-orange-500/30 text-slate-900 hover:scale-[1.02] font-bold text-[10px] py-2.5 px-3 rounded-2xl transition-all cursor-pointer"
+              >
                 <Plus className="w-3 h-3" /> Add Company
               </button>
-              <button className="flex items-center justify-center gap-2 bg-gradient-to-r from-rose-500 to-rose-600 shadow-md shadow-rose-500/30 text-slate-900 hover:scale-[1.02] font-bold text-[10px] py-2.5 px-3 rounded-2xl transition-all cursor-pointer">
+              <button 
+                onClick={() => setShowSuspendCompanyModal(true)}
+                className="flex items-center justify-center gap-2 bg-gradient-to-r from-rose-500 to-rose-600 shadow-md shadow-rose-500/30 text-slate-900 hover:scale-[1.02] font-bold text-[10px] py-2.5 px-3 rounded-2xl transition-all cursor-pointer"
+              >
                 <AlertCircle className="w-3 h-3" /> Suspend Company
               </button>
-              <button className="flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 shadow-md shadow-emerald-500/30 text-slate-900 hover:scale-[1.02] font-bold text-[10px] py-2.5 px-3 rounded-2xl transition-all cursor-pointer">
+              <button 
+                onClick={() => setShowReactivateCompanyModal(true)}
+                className="flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 shadow-md shadow-emerald-500/30 text-slate-900 hover:scale-[1.02] font-bold text-[10px] py-2.5 px-3 rounded-2xl transition-all cursor-pointer"
+              >
                 <RefreshCw className="w-3 h-3" /> Reactivate Company
               </button>
-              <button className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-400 to-blue-600 shadow-md shadow-blue-500/30 text-slate-900 hover:scale-[1.02] font-bold text-[10px] py-2.5 px-3 rounded-2xl transition-all cursor-pointer">
+              <button 
+                onClick={() => setShowLoginAsModal(true)}
+                className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-400 to-blue-600 shadow-md shadow-blue-500/30 text-slate-900 hover:scale-[1.02] font-bold text-[10px] py-2.5 px-3 rounded-2xl transition-all cursor-pointer"
+              >
                 <UserCheck className="w-3 h-3" /> Login As Company
               </button>
               <button onClick={() => setShowCreatePlanModal(true)} className="flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-orange-500 shadow-md shadow-orange-500/30 text-slate-900 hover:scale-[1.02] font-bold text-[10px] py-2.5 px-3 rounded-2xl transition-all cursor-pointer">
@@ -559,60 +607,6 @@ export default function PlatformDashboard() {
         </div>
       </div>
 
-      {/* Change Subscription Plan Modal */}
-      {showChangeSubModal && (
-        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center z-[999] p-4">
-          <div className="bg-white rounded-[24px] w-full max-w-[400px] shadow-2xl overflow-hidden border border-slate-100">
-            {/* Modal Header */}
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-              <h3 className="text-base font-extrabold text-slate-900">Change Subscription Plan</h3>
-              <button
-                onClick={() => setShowChangeSubModal(false)}
-                className="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-lg hover:bg-slate-50 cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-6 space-y-6">
-              <div className="space-y-2 text-left">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SELECT COMPANY WORKSPACE</label>
-                <select
-                  value={selectedCompany}
-                  onChange={(e) => setSelectedCompany(e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
-                >
-                  <option value="Falcon Logistics LLC">Falcon Logistics LLC</option>
-                  <option value="Swift Cargo Express">Swift Cargo Express</option>
-                  <option value="Apex Logistics LLC">Apex Logistics LLC</option>
-                  <option value="Blue Sky Shipping">Blue Sky Shipping</option>
-                </select>
-              </div>
-
-              <div className="space-y-2 text-left">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SELECT NEW SUBSCRIPTION PLAN TIER</label>
-                <select
-                  value={selectedPlanTier}
-                  onChange={(e) => setSelectedPlanTier(e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
-                >
-                  <option value="Starter Tier - $99/mo">Starter Tier - $99/mo</option>
-                  <option value="Professional Tier - $499/mo">Professional Tier - $499/mo</option>
-                  <option value="Enterprise Tier - $999/mo">Enterprise Tier - $999/mo</option>
-                </select>
-              </div>
-
-              <button
-                onClick={() => setShowChangeSubModal(false)}
-                className="w-full py-3.5 bg-gradient-to-r from-[#FFD400] to-[#FFB300] hover:from-[#F0C800] hover:to-[#FFA000] text-slate-900 font-extrabold text-xs rounded-xl transition-all shadow-sm mt-4 cursor-pointer"
-              >
-                Update Subscription
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Open Support Ticket Modal */}
       {showOpenTicketModal && (
@@ -815,57 +809,57 @@ export default function PlatformDashboard() {
 
       {/* Provision New SaaS Tenant Modal */}
       {showAddCompanyModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[999] p-4">
-          <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-[420px] overflow-hidden shadow-2xl animate-fade-in text-left">
-            <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100">
-              <h3 className="text-sm font-black text-slate-800">Provision New SaaS Tenant</h3>
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[999] p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-[500px] overflow-hidden shadow-2xl animate-fade-in text-left">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100">
+              <h3 className="text-lg font-bold text-slate-900">Provision New SaaS Tenant</h3>
               <button 
                 onClick={() => setShowAddCompanyModal(false)} 
-                className="text-slate-400 hover:text-slate-600 cursor-pointer"
+                className="text-slate-500 hover:text-slate-700 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <form onSubmit={handleProvisionTenant} className="p-6 space-y-5">
+            <form onSubmit={handleProvisionTenant} className="p-6 space-y-4">
               <div className="space-y-1.5">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">TENANT COMPANY NAME</label>
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">TENANT COMPANY NAME</label>
                 <input
                   type="text"
                   required
                   value={tenantName}
                   onChange={(e) => setTenantName(e.target.value)}
                   placeholder="e.g. Titan Freightlines LLC"
-                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800"
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFA000] text-[13px] font-medium rounded-xl focus:outline-none text-slate-800 placeholder-slate-400"
                 />
               </div>
-              <div className="space-y-1.5">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">WORKSPACE MANAGER EMAIL</label>
+              <div className="space-y-2">
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">WORKSPACE MANAGER EMAIL</label>
                 <input
                   type="email"
                   required
                   value={managerEmail}
                   onChange={(e) => setManagerEmail(e.target.value)}
                   placeholder="e.g. admin@titan.com"
-                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800"
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFA000] text-[13px] font-medium rounded-xl focus:outline-none text-slate-800 placeholder-slate-400"
                 />
               </div>
-              <div className="space-y-1.5">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">WORKSPACE MANAGER PASSWORD</label>
+              <div className="space-y-2">
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">WORKSPACE MANAGER PASSWORD</label>
                 <input
                   type="password"
                   required
                   value={managerPassword}
                   onChange={(e) => setManagerPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800"
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFA000] text-[13px] font-medium rounded-xl focus:outline-none text-slate-800 placeholder-slate-400"
                 />
               </div>
-              <div className="space-y-1.5">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">LICENSE PLAN TIER</label>
+              <div className="space-y-2">
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">LICENSE PLAN TIER</label>
                 <select
                   value={selectedPlan}
                   onChange={(e) => setSelectedPlan(e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFA000] text-[13px] font-medium rounded-xl focus:outline-none text-slate-800 cursor-pointer"
                 >
                   <option value="Professional Tier">Professional Tier</option>
                   <option value="Starter Tier">Starter Tier</option>
@@ -875,9 +869,9 @@ export default function PlatformDashboard() {
               <div className="pt-2">
                 <button
                   type="submit"
-                  className="w-full bg-[#FFB300] hover:bg-[#FFA000] text-black font-extrabold text-xs py-3 rounded-xl shadow-md transition-colors cursor-pointer flex flex-col items-center justify-center gap-1"
+                  className="w-full bg-[#FFA000] hover:bg-[#FF8F00] text-slate-900 font-bold text-[13px] py-2.5 rounded-xl shadow-sm transition-colors cursor-pointer flex flex-col items-center justify-center gap-1"
                 >
-                  <Check className="w-4 h-4 text-black" />
+                  <Check className="w-4 h-4 text-slate-900" />
                   <span>Finalize Setup</span>
                 </button>
               </div>
@@ -888,26 +882,28 @@ export default function PlatformDashboard() {
 
       {/* Suspend Company Modal */}
       {showSuspendCompanyModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[999] p-4">
-          <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-[420px] overflow-hidden shadow-2xl animate-fade-in text-left">
-            <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100">
-              <h3 className="text-sm font-black text-slate-800">Suspend Company License</h3>
-              <button onClick={() => setShowSuspendCompanyModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[999] p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-[500px] overflow-hidden shadow-2xl animate-fade-in text-left">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100">
+              <h3 className="text-lg font-bold text-slate-900">Suspend Company License</h3>
+              <button onClick={() => setShowSuspendCompanyModal(false)} className="text-slate-500 hover:text-slate-700 cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="p-6 space-y-5">
-              <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SELECT COMPANY TO SUSPEND</label>
-                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+            <div className="p-6 space-y-4">
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">SELECT COMPANY TO SUSPEND</label>
+                <select className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-[13px] font-medium rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                  <option>-- Select Active Company --</option>
                   <option>Falcon Logistics LLC</option>
                   <option>Swift Cargo Express</option>
+                  <option>Global Shipping Solutions</option>
                   <option>Apex Logistics LLC</option>
                 </select>
               </div>
               <button
                 onClick={() => setShowSuspendCompanyModal(false)}
-                className="w-full py-3 bg-[#E11D48] hover:bg-[#BE123C] text-white font-extrabold text-xs rounded-xl shadow-md transition-colors cursor-pointer text-center"
+                className="w-full py-2.5 bg-[#E11D48] hover:bg-[#BE123C] text-white font-bold text-[13px] rounded-xl shadow-sm transition-colors cursor-pointer text-center mt-2"
               >
                 Suspend License
               </button>
@@ -918,25 +914,26 @@ export default function PlatformDashboard() {
 
       {/* Reactivate Company Modal */}
       {showReactivateCompanyModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[999] p-4">
-          <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-[420px] overflow-hidden shadow-2xl animate-fade-in text-left">
-            <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100">
-              <h3 className="text-sm font-black text-slate-800">Reactivate Suspended Company</h3>
-              <button onClick={() => setShowReactivateCompanyModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[999] p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-[500px] overflow-hidden shadow-2xl animate-fade-in text-left">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100">
+              <h3 className="text-lg font-bold text-slate-900">Reactivate Suspended Company</h3>
+              <button onClick={() => setShowReactivateCompanyModal(false)} className="text-slate-500 hover:text-slate-700 cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="p-6 space-y-5">
-              <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SELECT COMPANY TO REACTIVATE</label>
-                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+            <div className="p-6 space-y-4">
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">SELECT COMPANY TO REACTIVATE</label>
+                <select className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#10B981] text-[13px] font-medium rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                  <option>-- Select Suspended Company --</option>
                   <option>Texas Hotshot Carriers</option>
                   <option>Blue Sky Shipping</option>
                 </select>
               </div>
               <button
                 onClick={() => setShowReactivateCompanyModal(false)}
-                className="w-full py-3 bg-[#10B981] hover:bg-[#059669] text-white font-extrabold text-xs rounded-xl shadow-md transition-colors cursor-pointer text-center"
+                className="w-full py-2.5 bg-[#10B981] hover:bg-[#059669] text-white font-bold text-[13px] rounded-xl shadow-sm transition-colors cursor-pointer text-center mt-2"
               >
                 Reactivate License
               </button>
@@ -947,26 +944,29 @@ export default function PlatformDashboard() {
 
       {/* Simulate Login Session Modal */}
       {showLoginAsModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[999] p-4">
-          <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-[420px] overflow-hidden shadow-2xl animate-fade-in text-left">
-            <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100">
-              <h3 className="text-sm font-black text-slate-800">Simulate Login Session</h3>
-              <button onClick={() => setShowLoginAsModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[999] p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-[500px] overflow-hidden shadow-2xl animate-fade-in text-left">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100">
+              <h3 className="text-lg font-bold text-slate-900">Simulate Login Session</h3>
+              <button onClick={() => setShowLoginAsModal(false)} className="text-slate-500 hover:text-slate-700 cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="p-6 space-y-5">
-              <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SELECT COMPANY WORKSPACE</label>
-                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+            <div className="p-6 space-y-4">
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">SELECT COMPANY WORKSPACE</label>
+                <select className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-[13px] font-medium rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                  <option>-- Select Company --</option>
                   <option>Falcon Logistics LLC</option>
                   <option>Swift Cargo Express</option>
+                  <option>Global Shipping Solutions</option>
+                  <option>Texas Hotshot Carriers</option>
                   <option>Apex Logistics LLC</option>
                 </select>
               </div>
               <button
                 onClick={() => setShowLoginAsModal(false)}
-                className="w-full py-3 bg-[#FFB300] hover:bg-[#FFA000] text-black font-extrabold text-xs rounded-xl shadow-md transition-colors cursor-pointer text-center"
+                className="w-full py-2.5 bg-[#FFB300] hover:bg-[#FFA000] text-slate-900 font-bold text-[13px] rounded-xl shadow-sm transition-colors cursor-pointer text-center mt-2"
               >
                 Simulate Login
               </button>
@@ -977,26 +977,30 @@ export default function PlatformDashboard() {
 
       {/* Create Plan Modal */}
       {showCreatePlanModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[999] p-4">
-          <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-[420px] overflow-hidden shadow-2xl animate-fade-in text-left">
-            <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100">
-              <h3 className="text-sm font-black text-slate-800">Create New Pricing Plan</h3>
-              <button onClick={() => setShowCreatePlanModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[999] p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-[500px] overflow-hidden shadow-2xl animate-fade-in text-left">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100">
+              <h3 className="text-lg font-bold text-slate-900">Create New Subscription Plan</h3>
+              <button onClick={() => setShowCreatePlanModal(false)} className="text-slate-500 hover:text-slate-700 cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="p-6 space-y-5">
-              <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">PLAN NAME</label>
-                <input type="text" placeholder="e.g. Enterprise Tier" className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800" />
+            <div className="p-6 space-y-4">
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">PLAN NAME</label>
+                <input type="text" placeholder="e.g. Starter, Premium, Ultimate" className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFA000] text-[13px] font-medium rounded-xl focus:outline-none text-slate-800 placeholder-slate-400" />
               </div>
-              <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">MONTHLY PRICE ($)</label>
-                <input type="number" placeholder="e.g. 1999" className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800" />
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">MONTHLY PRICE (USD)</label>
+                <input type="text" placeholder="e.g. 199" className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFA000] text-[13px] font-medium rounded-xl focus:outline-none text-slate-800 placeholder-slate-400" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">DRIVERS LIMIT</label>
+                <input type="text" placeholder="e.g. 10" className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFA000] text-[13px] font-medium rounded-xl focus:outline-none text-slate-800 placeholder-slate-400" />
               </div>
               <button
                 onClick={() => setShowCreatePlanModal(false)}
-                className="w-full py-3 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-slate-900 font-extrabold text-xs rounded-xl shadow-md transition-colors cursor-pointer text-center"
+                className="w-full py-2.5 bg-[#FFA000] hover:bg-[#FF8F00] text-slate-900 font-bold text-[13px] rounded-xl shadow-sm transition-colors cursor-pointer text-center mt-2"
               >
                 Create Plan
               </button>
@@ -1007,28 +1011,36 @@ export default function PlatformDashboard() {
 
       {/* Edit Plan Modal */}
       {showEditPlanModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[999] p-4">
-          <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-[420px] overflow-hidden shadow-2xl animate-fade-in text-left">
-            <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100">
-              <h3 className="text-sm font-black text-slate-800">Edit Existing Plan</h3>
-              <button onClick={() => setShowEditPlanModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[999] p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-[500px] overflow-hidden shadow-2xl animate-fade-in text-left">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100">
+              <h3 className="text-lg font-bold text-slate-900">Edit Subscription Plan Tier</h3>
+              <button onClick={() => setShowEditPlanModal(false)} className="text-slate-500 hover:text-slate-700 cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="p-6 space-y-5">
-              <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SELECT PLAN</label>
-                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#3B82F6] text-xs font-semibold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+            <div className="p-6 space-y-4">
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">SELECT PLAN TIER TO EDIT</label>
+                <select className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFA000] text-[13px] font-medium rounded-xl focus:outline-none text-slate-800 cursor-pointer">
                   <option>Starter Tier</option>
                   <option>Professional Tier</option>
                   <option>Enterprise Tier</option>
                 </select>
               </div>
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">MONTHLY PRICE (USD)</label>
+                <input type="text" placeholder="199" className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFA000] text-[13px] font-medium rounded-xl focus:outline-none text-slate-800 placeholder-slate-400" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">DRIVERS LIMIT</label>
+                <input type="text" placeholder="5" className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFA000] text-[13px] font-medium rounded-xl focus:outline-none text-slate-800 placeholder-slate-400" />
+              </div>
               <button
                 onClick={() => setShowEditPlanModal(false)}
-                className="w-full py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-colors cursor-pointer text-center"
+                className="w-full py-2.5 bg-[#FFA000] hover:bg-[#FF8F00] text-slate-900 font-bold text-[13px] rounded-xl shadow-sm transition-colors cursor-pointer text-center mt-2"
               >
-                Save Changes
+                Save Plan Settings
               </button>
             </div>
           </div>
@@ -1037,34 +1049,38 @@ export default function PlatformDashboard() {
 
       {/* Change Subscription Modal */}
       {showChangeSubModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[999] p-4">
-          <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-[420px] overflow-hidden shadow-2xl animate-fade-in text-left">
-            <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100">
-              <h3 className="text-sm font-black text-slate-800">Change Company Subscription</h3>
-              <button onClick={() => setShowChangeSubModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[999] p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-[500px] overflow-hidden shadow-2xl animate-fade-in text-left">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100">
+              <h3 className="text-lg font-bold text-slate-900">Change Subscription Plan</h3>
+              <button onClick={() => setShowChangeSubModal(false)} className="text-slate-500 hover:text-slate-700 cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="p-6 space-y-5">
-              <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SELECT COMPANY</label>
-                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#A855F7] text-xs font-semibold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+            <div className="p-6 space-y-4">
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">SELECT COMPANY WORKSPACE</label>
+                <select className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFA000] text-[13px] font-medium rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                  <option>-- Select Company --</option>
                   <option>Falcon Logistics LLC</option>
                   <option>Swift Cargo Express</option>
+                  <option>Global Shipping Solutions</option>
+                  <option>Texas Hotshot Carriers</option>
+                  <option>Apex Logistics LLC</option>
                 </select>
               </div>
-              <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SELECT NEW PLAN</label>
-                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#A855F7] text-xs font-semibold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
-                  <option>Professional Tier</option>
-                  <option>Enterprise Tier</option>
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">SELECT NEW SUBSCRIPTION PLAN TIER</label>
+                <select className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFA000] text-[13px] font-medium rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                  <option>Professional Tier - $499/mo</option>
+                  <option>Enterprise Tier - $999/mo</option>
                 </select>
               </div>
               <button
                 onClick={() => setShowChangeSubModal(false)}
-                className="w-full py-3 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-colors cursor-pointer text-center"
+                className="w-full py-2.5 bg-[#FFA000] hover:bg-[#FF8F00] text-slate-900 font-bold text-[13px] rounded-xl shadow-sm transition-colors cursor-pointer text-center mt-2"
               >
-                Change Subscription
+                Update Subscription
               </button>
             </div>
           </div>
@@ -1073,25 +1089,43 @@ export default function PlatformDashboard() {
 
       {/* Enable Feature Modal */}
       {showEnableFeatureModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[999] p-4">
-          <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-[420px] overflow-hidden shadow-2xl animate-fade-in text-left">
-            <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100">
-              <h3 className="text-sm font-black text-slate-800">Enable Feature Flag</h3>
-              <button onClick={() => setShowEnableFeatureModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[999] p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-[500px] overflow-hidden shadow-2xl animate-fade-in text-left">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100">
+              <h3 className="text-lg font-bold text-slate-900">Enable Feature Globally or by Tier</h3>
+              <button onClick={() => setShowEnableFeatureModal(false)} className="text-slate-500 hover:text-slate-700 cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="p-6 space-y-5">
-              <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SELECT FEATURE</label>
-                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#10B981] text-xs font-semibold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
-                  <option>Advanced Analytics Module</option>
-                  <option>AI Assistant Beta</option>
+            <div className="p-6 space-y-4">
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">SELECT FEATURE TO ENABLE</label>
+                <select className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFA000] text-[13px] font-medium rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                  <option>Platform Dashboard</option>
+                  <option>Companies</option>
+                  <option>Subscriptions</option>
+                  <option>Membership Plans</option>
+                  <option>Feature Access</option>
+                  <option>White Label</option>
+                  <option>Support Tickets</option>
+                  <option>Billing</option>
+                  <option>System Analytics</option>
+                  <option>Inter-Company Transfers</option>
+                  <option>AI Controls</option>
+                  <option>Settings</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">SELECT PLAN TIER</label>
+                <select className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#10B981] text-[13px] font-medium rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                  <option>Starter Tier</option>
+                  <option>Professional Tier</option>
+                  <option>Enterprise Tier</option>
                 </select>
               </div>
               <button
                 onClick={() => setShowEnableFeatureModal(false)}
-                className="w-full py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-colors cursor-pointer text-center"
+                className="w-full py-2.5 bg-[#10B981] hover:bg-[#059669] text-white font-bold text-[13px] rounded-xl shadow-sm transition-colors cursor-pointer text-center mt-2"
               >
                 Enable Feature
               </button>
@@ -1102,25 +1136,43 @@ export default function PlatformDashboard() {
 
       {/* Disable Feature Modal */}
       {showDisableFeatureModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[999] p-4">
-          <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-[420px] overflow-hidden shadow-2xl animate-fade-in text-left">
-            <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100">
-              <h3 className="text-sm font-black text-slate-800">Disable Feature Flag</h3>
-              <button onClick={() => setShowDisableFeatureModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[999] p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-[500px] overflow-hidden shadow-2xl animate-fade-in text-left">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100">
+              <h3 className="text-lg font-bold text-slate-900">Disable Feature Globally or by Tier</h3>
+              <button onClick={() => setShowDisableFeatureModal(false)} className="text-slate-500 hover:text-slate-700 cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="p-6 space-y-5">
-              <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SELECT FEATURE</label>
-                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#F43F5E] text-xs font-semibold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
-                  <option>API Access</option>
-                  <option>Bulk Imports</option>
+            <div className="p-6 space-y-4">
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">SELECT FEATURE TO DISABLE</label>
+                <select className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFA000] text-[13px] font-medium rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                  <option>Platform Dashboard</option>
+                  <option>Companies</option>
+                  <option>Subscriptions</option>
+                  <option>Membership Plans</option>
+                  <option>Feature Access</option>
+                  <option>White Label</option>
+                  <option>Support Tickets</option>
+                  <option>Billing</option>
+                  <option>System Analytics</option>
+                  <option>Inter-Company Transfers</option>
+                  <option>AI Controls</option>
+                  <option>Settings</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">SELECT PLAN TIER</label>
+                <select className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#E11D48] text-[13px] font-medium rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                  <option>Starter Tier</option>
+                  <option>Professional Tier</option>
+                  <option>Enterprise Tier</option>
                 </select>
               </div>
               <button
                 onClick={() => setShowDisableFeatureModal(false)}
-                className="w-full py-3 bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-colors cursor-pointer text-center"
+                className="w-full py-2.5 bg-[#E11D48] hover:bg-[#BE123C] text-white font-bold text-[13px] rounded-xl shadow-sm transition-colors cursor-pointer text-center mt-2"
               >
                 Disable Feature
               </button>
@@ -1131,36 +1183,419 @@ export default function PlatformDashboard() {
 
       {/* White Label Modal */}
       {showWhiteLabelModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[999] p-4">
-          <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-[420px] overflow-hidden shadow-2xl animate-fade-in text-left">
-            <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100">
-              <h3 className="text-sm font-black text-slate-800">Configure White Labeling</h3>
-              <button onClick={() => setShowWhiteLabelModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[999] p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-[500px] overflow-hidden shadow-2xl animate-fade-in text-left">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100">
+              <h3 className="text-lg font-bold text-slate-900">White Label Branding Options</h3>
+              <button onClick={() => setShowWhiteLabelModal(false)} className="text-slate-500 hover:text-slate-700 cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="p-6 space-y-5">
-              <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SELECT COMPANY</label>
-                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#A855F7] text-xs font-semibold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
-                  <option>Titan Freightlines LLC</option>
-                </select>
+            <div className="p-6 space-y-4">
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">BRANDED PLATFORM NAME</label>
+                <input type="text" placeholder="HERO LOGISTICS" className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFA000] text-[13px] font-medium rounded-xl focus:outline-none text-slate-800 placeholder-slate-400" />
               </div>
-              <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">CUSTOM DOMAIN</label>
-                <input type="text" placeholder="e.g. portal.titan.com" className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#A855F7] text-xs font-semibold rounded-xl focus:outline-none text-slate-800" />
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">ACCENT THEME COLOR</label>
+                <div className="relative flex items-center">
+                  <div className="absolute left-3 w-7 h-7 bg-[#0ea5e9] border border-slate-300"></div>
+                  <input type="text" placeholder="#0ea5e9" className="w-full pl-13 pr-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFA000] text-[13px] font-medium rounded-xl focus:outline-none text-slate-800 placeholder-slate-400" />
+                </div>
               </div>
               <button
                 onClick={() => setShowWhiteLabelModal(false)}
-                className="w-full py-3 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-colors cursor-pointer text-center"
+                className="w-full py-2.5 bg-[#FFA000] hover:bg-[#FF8F00] text-slate-900 font-bold text-[13px] rounded-xl shadow-sm transition-colors cursor-pointer text-center mt-2"
               >
-                Apply Custom Domain
+                Save Branding Options
               </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* Tenant Workspace Inspector Drawer */}
+      {showInspector && (
+        <div className="fixed inset-0 z-[1000] flex justify-end">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity cursor-pointer"
+            onClick={() => setShowInspector(false)}
+          ></div>
+
+          {/* Drawer Panel */}
+          <div className="relative w-full max-w-md bg-white shadow-2xl h-full flex flex-col animate-slide-left">
+            {/* Header */}
+            <div className="flex justify-between items-center p-6 border-b border-slate-100 bg-white">
+              <h3 className="text-lg font-extrabold text-slate-900">Tenant Workspace Inspector</h3>
+              <button 
+                onClick={() => setShowInspector(false)} 
+                className="text-slate-400 hover:text-slate-700 transition-colors p-1 rounded-lg hover:bg-slate-50 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-8 overflow-y-auto custom-scrollbar flex-grow space-y-8 bg-[#F8FAFC]">
+              
+              <div className="flex justify-between items-start">
+                <div>
+                  <h2 className="text-[22px] font-black text-slate-900">{selectedTenant?.name || 'Falcon Logistics LLC'}</h2>
+                  <p className="text-[10px] font-mono text-slate-400 mt-1 uppercase tracking-wider">Workspace ID: #TEN-{selectedTenant?.id || '1'}</p>
+                </div>
+                <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-bold tracking-wider ${
+                  (selectedTenant?.status || 'ACTIVE') === 'ACTIVE'
+                    ? 'text-emerald-600 bg-emerald-50 border border-emerald-200'
+                    : 'text-amber-600 bg-amber-50 border border-amber-200'
+                }`}>
+                  {selectedTenant?.status || 'ACTIVE'}
+                </span>
+              </div>
+
+              {/* Tabs */}
+              <div className="flex overflow-x-auto custom-scrollbar pb-3 gap-2 border-b border-slate-200/60 items-center">
+                {['Overview', 'Subscriptions', 'Users', 'Branches', 'Fleet', 'Loads', 'Billing', 'Support Tickets', 'Feature Access', 'Audit Log'].map(tab => (
+                  <button 
+                    key={tab}
+                    onClick={() => setActiveInspectorTab(tab)}
+                    className={`shrink-0 px-4 py-1.5 text-[11px] rounded-xl whitespace-nowrap cursor-pointer transition-colors ${
+                      activeInspectorTab === tab 
+                        ? 'bg-[#FFD400] text-slate-900 font-black shadow-sm border-2 border-slate-900'
+                        : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 font-bold border-2 border-transparent'
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+
+              {activeInspectorTab === 'Overview' && (
+                <div className="space-y-4">
+                  {/* General Information Card */}
+                  <div className="bg-white border border-slate-100 rounded-xl p-4 shadow-sm shadow-slate-200/40">
+                    <h4 className="text-[12px] font-extrabold text-slate-800 mb-3 flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                      General Information
+                    </h4>
+                    <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+                      <div>
+                        <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Account Manager</p>
+                        <p className="text-slate-800 font-bold text-[12px]">Alex W.</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Region/Country</p>
+                        <p className="text-slate-800 font-bold text-[12px]">USA</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Joined Date</p>
+                        <p className="text-slate-800 font-bold text-[12px]">03/12/2026</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Last Login</p>
+                        <p className="text-slate-800 font-bold text-[12px]">{selectedTenant?.lastActive || 'Today, 02:15 PM'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Resource Metrics Card */}
+                  <div className="bg-white border border-slate-100 rounded-xl p-4 shadow-sm shadow-slate-200/40">
+                    <h4 className="text-[12px] font-extrabold text-slate-800 mb-3 flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      Resource Metrics
+                    </h4>
+                    <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+                      <div>
+                        <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Active Users</p>
+                        <p className="text-slate-800 font-black text-sm">{selectedTenant?.users || '12'}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Total Drivers</p>
+                        <p className="text-slate-800 font-black text-sm">3</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Fleet Vehicles</p>
+                        <p className="text-slate-800 font-black text-sm">15</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Branches count</p>
+                        <p className="text-slate-800 font-black text-sm">4</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeInspectorTab === 'Subscriptions' && (
+                <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm shadow-slate-200/40">
+                  <h4 className="text-[13px] font-extrabold text-slate-800 mb-5">Subscription Licensing Contract</h4>
+                  <div className="space-y-3.5">
+                    <div className="flex gap-2 items-center">
+                      <span className="text-slate-400 text-[12px] font-bold">Current Tier Plan:</span>
+                      <span className="text-[#D97706] font-extrabold text-[12px]">Professional Plan</span>
+                    </div>
+                    <div className="flex gap-2 items-center">
+                      <span className="text-slate-400 text-[12px] font-bold">Contract Billing Rate:</span>
+                      <span className="text-slate-800 font-extrabold text-[12px]">$8,500 / month</span>
+                    </div>
+                    <div className="flex gap-2 items-center">
+                      <span className="text-slate-400 text-[12px] font-bold">Billing Cycle Period:</span>
+                      <span className="text-slate-800 font-extrabold text-[12px]">Monthly Auto-Renewal recurring</span>
+                    </div>
+                    <div className="flex gap-2 items-center">
+                      <span className="text-slate-400 text-[12px] font-bold">Next Renewal Invoice Date:</span>
+                      <span className="text-slate-800 font-extrabold text-[12px]">07/24/2026</span>
+                    </div>
+                    <div className="flex gap-2 items-center">
+                      <span className="text-slate-400 text-[12px] font-bold">Trial Expiry:</span>
+                      <span className="text-slate-800 font-extrabold text-[12px]">N/A</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeInspectorTab === 'Users' && (
+                <div>
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">REGISTERED ACCOUNT STAFF MEMBERS</h4>
+                  <div className="bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/40 overflow-hidden divide-y divide-slate-100">
+                    {[
+                      { name: 'Alexander Wright', email: 'Alex W.', role: 'Company Admin', status: 'Active' },
+                      { name: 'Operator B', email: 'operator2@falconlogisticsllc.com', role: 'Dispatcher', status: 'Active' },
+                      { name: 'Operator C', email: 'operator3@falconlogisticsllc.com', role: 'Dispatcher', status: 'Active' },
+                      { name: 'Operator D', email: 'operator4@falconlogisticsllc.com', role: 'Dispatcher', status: 'Active' },
+                      { name: 'Operator E', email: 'operator5@falconlogisticsllc.com', role: 'Dispatcher', status: 'Active' },
+                      { name: 'Operator F', email: 'operator6@falconlogisticsllc.com', role: 'Dispatcher', status: 'Active' },
+                      { name: 'Operator G', email: 'operator7@falconlogisticsllc.com', role: 'Dispatcher', status: 'Active' },
+                      { name: 'Operator H', email: 'operator8@falconlogisticsllc.com', role: 'Dispatcher', status: 'Active' },
+                    ].map(user => (
+                      <div key={user.name} className="flex justify-between items-center p-4">
+                        <div>
+                          <p className="text-[13px] font-bold text-slate-800">{user.name}</p>
+                          <p className="text-[11px] font-mono text-slate-400 mt-0.5">{user.email}</p>
+                        </div>
+                        <div className="text-right flex flex-col items-end">
+                          <p className="text-[11px] font-bold text-slate-600 mb-1">{user.role}</p>
+                          <span className="text-[9px] font-bold text-emerald-500 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full tracking-wider">{user.status}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {activeInspectorTab === 'Branches' && (
+                <div>
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">ACTIVE BRANCH TERMINALS</h4>
+                  <div className="bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/40 overflow-hidden divide-y divide-slate-100">
+                    {[
+                      { name: 'Chicago HQ Terminal', loc: 'Chicago, IL', staff: '4 Staff' },
+                      { name: 'Branch Depot 2', loc: 'Los Angeles, CA', staff: '6 Staff' },
+                      { name: 'Branch Depot 3', loc: 'Los Angeles, CA', staff: '8 Staff' },
+                      { name: 'Branch Depot 4', loc: 'Los Angeles, CA', staff: '10 Staff' },
+                    ].map(branch => (
+                      <div key={branch.name} className="flex justify-between items-center p-4">
+                        <div>
+                          <p className="text-[13px] font-bold text-slate-800">{branch.name}</p>
+                          <p className="text-[11px] font-medium text-slate-400 mt-0.5">{branch.loc}</p>
+                        </div>
+                        <div>
+                          <p className="text-[12px] font-bold text-slate-600">{branch.staff}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {activeInspectorTab === 'Fleet' && (
+                <div>
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">REGISTERED FLEET ASSET VEHICLES</h4>
+                  <div className="bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/40 overflow-hidden divide-y divide-slate-100">
+                    {[
+                      { id: 'TX-ROAD88', type: 'Semi-Truck' },
+                      { id: 'IL-HAUL42', type: 'Flatbed Trailer' },
+                      { id: 'CA-CARRI7', type: 'Semi-Truck' },
+                      { id: 'TX-1003', type: 'Flatbed Trailer' },
+                      { id: 'TX-1004', type: 'Semi-Truck' },
+                      { id: 'TX-1005', type: 'Flatbed Trailer' },
+                      { id: 'TX-1006', type: 'Semi-Truck' },
+                      { id: 'TX-1007', type: 'Flatbed Trailer' },
+                    ].map(vehicle => (
+                      <div key={vehicle.id} className="flex justify-between items-center p-4">
+                        <div>
+                          <p className="text-[13px] font-bold text-slate-800">{vehicle.id}</p>
+                          <p className="text-[11px] font-medium text-slate-400 mt-0.5">{vehicle.type}</p>
+                        </div>
+                        <div>
+                          <span className="text-[9px] font-bold text-blue-500 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full tracking-wide">Active</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {activeInspectorTab === 'Loads' && (
+                <div>
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">LOADS MANIFEST SUMMARY</h4>
+                  <div className="bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/40 overflow-hidden divide-y divide-slate-100">
+                    {[
+                      { id: 'Load LD-9400', route: 'Chicago ➔ Dallas', cargo: 'Automotive Components' },
+                      { id: 'Load LD-9401', route: 'Houston ➔ Atlanta', cargo: 'Dry Grocery Pallets' },
+                      { id: 'Load LD-9402', route: 'Chicago ➔ Dallas', cargo: 'Automotive Components' },
+                      { id: 'Load LD-9403', route: 'Houston ➔ Atlanta', cargo: 'Dry Grocery Pallets' },
+                      { id: 'Load LD-9404', route: 'Chicago ➔ Dallas', cargo: 'Automotive Components' },
+                      { id: 'Load LD-9405', route: 'Houston ➔ Atlanta', cargo: 'Dry Grocery Pallets' },
+                      { id: 'Load LD-9406', route: 'Chicago ➔ Dallas', cargo: 'Automotive Components' },
+                      { id: 'Load LD-9407', route: 'Houston ➔ Atlanta', cargo: 'Dry Grocery Pallets' },
+                    ].map(load => (
+                      <div key={load.id} className="flex justify-between items-center p-4">
+                        <div>
+                          <p className="text-[13px] font-bold text-slate-800">{load.id}</p>
+                          <p className="text-[11px] font-medium text-slate-500 mt-0.5">{load.route} ({load.cargo})</p>
+                        </div>
+                        <div>
+                          <span className="text-[9px] font-bold text-emerald-500 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full tracking-wide">In Transit</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {activeInspectorTab === 'Billing' && (
+                <div>
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">BILLING SUMMARY & LEDGER</h4>
+                  
+                  <div className="bg-white border border-slate-100 rounded-2xl p-5 mb-4 shadow-sm shadow-slate-200/40">
+                    <div className="space-y-3.5">
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400 text-[12px] font-bold">Subscription Revenue:</span>
+                        <span className="text-emerald-500 font-extrabold text-[12px]">$8500/mo</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400 text-[12px] font-bold">Annual Projected:</span>
+                        <span className="text-slate-800 font-extrabold text-[12px]">$102000/yr</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400 text-[12px] font-bold">Billing Cycle:</span>
+                        <span className="text-slate-800 font-extrabold text-[12px]">Monthly Recurring</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400 text-[12px] font-bold">Auto Renewal:</span>
+                        <span className="text-emerald-500 font-extrabold text-[12px]">Enabled</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/40 overflow-hidden divide-y divide-slate-100">
+                    {[
+                      { id: '#INV-1001A', date: '06/12/2026 - 07/12/2026', amount: '$8500', status: 'Paid', statusClass: 'text-emerald-500 bg-emerald-50' },
+                      { id: '#INV-1002A', date: '06/15/2026 - 06/29/2026', amount: '$4200', status: 'Sent', statusClass: 'text-amber-500 bg-amber-50' },
+                      { id: '#INV-1003A', date: '06/20/2026 - 07/04/2026', amount: '$3100', status: 'Draft', statusClass: 'text-amber-500 bg-amber-50' },
+                      { id: '#INV-1004A', date: '05/10/2026 - 05/24/2026', amount: '$5000', status: 'Overdue', statusClass: 'text-amber-500 bg-amber-50' },
+                    ].map(invoice => (
+                      <div key={invoice.id} className="flex justify-between items-center p-4">
+                        <div>
+                          <p className="text-[13px] font-bold text-slate-800">Invoice {invoice.id}</p>
+                          <p className="text-[11px] font-medium text-slate-400 mt-0.5">Period: {invoice.date}</p>
+                        </div>
+                        <div className="text-right flex flex-col items-end">
+                          <p className="text-[13px] font-bold text-slate-800 mb-1">{invoice.amount}</p>
+                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full tracking-wider ${invoice.statusClass}`}>{invoice.status}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {activeInspectorTab === 'Support Tickets' && (
+                <div>
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">INBOUND TICKET QUERIES RAISED</h4>
+                  <div className="bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/40 p-4 flex justify-between items-center">
+                    <div>
+                      <p className="text-[13px] font-bold text-slate-800">#1 • Invoice Factoring Delay</p>
+                      <p className="text-[11px] font-medium text-slate-400 mt-0.5">Priority: High</p>
+                    </div>
+                    <div>
+                      <span className="text-[9px] font-bold text-amber-500 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full tracking-wide">Open</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeInspectorTab === 'Feature Access' && (
+                <div>
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">VISUAL FEATURE PERMISSIONS</h4>
+                  <div className="bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/40 overflow-hidden divide-y divide-slate-50 py-1">
+                    {[
+                      { name: 'Platform Dashboard', status: 'Enabled', active: true },
+                      { name: 'Companies Workspace', status: 'Enabled', active: true },
+                      { name: 'Subscriptions Panel', status: 'Enabled', active: true },
+                      { name: 'Membership Plans', status: 'Disabled', active: false },
+                      { name: 'AI Controls Center', status: 'Disabled', active: false },
+                      { name: 'Inter-Company Transfers', status: 'Disabled', active: false },
+                      { name: 'White Label Customization', status: 'Disabled', active: false },
+                    ].map(feature => (
+                      <div key={feature.name} className="flex justify-between items-center px-5 py-3">
+                        <p className="text-[13px] font-medium text-slate-500">{feature.name}</p>
+                        <span className={`text-[12px] font-bold ${feature.active ? 'text-emerald-500' : 'text-slate-600'}`}>{feature.status}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {activeInspectorTab === 'Audit Log' && (
+                <div>
+                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">SUBSCRIPTION AUDIT FEED</h4>
+                  <div className="bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/40 p-5 divide-y divide-slate-100">
+                    <div className="pb-4">
+                      <p className="text-[12px] font-bold text-slate-800">Company Created</p>
+                      <p className="text-[11px] text-slate-500 mt-1">Falcon Logistics LLC provisioned successfully.</p>
+                      <p className="text-[9px] font-mono text-slate-400 mt-2">03/12/2026</p>
+                    </div>
+                    <div className="pt-4">
+                      <p className="text-[12px] font-bold text-slate-800">Database Index Sync</p>
+                      <p className="text-[11px] text-slate-500 mt-1">ElasticSearch keys auto-indexing rebuilt.</p>
+                      <p className="text-[9px] font-mono text-slate-400 mt-2">03/12/2026</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {!['Overview', 'Subscriptions', 'Users', 'Branches', 'Fleet', 'Billing', 'Support Tickets', 'Feature Access', 'Audit Log'].includes(activeInspectorTab) && (
+                <div className="bg-white border border-slate-100 rounded-2xl p-8 text-center shadow-sm shadow-slate-200/40">
+                  <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <span className="text-slate-400 font-bold text-xl">ℹ️</span>
+                  </div>
+                  <h4 className="text-sm font-extrabold text-slate-800 mb-1">{activeInspectorTab} Data</h4>
+                  <p className="text-[11px] text-slate-500">Detailed information for {activeInspectorTab.toLowerCase()} will be displayed here.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer Buttons */}
+            <div className="p-6 border-t border-slate-100 bg-white">
+              <div className="flex gap-3 mb-3">
+                <button className="flex-1 bg-[#E11D48] text-white px-4 py-3 rounded-xl text-[11px] font-bold hover:bg-[#BE123C] shadow-md shadow-rose-500/20 transition-all text-center cursor-pointer">
+                  Suspend Workspace License
+                </button>
+                <button className="flex-1 bg-[#E11D48] text-white px-4 py-3 rounded-xl text-[11px] font-bold hover:bg-[#BE123C] shadow-md shadow-rose-500/20 transition-all text-center cursor-pointer">
+                  Permanently Delete Company
+                </button>
+              </div>
+              <button 
+                onClick={() => setShowInspector(false)}
+                className="w-[150px] bg-white border border-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-[11px] font-bold hover:bg-slate-50 transition-colors text-center cursor-pointer"
+              >
+                Close Inspector
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
