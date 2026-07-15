@@ -1,59 +1,73 @@
 import React, { useState } from 'react';
-import { Shield, Truck, AlertTriangle, Heart, X, Phone, MessageSquare, Mic, Compass, Wifi, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Shield, Truck, AlertTriangle, Heart, X, Phone, MessageSquare, Mic, Link, Wifi, Bell, Check, Trash2, CheckCircle2 } from 'lucide-react';
 
-export default function CreateDraftLoad() {
+export default function Notifications() {
   const [sosModalOpen, setSosModalOpen] = useState(false);
   const [hotlineOpen, setHotlineOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
-  const [toastType, setToastType] = useState('success');
   const [isOnline, setIsOnline] = useState(true);
   const [activeSosAlert, setActiveSosAlert] = useState(null);
-
-  // Form states
-  const [shipperName, setShipperName] = useState('');
-  const [routeDetails, setRouteDetails] = useState('');
 
   // SOS states
   const [shareGps, setShareGps] = useState(true);
   const [autoNotify, setAutoNotify] = useState(true);
 
-  const triggerToast = (msg, type = 'success') => {
+  const triggerToast = (msg) => {
     setToastMsg(msg);
-    setToastType(type);
     setTimeout(() => setToastMsg(''), 4000);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!shipperName.trim() || !routeDetails.trim()) {
-      triggerToast('Shipper and Route are required.', 'error');
-    } else {
-      triggerToast('Draft shipment submitted for dispatcher review.', 'success');
-      setShipperName('');
-      setRouteDetails('');
+  const [notifications, setNotifications] = useState([
+    {
+      id: 1,
+      type: 'DISPATCH',
+      title: 'New Load Assigned',
+      message: 'Load LD-9411 has been assigned to your shift.',
+      time: '10 mins ago',
+      read: false
+    },
+    {
+      id: 2,
+      type: 'SYSTEM',
+      title: 'ELD Sync Complete',
+      message: 'Your logs have been successfully synced with the server.',
+      time: '1 hour ago',
+      read: false
+    },
+    {
+      id: 3,
+      type: 'ALERT',
+      title: 'Severe Weather Warning',
+      message: 'High winds reported on route I-94. Please drive carefully.',
+      time: '2 hours ago',
+      read: false
     }
+  ]);
+
+  const markAllRead = () => {
+    setNotifications(notifications.map(n => ({ ...n, read: true })));
+    triggerToast('successfully');
+  };
+
+  const markRead = (id) => {
+    setNotifications(notifications.map(n => n.id === id ? { ...n, read: true } : n));
+    triggerToast('successfully');
+  };
+
+  const dismiss = (id) => {
+    setNotifications(notifications.filter(n => n.id !== id));
+    triggerToast('successfully');
   };
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-screen text-left flex flex-col space-y-6 relative pb-28">
-      {/* Toast Notification */}
+      {/* Toast */}
       {toastMsg && (
-        <div className={`fixed bottom-24 right-6 z-[120] px-4 py-3 rounded-xl text-sm font-bold shadow-lg flex items-center gap-3 max-w-sm animate-fade-in border ${
-          toastType === 'error' 
-            ? 'bg-[#FEF2F2] border-[#FCA5A5] text-[#334155]' 
-            : 'bg-[#ECFDF5] border-[#A7F3D0] text-[#065F46]'
-        }`}>
-          {toastType === 'error' ? (
-            <AlertCircle className="w-5 h-5 text-[#EF4444] shrink-0" strokeWidth={2.5} />
-          ) : (
-            <CheckCircle2 className="w-5 h-5 text-[#10B981] shrink-0" strokeWidth={2.5} />
-          )}
+        <div className="fixed bottom-24 right-6 z-[120] bg-white border border-gray-200 text-gray-800 px-4 py-2.5 rounded-2xl text-sm font-semibold shadow-xl flex items-center gap-2 max-w-xs animate-fade-in">
+          <span className="text-emerald-500 text-base">✓</span>
           <span>{toastMsg}</span>
-          <button 
-            onClick={() => setToastMsg('')} 
-            className={`ml-auto cursor-pointer pl-2 ${toastType === 'error' ? 'text-gray-400 hover:text-gray-600' : 'text-[#059669] hover:text-[#047857]'}`}
-          >
-            <X className="w-4 h-4" strokeWidth={2.5} />
+          <button onClick={() => setToastMsg('')} className="ml-auto text-gray-400 hover:text-gray-600 cursor-pointer">
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
@@ -122,65 +136,79 @@ export default function CreateDraftLoad() {
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none">Driver Portal</h1>
             <span className="text-xl font-bold text-gray-400">•</span>
-            <span className="text-xl font-black text-gray-800">create draft-load</span>
+            <span className="text-xl font-black text-gray-800">notifications</span>
           </div>
           <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider mt-1.5">ELD &amp; logistics operations controls.</p>
         </div>
-        <div className="w-10 h-10 rounded-full bg-[#FFFBEB] flex items-center justify-center text-[#D97706] shrink-0">
-          <Compass className="w-5 h-5" />
+        <div className="w-8 h-8 rounded-full bg-amber-50 border border-amber-100 flex items-center justify-center text-[#D97706] cursor-pointer" title="ELD Info">
+          <Link className="w-4 h-4" />
         </div>
       </div>
 
-      {/* Main Form Card */}
-      <div className="bg-white border border-gray-100 rounded-3xl p-6 md:p-8 shadow-sm text-left max-w-2xl mx-auto w-full mt-4">
-        <h2 className="text-lg font-black text-[#0F172A] leading-tight">Create Draft Shipment</h2>
-        <p className="text-gray-500 text-sm mt-2 font-medium mb-8">
-          Submit a cargo draft to dispatcher registry for review and assignment.
-        </p>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Main Notifications Card */}
+      <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm text-left flex items-start gap-4">
+        <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
+          <Bell className="w-5 h-5" />
+        </div>
+        <div className="flex-1 flex justify-between items-center">
           <div>
-            <label className="block text-[11px] font-black text-gray-500 uppercase tracking-widest mb-2">
-              SHIPPER CUSTOMER NAME
-            </label>
-            <input 
-              type="text" 
-              value={shipperName}
-              onChange={(e) => setShipperName(e.target.value)}
-              placeholder="e.g. Vance Refrigeration"
-              className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm font-semibold text-gray-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder-gray-400"
-            />
+            <h2 className="text-lg font-black text-gray-900 leading-tight">Notifications</h2>
+            <p className="text-gray-500 text-xs mt-1.5 font-semibold">Updates and alerts from dispatch and system.</p>
           </div>
+          <button 
+            onClick={markAllRead}
+            className="text-xs font-bold text-[#1E3A8A] bg-blue-50 hover:bg-blue-100 border border-blue-100 px-4 py-2 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            Mark All Read
+          </button>
+        </div>
+      </div>
 
-          <div>
-            <label className="block text-[11px] font-black text-gray-500 uppercase tracking-widest mb-2">
-              ROUTE DETAILS (ORIGIN ➔ DESTINATION)
-            </label>
-            <input 
-              type="text" 
-              value={routeDetails}
-              onChange={(e) => setRouteDetails(e.target.value)}
-              placeholder="e.g. Chicago ➔ Boston"
-              className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm font-semibold text-gray-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder-gray-400"
-            />
+      {/* Notifications List */}
+      <div className="space-y-4">
+        {notifications.length === 0 ? (
+          <div className="text-center py-10 text-gray-400 font-bold text-sm">
+            No active notifications
           </div>
+        ) : (
+          notifications.map((notification) => (
+            <div key={notification.id} className={`bg-white border ${notification.read ? 'border-gray-150 opacity-70' : 'border-blue-200'} rounded-3xl p-6 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-colors`}>
+              <div className="text-left space-y-2">
+                <span className={`text-[9px] font-black px-2.5 py-0.5 rounded uppercase tracking-wider inline-block ${notification.type === 'ALERT' ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-blue-50 text-blue-600 border border-blue-100'}`}>
+                  {notification.type}
+                </span>
+                <h3 className="text-base font-black text-gray-900 flex items-center gap-2">
+                  {notification.title}
+                  {!notification.read && <span className="w-2 h-2 rounded-full bg-blue-500"></span>}
+                </h3>
+                <p className="text-xs font-semibold text-gray-500">{notification.message}</p>
+                <div className="text-[11px] font-bold text-gray-400 pt-0.5">
+                  <span>{notification.time}</span>
+                </div>
+              </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
-            <button 
-              type="button"
-              onClick={handleSubmit}
-              className="w-full bg-[#FFB000] text-black font-black text-sm py-4 px-4 rounded-xl hover:bg-[#F59E0B] transition-all shadow-sm cursor-pointer hover:shadow-md"
-            >
-              Create Draft Load
-            </button>
-            <button 
-              type="submit"
-              className="w-full bg-[#0F9D58] text-black font-black text-sm py-4 px-4 rounded-xl hover:bg-[#0B8043] transition-all shadow-sm cursor-pointer hover:shadow-md"
-            >
-              Submit Draft for Review
-            </button>
-          </div>
-        </form>
+              <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                {!notification.read && (
+                  <button
+                    onClick={() => markRead(notification.id)}
+                    className="flex-1 sm:flex-none bg-[#E6F4EA] border border-[#CEEAD6] text-[#137333] font-black text-xs py-2 px-4 rounded-xl flex items-center justify-center gap-1 shadow-sm hover:bg-green-100 transition-all cursor-pointer"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Read</span>
+                  </button>
+                )}
+                <button
+                  onClick={() => dismiss(notification.id)}
+                  className="flex-1 sm:flex-none bg-gray-50 border border-gray-200 text-gray-600 font-black text-xs py-2 px-4 rounded-xl flex items-center justify-center gap-1 shadow-sm hover:bg-gray-100 transition-all cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Dismiss</span>
+                </button>
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* Floating Buttons */}
