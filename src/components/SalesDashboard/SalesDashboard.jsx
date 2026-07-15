@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { 
   Bell, ChevronDown, Plus, Mail, Phone, Calendar, 
-  Activity, ArrowRight, Check, X, User, Star, Clock 
+  Activity, ArrowRight, Check, X, User, Star, Clock,
+  Play, Send, UserPlus
 } from 'lucide-react';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -12,6 +13,17 @@ export default function SalesDashboard() {
   const [salesRep, setSalesRep] = useState('Alex Wright');
   const [selectedLead, setSelectedLead] = useState('Vance Refrigeration (Robert Vance)');
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
+  const [showDemoModal, setShowDemoModal] = useState(false);
+  const [showProposalModal, setShowProposalModal] = useState(false);
+  const [showRecommendModal, setShowRecommendModal] = useState(false);
+  const [showMailModal, setShowMailModal] = useState(false);
+  const [showCallModal, setShowCallModal] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showConvertButton, setShowConvertButton] = useState(false);
+  const [showConversionWizard, setShowConversionWizard] = useState(false);
+  const [wizardStep, setWizardStep] = useState(1);
+  const [isProvisioning, setIsProvisioning] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState('Professional');
 
   // Analytics Data
   const monthlyData = [
@@ -180,7 +192,7 @@ export default function SalesDashboard() {
 
             <div>
               <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-3">CRM DIRECT DISPATCH ACTIONS</p>
-              <div className="flex flex-wrap items-center gap-2 mb-4">
+              <div className="flex flex-nowrap items-center gap-1 mb-4">
                 <div className="flex items-center gap-2 bg-white border border-slate-200 px-3 py-2 rounded-xl">
                   <User className="w-3.5 h-3.5 text-amber-500" />
                   <span className="text-[11px] font-bold text-slate-500">Rep:</span>
@@ -194,37 +206,66 @@ export default function SalesDashboard() {
                     <option>Sarah Connor</option>
                   </select>
                 </div>
-                <button className="bg-purple-600 text-white text-[10px] font-bold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-1.5 hover:bg-purple-700 transition-colors">
+                <button onClick={() => setShowRecommendModal(true)} className="bg-[#4B0082] text-white text-[10px] font-bold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-1.5 hover:bg-purple-900 transition-colors">
                   <Star className="w-3.5 h-3.5" /> Recommend Plan
                 </button>
-                <button className="bg-[#ffcc00] text-black text-[10px] font-bold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-1.5 hover:bg-[#e6b800] transition-colors">
+                <button onClick={() => setShowDemoModal(true)} className="bg-[#ffcc00] text-black text-[10px] font-bold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-1.5 hover:bg-[#e6b800] transition-colors">
                   <Calendar className="w-3.5 h-3.5" /> Book Demo
                 </button>
                 <button className="bg-slate-800 text-white text-[10px] font-bold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-1.5 hover:bg-slate-900 transition-colors">
-                  <Activity className="w-3.5 h-3.5" /> Start Trial
+                  <Play className="w-3.5 h-3.5" fill="currentColor" /> Start Trial
                 </button>
-                <button className="bg-white border border-slate-200 text-slate-700 text-[10px] font-bold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-1.5 hover:bg-slate-50 transition-colors">
-                  <Mail className="w-3.5 h-3.5" /> Send Proposal
+                <button onClick={() => setShowProposalModal(true)} className="bg-white border border-slate-200 text-slate-700 text-[10px] font-bold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-1.5 hover:bg-slate-50 transition-colors">
+                  <Send className="w-3.5 h-3.5" /> Send Proposal
                 </button>
               </div>
               
-              <div className="flex items-center gap-2 mb-4">
-                <button className="bg-emerald-700 text-white text-[10px] font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 hover:bg-emerald-800 transition-colors">
+              <div className="flex flex-nowrap items-center gap-1 mb-4">
+                <button 
+                  onClick={() => setShowConvertButton(true)}
+                  className="bg-[#0F9D58] text-white text-[10px] font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5 hover:bg-[#0b8043] shadow-sm transition-colors"
+                >
                   <Check className="w-3.5 h-3.5" /> Mark Won
                 </button>
-                <button className="bg-rose-800 text-white text-[10px] font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 hover:bg-rose-900 transition-colors">
+                <button 
+                  onClick={() => setShowConvertButton(false)}
+                  className="bg-[#990000] text-white text-[10px] font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5 hover:bg-[#800000] shadow-sm transition-colors"
+                >
                   <X className="w-3.5 h-3.5" /> Mark Lost
                 </button>
+                {showConvertButton && (
+                  <button 
+                    onClick={() => {
+                      setWizardStep(1);
+                      setShowConversionWizard(true);
+                    }}
+                    className="bg-[#E68A00] text-white text-[10px] font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5 hover:bg-[#cc7a00] shadow-sm transition-colors"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" /> Convert to Company
+                  </button>
+                )}
               </div>
 
               <div className="flex items-center gap-2">
-                <button className="p-2.5 border border-slate-200 rounded-xl text-slate-400 hover:bg-slate-50 transition-colors">
+                <button 
+                  onClick={() => setShowMailModal(true)}
+                  title="Send Email"
+                  className="p-2.5 border border-slate-200 rounded-xl text-blue-500 hover:bg-blue-50 hover:border-blue-300 transition-all"
+                >
                   <Mail className="w-4 h-4" />
                 </button>
-                <button className="p-2.5 border border-slate-200 rounded-xl text-slate-400 hover:bg-slate-50 transition-colors">
+                <button 
+                  onClick={() => setShowCallModal(true)}
+                  title="Log Phone Call"
+                  className="p-2.5 border border-slate-200 rounded-xl text-green-500 hover:bg-green-50 hover:border-green-300 transition-all"
+                >
                   <Phone className="w-4 h-4" />
                 </button>
-                <button className="p-2.5 border border-slate-200 rounded-xl text-slate-400 hover:bg-slate-50 transition-colors">
+                <button 
+                  onClick={() => setShowScheduleModal(true)}
+                  title="Schedule Follow-up"
+                  className="p-2.5 border border-slate-200 rounded-xl text-amber-500 hover:bg-amber-50 hover:border-amber-300 transition-all"
+                >
                   <Calendar className="w-4 h-4" />
                 </button>
                 <input 
@@ -376,7 +417,7 @@ export default function SalesDashboard() {
 
       {/* Create New Task Modal */}
       {showAddTaskModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
           <div className="bg-white rounded-[24px] w-full max-w-[550px] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
@@ -437,10 +478,738 @@ export default function SalesDashboard() {
 
               <button 
                 onClick={() => setShowAddTaskModal(false)}
-                className="w-full bg-[#ffcc00] hover:bg-[#e6b800] text-black font-extrabold text-sm py-4 rounded-xl shadow-sm transition-colors mt-2"
+                className="w-full bg-[#ffcc00] hover:bg-[#e6b800] text-black font-extrabold text-sm py-4 rounded-xl shadow-[0_4px_15px_rgba(255,204,0,0.4)] transition-colors mt-2"
               >
                 Create Task checklist
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Schedule ZOOM Product Walkthrough Modal */}
+      {showDemoModal && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-visible animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
+              <h2 className="text-[17px] font-black text-slate-900">Schedule ZOOM Product Walkthrough</h2>
+              <button onClick={() => setShowDemoModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors p-1">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-6">
+              <p className="text-[13px] font-semibold text-slate-500">Locking a demo schedule for {selectedLead.split(' ')[0]} Refrigeration.</p>
+              
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">SELECT DATE</label>
+                <div className="relative">
+                  <input type="date" defaultValue="2026-07-17" className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400] focus:ring-2 focus:ring-[#FFD400]/20 transition-colors" />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">SELECT TIME BLOCK</label>
+                <select className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400] focus:ring-2 focus:ring-[#FFD400]/20 transition-colors appearance-none bg-white">
+                  <option>11:00 AM EST</option>
+                  <option>1:00 PM EST</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">MEETING AGENDA / HOST NOTES</label>
+                <textarea rows="2" className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400] focus:ring-2 focus:ring-[#FFD400]/20 transition-colors resize-none" defaultValue="Walkthrough showcasing fleet telematics and factoring automation."></textarea>
+              </div>
+
+              <div className="pt-2">
+                <button onClick={() => setShowDemoModal(false)} className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[13px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all">
+                  Confirm Zoom Schedule
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Issue Licensing Agreement Proposal Modal */}
+      {showProposalModal && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-visible animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
+              <h2 className="text-[17px] font-black text-slate-900">Issue Licensing Agreement Proposal</h2>
+              <button onClick={() => setShowProposalModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors p-1">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-6">
+              
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">PROPOSAL TITLE DOCUMENT</label>
+                <input type="text" defaultValue="Hero Logistics SaaS License - Vance Refrigeration" className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400] focus:ring-2 focus:ring-[#FFD400]/20 transition-colors" />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">LINE ITEMS</label>
+                <div className="space-y-3">
+                  <div className="flex gap-4">
+                    <input type="text" defaultValue="Enterprise License Tier base" className="w-2/3 border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400] focus:ring-2 focus:ring-[#FFD400]/20 transition-colors" />
+                    <input type="text" defaultValue="2004" className="w-1/3 border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400] focus:ring-2 focus:ring-[#FFD400]/20 transition-colors" />
+                  </div>
+                  <div className="flex gap-4">
+                    <input type="text" defaultValue="GPS Fleet Tracking Modules API" className="w-2/3 border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400] focus:ring-2 focus:ring-[#FFD400]/20 transition-colors" />
+                    <input type="text" defaultValue="301" className="w-1/3 border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400] focus:ring-2 focus:ring-[#FFD400]/20 transition-colors" />
+                  </div>
+                </div>
+                <button className="text-[10px] font-black text-[#E68A00] mt-2 hover:text-amber-600 transition-colors">+ Add Custom Add-on item</button>
+              </div>
+
+              <div className="flex gap-4">
+                <div className="flex-1 space-y-2">
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">CORPORATE DISCOUNT (%)</label>
+                  <input type="text" defaultValue="0" className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400] focus:ring-2 focus:ring-[#FFD400]/20 transition-colors" />
+                </div>
+                <div className="flex-1 space-y-2">
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">PROPOSAL VALIDITY TERM</label>
+                  <select className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400] focus:ring-2 focus:ring-[#FFD400]/20 transition-colors appearance-none bg-white">
+                    <option>30 Days validity</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <button onClick={() => setShowProposalModal(false)} className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[13px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all">
+                  Dispatched Proposal Email
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Interactive License Tier Recommendation Modal */}
+      {showRecommendModal && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
+              <h2 className="text-[17px] font-black text-slate-900">Interactive License Tier Recommendation</h2>
+              <button onClick={() => setShowRecommendModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors p-1">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              <div className="mb-6">
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">LEAD DIAGNOSIS</p>
+                <h3 className="text-[17px] font-black text-slate-800 mb-1">{selectedLead.split(' ')[0]} Refrigeration</h3>
+                <p className="text-[13px] font-medium text-slate-500">Fleet Size: <span className="text-slate-700 font-bold">12 Trucks</span> &bull; Current Software: <span className="text-slate-700 font-bold">Spreadsheets (Excel)</span></p>
+              </div>
+
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-4">AVAILABLE LICENSE PLAN TIERS</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                
+                {/* Starter Plan (Recommended) */}
+                <div className="border border-[#FFD400] bg-[#FFFBF0] rounded-2xl p-5 flex flex-col relative overflow-hidden">
+                  <div className="mb-4">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <h4 className="text-[15px] font-black text-slate-900">Starter</h4>
+                      <span className="bg-[#FFD400] text-black text-[9px] font-black uppercase px-2 py-0.5 rounded shadow-sm">RECOMMENDED</span>
+                    </div>
+                    <p className="text-[11px] font-semibold text-slate-500 h-8 leading-tight">For small operators &lt;<br/>35 trucks</p>
+                  </div>
+                  <div className="mb-5">
+                    <div className="flex items-end gap-0.5">
+                      <span className="text-2xl font-black text-slate-900">$199</span>
+                      <span className="text-[11px] font-bold text-slate-500 mb-1">/mo</span>
+                    </div>
+                  </div>
+                  
+                  <div className="h-[1px] w-full bg-slate-200/50 mb-5"></div>
+                  
+                  <ul className="space-y-3 mb-6 flex-1">
+                    <li className="flex items-center gap-2.5 text-[11px] font-bold text-slate-600">
+                      <Check className="w-3.5 h-3.5 text-amber-500 stroke-[3]" /> Core Dispatching
+                    </li>
+                    <li className="flex items-center gap-2.5 text-[11px] font-bold text-slate-600">
+                      <Check className="w-3.5 h-3.5 text-amber-500 stroke-[3]" /> Basic Driver App
+                    </li>
+                    <li className="flex items-center gap-2.5 text-[11px] font-bold text-slate-600">
+                      <Check className="w-3.5 h-3.5 text-amber-500 stroke-[3]" /> GPS Tracking (hourly)
+                    </li>
+                    <li className="flex items-center gap-2.5 text-[11px] font-bold text-slate-600">
+                      <Check className="w-3.5 h-3.5 text-amber-500 stroke-[3]" /> Email Support
+                    </li>
+                  </ul>
+                  
+                  <button onClick={() => setShowRecommendModal(false)} className="w-full bg-[#FFD400] hover:bg-[#FACC15] text-slate-900 font-black text-[11px] py-3.5 rounded-xl shadow-[0_2px_10px_rgba(255,212,0,0.4)] transition-all uppercase tracking-wider text-center">
+                    APPLY STARTER PLAN
+                  </button>
+                </div>
+
+                {/* Professional Plan */}
+                <div className="border border-slate-200 rounded-2xl p-5 flex flex-col">
+                  <div className="mb-4">
+                    <h4 className="text-[15px] font-black text-slate-700 mb-1.5">Professional</h4>
+                    <p className="text-[11px] font-medium text-slate-400 h-8 leading-tight">For growing fleets 35 -<br/>100 trucks</p>
+                  </div>
+                  <div className="mb-5">
+                    <div className="flex items-end gap-0.5">
+                      <span className="text-2xl font-black text-slate-700">$499</span>
+                      <span className="text-[11px] font-bold text-slate-400 mb-1">/mo</span>
+                    </div>
+                  </div>
+                  
+                  <div className="h-[1px] w-full bg-slate-100 mb-5"></div>
+                  
+                  <ul className="space-y-3 mb-6 flex-1">
+                    <li className="flex items-center gap-2.5 text-[11px] font-medium text-slate-500">
+                      <Check className="w-3.5 h-3.5 text-amber-300 stroke-[3]" /> Dynamic Dispatching
+                    </li>
+                    <li className="flex items-center gap-2.5 text-[11px] font-medium text-slate-500">
+                      <Check className="w-3.5 h-3.5 text-amber-300 stroke-[3]" /> Factor Integration A...
+                    </li>
+                    <li className="flex items-center gap-2.5 text-[11px] font-medium text-slate-500">
+                      <Check className="w-3.5 h-3.5 text-amber-300 stroke-[3]" /> GPS Tracking (live H...
+                    </li>
+                    <li className="flex items-center gap-2.5 text-[11px] font-medium text-slate-500">
+                      <Check className="w-3.5 h-3.5 text-amber-300 stroke-[3]" /> Priority Support
+                    </li>
+                  </ul>
+                  
+                  <button onClick={() => setShowRecommendModal(false)} className="w-full bg-transparent text-slate-500 font-bold text-[11px] py-3.5 rounded-xl transition-all uppercase tracking-wider hover:bg-slate-50 text-center">
+                    APPLY PROFESSIONAL PLAN
+                  </button>
+                </div>
+
+                {/* Enterprise Plan */}
+                <div className="border border-slate-200 rounded-2xl p-5 flex flex-col">
+                  <div className="mb-4">
+                    <h4 className="text-[15px] font-black text-slate-700 mb-1.5">Enterprise</h4>
+                    <p className="text-[11px] font-medium text-slate-400 h-8 leading-tight">For logistics giants &gt;<br/>100 trucks</p>
+                  </div>
+                  <div className="mb-5">
+                    <div className="flex items-end gap-0.5">
+                      <span className="text-2xl font-black text-slate-700">$1299</span>
+                      <span className="text-[11px] font-bold text-slate-400 mb-1">/mo</span>
+                    </div>
+                  </div>
+                  
+                  <div className="h-[1px] w-full bg-slate-100 mb-5"></div>
+                  
+                  <ul className="space-y-3 mb-6 flex-1">
+                    <li className="flex items-center gap-2.5 text-[11px] font-medium text-slate-500">
+                      <Check className="w-3.5 h-3.5 text-amber-300 stroke-[3]" /> AI CommandCenter ...
+                    </li>
+                    <li className="flex items-center gap-2.5 text-[11px] font-medium text-slate-500">
+                      <Check className="w-3.5 h-3.5 text-amber-300 stroke-[3]" /> Custom Billing Rules
+                    </li>
+                    <li className="flex items-center gap-2.5 text-[11px] font-medium text-slate-500">
+                      <Check className="w-3.5 h-3.5 text-amber-300 stroke-[3]" /> Unlimited Drivers/H...
+                    </li>
+                    <li className="flex items-center gap-2.5 text-[11px] font-medium text-slate-500">
+                      <Check className="w-3.5 h-3.5 text-amber-300 stroke-[3]" /> Dedicated SLA Custo...
+                    </li>
+                  </ul>
+                  
+                  <button onClick={() => setShowRecommendModal(false)} className="w-full bg-transparent text-slate-500 font-bold text-[11px] py-3.5 rounded-xl transition-all uppercase tracking-wider hover:bg-slate-50 text-center">
+                    APPLY ENTERPRISE PLAN
+                  </button>
+                </div>
+                
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Send Email Modal - Compose Email Touchpoint */}
+      {showMailModal && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-[500px] shadow-2xl overflow-hidden">
+            {/* Header */}
+            <div className="px-6 py-5 flex justify-between items-center">
+              <h2 className="text-[18px] font-bold text-slate-900">Compose Email Touchpoint</h2>
+              <button onClick={() => setShowMailModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="px-6 pb-6 space-y-4">
+              {/* Select Template Layout */}
+              <div className="space-y-2">
+                <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">SELECT TEMPLATE LAYOUT</label>
+                <select className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 transition-colors bg-white appearance-auto">
+                  <option>Welcome Sandbox Invite</option>
+                  <option>Follow-up Outreach</option>
+                  <option>Demo Confirmation</option>
+                  <option>Proposal Follow-up</option>
+                  <option>Custom Email</option>
+                </select>
+              </div>
+
+              {/* Email Subject */}
+              <div className="space-y-2">
+                <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">EMAIL SUBJECT</label>
+                <input
+                  type="text"
+                  defaultValue="Welcome Sandbox Invite"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-colors"
+                />
+              </div>
+
+              {/* Message Body */}
+              <div className="space-y-2">
+                <label className="block text-[13px] font-semibold text-slate-700">Message Body</label>
+                <textarea
+                  rows={6}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-colors resize-y"
+                  placeholder=""
+                />
+              </div>
+
+              {/* Bottom Row: Email Status + Process Mail */}
+              <div className="flex items-end gap-3 pt-1">
+                <div className="flex-1 space-y-2">
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">EMAIL STATUS</label>
+                  <select className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 transition-colors bg-white appearance-auto">
+                    <option>Send Immediately</option>
+                    <option>Schedule for Later</option>
+                    <option>Save as Draft</option>
+                  </select>
+                </div>
+                <button
+                  onClick={() => setShowMailModal(false)}
+                  className="bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] px-6 py-3 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all whitespace-nowrap"
+                >
+                  Process Mail
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+      {/* Log Phone Call Modal */}
+      {showCallModal && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-[500px] shadow-2xl overflow-hidden">
+            {/* Header */}
+            <div className="px-6 py-5 flex justify-between items-center">
+              <h2 className="text-[18px] font-bold text-slate-900">Log Outgoing / Incoming Phone call</h2>
+              <button onClick={() => setShowCallModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="px-6 pb-6 space-y-4">
+              {/* Call Duration + Outcome side by side */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">CALL DURATION</label>
+                  <input
+                    type="text"
+                    defaultValue="2m 15s"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-colors"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">OUTCOME</label>
+                  <select className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 transition-colors bg-white appearance-auto">
+                    <option>Connected</option>
+                    <option>No Answer</option>
+                    <option>Voicemail</option>
+                    <option>Busy</option>
+                    <option>Wrong Number</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Call Notes */}
+              <div className="space-y-2">
+                <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">CALL NOTES</label>
+                <input
+                  type="text"
+                  placeholder=""
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-colors"
+                />
+              </div>
+
+              {/* Save Call Entry Button */}
+              <button
+                onClick={() => setShowCallModal(false)}
+                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all mt-2"
+              >
+                Save Call Entry
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+      {/* Schedule Follow-up / Calendar Modal */}
+      {showScheduleModal && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-[500px] shadow-2xl overflow-hidden">
+            {/* Header */}
+            <div className="px-6 py-5 flex justify-between items-center">
+              <h2 className="text-[18px] font-bold text-slate-900">Schedule Follow-Up Touchpoint</h2>
+              <button onClick={() => setShowScheduleModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="px-6 pb-6 space-y-4">
+              {/* Subtitle */}
+              <p className="text-[13px] font-medium text-slate-400 -mt-2">Scheduling a follow-up action for prospect .</p>
+
+              {/* Follow-Up Action Type + Priority Tier */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">FOLLOW-UP ACTION TYPE</label>
+                  <select className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 transition-colors bg-white appearance-auto">
+                    <option>📞 Phone Call</option>
+                    <option>✉️ Email</option>
+                    <option>📅 Meeting</option>
+                    <option>💬 WhatsApp</option>
+                    <option>📝 Task</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">PRIORITY TIER</label>
+                  <select className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 transition-colors bg-white appearance-auto">
+                    <option>🔴 High</option>
+                    <option selected>🟡 Medium</option>
+                    <option>🟢 Low</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Target Date + Time Slot */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">TARGET DATE</label>
+                  <input
+                    type="date"
+                    defaultValue="2026-07-15"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-colors"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">TIME SLOT</label>
+                  <input
+                    type="text"
+                    defaultValue="10:00 AM"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-colors"
+                  />
+                </div>
+              </div>
+
+              {/* Follow-Up Memo / Action Notes */}
+              <div className="space-y-2">
+                <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">FOLLOW-UP MEMO / ACTION NOTES</label>
+                <input
+                  type="text"
+                  defaultValue="Urgent follow-up touchpoint."
+                  className="w-full border border-amber-400 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-400/20 transition-colors"
+                />
+              </div>
+
+              {/* Schedule Follow-Up Task Button */}
+              <button
+                onClick={() => setShowScheduleModal(false)}
+                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all mt-1"
+              >
+                Schedule Follow-Up Task
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Company Conversion Wizard */}
+      {showConversionWizard && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-[600px] shadow-2xl overflow-hidden">
+            {/* Header */}
+            <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
+              <h2 className="text-[18px] font-bold text-slate-900">Company Conversion Wizard</h2>
+              <button onClick={() => setShowConversionWizard(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Steps Progress */}
+            <div className="px-6 py-4 flex items-center justify-between border-b border-slate-100 text-[11px] font-bold">
+              {[
+                { num: 1, label: 'TIER' },
+                { num: 2, label: 'COMPANY' },
+                { num: 3, label: 'ADMIN' },
+                { num: 4, label: 'DEPOT' },
+                { num: 5, label: 'REVIEW' },
+                { num: 6, label: 'SYNC' }
+              ].map(step => (
+                <div key={step.num} className={`uppercase ${wizardStep === step.num ? 'text-[#FFB020]' : 'text-slate-600'}`}>
+                  {step.num}. {step.label}
+                </div>
+              ))}
+            </div>
+
+            {/* Body */}
+            <div className="px-6 py-6">
+              {wizardStep === 1 && (
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">CHOOSE SUBSCRIPTION LICENSE</label>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div 
+                        onClick={() => setSelectedPlan('Starter')}
+                        className={`rounded-xl p-4 text-center cursor-pointer transition-colors ${selectedPlan === 'Starter' ? 'border-2 border-[#FFB020] bg-yellow-50/50' : 'border border-slate-200 hover:border-[#FFB020]'}`}
+                      >
+                        <div className="font-bold text-slate-900 text-[14px]">Starter</div>
+                        <div className="text-[13px] text-slate-500">$199/mo</div>
+                      </div>
+                      <div 
+                        onClick={() => setSelectedPlan('Professional')}
+                        className={`rounded-xl p-4 text-center cursor-pointer transition-colors ${selectedPlan === 'Professional' ? 'border-2 border-[#FFB020] bg-yellow-50/50' : 'border border-slate-200 hover:border-[#FFB020]'}`}
+                      >
+                        <div className="font-bold text-slate-900 text-[14px]">Professional</div>
+                        <div className="text-[13px] text-slate-500">$499/mo</div>
+                      </div>
+                      <div 
+                        onClick={() => setSelectedPlan('Enterprise')}
+                        className={`rounded-xl p-4 text-center cursor-pointer transition-colors ${selectedPlan === 'Enterprise' ? 'border-2 border-[#FFB020] bg-yellow-50/50' : 'border border-slate-200 hover:border-[#FFB020]'}`}
+                      >
+                        <div className="font-bold text-slate-900 text-[14px]">Enterprise</div>
+                        <div className="text-[13px] text-slate-500">$1,299/mo</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">BILLING FREQUENCY</label>
+                    <select className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFB020] transition-colors bg-white appearance-auto">
+                      <option>Monthly</option>
+                      <option>Yearly (20% Discount)</option>
+                    </select>
+                  </div>
+
+                  <button
+                    onClick={() => setWizardStep(2)}
+                    className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all"
+                  >
+                    Continue
+                  </button>
+                </div>
+              )}
+
+              {wizardStep === 2 && (
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">COMPANY LEGAL INFORMATION</label>
+                    
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">LEGAL COMPANY NAME</label>
+                        <input
+                          type="text"
+                          className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFB020] focus:ring-2 focus:ring-[#FFB020]/20 transition-colors"
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">DOT REGISTRY NUMBER</label>
+                          <input
+                            type="text"
+                            defaultValue="DOT-767684"
+                            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFB020] focus:ring-2 focus:ring-[#FFB020]/20 transition-colors"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">CORPORATE TAX ID</label>
+                          <input
+                            type="text"
+                            defaultValue="TX-43-1604692"
+                            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFB020] focus:ring-2 focus:ring-[#FFB020]/20 transition-colors"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setWizardStep(3)}
+                      className="flex-1 bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all"
+                    >
+                      Continue
+                    </button>
+                    <button
+                      onClick={() => setWizardStep(1)}
+                      className="px-6 py-3.5 text-slate-600 font-bold text-[14px] hover:bg-slate-50 rounded-xl transition-all"
+                    >
+                      Back
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {wizardStep === 3 && (
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">DEFINE SYSTEM ADMINISTRATOR WORKSPACE PROFILE</label>
+                    
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">ADMIN FULL NAME</label>
+                        <input
+                          type="text"
+                          className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFB020] focus:ring-2 focus:ring-[#FFB020]/20 transition-colors"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">ADMIN LOGIN EMAIL</label>
+                        <input
+                          type="email"
+                          className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFB020] focus:ring-2 focus:ring-[#FFB020]/20 transition-colors"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setWizardStep(4)}
+                      className="flex-1 bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all"
+                    >
+                      Continue
+                    </button>
+                    <button
+                      onClick={() => setWizardStep(2)}
+                      className="px-6 py-3.5 text-slate-600 font-bold text-[14px] hover:bg-slate-50 rounded-xl transition-all"
+                    >
+                      Back
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {wizardStep === 4 && (
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">ASSIGN REGIONAL BRANCH TERMINAL</label>
+                    
+                    <div className="space-y-2">
+                      <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">DEPOT LOCATION</label>
+                      <select className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFB020] transition-colors bg-white appearance-auto">
+                        <option>Chicago HQ Terminal</option>
+                        <option>New York Terminal</option>
+                        <option>Dallas Hub</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setWizardStep(5)}
+                      className="flex-1 bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all"
+                    >
+                      Continue
+                    </button>
+                    <button
+                      onClick={() => setWizardStep(3)}
+                      className="px-6 py-3.5 text-slate-600 font-bold text-[14px] hover:bg-slate-50 rounded-xl transition-all"
+                    >
+                      Back
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {wizardStep === 5 && (
+                <div className="space-y-6">
+                  {isProvisioning ? (
+                    <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                      <div className="w-12 h-12 border-4 border-slate-100 border-t-[#FFB020] rounded-full animate-spin"></div>
+                      <p className="text-slate-600 font-bold text-[14px]">Provisioning Workspace...</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="space-y-3">
+                        <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">REVIEW WORKSPACE SPECIFICATIONS</label>
+                        
+                        <div className="border border-slate-200 rounded-xl p-5 space-y-3">
+                          <div className="flex justify-between items-center text-[13px]">
+                            <span className="text-slate-500 font-medium">Subscription:</span>
+                            <span className="text-slate-700 font-bold">Professional Plan (Monthly)</span>
+                          </div>
+                          <div className="flex justify-between items-center text-[13px]">
+                            <span className="text-slate-500 font-medium">Company:</span>
+                            <span className="text-slate-700 font-bold"></span>
+                          </div>
+                          <div className="flex justify-between items-center text-[13px]">
+                            <span className="text-slate-500 font-medium">Admin User:</span>
+                            <span className="text-slate-700 font-bold">()</span>
+                          </div>
+                          <div className="flex justify-between items-center text-[13px]">
+                            <span className="text-slate-500 font-medium">Depot Allocation:</span>
+                            <span className="text-slate-700 font-bold">Chicago HQ Terminal</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => {
+                            setIsProvisioning(true);
+                            setTimeout(() => {
+                              setIsProvisioning(false);
+                              setWizardStep(6);
+                            }, 2000);
+                          }}
+                          className="flex-1 bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all"
+                        >
+                          Provision Workspace
+                        </button>
+                        <button
+                          onClick={() => setWizardStep(4)}
+                          className="px-6 py-3.5 text-slate-600 font-bold text-[14px] hover:bg-slate-50 rounded-xl transition-all"
+                        >
+                          Back
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {wizardStep === 6 && (
+                <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-8 text-center space-y-6">
+                  <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
+                    <div className="w-12 h-12 border-[4px] border-emerald-400 rounded-full flex items-center justify-center">
+                      <Check className="w-6 h-6 text-emerald-500" strokeWidth={3} />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <h3 className="text-[18px] font-bold text-slate-900">Company Workspace Provision Complete!</h3>
+                    <p className="text-[13px] font-medium text-slate-500">Tenant profile successfully registered inside global administrative databases.</p>
+                  </div>
+
+                  <button
+                    onClick={() => setShowConversionWizard(false)}
+                    className="bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] px-8 py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all flex items-center justify-center gap-2 mx-auto"
+                  >
+                    <User className="w-4 h-4" />
+                    Takeover Admin Session & Open Dashboard
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

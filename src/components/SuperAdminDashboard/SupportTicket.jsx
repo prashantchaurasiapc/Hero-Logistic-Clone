@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, X, CheckCircle } from 'lucide-react';
+import { Search, Plus, X, CheckCircle, Check } from 'lucide-react';
 
 export default function SupportTickets() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -10,6 +10,14 @@ export default function SupportTickets() {
   const [showNewTicketModal, setShowNewTicketModal] = useState(false);
   const [showResponderModal, setShowResponderModal] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
+  
+  // Assign Modal state
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [assignForm, setAssignForm] = useState({ ticketId: '', assigneeTier: 'L2 Senior Specialist' });
+
+  // Resolve Modal state
+  const [showResolveModal, setShowResolveModal] = useState(false);
+  const [resolveForm, setResolveForm] = useState({ ticketId: '', notes: '' });
 
   // Form states
   const [newTicketForm, setNewTicketForm] = useState({
@@ -96,9 +104,18 @@ export default function SupportTickets() {
     showNotification(`Ticket #${nextId} opened successfully!`);
   };
 
-  const handleAssignTicket = (id) => {
-    setTickets(prev => prev.map(t => t.id === id ? { ...t, assignee: 'Super Admin' } : t));
-    showNotification(`Ticket #${id} assigned to Super Admin.`);
+  const handleOpenAssignModal = (ticket) => {
+    setAssignForm({ ticketId: ticket.id, assigneeTier: 'L2 Senior Specialist' });
+    setShowAssignModal(true);
+  };
+
+  const handleSaveAssignment = (e) => {
+    e.preventDefault();
+    setTickets(prev => prev.map(t => 
+      t.id === assignForm.ticketId ? { ...t, assignee: assignForm.assigneeTier } : t
+    ));
+    setShowAssignModal(false);
+    showNotification(`Ticket #${assignForm.ticketId} assigned to ${assignForm.assigneeTier}.`);
   };
 
   const handleOpenResponder = (ticket) => {
@@ -127,14 +144,21 @@ export default function SupportTickets() {
     showNotification(`Ticket #${selectedTicket.id} has been marked as RESOLVED.`);
   };
 
-  const handleDirectResolve = (id) => {
-    setTickets(prev => prev.map(t => t.id === id ? { ...t, status: 'RESOLVED', assignee: 'Super Admin' } : t));
-    const target = tickets.find(t => t.id === id);
+  const handleOpenResolveModal = (ticket) => {
+    setResolveForm({ ticketId: ticket.id, notes: '' });
+    setShowResolveModal(true);
+  };
+
+  const handleSaveResolution = (e) => {
+    e.preventDefault();
+    setTickets(prev => prev.map(t => t.id === resolveForm.ticketId ? { ...t, status: 'RESOLVED', assignee: 'Super Admin' } : t));
+    const target = tickets.find(t => t.id === resolveForm.ticketId);
     setResponseHistory([
-      { ticketId: id, subject: target.subject, response: 'Resolved directly by Super Admin.' },
+      { ticketId: resolveForm.ticketId, subject: target.subject, response: resolveForm.notes || 'Resolved directly by Super Admin.' },
       ...responseHistory
     ]);
-    showNotification(`Ticket #${id} resolved.`);
+    setShowResolveModal(false);
+    showNotification(`Ticket #${resolveForm.ticketId} resolved.`);
   };
 
   const handleExportCSV = () => {
@@ -354,13 +378,13 @@ export default function SupportTickets() {
                     {t.status === 'OPEN' && (
                       <>
                         <button
-                          onClick={() => handleAssignTicket(t.id)}
+                          onClick={() => handleOpenAssignModal(t)}
                           className="border border-[#FFD400] bg-white hover:bg-slate-50 text-[#CC7B00] font-extrabold text-[10px] px-3 py-1.5 rounded-lg shadow-xs transition-colors cursor-pointer"
                         >
                           Assign
                         </button>
                         <button
-                          onClick={() => handleDirectResolve(t.id)}
+                          onClick={() => handleOpenResolveModal(t)}
                           className="bg-[#0F9D58] hover:bg-[#0b8043] text-white font-extrabold text-[10px] px-3 py-1.5 rounded-lg shadow-xs transition-colors cursor-pointer"
                         >
                           Resolve
@@ -482,54 +506,207 @@ export default function SupportTickets() {
         </div>
       )}
 
-      {/* Modal 2: Support Ticket Responder */}
+      {/* Modal 2: Support Ticket Responder (Drawer) */}
       {showResponderModal && selectedTicket && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[999] p-4">
-          <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-md overflow-hidden shadow-2xl animate-fade-in text-left">
-            <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-              <h3 className="text-lg font-black text-slate-900">Support Ticket Responder</h3>
+        <div className="fixed inset-0 z-[1000] flex justify-end">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm transition-opacity"
+            onClick={() => setShowResponderModal(false)}
+          ></div>
+          
+          {/* Drawer Panel */}
+          <div className="relative w-full max-w-[420px] bg-[#F8FAFC] h-full shadow-2xl flex flex-col animate-slide-in-right border-l border-slate-200">
+            {/* Header */}
+            <div className="px-6 py-5 border-b border-slate-200 bg-white flex justify-between items-center z-10 shrink-0">
+              <h3 className="text-base font-black text-slate-900">Support Ticket Responder</h3>
               <button 
                 onClick={() => setShowResponderModal(false)} 
+                className="text-slate-400 hover:text-slate-600 transition-colors p-1 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <form onSubmit={handleSubmitResolution} className="space-y-6">
+                
+                {/* Ticket Info & Subject */}
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-[10px] font-black text-slate-400 font-mono tracking-wider uppercase">
+                      Ticket #{selectedTicket.id}
+                    </span>
+                    <span className="bg-slate-100 text-slate-500 border border-slate-200 text-[9px] font-black uppercase px-3 py-1 rounded-xl">
+                      {selectedTicket.status}
+                    </span>
+                  </div>
+                  <h4 className="text-[22px] font-black text-slate-800 pb-5 border-b border-slate-200/80">
+                    {selectedTicket.subject}
+                  </h4>
+                </div>
+
+                {/* Query Details */}
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">
+                    QUERY DETAILS
+                  </label>
+                  <div className="w-full px-4 py-4 bg-white border border-slate-200 text-[13px] rounded-xl text-slate-600 font-semibold shadow-sm min-h-[70px]">
+                    "{selectedTicket.message}"
+                  </div>
+                </div>
+
+                {/* Reply Payload */}
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">
+                    REPLY MESSAGE PAYLOAD
+                  </label>
+                  <textarea
+                    required
+                    rows="5"
+                    placeholder="Provide developer / administrative instructions..."
+                    value={replyPayload}
+                    onChange={(e) => setReplyPayload(e.target.value)}
+                    className="w-full px-4 py-4 bg-white border border-slate-200 focus:border-[#FFD400] text-[13px] rounded-xl focus:outline-none text-slate-700 placeholder:text-slate-400 font-semibold shadow-sm resize-none transition-colors"
+                  />
+                </div>
+
+                {/* Submit Button */}
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold py-3.5 rounded-xl shadow-[0_2px_15px_rgba(255,176,32,0.3)] text-center text-sm transition-all cursor-pointer"
+                  >
+                    Submit Resolution
+                  </button>
+                </div>
+
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 3: Assign Support Ticket */}
+      {showAssignModal && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[999] p-4">
+          <div className="bg-white rounded-3xl w-full max-w-lg overflow-visible shadow-2xl animate-fade-in text-left">
+            <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center">
+              <h3 className="text-[17px] font-black text-slate-900">Assign Support Ticket</h3>
+              <button 
+                onClick={() => setShowAssignModal(false)} 
                 className="text-slate-400 hover:text-slate-650 cursor-pointer transition-colors p-1"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmitResolution} className="p-6 space-y-4 font-sans">
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-slate-450">Ticket #{selectedTicket.id}</span>
-                <span className="bg-slate-100 text-slate-650 text-[10px] font-black px-2 py-0.5 rounded">
-                  {selectedTicket.status}
-                </span>
+            <form onSubmit={handleSaveAssignment} className="p-6 space-y-6">
+              
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">
+                  SELECT OPEN TICKET
+                </label>
+                <select
+                  value={assignForm.ticketId}
+                  onChange={(e) => setAssignForm({ ...assignForm, ticketId: Number(e.target.value) })}
+                  className="w-full px-4 py-3.5 bg-white border border-slate-200 text-[13px] font-semibold rounded-xl focus:border-[#FFD400] focus:ring-2 focus:ring-[#FFD400]/20 focus:outline-none text-slate-700 cursor-pointer shadow-sm transition-all"
+                >
+                  {tickets.filter(t => t.status === 'OPEN').map(t => (
+                    <option key={t.id} value={t.id}>
+                      #{t.id} - {t.subject} ({t.company})
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              <div>
-                <h4 className="text-base font-extrabold text-slate-800 mb-4">{selectedTicket.subject}</h4>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">QUERY DETAILS</label>
-                <div className="w-full px-3.5 py-3 bg-slate-50 border border-slate-150 text-xs rounded-xl text-slate-600 font-semibold">
-                  "{selectedTicket.message}"
-                </div>
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">
+                  SUPPORT ASSIGNEE TIER
+                </label>
+                <select
+                  value={assignForm.assigneeTier}
+                  onChange={(e) => setAssignForm({ ...assignForm, assigneeTier: e.target.value })}
+                  className="w-full px-4 py-3.5 bg-white border border-slate-200 text-[13px] font-semibold rounded-xl focus:border-[#FFD400] focus:ring-2 focus:ring-[#FFD400]/20 focus:outline-none text-slate-700 cursor-pointer shadow-sm transition-all"
+                >
+                  <option value="L1 General Support">L1 General Support</option>
+                  <option value="L2 Senior Specialist">L2 Senior Specialist</option>
+                  <option value="L3 Engineering & Devs">L3 Engineering & Devs</option>
+                  <option value="QA Verification">QA Verification</option>
+                  <option value="Billing & Account Executive">Billing & Account Executive</option>
+                </select>
               </div>
 
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">REPLY MESSAGE PAYLOAD</label>
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold py-3 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] text-center text-[13px] transition-all flex flex-col items-center justify-center gap-0.5 cursor-pointer"
+                >
+                  <Check className="w-4 h-4" strokeWidth={3} />
+                  <span>Save Assignment</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 4: Resolve Support Ticket */}
+      {showResolveModal && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[999] p-4">
+          <div className="bg-white rounded-3xl w-full max-w-lg overflow-visible shadow-2xl animate-fade-in text-left">
+            <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center">
+              <h3 className="text-[17px] font-black text-slate-900">Resolve Support Ticket</h3>
+              <button 
+                onClick={() => setShowResolveModal(false)} 
+                className="text-slate-400 hover:text-slate-650 cursor-pointer transition-colors p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveResolution} className="p-6 space-y-6">
+              
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">
+                  SELECT TICKET TO RESOLVE
+                </label>
+                <select
+                  value={resolveForm.ticketId}
+                  onChange={(e) => setResolveForm({ ...resolveForm, ticketId: Number(e.target.value) })}
+                  className="w-full px-4 py-3.5 bg-white border border-slate-200 text-[13px] font-semibold rounded-xl focus:border-[#FFD400] focus:ring-2 focus:ring-[#FFD400]/20 focus:outline-none text-slate-700 cursor-pointer shadow-sm transition-all"
+                >
+                  {tickets.filter(t => t.status === 'OPEN').map(t => (
+                    <option key={t.id} value={t.id}>
+                      #{t.id} - {t.subject} ({t.company})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">
+                  RESOLUTION NOTES (OPTIONAL)
+                </label>
                 <textarea
-                  required
-                  rows="4"
-                  placeholder="Provide developer / administrative instructions..."
-                  value={replyPayload}
-                  onChange={(e) => setReplyPayload(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800 placeholder:text-slate-400 font-sans"
+                  rows="3"
+                  value={resolveForm.notes}
+                  onChange={(e) => setResolveForm({ ...resolveForm, notes: e.target.value })}
+                  placeholder="Provide summary of resolution or notes for the customer..."
+                  className="w-full px-4 py-3.5 bg-white border border-slate-200 text-[13px] font-semibold rounded-xl focus:border-[#FFD400] focus:ring-2 focus:ring-[#FFD400]/20 focus:outline-none text-slate-700 placeholder:text-slate-400 shadow-sm transition-all resize-none"
                 />
               </div>
 
-              <button
-                type="submit"
-                className="w-full bg-[#FFA000] hover:bg-[#FF8F00] text-black font-extrabold py-3.5 rounded-xl text-center text-xs transition-colors cursor-pointer mt-4"
-              >
-                Submit Resolution
-              </button>
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  className="w-full bg-[#0F9D58] hover:bg-[#0b8043] text-white font-extrabold py-3 rounded-xl shadow-[0_4px_15px_rgba(15,157,88,0.4)] text-center text-[13px] transition-all flex flex-col items-center justify-center gap-0.5 cursor-pointer"
+                >
+                  <Check className="w-4 h-4" strokeWidth={3} />
+                  <span>Mark Ticket Resolved</span>
+                </button>
+              </div>
             </form>
           </div>
         </div>

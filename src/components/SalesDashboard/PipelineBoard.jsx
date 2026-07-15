@@ -20,8 +20,12 @@ export default function PipelineBoard() {
   const [draggedOverColumn, setDraggedOverColumn] = useState(null); // column stage name
   const [inspectorTab, setInspectorTab] = useState('Overview');
   
-  // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showZoomModal, setShowZoomModal] = useState(false);
+  const [showProposalModal, setShowProposalModal] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showRecommendModal, setShowRecommendModal] = useState(false);
+  const [isMarkedWon, setIsMarkedWon] = useState(false);
   const [modalForm, setModalForm] = useState({
     company: '',
     name: '',
@@ -372,13 +376,19 @@ export default function PipelineBoard() {
               <div className="flex justify-between items-start mb-4">
                 <h3 className="text-2xl font-black text-slate-900 leading-none truncate pr-4">{selectedLead.company}</h3>
                 <div className="flex gap-2 shrink-0">
-                  <button className="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-600 transition-colors shadow-xs">
+                  <button 
+                    onClick={() => setShowZoomModal(true)}
+                    className="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-600 transition-colors shadow-xs"
+                  >
                     <Calendar className="w-4 h-4" />
                   </button>
                   <button className="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-600 transition-colors shadow-xs">
                     <Play className="w-4 h-4" />
                   </button>
-                  <button className="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-600 transition-colors shadow-xs">
+                  <button 
+                    onClick={() => setShowProposalModal(true)}
+                    className="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-600 transition-colors shadow-xs"
+                  >
                     <FileText className="w-4 h-4" />
                   </button>
                 </div>
@@ -474,11 +484,29 @@ export default function PipelineBoard() {
                   {/* Lead Direct Actions */}
                   <div>
                     <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4">Lead Direct Actions</div>
-                    <div className="flex flex-wrap gap-2.5">
-                      <button className="bg-indigo-950 text-indigo-100 text-[11px] font-bold px-4 py-2.5 rounded-full cursor-pointer hover:bg-indigo-900 transition-colors shadow-xs">Recommend Plan</button>
-                      <button className="bg-emerald-950 text-emerald-100 text-[11px] font-bold px-4 py-2.5 rounded-full cursor-pointer hover:bg-emerald-900 transition-colors shadow-xs">Mark Won</button>
-                      <button className="bg-rose-950 text-rose-100 text-[11px] font-bold px-4 py-2.5 rounded-full cursor-pointer hover:bg-rose-900 transition-colors shadow-xs">Mark Lost</button>
-                      <button className="bg-white border border-slate-300 text-slate-800 text-[11px] font-bold px-4 py-2.5 rounded-full cursor-pointer hover:bg-slate-50 transition-colors shadow-xs">Schedule Follow-Up</button>
+                    <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-none">
+                      <button 
+                        onClick={() => setShowRecommendModal(true)}
+                        className="whitespace-nowrap bg-[#311B92] text-white text-[11px] font-bold px-4 py-2.5 rounded-full cursor-pointer hover:bg-[#281577] transition-colors shadow-xs"
+                      >Recommend Plan</button>
+                      <button 
+                        onClick={() => { setIsMarkedWon(true); }}
+                        className="whitespace-nowrap bg-[#004D40] text-white text-[11px] font-bold px-4 py-2.5 rounded-full cursor-pointer hover:bg-[#003B31] transition-colors shadow-xs"
+                      >
+                        Mark Won
+                      </button>
+                      <button 
+                        onClick={() => { setIsMarkedWon(false); }}
+                        className="whitespace-nowrap bg-[#4A0000] text-white text-[11px] font-bold px-4 py-2.5 rounded-full cursor-pointer hover:bg-[#330000] transition-colors shadow-xs"
+                      >
+                        Mark Lost
+                      </button>
+                      <button 
+                        onClick={() => setShowScheduleModal(true)}
+                        className="whitespace-nowrap bg-white border border-slate-300 text-slate-800 text-[11px] font-bold px-4 py-2.5 rounded-full cursor-pointer hover:bg-slate-50 transition-colors shadow-xs"
+                      >
+                        Schedule Follow-Up
+                      </button>
                     </div>
                   </div>
                 </>
@@ -501,10 +529,17 @@ export default function PipelineBoard() {
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-5 bg-slate-50 border-t border-slate-200 shrink-0">
+          <div className="px-6 py-5 bg-white border-t border-slate-200 shrink-0 flex gap-3">
+            {isMarkedWon && (
+              <button 
+                className="flex-1 bg-[#10b981] text-white text-[13px] font-bold rounded-xl py-3.5 hover:bg-[#059669] transition-colors shadow-sm cursor-pointer"
+              >
+                Convert to Company Account
+              </button>
+            )}
             <button 
-              onClick={() => setSelectedLead(null)}
-              className="px-6 py-2.5 bg-white border border-slate-300 text-slate-800 text-[11px] font-black rounded-xl hover:bg-slate-100 transition-colors shadow-xs cursor-pointer"
+              onClick={() => { setSelectedLead(null); setIsMarkedWon(false); }}
+              className="px-6 py-3.5 bg-white border border-slate-200 text-slate-800 text-[13px] font-bold rounded-xl hover:bg-slate-50 transition-colors shadow-sm cursor-pointer"
             >
               Close
             </button>
@@ -726,6 +761,329 @@ export default function PipelineBoard() {
           </div>
         </div>
       )}
+      {/* ZOOM Modal */}
+      {showZoomModal && selectedLead && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-[500px] shadow-2xl overflow-hidden animate-slide-in">
+            {/* Header */}
+            <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
+              <h2 className="text-[18px] font-bold text-slate-900">Schedule ZOOM Product Walkthrough</h2>
+              <button onClick={() => setShowZoomModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="px-6 py-6 space-y-5">
+              <p className="text-[13px] font-medium text-slate-500 -mt-2">Locking a demo schedule for {selectedLead.company}.</p>
+
+              <div className="space-y-2">
+                <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">SELECT DATE</label>
+                <input
+                  type="date"
+                  defaultValue="2026-07-17"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-colors"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">SELECT TIME BLOCK</label>
+                <select className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 transition-colors bg-white appearance-auto">
+                  <option>11:00 AM EST</option>
+                  <option>01:00 PM EST</option>
+                  <option>03:00 PM EST</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">MEETING AGENDA / HOST NOTES</label>
+                <input
+                  type="text"
+                  defaultValue="Walkthrough showcasing fleet telematics and factoring automation."
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-colors"
+                />
+              </div>
+
+              <button
+                onClick={() => {
+                  setShowZoomModal(false);
+                  setToast({ type: 'success', text: selectedLead.company, actionText: 'Zoom scheduled!' });
+                }}
+                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all mt-2"
+              >
+                Confirm Zoom Schedule
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Proposal Modal */}
+      {showProposalModal && selectedLead && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-[500px] shadow-2xl overflow-hidden animate-slide-in">
+            {/* Header */}
+            <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
+              <h2 className="text-[18px] font-bold text-slate-900">Issue Licensing Agreement Proposal</h2>
+              <button onClick={() => setShowProposalModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="px-6 py-6 space-y-5">
+              <div className="space-y-2">
+                <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">PROPOSAL TITLE DOCUMENT</label>
+                <input
+                  type="text"
+                  defaultValue={`Hero Logistics SaaS License - ${selectedLead.company}`}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-colors"
+                />
+              </div>
+
+              <div className="space-y-3">
+                <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">LINE ITEMS</label>
+                <div className="flex gap-3">
+                  <input
+                    type="text"
+                    defaultValue="Enterprise License Tier base"
+                    className="flex-1 border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-colors"
+                  />
+                  <input
+                    type="number"
+                    defaultValue="6162"
+                    className="w-32 border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-colors"
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <input
+                    type="text"
+                    defaultValue="GPS Fleet Tracking Modules API"
+                    className="flex-1 border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-colors"
+                  />
+                  <input
+                    type="number"
+                    defaultValue="924"
+                    className="w-32 border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-colors"
+                  />
+                </div>
+                <button className="text-[#FFB020] text-[11px] font-black hover:text-[#E68A00] transition-colors mt-1">
+                  + Add Custom Add-on item
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <div className="space-y-2">
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">CORPORATE DISCOUNT (%)</label>
+                  <input
+                    type="number"
+                    defaultValue="0"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-colors"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">PROPOSAL VALIDITY TERM</label>
+                  <select className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 transition-colors bg-white appearance-auto">
+                    <option>30 Days validity</option>
+                    <option>60 Days validity</option>
+                  </select>
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  setShowProposalModal(false);
+                  setToast({ type: 'success', text: selectedLead.company, actionText: 'Proposal dispatched!' });
+                }}
+                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all mt-2"
+              >
+                Dispatched Proposal Email
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Schedule Follow-Up Modal */}
+      {showScheduleModal && selectedLead && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-[500px] shadow-2xl overflow-hidden animate-slide-in">
+            {/* Header */}
+            <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
+              <h2 className="text-[18px] font-bold text-slate-900">Schedule Follow-Up Touchpoint</h2>
+              <button onClick={() => setShowScheduleModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="px-6 py-6 space-y-5">
+              <p className="text-[13px] font-medium text-slate-500 -mt-2">Scheduling a follow-up action for prospect <span className="font-bold">{selectedLead.company}</span>.</p>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">FOLLOW-UP ACTION TYPE</label>
+                  <select className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 transition-colors bg-white appearance-auto">
+                    <option>📞 Phone Call</option>
+                    <option>✉️ Email</option>
+                    <option>📅 Meeting</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">PRIORITY TIER</label>
+                  <select className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 transition-colors bg-white appearance-auto">
+                    <option selected>🟡 Medium</option>
+                    <option>🔴 High</option>
+                    <option>🟢 Low</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">TARGET DATE</label>
+                  <input
+                    type="date"
+                    defaultValue="2026-07-17"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-colors"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">TIME SLOT</label>
+                  <input
+                    type="text"
+                    defaultValue="10:00 AM"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-colors"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">FOLLOW-UP MEMO / ACTION NOTES</label>
+                <input
+                  type="text"
+                  defaultValue="Follow-up touchpoint check-in."
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-colors"
+                />
+              </div>
+
+              <button
+                onClick={() => {
+                  setShowScheduleModal(false);
+                  setToast({ type: 'success', text: selectedLead.company, actionText: 'follow-up scheduled!' });
+                }}
+                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all mt-2"
+              >
+                Schedule Follow-Up Task
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Recommend Plan Modal */}
+      {showRecommendModal && selectedLead && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-[560px] shadow-2xl overflow-hidden">
+            {/* Header */}
+            <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
+              <h2 className="text-[18px] font-bold text-slate-900">Interactive License Tier Recommendation</h2>
+              <button onClick={() => setShowRecommendModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="px-6 py-6 space-y-6">
+              {/* Lead Diagnosis */}
+              <div>
+                <div className="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">LEAD DIAGNOSIS</div>
+                <div className="font-bold text-slate-900 text-[16px] mb-1">{selectedLead.company}</div>
+                <div className="text-[13px] text-slate-500 font-medium">
+                  Fleet Size: <span className="font-bold text-slate-700">{selectedLead.fleetSize} Trucks</span>
+                  {' • '}
+                  Current Software: <span className="font-bold text-slate-700">Salesforce (Too Costly)</span>
+                </div>
+              </div>
+
+              {/* Plans */}
+              <div>
+                <div className="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-4">AVAILABLE LICENSE PLAN TIERS</div>
+                <div className="grid grid-cols-3 gap-4">
+
+                  {/* Starter */}
+                  <div className="border border-slate-200 rounded-2xl p-4 flex flex-col gap-3">
+                    <div>
+                      <div className="font-bold text-slate-900 text-[15px] mb-1">Starter</div>
+                      <div className="text-[12px] text-slate-500">For small operators &lt; 35 trucks</div>
+                    </div>
+                    <div className="font-black text-slate-900 text-[20px]">$199<span className="text-[13px] text-slate-500 font-semibold">/mo</span></div>
+                    <ul className="space-y-1.5 flex-1">
+                      {['Core Dispatching', 'Basic Driver App', 'GPS Tracking (hourly)', 'Email Support'].map(f => (
+                        <li key={f} className="flex items-center gap-1.5 text-[11px] text-slate-600">
+                          <Check className="w-3 h-3 text-slate-400 shrink-0" /> {f}
+                        </li>
+                      ))}
+                    </ul>
+                    <button
+                      onClick={() => { setShowRecommendModal(false); setToast({ type: 'success', text: selectedLead.company, actionText: 'Starter plan applied!' }); }}
+                      className="w-full border border-slate-200 text-slate-700 text-[10px] font-black py-2.5 rounded-xl hover:bg-slate-50 transition-colors tracking-wider uppercase"
+                    >
+                      Apply Starter Plan
+                    </button>
+                  </div>
+
+                  {/* Professional */}
+                  <div className="border border-slate-200 rounded-2xl p-4 flex flex-col gap-3">
+                    <div>
+                      <div className="font-bold text-slate-900 text-[15px] mb-1">Professional</div>
+                      <div className="text-[12px] text-slate-500">For growing fleets 35 - 100 trucks</div>
+                    </div>
+                    <div className="font-black text-slate-900 text-[20px]">$499<span className="text-[13px] text-slate-500 font-semibold">/mo</span></div>
+                    <ul className="space-y-1.5 flex-1">
+                      {['Dynamic Dispatching', 'Factor Integration A...', 'GPS Tracking (live H...', 'Priority Support'].map(f => (
+                        <li key={f} className="flex items-center gap-1.5 text-[11px] text-slate-600">
+                          <Check className="w-3 h-3 text-slate-400 shrink-0" /> {f}
+                        </li>
+                      ))}
+                    </ul>
+                    <button
+                      onClick={() => { setShowRecommendModal(false); setToast({ type: 'success', text: selectedLead.company, actionText: 'Professional plan applied!' }); }}
+                      className="w-full border border-slate-200 text-slate-700 text-[10px] font-black py-2.5 rounded-xl hover:bg-slate-50 transition-colors tracking-wider uppercase"
+                    >
+                      Apply Professional Plan
+                    </button>
+                  </div>
+
+                  {/* Enterprise - RECOMMENDED */}
+                  <div className="border-2 border-[#FFB020] rounded-2xl p-4 flex flex-col gap-3 relative">
+                    <div className="absolute -top-3 right-3 bg-[#FFB020] text-slate-900 text-[9px] font-black px-2 py-0.5 rounded-full tracking-widest uppercase">RECOMMENDED</div>
+                    <div>
+                      <div className="font-bold text-slate-900 text-[15px] mb-1">Enterprise</div>
+                      <div className="text-[12px] text-slate-500">For logistics giants &gt; 100 trucks</div>
+                    </div>
+                    <div className="font-black text-slate-900 text-[20px]">$1299<span className="text-[13px] text-slate-500 font-semibold">/mo</span></div>
+                    <ul className="space-y-1.5 flex-1">
+                      {['AI CommandCenter ...', 'Custom Billing Rules', 'Unlimited Drivers/H...', 'Dedicated SLA Custo...'].map(f => (
+                        <li key={f} className="flex items-center gap-1.5 text-[11px] text-slate-600">
+                          <Check className="w-3 h-3 text-[#FFB020] shrink-0" /> {f}
+                        </li>
+                      ))}
+                    </ul>
+                    <button
+                      onClick={() => { setShowRecommendModal(false); setToast({ type: 'success', text: selectedLead.company, actionText: 'Enterprise plan applied!' }); }}
+                      className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 text-[10px] font-black py-2.5 rounded-xl shadow-[0_4px_12px_rgba(255,176,32,0.4)] transition-all tracking-wider uppercase"
+                    >
+                      Apply Enterprise Plan
+                    </button>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
