@@ -1,37 +1,3 @@
-<<<<<<< HEAD
-import React, { useState, useRef, useEffect } from 'react';
-import './Header.css';
-import { FiMenu, FiSearch, FiBell, FiMessageSquare, FiChevronDown, FiUser, FiLogOut } from 'react-icons/fi';
-import { useNavigate } from 'react-router-dom';
-
-const Header = () => {
-  const [profileOpen, setProfileOpen] = useState(false);
-  const dropdownRef = useRef(null);
-  const navigate = useNavigate();
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setProfileOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const handleProfileSettings = () => {
-    setProfileOpen(false);
-    // Navigate or show toast — for now just stay on page
-    alert('Profile Settings');
-  };
-
-  const handleSignOut = () => {
-    setProfileOpen(false);
-    navigate('/login');
-  };
-
-=======
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './Header.css';
@@ -61,7 +27,17 @@ const Header = () => {
     };
   }, []);
 
->>>>>>> 9ad804f69b8f639ac668fb4a4d196942ed579546
+  // Determine role label based on current route
+  const getRoleLabel = () => {
+    if (location.pathname.startsWith('/driver')) return 'Driver';
+    if (location.pathname.startsWith('/dispatcher')) return 'Dispatcher';
+    if (location.pathname.startsWith('/warehouse')) return 'Warehouse';
+    if (location.pathname.startsWith('/company-admin')) return 'Company Admin';
+    if (location.pathname.startsWith('/super-admin')) return 'Super Admin';
+    if (location.pathname.startsWith('/sales')) return 'Sales';
+    return 'Admin';
+  };
+
   return (
     <header className="header">
       <div className="header-left">
@@ -103,44 +79,18 @@ const Header = () => {
           </div>
         </div>
         
-<<<<<<< HEAD
-        <div className="user-dropdown-wrapper" ref={dropdownRef}>
-          <div className="user-dropdown" onClick={() => setProfileOpen(!profileOpen)}>
-            <div className="avatar-sm">SM</div>
-            <FiChevronDown className={`dropdown-icon ${profileOpen ? 'dropdown-icon-rotated' : ''}`} />
-          </div>
-
-          {profileOpen && (
-            <div className="profile-dropdown-menu">
-              <div className="profile-dropdown-header">
-                <p className="profile-dropdown-name">Admin</p>
-                <p className="profile-dropdown-role">Driver • admin@hero.com</p>
-              </div>
-              <div className="profile-dropdown-divider"></div>
-              <button className="profile-dropdown-item" onClick={handleProfileSettings}>
-                <FiUser className="profile-dropdown-item-icon" />
-                <span>Profile Settings</span>
-              </button>
-              <button className="profile-dropdown-item profile-dropdown-item-danger" onClick={handleSignOut}>
-                <FiLogOut className="profile-dropdown-item-icon" />
-                <span>Sign Out</span>
-              </button>
-            </div>
-          )}
-=======
         {/* User Profile Controller */}
         <div className="user-profile-trigger" onClick={() => setShowDropdown(!showDropdown)}>
           <div className="avatar-circle-sm">SM</div>
           <ChevronDown className={`dropdown-icon w-4 h-4 transition-transform duration-250 ${showDropdown ? 'rotate-180' : ''}`} />
->>>>>>> 9ad804f69b8f639ac668fb4a4d196942ed579546
         </div>
 
-        {/* Dropdown Menu (3rd Image Match) */}
+        {/* Dropdown Menu */}
         {showDropdown && (
           <div className="header-profile-dropdown animate-fade-in">
             <div className="dropdown-header-info">
               <span className="dropdown-info-name">Admin</span>
-              <span className="dropdown-info-role">Dispatcher • admin@hero.com</span>
+              <span className="dropdown-info-role">{getRoleLabel()} • admin@hero.com</span>
             </div>
             
             <div className="dropdown-menu-divider"></div>
@@ -149,7 +99,7 @@ const Header = () => {
             <button 
               onClick={() => {
                 setShowDropdown(false);
-                navigate('/dispatcher/system-settings');
+                alert('Profile Settings');
               }}
               className="dropdown-menu-item"
             >
@@ -161,7 +111,7 @@ const Header = () => {
             <button 
               onClick={() => {
                 setShowDropdown(false);
-                alert("Signing out dispatcher account...");
+                navigate('/login');
               }}
               className="dropdown-menu-item signout-btn"
             >
