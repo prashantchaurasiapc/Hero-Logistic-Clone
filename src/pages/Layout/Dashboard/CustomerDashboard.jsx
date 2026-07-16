@@ -5,7 +5,7 @@ const CustomerDashboard = () => (
   <div className="customer-dashboard">
     <div className="customer-header-container">
       <div>
-        <h1 className="customer-title">Customer Shipper Portal &bull; Overview</h1>
+        <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">Customer Shipper Portal &bull; Overview</h1>
         <p className="customer-subtitle">Request load deliveries, audit invoices, download BOL papers, and track active route paths.</p>
       </div>
       <button className="contact-support-btn">Contact Support</button>

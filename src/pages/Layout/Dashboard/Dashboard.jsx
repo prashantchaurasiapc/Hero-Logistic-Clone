@@ -24,7 +24,7 @@ const SuperAdminDashboard = () => {
     <div className="dashboard-container">
       <div className="dashboard-header">
         <div>
-          <h1 className="page-title">Super Admin • Overview</h1>
+          <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">Super Admin • Overview</h1>
           <p className="page-subtitle">Configure global licensing rules, audit tenant margins, and resolve support tickets.</p>
         </div>
         <button className="export-btn">Export Report</button>
@@ -240,7 +240,7 @@ const YardDashboard = () => (
 const AccountsDashboard = () => (
   <div className="accounts-dashboard">
     <div className="accounts-header">
-      <h1 className="accounts-title">Accounts & Payroll &bull; Overview</h1>
+      <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">Accounts & Payroll &bull; Overview</h1>
       <p className="accounts-subtitle">Review invoice factoring, disburse driver paychecks, and analyze margins.</p>
     </div>
     <div className="stats-grid stats-4">
@@ -291,7 +291,7 @@ const CustomerDashboard = () => (
   <div className="customer-dashboard">
     <div className="customer-header-container">
       <div>
-        <h1 className="customer-title">Customer Shipper Portal &bull; Overview</h1>
+        <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">Customer Shipper Portal &bull; Overview</h1>
         <p className="customer-subtitle">Request load deliveries, audit invoices, download BOL papers, and track active route paths.</p>
       </div>
       <button className="contact-support-btn">Contact Support</button>

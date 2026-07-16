@@ -5,7 +5,7 @@ const DriverDashboard = () => {
   return (
     <div className="dashboard-wrapper">
       <div className="dashboard-header">
-        <h1 className="dashboard-title">Driver Dashboard</h1>
+        <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">Driver Dashboard</h1>
         <p className="dashboard-subtitle">View jobs, expenses, and contact dispatch.</p>
       </div>
       <div className="dashboard-card">

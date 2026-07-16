@@ -1,8 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @import "tailwindcss";
 
 @theme {
+  --font-sans: "Poppins", sans-serif;
   --color-brand-50: #FFFDF0;
   --color-brand-100: #FFF9C4;
   --color-brand-200: #FFF59D;
@@ -27,7 +28,7 @@ body {
 @layer base {
   body {
     @apply bg-slate-50 text-slate-800 dark:bg-[#0B0B0B] dark:text-slate-200 antialiased selection:bg-brand-500 selection:text-slate-950 transition-colors duration-200;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Poppins', sans-serif !important;
     scroll-behavior: smooth;
   }
 

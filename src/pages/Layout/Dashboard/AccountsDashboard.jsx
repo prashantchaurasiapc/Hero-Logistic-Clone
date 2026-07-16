@@ -4,7 +4,7 @@ import './AccountsDashboard.css';
 const AccountsDashboard = () => (
   <div className="accounts-dashboard">
     <div className="accounts-header">
-      <h1 className="accounts-title">Accounts & Payroll &bull; Overview</h1>
+      <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">Accounts & Payroll &bull; Overview</h1>
       <p className="accounts-subtitle">Review invoice factoring, disburse driver paychecks, and analyze margins.</p>
     </div>
     <div className="stats-grid stats-4">

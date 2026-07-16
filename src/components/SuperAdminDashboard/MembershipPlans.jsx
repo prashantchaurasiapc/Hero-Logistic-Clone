@@ -500,7 +500,7 @@ export default function MembershipPlans() {
       {/* Header Area */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-b border-slate-100 pb-5 bg-white -mx-6 px-6 -mt-6 pt-6">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+          <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
             Super Admin <span className="text-slate-300">•</span> Plans
           </h1>
           <p className="text-xs text-slate-400 font-semibold mt-1">
