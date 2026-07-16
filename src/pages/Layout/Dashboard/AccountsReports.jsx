@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   TrendingUp, Users, Truck, Building2, Layers,
-  ChevronDown, Settings, Download, ChevronLeft, ChevronRight
+  ChevronDown, Settings, Download
 } from 'lucide-react';
 
 const CustomCheckbox = ({ checked, onChange }) => {
@@ -30,7 +30,7 @@ const CustomCheckbox = ({ checked, onChange }) => {
   );
 };
 
-const WarehouseReports = () => {
+const AccountsReports = () => {
   const [timeFilter, setTimeFilter] = useState('This Month');
   const [branchFilter, setBranchFilter] = useState('All Branches');
   const [activeTab, setActiveTab] = useState('Revenue Trends');
@@ -73,7 +73,7 @@ const WarehouseReports = () => {
     { id: 'R-3', period: 'Apr', grossRevenue: 48000, expenses: 36000, netProfit: 12000 },
     { id: 'R-4', period: 'May', grossRevenue: 55000, expenses: 41000, netProfit: 14000 },
     { id: 'R-5', period: 'Jun', grossRevenue: 62000, expenses: 47000, netProfit: 15000 },
-    { id: 'R-6', period: 'Jul', grossRevenue: 70000, expenses: 52000, netProfit: 18000 }
+    { id: 'R-6', period: 'Jul', grossRevenue: 12790, expenses: 16220, netProfit: -3430 }
   ];
 
   const driverData = [
@@ -104,7 +104,7 @@ const WarehouseReports = () => {
   };
 
   const handleExportCSV = () => {
-    showToast('Exporting performance ledger in CSV format.');
+    showToast('Reports module exported successfully to CSV format.');
   };
 
   const handleExportPDF = () => {
@@ -226,7 +226,7 @@ const WarehouseReports = () => {
 
       {/* KPI Stats Grid */}
       <div style={S.kpiGrid}>
-        <div style={S.kpiCard}>
+        <div className="hover-card" style={S.kpiCard}>
           <div style={S.kpiHeader}>
             <span style={S.kpiLabel}>TOTAL REVENUE</span>
             <span style={S.kpiBadge}>+14.2%</span>
@@ -235,10 +235,10 @@ const WarehouseReports = () => {
           <span style={S.kpiSub}>Across selected period</span>
         </div>
 
-        <div style={S.kpiCard}>
+        <div className="hover-card" style={S.kpiCard}>
           <div style={S.kpiHeader}>
             <span style={S.kpiLabel}>NET PROFIT MARGIN</span>
-            <span style={S.kpiBadge}>-26.8% Margin</span>
+            <span style={{ ...S.kpiBadge, backgroundColor: '#ecfdf5', color: '#0ea5e9' }}>-26.8% Margin</span>
           </div>
           <span style={S.kpiValue}>$-3,430.00</span>
           <span style={S.kpiSub}>After expenses</span>
@@ -247,7 +247,7 @@ const WarehouseReports = () => {
         <div style={S.kpiCard}>
           <div style={S.kpiHeader}>
             <span style={S.kpiLabel}>TOTAL TRIPS COMPLETED</span>
-            <span style={S.kpiBadge}>Live</span>
+            <span style={{ ...S.kpiBadge, backgroundColor: '#ecfdf5', color: '#10b981' }}>Live</span>
           </div>
           <span style={S.kpiValue}>1</span>
           <span style={S.kpiSub}>Loads delivered</span>
@@ -256,7 +256,7 @@ const WarehouseReports = () => {
         <div style={S.kpiCard}>
           <div style={S.kpiHeader}>
             <span style={S.kpiLabel}>ACTIVE CUSTOMERS</span>
-            <span style={S.kpiBadge}>Stable</span>
+            <span style={{ ...S.kpiBadge, backgroundColor: '#ecfdf5', color: '#10b981' }}>Stable</span>
           </div>
           <span style={S.kpiValue}>5</span>
           <span style={S.kpiSub}>Billed shippers</span>
@@ -334,10 +334,10 @@ const WarehouseReports = () => {
                 style={{
                   ...S.tabButton,
                   color: isActive ? '#b45309' : '#64748b',
-                  border: isActive ? '1px solid #000' : '1px solid transparent',
-                  borderBottom: isActive ? '3px solid #ffd400' : '1px solid transparent',
-                  borderRadius: isActive ? '4px 4px 0 0' : 0,
-                  backgroundColor: isActive ? '#ffffff' : 'transparent'
+                  border: 'none',
+                  borderBottom: isActive ? '3px solid #ffd400' : '3px solid transparent',
+                  borderRadius: 0,
+                  backgroundColor: 'transparent'
                 }}
               >
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -358,21 +358,29 @@ const WarehouseReports = () => {
               <div style={S.donutChartCard}>
                 <div style={S.donutWrapper}>
                   {/* SVG Pie/Donut Chart */}
-                  <svg width="220" height="220" viewBox="0 0 42 42" className="donut">
+                  <svg width="220" height="220" viewBox="0 0 42 42" className="donut-svg">
                     <circle className="donut-hole" cx="21" cy="21" r="15.91549430918954" fill="#fff"></circle>
                     <circle className="donut-ring" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#f1f5f9" strokeWidth="4"></circle>
 
-                    {/* Green Segment (Available): 30% -> offset 0, length 30 */}
-                    <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#10b981" strokeWidth="4" strokeDasharray="30 70" strokeDashoffset="0"></circle>
+                    {/* Blue Segment (In Transit): 45% -> length 42.5, gap 57.5, offset 19 */}
+                    <circle className="donut-segment" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#0ea5e9" strokeWidth="4" strokeDasharray="42.5 57.5" strokeDashoffset="19" transform="rotate(-90 21 21)">
+                      <animate attributeName="stroke-dashoffset" from="61.5" to="19" dur="1.2s" begin="0.1s" fill="freeze" calcMode="spline" keySplines="0.16 1 0.3 1" keyTimes="0 1" />
+                    </circle>
 
-                    {/* Blue Segment (In Transit): 45% -> offset 70, length 45 */}
-                    <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#0ea5e9" strokeWidth="4" strokeDasharray="45 55" strokeDashoffset="70"></circle>
+                    {/* Red Segment (Out of Service): 10% -> length 9.5, gap 90.5, offset -25 */}
+                    <circle className="donut-segment" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#ef4444" strokeWidth="4" strokeDasharray="9.5 90.5" strokeDashoffset="-25" transform="rotate(-90 21 21)">
+                      <animate attributeName="stroke-dashoffset" from="-15.5" to="-25" dur="1.2s" begin="0.1s" fill="freeze" calcMode="spline" keySplines="0.16 1 0.3 1" keyTimes="0 1" />
+                    </circle>
 
-                    {/* Orange Segment (Maintenance): 15% -> offset 25, length 15 */}
-                    <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#f59e0b" strokeWidth="4" strokeDasharray="15 85" strokeDashoffset="25"></circle>
+                    {/* Orange Segment (Maintenance): 15% -> length 14, gap 86, offset -36 */}
+                    <circle className="donut-segment" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#f59e0b" strokeWidth="4" strokeDasharray="14 86" strokeDashoffset="-36" transform="rotate(-90 21 21)">
+                      <animate attributeName="stroke-dashoffset" from="-22" to="-36" dur="1.2s" begin="0.1s" fill="freeze" calcMode="spline" keySplines="0.16 1 0.3 1" keyTimes="0 1" />
+                    </circle>
 
-                    {/* Red Segment (Out of Service): 10% -> offset 10, length 10 */}
-                    <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#ef4444" strokeWidth="4" strokeDasharray="10 90" strokeDashoffset="10"></circle>
+                    {/* Green Segment (Available): 30% -> length 28, gap 72, offset -51.5 */}
+                    <circle className="donut-segment" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#10b981" strokeWidth="4" strokeDasharray="28 72" strokeDashoffset="-51.5" transform="rotate(-90 21 21)">
+                      <animate attributeName="stroke-dashoffset" from="-23.5" to="-51.5" dur="1.2s" begin="0.1s" fill="freeze" calcMode="spline" keySplines="0.16 1 0.3 1" keyTimes="0 1" />
+                    </circle>
                   </svg>
                 </div>
                 {/* Horizontal status legends */}
@@ -564,7 +572,9 @@ const WarehouseReports = () => {
                               <td style={{ ...getPaddingStyle(), ...S.tdRedBold }}>${row.expenses.toLocaleString()}</td>
                             )}
                             {revenueColumns.netProfit && (
-                              <td style={{ ...getPaddingStyle(), ...S.tdGreenBold }}>${row.netProfit.toLocaleString()}</td>
+                              <td style={{ ...getPaddingStyle(), ...S.tdGreenBold }}>
+                                {row.netProfit < 0 ? `-$${Math.abs(row.netProfit).toLocaleString()}` : `$${row.netProfit.toLocaleString()}`}
+                              </td>
                             )}
                           </>
                         )}
@@ -609,7 +619,7 @@ const WarehouseReports = () => {
                               <td style={{ ...getPaddingStyle(), ...S.tdRegular }}>{row.zone}</td>
                             )}
                             {capacityColumns.utilization && (
-                              <td style={{ ...getPaddingStyle(), ...S.tdGoldBold }}>{row.utilization}</td>
+                              <td style={{ ...getPaddingStyle(), ...S.tdMonoBold }}>{row.utilization}</td>
                             )}
                           </>
                         )}
@@ -618,84 +628,133 @@ const WarehouseReports = () => {
                   })}
                 </tbody>
               </table>
+            </div>
 
-              {/* Pagination footer */}
-              <div style={S.paginationFooter}>
-                <span style={S.paginationText}>Showing {startIndex + 1} to {endIndex} of {totalItems} items</span>
-                <div style={S.paginationButtons}>
-                  <button
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
-                    style={{ ...S.pageArrow, opacity: currentPage === 1 ? 0.4 : 1 }}
-                  >
-                    <ChevronLeft size={16} />
-                  </button>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+            {/* Pagination block */}
+            <div style={S.paginationFooter}>
+              <span style={S.paginationText}>
+                Showing <strong style={{ color: '#0f172a' }}>{startIndex + 1}</strong> to <strong style={{ color: '#0f172a' }}>{endIndex}</strong> of <strong style={{ color: '#0f172a' }}>{totalItems}</strong> items
+              </span>
+              <div style={S.paginationButtons}>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  style={{
+                    ...S.pageArrow,
+                    opacity: currentPage === 1 ? 0.4 : 1,
+                    cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  &lt;
+                </button>
+                {Array.from({ length: totalPages }, (_, index) => {
+                  const pNum = index + 1;
+                  const isActive = currentPage === pNum;
+                  return (
                     <button
-                      key={p}
-                      onClick={() => setCurrentPage(p)}
+                      key={pNum}
+                      onClick={() => setCurrentPage(pNum)}
                       style={{
                         ...S.pageNumBtn,
-                        backgroundColor: currentPage === p ? '#ffd400' : 'transparent',
-                        color: '#0f172a',
-                        fontWeight: currentPage === p ? '800' : '500'
+                        backgroundColor: isActive ? '#ffd400' : 'transparent',
+                        color: isActive ? '#0f172a' : '#475569',
+                        fontWeight: isActive ? '800' : '600',
+                        border: isActive ? '1.5px solid #0f172a' : '1px solid transparent'
                       }}
                     >
-                      {p}
+                      {pNum}
                     </button>
-                  ))}
-                  <button
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages}
-                    style={{ ...S.pageArrow, opacity: currentPage === totalPages ? 0.4 : 1 }}
-                  >
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
+                  );
+                })}
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  style={{
+                    ...S.pageArrow,
+                    opacity: currentPage === totalPages ? 0.4 : 1,
+                    cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  &gt;
+                </button>
               </div>
             </div>
           </div>
         )}
       </div>
 
-      {/* Toast Notification */}
+      {/* Floating Success Toast Alert */}
       {toast && (
         <div style={S.toastContainer}>
           <div style={S.toastIcon}>✓</div>
           <span style={S.toastText}>{toast}</span>
-          <button onClick={() => setToast(null)} style={S.toastCloseBtn}>✕</button>
+          <button onClick={() => setToast(null)} style={S.toastCloseBtn}>×</button>
         </div>
       )}
+
+      {/* Pop up styles */}
+      <style>{`
+        .hover-card {
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .hover-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04) !important;
+          border-color: #cbd5e1 !important;
+        }
+        .donut-svg {
+          animation: spin-in 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          transform-origin: center;
+        }
+        .donut-segment {
+          transform-origin: center;
+        }
+        .segment-blue {}
+        .segment-red {}
+        .segment-orange {}
+        .segment-green {}
+        @keyframes spin-in {
+          from {
+            transform: rotate(-270deg) scale(0.8);
+            opacity: 0;
+          }
+          to {
+            transform: rotate(0deg) scale(1);
+            opacity: 1;
+          }
+        }
+      `}</style>
     </div>
   );
 };
 
-/* ─── Styles Object ─── */
 const S = {
   container: {
-    padding: '24px 32px',
+    padding: '32px 40px',
     backgroundColor: '#f8fafc',
     minHeight: '100vh',
-    fontFamily: "'Inter', sans-serif"
+    fontFamily: "'Outfit', 'Inter', sans-serif"
   },
   header: {
-    marginBottom: 24,
+    marginBottom: 28,
     textAlign: 'left'
   },
   pageTitle: {
-    fontSize: 24,
+    fontSize: '26px',
     fontWeight: '800',
     color: '#0f172a',
-    margin: '0 0 8px 0'
+    margin: '0 0 6px 0',
+    letterSpacing: '-0.5px'
   },
   pageSubtitle: {
-    fontSize: 14,
+    fontSize: '14px',
     color: '#64748b',
-    margin: 0
+    margin: 0,
+    fontWeight: '500'
   },
   kpiGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(4, 1fr)',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
     gap: 20,
     marginBottom: 28
   },
@@ -804,11 +863,11 @@ const S = {
   btnExportCsv: {
     backgroundColor: '#ffffff',
     color: '#334155',
-    border: '1px solid #cbd5e1',
+    border: '2px solid #0f172a', // Styled to look clean and active
     borderRadius: 12,
     padding: '10px 22px',
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '800',
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
@@ -1046,7 +1105,7 @@ const S = {
   },
   tdGreenBold: {
     fontWeight: '800',
-    color: '#16a34a'
+    color: '#10b981'
   },
   statusBadge: {
     padding: '4px 8px',
@@ -1222,4 +1281,4 @@ const S = {
   }
 };
 
-export default WarehouseReports;
+export default AccountsReports;

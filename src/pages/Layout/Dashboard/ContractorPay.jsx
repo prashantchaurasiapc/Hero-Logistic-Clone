@@ -1,68 +1,33 @@
 import React, { useState } from 'react';
 
-const SentInvoices = () => {
+const ContractorPay = () => {
   const [density, setDensity] = useState('RELAXED'); // COMPACT, DEFAULT, RELAXED
   const [showColumnsDropdown, setShowColumnsDropdown] = useState(false);
   const [toast, setToast] = useState(null);
+  const [activeBtn, setActiveBtn] = useState(null);
 
-  // Table Data
-  const [invoices, setInvoices] = useState([
-    { id: 'INV-3981', customer: 'Global Retail Corp', amount: '$1,200.00', dueDate: '18 Jul 2026', status: 'SENT', checked: false },
-    { id: 'INV-3982', customer: 'Vance Refrigeration', amount: '$850.00', dueDate: '22 Jul 2026', status: 'SENT', checked: false }
-  ]);
-
-  // Column Visibility
-  const [visibleColumns, setVisibleColumns] = useState({
-    invoiceId: true,
-    customer: true,
-    amount: true,
-    dueDate: false, // unchecked by default in screenshots
-    status: true
+  // Column visibility states
+  const [cols, setCols] = useState({
+    contractorService: false,
+    settlementAmount: false,
+    state: true,
+    disburse: false
   });
 
   const columnsList = [
-    { key: 'invoiceId', label: 'Invoice ID' },
-    { key: 'customer', label: 'Shipper Customer' },
-    { key: 'amount', label: 'Total Amount' },
-    { key: 'dueDate', label: 'Due Date' },
-    { key: 'status', label: 'Status' }
+    { key: 'contractorService', label: 'External Contractor Service' },
+    { key: 'settlementAmount', label: 'Settlement Amount' },
+    { key: 'state', label: 'State' },
+    { key: 'disburse', label: 'Disburse' }
   ];
-
-  // Hover states for buttons
-  const [hoveredBtn, setHoveredBtn] = useState(null);
 
   const showToast = (msg) => {
     setToast(msg);
     setTimeout(() => setToast(null), 4000);
   };
 
-  const handleSendInvoice = () => {
-    showToast('Initiating new outbound invoice transmission.');
-  };
-
-  const handleExportPDF = () => {
-    showToast('Compiling sent invoices ledger to PDF.');
-  };
-
-  const handleSendStatement = () => {
-    showToast('Outbound account statements queued for dispatch.');
-  };
-
-  // Master Checkbox Toggle
-  const isAllChecked = invoices.length > 0 && invoices.every(inv => inv.checked);
-  const handleMasterCheckbox = () => {
-    const targetState = !isAllChecked;
-    setInvoices(prev => prev.map(inv => ({ ...inv, checked: targetState })));
-  };
-
-  const handleRowCheckbox = (id) => {
-    setInvoices(prev => prev.map(inv =>
-      inv.id === id ? { ...inv, checked: !inv.checked } : inv
-    ));
-  };
-
   const toggleColumn = (key) => {
-    setVisibleColumns(prev => ({ ...prev, [key]: !prev[key] }));
+    setCols(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
   // Get cell padding based on density
@@ -76,62 +41,44 @@ const SentInvoices = () => {
     <div style={S.container}>
       {/* Page Header */}
       <div style={S.header}>
-        <h1 style={S.pageTitle}>Accounts &amp; Payroll &bull; Sent Invoices</h1>
+        <h1 style={S.pageTitle}>Accounts &amp; Payroll &bull; Contractor Pay</h1>
         <p style={S.pageSubtitle}>Review invoice factoring, disburse driver paychecks, and analyze margins.</p>
       </div>
 
-      {/* Main Content Card */}
-      <div style={S.card}>
+      {/* Operations Block */}
+      <div style={S.operationsCard}>
         <div style={S.cardHeader}>
-          {/* Title & Desc */}
           <div style={S.cardTitleBlock}>
-            <h2 style={S.cardTitle}>Sent Invoices Ledger</h2>
-            <p style={S.cardSubtitle}>Audit dispatched invoices, track aging, export tax documents, and issue statements.</p>
+            <h2 style={{ ...S.cardTitle, fontSize: 15 }}>Contractor Payouts</h2>
+            <p style={{ ...S.cardSubtitle, fontSize: 12 }}>Manage and disburse external contractor settlements.</p>
           </div>
 
-          {/* Action Buttons */}
           <div style={S.actionGroup}>
-            <button
-              onClick={handleSendInvoice}
-              onMouseEnter={() => setHoveredBtn('send')}
-              onMouseLeave={() => setHoveredBtn(null)}
-              style={{
-                ...S.btnPrimary,
-                border: hoveredBtn === 'send' ? '2px solid #000000' : 'none',
-                padding: hoveredBtn === 'send' ? '5px 14px' : '7px 14px'
+            <button 
+              onClick={() => {
+                setActiveBtn('export');
+                showToast('Contractor manifest exported successfully.');
               }}
-            >
-              Send Invoice
-            </button>
-            <button
-              onClick={handleExportPDF}
-              onMouseEnter={() => setHoveredBtn('pdf')}
-              onMouseLeave={() => setHoveredBtn(null)}
               style={{
                 ...S.btnSecondary,
-                border: hoveredBtn === 'pdf' ? '2px solid #000000' : '1px solid #cbd5e1',
-                padding: hoveredBtn === 'pdf' ? '5px 14px' : '6px 14px'
+                border: activeBtn === 'export' ? '2.5px solid #000000' : '1px solid #cbd5e1',
+                padding: activeBtn === 'export' ? '4px 12px' : '5px 13px'
               }}
             >
-              Export PDF
-            </button>
-            <button
-              onClick={handleSendStatement}
-              onMouseEnter={() => setHoveredBtn('statement')}
-              onMouseLeave={() => setHoveredBtn(null)}
-              style={{
-                ...S.btnSecondary,
-                border: hoveredBtn === 'statement' ? '2px solid #000000' : '1px solid #cbd5e1',
-                padding: hoveredBtn === 'statement' ? '5px 14px' : '6px 14px'
-              }}
-            >
-              Send Statement
+              Export Manifest
             </button>
           </div>
         </div>
+      </div>
 
-        {/* Toolbar with controls */}
-        <div style={S.toolbar}>
+      {/* Table Card */}
+      <div style={S.card}>
+        <div style={S.cardHeader}>
+          <div style={S.cardTitleBlock}>
+            <h2 style={S.cardTitle}>Subcontractor Brokerage settlements</h2>
+          </div>
+
+          {/* Controls */}
           <div style={S.toolbarRight}>
             {/* Density Controls Pill */}
             <div style={S.densityPill}>
@@ -153,20 +100,20 @@ const SentInvoices = () => {
 
             {/* Column Visibility Trigger */}
             <div style={{ position: 'relative' }}>
-              <button
+              <button 
                 onClick={() => setShowColumnsDropdown(!showColumnsDropdown)}
                 style={{
                   ...S.columnsBtn,
                   border: showColumnsDropdown ? '2px solid #000000' : '1px solid #e2e8f0',
-                  padding: showColumnsDropdown ? '5px 12px' : '6px 13px'
+                  padding: showColumnsDropdown ? '4px 10px' : '5px 11px'
                 }}
               >
                 {/* Inline Gear SVG */}
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 5, verticalAlign: 'middle' }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: 5, verticalAlign: 'middle'}}>
                   <circle cx="12" cy="12" r="3"></circle>
                   <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                 </svg>
-                <span style={{ verticalAlign: 'middle' }}>COLUMNS</span>
+                <span style={{verticalAlign: 'middle'}}>COLUMNS</span>
               </button>
 
               {showColumnsDropdown && (
@@ -176,9 +123,9 @@ const SentInvoices = () => {
                     <div style={S.dropdownTitle}>COLUMN VISIBILITY</div>
                     {columnsList.map((col) => (
                       <label key={col.key} style={S.dropdownLabel}>
-                        <input
-                          type="checkbox"
-                          checked={visibleColumns[col.key]}
+                        <input 
+                          type="checkbox" 
+                          checked={cols[col.key]}
                           onChange={() => toggleColumn(col.key)}
                           style={S.checkboxInput}
                         />
@@ -192,50 +139,40 @@ const SentInvoices = () => {
           </div>
         </div>
 
-        {/* Data Table */}
+        {/* Empty Table structure */}
         <div style={S.tableWrapper}>
           <table style={S.table}>
             <thead>
               <tr style={S.theadRow}>
                 <th style={{ ...S.th, padding: getCellPadding(), width: 48, textAlign: 'center' }}>
-                  <input
-                    type="checkbox"
-                    checked={isAllChecked}
-                    onChange={handleMasterCheckbox}
-                    style={S.checkboxInput}
-                  />
+                  <input type="checkbox" style={{ ...S.checkboxInput, marginRight: 0 }} disabled />
                 </th>
-                {visibleColumns.invoiceId && <th style={{ ...S.th, padding: getCellPadding() }}>INVOICE ID</th>}
-                {visibleColumns.customer && <th style={{ ...S.th, padding: getCellPadding() }}>SHIPPER CUSTOMER</th>}
-                {visibleColumns.dueDate && <th style={{ ...S.th, padding: getCellPadding() }}>DUE DATE</th>}
-                {visibleColumns.amount && <th style={{ ...S.th, padding: getCellPadding() }}>TOTAL AMOUNT</th>}
-                {visibleColumns.status && <th style={{ ...S.th, padding: getCellPadding() }}>STATUS</th>}
+                {columnsList.map(col => (
+                  cols[col.key] && (
+                    <th key={col.key} style={{ ...S.th, padding: getCellPadding() }}>
+                      {col.label.toUpperCase()}
+                    </th>
+                  )
+                ))}
               </tr>
             </thead>
             <tbody>
-              {invoices.map((row) => (
-                <tr key={row.id} style={S.tbodyRow}>
-                  <td style={{ ...S.td, padding: getCellPadding(), textAlign: 'center' }}>
-                    <input
-                      type="checkbox"
-                      checked={row.checked}
-                      onChange={() => handleRowCheckbox(row.id)}
-                      style={S.checkboxInput}
-                    />
-                  </td>
-                  {visibleColumns.invoiceId && <td style={{ ...S.td, padding: getCellPadding(), fontWeight: '600', color: '#475569' }}>{row.id}</td>}
-                  {visibleColumns.customer && <td style={{ ...S.td, padding: getCellPadding(), color: '#475569' }}>{row.customer}</td>}
-                  {visibleColumns.dueDate && <td style={{ ...S.td, padding: getCellPadding(), color: '#64748b' }}>{row.dueDate}</td>}
-                  {visibleColumns.amount && <td style={{ ...S.td, padding: getCellPadding(), fontWeight: '700', color: '#0f172a' }}>{row.amount}</td>}
-                  {visibleColumns.status && (
-                    <td style={{ ...S.td, padding: getCellPadding() }}>
-                      <span style={S.statusBadge}>
-                        {row.status}
-                      </span>
-                    </td>
-                  )}
-                </tr>
-              ))}
+              <tr>
+                <td 
+                  colSpan={columnsList.filter(c => cols[c.key]).length + 1}
+                  style={{
+                    padding: '48px 24px',
+                    textAlign: 'center',
+                    fontSize: 13,
+                    fontWeight: '800',
+                    color: '#64748b',
+                    backgroundColor: '#ffffff',
+                    letterSpacing: '0.5px'
+                  }}
+                >
+                  NO RECORDS RESOLVED.
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -269,7 +206,7 @@ const S = {
     fontFamily: "'Outfit', 'Inter', sans-serif"
   },
   header: {
-    marginBottom: 32
+    marginBottom: 24
   },
   pageTitle: {
     fontSize: 26,
@@ -283,6 +220,14 @@ const S = {
     color: '#64748b',
     margin: 0
   },
+  operationsCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: '20px 32px',
+    border: '1px solid #e2e8f0',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02)',
+    marginBottom: 24
+  },
   card: {
     backgroundColor: '#ffffff',
     borderRadius: 16,
@@ -293,8 +238,7 @@ const S = {
   cardHeader: {
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 24,
+    alignItems: 'center',
     flexWrap: 'wrap',
     gap: 20
   },
@@ -306,12 +250,12 @@ const S = {
     fontSize: 18,
     fontWeight: '800',
     color: '#0f172a',
-    margin: '0 0 6px 0'
+    margin: 0
   },
   cardSubtitle: {
     fontSize: 13.5,
     color: '#64748b',
-    margin: 0,
+    margin: '4px 0 0 0',
     lineHeight: 1.5
   },
   actionGroup: {
@@ -319,34 +263,16 @@ const S = {
     gap: 12,
     alignItems: 'center'
   },
-  btnPrimary: {
-    backgroundColor: '#FFCC00',
-    color: '#000000',
-    border: 'none',
-    borderRadius: 30,
-    fontSize: 12,
-    fontWeight: '800',
-    cursor: 'pointer',
-    boxShadow: '0 4px 14px rgba(255, 204, 0, 0.35)',
-    transition: 'all 0.15s ease-in-out',
-    outline: 'none',
-    boxSizing: 'border-box'
-  },
   btnSecondary: {
     backgroundColor: '#ffffff',
     color: '#334155',
     borderRadius: 30,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     cursor: 'pointer',
     transition: 'all 0.15s ease-in-out',
     outline: 'none',
     boxSizing: 'border-box'
-  },
-  toolbar: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    marginBottom: 24
   },
   toolbarRight: {
     display: 'flex',
@@ -372,7 +298,7 @@ const S = {
     backgroundColor: '#f1f5f9',
     color: '#475569',
     borderRadius: 8,
-    fontSize: 11,
+    fontSize: 10.5,
     fontWeight: '800',
     cursor: 'pointer',
     outline: 'none',
@@ -395,7 +321,7 @@ const S = {
     boxShadow: '0 10px 25px -5px rgba(0,0,0,0.08), 0 8px 16px -6px rgba(0,0,0,0.04)',
     border: '1px solid #e2e8f0',
     padding: 18,
-    width: 200,
+    width: 250,
     zIndex: 99
   },
   dropdownTitle: {
@@ -425,7 +351,8 @@ const S = {
   tableWrapper: {
     border: '1px solid #e2e8f0',
     borderRadius: 12,
-    overflow: 'hidden'
+    overflow: 'hidden',
+    marginTop: 20
   },
   table: {
     width: '100%',
@@ -440,28 +367,6 @@ const S = {
     fontSize: 11,
     fontWeight: '800',
     color: '#475569',
-    letterSpacing: '0.5px'
-  },
-  tbodyRow: {
-    borderBottom: '1px solid #f1f5f9',
-    transition: 'background-color 0.1s ease',
-    ':hover': {
-      backgroundColor: '#f8fafc'
-    }
-  },
-  td: {
-    fontSize: 14,
-    color: '#334155',
-    verticalAlign: 'middle'
-  },
-  statusBadge: {
-    display: 'inline-block',
-    padding: '5px 12px',
-    borderRadius: 20,
-    fontSize: 10.5,
-    fontWeight: '800',
-    backgroundColor: '#f1f5f9',
-    color: '#64748b',
     letterSpacing: '0.5px'
   },
   toastContainer: {
@@ -503,4 +408,4 @@ const S = {
   }
 };
 
-export default SentInvoices;
+export default ContractorPay;

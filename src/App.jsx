@@ -17,6 +17,15 @@ import YardDashboard from './pages/Layout/Dashboard/YardDashboard';
 import AccountsDashboard from './pages/Layout/Dashboard/AccountsDashboard';
 import InvoiceReview from './pages/Layout/Dashboard/InvoiceReview';
 import SentInvoices from './pages/Layout/Dashboard/SentInvoices';
+import Payments from './pages/Layout/Dashboard/Payments';
+import Payroll from './pages/Layout/Dashboard/Payroll';
+import ContractorPay from './pages/Layout/Dashboard/ContractorPay';
+import EmployeePay from './pages/Layout/Dashboard/EmployeePay';
+import Expenses from './pages/Layout/Dashboard/Expenses';
+import GstPayg from './pages/Layout/Dashboard/GstPayg';
+import Pnl from './pages/Layout/Dashboard/Pnl';
+import VehicleCosts from './pages/Layout/Dashboard/VehicleCosts';
+import AccountsReports from './pages/Layout/Dashboard/AccountsReports';
 import CustomerDashboard from './pages/Layout/Dashboard/CustomerDashboard';
 import SalesDashboard from './components/SalesDashboard/SalesDashboard';
 import CompanyAdminDashboard from './pages/Layout/Dashboard/CompanyAdminDashboard';
@@ -127,16 +136,15 @@ const YardReportIssue = () => <div style={{ padding: '24px' }}><h2>Report issue<
 // Accounts placeholders
 // InvoiceReview is imported at the top of the file
 // SentInvoices is imported at the top of the file
-const Payments = () => <div style={{ padding: '24px' }}><h2>Payments</h2></div>;
-const Payroll = () => <div style={{ padding: '24px' }}><h2>Payroll</h2></div>;
-const ContractorPay = () => <div style={{ padding: '24px' }}><h2>Contractor Pay</h2></div>;
-const EmployeePay = () => <div style={{ padding: '24px' }}><h2>Employee Pay</h2></div>;
-const Expenses = () => <div style={{ padding: '24px' }}><h2>Expenses</h2></div>;
-const GstPayg = () => <div style={{ padding: '24px' }}><h2>GST / PAYG</h2></div>;
-const Pnl = () => <div style={{ padding: '24px' }}><h2>P&L</h2></div>;
-const VehicleCosts = () => <div style={{ padding: '24px' }}><h2>Vehicle Costs</h2></div>;
-const AccountsReports = () => <div style={{ padding: '24px' }}><h2>Reports</h2></div>;
-
+// Payments is imported at the top of the file
+// Payroll is imported at the top of the file
+// ContractorPay is imported at the top of the file
+// EmployeePay is imported at the top of the file
+// Expenses is imported at the top of the file
+// GstPayg is imported at the top of the file
+// Pnl is imported at the top of the file
+// VehicleCosts is imported at the top of the file
+// AccountsReports is imported at the top of the file
 // Customer placeholders
 const MyLoads = () => <div style={{ padding: '24px' }}><h2>My Loads</h2></div>;
 const TrackDelivery = () => <div style={{ padding: '24px' }}><h2>Track Delivery</h2></div>;

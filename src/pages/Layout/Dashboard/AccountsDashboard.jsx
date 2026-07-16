@@ -33,6 +33,7 @@ const AccountsDashboard = () => {
   const [ledgerForm, setLedgerForm] = useState({ payee: '', amount: '', category: LEDGER_CATEGORIES[0] });
   const [showCategoryDrop, setShowCategoryDrop] = useState(false);
   const [toast, setToast] = useState(null);
+  const [activeAction, setActiveAction] = useState(null);
 
   const showToast = (msg) => {
     setToast(msg);
@@ -42,6 +43,9 @@ const AccountsDashboard = () => {
   const handleRecordPayment = () => { setShowLedgerModal(true); };
   const handleCreditNote = () => { showToast('Credit note raised and applied to customer account.'); };
   const handleWriteOff = () => { showToast('Bad debt written off and flagged in ledger.'); };
+
+  const handleFactoringSubmit = () => { showToast('Invoice factoring transaction submitted for financing.'); };
+  const handleRunPayroll = () => { showToast('Driver payroll disbursement batch processed successfully.'); };
 
   const handleLedgerSubmit = () => {
     setShowLedgerModal(false);
@@ -62,28 +66,64 @@ const AccountsDashboard = () => {
       {/* KPI Row 1 */}
       <div className="stats-grid stats-4">
         <div className="stat-card"><div className="stat-title">FACTORED FUNDING</div><div className="stat-value">$12,400.00</div><div className="stat-footer"><span className="footer-left">Active invoice reserves</span><span className="footer-right grey">Factored</span></div></div>
-        <div className="stat-card"><div className="stat-title">DRIVER PAYROLL</div><div className="stat-value">2 Pending</div><div className="stat-footer"><span className="footer-left">Awaiting payment runs</span><span className="footer-right green">$3,310 paid</span></div></div>
-        <div className="stat-card"><div className="stat-title">OUTSTANDING INVOICES</div><div className="stat-value">$0.00</div><div className="stat-footer"><span className="footer-left">Open balances ledger</span><span className="footer-right" style={{color:'#eab308'}}>Awaiting Customer</span></div></div>
+        <div className="stat-card"><div className="stat-title">DRIVER PAYROLL</div><div className="stat-value">2 Pending</div><div className="stat-footer"><span className="footer-left">Awaiting payment runs</span><span className="footer-right grey">$3,310 paid</span></div></div>
+        <div className="stat-card"><div className="stat-title">OUTSTANDING INVOICES</div><div className="stat-value">$0.00</div><div className="stat-footer"><span className="footer-left">Open balances ledger</span><span className="footer-right green">Awaiting Customer</span></div></div>
         <div className="stat-card"><div className="stat-title">NET PROFIT MARGIN</div><div className="stat-value">$-3,430.00</div><div className="stat-footer"><span className="footer-left">Margin: -26.8%</span><span className="footer-right green">Revenue: $12,790</span></div></div>
       </div>
 
       {/* KPI Row 2 */}
       <div className="stats-grid stats-4">
         <div className="stat-card"><div className="stat-title">TOTAL REVENUE</div><div className="stat-value">$12,790.00</div><div className="stat-footer"><span className="footer-left">From paid shipper invoices</span><span className="footer-right green">Revenue</span></div></div>
-        <div className="stat-card"><div className="stat-title">TOTAL EXPENSES</div><div className="stat-value">$16,220.00</div><div className="stat-footer"><span className="footer-left">Payroll + Fuel + Maintenance</span><span className="footer-right" style={{color:'#ef4444'}}>Costs</span></div></div>
-        <div className="stat-card"><div className="stat-title">GROSS PROFIT</div><div className="stat-value">$7,630.00</div><div className="stat-footer"><span className="footer-left">After labour costs</span><span className="footer-right" style={{color:'#eab308'}}>Before overheads</span></div></div>
+        <div className="stat-card"><div className="stat-title">TOTAL EXPENSES</div><div className="stat-value">$16,220.00</div><div className="stat-footer"><span className="footer-left">Payroll + Fuel + Maintenance</span><span className="footer-right grey">Costs</span></div></div>
+        <div className="stat-card"><div className="stat-title">GROSS PROFIT</div><div className="stat-value">$7,630.00</div><div className="stat-footer"><span className="footer-left">After labour costs</span><span className="footer-right green">Before overheads</span></div></div>
         <div className="stat-card"><div className="stat-title">CONTRACTOR PAY</div><div className="stat-value">$1,850.00</div><div className="stat-footer"><span className="footer-left">Subcontractor settlements</span><span className="footer-right grey">Brokerage costs</span></div></div>
       </div>
 
       {/* Quick Actions */}
       <div className="quick-actions-section">
         <span className="quick-actions-label">QUICK ACTIONS:</span>
-        <button className="action-btn btn-primary" onClick={() => setShowLedgerModal(true)}>+ New Invoice</button>
-        <button className="action-btn btn-secondary" onClick={handleCreditNote}>Raise Credit Note</button>
-        <button className="action-btn btn-secondary">Submit Factoring</button>
-        <button className="action-btn btn-secondary" onClick={() => showToast('Manual payment record logged to ledger.')}>Record Payment</button>
-        <button className="action-btn btn-danger" onClick={handleWriteOff}>Write Off Bad Debt</button>
-        <button className="action-btn btn-secondary">Run Payroll</button>
+        <button 
+          className="action-btn btn-primary" 
+          onClick={() => { setActiveAction('new-invoice'); setShowLedgerModal(true); }}
+          style={{ border: activeAction === 'new-invoice' ? '2.5px solid #0f172a' : '2.5px solid transparent' }}
+        >
+          + New Invoice
+        </button>
+        <button 
+          className="action-btn btn-secondary" 
+          onClick={() => { setActiveAction('credit-note'); handleCreditNote(); }}
+          style={{ border: activeAction === 'credit-note' ? '2.5px solid #0f172a' : '1px solid #cbd5e1' }}
+        >
+          Raise Credit Note
+        </button>
+        <button 
+          className="action-btn btn-factoring" 
+          onClick={() => { setActiveAction('factoring'); handleFactoringSubmit(); }}
+          style={{ border: activeAction === 'factoring' ? '2.5px solid #0f172a' : '1px solid #cbd5e1' }}
+        >
+          Submit Factoring
+        </button>
+        <button 
+          className="action-btn btn-secondary" 
+          onClick={() => { setActiveAction('record-payment'); showToast('Manual payment record logged to ledger.'); }}
+          style={{ border: activeAction === 'record-payment' ? '2.5px solid #0f172a' : '1px solid #cbd5e1' }}
+        >
+          Record Payment
+        </button>
+        <button 
+          className="action-btn btn-danger" 
+          onClick={() => { setActiveAction('write-off'); handleWriteOff(); }}
+          style={{ border: activeAction === 'write-off' ? '2.5px solid #0f172a' : '2.5px solid transparent' }}
+        >
+          Write Off Bad Debt
+        </button>
+        <button 
+          className="action-btn btn-secondary" 
+          onClick={() => { setActiveAction('run-payroll'); handleRunPayroll(); }}
+          style={{ border: activeAction === 'run-payroll' ? '2.5px solid #0f172a' : '1px solid #cbd5e1' }}
+        >
+          Run Payroll
+        </button>
       </div>
 
       {/* Expense Charts */}
