@@ -3,8 +3,20 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import DashboardLayout from './pages/Layout/DashboardLayout/DashboardLayout';
 
 import WarehouseDashboard from './pages/Layout/Dashboard/WarehouseDashboard';
+import WarehouseInbound from './pages/Layout/Dashboard/WarehouseInbound';
+import WarehouseOutbound from './pages/Layout/Dashboard/WarehouseOutbound';
+import WarehouseCurrentStock from './pages/Layout/Dashboard/WarehouseCurrentStock';
+import WarehouseMap from './pages/Layout/Dashboard/WarehouseMap';
+import WarehouseHoldingAreas from './pages/Layout/Dashboard/WarehouseHoldingAreas';
+import WarehouseLoadLanes from './pages/Layout/Dashboard/WarehouseLoadLanes';
+import WarehouseReports from './pages/Layout/Dashboard/WarehouseReports';
+import WarehouseScanning from './pages/Layout/Dashboard/WarehouseScanning';
+import WarehouseLabels from './pages/Layout/Dashboard/WarehouseLabels';
+import WarehouseMovements from './pages/Layout/Dashboard/WarehouseMovements';
 import YardDashboard from './pages/Layout/Dashboard/YardDashboard';
 import AccountsDashboard from './pages/Layout/Dashboard/AccountsDashboard';
+import InvoiceReview from './pages/Layout/Dashboard/InvoiceReview';
+import SentInvoices from './pages/Layout/Dashboard/SentInvoices';
 import CustomerDashboard from './pages/Layout/Dashboard/CustomerDashboard';
 import SalesDashboard from './components/SalesDashboard/SalesDashboard';
 import CompanyAdminDashboard from './pages/Layout/Dashboard/CompanyAdminDashboard';
@@ -96,16 +108,12 @@ import SystemSettings from './components/Dispatcher/SystemSettings';
 const DriverJobs = () => <div style={{ padding: '24px' }}><h2>Jobs</h2></div>;
 
 // Warehouse placeholders
-const Inbound = () => <div style={{ padding: '24px' }}><h2>Inbound</h2></div>;
-const Outbound = () => <div style={{ padding: '24px' }}><h2>Outbound</h2></div>;
-const CurrentStock = () => <div style={{ padding: '24px' }}><h2>Current Stock</h2></div>;
-const WarehouseMap = () => <div style={{ padding: '24px' }}><h2>Yard / Warehouse Map</h2></div>;
-const HoldingAreas = () => <div style={{ padding: '24px' }}><h2>Holding Areas</h2></div>;
-const LoadLanes = () => <div style={{ padding: '24px' }}><h2>Load Lanes</h2></div>;
-const Scanning = () => <div style={{ padding: '24px' }}><h2>Scanning</h2></div>;
-const Labels = () => <div style={{ padding: '24px' }}><h2>Labels</h2></div>;
-const Movements = () => <div style={{ padding: '24px' }}><h2>Movements</h2></div>;
-const WarehouseReports = () => <div style={{ padding: '24px' }}><h2>Reports</h2></div>;
+const HoldingAreas = WarehouseHoldingAreas;
+const LoadLanes = WarehouseLoadLanes;
+const Scanning = WarehouseScanning;
+const Labels = WarehouseLabels;
+const Movements = WarehouseMovements;
+// WarehouseReports is imported at the top of the file
 
 // Yard Attendant placeholders
 const YardWorkStatus = () => <div style={{ padding: '24px' }}><h2>Start Work / Finish Work</h2></div>;
@@ -117,8 +125,8 @@ const YardLoadLane = () => <div style={{ padding: '24px' }}><h2>Load lane assign
 const YardReportIssue = () => <div style={{ padding: '24px' }}><h2>Report issue</h2></div>;
 
 // Accounts placeholders
-const InvoiceReview = () => <div style={{ padding: '24px' }}><h2>Invoice Review</h2></div>;
-const SentInvoices = () => <div style={{ padding: '24px' }}><h2>Sent Invoices</h2></div>;
+// InvoiceReview is imported at the top of the file
+// SentInvoices is imported at the top of the file
 const Payments = () => <div style={{ padding: '24px' }}><h2>Payments</h2></div>;
 const Payroll = () => <div style={{ padding: '24px' }}><h2>Payroll</h2></div>;
 const ContractorPay = () => <div style={{ padding: '24px' }}><h2>Contractor Pay</h2></div>;
@@ -240,9 +248,9 @@ function App() {
         {/* ===== WAREHOUSE ===== */}
         <Route path="/warehouse" element={<DashboardLayout role="warehouse" />}>
           <Route path="dashboard" element={<WarehouseDashboard />} />
-          <Route path="inbound" element={<Inbound />} />
-          <Route path="outbound" element={<Outbound />} />
-          <Route path="current-stock" element={<CurrentStock />} />
+          <Route path="inbound" element={<WarehouseInbound />} />
+          <Route path="outbound" element={<WarehouseOutbound />} />
+          <Route path="current-stock" element={<WarehouseCurrentStock />} />
           <Route path="map" element={<WarehouseMap />} />
           <Route path="holding-areas" element={<HoldingAreas />} />
           <Route path="load-lanes" element={<LoadLanes />} />
