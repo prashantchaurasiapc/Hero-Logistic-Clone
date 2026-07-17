@@ -3,7 +3,7 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Poppins", sans-serif;
+  --font-sans: "Outfit", sans-serif;
   --color-brand-50: #FFFDF0;
   --color-brand-100: #FFF9C4;
   --color-brand-200: #FFF59D;
@@ -28,11 +28,11 @@ body {
 @layer base {
   body {
     @apply bg-slate-50 text-slate-800 dark:bg-[#0B0B0B] dark:text-slate-200 antialiased selection:bg-brand-500 selection:text-slate-950 transition-colors duration-200;
-    font-family: 'Poppins', sans-serif !important;
+    font-family: 'Outfit', sans-serif !important;
     scroll-behavior: smooth;
   }
 
-  /* Custom scrollbar */
+  /* Custom scrollbar - Light and subtle, never black */
   ::-webkit-scrollbar,
   .main-content::-webkit-scrollbar,
   .overflow-x-auto::-webkit-scrollbar {
@@ -43,20 +43,26 @@ body {
   ::-webkit-scrollbar-track,
   .main-content::-webkit-scrollbar-track,
   .overflow-x-auto::-webkit-scrollbar-track {
-    background: #f8fafc;
+    background: transparent;
   }
 
   ::-webkit-scrollbar-thumb,
   .main-content::-webkit-scrollbar-thumb,
   .overflow-x-auto::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
+    background: #e2e8f0; /* Very light gray */
     border-radius: 9999px;
   }
 
   ::-webkit-scrollbar-thumb:hover,
   .main-content::-webkit-scrollbar-thumb:hover,
   .overflow-x-auto::-webkit-scrollbar-thumb:hover {
-    background: #FFD400;
+    background: #cbd5e1; /* Slightly darker on hover */
+  }
+
+  /* Global scrollbar styling for modern browsers */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #e2e8f0 transparent;
   }
 }
 
