@@ -125,16 +125,16 @@ export default function PlatformDashboard() {
       </div>
 
       {/* KPIs Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {kpis.map((kpi, idx) => (
-          <div key={idx} className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between min-h-[100px]">
+          <div key={idx} className="bg-white border border-slate-100 rounded-xl p-5 shadow-sm flex flex-col justify-between min-h-[100px] hover:shadow-md transition-shadow">
             <div>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">{kpi.title}</span>
-              <span className="text-2xl font-black text-slate-800 block mt-1.5">{kpi.value}</span>
+              <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wide block">{kpi.title}</span>
+              <span className="text-[26px] font-black text-slate-900 block mt-2 leading-none">{kpi.value}</span>
             </div>
-            <div className="flex justify-between items-center mt-2">
-              <span className="text-[10px] font-semibold text-slate-400 whitespace-nowrap">{kpi.desc}</span>
-              <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md shrink-0 ${kpi.statusColor}`}>{kpi.status}</span>
+            <div className="flex justify-between items-center mt-3">
+              <span className="text-[11px] font-medium text-slate-400 leading-tight">{kpi.desc}</span>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md shrink-0 ml-2 ${kpi.statusColor}`}>{kpi.status}</span>
             </div>
           </div>
         ))}
@@ -300,18 +300,18 @@ export default function PlatformDashboard() {
             <div className="overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse whitespace-nowrap">
                 <thead>
-                  <tr className="border-b border-slate-100">
-                    <th className="py-4 px-6 w-10">
+                  <tr className="border-b border-slate-100 bg-slate-50/50">
+                    <th className="py-3.5 px-6 w-10">
                       <input type="checkbox" className="w-4 h-4 text-[#FFD400] rounded focus:ring-0 cursor-pointer" />
                     </th>
-                    {visibleColumns.companyName && <th className="py-4 px-2 text-[11px] font-bold text-slate-500 uppercase tracking-wider">COMPANY</th>}
-                    {visibleColumns.subscriptionPlan && <th className="py-4 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">SUBSCRIPTION PLAN</th>}
-                    {visibleColumns.status && <th className="py-4 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">STATUS</th>}
-                    {visibleColumns.activeUsers && <th className="py-4 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">ACTIVE USERS</th>}
-                    {visibleColumns.monthlyRevenue && <th className="py-4 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">MONTHLY REVENUE</th>}
-                    {visibleColumns.trialExpiry && <th className="py-4 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">TRIAL EXPIRY</th>}
-                    {visibleColumns.lastLogin && <th className="py-4 px-6 text-[11px] font-bold text-slate-500 uppercase tracking-wider">LAST LOGIN</th>}
-                    <th className="py-4 px-6 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">ACTIONS</th>
+                    {visibleColumns.companyName && <th className="py-3.5 px-2 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-left">COMPANY</th>}
+                    {visibleColumns.subscriptionPlan && <th className="py-3.5 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-left">SUBSCRIPTION PLAN</th>}
+                    {visibleColumns.status && <th className="py-3.5 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-left">STATUS</th>}
+                    {visibleColumns.activeUsers && <th className="py-3.5 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-left">ACTIVE USERS</th>}
+                    {visibleColumns.monthlyRevenue && <th className="py-3.5 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-left">MONTHLY REV.</th>}
+                    {visibleColumns.trialExpiry && <th className="py-3.5 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-left">TRIAL EXPIRY</th>}
+                    {visibleColumns.lastLogin && <th className="py-3.5 px-6 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-left">LAST LOGIN</th>}
+                    <th className="py-3.5 px-6 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">ACTIONS</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
