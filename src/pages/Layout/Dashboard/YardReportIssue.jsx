@@ -1,0 +1,685 @@
+import React, { useState } from 'react';
+import './WarehouseDashboard.css';
+import './YardDashboard.css';
+
+// SVG Icons
+const CloseIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18"></line>
+    <line x1="6" y1="6" x2="18" y2="18"></line>
+  </svg>
+);
+
+const UploadIcon = () => (
+  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#eab308" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+    <polyline points="17 8 12 3 7 8"></polyline>
+    <line x1="12" y1="3" x2="12" y2="15"></line>
+  </svg>
+);
+
+const AlertCircleIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"></circle>
+    <line x1="12" y1="8" x2="12" y2="12"></line>
+    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+  </svg>
+);
+
+export default function YardReportIssue() {
+  const [issueCategory, setIssueCategory] = useState('Container Damage Report');
+  const [trailerId, setTrailerId] = useState('');
+  const [description, setDescription] = useState('');
+  const [severity, setSeverity] = useState('Medium (Requires repair)');
+
+  // Checklist State
+  const [checklist, setChecklist] = useState({
+    doors: false,
+    tyres: false,
+    lights: false,
+    seals: false,
+    brakes: false
+  });
+
+  // Active Safety Issues State
+  const [issues, setIssues] = useState([
+    {
+      id: 1,
+      category: 'Damage',
+      trailerId: 'TR-7712',
+      description: 'Rear container door seal torn. Water leak risk.',
+      loggedDate: '06/19/2026',
+      severity: 'High'
+    },
+    {
+      id: 2,
+      category: 'Missing Item',
+      trailerId: 'TR-1102',
+      description: 'Load securing chains missing from rear locker box.',
+      loggedDate: '06/18/2026',
+      severity: 'Low'
+    }
+  ]);
+
+  // UI State
+  const [validationAlert, setValidationAlert] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [selectedIssue, setSelectedIssue] = useState(null); // For details modal
+  const [hoverBtn, setHoverBtn] = useState(null);
+
+  const handleChecklistChange = (key) => {
+    setChecklist(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const handleFormSubmit = (e) => {
+    if (e) e.preventDefault();
+
+    if (!trailerId.trim() || !description.trim()) {
+      setValidationAlert(true);
+      setTimeout(() => setValidationAlert(false), 6000);
+      return;
+    }
+
+    const shortCategory = issueCategory.includes('Damage') ? 'Damage' : 'Missing Item';
+    const shortSeverity = severity.split(' ')[0]; // High, Medium, Low
+
+    const newIssue = {
+      id: Date.now(),
+      category: shortCategory,
+      trailerId: trailerId.trim(),
+      description: description.trim(),
+      loggedDate: new Date().toLocaleDateString('en-US', {
+        month: '2-digit',
+        day: '2-digit',
+        year: 'numeric'
+      }),
+      severity: shortSeverity
+    };
+
+    setIssues([newIssue, ...issues]);
+    setTrailerId('');
+    setDescription('');
+    setIssueCategory('Container Damage Report');
+    setSeverity('Medium (Requires repair)');
+    setChecklist({
+      doors: false,
+      tyres: false,
+      lights: false,
+      seals: false,
+      brakes: false
+    });
+
+    setToastMessage('Inspection report logged successfully.');
+    setTimeout(() => setToastMessage(''), 4000);
+  };
+
+  const handleReportMissingItem = () => {
+    setIssueCategory('Missing Security tools / chains');
+    setToastMessage('Category switched to Missing Security tools.');
+    setTimeout(() => setToastMessage(''), 3000);
+  };
+
+  const handleResolveReport = (issueId) => {
+    setIssues(prev => prev.filter(item => item.id !== issueId));
+    setSelectedIssue(null);
+    setToastMessage('Safety issue resolved and archived.');
+    setTimeout(() => setToastMessage(''), 4000);
+  };
+
+  return (
+    <div className="customer-dashboard" style={{ height: 'calc(100vh - 125px)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflow: 'hidden', padding: 0, width: '100%', maxWidth: 'none', fontFamily: "'Outfit', 'Inter', sans-serif" }}>
+
+      {/* Header Panel */}
+      <div className="customer-header-container" style={{ flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 24 }}>🚧</span>
+          <div style={{ textAlign: 'left' }}>
+            <h1 className="customer-title" style={{ fontSize: '20px', fontWeight: '800', margin: 0 }}>Yard Attendant &bull; Report Issue</h1>
+            <p className="customer-subtitle" style={{ fontSize: '12.5px', marginTop: '2px', color: '#64748b' }}>Perform safety checks, log damages, and track active yard issue reports.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div style={{ flex: 1, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', minHeight: 0, width: '100%', overflowY: 'auto' }}>
+
+        {/* Full width container box */}
+        <div style={{
+          backgroundColor: '#ffffff',
+          borderRadius: 0,
+          padding: '24px 20px',
+          width: '100%',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+          borderTop: '1px solid #e2e8f0',
+          borderBottom: 'none',
+          borderLeft: 'none',
+          borderRight: 'none',
+          textAlign: 'left'
+        }}>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: '24px', alignItems: 'start' }}>
+
+            {/* Left Card: Form */}
+            <div style={{
+              backgroundColor: '#ffffff',
+              border: '1px solid #e2e8f0',
+              borderRadius: 16,
+              padding: '24px 20px',
+              boxSizing: 'border-box'
+            }}>
+              <h2 style={{ fontSize: 14.5, fontWeight: '800', color: '#0f172a', margin: '0 0 20px 0' }}>Log Safety Inspection Report</h2>
+
+              <form onSubmit={handleFormSubmit}>
+
+                {/* Issue Category */}
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ fontSize: 10.5, fontWeight: '800', color: '#64748b', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>
+                    REPORT ISSUE CATEGORY
+                  </label>
+                  <select
+                    value={issueCategory}
+                    onChange={(e) => setIssueCategory(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      borderRadius: 12,
+                      border: '1.5px solid #ffcc00',
+                      fontSize: 13,
+                      fontWeight: '600',
+                      outline: 'none',
+                      color: '#0f172a',
+                      backgroundColor: '#ffffff',
+                      boxSizing: 'border-box'
+                    }}
+                  >
+                    <option value="Container Damage Report">Container Damage Report</option>
+                    <option value="Missing Security tools / chains">Missing Security tools / chains</option>
+                  </select>
+                </div>
+
+                {/* Trailer / Container ID */}
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ fontSize: 10.5, fontWeight: '800', color: '#64748b', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>
+                    TRAILER CONTAINER ID
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. TR-9410"
+                    value={trailerId}
+                    onChange={(e) => setTrailerId(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      borderRadius: 12,
+                      border: '1px solid #cbd5e1',
+                      fontSize: 13,
+                      fontWeight: '500',
+                      outline: 'none',
+                      color: '#0f172a',
+                      backgroundColor: '#ffffff',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                {/* Report Details Description */}
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ fontSize: 10.5, fontWeight: '800', color: '#64748b', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>
+                    REPORT DETAILS DESCRIPTION
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Door latch seal ripped"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      borderRadius: 12,
+                      border: '1px solid #cbd5e1',
+                      fontSize: 13,
+                      fontWeight: '500',
+                      outline: 'none',
+                      color: '#0f172a',
+                      backgroundColor: '#ffffff',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                {/* Issue Severity */}
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ fontSize: 10.5, fontWeight: '800', color: '#64748b', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>
+                    ISSUE SEVERITY
+                  </label>
+                  <select
+                    value={severity}
+                    onChange={(e) => setSeverity(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      borderRadius: 12,
+                      border: '1px solid #cbd5e1',
+                      fontSize: 13,
+                      fontWeight: '600',
+                      outline: 'none',
+                      color: '#0f172a',
+                      backgroundColor: '#ffffff',
+                      boxSizing: 'border-box'
+                    }}
+                  >
+                    <option value="High (Immediate Ground)">High (Immediate Ground)</option>
+                    <option value="Medium (Requires repair)">Medium (Requires repair)</option>
+                    <option value="Low (Warning log)">Low (Warning log)</option>
+                  </select>
+                </div>
+
+                {/* Inspection Checklist */}
+                <div style={{ marginBottom: 20 }}>
+                  <label style={{ fontSize: 10.5, fontWeight: '800', color: '#64748b', letterSpacing: '0.5px', display: 'block', marginBottom: 8 }}>
+                    INSPECTION CHECKLIST
+                  </label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {Object.keys(checklist).map((key) => (
+                      <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, fontWeight: '600', color: '#334155', cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={checklist[key]}
+                          onChange={() => handleChecklistChange(key)}
+                          style={{ width: 15, height: 15, cursor: 'pointer' }}
+                        />
+                        {key.charAt(0).toUpperCase() + key.slice(1)} Checked
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* File Upload zone */}
+                <div style={{ marginBottom: 24 }}>
+                  <label style={{ fontSize: 10.5, fontWeight: '800', color: '#64748b', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>
+                    UPLOAD INSPECTIONS PHOTO EVIDENCE
+                  </label>
+                  <div style={{
+                    border: '1.5px dashed #ffcc00',
+                    borderRadius: 14,
+                    padding: '24px 16px',
+                    backgroundColor: '#fffdf5',
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8
+                  }}>
+                    <UploadIcon />
+                    <span style={{ fontSize: 13, fontWeight: '700', color: '#0f172a' }}>Drag &amp; drop file or click to select</span>
+                    <span style={{ fontSize: 10.5, color: '#64748b' }}>Supports .PDF, .JPG, .JPEG, .PNG (Max 10MB)</span>
+                  </div>
+                </div>
+
+                {/* Submit Buttons */}
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    onClick={handleReportMissingItem}
+                    onMouseEnter={() => setHoverBtn('missing-btn')}
+                    onMouseLeave={() => setHoverBtn(null)}
+                    style={{
+                      backgroundColor: '#ffffff',
+                      border: hoverBtn === 'missing-btn' ? '2.5px solid #000000' : '2px solid #0f172a',
+                      borderRadius: 12,
+                      padding: '12px 18px',
+                      fontSize: 13,
+                      color: '#0f172a',
+                      fontWeight: '800',
+                      cursor: 'pointer',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    Report Missing Item
+                  </button>
+
+                  <button
+                    type="submit"
+                    onMouseEnter={() => setHoverBtn('submit-btn')}
+                    onMouseLeave={() => setHoverBtn(null)}
+                    style={{
+                      flex: 1,
+                      backgroundColor: '#ffcc00',
+                      color: '#000000',
+                      border: hoverBtn === 'submit-btn' ? '2px solid #000000' : '1px solid transparent',
+                      borderRadius: 12,
+                      padding: '12px 20px',
+                      fontSize: 13,
+                      fontWeight: '800',
+                      cursor: 'pointer',
+                      outline: 'none',
+                      boxShadow: '0 2px 4px rgba(255, 204, 0, 0.15)',
+                      transition: 'all 0.15s ease',
+                      boxSizing: 'border-box'
+                    }}
+                  >
+                    Submit Inspection
+                  </button>
+                </div>
+
+              </form>
+            </div>
+
+            {/* Right Card: Active Issues */}
+            <div style={{
+              backgroundColor: '#ffffff',
+              border: '1px solid #e2e8f0',
+              borderRadius: 16,
+              padding: '24px 20px',
+              boxSizing: 'border-box'
+            }}>
+              <h2 style={{ fontSize: 14.5, fontWeight: '800', color: '#0f172a', margin: '0 0 20px 0' }}>Active Safety Issues Index</h2>
+
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {issues.length === 0 ? (
+                  <p style={{ fontSize: 13, color: '#64748b', textAlign: 'center', padding: '24px 0' }}>No active safety issues logged.</p>
+                ) : (
+                  issues.map((item, idx) => (
+                    <div
+                      key={item.id}
+                      style={{
+                        padding: '16px 0',
+                        borderBottom: idx === issues.length - 1 ? 'none' : '1px solid #e2e8f0',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}
+                    >
+                      <div style={{ textAlign: 'left', flex: 1, paddingRight: 16 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                          <span style={{
+                            fontSize: 10,
+                            fontWeight: '800',
+                            padding: '3px 8px',
+                            borderRadius: 6,
+                            backgroundColor: item.category === 'Damage' ? '#fee2e2' : '#fef3c7',
+                            color: item.category === 'Damage' ? '#ef4444' : '#b45309',
+                            letterSpacing: '0.3px',
+                            textTransform: 'uppercase'
+                          }}>
+                            {item.category}
+                          </span>
+                          <span style={{ fontSize: 13.5, fontWeight: '800', color: '#0f172a' }}>
+                            Trailer: {item.trailerId}
+                          </span>
+                        </div>
+                        <p style={{ fontSize: 12.5, color: '#475569', margin: '0 0 6px 0', lineHeight: '1.4' }}>
+                          {item.description}
+                        </p>
+                        <span style={{ fontSize: 11, color: '#94a3b8' }}>
+                          Logged date: {item.loggedDate}
+                        </span>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span style={{
+                          fontSize: 11,
+                          fontWeight: '800',
+                          color: item.severity === 'High' ? '#ef4444' : item.severity === 'Medium' ? '#d97706' : '#22c55e',
+                          backgroundColor: item.severity === 'High' ? '#fee2e2' : item.severity === 'Medium' ? '#fef3c7' : '#dcfce7',
+                          padding: '6px 12px',
+                          borderRadius: 20
+                        }}>
+                          {item.severity} Severity
+                        </span>
+
+                        <button
+                          onClick={() => setSelectedIssue(item)}
+                          style={{
+                            backgroundColor: '#ffffff',
+                            border: '1.5px solid #ffcc00',
+                            borderRadius: 10,
+                            padding: '6px 14px',
+                            fontSize: 11.5,
+                            fontWeight: '800',
+                            color: '#b45309',
+                            cursor: 'pointer',
+                            outline: 'none',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          Details
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+      {/* Floating Validation Warning Alert */}
+      {validationAlert && (
+        <div style={{
+          position: 'fixed',
+          top: 30,
+          right: 32,
+          backgroundColor: '#fef2f2',
+          border: '1px solid #fee2e2',
+          borderRadius: 12,
+          padding: '14px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          zIndex: 3000,
+          boxShadow: '0 10px 25px -5px rgba(239, 68, 68, 0.1)',
+          maxWidth: 420,
+          textAlign: 'left'
+        }}>
+          <AlertCircleIcon />
+          <span style={{ fontSize: 13, fontWeight: '700', color: '#991b1b', flex: 1 }}>
+            Please complete Trailer ID and Description first.
+          </span>
+          <button
+            onClick={() => setValidationAlert(false)}
+            style={{ background: 'none', border: 'none', fontSize: 18, color: '#991b1b', cursor: 'pointer', marginLeft: 8 }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div style={{
+          position: 'fixed',
+          bottom: 30,
+          right: 32,
+          backgroundColor: '#eff6ff',
+          border: '1px solid #bfdbfe',
+          borderRadius: 12,
+          padding: '14px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          zIndex: 2000,
+          boxShadow: '0 10px 25px -5px rgba(0,0,0,0.05)',
+          maxWidth: 420,
+          textAlign: 'left'
+        }}>
+          <div style={{ backgroundColor: '#3b82f6', color: '#ffffff', width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>✓</div>
+          <span style={{ fontSize: 13, fontWeight: '600', color: '#1e40af', flex: 1 }}>{toastMessage}</span>
+          <button onClick={() => setToastMessage('')} style={{ background: 'none', border: 'none', fontSize: 16, color: '#64748b', cursor: 'pointer', marginLeft: 8 }}>✕</button>
+        </div>
+      )}
+
+      {/* Details Modal */}
+      {selectedIssue && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.4)',
+          backdropFilter: 'blur(3px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: '#ffffff',
+            borderRadius: 24,
+            width: '100%',
+            maxWidth: 480,
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            border: '1px solid #e2e8f0',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            textAlign: 'left'
+          }}>
+            {/* Modal Header */}
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ fontSize: 16.5, fontWeight: '800', color: '#0f172a', margin: 0 }}>
+                Inspection Report &mdash; {selectedIssue.trailerId}
+              </h2>
+              <button
+                onClick={() => setSelectedIssue(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', color: '#64748b' }}
+              >
+                <CloseIcon />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                {/* Report Type */}
+                <div style={{ border: '1px solid #e2e8f0', borderRadius: 12, padding: '12px 16px' }}>
+                  <span style={{ fontSize: 9.5, fontWeight: '800', color: '#64748b', display: 'block', marginBottom: 4, letterSpacing: '0.5px' }}>
+                    REPORT TYPE
+                  </span>
+                  <span style={{ fontSize: 13, fontWeight: '700', color: '#0f172a' }}>
+                    {selectedIssue.category}
+                  </span>
+                </div>
+
+                {/* Severity */}
+                <div style={{ border: '1px solid #e2e8f0', borderRadius: 12, padding: '12px 16px' }}>
+                  <span style={{ fontSize: 9.5, fontWeight: '800', color: '#64748b', display: 'block', marginBottom: 4, letterSpacing: '0.5px' }}>
+                    SEVERITY
+                  </span>
+                  <span style={{ fontSize: 13, fontWeight: '700', color: '#0f172a' }}>
+                    {selectedIssue.severity}
+                  </span>
+                </div>
+
+                {/* Date Logged */}
+                <div style={{ border: '1px solid #e2e8f0', borderRadius: 12, padding: '12px 16px' }}>
+                  <span style={{ fontSize: 9.5, fontWeight: '800', color: '#64748b', display: 'block', marginBottom: 4, letterSpacing: '0.5px' }}>
+                    DATE LOGGED
+                  </span>
+                  <span style={{ fontSize: 13, fontWeight: '700', color: '#0f172a' }}>
+                    {selectedIssue.loggedDate}
+                  </span>
+                </div>
+
+                {/* Trailer ID */}
+                <div style={{ border: '1px solid #e2e8f0', borderRadius: 12, padding: '12px 16px' }}>
+                  <span style={{ fontSize: 9.5, fontWeight: '800', color: '#64748b', display: 'block', marginBottom: 4, letterSpacing: '0.5px' }}>
+                    TRAILER ID
+                  </span>
+                  <span style={{ fontSize: 13, fontWeight: '700', color: '#0f172a' }}>
+                    {selectedIssue.trailerId}
+                  </span>
+                </div>
+              </div>
+
+              {/* Details text area */}
+              <div style={{ border: '1px solid #e2e8f0', borderRadius: 12, padding: '12px 16px' }}>
+                <span style={{ fontSize: 9.5, fontWeight: '800', color: '#64748b', display: 'block', marginBottom: 4, letterSpacing: '0.5px' }}>
+                  DETAILS
+                </span>
+                <p style={{ fontSize: 13, color: '#334155', margin: 0, lineHeight: '1.4' }}>
+                  {selectedIssue.description}
+                </p>
+              </div>
+
+              {/* Upload additional photos zone */}
+              <div>
+                <label style={{ fontSize: 10.5, fontWeight: '800', color: '#64748b', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>
+                  UPLOAD ADDITIONAL PHOTOS
+                </label>
+                <div style={{
+                  border: '1.5px dashed #ffcc00',
+                  borderRadius: 14,
+                  padding: '20px 16px',
+                  backgroundColor: '#fffdf5',
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6
+                }}>
+                  <UploadIcon />
+                  <span style={{ fontSize: 12.5, fontWeight: '700', color: '#0f172a' }}>Drag &amp; drop file or click to select</span>
+                  <span style={{ fontSize: 10, color: '#64748b' }}>Supports .PDF, .JPG, .JPEG, .PNG (Max 10MB)</span>
+                </div>
+              </div>
+
+              {/* Footer Actions */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 12 }}>
+                <button
+                  type="button"
+                  onClick={() => setSelectedIssue(null)}
+                  style={{
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: 10,
+                    padding: '10px 24px',
+                    fontSize: 12.5,
+                    fontWeight: '700',
+                    color: '#334155',
+                    cursor: 'pointer',
+                    outline: 'none'
+                  }}
+                >
+                  Close
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleResolveReport(selectedIssue.id)}
+                  style={{
+                    backgroundColor: '#ffcc00',
+                    border: 'none',
+                    borderRadius: 10,
+                    padding: '10px 24px',
+                    fontSize: 12.5,
+                    fontWeight: '800',
+                    color: '#000000',
+                    cursor: 'pointer',
+                    outline: 'none',
+                    boxShadow: '0 2px 4px rgba(255, 204, 0, 0.15)'
+                  }}
+                >
+                  Resolve Report
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}

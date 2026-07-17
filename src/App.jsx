@@ -14,6 +14,13 @@ import WarehouseScanning from './pages/Layout/Dashboard/WarehouseScanning';
 import WarehouseLabels from './pages/Layout/Dashboard/WarehouseLabels';
 import WarehouseMovements from './pages/Layout/Dashboard/WarehouseMovements';
 import YardDashboard from './pages/Layout/Dashboard/YardDashboard';
+import YardWorkStatus from './pages/Layout/Dashboard/YardWorkStatus';
+import YardScan from './pages/Layout/Dashboard/YardScan';
+import YardMoveItem from './pages/Layout/Dashboard/YardMoveItem';
+import YardScanIn from './pages/Layout/Dashboard/YardScanIn';
+import YardScanOut from './pages/Layout/Dashboard/YardScanOut';
+import YardLoadLane from './pages/Layout/Dashboard/YardLoadLane';
+import YardReportIssue from './pages/Layout/Dashboard/YardReportIssue';
 import AccountsDashboard from './pages/Layout/Dashboard/AccountsDashboard';
 import InvoiceReview from './pages/Layout/Dashboard/InvoiceReview';
 import SentInvoices from './pages/Layout/Dashboard/SentInvoices';
@@ -124,14 +131,7 @@ const Labels = WarehouseLabels;
 const Movements = WarehouseMovements;
 // WarehouseReports is imported at the top of the file
 
-// Yard Attendant placeholders
-const YardWorkStatus = () => <div style={{ padding: '24px' }}><h2>Start Work / Finish Work</h2></div>;
-const YardScan = () => <div style={{ padding: '24px' }}><h2>Scan button</h2></div>;
-const YardMoveItem = () => <div style={{ padding: '24px' }}><h2>Move item</h2></div>;
-const YardScanIn = () => <div style={{ padding: '24px' }}><h2>Scan into location</h2></div>;
-const YardScanOut = () => <div style={{ padding: '24px' }}><h2>Scan out of location</h2></div>;
-const YardLoadLane = () => <div style={{ padding: '24px' }}><h2>Load lane assignment</h2></div>;
-const YardReportIssue = () => <div style={{ padding: '24px' }}><h2>Report issue</h2></div>;
+// Yard Attendant pages are imported at the top of the file
 
 // Accounts placeholders
 // InvoiceReview is imported at the top of the file
@@ -145,17 +145,16 @@ const YardReportIssue = () => <div style={{ padding: '24px' }}><h2>Report issue<
 // Pnl is imported at the top of the file
 // VehicleCosts is imported at the top of the file
 // AccountsReports is imported at the top of the file
-// Customer placeholders
-const MyLoads = () => <div style={{ padding: '24px' }}><h2>My Loads</h2></div>;
-const TrackDelivery = () => <div style={{ padding: '24px' }}><h2>Track Delivery</h2></div>;
-const CustomerDocuments = () => <div style={{ padding: '24px' }}><h2>Documents</h2></div>;
-const Invoices = () => <div style={{ padding: '24px' }}><h2>Invoices</h2></div>;
-const CustomerPayments = () => <div style={{ padding: '24px' }}><h2>Payments</h2></div>;
-const LoadRequests = () => <div style={{ padding: '24px' }}><h2>Load Requests</h2></div>;
-const CustomerNotifications = () => <div style={{ padding: '24px' }}><h2>Notifications</h2></div>;
-const DispatcherChat = () => <div style={{ padding: '24px' }}><h2>Dispatcher Chat</h2></div>;
-const Support = () => <div style={{ padding: '24px' }}><h2>Support</h2></div>;
-const CustomerSettings = () => <div style={{ padding: '24px' }}><h2>Settings</h2></div>;
+import MyLoads from './pages/Layout/Dashboard/MyLoads';
+import TrackDelivery from './pages/Layout/Dashboard/TrackDelivery';
+import CustomerDocuments from './pages/Layout/Dashboard/CustomerDocuments';
+import CustomerInvoices from './pages/Layout/Dashboard/CustomerInvoices';
+import CustomerPayments from './pages/Layout/Dashboard/CustomerPayments';
+import LoadRequests from './pages/Layout/Dashboard/LoadRequests';
+import CustomerNotifications from './pages/Layout/Dashboard/CustomerNotifications';
+import CustomerDispatcherChat from './pages/Layout/Dashboard/CustomerDispatcherChat';
+import CustomerSupport from './pages/Layout/Dashboard/CustomerSupport';
+import CustomerSettings from './pages/Layout/Dashboard/CustomerSettings';
 
 /* ============================================================
    APP ROUTES
@@ -302,12 +301,12 @@ function App() {
           <Route path="my-loads" element={<MyLoads />} />
           <Route path="track-delivery" element={<TrackDelivery />} />
           <Route path="documents" element={<CustomerDocuments />} />
-          <Route path="invoices" element={<Invoices />} />
+          <Route path="invoices" element={<CustomerInvoices />} />
           <Route path="payments" element={<CustomerPayments />} />
           <Route path="load-requests" element={<LoadRequests />} />
           <Route path="notifications" element={<CustomerNotifications />} />
-          <Route path="dispatcher-chat" element={<DispatcherChat />} />
-          <Route path="support" element={<Support />} />
+          <Route path="dispatcher-chat" element={<CustomerDispatcherChat />} />
+          <Route path="support" element={<CustomerSupport />} />
           <Route path="settings" element={<CustomerSettings />} />
         </Route>
 
