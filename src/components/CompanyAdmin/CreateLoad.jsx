@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import {
   ArrowLeft, Save, Zap, Plus, Trash2, GripVertical,
   MapPin, User, Calendar, Clock, Package, Truck,
-  Upload, ChevronDown, AlertCircle, CheckCircle, Info,
-  Camera, X, Search
+  Upload, ChevronDown, ChevronLeft, AlertCircle, CheckCircle, Info,
+  Camera, X, Search, Flag, MoreVertical
 } from 'lucide-react';
 
 const STOP_TYPES = ['Pickup', 'Drop-off'];
@@ -15,13 +15,13 @@ const TRAILERS    = ['TRL-201 · B Car Carrier', 'TRL-202 · Flatbed', 'TRL-203 
 
 function SectionHeader({ number, title, subtitle, action, colorCls = "bg-indigo-600" }) {
   return (
-    <div className="flex justify-between items-center mb-5">
-      <div className="flex items-center gap-3">
-        <div className={`w-7 h-7 rounded-full text-white text-xs font-black flex items-center justify-center shrink-0 ${colorCls}`}>
+    <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+      <div className="flex items-center gap-4">
+        <div className={`w-9 h-9 rounded-full text-white text-[15px] font-black flex items-center justify-center shrink-0 ${colorCls}`}>
           {number}
         </div>
         <div>
-          <h2 className="text-sm font-black text-slate-900 uppercase tracking-wide">{title}</h2>
+          <h2 className="text-[17px] font-black text-slate-900 tracking-tight">{title}</h2>
           {subtitle && <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider mt-0.5">{subtitle}</p>}
         </div>
       </div>
@@ -32,21 +32,21 @@ function SectionHeader({ number, title, subtitle, action, colorCls = "bg-indigo-
 
 function FieldLabel({ children, required }) {
   return (
-    <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
-      {children}{required && <span className="text-rose-500 ml-0.5">*</span>}
+    <label className="block text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2">
+      {children}{required && <span className="text-rose-500 ml-1">*</span>}
     </label>
   );
 }
 
-const inputCls = "w-full px-3 py-2.5 bg-white border border-slate-200 focus:border-indigo-400 rounded-xl focus:outline-none text-xs font-semibold text-slate-800 placeholder-slate-400 transition-colors";
-const selectCls = "w-full px-3 py-2.5 bg-white border border-slate-200 focus:border-indigo-400 rounded-xl focus:outline-none text-xs font-semibold text-slate-800 cursor-pointer transition-colors appearance-none";
+const inputCls = "w-full px-4 py-3 bg-white border border-slate-200 focus:border-indigo-400 rounded-xl focus:outline-none text-[13px] font-bold text-slate-800 placeholder-slate-400 transition-colors shadow-sm";
+const selectCls = "w-full px-4 py-3 bg-white border border-slate-200 focus:border-indigo-400 rounded-xl focus:outline-none text-[13px] font-bold text-slate-800 cursor-pointer transition-colors appearance-none shadow-sm";
 
 export default function CreateLoad({ onBack }) {
   const [stops, setStops] = useState([
-    { id: 1, type: 'Pickup',   address: '123 Smith St, Melbourn', contact: 'John Smith\n+31412345670',  date: '07/15/2025', time: '08:00 AM' },
-    { id: 2, type: 'Pickup',   address: '45 Industrial Rd, Gee',  contact: 'Mark Davis\n+61400123456',  date: '07/15/2025', time: '10:30 AM' },
-    { id: 3, type: 'Drop-off', address: '456 James Rd, Sydney',   contact: 'Jane Doe\n+61421987654',   date: '07/17/2025', time: '04:00 PM' },
-    { id: 4, type: 'Drop-off', address: '789 Depot Rd, Brisbane', contact: 'Peter Brown\n+61430227199', date: '07/18/2025', time: '09:00 AM' },
+    { id: 1, type: 'Pickup', address: '123 Smith St, Melbou', contactName: 'John Smith', contactPhone: '+61 412 345 670', date: '2025-07-15', time: '08:00' },
+    { id: 2, type: 'Pickup', address: '45 Industrial Rd, Geel', contactName: 'Mark Davis', contactPhone: '+61 400 123 456', date: '2025-07-15', time: '10:30' },
+    { id: 3, type: 'Drop-off', address: '456 Jones Rd, Sydne', contactName: 'Jane Doe', contactPhone: '+61 421 987 654', date: '2025-07-17', time: '16:00' },
+    { id: 4, type: 'Drop-off', address: '789 Depot Rd, Brisba', contactName: 'Peter Brown', contactPhone: '+61 433 221 122', date: '2025-07-18', time: '09:00' }
   ]);
 
   const [items, setItems] = useState([
@@ -72,9 +72,7 @@ export default function CreateLoad({ onBack }) {
   });
 
   const addStop = () => {
-    setStops(prev => [...prev, {
-      id: Date.now(), type: 'Pickup', address: '', contact: '', date: '', time: ''
-    }]);
+    setStops([...stops, { id: Date.now(), type: 'Drop-off', address: '', contactName: '', contactPhone: '', date: '', time: '' }]);
   };
 
   const removeStop = (id) => setStops(prev => prev.filter(s => s.id !== id));
@@ -102,36 +100,39 @@ export default function CreateLoad({ onBack }) {
   };
 
   return (
-    <div className="flex-grow bg-[#F8FAFC] w-full font-sans overflow-y-auto min-h-0 flex flex-col">
+    <div 
+      className="flex-grow bg-[#F8FAFC] w-full overflow-y-auto min-h-0 flex flex-col"
+      style={{ fontFamily: "'Inter', sans-serif" }}
+    >
 
       {/* ── Sticky Top Bar ───────────────────────── */}
-      <div className="sticky top-0 z-30 bg-white border-b border-slate-200 shadow-xs px-6 py-3 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-3">
+      <div className="sticky top-0 z-30 bg-white border-b border-slate-200 shadow-xs px-8 py-4 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-5">
           <button
             onClick={onBack}
-            className="p-1.5 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors"
+            className="w-10 h-10 flex items-center justify-center bg-white border-2 border-slate-100 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors shadow-sm"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ChevronLeft className="w-5 h-5 stroke-[2.5px]" />
           </button>
           <div>
             <div className="flex items-baseline gap-2">
-              <h1 className="text-lg font-black text-slate-900 uppercase tracking-tight">Create Load</h1>
-              <span className="text-lg font-black text-amber-500 uppercase tracking-tight">Console</span>
+              <h1 className="text-[22px] font-black text-slate-900 uppercase tracking-tight">CREATE LOAD</h1>
+              <span className="text-[22px] font-bold text-amber-500 uppercase tracking-tight italic">CONSOLE</span>
             </div>
-            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
-              Operational Principle: Load → Stops → Items
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+              OPERATIONAL PRINCIPLE: LOAD → STOPS → ITEMS
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-1.5 shadow-xs">
-            <Save className="w-3.5 h-3.5" /> Save Draft
+        <div className="flex items-center gap-3">
+          <button className="px-5 py-2.5 bg-white border border-slate-300 rounded-lg text-[11px] font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm uppercase tracking-wider">
+            SAVE DRAFT
           </button>
           <button
             onClick={handleActivate}
-            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-colors shadow-sm"
+            className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-[11px] font-black flex items-center gap-2 transition-colors shadow-sm uppercase tracking-wider"
           >
-            <Zap className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> Activate Load
+            <Zap className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> ACTIVATE LOAD
           </button>
         </div>
       </div>
@@ -151,26 +152,28 @@ export default function CreateLoad({ onBack }) {
                   type="text"
                   value={formData.customer}
                   onChange={e => setFormData({ ...formData, customer: e.target.value })}
-                  className={inputCls}
+                  className={`${inputCls} pr-10`}
                   placeholder="Search customer..."
                 />
+                <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               </div>
-              <p className="text-[9px] font-medium text-indigo-500 mt-1.5 leading-snug">
-                Fields below will change location footsteps
+              <p className="text-[10.5px] font-bold text-emerald-500 mt-2 leading-snug">
+                Fields below will change based on load type
               </p>
             </div>
 
             <div className="col-span-1">
               <FieldLabel required>Load Type / Service</FieldLabel>
               <div className="relative">
+                <Truck className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
                 <select
                   value={formData.loadType}
                   onChange={e => setFormData({ ...formData, loadType: e.target.value })}
-                  className={selectCls}
+                  className={`${selectCls} pl-10`}
                 >
                   {LOAD_TYPES.map(t => <option key={t}>{t}</option>)}
                 </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               </div>
             </div>
 
@@ -188,24 +191,29 @@ export default function CreateLoad({ onBack }) {
             <div className="col-span-1">
               <FieldLabel>Priority</FieldLabel>
               <div className="relative">
+                <Flag className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <select
                   value={formData.priority}
                   onChange={e => setFormData({ ...formData, priority: e.target.value })}
-                  className={selectCls}
+                  className={`${selectCls} pl-10`}
                 >
                   {PRIORITIES.map(p => <option key={p}>{p}</option>)}
                 </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               </div>
             </div>
 
             <div className="col-span-1">
               <FieldLabel>Load Date</FieldLabel>
-              <input
-                type="date"
-                className={inputCls}
-                defaultValue="2025-07-08"
-              />
+              <div className="relative">
+                <input
+                  type="date"
+                  value={formData.loadDate || '2025-07-08'}
+                  onChange={e => setFormData({ ...formData, loadDate: e.target.value })}
+                  className={`${inputCls} relative z-10 bg-transparent pr-10 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
+                />
+                <Calendar className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-0 pointer-events-none" />
+              </div>
             </div>
           </div>
         </div>
@@ -215,15 +223,15 @@ export default function CreateLoad({ onBack }) {
           <SectionHeader
             number="2"
             title="Route Stops"
-            colorCls="bg-blue-600"
+            colorCls="bg-indigo-600"
             subtitle="Add all pickup and drop-off locations"
             action={
               <button
                 type="button"
                 onClick={addStop}
-                className="flex items-center gap-1.5 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 rounded-xl text-xs font-bold transition-colors"
+                className="flex items-center gap-1.5 px-4 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-full text-[10px] font-black transition-colors uppercase tracking-wider shadow-sm"
               >
-                <Plus className="w-3.5 h-3.5 stroke-[3px]" /> Add Stop
+                <Plus className="w-3.5 h-3.5 stroke-[3px]" /> ADD STOP
               </button>
             }
           />
@@ -249,28 +257,33 @@ export default function CreateLoad({ onBack }) {
 
           <div className="space-y-3">
             {stops.map((stop, idx) => (
-              <div key={stop.id} className="grid grid-cols-12 gap-3 items-center bg-slate-50/60 rounded-xl p-3 border border-slate-100 hover:border-slate-200 transition-colors group">
+              <div key={stop.id} className="grid grid-cols-12 gap-3 items-center bg-white rounded-[14px] p-2.5 border border-slate-200 hover:border-slate-300 transition-colors group">
                 {/* # */}
-                <div className="col-span-1 flex items-center gap-1.5">
-                  <GripVertical className="w-3.5 h-3.5 text-slate-300 cursor-grab" />
-                  <span className="text-xs font-black text-slate-500">{idx + 1}</span>
+                <div className="col-span-1 flex items-center gap-2 pl-1">
+                  <GripVertical className="w-4 h-4 text-slate-300 cursor-grab" />
+                  <span className="text-xs font-black text-slate-700">{idx + 1}</span>
                 </div>
 
                 {/* Type */}
                 <div className="col-span-2">
                   <div className="relative">
+                    <MapPin className={`absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 ${
+                      stop.type === 'Pickup' ? 'text-purple-600' : 'text-blue-600'
+                    }`} />
                     <select
                       value={stop.type}
                       onChange={e => updateStop(stop.id, 'type', e.target.value)}
-                      className={`${selectCls} text-[11px] py-2 ${
+                      className={`${selectCls} text-[11px] py-2 pl-8 font-bold ${
                         stop.type === 'Pickup'
-                          ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                          : 'bg-amber-50 border-amber-200 text-amber-700'
+                          ? 'bg-purple-50 border-purple-200 text-purple-700'
+                          : 'bg-blue-50 border-blue-200 text-blue-700'
                       }`}
                     >
                       {STOP_TYPES.map(t => <option key={t}>{t}</option>)}
                     </select>
-                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 opacity-50 pointer-events-none" />
+                    <ChevronDown className={`absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none ${
+                      stop.type === 'Pickup' ? 'text-purple-400' : 'text-blue-400'
+                    }`} />
                   </div>
                 </div>
 
@@ -286,42 +299,57 @@ export default function CreateLoad({ onBack }) {
                 </div>
 
                 {/* Contact */}
-                <div className="col-span-2">
-                  <textarea
-                    value={stop.contact}
-                    onChange={e => updateStop(stop.id, 'contact', e.target.value)}
-                    rows={2}
-                    className={`${inputCls} text-[10px] py-1.5 resize-none leading-snug`}
-                    placeholder="Name&#10;Phone"
+                <div className="col-span-2 flex flex-col gap-1 px-1">
+                  <input
+                    type="text"
+                    value={stop.contactName || ''}
+                    onChange={e => updateStop(stop.id, 'contactName', e.target.value)}
+                    className="w-full bg-transparent border-none p-0 text-[10.5px] font-black text-slate-900 focus:ring-0 placeholder-slate-400 outline-none leading-none"
+                    placeholder="Contact Name"
+                  />
+                  <input
+                    type="text"
+                    value={stop.contactPhone || ''}
+                    onChange={e => updateStop(stop.id, 'contactPhone', e.target.value)}
+                    className="w-full bg-transparent border-none p-0 text-[9.5px] font-bold text-slate-500 focus:ring-0 placeholder-slate-300 outline-none leading-none"
+                    placeholder="Phone Number"
                   />
                 </div>
 
                 {/* Date */}
                 <div className="col-span-2">
-                  <input
-                    type="date"
-                    value={stop.date ? stop.date.split('/').reverse().join('-') : ''}
-                    onChange={e => updateStop(stop.id, 'date', e.target.value)}
-                    className={`${inputCls} text-[11px] py-2`}
-                  />
+                  <div className="relative">
+                    <input
+                      type="date"
+                      value={stop.date || ''}
+                      onChange={e => updateStop(stop.id, 'date', e.target.value)}
+                      className={`${inputCls} text-[11px] py-2 pr-8 relative z-10 bg-transparent [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-8 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
+                    />
+                    <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none z-0" />
+                  </div>
                 </div>
 
                 {/* Time */}
                 <div className="col-span-1">
-                  <input
-                    type="time"
-                    className={`${inputCls} text-[11px] py-2`}
-                  />
+                  <div className="relative">
+                    <input
+                      type="time"
+                      value={stop.time || ''}
+                      onChange={e => updateStop(stop.id, 'time', e.target.value)}
+                      className={`${inputCls} text-[11px] py-2 pr-8 relative z-10 bg-transparent [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-8 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
+                    />
+                    <Clock className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none z-0" />
+                  </div>
                 </div>
 
                 {/* Actions */}
-                <div className="col-span-1 flex justify-end">
+                <div className="col-span-1 flex justify-end pr-2">
                   <button
                     type="button"
                     onClick={() => removeStop(stop.id)}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors opacity-0 group-hover:opacity-100"
+                    className="p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <MoreVertical className="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -338,22 +366,22 @@ export default function CreateLoad({ onBack }) {
           <SectionHeader
             number="3"
             title="Items"
-            colorCls="bg-emerald-500"
-            subtitle="ABC Cars / Vehicles to be transported"
+            colorCls="bg-indigo-600"
+            subtitle="ADD CARS / VEHICLES TO BE TRANSPORTED"
             action={
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-colors"
+                  className="flex items-center gap-1.5 px-4 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-[11px] font-bold transition-colors uppercase tracking-wider shadow-sm"
                 >
-                  <Upload className="w-3.5 h-3.5" /> Bulk Import
+                  <Upload className="w-3.5 h-3.5" /> BULK IMPORT
                 </button>
                 <button
                   type="button"
                   onClick={addItem}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors shadow-sm"
+                  className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[11px] font-bold transition-colors shadow-sm uppercase tracking-wider"
                 >
-                  <Plus className="w-3.5 h-3.5 stroke-[3px]" /> Add Item
+                  <Plus className="w-3.5 h-3.5 stroke-[3px]" /> ADD ITEM
                 </button>
               </div>
             }
@@ -363,11 +391,13 @@ export default function CreateLoad({ onBack }) {
             {items.map((item, idx) => (
               <div key={item.id} className="border border-slate-200 rounded-2xl overflow-hidden">
                 {/* Item Header */}
-                <div className="bg-white border-b border-slate-100 px-4 py-2.5 flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <GripVertical className="w-3.5 h-3.5 text-slate-300 cursor-grab" />
-                    <Package className="w-4 h-4 text-indigo-500" />
-                    <span className="text-xs font-black text-slate-800">Item {idx + 1}</span>
+                <div className="bg-white border-b border-slate-100 px-4 py-3 flex justify-between items-center">
+                  <div className="flex items-center gap-2.5">
+                    <GripVertical className="w-4 h-4 text-slate-300 cursor-grab" />
+                    <div className="w-5 h-5 rounded flex items-center justify-center bg-indigo-50 border border-indigo-100">
+                      <div className="w-2.5 h-2.5 border-2 border-indigo-400 rounded-sm"></div>
+                    </div>
+                    <span className="text-sm font-black text-slate-800 tracking-wide">Item {idx + 1}</span>
                   </div>
                   {items.length > 1 && (
                     <button
@@ -667,7 +697,7 @@ export default function CreateLoad({ onBack }) {
 
         {/* ═══════ Section 4: Assign Truck & Driver ══ */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-          <SectionHeader number="4" title="Assign Truck & Driver" colorCls="bg-orange-500" />
+          <SectionHeader number="4" title="Assign Truck & Driver" colorCls="bg-indigo-600" />
 
           <div className="grid grid-cols-4 gap-4">
             <div>

@@ -105,7 +105,7 @@ export default function SuperAdminDashboard() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
         <div>
-          <h1 className="text-[28px] font-black text-slate-900 flex items-center gap-2">
+          <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
             Super Admin <span className="text-slate-400 text-xl mx-1">•</span> Overview
           </h1>
           <p className="text-[13px] text-slate-500 mt-1 font-medium">

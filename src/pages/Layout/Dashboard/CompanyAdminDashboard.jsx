@@ -5,7 +5,7 @@ const CompanyAdminDashboard = () => {
   return (
     <div className="dashboard-wrapper">
       <div className="dashboard-header">
-        <h1 className="dashboard-title">Command Centre</h1>
+        <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">Command Centre</h1>
         <p className="dashboard-subtitle">Company administration and fleet management.</p>
       </div>
       <div className="dashboard-card">

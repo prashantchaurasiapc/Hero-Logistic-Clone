@@ -383,7 +383,7 @@ export default function WhiteLabel() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 mb-1">
+          <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
             Super Admin • White Label
           </h1>
           <p className="text-sm font-medium text-slate-500">

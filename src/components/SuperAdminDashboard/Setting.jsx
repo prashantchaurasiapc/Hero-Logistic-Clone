@@ -24,7 +24,7 @@ export default function Settings() {
     <div className="flex-grow bg-[#F8FAFC] p-6 w-full font-sans">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-black text-slate-900 mb-2 flex items-center gap-2">
+        <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
           <SettingsIcon className="w-7 h-7 text-[#FFD400]" /> Settings
         </h1>
         <p className="text-sm font-medium text-slate-500">

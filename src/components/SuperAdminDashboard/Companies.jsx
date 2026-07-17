@@ -294,7 +294,7 @@ export default function Companies() {
       {/* Header Area */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pb-2">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+          <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
             Super Admin <span className="text-slate-350 font-black">•</span> Companies
           </h1>
           <p className="text-xs text-slate-400 font-semibold mt-1">

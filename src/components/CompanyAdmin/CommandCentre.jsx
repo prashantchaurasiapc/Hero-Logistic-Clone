@@ -1,12 +1,26 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Plus, ChevronDown, Package, Truck, DollarSign, Building2, MapPin,
   UserPlus, FileText, MoreVertical, Search, ArrowUpRight, ArrowDownRight,
-  AlertCircle, MessageSquare, Clock, Map, CheckCircle2, XCircle
+  AlertCircle, MessageSquare, Clock, Map, CheckCircle2, XCircle, Download, Mail
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 export default function CommandCentre() {
+  const navigate = useNavigate();
+  
+  const [showAssignDriver, setShowAssignDriver] = React.useState(false);
+  const [showTrackLoad, setShowTrackLoad] = React.useState(false);
+  const [showCreateCustomer, setShowCreateCustomer] = React.useState(false);
+  const [showCreateInvoice, setShowCreateInvoice] = React.useState(false);
+  const [showMoreActions, setShowMoreActions] = React.useState(false);
+  
+  const [showAddNewTruck, setShowAddNewTruck] = React.useState(false);
+  const [showExportReport, setShowExportReport] = React.useState(false);
+  const [showSendBroadcast, setShowSendBroadcast] = React.useState(false);
+  const [showSupportTicket, setShowSupportTicket] = React.useState(false);
+
   // --- MOCK DATA ---
   const loadStatusData = [
     { name: 'Draft', value: 1245, color: '#94A3B8' }, // slate-400
@@ -65,7 +79,9 @@ export default function CommandCentre() {
           <h1 className="text-2xl font-black text-slate-900 mb-1 tracking-tight">Command Centre</h1>
           <p className="text-sm font-medium text-slate-500">Overview of your fleet operations</p>
         </div>
-        <button className="bg-[#FFCC00] hover:bg-[#FACC15] text-black font-bold text-sm px-4 py-2.5 rounded-xl shadow-sm transition-colors flex items-center gap-2">
+        <button 
+          onClick={() => navigate('/company-admin/loads', { state: { openNewLoadModal: true } })}
+          className="bg-[#FFCC00] hover:bg-[#FACC15] text-black font-bold text-sm px-4 py-2.5 rounded-xl shadow-sm transition-colors flex items-center gap-2">
           <Plus className="w-4 h-4 stroke-[3px]" /> New Load <ChevronDown className="w-4 h-4 ml-1 opacity-70" />
         </button>
       </div>
@@ -142,7 +158,9 @@ export default function CommandCentre() {
         <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4">Quick Actions</h3>
         <div className="grid grid-cols-2 md:grid-cols-6 gap-4 divide-x divide-slate-100">
           
-          <button className="flex items-start gap-3 pl-0 pr-2 group text-left">
+          <button 
+            onClick={() => navigate('/company-admin/loads', { state: { openNewLoadModal: true } })}
+            className="flex items-start gap-3 pl-0 pr-2 group text-left">
             <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:bg-blue-100 transition-colors">
               <Plus className="w-4 h-4 stroke-[3px]" />
             </div>
@@ -152,7 +170,9 @@ export default function CommandCentre() {
             </div>
           </button>
 
-          <button className="flex items-start gap-3 pl-4 pr-2 group text-left">
+          <button 
+            onClick={() => setShowAssignDriver(true)}
+            className="flex items-start gap-3 pl-4 pr-2 group text-left">
             <div className="w-8 h-8 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 group-hover:bg-purple-100 transition-colors">
               <UserPlus className="w-4 h-4 stroke-[2.5px]" />
             </div>
@@ -162,7 +182,9 @@ export default function CommandCentre() {
             </div>
           </button>
 
-          <button className="flex items-start gap-3 pl-4 pr-2 group text-left">
+          <button 
+            onClick={() => setShowTrackLoad(true)}
+            className="flex items-start gap-3 pl-4 pr-2 group text-left">
             <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 group-hover:bg-emerald-100 transition-colors">
               <MapPin className="w-4 h-4 stroke-[2.5px]" />
             </div>
@@ -172,7 +194,9 @@ export default function CommandCentre() {
             </div>
           </button>
 
-          <button className="flex items-start gap-3 pl-4 pr-2 group text-left">
+          <button 
+            onClick={() => setShowCreateCustomer(true)}
+            className="flex items-start gap-3 pl-4 pr-2 group text-left">
             <div className="w-8 h-8 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center shrink-0 group-hover:bg-orange-100 transition-colors">
               <Building2 className="w-4 h-4 stroke-[2.5px]" />
             </div>
@@ -182,7 +206,9 @@ export default function CommandCentre() {
             </div>
           </button>
 
-          <button className="flex items-start gap-3 pl-4 pr-2 group text-left">
+          <button 
+            onClick={() => setShowCreateInvoice(true)}
+            className="flex items-start gap-3 pl-4 pr-2 group text-left">
             <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 group-hover:bg-indigo-100 transition-colors">
               <FileText className="w-4 h-4 stroke-[2.5px]" />
             </div>
@@ -192,15 +218,45 @@ export default function CommandCentre() {
             </div>
           </button>
 
-          <button className="flex items-start gap-3 pl-4 pr-0 group text-left">
-            <div className="w-8 h-8 rounded-full bg-slate-50 text-slate-600 flex items-center justify-center shrink-0 group-hover:bg-slate-100 transition-colors">
-              <MoreVertical className="w-4 h-4 stroke-[2.5px]" />
-            </div>
-            <div>
-              <div className="text-sm font-extrabold text-slate-900 leading-none mb-1">More Actions</div>
-              <div className="text-[10px] font-medium text-slate-400">View all actions</div>
-            </div>
-          </button>
+          <div className="relative pl-4 pr-0">
+            <button 
+              onClick={() => setShowMoreActions(!showMoreActions)}
+              className="flex items-start gap-3 group text-left w-full">
+              <div className="w-8 h-8 rounded-full bg-slate-50 text-slate-600 flex items-center justify-center shrink-0 group-hover:bg-slate-100 transition-colors">
+                <MoreVertical className="w-4 h-4 stroke-[2.5px]" />
+              </div>
+              <div>
+                <div className="text-sm font-extrabold text-slate-900 leading-none mb-1">More Actions</div>
+                <div className="text-[10px] font-medium text-slate-400">View all actions</div>
+              </div>
+            </button>
+
+            {showMoreActions && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowMoreActions(false)} />
+                <div className="absolute left-4 top-full mt-2 w-[180px] bg-white rounded-xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] border border-slate-100 overflow-hidden z-50 py-1.5">
+                  <button 
+                    onClick={() => { setShowMoreActions(false); setShowAddNewTruck(true); }} 
+                    className="w-full flex items-center gap-3 px-4 py-2 hover:bg-slate-50 transition-colors">
+                    <Truck className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm font-semibold text-blue-600">Add New Truck</span>
+                  </button>
+                  <button 
+                    onClick={() => { setShowMoreActions(false); setShowExportReport(true); }} 
+                    className="w-full flex items-center gap-3 px-4 py-2 hover:bg-slate-50 transition-colors">
+                    <Download className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm font-semibold text-blue-600">Export Report</span>
+                  </button>
+                  <button 
+                    onClick={() => { setShowMoreActions(false); setShowSendBroadcast(true); }} 
+                    className="w-full flex items-center gap-3 px-4 py-2 hover:bg-slate-50 transition-colors">
+                    <Mail className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm font-semibold text-blue-600">Send Broadcast</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
 
         </div>
       </div>
@@ -469,10 +525,14 @@ export default function CommandCentre() {
             <h3 className="text-[11px] font-black text-blue-600 uppercase tracking-widest mb-2">Need Help?</h3>
             <p className="text-xs font-medium text-slate-500 mb-4">Search our knowledge base or raise a new ticket.</p>
             <div className="flex gap-3">
-              <button className="flex-1 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-[10px] font-bold py-2.5 rounded-xl transition-colors">
+              <button 
+                onClick={() => navigate('/company-admin/knowledge-base')}
+                className="flex-1 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-[10px] font-bold py-2.5 rounded-xl transition-colors">
                 Knowledge Base
               </button>
-              <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold py-2.5 rounded-xl shadow-sm transition-colors">
+              <button 
+                onClick={() => setShowSupportTicket(true)}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold py-2.5 rounded-xl shadow-sm transition-colors">
                 New Support Ticket
               </button>
             </div>
@@ -481,6 +541,279 @@ export default function CommandCentre() {
         </div>
 
       </div>
+
+      {/* Assign Driver Modal */}
+      {showAssignDriver && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-[540px] overflow-hidden">
+            <div className="px-6 py-3 border-b border-slate-100 flex justify-between items-center">
+              <h2 className="text-lg font-bold text-slate-800">Assign Driver</h2>
+              <button onClick={() => setShowAssignDriver(false)} className="text-slate-400 hover:text-slate-600"><XCircle className="w-5 h-5" /></button>
+            </div>
+            <div className="px-6 py-4">
+              <div className="mb-3">
+                <label className="block text-sm font-semibold text-slate-600 mb-1">Select Load</label>
+                <select className="w-full px-4 py-1.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-blue-500">
+                  <option>L-12544 (Auckland → Hamilton)</option>
+                  <option>L-12546 (Perth → Fremantle)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-1">Available Drivers</label>
+                <div className="border border-slate-200 rounded-lg p-1.5 space-y-1.5">
+                  <div className="flex items-center gap-3 p-1.5 hover:bg-slate-50 rounded-md cursor-pointer">
+                    <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-sm">SM</div>
+                    <div>
+                      <div className="text-sm font-bold text-slate-800">Sam Mitchell</div>
+                      <div className="text-[11px] font-medium text-emerald-600">Available - 8 hours remaining</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-1.5 hover:bg-slate-50 rounded-md cursor-pointer">
+                    <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-sm">JD</div>
+                    <div>
+                      <div className="text-sm font-bold text-slate-800">John Doe</div>
+                      <div className="text-[11px] font-medium text-emerald-600">Available - 10 hours remaining</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-3 border-t border-slate-100 flex justify-end gap-3 bg-white">
+              <button onClick={() => setShowAssignDriver(false)} className="px-4 py-1.5 text-sm font-semibold text-slate-600 hover:text-slate-800">Cancel</button>
+              <button onClick={() => setShowAssignDriver(false)} className="px-5 py-1.5 bg-[#8b5cf6] hover:bg-[#7c3aed] text-white text-sm font-bold rounded-lg shadow-sm">Assign to Load</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Track Load Modal */}
+      {showTrackLoad && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-[540px] overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+              <h2 className="text-lg font-bold text-slate-800">Track Load</h2>
+              <button onClick={() => setShowTrackLoad(false)} className="text-slate-400 hover:text-slate-600"><XCircle className="w-5 h-5" /></button>
+            </div>
+            <div className="py-6 px-8 flex flex-col items-center text-center">
+              <div className="w-14 h-14 text-[#10B981] flex items-center justify-center mb-3">
+                <MapPin className="w-10 h-10" />
+              </div>
+              <p className="text-sm text-slate-600 mb-5">Enter a Load ID or VIN to view its current location on the live map.</p>
+              <input type="text" placeholder="e.g. L-12345" className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-center text-slate-700 focus:outline-none focus:border-emerald-500 mb-5" />
+              <button onClick={() => setShowTrackLoad(false)} className="w-full py-2.5 bg-[#10B981] hover:bg-emerald-600 text-white text-sm font-bold rounded-lg shadow-sm">Find on Map</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add New Customer Modal */}
+      {showCreateCustomer && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-[540px] overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+              <h2 className="text-lg font-bold text-slate-800">Add New Customer</h2>
+              <button onClick={() => setShowCreateCustomer(false)} className="text-slate-400 hover:text-slate-600"><XCircle className="w-5 h-5" /></button>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-1.5">Company Name</label>
+                <input type="text" className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-blue-500" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-600 mb-1.5">Contact Name</label>
+                  <input type="text" className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-600 mb-1.5">Email</label>
+                  <input type="email" className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-blue-500" />
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-4 flex justify-end gap-3 bg-white mt-2">
+              <button onClick={() => setShowCreateCustomer(false)} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800">Cancel</button>
+              <button onClick={() => setShowCreateCustomer(false)} className="px-5 py-2 bg-[#2563eb] hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-sm">Save Customer</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Generate Invoice Modal */}
+      {showCreateInvoice && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-[540px] overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+              <h2 className="text-lg font-bold text-slate-800">Generate Invoice</h2>
+              <button onClick={() => setShowCreateInvoice(false)} className="text-slate-400 hover:text-slate-600"><XCircle className="w-5 h-5" /></button>
+            </div>
+            <div className="px-6 py-5">
+              <p className="text-sm text-slate-600 mb-4">Select completed loads to generate a combined invoice.</p>
+              <div className="border border-slate-200 rounded-lg p-3.5 space-y-3.5">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input type="checkbox" className="mt-1 w-4 h-4 text-purple-600 border-slate-300 rounded focus:ring-purple-500" />
+                  <div>
+                    <div className="text-sm font-bold text-slate-800">L-12545 (Melbourne → Sydney)</div>
+                    <div className="text-xs font-medium text-slate-500">Delivered - $1,450.00</div>
+                  </div>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input type="checkbox" className="mt-1 w-4 h-4 text-purple-600 border-slate-300 rounded focus:ring-purple-500" />
+                  <div>
+                    <div className="text-sm font-bold text-slate-800">L-12501 (Sydney → Brisbane)</div>
+                    <div className="text-xs font-medium text-slate-500">Delivered - $2,100.00</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+            <div className="px-6 py-4 flex justify-end gap-3 bg-white mt-1">
+              <button onClick={() => setShowCreateInvoice(false)} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800">Cancel</button>
+              <button onClick={() => setShowCreateInvoice(false)} className="px-5 py-2 bg-[#5b21b6] hover:bg-purple-800 text-white text-sm font-bold rounded-lg shadow-sm flex items-center gap-2">
+                <FileText className="w-4 h-4" /> Generate Invoice
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add New Truck Modal */}
+      {showAddNewTruck && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-[540px] overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+              <h2 className="text-lg font-bold text-slate-800">Add New Truck</h2>
+              <button onClick={() => setShowAddNewTruck(false)} className="text-slate-400 hover:text-slate-600"><XCircle className="w-5 h-5" /></button>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-600 mb-1.5">Truck Name/Model</label>
+                  <input type="text" placeholder="e.g. Volvo FH16" className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-600 mb-1.5">Registration Number</label>
+                  <input type="text" placeholder="e.g. ABC-1234" className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-blue-500" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-1.5">Assigned Driver (Optional)</label>
+                <select className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-blue-500">
+                  <option>Select a driver</option>
+                  <option>John Doe</option>
+                  <option>Sam Mitchell</option>
+                </select>
+              </div>
+            </div>
+            <div className="px-6 py-4 flex justify-end gap-3 bg-white mt-2">
+              <button onClick={() => setShowAddNewTruck(false)} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800">Cancel</button>
+              <button onClick={() => setShowAddNewTruck(false)} className="px-5 py-2 bg-[#2563eb] hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-sm">Save Truck</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Export Report Modal */}
+      {showExportReport && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-[540px] overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+              <h2 className="text-lg font-bold text-slate-800">Export Report</h2>
+              <button onClick={() => setShowExportReport(false)} className="text-slate-400 hover:text-slate-600"><XCircle className="w-5 h-5" /></button>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-1.5">Report Type</label>
+                <select className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-blue-500">
+                  <option>Overall Performance Report</option>
+                  <option>Fleet Activity Report</option>
+                  <option>Financial Summary</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-600 mb-1.5">Start Date</label>
+                  <input type="date" className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-blue-500" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-600 mb-1.5">End Date</label>
+                  <input type="date" className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-blue-500" />
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-4 flex justify-end gap-3 bg-white mt-2">
+              <button onClick={() => setShowExportReport(false)} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800">Cancel</button>
+              <button onClick={() => setShowExportReport(false)} className="px-5 py-2 bg-[#2563eb] hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-sm flex items-center gap-2">
+                <Download className="w-4 h-4" /> Export
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Send Broadcast Modal */}
+      {showSendBroadcast && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-[540px] overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+              <h2 className="text-lg font-bold text-slate-800">Send Broadcast</h2>
+              <button onClick={() => setShowSendBroadcast(false)} className="text-slate-400 hover:text-slate-600"><XCircle className="w-5 h-5" /></button>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-1.5">Recipients</label>
+                <select className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-blue-500">
+                  <option>All Active Drivers</option>
+                  <option>Depot Managers</option>
+                  <option>Entire Fleet Team</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-1.5">Message Content</label>
+                <textarea rows="4" placeholder="Enter your broadcast message here..." className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-blue-500 resize-none"></textarea>
+              </div>
+            </div>
+            <div className="px-6 py-4 flex justify-end gap-3 bg-white mt-2">
+              <button onClick={() => setShowSendBroadcast(false)} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800">Cancel</button>
+              <button onClick={() => setShowSendBroadcast(false)} className="px-5 py-2 bg-[#2563eb] hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-sm flex items-center gap-2">
+                <Mail className="w-4 h-4" /> Send Message
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Support Ticket Modal */}
+      {showSupportTicket && (
+        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-[540px] overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+              <h2 className="text-lg font-bold text-slate-800">New Support Ticket</h2>
+              <button onClick={() => setShowSupportTicket(false)} className="text-slate-400 hover:text-slate-600"><XCircle className="w-5 h-5" /></button>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-1.5">Issue Type</label>
+                <select className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-blue-500">
+                  <option>Software Bug / Error</option>
+                  <option>Billing Issue</option>
+                  <option>Feature Request</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-600 mb-1.5">Description</label>
+                <textarea rows="4" placeholder="Please describe the issue in detail..." className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-blue-500 resize-none"></textarea>
+              </div>
+            </div>
+            <div className="px-6 py-4 flex justify-end gap-3 bg-white mt-2">
+              <button onClick={() => setShowSupportTicket(false)} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800">Cancel</button>
+              <button onClick={() => setShowSupportTicket(false)} className="px-5 py-2 bg-[#2563eb] hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-sm">
+                Submit Ticket
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
