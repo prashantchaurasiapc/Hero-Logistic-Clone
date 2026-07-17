@@ -2,8 +2,7 @@
    SHARED DASHBOARD STYLES
    ============================================================ */
 .dashboard-container,
-.accounts-dashboard,
-.customer-dashboard {
+.accounts-dashboard {
   max-width: 1200px;
   margin: 0 auto;
   font-family: 'Inter', sans-serif;
@@ -824,14 +823,7 @@
   border-radius: 4px 4px 0 0;
 }
 
-/* ============================================================
-   CUSTOMER SPECIFIC
-   ============================================================ */
-.customer-dashboard {
-  padding: 24px 32px;
-  background-color: #f8fafc;
-  min-height: 100%;
-}
+/* Duplicated customer styles removed */
 
 .map-section {
   background-color: #fff;
