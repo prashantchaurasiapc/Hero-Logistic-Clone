@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import './Login.css';
 import { 
@@ -26,45 +26,98 @@ const tags = [
 
 const Login = () => {
   const navigate = useNavigate();
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [loggingInRole, setLoggingInRole] = useState('');
+  const [logoSrc, setLogoSrc] = useState('/image.png');
+
+  useEffect(() => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = '/image.png';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(img, 0, 0);
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imgData.data;
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          // If the pixel is dark gray/black (R < 35, G < 35, B < 35), make it transparent
+          if (r < 35 && g < 35 && b < 35) {
+            data[i + 3] = 0; // alpha channel to 0
+          }
+        }
+        ctx.putImageData(imgData, 0, 0);
+        setLogoSrc(canvas.toDataURL());
+      }
+    };
+  }, []);
 
   const handleRoleLogin = (roleId) => {
-    if (roleId === 'super-admin') {
-      navigate('/admin/dashboard');
-    } else if (roleId === 'sales') {
-      navigate('/sales/dashboard');
-    } else if (roleId === 'company-admin') {
-      navigate('/company-admin/command-centre');
-    } else if (roleId === 'dispatcher') {
-      navigate('/dispatcher/command-center');
-    } else if (roleId === 'driver') {
-      navigate('/driver/jobs');
-    } else if (roleId === 'warehouse') {
-      navigate('/warehouse/dashboard');
-    } else if (roleId === 'yard') {
-      navigate('/yard/dashboard');
-    } else if (roleId === 'accounts') {
-      navigate('/accounts/dashboard');
-    } else if (roleId === 'customer') {
-      navigate('/customer/dashboard');
-    } else {
-      // Placeholder for other dashboards
-      alert(`Logging in to ${roleId} dashboard...`);
-    }
+    const roleCard = roleCards.find(r => r.id === roleId);
+    const label = roleCard ? roleCard.label : 'Admin';
+    setLoggingInRole(label);
+    setIsAuthenticating(true);
+
+    setTimeout(() => {
+      if (roleId === 'super-admin') {
+        navigate('/admin/dashboard');
+      } else if (roleId === 'sales') {
+        navigate('/sales/dashboard');
+      } else if (roleId === 'company-admin') {
+        navigate('/company-admin/command-centre');
+      } else if (roleId === 'dispatcher') {
+        navigate('/dispatcher/command-center');
+      } else if (roleId === 'driver') {
+        navigate('/driver/jobs');
+      } else if (roleId === 'warehouse') {
+        navigate('/warehouse/dashboard');
+      } else if (roleId === 'yard') {
+        navigate('/yard/dashboard');
+      } else if (roleId === 'accounts') {
+        navigate('/accounts/dashboard');
+      } else if (roleId === 'customer') {
+        navigate('/customer/dashboard');
+      } else {
+        navigate('/admin/dashboard');
+      }
+    }, 1600);
   };
 
   const handleLogin = (e) => {
     e.preventDefault();
-    navigate('/admin/dashboard');
+    setLoggingInRole('Super Admin');
+    setIsAuthenticating(true);
+    setTimeout(() => {
+      navigate('/admin/dashboard');
+    }, 1600);
   };
 
   return (
     <div className="login-container">
+      {/* Dynamic Keyframes Animation Injection */}
+      <style>{`
+        @keyframes progress-loading {
+          0% { width: 0%; }
+          100% { width: 100%; }
+        }
+      `}</style>
+
       {/* Left Panel */}
       <div className="login-left">
         <div className="grid-overlay"></div>
         <div className="left-content">
-          <div className="login-logo" style={{ marginBottom: '2rem' }}>
-            <img src="/image.png" alt="Logo" style={{ height: '56px', width: 'auto', objectFit: 'contain' }} />
+          <div className="login-logo" style={{ marginBottom: '2.2rem', display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <img src={logoSrc} alt="Logo" style={{ height: '62px', width: 'auto', objectFit: 'contain' }} />
+            <div className="logo-text-group" style={{ display: 'flex', flexDirection: 'column' }}>
+              <span className="logo-title" style={{ fontSize: '22px', fontWeight: 805, color: '#ffffff', fontFamily: "'Outfit', system-ui, sans-serif", lineHeight: '1.1' }}>Hero Logistics</span>
+              <span className="logo-subtitle" style={{ fontSize: '10.5px', fontWeight: 700, color: '#64748b', letterSpacing: '2px', textTransform: 'uppercase', marginTop: '4px', lineHeight: '1' }}>Enterprise Suite</span>
+            </div>
           </div>
 
           <h1 className="hero-headline">
@@ -107,57 +160,109 @@ const Login = () => {
 
       {/* Right Panel */}
       <div className="login-right">
-        <div className="right-content">
-          <h2 className="welcome-title">Welcome back</h2>
-          <p className="welcome-desc">Click any dashboard below for instant access, or sign in manually</p>
+        {isAuthenticating ? (
+          <div className="right-content" style={{ textAlign: 'center' }}>
+            {/* Green Tick Circular Badge */}
+            <div 
+              style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: '50%',
+                border: '2px solid rgba(16, 185, 129, 0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#10b981',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                marginBottom: '24px',
+                marginLeft: 'auto',
+                marginRight: 'auto',
+                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.15)'
+              }}
+            >
+              <svg 
+                style={{ width: '28px', height: '28px' }} 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24" 
+                strokeWidth="3.5"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
 
-          <form className="login-form" onSubmit={handleLogin}>
-            <div className="form-group">
-              <label>EMAIL ADDRESS</label>
-              <div className="input-wrapper">
-                <FiMail className="input-icon" />
-                <input type="email" defaultValue="admin@hero.com" />
+            <h2 style={{ fontSize: '32px', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.5px', marginBottom: '8px' }}>
+              Authenticated!
+            </h2>
+            <p style={{ fontSize: '13px', fontWeight: 600, color: '#94a3b8', marginBottom: '32px' }}>
+              Logging in as {loggingInRole}...
+            </p>
+
+            {/* Gold Progress Loader Bar */}
+            <div style={{ width: '80px', backgroundColor: '#1e293b', height: '4px', borderRadius: '9999px', overflow: 'hidden', marginLeft: 'auto', marginRight: 'auto' }}>
+              <div 
+                style={{
+                  height: '100%',
+                  backgroundColor: '#fbbf24',
+                  borderRadius: '9999px',
+                  animation: 'progress-loading 1.4s ease-out forwards'
+                }}
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="right-content">
+            <h2 className="welcome-title">Welcome back</h2>
+            <p className="welcome-desc">Click any dashboard below for instant access, or sign in manually</p>
+
+            <form className="login-form" onSubmit={handleLogin}>
+              <div className="form-group">
+                <label>EMAIL ADDRESS</label>
+                <div className="input-wrapper">
+                  <FiMail className="input-icon" />
+                  <input type="email" defaultValue="admin@hero.com" />
+                </div>
               </div>
-            </div>
 
-            <div className="form-group">
-              <div className="label-row">
-                <label>PASSWORD</label>
-                <a href="#" className="forgot-link">Forgot password?</a>
+              <div className="form-group">
+                <div className="label-row">
+                  <label>PASSWORD</label>
+                  <a href="#" className="forgot-link">Forgot password?</a>
+                </div>
+                <div className="input-wrapper">
+                  <FiLock className="input-icon" />
+                  <input type="password" defaultValue="123456" />
+                  <FiEye className="input-icon-right" />
+                </div>
               </div>
-              <div className="input-wrapper">
-                <FiLock className="input-icon" />
-                <input type="password" defaultValue="123456" />
-                <FiEye className="input-icon-right" />
+
+              <div className="divider">
+                <span>OR SIGN IN AS</span>
               </div>
-            </div>
 
-            <div className="divider">
-              <span>OR SIGN IN AS</span>
-            </div>
+              <div className="roles-grid">
+                {roleCards.map(role => (
+                  <button 
+                    key={role.id} 
+                    type="button"
+                    className="role-card" 
+                    style={{ '--card-color': role.color, '--card-bg': role.bg }}
+                    onClick={() => handleRoleLogin(role.id)}
+                  >
+                    <div className="role-icon" style={{ color: role.color }}>
+                      {role.icon}
+                    </div>
+                    <span className="role-label">{role.label}</span>
+                  </button>
+                ))}
+              </div>
 
-            <div className="roles-grid">
-              {roleCards.map(role => (
-                <button 
-                  key={role.id} 
-                  type="button"
-                  className="role-card" 
-                  style={{ '--card-color': role.color, '--card-bg': role.bg }}
-                  onClick={() => handleRoleLogin(role.id)}
-                >
-                  <div className="role-icon" style={{ color: role.color }}>
-                    {role.icon}
-                  </div>
-                  <span className="role-label">{role.label}</span>
-                </button>
-              ))}
-            </div>
-
-            <div className="signup-link">
-              New to platform? <Link to="/register" className="text-yellow font-bold" style={{ textDecoration: 'none' }}>Start Free Trial</Link>
-            </div>
-          </form>
-        </div>
+              <div className="signup-link">
+                New to platform? <Link to="/register" className="text-yellow font-bold" style={{ textDecoration: 'none' }}>Start Free Trial</Link>
+              </div>
+            </form>
+          </div>
+        )}
       </div>
     </div>
   );
