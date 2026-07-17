@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './WarehouseDashboard.css';
-import './YardDashboard.css';
 
 // SVG Icons
 const BellIcon = () => (
@@ -34,6 +33,13 @@ const AlertTriangleIcon = () => (
   </svg>
 );
 
+const LargeClockIcon = () => (
+  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"></circle>
+    <polyline points="12 6 12 12 16 14"></polyline>
+  </svg>
+);
+
 const CloseIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -41,66 +47,12 @@ const CloseIcon = () => (
   </svg>
 );
 
-const CheckIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="20 6 9 17 4 12"></polyline>
-  </svg>
-);
-
-const NavigationIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
-  </svg>
-);
-
-const TruckIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="1" y="3" width="15" height="13"></rect>
-    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
-    <circle cx="5.5" cy="18.5" r="2.5"></circle>
-    <circle cx="18.5" cy="18.5" r="2.5"></circle>
-  </svg>
-);
-
-const CalendarIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-    <line x1="16" y1="2" x2="16" y2="6"></line>
-    <line x1="8" y1="2" x2="8" y2="6"></line>
-    <line x1="3" y1="10" x2="21" y2="10"></line>
-  </svg>
-);
-
-const SyncIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="23 4 23 10 17 10"></polyline>
-    <polyline points="1 20 1 14 7 14"></polyline>
-    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-  </svg>
-);
-
-const ClockIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10"></circle>
-    <polyline points="12 6 12 12 16 14"></polyline>
-  </svg>
-);
-
-export default function YardDashboard() {
+export default function YardWorkStatus() {
   const [shiftActive, setShiftActive] = useState(false);
   const [secondsElapsed, setSecondsElapsed] = useState(0);
   const [startTime, setStartTime] = useState(null);
   const [endTime, setEndTime] = useState(null);
   const [timerString, setTimerString] = useState('00:00:00');
-
-  // Hover states for top stats cards
-  const [hoveredStatCard, setHoveredStatCard] = useState(null);
-
-  // Hover states for bottom action cards
-  const [hoveredActionCard, setHoveredActionCard] = useState(null);
-
-  // Hover state for outline buttons
-  const [hoveredButtonId, setHoveredButtonId] = useState(null);
 
   // Modals state
   const [showSummaryModal, setShowSummaryModal] = useState(false);
@@ -109,24 +61,27 @@ export default function YardDashboard() {
   const [showQrModal, setShowQrModal] = useState(false);
   const [showIncidentModal, setShowIncidentModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [showStatusModal, setShowStatusModal] = useState(false);
-  const [showTasksModal, setShowTasksModal] = useState(false);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [showNotePopup, setShowNotePopup] = useState(false);
-  const [showSupervisorModal, setShowSupervisorModal] = useState(false);
 
-  // Form states
+  // QR Modal form state
   const [scanType, setScanType] = useState('Trailer');
   const [scannedId, setScannedId] = useState('');
+
+  // Incident Modal form state
   const [incidentType, setIncidentType] = useState('Accident');
   const [incidentLocation, setIncidentLocation] = useState('');
   const [incidentDescription, setIncidentDescription] = useState('');
   const [incidentSeverity, setIncidentSeverity] = useState('Medium');
+
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [showTasksModal, setShowTasksModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showNotePopup, setShowNotePopup] = useState(false);
+
+  // Status form state
   const [currentStatus, setCurrentStatus] = useState('Off Duty');
   const [statusNotes, setStatusNotes] = useState('');
-  const [supervisorMessage, setSupervisorMessage] = useState('');
 
-  // Task states
+  // Task list and interaction states
   const [selectedTask, setSelectedTask] = useState(null);
   const [noteTaskId, setNoteTaskId] = useState(null);
   const [noteText, setNoteText] = useState('');
@@ -147,12 +102,12 @@ export default function YardDashboard() {
       id: 2,
       title: 'Audit Seal locks for TR-1102',
       priority: 'High',
-      status: 'IN_PROGRESS',
+      status: 'COMPLETED',
       desc: 'Verify container security codes before departure',
       time: '15:30',
       gate: 'Gate 2',
       unit: 'TR-1102',
-      notes: ''
+      notes: 'Confirmed Loaded'
     },
     {
       id: 3,
@@ -242,7 +197,6 @@ export default function YardDashboard() {
     setStartTime(now);
     setSecondsElapsed(0);
     setShiftActive(true);
-    setCurrentStatus('Available');
     triggerToast('Work shift started successfully. Logging GPS telemetry.');
   };
 
@@ -250,7 +204,6 @@ export default function YardDashboard() {
     const now = new Date();
     setEndTime(now);
     setShiftActive(false);
-    setCurrentStatus('Off Duty');
     setShowSummaryModal(true);
   };
 
@@ -262,13 +215,13 @@ export default function YardDashboard() {
   // Calculate unread count
   const unreadCount = notifications.filter(n => n.unread).length;
 
-  // Format date
+  // Format date as 17/7/2026
   const getFormattedDate = (date) => {
     if (!date) return '';
     return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
   };
 
-  // Format time
+  // Format time as 11:36:17 am
   const getFormattedTime = (date) => {
     if (!date) return '';
     let hrs = date.getHours();
@@ -276,7 +229,7 @@ export default function YardDashboard() {
     const secs = date.getSeconds().toString().padStart(2, '0');
     const ampm = hrs >= 12 ? 'pm' : 'am';
     hrs = hrs % 12;
-    hrs = hrs ? hrs : 12;
+    hrs = hrs ? hrs : 12; // hour 0 should be 12
     return `${hrs}:${mins}:${secs} ${ampm}`;
   };
 
@@ -286,7 +239,7 @@ export default function YardDashboard() {
     return (mins * 0.75).toFixed(2);
   };
 
-  // Yard Map slots
+  // Yard Map parking slots
   const yardSlots = [
     { id: 'A1', type: 'Trailer', val: 'TR-9410', bg: '#FEF3C7', border: '#FDE68A', color: '#B45309' },
     { id: 'A2', type: 'Trailer (busy)', val: 'TR-1102', bg: '#DBEAFE', border: '#BFDBFE', color: '#1D4ED8' },
@@ -313,100 +266,22 @@ export default function YardDashboard() {
     }
   };
 
-  const getButtonStyle = (buttonId, normalBorder, normalBg, normalColor) => {
-    const isHovered = hoveredButtonId === buttonId;
-    return {
-      backgroundColor: normalBg,
-      color: normalColor,
-      border: isHovered ? '2px solid #000000' : normalBorder,
-      borderRadius: 8,
-      padding: '6px 14px',
-      fontSize: 11.5,
-      fontWeight: '700',
-      cursor: 'pointer',
-      outline: 'none',
-      transition: 'all 0.15s ease',
-      boxSizing: 'border-box',
-      display: 'flex',
-      alignItems: 'center',
-      gap: 4
-    };
-  };
-
-  // Helper to generate styles for the top 5 stats cards with hover-lift
-  const getStatCardStyle = (cardId) => {
-    const isHovered = hoveredStatCard === cardId;
-    return {
-      backgroundColor: '#ffffff',
-      borderRadius: 16,
-      padding: '18px 20px',
-      border: '1px solid #e2e8f0',
-      boxShadow: isHovered ? '0 12px 20px -5px rgba(0, 0, 0, 0.08), 0 8px 8px -5px rgba(0, 0, 0, 0.04)' : '0 1px 3px rgba(0,0,0,0.05)',
-      transform: isHovered ? 'translateY(-6px) scale(1.02)' : 'translateY(0) scale(1)',
-      transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-      textAlign: 'left',
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'space-between',
-      height: 125,
-      boxSizing: 'border-box'
-    };
-  };
-
-  // Helper to generate styles for the bottom 5 action cards
-  const getActionCardStyle = (cardId) => {
-    const isHovered = hoveredActionCard === cardId;
-    return {
-      backgroundColor: '#ffffff',
-      borderRadius: 16,
-      padding: '20px 16px',
-      border: isHovered ? '1.5px solid #ffcc00' : '1.5px solid #e2e8f0',
-      boxShadow: isHovered ? '0 10px 15px -3px rgba(255, 204, 0, 0.1), 0 4px 6px -2px rgba(255, 204, 0, 0.05)' : '0 1px 3px rgba(0,0,0,0.03)',
-      cursor: 'pointer',
-      textAlign: 'center',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      height: 180,
-      transition: 'all 0.25s ease',
-      boxSizing: 'border-box'
-    };
-  };
-
-  // Helper to generate style for the action card icon container
-  const getActionIconContainerStyle = (cardId) => {
-    const isHovered = hoveredActionCard === cardId;
-    return {
-      width: 44,
-      height: 44,
-      borderRadius: 12,
-      backgroundColor: isHovered ? '#64748b' : '#fffbeb',
-      border: isHovered ? 'none' : '1.5px solid #fde047',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      color: isHovered ? '#ffcc00' : '#d97706',
-      transition: 'all 0.2s ease'
-    };
-  };
-
   return (
-    <div style={{ height: 'calc(100vh - 85px)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto', padding: '16px 20px', width: '100%', maxWidth: 'none', fontFamily: "'Outfit', 'Inter', sans-serif", backgroundColor: '#f8fafc' }}>
+    <div className="customer-dashboard" style={{ height: 'calc(100vh - 125px)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflow: 'hidden', padding: '16px 20px', width: '100%', maxWidth: 'none', fontFamily: "'Outfit', 'Inter', sans-serif" }}>
 
       {/* Header Panel */}
-      <div style={{ flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+      <div className="customer-header-container" style={{ flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: 24 }}>🚧</span>
           <div style={{ textAlign: 'left' }}>
-            <h1 style={{ fontSize: '20px', fontWeight: '800', margin: 0, color: '#0f172a' }}>Yard Attendant &bull; Overview</h1>
-            <p style={{ fontSize: '12.5px', marginTop: '2px', color: '#64748b', margin: 0 }}>Perform gate checks, inspect trailers, and log spotted containers.</p>
+            <h1 className="customer-title" style={{ fontSize: '20px', fontWeight: '800', margin: 0 }}>Yard Attendant &bull; Start Finish</h1>
+            <p className="customer-subtitle" style={{ fontSize: '12.5px', marginTop: '2px', color: '#64748b' }}>Perform gate checks, inspect trailers, and log spotted containers.</p>
           </div>
         </div>
 
         {/* Top Right Header Controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {/* Bell Icon */}
+          {/* Bell Icon with unread badge */}
           <div style={{ position: 'relative' }}>
             <button
               onClick={() => setShowNotificationsModal(true)}
@@ -518,546 +393,114 @@ export default function YardDashboard() {
             <AlertTriangleIcon />
           </button>
 
-          {/* Schedule button */}
-          <button
-            onClick={() => setShowScheduleModal(true)}
-            style={{
-              backgroundColor: '#ffffff',
-              border: '1px solid #ffcc00',
-              borderRadius: 8,
-              padding: '8px 16px',
-              color: '#b45309',
-              fontSize: 12,
-              fontWeight: '700',
-              cursor: 'pointer',
-              outline: 'none'
-            }}
-          >
-            View Shift Schedule
-          </button>
-
-          {/* Status button */}
-          <button
-            onClick={() => {
-              setStatusNotes('');
-              setShowStatusModal(true);
-            }}
-            style={{
-              backgroundColor: '#ffffff',
-              border: '1px solid #cbd5e1',
-              borderRadius: 8,
-              padding: '8px 16px',
-              color: '#475569',
-              fontSize: 12,
-              fontWeight: '700',
-              cursor: 'pointer',
-              outline: 'none'
-            }}
-          >
-            Update Status
-          </button>
-
-          {/* View My Tasks button */}
-          <button
-            onClick={() => setShowTasksModal(true)}
-            style={{
-              backgroundColor: '#ffcc00',
-              border: 'none',
-              borderRadius: 8,
-              padding: '8px 16px',
-              color: '#000000',
-              fontSize: 12,
-              fontWeight: '800',
-              cursor: 'pointer',
-              outline: 'none',
-              boxShadow: '0 2px 4px rgba(255, 204, 0, 0.2)'
-            }}
-          >
-            View My Tasks
-          </button>
         </div>
       </div>
 
-      {/* Stats row (Top 5 boxes) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16, marginBottom: 20 }}>
-        {/* Trailers Spotted */}
-        <div
-          onMouseEnter={() => setHoveredStatCard('trailers')}
-          onMouseLeave={() => setHoveredStatCard(null)}
-          style={getStatCardStyle('trailers')}
-        >
-          <div>
-            <span style={{ fontSize: 10, fontWeight: '800', color: '#64748b', letterSpacing: '0.6px', display: 'block' }}>TRAILERS SPOTTED</span>
-            <span style={{ fontSize: 28, fontWeight: '800', color: '#0f172a', display: 'block', marginTop: 4 }}>4</span>
-          </div>
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9.5, fontWeight: '800', color: '#64748b', marginBottom: 4 }}>
-              <span>Progress</span>
-              <span>56%</span>
-            </div>
-            <div style={{ width: '100%', height: 5, backgroundColor: '#f1f5f9', borderRadius: 3, overflow: 'hidden', marginBottom: 6 }}>
-              <div style={{ width: '56%', height: '100%', backgroundColor: '#ffcc00' }}></div>
-            </div>
-            <span style={{ fontSize: 11, color: '#64748b', fontWeight: '600' }}>Active parking spots</span>
-          </div>
-        </div>
+      {/* Main Content Area */}
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', minHeight: 0 }}>
 
-        {/* Gate Events */}
-        <div
-          onMouseEnter={() => setHoveredStatCard('gate-events')}
-          onMouseLeave={() => setHoveredStatCard(null)}
-          style={getStatCardStyle('gate-events')}
-        >
-          <div>
-            <span style={{ fontSize: 10, fontWeight: '800', color: '#64748b', letterSpacing: '0.6px', display: 'block' }}>GATE EVENTS</span>
-            <span style={{ fontSize: 28, fontWeight: '800', color: '#0f172a', display: 'block', marginTop: 4 }}>4</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 11, color: '#64748b', fontWeight: '600' }}>Inward/Outward today</span>
-            <span style={{ fontSize: 10, fontWeight: '800', color: '#047857', backgroundColor: '#d1fae5', padding: '2px 6px', borderRadius: 4 }}>+2 checks</span>
-          </div>
-        </div>
+        {/* Time Clock Central Card */}
+        <div style={{
+          backgroundColor: '#ffffff',
+          borderRadius: 24,
+          padding: '40px 48px',
+          width: '100%',
+          maxWidth: 520,
+          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03)',
+          border: '1px solid #e2e8f0',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 20
+        }}>
 
-        {/* Yard Capacity */}
-        <div
-          onMouseEnter={() => setHoveredStatCard('capacity')}
-          onMouseLeave={() => setHoveredStatCard(null)}
-          style={getStatCardStyle('capacity')}
-        >
-          <div>
-            <span style={{ fontSize: 10, fontWeight: '800', color: '#64748b', letterSpacing: '0.6px', display: 'block' }}>YARD CAPACITY</span>
-            <span style={{ fontSize: 28, fontWeight: '800', color: '#0f172a', display: 'block', marginTop: 4 }}>53%</span>
-          </div>
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9.5, fontWeight: '800', color: '#64748b', marginBottom: 4 }}>
-              <span>Progress</span>
-              <span>56%</span>
-            </div>
-            <div style={{ width: '100%', height: 5, backgroundColor: '#f1f5f9', borderRadius: 3, overflow: 'hidden', marginBottom: 6 }}>
-              <div style={{ width: '53%', height: '100%', backgroundColor: '#ffcc00' }}></div>
-            </div>
-            <span style={{ fontSize: 11, color: '#64748b', fontWeight: '600' }}>Slots occupied</span>
-          </div>
-        </div>
+          {/* Clock icon */}
+          <LargeClockIcon />
 
-        {/* Pending Tasks */}
-        <div
-          onMouseEnter={() => setHoveredStatCard('pending')}
-          onMouseLeave={() => setHoveredStatCard(null)}
-          style={getStatCardStyle('pending')}
-        >
-          <div>
-            <span style={{ fontSize: 10, fontWeight: '800', color: '#64748b', letterSpacing: '0.6px', display: 'block' }}>PENDING TASKS</span>
-            <span style={{ fontSize: 28, fontWeight: '800', color: '#0f172a', display: 'block', marginTop: 4 }}>
-              {tasks.filter(t => t.status === 'PENDING').length}
-            </span>
+          {/* Title */}
+          <div style={{ textAlign: 'center' }}>
+            <h2 style={{ fontSize: 20, fontWeight: '800', color: '#0f172a', margin: 0 }}>Attendant Time Clock</h2>
+            <p style={{ fontSize: 13, color: '#64748b', margin: '6px 0 0 0', lineHeight: 1.5, maxWidth: 360 }}>
+              Clock in/out to log operational hours, feed payroll data, and calculate costing.
+            </p>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 11, color: '#64748b', fontWeight: '600' }}>Awaiting action</span>
-            <span style={{ fontSize: 10, fontWeight: '800', color: '#64748b', backgroundColor: '#f1f5f9', padding: '2px 6px', borderRadius: 4 }}>Action needed</span>
-          </div>
-        </div>
 
-        {/* Current Shift */}
-        <div
-          onMouseEnter={() => setHoveredStatCard('shift')}
-          onMouseLeave={() => setHoveredStatCard(null)}
-          style={getStatCardStyle('shift')}
-        >
-          <div>
-            <span style={{ fontSize: 10, fontWeight: '800', color: '#64748b', letterSpacing: '0.6px', display: 'block' }}>CURRENT SHIFT</span>
-            <span style={{ fontSize: shiftActive ? 22 : 26, fontWeight: '800', color: '#0f172a', display: 'block', marginTop: 4, fontFamily: shiftActive ? 'monospace' : 'inherit' }}>
-              {shiftActive ? timerString : 'Off Duty'}
-            </span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 11, color: '#64748b', fontWeight: '600' }}>Not clocked in</span>
-            <span
-              onClick={shiftActive ? handleFinishWork : handleStartWork}
-              style={{ fontSize: 10, fontWeight: '800', color: '#334155', textDecoration: 'underline', cursor: 'pointer' }}
-            >
-              Clock in
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Action Cards Row (Bottom 5 boxes with hover style matching Move Asset) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16, marginBottom: 20 }}>
-        {/* Card 1: Move Asset */}
-        <div
-          onClick={() => triggerToast('Select Move Asset from sidebar to relocate assets.')}
-          onMouseEnter={() => setHoveredActionCard('move-asset')}
-          onMouseLeave={() => setHoveredActionCard(null)}
-          style={getActionCardStyle('move-asset')}
-        >
-          <div style={getActionIconContainerStyle('move-asset')}>
-            <NavigationIcon />
-          </div>
-          <div>
-            <h3 style={{ fontSize: 13.5, fontWeight: '800', color: '#0f172a', margin: 0 }}>Move Asset</h3>
-            <p style={{ fontSize: 10.5, color: '#64748b', margin: '4px 0 0 0', fontWeight: '500' }}>Relocate trailers & containers</p>
-          </div>
-          <span style={{ fontSize: 16, color: '#94a3b8', display: 'block' }}>&rarr;</span>
-        </div>
-
-        {/* Card 2: Scan In */}
-        <div
-          onClick={() => { setScanType('Container'); setScannedId(''); setShowQrModal(true); }}
-          onMouseEnter={() => setHoveredActionCard('scan-in')}
-          onMouseLeave={() => setHoveredActionCard(null)}
-          style={getActionCardStyle('scan-in')}
-        >
-          <div style={getActionIconContainerStyle('scan-in')}>
-            <QrCodeIcon />
-          </div>
-          <div>
-            <h3 style={{ fontSize: 13.5, fontWeight: '800', color: '#0f172a', margin: 0 }}>Scan In</h3>
-            <p style={{ fontSize: 10.5, color: '#64748b', margin: '4px 0 0 0', fontWeight: '500' }}>Check inbound assets into yard</p>
-          </div>
-          <span style={{ fontSize: 16, color: '#94a3b8', display: 'block' }}>&rarr;</span>
-        </div>
-
-        {/* Card 3: Scan Out */}
-        <div
-          onClick={() => { setScanType('Container'); setScannedId(''); setShowQrModal(true); }}
-          onMouseEnter={() => setHoveredActionCard('scan-out')}
-          onMouseLeave={() => setHoveredActionCard(null)}
-          style={getActionCardStyle('scan-out')}
-        >
-          <div style={getActionIconContainerStyle('scan-out')}>
-            <TruckIcon />
-          </div>
-          <div>
-            <h3 style={{ fontSize: 13.5, fontWeight: '800', color: '#0f172a', margin: 0 }}>Scan Out</h3>
-            <p style={{ fontSize: 10.5, color: '#64748b', margin: '4px 0 0 0', fontWeight: '500' }}>Release assets to gate</p>
-          </div>
-          <span style={{ fontSize: 16, color: '#94a3b8', display: 'block' }}>&rarr;</span>
-        </div>
-
-        {/* Card 4: Lane Assignment */}
-        <div
-          onClick={() => setShowYardMapModal(true)}
-          onMouseEnter={() => setHoveredActionCard('lane-assignment')}
-          onMouseLeave={() => setHoveredActionCard(null)}
-          style={getActionCardStyle('lane-assignment')}
-        >
-          <div style={getActionIconContainerStyle('lane-assignment')}>
-            <MapPinIcon />
-          </div>
-          <div>
-            <h3 style={{ fontSize: 13.5, fontWeight: '800', color: '#0f172a', margin: 0 }}>Lane Assignment</h3>
-            <p style={{ fontSize: 10.5, color: '#64748b', margin: '4px 0 0 0', fontWeight: '500' }}>Spot trailers to load lanes</p>
-          </div>
-          <span style={{ fontSize: 16, color: '#94a3b8', display: 'block' }}>&rarr;</span>
-        </div>
-
-        {/* Card 5: Report Issue */}
-        <div
-          onClick={() => {
-            setIncidentType('Accident');
-            setIncidentLocation('');
-            setIncidentDescription('');
-            setIncidentSeverity('Medium');
-            setShowIncidentModal(true);
-          }}
-          onMouseEnter={() => setHoveredActionCard('report-issue')}
-          onMouseLeave={() => setHoveredActionCard(null)}
-          style={getActionCardStyle('report-issue')}
-        >
+          {/* Time Clock Container Box */}
           <div style={{
-            width: 44,
-            height: 44,
-            borderRadius: 12,
-            backgroundColor: hoveredActionCard === 'report-issue' ? '#64748b' : '#fef2f2',
-            border: hoveredActionCard === 'report-issue' ? 'none' : '1.5px solid #fca5a5',
+            width: '100%',
+            backgroundColor: '#ffffff',
+            border: '1px solid #e2e8f0',
+            borderRadius: 16,
+            padding: '24px 28px',
+            boxSizing: 'border-box',
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
-            color: hoveredActionCard === 'report-issue' ? '#ffcc00' : '#ef4444',
-            transition: 'all 0.2s ease'
+            gap: 16
           }}>
-            <AlertTriangleIcon />
-          </div>
-          <div>
-            <h3 style={{ fontSize: 13.5, fontWeight: '800', color: '#0f172a', margin: 0 }}>Report Issue</h3>
-            <p style={{ fontSize: 10.5, color: '#64748b', margin: '4px 0 0 0', fontWeight: '500' }}>Log damage or missing items</p>
-          </div>
-          <span style={{ fontSize: 16, color: '#94a3b8', display: 'block' }}>&rarr;</span>
-        </div>
-      </div>
-
-      {/* Shift Control Strip */}
-      <div style={{
-        backgroundColor: '#ffffff',
-        borderRadius: 14,
-        padding: '12px 20px',
-        border: '1px solid #e2e8f0',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 20
-      }}>
-        {/* Left Side Status dot */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            backgroundColor: shiftActive ? '#10b981' : '#64748b',
-            display: 'inline-block'
-          }}></span>
-          <span style={{ fontSize: 13, fontWeight: '700', color: '#334155' }}>
-            {shiftActive ? `Shift In Progress (Active) - ${timerString}` : 'Shift Off Duty (Available)'}
-          </span>
-        </div>
-
-        {/* Right Side Buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button
-            onClick={() => setShowScheduleModal(true)}
-            style={{
-              backgroundColor: '#ffffff',
-              border: '1px solid #cbd5e1',
-              borderRadius: 8,
-              padding: '6px 14px',
-              color: '#475569',
-              fontSize: 12,
-              fontWeight: '700',
-              cursor: 'pointer',
-              outline: 'none'
-            }}
-          >
-            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><CalendarIcon /> Shift Schedule</span>
-          </button>
-
-          <button
-            onClick={() => triggerToast('Yard inventory database synchronized successfully.')}
-            style={{
-              backgroundColor: '#ffffff',
-              border: '1px solid #cbd5e1',
-              borderRadius: 8,
-              padding: '6px 14px',
-              color: '#475569',
-              fontSize: 12,
-              fontWeight: '700',
-              cursor: 'pointer',
-              outline: 'none'
-            }}
-          >
-            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><SyncIcon /> Sync Yard Status</span>
-          </button>
-
-          <button
-            onClick={shiftActive ? handleFinishWork : handleStartWork}
-            onMouseEnter={() => setHoveredButtonId('start-work-btn')}
-            onMouseLeave={() => setHoveredButtonId(null)}
-            style={{
-              backgroundColor: shiftActive ? '#ef4444' : '#ffcc00',
-              color: shiftActive ? '#ffffff' : '#000000',
-              border: hoveredButtonId === 'start-work-btn' ? '2px solid #000000' : '1px solid transparent',
-              borderRadius: 8,
-              padding: '8px 16px',
-              fontSize: 12,
-              fontWeight: '800',
-              cursor: 'pointer',
-              outline: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              boxShadow: shiftActive ? '0 2px 4px rgba(239, 68, 68, 0.2)' : '0 2px 4px rgba(255, 204, 0, 0.2)',
-              transition: 'all 0.15s ease'
-            }}
-          >
-            <ClockIcon /> {shiftActive ? 'Finish Work' : 'Start Work'}
-          </button>
-        </div>
-      </div>
-
-      {/* Spotted Relocator Task Queue List */}
-      <div style={{ backgroundColor: '#ffffff', borderRadius: 16, border: '1px solid #e2e8f0', padding: 20, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 14 }}>
-
-        {/* Section Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: 12 }}>
-          <h2 style={{ fontSize: 15, fontWeight: '800', color: '#0f172a', margin: 0 }}>
-            Spotted Relocator Task Queue &bull; <span style={{ color: '#64748b', fontSize: 13, fontWeight: '700' }}>3 Tasks</span>
-          </h2>
-          <button
-            onClick={() => setShowTasksModal(true)}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#b45309',
-              fontSize: 12,
-              fontWeight: '800',
-              cursor: 'pointer',
-              outline: 'none'
-            }}
-          >
-            View All Tasks
-          </button>
-        </div>
-
-        {/* Task Cards */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {tasks.map((task) => (
-            <div
-              key={task.id}
-              style={{
-                border: '1px solid #f1f5f9',
-                borderRadius: 12,
-                padding: 14,
-                backgroundColor: '#ffffff',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                gap: 16
-              }}
-            >
-              {/* Left Side: Info */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <h3 style={{ fontSize: 13.5, fontWeight: '800', color: '#0f172a', margin: 0 }}>{task.title}</h3>
-                  <span style={{
-                    fontSize: 9,
+            {!shiftActive ? (
+              <>
+                <span style={{ fontSize: 10, fontWeight: '800', color: '#64748b', letterSpacing: '0.5px' }}>
+                  NOT CLOCKED IN
+                </span>
+                <h3 style={{ fontSize: 22, fontWeight: '800', color: '#475569', margin: 0 }}>
+                  Shift Off-Duty
+                </h3>
+                <button
+                  onClick={handleStartWork}
+                  style={{
+                    width: '100%',
+                    backgroundColor: '#ffcc00',
+                    border: 'none',
+                    borderRadius: 12,
+                    padding: '14px',
+                    fontSize: 13.5,
                     fontWeight: '800',
-                    padding: '2px 6px',
-                    borderRadius: 4,
-                    textTransform: 'uppercase',
-                    backgroundColor: task.priority === 'High' ? '#fef2f2' : '#fffbeb',
-                    color: task.priority === 'High' ? '#ef4444' : '#b45309',
-                    border: `1.5px solid ${task.priority === 'High' ? '#fca5a5' : '#fde047'}`
-                  }}>
-                    {task.priority}
-                  </span>
-
-                  <span style={{
-                    fontSize: 9,
+                    color: '#000000',
+                    cursor: 'pointer',
+                    outline: 'none',
+                    boxShadow: '0 4px 12px rgba(255, 204, 0, 0.25)',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  Start Work
+                </button>
+              </>
+            ) : (
+              <>
+                <span style={{ fontSize: 10, fontWeight: '800', color: '#b45309', letterSpacing: '0.5px' }}>
+                  ACTIVE SHIFT IN PROGRESS
+                </span>
+                <div style={{ fontSize: 36, fontWeight: '800', color: '#0f172a', margin: 0, fontFamily: 'monospace', letterSpacing: '1px' }}>
+                  {timerString}
+                </div>
+                <span style={{ fontSize: 11, color: '#64748b', fontWeight: '500' }}>
+                  Started at: {getFormattedTime(startTime)}
+                </span>
+                <button
+                  onClick={handleFinishWork}
+                  style={{
+                    width: '100%',
+                    backgroundColor: '#ef4444',
+                    border: 'none',
+                    borderRadius: 12,
+                    padding: '14px',
+                    fontSize: 13.5,
                     fontWeight: '800',
-                    padding: '2px 6px',
-                    borderRadius: 4,
-                    backgroundColor: task.status === 'COMPLETED' ? '#d1fae5' : task.status === 'IN_PROGRESS' ? '#dbeafe' : '#fef3c7',
-                    color: task.status === 'COMPLETED' ? '#047857' : task.status === 'IN_PROGRESS' ? '#1d4ed8' : '#d97706',
-                    border: `1.5px solid ${task.status === 'COMPLETED' ? '#a7f3d0' : task.status === 'IN_PROGRESS' ? '#bfdbfe' : '#fde68a'}`
-                  }}>
-                    {task.status === 'IN_PROGRESS' ? 'IN PROGRESS' : task.status}
-                  </span>
-                </div>
-
-                <p style={{ fontSize: 11.5, color: '#64748b', margin: 0, fontWeight: '500' }}>
-                  {task.desc}
-                </p>
-
-                {/* Metadata Row */}
-                <div style={{ display: 'flex', gap: 14, alignItems: 'center', fontSize: 11, color: '#475569', fontWeight: '600', marginTop: 4 }}>
-                  <span>⏰ Due: {task.time}</span>
-                  <span>&bull;</span>
-                  <span>🚪 Gate: {task.gate}</span>
-                  <span>&bull;</span>
-                  <span>🚛 Unit: {task.unit}</span>
-                  {task.notes && (
-                    <>
-                      <span>&bull;</span>
-                      <span style={{ fontStyle: 'italic', color: '#10b981' }}>📝 Note: {task.notes}</span>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Right Side: Actions */}
-              <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                {task.status === 'PENDING' && (
-                  <button
-                    onClick={() => {
-                      setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: 'IN_PROGRESS' } : t));
-                      triggerToast(`Task started: ${task.title}`);
-                    }}
-                    onMouseEnter={() => setHoveredButtonId(`start-${task.id}`)}
-                    onMouseLeave={() => setHoveredButtonId(null)}
-                    style={getButtonStyle(`start-${task.id}`, '1px solid #bfdbfe', '#eff6ff', '#1d4ed8')}
-                  >
-                    Start Task
-                  </button>
-                )}
-
-                {task.status === 'IN_PROGRESS' && (
-                  <>
-                    <button
-                      onClick={() => {
-                        setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: 'COMPLETED' } : t));
-                        triggerToast(`Task completed: ${task.title}`);
-                      }}
-                      onMouseEnter={() => setHoveredButtonId(`complete-${task.id}`)}
-                      onMouseLeave={() => setHoveredButtonId(null)}
-                      style={getButtonStyle(`complete-${task.id}`, '1px solid transparent', '#ffcc00', '#000000')}
-                    >
-                      <CheckIcon /> Complete
-                    </button>
-                    <button
-                      onClick={() => {
-                        setTasks(prev => prev.map(t => t.id === task.id ? { ...t, notes: 'Confirmed Loaded' } : t));
-                        triggerToast(`Confirmed Loaded for ${task.unit}`);
-                      }}
-                      onMouseEnter={() => setHoveredButtonId(`load-${task.id}`)}
-                      onMouseLeave={() => setHoveredButtonId(null)}
-                      style={getButtonStyle(`load-${task.id}`, '1px solid #cbd5e1', '#ffffff', '#475569')}
-                    >
-                      Confirm Loaded
-                    </button>
-                    <button
-                      onClick={() => {
-                        setTasks(prev => prev.map(t => t.id === task.id ? { ...t, notes: 'Confirmed Unloaded' } : t));
-                        triggerToast(`Confirmed Unloaded for ${task.unit}`);
-                      }}
-                      onMouseEnter={() => setHoveredButtonId(`unload-${task.id}`)}
-                      onMouseLeave={() => setHoveredButtonId(null)}
-                      style={getButtonStyle(`unload-${task.id}`, '1px solid #cbd5e1', '#ffffff', '#475569')}
-                    >
-                      Confirm Unloaded
-                    </button>
-                  </>
-                )}
-
-                <button
-                  onClick={() => {
-                    setSelectedTask(task);
-                    setShowDetailsModal(true);
+                    color: '#ffffff',
+                    cursor: 'pointer',
+                    outline: 'none',
+                    boxShadow: '0 4px 12px rgba(239, 68, 68, 0.25)',
+                    transition: 'all 0.15s ease'
                   }}
-                  onMouseEnter={() => setHoveredButtonId(`details-${task.id}`)}
-                  onMouseLeave={() => setHoveredButtonId(null)}
-                  style={getButtonStyle(`details-${task.id}`, '1.5px solid #ffcc00', '#ffffff', '#b45309')}
                 >
-                  View Details
+                  Finish Work
                 </button>
-
-                <button
-                  onClick={() => {
-                    setNoteTaskId(task.id);
-                    setNoteText(task.notes || '');
-                    setShowNotePopup(true);
-                  }}
-                  onMouseEnter={() => setHoveredButtonId(`note-${task.id}`)}
-                  onMouseLeave={() => setHoveredButtonId(null)}
-                  style={getButtonStyle(`note-${task.id}`, '1.5px solid #ffcc00', '#ffffff', '#b45309')}
-                >
-                  Add Notes
-                </button>
-
-                <button
-                  onClick={() => setShowSupervisorModal(true)}
-                  onMouseEnter={() => setHoveredButtonId(`super-${task.id}`)}
-                  onMouseLeave={() => setHoveredButtonId(null)}
-                  style={getButtonStyle(`super-${task.id}`, '1.5px solid #ffcc00', '#ffffff', '#b45309')}
-                >
-                  Contact Supervisor
-                </button>
-              </div>
-            </div>
-          ))}
+              </>
+            )}
+          </div>
         </div>
       </div>
-
-      {/* ─── MODALS ──────────────────────────────────────────────────────── */}
 
       {/* MODAL 1: Work Shift Summary */}
       {showSummaryModal && (
@@ -1085,6 +528,7 @@ export default function YardDashboard() {
             display: 'flex',
             flexDirection: 'column'
           }}>
+
             {/* Modal Header */}
             <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h2 style={{ fontSize: 16.5, fontWeight: '800', color: '#0f172a', margin: 0 }}>Work Shift Summary</h2>
@@ -1098,7 +542,8 @@ export default function YardDashboard() {
 
             {/* Modal Body */}
             <div style={{ padding: '24px' }}>
-              {/* Gold Card Box */}
+
+              {/* Gold/Yellow Card Box */}
               <div style={{
                 backgroundColor: '#fffbeb',
                 border: '1px solid #fde047',
@@ -1155,6 +600,7 @@ export default function YardDashboard() {
                   Done
                 </button>
               </div>
+
             </div>
           </div>
         </div>
@@ -1186,6 +632,7 @@ export default function YardDashboard() {
             display: 'flex',
             flexDirection: 'column'
           }}>
+
             {/* Modal Header */}
             <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h2 style={{ fontSize: 16.5, fontWeight: '800', color: '#0f172a', margin: 0 }}>Notifications</h2>
@@ -1199,6 +646,8 @@ export default function YardDashboard() {
 
             {/* Modal Body */}
             <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+              {/* Sub-header controls */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: 12, fontWeight: '700', color: '#64748b' }}>{unreadCount} unread</span>
                 <button
@@ -1243,26 +692,30 @@ export default function YardDashboard() {
                       }}>
                         {n.type === 'emergency' && '🚨 '}{n.title}
                       </span>
-                      <span style={{ fontSize: 10, color: '#94a3b8' }}>{n.time}</span>
+                      <span style={{ fontSize: 10.5, color: '#64748b', fontWeight: '500' }}>
+                        {n.time}
+                      </span>
                     </div>
-                    <p style={{ fontSize: 11.5, color: '#64748b', margin: 0, fontWeight: '500', lineHeight: 1.4 }}>
+
+                    <p style={{ fontSize: 11.5, color: '#334155', margin: '4px 0 0 0', lineHeight: 1.4, fontWeight: '500' }}>
                       {n.desc}
                     </p>
+
+                    {/* Unread yellow dot at bottom-left */}
                     {n.unread && (
-                      <span style={{
-                        position: 'absolute',
-                        top: 14,
-                        right: 14,
-                        width: 6,
-                        height: 6,
+                      <div style={{
+                        width: 7,
+                        height: 7,
+                        backgroundColor: '#fbbf24',
                         borderRadius: '50%',
-                        backgroundColor: '#3b82f6'
-                      }}></span>
+                        marginTop: 6
+                      }}></div>
                     )}
                   </div>
                 ))}
               </div>
 
+              {/* Close Button */}
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
                 <button
                   onClick={() => setShowNotificationsModal(false)}
@@ -1281,6 +734,7 @@ export default function YardDashboard() {
                   Close
                 </button>
               </div>
+
             </div>
           </div>
         </div>
@@ -1312,6 +766,7 @@ export default function YardDashboard() {
             display: 'flex',
             flexDirection: 'column'
           }}>
+
             {/* Modal Header */}
             <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h2 style={{ fontSize: 16.5, fontWeight: '800', color: '#0f172a', margin: 0 }}>Yard Map &mdash; Parking Grid</h2>
@@ -1325,6 +780,7 @@ export default function YardDashboard() {
 
             {/* Modal Body */}
             <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+
               {/* Legend row */}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px', justifyContent: 'flex-start', alignItems: 'center', fontSize: 11.5, fontWeight: '600', color: '#475569' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -1349,7 +805,7 @@ export default function YardDashboard() {
                 </div>
               </div>
 
-              {/* Parking Grid */}
+              {/* parking Grid (3x5 grid of cards) */}
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(5, 1fr)',
@@ -1427,6 +883,7 @@ export default function YardDashboard() {
                   Close
                 </button>
               </div>
+
             </div>
           </div>
         </div>
@@ -1733,6 +1190,7 @@ export default function YardDashboard() {
                   gap: 12,
                   cursor: 'pointer'
                 }}>
+                  {/* Cloud Icon */}
                   <div style={{
                     width: 44,
                     height: 44,
@@ -1843,6 +1301,7 @@ export default function YardDashboard() {
 
             {/* Modal Body */}
             <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 20, overflowY: 'auto' }}>
+
               {/* Today's Shift Card */}
               <div style={{
                 backgroundColor: '#fffbeb',
@@ -1899,7 +1358,16 @@ export default function YardDashboard() {
                 <span style={{ fontSize: 11, fontWeight: '800', color: '#64748b', letterSpacing: '0.5px' }}>UPCOMING SHIFTS</span>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <div style={{ border: '1px solid #e2e8f0', borderRadius: 12, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff' }}>
+                  {/* Shift 1 */}
+                  <div style={{
+                    border: '1px solid #e2e8f0',
+                    borderRadius: 12,
+                    padding: '12px 16px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    backgroundColor: '#ffffff'
+                  }}>
                     <div>
                       <span style={{ fontSize: 13, fontWeight: '800', color: '#0f172a', display: 'block' }}>Jun 28, 2026</span>
                       <span style={{ fontSize: 11, color: '#64748b', marginTop: 2, display: 'block' }}>06:00 AM &ndash; 02:00 PM</span>
@@ -1910,7 +1378,16 @@ export default function YardDashboard() {
                     </div>
                   </div>
 
-                  <div style={{ border: '1px solid #e2e8f0', borderRadius: 12, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff' }}>
+                  {/* Shift 2 */}
+                  <div style={{
+                    border: '1px solid #e2e8f0',
+                    borderRadius: 12,
+                    padding: '12px 16px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    backgroundColor: '#ffffff'
+                  }}>
                     <div>
                       <span style={{ fontSize: 13, fontWeight: '800', color: '#0f172a', display: 'block' }}>Jun 29, 2026</span>
                       <span style={{ fontSize: 11, color: '#64748b', marginTop: 2, display: 'block' }}>02:00 PM &ndash; 10:00 PM</span>
@@ -1921,7 +1398,16 @@ export default function YardDashboard() {
                     </div>
                   </div>
 
-                  <div style={{ border: '1px solid #e2e8f0', borderRadius: 12, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff' }}>
+                  {/* Shift 3 */}
+                  <div style={{
+                    border: '1px solid #e2e8f0',
+                    borderRadius: 12,
+                    padding: '12px 16px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    backgroundColor: '#ffffff'
+                  }}>
                     <div>
                       <span style={{ fontSize: 13, fontWeight: '800', color: '#0f172a', display: 'block' }}>Jun 30, 2026</span>
                       <span style={{ fontSize: 11, color: '#64748b', marginTop: 2, display: 'block' }}>Rest Day</span>
@@ -1953,6 +1439,7 @@ export default function YardDashboard() {
                   Close
                 </button>
               </div>
+
             </div>
           </div>
         </div>
@@ -1998,6 +1485,7 @@ export default function YardDashboard() {
 
             {/* Modal Body */}
             <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 16, textAlign: 'left' }}>
+              {/* Status Selector */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <label style={{ fontSize: 11, fontWeight: '800', color: '#64748b', letterSpacing: '0.5px' }}>STATUS</label>
                 <select
@@ -2024,6 +1512,7 @@ export default function YardDashboard() {
                 </select>
               </div>
 
+              {/* Notes */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <label style={{ fontSize: 11, fontWeight: '800', color: '#64748b', letterSpacing: '0.5px' }}>NOTES (OPTIONAL)</label>
                 <input
@@ -2127,6 +1616,7 @@ export default function YardDashboard() {
 
             {/* Modal Body */}
             <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto' }}>
+
               {/* Statistics Row */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
                 <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: '12px 6px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -2171,6 +1661,7 @@ export default function YardDashboard() {
                       gap: 8
                     }}
                   >
+                    {/* Header: Title and Badges */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                         <h3 style={{ fontSize: 14, fontWeight: '800', color: '#0f172a', margin: 0 }}>{task.title}</h3>
@@ -2188,6 +1679,7 @@ export default function YardDashboard() {
                         </span>
                       </div>
 
+                      {/* Status badge */}
                       <span style={{
                         fontSize: 9,
                         fontWeight: '800',
@@ -2202,16 +1694,19 @@ export default function YardDashboard() {
                       </span>
                     </div>
 
+                    {/* Subtext */}
                     <p style={{ fontSize: 11.5, color: '#64748b', margin: 0, fontWeight: '500' }}>
                       {task.desc}
                     </p>
 
+                    {/* Metadata Row */}
                     <div style={{ display: 'flex', gap: 16, alignItems: 'center', fontSize: 11, color: '#475569', fontWeight: '600' }}>
-                      <span>⏰ {task.time}</span>
-                      <span>🚪 {task.gate}</span>
-                      <span>🚛 {task.unit}</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>⏰ {task.time}</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>🚪 {task.gate}</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>🚛 {task.unit}</span>
                     </div>
 
+                    {/* Notes Row */}
                     {task.notes && (
                       <div style={{ borderTop: '1px dashed #e2e8f0', paddingTop: 8, marginTop: 4 }}>
                         <p style={{ fontSize: 11, color: '#475569', margin: 0, fontStyle: 'italic', fontWeight: '500' }}>
@@ -2219,6 +1714,94 @@ export default function YardDashboard() {
                         </p>
                       </div>
                     )}
+
+                    {/* Action buttons */}
+                    <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+                      {task.status === 'PENDING' && (
+                        <button
+                          onClick={() => {
+                            setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: 'IN_PROGRESS' } : t));
+                            triggerToast(`Task started: ${task.title}`);
+                          }}
+                          style={{
+                            backgroundColor: '#ffffff',
+                            border: '1px solid #3b82f6',
+                            color: '#2563eb',
+                            borderRadius: 8,
+                            padding: '6px 14px',
+                            fontSize: 11.5,
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                            outline: 'none'
+                          }}
+                        >
+                          Start Task
+                        </button>
+                      )}
+
+                      {task.status === 'IN_PROGRESS' && (
+                        <button
+                          onClick={() => {
+                            setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: 'COMPLETED' } : t));
+                            triggerToast(`Task completed: ${task.title}`);
+                          }}
+                          style={{
+                            backgroundColor: '#ffffff',
+                            border: '1px solid #10b981',
+                            color: '#059669',
+                            borderRadius: 8,
+                            padding: '6px 14px',
+                            fontSize: 11.5,
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                            outline: 'none'
+                          }}
+                        >
+                          Finish Task
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => {
+                          setSelectedTask(task);
+                          setShowDetailsModal(true);
+                        }}
+                        style={{
+                          backgroundColor: '#ffffff',
+                          border: '1px solid #ffcc00',
+                          color: '#b45309',
+                          borderRadius: 8,
+                          padding: '6px 14px',
+                          fontSize: 11.5,
+                          fontWeight: '700',
+                          cursor: 'pointer',
+                          outline: 'none'
+                        }}
+                      >
+                        View Details
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setNoteTaskId(task.id);
+                          setNoteText(task.notes || '');
+                          setShowNotePopup(true);
+                        }}
+                        style={{
+                          backgroundColor: '#ffffff',
+                          border: '1px solid #ffcc00',
+                          color: '#b45309',
+                          borderRadius: 8,
+                          padding: '6px 14px',
+                          fontSize: 11.5,
+                          fontWeight: '700',
+                          cursor: 'pointer',
+                          outline: 'none'
+                        }}
+                      >
+                        Add Notes
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -2242,6 +1825,7 @@ export default function YardDashboard() {
                   Close
                 </button>
               </div>
+
             </div>
           </div>
         </div>
@@ -2329,6 +1913,7 @@ export default function YardDashboard() {
                 </div>
               )}
 
+              {/* Close button */}
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
                 <button
                   onClick={() => setShowDetailsModal(false)}
@@ -2457,146 +2042,6 @@ export default function YardDashboard() {
         </div>
       )}
 
-      {/* MODAL 11: Contact Shift Supervisor */}
-      {showSupervisorModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.4)',
-          backdropFilter: 'blur(3px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1100
-        }}>
-          <div style={{
-            backgroundColor: '#ffffff',
-            borderRadius: 24,
-            width: '100%',
-            maxWidth: 480,
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-            border: '1px solid #e2e8f0',
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column',
-            fontFamily: "'Outfit', 'Inter', sans-serif"
-          }}>
-            {/* Modal Header */}
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ fontSize: 17, fontWeight: '800', color: '#0f172a', margin: 0 }}>Contact Shift Supervisor</h2>
-              <button
-                onClick={() => setShowSupervisorModal(false)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', color: '#64748b' }}
-              >
-                <CloseIcon />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 18, textAlign: 'left' }}>
-              {/* Supervisor Info Card */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                backgroundColor: '#f8fafc',
-                border: '1px solid #e2e8f0',
-                borderRadius: 14,
-                padding: '12px 16px'
-              }}>
-                <div style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: '50%',
-                  backgroundColor: '#ffcc00',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 16,
-                  fontWeight: '800',
-                  color: '#000000'
-                }}>
-                  MT
-                </div>
-                <div>
-                  <h3 style={{ fontSize: 14, fontWeight: '800', color: '#0f172a', margin: 0 }}>Michael Torres</h3>
-                  <p style={{ fontSize: 11, color: '#64748b', margin: '2px 0 0 0', fontWeight: '600' }}>Shift Yard Supervisor (Active)</p>
-                </div>
-              </div>
-
-              {/* Message Input */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <label style={{ fontSize: 11, fontWeight: '800', color: '#64748b', letterSpacing: '0.5px' }}>MESSAGE *</label>
-                <textarea
-                  rows="4"
-                  placeholder="Type your message for the supervisor..."
-                  value={supervisorMessage}
-                  onChange={(e) => setSupervisorMessage(e.target.value)}
-                  style={{
-                    padding: '12px 16px',
-                    borderRadius: 12,
-                    border: '1px solid #cbd5e1',
-                    fontSize: 13,
-                    outline: 'none',
-                    fontWeight: '500',
-                    resize: 'none',
-                    fontFamily: 'inherit'
-                  }}
-                />
-              </div>
-
-              {/* Action Buttons */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 4 }}>
-                <button
-                  onClick={() => setShowSupervisorModal(false)}
-                  style={{
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #cbd5e1',
-                    borderRadius: 10,
-                    padding: '10px 24px',
-                    fontSize: 12.5,
-                    fontWeight: '700',
-                    color: '#334155',
-                    cursor: 'pointer',
-                    outline: 'none'
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    if (!supervisorMessage.trim()) {
-                      triggerToast('Please type a message first.');
-                      return;
-                    }
-                    triggerToast('Message sent to Supervisor Michael Torres.');
-                    setSupervisorMessage('');
-                    setShowSupervisorModal(false);
-                  }}
-                  style={{
-                    backgroundColor: '#ffcc00',
-                    border: 'none',
-                    borderRadius: 10,
-                    padding: '10px 24px',
-                    fontSize: 12.5,
-                    fontWeight: '800',
-                    color: '#000000',
-                    cursor: 'pointer',
-                    outline: 'none',
-                    boxShadow: '0 2px 6px rgba(255, 204, 0, 0.2)'
-                  }}
-                >
-                  Send Message
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Custom Toast Notification Popup */}
       {toast && (
         <div style={{
@@ -2610,7 +2055,7 @@ export default function YardDashboard() {
           display: 'flex',
           alignItems: 'center',
           gap: 10,
-          zIndex: 2000,
+          zIndex: 1100,
           boxShadow: '0 10px 25px -5px rgba(0,0,0,0.05)',
           maxWidth: 420,
           animation: 'slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
