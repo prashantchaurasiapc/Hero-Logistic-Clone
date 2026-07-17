@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Users, UserCheck, UserPlus, UserMinus, Star, Search, Plus, Upload, Download, MoreVertical,
-  ChevronDown, ArrowRight, Eye, Edit, UserCircle, Trash2, MapPin, Phone, Mail, Globe, Clock, Package, CheckCircle2, FileText, ChevronLeft, Building2, Briefcase, Lock, List, Settings, DollarSign, Activity, AlertCircle, Wrench, Truck, Calendar, Filter, X, MessageSquare, ToggleLeft, ToggleRight, Info, Map, Car, Calculator, Shield, ExternalLink, ChevronRight
+  ChevronDown, ArrowRight, ArrowLeft, Eye, Edit, UserCircle, Trash2, Check, MapPin, Phone, Mail, Globe, Clock, Package, CheckCircle2, FileText, ChevronLeft, Building2, Briefcase, Lock, List, Settings, DollarSign, Activity, AlertCircle, Wrench, Truck, Calendar, Filter, X, MessageSquare, ToggleLeft, ToggleRight, Info, Map, Car, Calculator, Shield, ExternalLink, ChevronRight
 } from 'lucide-react';
 
 const mockCustomers = [
@@ -55,10 +56,398 @@ const initialDocuments = [
 ];
 
 export default function Customers() {
+  const [customersList, setCustomersList] = useState(mockCustomers);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [activeActionMenu, setActiveActionMenu] = useState(null);
   const [activeDetailsTab, setActiveDetailsTab] = useState('Overview');
+
+  const [showCreateLoadModal, setShowCreateLoadModal] = useState(false);
+  const [showCreateInvoiceModal, setShowCreateInvoiceModal] = useState(false);
+  const [showSendMessageModal, setShowSendMessageModal] = useState(false);
+  const [showEditCustomerModal, setShowEditCustomerModal] = useState(false);
+  const [showAddContactModal, setShowAddContactModal] = useState(false);
+  const [showAssignManagerModal, setShowAssignManagerModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedBranchTab, setSelectedBranchTab] = useState(null);
+  const [activeBranchTabTab, setActiveBranchTabTab] = useState('Overview');
+  
+  const [showAddStaffFormTab, setShowAddStaffFormTab] = useState(false);
+  const [newStaffNameTab, setNewStaffNameTab] = useState('');
+  const [newStaffRoleTab, setNewStaffRoleTab] = useState('Dispatcher');
+
+  const [customerBranches, setCustomerBranches] = useState([
+    {
+      id: '1',
+      name: 'Sydney Central Depot',
+      code: 'SYD-CENTRAL',
+      type: 'Primary Depot',
+      status: 'Online',
+      score: 98,
+      address: 'STRATHFIELD, NSW 2135',
+      leadName: 'MICHAEL ADAMS',
+      leadInitials: 'MA',
+      staffCount: 42,
+      vehicles: 18,
+      storageUsage: 92,
+      storageText: 'FULL 92%',
+      storageColor: 'text-red-500 bg-red-500',
+      authority: [
+        { name: 'Michael Adams', role: 'Branch Manager', initials: 'MA' },
+        { name: 'Sarah Mitchell', role: 'Dispatcher', initials: 'SM' },
+        { name: 'Emma Thompson', role: 'Dispatcher', initials: 'ET' },
+        { name: 'Chris Lee', role: 'Accounts', initials: 'CL' }
+      ]
+    },
+    {
+      id: '2',
+      name: 'Melbourne Depot',
+      code: 'MEL-DEPOT',
+      type: 'Primary Depot',
+      status: 'Online',
+      score: 84,
+      address: 'TULLAMARINE, VIC 3043',
+      leadName: 'SARAH MITCHELL',
+      leadInitials: 'SM',
+      staffCount: 14,
+      vehicles: 6,
+      storageUsage: 45,
+      storageText: 'OK 45%',
+      storageColor: 'text-amber-500 bg-amber-500',
+      authority: [
+        { name: 'Sarah Mitchell', role: 'Branch Manager', initials: 'SM' },
+        { name: 'Michael Adams', role: 'Dispatcher', initials: 'MA' }
+      ]
+    },
+    {
+      id: '3',
+      name: 'Brisbane Port Branch',
+      code: 'BNE-PORT',
+      type: 'Local Branch',
+      status: 'Maintenance',
+      score: 72,
+      address: 'LYTTON, QLD 4178',
+      leadName: 'LIAM SMITH',
+      leadInitials: 'LS',
+      staffCount: 28,
+      vehicles: 12,
+      storageUsage: 78,
+      storageText: 'OK 78%',
+      storageColor: 'text-amber-500 bg-amber-500',
+      authority: [
+        { name: 'Liam Smith', role: 'Branch Manager', initials: 'LS' },
+        { name: 'Emma Thompson', role: 'Dispatcher', initials: 'ET' }
+      ]
+    }
+  ]);
+  const [showAddBranchTab, setShowAddBranchTab] = useState(false);
+  const [branchSearchQuery, setBranchSearchQuery] = useState('');
+  const [newBranchTabForm, setNewBranchTabForm] = useState({
+    name: '',
+    type: 'Local Branch',
+    address: '',
+    code: '',
+    managerName: '',
+    phone: '',
+    workingHours: '08:00 - 18:00',
+    storageSpace: '1000'
+  });
+
+  const handleSaveBranchTab = (e) => {
+    e.preventDefault();
+    if (!newBranchTabForm.name || !newBranchTabForm.code) return;
+
+    if (selectedBranchTab) {
+      // Edit/Configure Mode
+      const updatedBranch = {
+        ...selectedBranchTab,
+        name: newBranchTabForm.name,
+        type: newBranchTabForm.type,
+        address: newBranchTabForm.address.toUpperCase(),
+        code: newBranchTabForm.code.toUpperCase(),
+        leadName: newBranchTabForm.managerName.toUpperCase(),
+        leadInitials: newBranchTabForm.managerName ? newBranchTabForm.managerName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'NA',
+        phone: newBranchTabForm.phone || selectedBranchTab.phone,
+        hours: newBranchTabForm.workingHours || selectedBranchTab.hours
+      };
+
+      setSelectedBranchTab(updatedBranch);
+      setCustomerBranches(prev => prev.map(b => b.id === selectedBranchTab.id ? updatedBranch : b));
+      setShowAddBranchTab(false);
+    } else {
+      // Add Mode
+      const storageVal = Math.floor(Math.random() * 60) + 30;
+      const isRed = storageVal >= 90;
+
+      const newBranch = {
+        id: Date.now().toString(),
+        name: newBranchTabForm.name,
+        code: newBranchTabForm.code.toUpperCase(),
+        type: newBranchTabForm.type,
+        status: 'Online',
+        score: Math.floor(Math.random() * 20) + 80,
+        address: newBranchTabForm.address.toUpperCase() || 'UNKNOWN ADDRESS',
+        leadName: newBranchTabForm.managerName.toUpperCase() || 'NO MANAGER ASSIGNED',
+        leadInitials: newBranchTabForm.managerName ? newBranchTabForm.managerName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'NA',
+        staffCount: Math.floor(Math.random() * 40) + 10,
+        vehicles: Math.floor(Math.random() * 15) + 3,
+        storageUsage: storageVal,
+        storageText: isRed ? `FULL ${storageVal}%` : `OK ${storageVal}%`,
+        storageColor: isRed ? 'text-red-500 bg-red-500' : 'text-amber-500 bg-amber-500',
+        phone: newBranchTabForm.phone || '+61 2 9111 2222',
+        hours: newBranchTabForm.workingHours || '24/7',
+        authority: [
+          { name: newBranchTabForm.managerName.toUpperCase() || 'NO MANAGER ASSIGNED', role: 'Branch Manager', initials: newBranchTabForm.managerName ? newBranchTabForm.managerName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'NA' }
+        ]
+      };
+
+      setCustomerBranches(prev => [...prev, newBranch]);
+      setShowAddBranchTab(false);
+    }
+
+    setNewBranchTabForm({
+      name: '',
+      type: 'Local Branch',
+      address: '',
+      code: '',
+      managerName: '',
+      phone: '',
+      workingHours: '08:00 - 18:00',
+      storageSpace: '1000'
+    });
+  };
+
+  const handleAddStaffMemberTab = (e) => {
+    e.preventDefault();
+    if (!newStaffNameTab) return;
+
+    const initials = newStaffNameTab.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+    const newStaff = {
+      name: newStaffNameTab,
+      role: newStaffRoleTab,
+      initials
+    };
+
+    const updatedBranch = {
+      ...selectedBranchTab,
+      authority: [...(selectedBranchTab.authority || []), newStaff],
+      staffCount: selectedBranchTab.staffCount + 1
+    };
+
+    setSelectedBranchTab(updatedBranch);
+    setCustomerBranches(prev => prev.map(b => b.id === selectedBranchTab.id ? updatedBranch : b));
+    
+    // Reset states
+    setNewStaffNameTab('');
+    setNewStaffRoleTab('Dispatcher');
+    setShowAddStaffFormTab(false);
+  };
+
+  const [editCustomerForm, setEditCustomerForm] = useState({
+    id: '',
+    name: '',
+    abn: '',
+    acn: '',
+    type: 'Corporate',
+    billingTerms: '30 Days EOM',
+    creditLimit: '250000',
+    category: 'Strategic Account',
+    manager: '',
+    status: 'Active'
+  });
+
+  const [assignManagerForm, setAssignManagerForm] = useState({
+    id: '',
+    name: '',
+    manager: ''
+  });
+
+  const [deleteCustomerForm, setDeleteCustomerForm] = useState({
+    id: '',
+    name: ''
+  });
+
+  const openEditCustomer = (customer) => {
+    setEditCustomerForm({
+      id: customer.id,
+      name: customer.name || '',
+      abn: customer.abn || '',
+      acn: customer.acn || '123 456 789',
+      type: customer.type || 'Corporate',
+      billingTerms: customer.billingTerms || '14 Days EOM',
+      creditLimit: customer.creditLimit || '250000',
+      category: customer.category || 'Strategic Account',
+      manager: customer.manager || 'Sarah Mitchell',
+      status: customer.status || 'Active'
+    });
+    setShowEditCustomerModal(true);
+    setActiveActionMenu(null);
+  };
+
+  const openAssignManager = (customer) => {
+    setAssignManagerForm({
+      id: customer.id,
+      name: customer.name,
+      manager: customer.manager || 'Sarah Mitchell'
+    });
+    setShowAssignManagerModal(true);
+    setActiveActionMenu(null);
+  };
+
+  const openDeleteCustomer = (customer) => {
+    setDeleteCustomerForm({
+      id: customer.id,
+      name: customer.name
+    });
+    setShowDeleteModal(true);
+    setActiveActionMenu(null);
+  };
+
+  const handleSaveEditCustomer = (e) => {
+    e.preventDefault();
+    const updatedList = customersList.map(c => {
+      if (c.id === editCustomerForm.id) {
+        return {
+          ...c,
+          name: editCustomerForm.name,
+          abn: editCustomerForm.abn,
+          type: editCustomerForm.type,
+          billingTerms: editCustomerForm.billingTerms,
+          manager: editCustomerForm.manager,
+          status: editCustomerForm.status,
+        };
+      }
+      return c;
+    });
+    setCustomersList(updatedList);
+
+    if (selectedCustomer && selectedCustomer.id === editCustomerForm.id) {
+      setSelectedCustomer({
+        ...selectedCustomer,
+        name: editCustomerForm.name,
+        abn: editCustomerForm.abn,
+        type: editCustomerForm.type,
+        billingTerms: editCustomerForm.billingTerms,
+        manager: editCustomerForm.manager,
+        status: editCustomerForm.status
+      });
+      setCompanyInfo(prev => ({
+        ...prev,
+        tradingName: editCustomerForm.name,
+        abn: editCustomerForm.abn,
+        acn: editCustomerForm.acn,
+        status: editCustomerForm.status
+      }));
+    }
+    setShowEditCustomerModal(false);
+  };
+
+  const handleSaveAssignManager = (e) => {
+    if (e) e.preventDefault();
+    const updatedList = customersList.map(c => {
+      if (c.id === assignManagerForm.id) {
+        return { ...c, manager: assignManagerForm.manager };
+      }
+      return c;
+    });
+    setCustomersList(updatedList);
+
+    if (selectedCustomer && selectedCustomer.id === assignManagerForm.id) {
+      setSelectedCustomer({
+        ...selectedCustomer,
+        manager: assignManagerForm.manager
+      });
+    }
+    setShowAssignManagerModal(false);
+  };
+
+  const handleConfirmDelete = (e) => {
+    if (e) e.preventDefault();
+    const updatedList = customersList.filter(c => c.id !== deleteCustomerForm.id);
+    setCustomersList(updatedList);
+
+    if (selectedCustomer && selectedCustomer.id === deleteCustomerForm.id) {
+      setSelectedCustomer(null);
+    }
+    setShowDeleteModal(false);
+  };
+
+  // Contacts live state
+  const [contacts, setContacts] = useState([
+    { id: 1, firstName: 'John', lastName: 'Smith', role: 'Primary', phone: '0401 234 567', email: 'john.smith@abcmotors.com.au', isPrimary: true },
+    { id: 2, firstName: 'Michael', lastName: 'King', role: 'Accounts', phone: '0412 345 678', email: 'michael.king@abcmotors.com.au', isPrimary: false },
+    { id: 3, firstName: 'Sarah', lastName: 'Patel', role: 'Operations', phone: '0411 567 890', email: 'sarah.patel@abcmotors.com.au', isPrimary: false },
+    { id: 4, firstName: 'After', lastName: 'Hours', role: 'After Hours', phone: '1300 123 456', email: 'afterhours@abcmotors.com.au', isPrimary: false },
+  ]);
+  const [draftContact, setDraftContact] = useState({ firstName: '', lastName: '', role: '', email: '', phone: '', isPrimary: false });
+  const [showUploadDocumentModal, setShowUploadDocumentModal] = useState(false);
+  const [showEditCompanyInfoModal, setShowEditCompanyInfoModal] = useState(false);
+  const [showEditNotesTagsModal, setShowEditNotesTagsModal] = useState(false);
+  const [showEditSpecialInstructionsModal, setShowEditSpecialInstructionsModal] = useState(false);
+  const [showMainHeaderMenu, setShowMainHeaderMenu] = useState(false);
+
+  // Special Instructions Live State
+  const [specialInstructions, setSpecialInstructions] = useState(`Delivery Instructions
+Report to receiving office before unloading. Photo POD required for all deliveries.
+
+Site Requirements
+High visibility vest must be worn on site. Speed limit 10km/h within yard.
+
+Booking Requirements
+All deliveries must be booked 24hrs in advance. Contact operations for scheduling.
+
+Access Information
+Main gate code: 2580#
+Please sign in at security.`);
+  const [draftSpecialInstructions, setDraftSpecialInstructions] = useState('');
+
+  // Company Information live state
+  const [companyInfo, setCompanyInfo] = useState({
+    tradingName: selectedCustomer?.name || 'FreightCo',
+    phone: '0415 166 693',
+    abn: selectedCustomer?.abn || '68 961 770 797',
+    email: 'casey.davis@example.com',
+    acn: '123 456 789',
+    website: 'www.abcmotors.com.au',
+    industry: 'Automotive',
+    customerSince: '12 Feb 2022',
+    address: '25 Corporate Drive\nEpping NSW 2121\nAustralia',
+  });
+  const [draftCompanyInfo, setDraftCompanyInfo] = useState({});
+
+  useEffect(() => {
+    if (selectedCustomer) {
+      setCompanyInfo({
+        tradingName: selectedCustomer.name || '',
+        phone: selectedCustomer.contactPhone || '0415 166 693',
+        abn: selectedCustomer.abn || '',
+        email: selectedCustomer.contactEmail || 'casey.davis@example.com',
+        acn: selectedCustomer.acn || '123 456 789',
+        website: selectedCustomer.website || 'www.abcmotors.com.au',
+        industry: selectedCustomer.industry || 'Automotive',
+        customerSince: selectedCustomer.customerSince || '12 Feb 2022',
+        address: selectedCustomer.address || '25 Corporate Drive\nEpping NSW 2121\nAustralia',
+      });
+      if (selectedCustomer.contacts) {
+        setContacts(selectedCustomer.contacts);
+      } else {
+        setContacts([
+          { id: 1, firstName: selectedCustomer.contactName?.split(' ')[0] || 'Casey', lastName: selectedCustomer.contactName?.split(' ')[1] || 'Doe', role: 'Primary', phone: selectedCustomer.contactPhone || '0415 166 693', email: selectedCustomer.contactEmail || 'casey.davis@example.com', isPrimary: true },
+          { id: 2, firstName: 'Michael', lastName: 'King', role: 'Accounts', phone: '0412 345 678', email: 'michael.king@abcmotors.com.au', isPrimary: false },
+        ]);
+      }
+    }
+  }, [selectedCustomer]);
+
+  // Notes & Tags live state
+  const [internalNotes, setInternalNotes] = useState(
+    'Priority customer. Regular car carrier runs.\nWeekly exports to Brisbane port.\nRequires advance booking for all pickups.'
+  );
+  const [customerTags, setCustomerTags] = useState(['Car Carrying', 'VIP', 'Regular', 'Export']);
+  // Draft state inside modal
+  const [draftNotes, setDraftNotes] = useState('');
+  const [draftTags, setDraftTags] = useState([]);
+  const [newTagInput, setNewTagInput] = useState('');
 
   const [selectedDocCategory, setSelectedDocCategory] = useState('All Documents');
   const [activeDocument, setActiveDocument] = useState(initialDocuments[2]);
@@ -73,7 +462,7 @@ export default function Customers() {
   const [moduleFilter, setModuleFilter] = useState('All Mods');
   const [managerFilter, setManagerFilter] = useState('All Managers');
 
-  const filteredCustomers = mockCustomers.filter(c => {
+  const filteredCustomers = customersList.filter(c => {
     if (searchQuery && !c.name.toLowerCase().includes(searchQuery.toLowerCase()) && !c.abn.includes(searchQuery)) return false;
     if (statusFilter !== 'All States' && c.status !== statusFilter) return false;
     if (typeFilter !== 'All Types' && c.type !== typeFilter) return false;
@@ -93,11 +482,39 @@ export default function Customers() {
 
   const handleSaveCustomer = (e) => {
     e.preventDefault();
+    if (!newCustomerForm.name) return;
+
+    const baseId = newCustomerForm.name.slice(0, 2).toUpperCase();
+    let uniqueId = baseId;
+    let counter = 1;
+    while (customersList.some(c => c.id === uniqueId)) {
+      uniqueId = `${baseId}${counter}`;
+      counter++;
+    }
+
+    const newCustomer = {
+      id: uniqueId,
+      name: newCustomerForm.name,
+      abn: newCustomerForm.abn || 'N/A',
+      type: newCustomerForm.type,
+      contactName: 'New Contact',
+      contactEmail: 'contact@example.com',
+      contactPhone: 'N/A',
+      transportModules: ['truck'],
+      billingTerms: '14 Days',
+      billingType: 'EOM',
+      manager: 'Sarah Mitchell',
+      status: 'Active'
+    };
+
+    setCustomersList([newCustomer, ...customersList]);
+    setNewCustomerForm({ name: '', abn: '', type: 'Corporate' });
     setShowAddModal(false);
   };
 
   if (selectedCustomer) {
     return (
+      <>
       <div className="flex-grow bg-[#F8FAFC] p-2 sm:p-6 w-full text-left font-sans custom-scrollbar overflow-y-auto">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div className="flex items-start gap-4">
@@ -144,7 +561,7 @@ export default function Customers() {
             <button onClick={() => setShowSendMessageModal(true)} className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer">
               <MessageSquare size={14} /> Message
             </button>
-            <button onClick={() => setShowEditCustomerModal(true)} className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer">
+            <button onClick={() => openEditCustomer(selectedCustomer)} className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer">
               <Edit size={14} /> Edit Customer
             </button>
             <button className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer">
@@ -256,20 +673,18 @@ export default function Customers() {
         </div>
 
         {/* Tabs */}
-        <div className="flex items-center gap-8 border-b border-slate-200 mb-6 overflow-x-auto custom-scrollbar pb-1">
-          {['Overview', 'Contacts', 'Billing Rules', 'Pricing', 'Transport Modules', 'Instructions', 'Documents', 'Activity', 'Financials'].map(tab => (
+        <div className="flex items-center border-b border-slate-200 mb-6 overflow-x-auto pb-0" style={{ gap: '0' }}>
+          {['Overview', 'Contacts', 'Branches', 'Billing Rules', 'Pricing', 'Transport Modules', 'Instructions', 'Documents', 'Activity', 'Financials'].map(tab => (
             <button
               key={tab}
               onClick={() => setActiveDetailsTab(tab)}
-              className={`text-[10px] pb-3 uppercase tracking-widest font-black whitespace-nowrap transition-colors relative cursor-pointer ${activeDetailsTab === tab
-                ? 'text-blue-600'
-                : 'text-slate-400 hover:text-slate-600'
+              className={`flex items-center gap-1.5 px-4 pb-3 pt-1 text-[13px] font-medium whitespace-nowrap transition-all relative cursor-pointer border-b-2 ${activeDetailsTab === tab
+                ? 'text-indigo-600 border-indigo-600'
+                : 'text-slate-400 border-transparent hover:text-slate-600 hover:border-slate-300'
                 }`}
             >
+              <span className={`text-[8px] ${activeDetailsTab === tab ? 'text-indigo-400' : 'text-slate-300'}`}>◆</span>
               {tab}
-              {activeDetailsTab === tab && (
-                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 rounded-t-full"></div>
-              )}
             </button>
           ))}
         </div>
@@ -287,46 +702,46 @@ export default function Customers() {
                     <FileText size={16} className="text-blue-600" />
                     <h3 className="text-sm font-black tracking-tight">Company Information</h3>
                   </div>
-                  <button className="text-[10px] font-bold text-slate-500 hover:text-slate-700 flex items-center gap-1 border border-slate-100 px-2 py-1 rounded bg-slate-50 cursor-pointer">
+                  <button onClick={() => { setDraftCompanyInfo({...companyInfo}); setShowEditCompanyInfoModal(true); }} className="text-[10px] font-bold text-slate-500 hover:text-slate-700 flex items-center gap-1 border border-slate-100 px-2 py-1 rounded bg-slate-50 cursor-pointer">
                     <Edit size={12} /> Edit
                   </button>
                 </div>
                 <div className="grid grid-cols-2 gap-y-4 gap-x-4 text-sm font-semibold text-slate-600">
                   <div>
                     <span className="text-[10px] text-slate-400 font-black uppercase block mb-0.5 tracking-widest">Trading Name</span>
-                    <span className="text-xs text-slate-900 font-bold">{selectedCustomer.name}</span>
+                    <span className="text-xs text-slate-900 font-bold">{companyInfo.tradingName}</span>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 font-black uppercase block mb-0.5 tracking-widest">Phone</span>
-                    <span className="text-xs text-slate-900 font-bold">0415 166 693</span>
+                    <span className="text-xs text-slate-900 font-bold">{companyInfo.phone}</span>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 font-black uppercase block mb-0.5 tracking-widest">ABN</span>
-                    <span className="text-xs text-slate-900 font-bold">{selectedCustomer.abn}</span>
+                    <span className="text-xs text-slate-900 font-bold">{companyInfo.abn}</span>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 font-black uppercase block mb-0.5 tracking-widest">Email</span>
-                    <span className="text-xs text-slate-900 font-bold">casey.davis@example.com</span>
+                    <span className="text-xs text-slate-900 font-bold">{companyInfo.email}</span>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 font-black uppercase block mb-0.5 tracking-widest">ACN</span>
-                    <span className="text-xs text-slate-900 font-bold">123 456 789</span>
+                    <span className="text-xs text-slate-900 font-bold">{companyInfo.acn}</span>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 font-black uppercase block mb-0.5 tracking-widest">Website</span>
-                    <span className="text-xs text-slate-900 font-bold">www.abcmotors.com.au</span>
+                    <span className="text-xs text-slate-900 font-bold">{companyInfo.website}</span>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 font-black uppercase block mb-0.5 tracking-widest">Industry</span>
-                    <span className="text-xs text-slate-900 font-bold">Automotive</span>
+                    <span className="text-xs text-slate-900 font-bold">{companyInfo.industry}</span>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 font-black uppercase block mb-0.5 tracking-widest">Customer Since</span>
-                    <span className="text-xs text-slate-900 font-bold">12 Feb 2022</span>
+                    <span className="text-xs text-slate-900 font-bold">{companyInfo.customerSince}</span>
                   </div>
                   <div className="col-span-1">
                     <span className="text-[10px] text-slate-400 font-black uppercase block mb-0.5 tracking-widest">Address</span>
-                    <span className="text-xs text-slate-900 font-bold block leading-tight">25 Corporate Drive<br />Epping NSW 2121<br />Australia</span>
+                    <span className="text-xs text-slate-900 font-bold block leading-tight">{companyInfo.address.split('\n').map((line, i) => <span key={i}>{line}{i < companyInfo.address.split('\n').length - 1 && <br />}</span>)}</span>
                   </div>
                   <div className="col-span-1">
                     <span className="text-[10px] text-slate-400 font-black uppercase block mb-0.5 tracking-widest">Status</span>
@@ -348,13 +763,13 @@ export default function Customers() {
                 <div className="grid grid-cols-3 gap-3">
                   {[
                     { label: 'Create Load', icon: Plus, action: () => setShowCreateLoadModal(true) },
-                    { label: 'View Loads', icon: Eye },
+                    { label: 'View Loads', icon: Eye, action: () => setActiveDetailsTab('Activity') },
                     { label: 'Create Invoice', icon: Plus, action: () => setShowCreateInvoiceModal(true) },
                     { label: 'Send Message', icon: MessageSquare, action: () => setShowSendMessageModal(true) },
-                    { label: 'View Invoices', icon: FileText },
+                    { label: 'View Invoices', icon: FileText, action: () => setActiveDetailsTab('Financials') },
                     { label: 'Edit Customer', icon: Edit, action: () => setShowEditCustomerModal(true) },
-                    { label: 'Add Contact', icon: UserPlus },
-                    { label: 'Upload Document', icon: Upload },
+                    { label: 'Add Contact', icon: UserPlus, action: () => setShowAddContactModal(true) },
+                    { label: 'Upload Document', icon: Upload, action: () => setShowUploadDocumentModal(true) },
                     { label: 'More Actions', icon: MoreVertical }
                   ].map((act, idx) => {
                     const Icon = act.icon;
@@ -381,7 +796,7 @@ export default function Customers() {
                     <Star size={16} className="text-blue-600" />
                     <h3 className="text-sm font-black tracking-tight">Notes & Tags</h3>
                   </div>
-                  <button className="text-[10px] font-bold text-slate-500 hover:text-slate-700 flex items-center gap-1 border border-slate-100 px-2 py-1 rounded bg-slate-50 cursor-pointer">
+                  <button onClick={() => { setDraftNotes(internalNotes); setDraftTags([...customerTags]); setNewTagInput(''); setShowEditNotesTagsModal(true); }} className="text-[10px] font-bold text-slate-500 hover:text-slate-700 flex items-center gap-1 border border-slate-100 px-2 py-1 rounded bg-slate-50 cursor-pointer">
                     <Edit size={12} /> Edit
                   </button>
                 </div>
@@ -389,30 +804,36 @@ export default function Customers() {
                 <div className="mb-5">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Internal Notes</p>
                   <div className="space-y-2">
-                    <p className="text-xs font-semibold text-slate-600 leading-relaxed bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                      Priority customer. Regular car carrier runs.
-                    </p>
-                    <p className="text-xs font-semibold text-slate-600 leading-relaxed bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                      Weekly exports to Brisbane port.
-                    </p>
-                    <p className="text-xs font-semibold text-slate-600 leading-relaxed bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                      Requires advance booking for all pickups.
-                    </p>
+                    {internalNotes.split('\n').filter(n => n.trim()).map((note, i) => (
+                      <p key={i} className="text-xs font-semibold text-slate-600 leading-relaxed bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                        {note}
+                      </p>
+                    ))}
                   </div>
                 </div>
 
                 <div>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Tags</p>
                   <div className="flex flex-wrap gap-2">
-                    <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-md text-[10px] font-black uppercase tracking-wider border border-indigo-100 shadow-sm">Car Carrying</span>
-                    <span className="px-2.5 py-1 bg-amber-50 text-amber-700 rounded-md text-[10px] font-black uppercase tracking-wider border border-amber-100 shadow-sm">VIP</span>
-                    <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-md text-[10px] font-black uppercase tracking-wider border border-emerald-100 shadow-sm">Regular</span>
-                    <span className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-md text-[10px] font-black uppercase tracking-wider border border-slate-200 shadow-sm">Export</span>
+                    {customerTags.map((tag, i) => {
+                      const colors = [
+                        'bg-indigo-50 text-indigo-700 border-indigo-100',
+                        'bg-amber-50 text-amber-700 border-amber-100',
+                        'bg-emerald-50 text-emerald-700 border-emerald-100',
+                        'bg-slate-100 text-slate-700 border-slate-200',
+                        'bg-rose-50 text-rose-700 border-rose-100',
+                        'bg-purple-50 text-purple-700 border-purple-100',
+                      ];
+                      return (
+                        <span key={i} className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider border shadow-sm ${colors[i % colors.length]}`}>
+                          {tag}
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
 
-              {/* Row 2 */}
               {/* Contacts */}
               <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
                 <div className="flex justify-between items-center mb-4">
@@ -420,77 +841,45 @@ export default function Customers() {
                     <Users size={16} className="text-blue-600" />
                     <h3 className="text-sm font-black tracking-tight">Contacts</h3>
                   </div>
-                  <button className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer">
+                  <button onClick={() => { setDraftContact({ firstName: '', lastName: '', role: '', email: '', phone: '', isPrimary: false }); setShowAddContactModal(true); }} className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer">
                     <Plus size={12} /> Add Contact
                   </button>
                 </div>
                 <div className="space-y-4 mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 font-black flex items-center justify-center text-xs border border-indigo-100 shrink-0">JS</div>
-                    <div className="flex-grow min-w-0">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-bold text-slate-900 truncate">John Smith</p>
-                        <span className="bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded text-[8px] uppercase font-black tracking-wider ml-2 shrink-0">Primary</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-semibold mt-0.5">
-                        <Phone size={10} /> 0401 234 567
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-semibold truncate mt-0.5">
-                        <Mail size={10} /> john.smith@abcmotors.com.au
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 font-black flex items-center justify-center text-xs border border-emerald-100 shrink-0">MK</div>
-                    <div className="flex-grow min-w-0">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-bold text-slate-900 truncate">Michael King</p>
-                        <span className="bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded text-[8px] uppercase font-black tracking-wider ml-2 shrink-0">Accounts</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-semibold mt-0.5">
-                        <Phone size={10} /> 0412 345 678
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-semibold truncate mt-0.5">
-                        <Mail size={10} /> michael.king@abcmotors.com.au
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-amber-50 text-amber-600 font-black flex items-center justify-center text-xs border border-amber-100 shrink-0">SP</div>
-                    <div className="flex-grow min-w-0">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-bold text-slate-900 truncate">Sarah Patel</p>
-                        <span className="bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded text-[8px] uppercase font-black tracking-wider ml-2 shrink-0">Operations</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-semibold mt-0.5">
-                        <Phone size={10} /> 0411 567 890
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-semibold truncate mt-0.5">
-                        <Mail size={10} /> sarah.patel@abcmotors.com.au
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-red-50 text-red-600 font-black flex items-center justify-center text-xs border border-red-100 shrink-0">AH</div>
-                    <div className="flex-grow min-w-0">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-bold text-slate-900 truncate">After Hours</p>
-                        <span className="bg-red-50 text-red-600 px-1.5 py-0.5 rounded text-[8px] uppercase font-black tracking-wider ml-2 shrink-0">After Hours</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-semibold mt-0.5">
-                        <Phone size={10} /> 1300 123 456
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-semibold truncate mt-0.5">
-                        <Mail size={10} /> afterhours@abcmotors.com.au
-                      </div>
-                    </div>
-                  </div>
+                  {(() => {
+                    const avatarColors = [
+                      { bg: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-indigo-100', badge: 'bg-indigo-50 text-indigo-600' },
+                      { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-100', badge: 'bg-emerald-50 text-emerald-600' },
+                      { bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-100', badge: 'bg-amber-50 text-amber-600' },
+                      { bg: 'bg-red-50', text: 'text-red-600', border: 'border-red-100', badge: 'bg-red-50 text-red-600' },
+                      { bg: 'bg-purple-50', text: 'text-purple-600', border: 'border-purple-100', badge: 'bg-purple-50 text-purple-600' },
+                      { bg: 'bg-rose-50', text: 'text-rose-600', border: 'border-rose-100', badge: 'bg-rose-50 text-rose-600' },
+                    ];
+                    return contacts.map((c, i) => {
+                      const col = avatarColors[i % avatarColors.length];
+                      const initials = `${c.firstName[0] || ''}${c.lastName[0] || ''}`.toUpperCase();
+                      return (
+                        <div key={c.id} className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-full ${col.bg} ${col.text} font-black flex items-center justify-center text-xs border ${col.border} shrink-0`}>{initials}</div>
+                          <div className="flex-grow min-w-0">
+                            <div className="flex items-center justify-between">
+                              <p className="text-sm font-bold text-slate-900 truncate">{c.firstName} {c.lastName}</p>
+                              {(c.isPrimary || c.role) && (
+                                <span className={`${col.badge} px-1.5 py-0.5 rounded text-[8px] uppercase font-black tracking-wider ml-2 shrink-0`}>
+                                  {c.isPrimary ? 'Primary' : c.role}
+                                </span>
+                              )}
+                            </div>
+                            {c.phone && <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-semibold mt-0.5"><Phone size={10} /> {c.phone}</div>}
+                            {c.email && <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-semibold truncate mt-0.5"><Mail size={10} /> {c.email}</div>}
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
                 </div>
                 <div className="pt-4 border-t border-slate-100">
-                  <button className="text-[10px] font-black text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer">
+                  <button onClick={() => setActiveDetailsTab('Contacts')} className="text-[10px] font-black text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer">
                     View All Contacts <ArrowRight size={12} />
                   </button>
                 </div>
@@ -503,7 +892,7 @@ export default function Customers() {
                     <Truck size={16} className="text-blue-600" />
                     <h3 className="text-sm font-black tracking-tight">Transport Modules</h3>
                   </div>
-                  <button className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer">
+                  <button onClick={() => setActiveDetailsTab('Transport Modules')} className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer">
                     Manage Modules
                   </button>
                 </div>
@@ -619,7 +1008,7 @@ export default function Customers() {
                     <Truck size={16} className="text-blue-600" />
                     <h3 className="text-sm font-black tracking-tight">Recent Loads</h3>
                   </div>
-                  <button className="text-[10px] font-black text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer">
+                  <button onClick={() => setActiveDetailsTab('Activity')} className="text-[10px] font-black text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer">
                     View All Loads <ArrowRight size={12} />
                   </button>
                 </div>
@@ -690,46 +1079,35 @@ export default function Customers() {
                     <FileText size={16} className="text-blue-600" />
                     <h3 className="text-sm font-black tracking-tight">Special Instructions</h3>
                   </div>
-                  <button className="text-[10px] font-bold text-slate-500 hover:text-slate-700 flex items-center gap-1 border border-slate-100 px-2 py-1 rounded bg-slate-50 cursor-pointer">
+                  <button onClick={() => { setDraftSpecialInstructions(specialInstructions); setShowEditSpecialInstructionsModal(true); }} className="text-[10px] font-bold text-slate-500 hover:text-slate-700 flex items-center gap-1 border border-slate-100 px-2 py-1 rounded bg-slate-50 cursor-pointer">
                     <Edit size={12} /> Edit
                   </button>
                 </div>
                 <div className="space-y-4">
-                  <div>
-                    <div className="flex items-center gap-1.5 text-xs font-black text-slate-900 mb-1">
-                      <CheckCircle2 size={12} className="text-blue-600" /> Delivery Instructions
-                    </div>
-                    <p className="text-[10px] font-semibold text-slate-500 pl-4 leading-relaxed">
-                      Report to receiving office before unloading. Photo POD required for all deliveries.
-                    </p>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1.5 text-xs font-black text-slate-900 mb-1">
-                      <CheckCircle2 size={12} className="text-blue-600" /> Site Requirements
-                    </div>
-                    <p className="text-[10px] font-semibold text-slate-500 pl-4 leading-relaxed">
-                      High visibility vest must be worn on site. Speed limit 10km/h within yard.
-                    </p>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1.5 text-xs font-black text-slate-900 mb-1">
-                      <CheckCircle2 size={12} className="text-blue-600" /> Booking Requirements
-                    </div>
-                    <p className="text-[10px] font-semibold text-slate-500 pl-4 leading-relaxed">
-                      All deliveries must be booked 24hrs in advance. Contact operations for scheduling.
-                    </p>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1.5 text-xs font-black text-slate-900 mb-1">
-                      <CheckCircle2 size={12} className="text-blue-600" /> Access Information
-                    </div>
-                    <p className="text-[10px] font-semibold text-slate-500 pl-4 leading-relaxed">
-                      Main gate code: 2580#<br />Please sign in at security.
-                    </p>
-                  </div>
+                  {specialInstructions ? (
+                    specialInstructions.split('\n\n').map((block, index) => {
+                      const lines = block.split('\n');
+                      const title = lines[0];
+                      const content = lines.slice(1).join('\n');
+                      return (
+                        <div key={index}>
+                          <div className="flex items-center gap-1.5 text-xs font-black text-slate-900 mb-1">
+                            <CheckCircle2 size={12} className="text-blue-600" /> {title}
+                          </div>
+                          {content && (
+                            <p className="text-[10px] font-semibold text-slate-500 pl-4 leading-relaxed whitespace-pre-line">
+                              {content}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p className="text-[10px] font-semibold text-slate-500 italic">No special instructions added.</p>
+                  )}
                 </div>
                 <div className="mt-5 pt-4 border-t border-slate-100">
-                  <button className="text-[10px] font-black text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer">
+                  <button onClick={() => setActiveDetailsTab('Instructions')} className="text-[10px] font-black text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer">
                     View All Instructions <ArrowRight size={12} />
                   </button>
                 </div>
@@ -794,7 +1172,7 @@ export default function Customers() {
                     <Activity size={16} className="text-blue-600" />
                     <h3 className="text-sm font-black tracking-tight">Recent Activity</h3>
                   </div>
-                  <button className="text-[10px] font-black text-blue-600 hover:text-blue-700 cursor-pointer">
+                  <button onClick={() => setActiveDetailsTab('Activity')} className="text-[10px] font-black text-blue-600 hover:text-blue-700 cursor-pointer">
                     View All
                   </button>
                 </div>
@@ -1195,6 +1573,803 @@ export default function Customers() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {activeDetailsTab === 'Branches' && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            {selectedBranchTab ? (
+              <div className="space-y-6">
+                {/* Header Block */}
+                <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
+                  <div className="flex items-center gap-4">
+                    {/* Back button */}
+                    <button 
+                      onClick={() => setSelectedBranchTab(null)} 
+                      className="w-9 h-9 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-900 transition-colors shadow-sm cursor-pointer shrink-0"
+                    >
+                      <ArrowLeft size={16} strokeWidth={2.5} />
+                    </button>
+                    <div>
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none">
+                          {selectedBranchTab.name}
+                        </h1>
+                        <span className={`px-2 py-0.5 rounded text-[8px] uppercase font-black tracking-wider ${
+                          selectedBranchTab.type === 'Primary Depot' ? 'bg-amber-100 text-slate-900' : 'bg-slate-100 text-slate-700'
+                        }`}>
+                          {selectedBranchTab.type}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded text-[8px] uppercase font-black tracking-wider ${
+                          selectedBranchTab.status === 'Online' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                        }`}>
+                          {selectedBranchTab.status}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 text-[10px] font-bold text-slate-500 flex-wrap">
+                        <span className="flex items-center gap-1"><MapPin size={11} className="text-slate-400" /> {selectedBranchTab.address}</span>
+                        <span className="text-slate-350">•</span>
+                        <span className="flex items-center gap-1"><Phone size={11} className="text-slate-400" /> {selectedBranchTab.phone || '+61 2 9111 2222'}</span>
+                        <span className="text-slate-350">•</span>
+                        <span className="flex items-center gap-1"><Clock size={11} className="text-slate-400" /> {selectedBranchTab.hours || '24/7'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 shrink-0">
+                    <button 
+                      onClick={() => {
+                        setActiveBranchTabTab('Authority');
+                        setShowAddStaffFormTab(true);
+                      }}
+                      className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Plus size={14} strokeWidth={2.5} /> Add Staff
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setNewBranchTabForm({
+                          name: selectedBranchTab.name,
+                          type: selectedBranchTab.type,
+                          address: selectedBranchTab.address,
+                          code: selectedBranchTab.code,
+                          managerName: selectedBranchTab.leadName,
+                          phone: selectedBranchTab.phone || '+61 2 9111 2222',
+                          workingHours: selectedBranchTab.hours || '24/7',
+                          storageSpace: selectedBranchTab.storageSpace || '1000'
+                        });
+                        setShowAddBranchTab(true);
+                      }}
+                      className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Settings size={14} /> Configure
+                    </button>
+                  </div>
+                </div>
+
+                {/* Metrics Row */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                  {[
+                    { label: 'TOTAL STAFF', value: selectedBranchTab.staffCount, color: 'text-slate-800' },
+                    { label: 'DRIVERS', value: selectedBranchTab.vehicles, color: 'text-slate-800' },
+                    { label: 'FLEET ASSETS', value: selectedBranchTab.vehicles + 6, color: 'text-slate-800' },
+                    { label: 'ACTIVE JOBS', value: selectedBranchTab.vehicles, color: 'text-slate-800' },
+                    { label: 'DELIVERED TODAY', value: selectedBranchTab.staffCount * 10 - 8, color: 'text-slate-800' },
+                    { label: 'ISSUES', value: selectedBranchTab.type === 'Primary Depot' ? '3' : '1', color: 'text-red-500' }
+                  ].map((metric, idx) => (
+                    <div key={idx} className="bg-white rounded-2xl border border-slate-100 p-4 shadow-xs">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">{metric.label}</p>
+                      <h3 className={`text-xl font-black leading-none ${metric.color}`}>{metric.value}</h3>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Dock Capacity progress bar */}
+                <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-xs">
+                  <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-wider mb-2.5">
+                    <span className="text-slate-500">Dock Capacity</span>
+                    <span className="text-slate-900">{selectedBranchTab.storageUsage}%</span>
+                  </div>
+                  <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden mb-2.5">
+                    <div 
+                      className={`h-full rounded-full ${
+                        selectedBranchTab.storageUsage >= 90 ? 'bg-red-500' : 
+                        selectedBranchTab.storageUsage > 60 ? 'bg-[#EAB308]' : 'bg-emerald-500'
+                      }`} 
+                      style={{ width: `${selectedBranchTab.storageUsage}%` }}
+                    ></div>
+                  </div>
+                  <div className="flex justify-between items-center text-[10px] font-bold text-slate-400">
+                    <span>{selectedBranchTab.type === 'Primary Depot' ? '18 Active Docks' : '8 Active Docks'}</span>
+                    {selectedBranchTab.storageUsage >= 90 ? (
+                      <span className="flex items-center gap-1 text-red-500 font-extrabold uppercase text-[9px] tracking-wider">
+                        <AlertCircle size={12} /> Near Capacity
+                      </span>
+                    ) : (
+                      <span className="text-emerald-500 font-extrabold uppercase text-[9px] tracking-wider">
+                        Optimal Capacity
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Two Column Layout */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                  {/* Left columns */}
+                  <div className="lg:col-span-2 space-y-6">
+                    
+                    {/* Inner Sub-navigation tabs with outline box for active tab */}
+                    <div className="flex items-center gap-2 border-b border-slate-100 pb-3 flex-nowrap overflow-x-auto">
+                      {[
+                        { id: 'Overview', label: 'Overview' },
+                        { id: 'Authority', label: `Authority (${(selectedBranchTab.authority || []).length})` },
+                        { id: 'Drivers', label: `Drivers (4)` },
+                        { id: 'Fleet', label: `Fleet (5)` },
+                        { id: 'Recent Jobs', label: 'Recent Jobs' }
+                      ].map((tab) => {
+                        const isActive = activeBranchTabTab === tab.id;
+                        return (
+                          <button 
+                            key={tab.id}
+                            onClick={() => setActiveBranchTabTab(tab.id)}
+                            className={`px-4 py-1.5 text-xs font-black whitespace-nowrap cursor-pointer transition-all rounded-lg border-2 ${
+                              isActive 
+                                ? 'border-slate-900 bg-white text-slate-900' 
+                                : 'border-transparent text-slate-400 hover:text-slate-800'
+                            }`}
+                          >
+                            {tab.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Dynamic Tab Panel Contents */}
+                    {activeBranchTabTab === 'Overview' && (
+                      <div className="space-y-6 animate-in fade-in duration-200">
+                        {/* Profile */}
+                        <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-xs">
+                          <div className="flex items-center gap-2 border-b border-slate-50 pb-4 mb-4">
+                            <Building2 size={16} className="text-blue-600" />
+                            <h3 className="text-xs font-black uppercase text-slate-800 tracking-wider">Branch Profile</h3>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6 text-xs font-bold text-slate-500">
+                            <div>
+                              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Branch Manager</span>
+                              <span className="text-slate-800">{selectedBranchTab.leadName}</span>
+                            </div>
+                            <div>
+                              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Contact Phone</span>
+                              <span className="text-slate-800">{selectedBranchTab.phone || '+61 2 9111 2222'}</span>
+                            </div>
+                            <div>
+                              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Operating Hours</span>
+                              <span className="text-slate-800">{selectedBranchTab.hours || '24/7'}</span>
+                            </div>
+                            <div>
+                              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Facility Type</span>
+                              <span className="text-slate-800">{selectedBranchTab.type}</span>
+                            </div>
+                            <div>
+                              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Location</span>
+                              <span className="text-slate-800">{selectedBranchTab.address}</span>
+                            </div>
+                            <div>
+                              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Branch ID</span>
+                              <span className="text-slate-800 font-extrabold">{selectedBranchTab.code}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Table */}
+                        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+                          <div className="p-5 border-b border-slate-100 flex justify-between items-center">
+                            <div className="flex items-center gap-2">
+                              <Truck size={16} className="text-blue-600" />
+                              <h3 className="text-xs font-black uppercase text-slate-800 tracking-wider">Recent Loads</h3>
+                            </div>
+                            <button className="text-[9px] font-black text-blue-600 hover:text-blue-700 transition-colors uppercase tracking-widest flex items-center gap-0.5 cursor-pointer">
+                              View All &rarr;
+                            </button>
+                          </div>
+                          <div className="overflow-x-auto custom-scrollbar">
+                            <table className="w-full text-left text-xs whitespace-nowrap">
+                              <thead>
+                                <tr className="border-b border-slate-100 text-[10px] font-bold text-slate-450 uppercase tracking-wider bg-slate-50/50">
+                                  <th className="py-3 px-5 text-slate-400">LOAD</th>
+                                  <th className="py-3 px-5 text-slate-400">STATUS</th>
+                                  <th className="py-3 px-5 text-slate-400">DRIVER</th>
+                                  <th className="py-3 px-5 text-slate-400">ETA</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100 font-semibold text-slate-655">
+                                <tr className="hover:bg-slate-50/30 transition-colors">
+                                  <td className="py-3.5 px-5 font-black text-slate-850">SHP-9042<span className="text-[9px] text-slate-400 font-semibold block">Acme Corp</span></td>
+                                  <td className="py-3.5 px-5"><span className="text-[8px] font-black uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-1 rounded">In Transit</span></td>
+                                  <td className="py-3.5 px-5 text-slate-505 font-semibold">Jack Taylor</td>
+                                  <td className="py-3.5 px-5 text-slate-700 font-bold">14:30</td>
+                                </tr>
+                                <tr className="hover:bg-slate-50/30 transition-colors">
+                                  <td className="py-3.5 px-5 font-black text-slate-850">SHP-9055<span className="text-[9px] text-slate-400 font-semibold block">Acme Freight</span></td>
+                                  <td className="py-3.5 px-5"><span className="text-[8px] font-black uppercase tracking-wider text-amber-600 bg-amber-50 px-2 py-1 rounded">Unassigned</span></td>
+                                  <td className="py-3.5 px-5 text-slate-400 font-normal">—</td>
+                                  <td className="py-3.5 px-5 text-slate-400 font-normal">—</td>
+                                </tr>
+                                <tr className="hover:bg-slate-50/30 transition-colors">
+                                  <td className="py-3.5 px-5 font-black text-slate-850">SHP-9039<span className="text-[9px] text-slate-400 font-semibold block">Global Traders</span></td>
+                                  <td className="py-3.5 px-5"><span className="text-[8px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-1 rounded">Received</span></td>
+                                  <td className="py-3.5 px-5 text-slate-505 font-semibold">Liam Smith</td>
+                                  <td className="py-3.5 px-5 text-emerald-600 font-bold">Done</td>
+                                </tr>
+                                <tr className="hover:bg-slate-50/30 transition-colors">
+                                  <td className="py-3.5 px-5 font-black text-slate-850">SHP-9041<span className="text-[9px] text-slate-400 font-semibold block">Tech Solutions</span></td>
+                                  <td className="py-3.5 px-5"><span className="text-[8px] font-black uppercase tracking-wider text-red-600 bg-red-50 px-2 py-1 rounded">Issue</span></td>
+                                  <td className="py-3.5 px-5 text-slate-505 font-semibold">Lucas Jones</td>
+                                  <td className="py-3.5 px-5 text-red-500 font-bold">Delayed</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {activeBranchTabTab === 'Authority' && (
+                      <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm space-y-6 animate-in fade-in duration-200">
+                        <div className="flex justify-between items-center border-b border-slate-50 pb-4">
+                          <h3 className="text-xs font-black uppercase text-slate-800 tracking-wider">Complete Branch Authority</h3>
+                          {showAddStaffFormTab ? (
+                            <button 
+                              onClick={() => setShowAddStaffFormTab(false)}
+                              className="text-xs font-bold text-amber-600 hover:text-amber-700 cursor-pointer bg-transparent border-0"
+                            >
+                              Cancel
+                            </button>
+                          ) : (
+                            <button 
+                              onClick={() => setShowAddStaffFormTab(true)}
+                              className="text-xs font-bold text-amber-600 hover:text-amber-700 cursor-pointer bg-transparent border-0"
+                            >
+                              + Add New Staff Member
+                            </button>
+                          )}
+                        </div>
+
+                        {showAddStaffFormTab && (
+                          <form onSubmit={handleAddStaffMemberTab} className="bg-slate-50/50 rounded-2xl border border-slate-100 p-5 space-y-4 animate-in slide-in-from-top duration-250">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Staff Member Name</label>
+                                <input 
+                                  type="text"
+                                  value={newStaffNameTab}
+                                  onChange={e => setNewStaffNameTab(e.target.value)}
+                                  placeholder="e.g. John Doe"
+                                  className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-xs font-semibold focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-100 transition-all text-slate-705 placeholder-slate-400 bg-white"
+                                  required
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Company Role</label>
+                                <div className="relative">
+                                  <select 
+                                    value={newStaffRoleTab}
+                                    onChange={e => setNewStaffRoleTab(e.target.value)}
+                                    className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-xs font-semibold focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-100 transition-all text-slate-705 bg-white cursor-pointer"
+                                  >
+                                    <option value="Dispatcher">Dispatcher</option>
+                                    <option value="Branch Manager">Branch Manager</option>
+                                    <option value="Accounts">Accounts</option>
+                                    <option value="Driver">Driver</option>
+                                  </select>
+                                  <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                </div>
+                              </div>
+                            </div>
+                            <button 
+                              type="submit"
+                              className="w-full bg-[#EAB308] hover:bg-[#CA8A04] text-slate-900 py-3 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center shadow-xs cursor-pointer border-0"
+                            >
+                              Add To Roster
+                            </button>
+                          </form>
+                        )}
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {(selectedBranchTab.authority || []).map((auth, idx) => (
+                            <div key={idx} className="bg-white border border-slate-100 rounded-xl p-4 flex items-center justify-between shadow-xs">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-slate-900 text-white font-black flex items-center justify-center text-[11px] shrink-0">
+                                  {auth.initials}
+                                </div>
+                                <div>
+                                  <p className="text-xs font-bold text-slate-800 leading-tight mb-0.5">{auth.name}</p>
+                                  <p className="text-[10px] text-slate-400 font-semibold leading-none">{auth.role}</p>
+                                </div>
+                              </div>
+                              <span className="bg-emerald-50 text-emerald-600 text-[8px] font-black px-1.5 py-0.5 rounded tracking-wide uppercase border border-emerald-100">
+                                Active
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {activeBranchTabTab === 'Drivers' && (
+                      <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm space-y-6 animate-in fade-in duration-200">
+                        <div className="border-b border-slate-50 pb-4">
+                          <h3 className="text-xs font-black uppercase text-slate-800 tracking-wider">Assigned Drivers</h3>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {[
+                            { name: 'Jack Taylor', class: 'MC Heavy Double', phone: '+61 400 111 222', status: 'In Transit', color: 'text-blue-600 bg-blue-50 border-blue-105' },
+                            { name: 'Liam Smith', class: 'HC Heavy Rigid', phone: '+61 400 222 333', status: 'At Depot', color: 'text-emerald-600 bg-emerald-50 border-emerald-105' },
+                            { name: 'Lucas Jones', class: 'MC Heavy Double', phone: '+61 400 333 444', status: 'Rest Period', color: 'text-amber-600 bg-amber-50 border-amber-105' },
+                            { name: 'Sarah Connor', class: 'HR Heavy Vehicle', phone: '+61 400 444 555', status: 'At Depot', color: 'text-emerald-600 bg-emerald-50 border-emerald-105' }
+                          ].map((driver, idx) => (
+                            <div key={idx} className="bg-white border border-slate-100 rounded-xl p-4 flex justify-between items-start shadow-xs">
+                              <div>
+                                <h4 className="text-xs font-bold text-slate-800 mb-1">{driver.name}</h4>
+                                <p className="text-[10px] text-slate-400 font-semibold mb-0.5">Class: {driver.class}</p>
+                                <p className="text-[10px] text-slate-400 font-semibold">Phone: {driver.phone}</p>
+                              </div>
+                              <span className={`text-[8px] font-black uppercase tracking-wider px-2 py-1 rounded border ${driver.color}`}>
+                                {driver.status}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {activeBranchTabTab === 'Fleet' && (
+                      <div className="bg-white rounded-2xl border border-slate-105 p-6 shadow-sm space-y-6 animate-in fade-in duration-200">
+                        <div className="border-b border-slate-50 pb-4">
+                          <h3 className="text-xs font-black uppercase text-slate-800 tracking-wider">Assigned Fleet Vehicles</h3>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {[
+                            { name: '2022 Toyota Camry', plate: 'ABC 123', body: 'Sedan', status: 'IN DEPOT', color: 'text-slate-600 bg-slate-50 border-slate-200' },
+                            { name: '2023 Honda CR-V', plate: 'XYZ 987', body: 'SUV', status: 'IN TRANSIT', color: 'text-blue-600 bg-blue-50 border-blue-105' },
+                            { name: '2024 Tesla Model S', plate: 'EV 0001', body: 'Electric Sedan', status: 'DELIVERED', color: 'text-emerald-600 bg-emerald-50 border-emerald-105' },
+                            { name: '2021 Ford Ranger', plate: 'TRK 444', body: 'Ute', status: 'AWAITING LOAD', color: 'text-amber-600 bg-amber-50 border-amber-105' },
+                            { name: '2022 Nissan X-Trail', plate: 'NIS 202', body: 'SUV', status: 'IN DEPOT', color: 'text-slate-600 bg-slate-50 border-slate-200' }
+                          ].map((vehicle, idx) => (
+                            <div key={idx} className="bg-white border border-slate-105 rounded-xl p-4 flex justify-between items-start shadow-xs">
+                              <div>
+                                <h4 className="text-xs font-bold text-slate-805 mb-1">{vehicle.name}</h4>
+                                <p className="text-[10px] text-slate-400 font-semibold">Plate: {vehicle.plate}  •  Body: {vehicle.body}</p>
+                              </div>
+                              <span className={`text-[8px] font-black uppercase tracking-wider px-2 py-1 rounded border ${vehicle.color}`}>
+                                {vehicle.status}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {activeBranchTabTab === 'Recent Jobs' && (
+                      <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm space-y-6 animate-in fade-in duration-200">
+                        <div className="border-b border-slate-50 pb-4">
+                          <h3 className="text-xs font-black uppercase text-slate-800 tracking-wider">Cargo Log Book</h3>
+                        </div>
+                        <div className="space-y-3">
+                          {[
+                            { id: 'SHP-9042', route: 'Sydney Central ➔ Brisbane Port', cargo: 'Automotive Parts (1.5 tons)', customer: 'Acme Corp' },
+                            { id: 'SHP-9055', route: 'Melbourne Depot ➔ Sydney Central', cargo: 'Retail Stock (800 kg)', customer: 'Acme Freight' },
+                            { id: 'SHP-9039', route: 'Brisbane Port ➔ Melbourne Depot', cargo: 'Electronics (2.1 tons)', customer: 'Global Traders' }
+                          ].map((job, idx) => (
+                            <div key={idx} className="bg-white border border-slate-100 rounded-xl p-4 flex justify-between items-center shadow-xs">
+                              <div className="space-y-0.5">
+                                <h4 className="text-xs font-black text-slate-800">{job.id}</h4>
+                                <p className="text-[11px] font-semibold text-slate-500">{job.route}</p>
+                                <p className="text-[10px] font-semibold text-slate-400">Cargo: {job.cargo}</p>
+                              </div>
+                              <span className="text-[10px] font-bold text-slate-450 text-right">{job.customer}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                  </div>
+
+                  {/* Right columns */}
+                  <div className="space-y-6">
+                    {/* Control */}
+                    <div className="bg-[#0f172a] text-white rounded-2xl border border-slate-900 p-5 shadow-md">
+                      <div className="flex items-center gap-2 border-b border-slate-800 pb-4 mb-4">
+                        <Settings size={16} className="text-amber-400" />
+                        <h3 className="text-xs font-black uppercase tracking-wider text-slate-200">Operations Control</h3>
+                      </div>
+                      <div className="space-y-3">
+                        <button className="w-full flex items-center justify-center gap-2 py-3 border border-red-500/30 hover:bg-red-500/10 text-red-400 hover:text-red-300 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer">
+                          <Activity size={14} /> Force Offline
+                        </button>
+                        <button className="w-full flex items-center justify-center gap-2 py-3 bg-slate-800/80 hover:bg-slate-800 text-slate-200 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer">
+                          <Shield size={14} /> View Authority Roster
+                        </button>
+                        <button className="w-full flex items-center justify-center gap-2 py-3 bg-[#EAB308] hover:bg-[#CA8A04] text-slate-900 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer">
+                          <UserPlus size={14} /> Add Staff to Branch
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Authority */}
+                    <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-xs">
+                      <div className="flex justify-between items-center border-b border-slate-50 pb-4 mb-4">
+                        <div className="flex items-center gap-2">
+                          <Shield size={16} className="text-blue-600" />
+                          <h3 className="text-xs font-black uppercase text-slate-800 tracking-wider">Authority</h3>
+                        </div>
+                        <button className="text-[9px] font-black text-blue-600 hover:text-blue-700 uppercase tracking-widest cursor-pointer">
+                          Details
+                        </button>
+                      </div>
+                      <div className="space-y-4">
+                        {[
+                          { name: 'Michael Adams', role: 'Branch Manager', initials: 'MA' },
+                          { name: 'Sarah Mitchell', role: 'Dispatcher', initials: 'SM' },
+                          { name: 'Emma Thompson', role: 'Dispatcher', initials: 'ET' },
+                          { name: 'Chris Lee', role: 'Accounts', initials: 'CL' }
+                        ].slice(0, selectedBranchTab.type === 'Primary Depot' ? 4 : 2).map((auth, idx) => (
+                          <div key={idx} className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-full bg-slate-900 text-white font-black flex items-center justify-center text-[10px] shrink-0">
+                              {auth.initials}
+                            </div>
+                            <div className="flex-grow min-w-0">
+                              <p className="text-xs font-bold text-slate-800 truncate leading-none mb-0.5">{auth.name}</p>
+                              <p className="text-[10px] text-slate-400 font-semibold leading-none">{auth.role}</p>
+                            </div>
+                            <span className="bg-emerald-50 text-emerald-600 text-[8px] font-black px-1.5 py-0.5 rounded tracking-wide uppercase border border-emerald-100 shrink-0">
+                              Active
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            ) : showAddBranchTab ? (
+              <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+                {/* Back navigation header */}
+                <div className="flex items-center gap-2 mb-6">
+                  <button 
+                    type="button"
+                    onClick={() => setShowAddBranchTab(false)} 
+                    className="flex items-center gap-1.5 text-xs font-bold text-slate-505 hover:text-slate-900 transition-colors uppercase tracking-wider cursor-pointer bg-transparent border-0"
+                  >
+                    <ArrowLeft size={14} strokeWidth={2.5} /> {selectedBranchTab ? selectedBranchTab.name : 'Customer Dashboard'}
+                  </button>
+                  <span className="text-slate-350 text-xs">/</span>
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{selectedBranchTab ? 'Configure Branch' : 'Add Customer Branch'}</span>
+                </div>
+
+                <form onSubmit={handleSaveBranchTab} className="space-y-6">
+                  <div className="bg-slate-50/50 rounded-2xl border border-slate-100 p-5">
+                    <div className="flex items-center gap-3 border-b border-slate-100 pb-3 mb-4">
+                      <Building2 size={16} className="text-amber-500" />
+                      <h3 className="text-xs font-black uppercase text-slate-800 tracking-wider">Branch Details</h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Branch Name</label>
+                        <input 
+                          type="text"
+                          value={newBranchTabForm.name}
+                          onChange={e => setNewBranchTabForm({ ...newBranchTabForm, name: e.target.value })}
+                          placeholder="e.g. Sydney Central Depot"
+                          className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-xs font-semibold focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-100 transition-all text-slate-700 placeholder-slate-400"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Branch Type</label>
+                        <div className="relative">
+                          <select 
+                            value={newBranchTabForm.type}
+                            onChange={e => setNewBranchTabForm({ ...newBranchTabForm, type: e.target.value })}
+                            className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-xs font-semibold focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-100 transition-all text-slate-700 bg-white cursor-pointer"
+                          >
+                            <option value="Local Branch">Local Branch</option>
+                            <option value="Primary Depot">Primary Depot</option>
+                          </select>
+                          <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        </div>
+                      </div>
+                      <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-5">
+                        <div className="md:col-span-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Address</label>
+                          <div className="relative">
+                            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"><MapPin size={14} /></span>
+                            <input 
+                              type="text"
+                              value={newBranchTabForm.address}
+                              onChange={e => setNewBranchTabForm({ ...newBranchTabForm, address: e.target.value })}
+                              placeholder="123 Industrial Dr, Suburb, VIC 3000"
+                              className="w-full border border-slate-200 rounded-lg pl-10 pr-4 py-2.5 text-xs font-semibold focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-100 transition-all text-slate-700 placeholder-slate-400"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Branch Code / ID</label>
+                          <input 
+                            type="text"
+                            value={newBranchTabForm.code}
+                            onChange={e => setNewBranchTabForm({ ...newBranchTabForm, code: e.target.value })}
+                            placeholder="e.g. SYD-WEST"
+                            className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-xs font-semibold focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-100 transition-all text-slate-700 placeholder-slate-400"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="bg-slate-50/50 rounded-2xl border border-slate-100 p-5">
+                      <div className="flex items-center gap-3 border-b border-slate-100 pb-3 mb-4">
+                        <Users size={16} className="text-blue-500" />
+                        <h3 className="text-xs font-black uppercase text-slate-800 tracking-wider">Management</h3>
+                      </div>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Manager Name</label>
+                          <input 
+                            type="text"
+                            value={newBranchTabForm.managerName}
+                            onChange={e => setNewBranchTabForm({ ...newBranchTabForm, managerName: e.target.value })}
+                            placeholder="Enter full name"
+                            className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-xs font-semibold focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-100 transition-all text-slate-700 placeholder-slate-400"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Phone Number</label>
+                          <div className="relative">
+                            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"><Clock size={14} /></span>
+                            <input 
+                              type="text"
+                              value={newBranchTabForm.phone}
+                              onChange={e => setNewBranchTabForm({ ...newBranchTabForm, phone: e.target.value })}
+                              placeholder="+61 400 000 000"
+                              className="w-full border border-slate-200 rounded-lg pl-10 pr-4 py-2.5 text-xs font-semibold focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-100 transition-all text-slate-700 placeholder-slate-400"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-50/50 rounded-2xl border border-slate-100 p-5">
+                      <div className="flex items-center gap-3 border-b border-slate-100 pb-3 mb-4">
+                        <Clock size={16} className="text-indigo-500" />
+                        <h3 className="text-xs font-black uppercase text-slate-800 tracking-wider">Capacity & Hours</h3>
+                      </div>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Working Hours</label>
+                          <input 
+                            type="text"
+                            value={newBranchTabForm.workingHours}
+                            onChange={e => setNewBranchTabForm({ ...newBranchTabForm, workingHours: e.target.value })}
+                            placeholder="08:00 - 18:00"
+                            className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-xs font-semibold focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-100 transition-all text-slate-700 placeholder-slate-400"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Storage Space (SQM)</label>
+                          <input 
+                            type="number"
+                            value={newBranchTabForm.storageSpace}
+                            onChange={e => setNewBranchTabForm({ ...newBranchTabForm, storageSpace: e.target.value })}
+                            placeholder="1000"
+                            className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-xs font-semibold focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-100 transition-all text-slate-700 placeholder-slate-400"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                    <button 
+                      type="button" 
+                      onClick={() => setShowAddBranchTab(false)} 
+                      className="px-5 py-2.5 border border-slate-200 rounded-lg text-xs font-bold uppercase tracking-wider text-slate-500 hover:bg-slate-50 cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      type="submit" 
+                      className="px-6 py-2.5 bg-[#EAB308] hover:bg-[#CA8A04] text-slate-900 rounded-lg text-xs font-bold uppercase tracking-wider shadow-md hover:shadow-lg flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Check size={14} strokeWidth={2.5} /> Save Branch
+                    </button>
+                  </div>
+                </form>
+              </div>
+            ) : (
+              <>
+                {/* Header */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-white border border-slate-100 flex items-center justify-center shadow-xs shrink-0">
+                      <div className="w-7 h-7 rounded-full bg-slate-50 flex items-center justify-center text-slate-700 border border-slate-150">
+                        <Building2 size={14} />
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="text-base font-black text-slate-900 tracking-tight">Branch List</h3>
+                      <p className="text-[10px] text-slate-500 font-bold mt-0.5">Manage Depots and delivery centers configured for {selectedCustomer.name}.</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      setSelectedBranchTab(null);
+                      setNewBranchTabForm({
+                        name: '',
+                        type: 'Local Branch',
+                        address: '',
+                        code: '',
+                        managerName: '',
+                        phone: '',
+                        workingHours: '08:00 - 18:00',
+                        storageSpace: '1000'
+                      });
+                      setShowAddBranchTab(true);
+                    }}
+                    className="px-4 py-2 bg-[#EAB308] hover:bg-[#CA8A04] text-slate-900 rounded-lg text-xs font-bold uppercase tracking-wider transition-all shadow-sm flex items-center gap-1.5 cursor-pointer border-0"
+                  >
+                    <Plus size={14} strokeWidth={2.5} /> Add Customer Branch
+                  </button>
+                </div>
+
+                {/* Filter Input */}
+                <div className="max-w-md">
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"><Search size={15} /></span>
+                    <input 
+                      type="text"
+                      value={branchSearchQuery}
+                      onChange={e => setBranchSearchQuery(e.target.value)}
+                      placeholder="Filter branches by name or code..."
+                      className="w-full border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-xs font-semibold focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-100 transition-all text-slate-700 placeholder-slate-400 bg-white shadow-xs"
+                    />
+                  </div>
+                </div>
+
+                {/* Stat Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                  {[
+                    { label: 'SYSTEM STATUS', value: '98.4%', icon: Activity, iconColor: 'text-emerald-500', bg: 'bg-emerald-50 border-emerald-100' },
+                    { label: 'TOTAL STAFF', value: '1,240', icon: Users, iconColor: 'text-blue-500', bg: 'bg-blue-50 border-blue-100' },
+                    { label: 'TOTAL VEHICLES', value: '840', icon: Truck, iconColor: 'text-amber-500', bg: 'bg-amber-50 border-amber-100' },
+                    { label: 'SYSTEM ONLINE', value: '99.9%', icon: Globe, iconColor: 'text-indigo-500', bg: 'bg-indigo-50 border-indigo-100' }
+                  ].map((stat, idx) => {
+                    const Icon = stat.icon;
+                    return (
+                      <div key={idx} className="bg-white rounded-2xl border border-slate-100 p-4 shadow-xs flex items-center justify-between">
+                        <div>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
+                          <h3 className="text-lg font-black text-slate-900 leading-tight">{stat.value}</h3>
+                        </div>
+                        <div className={`w-8 h-8 rounded-lg ${stat.bg} flex items-center justify-center ${stat.iconColor} border`}>
+                          <Icon size={16} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Cards Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {customerBranches
+                    .filter(b => 
+                      b.name.toLowerCase().includes(branchSearchQuery.toLowerCase()) || 
+                      b.code.toLowerCase().includes(branchSearchQuery.toLowerCase())
+                    )
+                    .map((branch) => {
+                      const isPrimary = branch.type === 'Primary Depot';
+                      return (
+                        <div 
+                          key={branch.id} 
+                          className={`bg-white rounded-2xl border p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between ${
+                            isPrimary ? 'border-[#EAB308]' : 'border-slate-100'
+                          }`}
+                        >
+                          <div>
+                            <div className="flex items-center justify-between mb-4">
+                              <div className="flex items-center gap-2">
+                                <span className={`px-2 py-0.5 rounded text-[8px] uppercase font-black tracking-wider ${
+                                  isPrimary ? 'bg-amber-100 text-slate-900' : 'bg-slate-100 text-slate-700'
+                                }`}>
+                                  {branch.type}
+                                </span>
+                                <span className="flex items-center gap-1 text-[9px] font-bold text-slate-400">
+                                  <span className={`w-1.5 h-1.5 rounded-full ${
+                                    branch.status === 'Online' ? 'bg-emerald-500' : 'bg-amber-500'
+                                  }`}></span>
+                                  {branch.status}
+                                </span>
+                              </div>
+                              <span className="bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded text-[9px] uppercase font-black tracking-wider border border-emerald-100">
+                                {branch.score}% Score
+                              </span>
+                            </div>
+
+                            <h2 className="text-base font-black text-slate-900 tracking-tight mb-1">
+                              {branch.name}
+                            </h2>
+                            <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 mb-4">
+                              <MapPin size={10} className="shrink-0" />
+                              <span>{branch.address}</span>
+                            </div>
+
+                            <div className="flex items-center gap-2.5 mb-5 bg-slate-50/50 p-2.5 rounded-xl border border-slate-100/50">
+                              <div className="w-8 h-8 rounded-full bg-slate-900 text-white font-black flex items-center justify-center text-[10px] shrink-0">
+                                {branch.leadInitials}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-0.5">Branch Lead</p>
+                                <p className="text-[10px] font-black text-slate-800 leading-none truncate">LEAD: {branch.leadName}</p>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3 mb-5">
+                              <div className="bg-[#F8FAFC] border border-slate-100 p-3 rounded-xl">
+                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Staff Count</p>
+                                <p className="text-sm font-black text-slate-800">{branch.staffCount}</p>
+                              </div>
+                              <div className="bg-[#F8FAFC] border border-slate-100 p-3 rounded-xl">
+                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Vehicles</p>
+                                <p className="text-sm font-black text-slate-800">{branch.vehicles}</p>
+                              </div>
+                            </div>
+
+                            <div className="mb-4">
+                              <div className="flex justify-between items-center text-[8px] font-black uppercase tracking-wider mb-1.5">
+                                <span className="text-slate-400">Storage Usage</span>
+                                <span className={branch.storageText.includes('FULL') ? 'text-red-500' : 'text-emerald-500'}>
+                                  {branch.storageText}
+                                </span>
+                              </div>
+                              <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                <div 
+                                  className={`h-full rounded-full ${
+                                    branch.storageText.includes('FULL') ? 'bg-red-500' : 
+                                    branch.storageUsage > 60 ? 'bg-[#EAB308]' : 'bg-emerald-500'
+                                  }`} 
+                                  style={{ width: `${branch.storageUsage}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                            <span className="text-[9px] font-black text-slate-400 tracking-wider">
+                              {branch.code}
+                            </span>
+                            <button 
+                              onClick={() => {
+                                setSelectedBranchTab(branch);
+                                setActiveBranchTabTab('Overview');
+                                setShowAddStaffFormTab(false);
+                                setNewStaffNameTab('');
+                                setNewStaffRoleTab('Dispatcher');
+                              }}
+                              className="text-[9px] font-black text-slate-700 hover:text-slate-900 transition-colors flex items-center gap-0.5 uppercase tracking-wider cursor-pointer"
+                            >
+                              Manage Branch <span className="text-slate-400 font-normal ml-0.5">&rsaquo;</span>
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -3147,6 +4322,739 @@ export default function Customers() {
         )}
 
       </div>
+
+      {/* Create New Load Modal */}
+      {showCreateLoadModal && createPortal(
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-[1.5px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowCreateLoadModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-[460px] max-h-[90vh] shadow-2xl flex flex-col overflow-hidden" onClick={e => e.stopPropagation()} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+            {/* Header */}
+            <div className="px-7 pt-7 pb-5 flex justify-between items-start border-b border-slate-100 shrink-0">
+              <div>
+                <h3 className="text-[18px] font-extrabold text-slate-900 leading-tight">Create New Load</h3>
+                <p className="text-[13px] font-normal text-slate-400 mt-2 leading-snug">New loads will be created in the Draft queue.</p>
+              </div>
+              <button onClick={() => setShowCreateLoadModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1"><X size={18} strokeWidth={2} /></button>
+            </div>
+
+            {/* Body */}
+            <div className="px-7 py-6 space-y-6 overflow-y-auto">
+              <div className="grid grid-cols-2 gap-5">
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Origin *</label>
+                  <input type="text" placeholder="e.g. Sydney Depot" className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700" />
+                </div>
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Destination *</label>
+                  <input type="text" placeholder="e.g. Canberra Branch" className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700" />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Cargo Type *</label>
+                <input type="text" placeholder="e.g. Beverages, Electronics, Dry Goods" className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-5">
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Weight</label>
+                  <input type="text" placeholder="e.g. 6.2t" className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700" />
+                </div>
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Priority</label>
+                  <div className="relative">
+                    <select className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer">
+                      <option>Low</option>
+                      <option>Medium</option>
+                      <option>High</option>
+                      <option>Urgent</option>
+                    </select>
+                    <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Assign Driver</label>
+                <input type="text" placeholder="Driver name (optional)" className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700" />
+              </div>
+
+              <div>
+                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Notes</label>
+                <textarea rows={3} placeholder="Additional notes..." className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700 resize-none"></textarea>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-7 py-5 flex justify-end gap-3 border-t border-slate-100 shrink-0">
+              <button onClick={() => setShowCreateLoadModal(false)} className="px-5 py-2.5 border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white">Cancel</button>
+              <button onClick={() => setShowCreateLoadModal(false)} className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-indigo-200">Save</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Create Invoice Modal */}
+      {showCreateInvoiceModal && createPortal(
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-[1.5px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowCreateInvoiceModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-[460px] max-h-[90vh] shadow-2xl flex flex-col overflow-hidden" onClick={e => e.stopPropagation()} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+            {/* Header */}
+            <div className="px-7 pt-7 pb-5 flex justify-between items-start border-b border-slate-100 shrink-0">
+              <div>
+                <h3 className="text-[18px] font-extrabold text-slate-900 leading-tight">Create Invoice</h3>
+                <p className="text-[13px] font-normal text-slate-400 mt-2 leading-snug">Generate a new invoice for outstanding loads.</p>
+              </div>
+              <button onClick={() => setShowCreateInvoiceModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1"><X size={18} strokeWidth={2} /></button>
+            </div>
+
+            {/* Body */}
+            <div className="px-7 py-6 space-y-6 overflow-y-auto">
+              <div>
+                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Invoice Date</label>
+                <input type="date" className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-600" />
+              </div>
+              <div>
+                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Due Date</label>
+                <input type="date" className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-600" />
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-7 py-5 flex justify-end gap-3 border-t border-slate-100 shrink-0">
+              <button onClick={() => setShowCreateInvoiceModal(false)} className="px-5 py-2.5 border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white">Cancel</button>
+              <button onClick={() => setShowCreateInvoiceModal(false)} className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-indigo-200">Save</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Send Message Modal */}
+      {showSendMessageModal && createPortal(
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-[1.5px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowSendMessageModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-[460px] max-h-[90vh] shadow-2xl flex flex-col overflow-hidden" onClick={e => e.stopPropagation()} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+            {/* Header */}
+            <div className="px-7 pt-7 pb-5 flex justify-between items-start border-b border-slate-100 shrink-0">
+              <div>
+                <h3 className="text-[18px] font-extrabold text-slate-900 leading-tight">Send Message</h3>
+              </div>
+              <button onClick={() => setShowSendMessageModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1"><X size={18} strokeWidth={2} /></button>
+            </div>
+
+            {/* Body */}
+            <div className="px-7 py-6 space-y-6 overflow-y-auto">
+              <div>
+                <label className="text-[13px] font-semibold text-slate-800 block mb-2">To</label>
+                <div className="relative">
+                  <select className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer">
+                    <option>Sarah Mitchell (Account Manager)</option>
+                    <option>Mike Thompson (Admin)</option>
+                  </select>
+                  <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                </div>
+              </div>
+              <div>
+                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Message</label>
+                <textarea rows={4} placeholder="Type your message here..." className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700 resize-none"></textarea>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-7 py-5 flex justify-end gap-3 border-t border-slate-100 shrink-0">
+              <button onClick={() => setShowSendMessageModal(false)} className="px-5 py-2.5 border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white">Cancel</button>
+              <button onClick={() => setShowSendMessageModal(false)} className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-indigo-200">Send</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Edit Customer Details Modal */}
+      {showEditCustomerModal && createPortal(
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-[1.5px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowEditCustomerModal(false)}>
+          <form onSubmit={handleSaveEditCustomer} className="bg-white rounded-2xl w-full max-w-[460px] max-h-[90vh] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+            {/* Header */}
+            <div className="px-7 pt-7 pb-5 flex justify-between items-start border-b border-slate-100 shrink-0">
+              <div>
+                <h3 className="text-[18px] font-extrabold text-slate-900 leading-tight">Edit Customer Details</h3>
+              </div>
+              <button type="button" onClick={() => setShowEditCustomerModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1"><X size={18} strokeWidth={2} /></button>
+            </div>
+
+            {/* Body */}
+            <div className="px-7 py-6 space-y-6 overflow-y-auto">
+              <div>
+                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Company Name</label>
+                <input 
+                  type="text" 
+                  value={editCustomerForm.name} 
+                  onChange={e => setEditCustomerForm({ ...editCustomerForm, name: e.target.value })}
+                  className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-700" 
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-5">
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">ABN</label>
+                  <input 
+                    type="text" 
+                    value={editCustomerForm.abn} 
+                    onChange={e => setEditCustomerForm({ ...editCustomerForm, abn: e.target.value })}
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-700" 
+                  />
+                </div>
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">ACN</label>
+                  <input 
+                    type="text" 
+                    value={editCustomerForm.acn} 
+                    onChange={e => setEditCustomerForm({ ...editCustomerForm, acn: e.target.value })}
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-700" 
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-5">
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Customer Type</label>
+                  <div className="relative">
+                    <select 
+                      value={editCustomerForm.type} 
+                      onChange={e => setEditCustomerForm({ ...editCustomerForm, type: e.target.value })}
+                      className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
+                    >
+                      <option value="Corporate">Corporate</option>
+                      <option value="Business">Business</option>
+                    </select>
+                    <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Status</label>
+                  <div className="relative">
+                    <select 
+                      value={editCustomerForm.status} 
+                      onChange={e => setEditCustomerForm({ ...editCustomerForm, status: e.target.value })}
+                      className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
+                    >
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                      <option value="Suspended">Suspended</option>
+                    </select>
+                    <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Account Category</label>
+                <div className="relative">
+                  <select 
+                    value={editCustomerForm.category} 
+                    onChange={e => setEditCustomerForm({ ...editCustomerForm, category: e.target.value })}
+                    className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
+                  >
+                    <option value="Strategic Account">Strategic Account</option>
+                    <option value="Standard Account">Standard Account</option>
+                  </select>
+                  <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-5">
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Billing Terms</label>
+                  <div className="relative">
+                    <select 
+                      value={editCustomerForm.billingTerms} 
+                      onChange={e => setEditCustomerForm({ ...editCustomerForm, billingTerms: e.target.value })}
+                      className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
+                    >
+                      <option value="7 Days">7 Days</option>
+                      <option value="14 Days">14 Days</option>
+                      <option value="14 Days EOM">14 Days EOM</option>
+                      <option value="30 Days EOM">30 Days EOM</option>
+                    </select>
+                    <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Credit Limit ($)</label>
+                  <input 
+                    type="number" 
+                    value={editCustomerForm.creditLimit} 
+                    onChange={e => setEditCustomerForm({ ...editCustomerForm, creditLimit: e.target.value })}
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-700" 
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Account Manager</label>
+                <div className="relative">
+                  <select 
+                    value={editCustomerForm.manager} 
+                    onChange={e => setEditCustomerForm({ ...editCustomerForm, manager: e.target.value })}
+                    className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
+                  >
+                    <option value="Sarah Mitchell">Sarah Mitchell</option>
+                    <option value="Mike Thompson">Mike Thompson</option>
+                    <option value="John Davis">John Davis</option>
+                    <option value="Emily Rogers">Emily Rogers</option>
+                  </select>
+                  <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-7 py-5 flex justify-end gap-3 border-t border-slate-100 shrink-0">
+              <button type="button" onClick={() => setShowEditCustomerModal(false)} className="px-5 py-2.5 border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white">Cancel</button>
+              <button type="submit" className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-indigo-200">Save</button>
+            </div>
+          </form>
+        </div>,
+        document.body
+      )}
+
+      {/* Assign Manager Modal */}
+      {showAssignManagerModal && createPortal(
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-[1.5px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowAssignManagerModal(false)}>
+          <form onSubmit={handleSaveAssignManager} className="bg-white rounded-2xl w-full max-w-[420px] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+            {/* Header */}
+            <div className="px-7 pt-7 pb-5 flex justify-between items-start border-b border-slate-100 shrink-0">
+              <div>
+                <h3 className="text-[18px] font-extrabold text-slate-900 leading-tight">Assign Account Manager</h3>
+                <p className="text-xs text-slate-500 mt-1 font-medium">Select a manager for {assignManagerForm.name}</p>
+              </div>
+              <button type="button" onClick={() => setShowAssignManagerModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1"><X size={18} strokeWidth={2} /></button>
+            </div>
+
+            {/* Body */}
+            <div className="px-7 py-6 space-y-4">
+              <div>
+                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Account Manager</label>
+                <div className="relative">
+                  <select 
+                    value={assignManagerForm.manager} 
+                    onChange={e => setAssignManagerForm({ ...assignManagerForm, manager: e.target.value })}
+                    className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
+                  >
+                    <option value="Sarah Mitchell">Sarah Mitchell</option>
+                    <option value="Mike Thompson">Mike Thompson</option>
+                    <option value="John Davis">John Davis</option>
+                    <option value="Emily Rogers">Emily Rogers</option>
+                  </select>
+                  <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-7 py-5 flex justify-end gap-3 border-t border-slate-100 shrink-0">
+              <button type="button" onClick={() => setShowAssignManagerModal(false)} className="px-5 py-2.5 border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white">Cancel</button>
+              <button type="submit" className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-indigo-200">Assign</button>
+            </div>
+          </form>
+        </div>,
+        document.body
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && createPortal(
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-[1.5px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowDeleteModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-[400px] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+            {/* Header */}
+            <div className="px-7 pt-7 pb-4 flex justify-between items-start shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-red-600 border border-red-100 shrink-0">
+                  <Trash2 size={20} />
+                </div>
+                <div>
+                  <h3 className="text-[16px] font-extrabold text-slate-900 leading-tight">Delete Customer</h3>
+                  <p className="text-xs text-slate-500 mt-1 font-medium">This action cannot be undone.</p>
+                </div>
+              </div>
+              <button onClick={() => setShowDeleteModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1"><X size={18} strokeWidth={2} /></button>
+            </div>
+
+            {/* Body */}
+            <div className="px-7 py-4">
+              <p className="text-[13px] font-medium text-slate-600 leading-relaxed">
+                Are you sure you want to delete <span className="font-bold text-slate-900">{deleteCustomerForm.name}</span>? All associated data, loads history, and settings will be permanently removed.
+              </p>
+            </div>
+
+            {/* Footer */}
+            <div className="px-7 py-5 flex justify-end gap-3 border-t border-slate-100 shrink-0 bg-slate-50/50 mt-4">
+              <button onClick={() => setShowDeleteModal(false)} className="px-5 py-2.5 border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white">Cancel</button>
+              <button onClick={handleConfirmDelete} className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-red-200">Delete Customer</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Add New Contact Modal */}
+      {showAddContactModal && createPortal(
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowAddContactModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-[460px] shadow-2xl flex flex-col overflow-hidden" onClick={e => e.stopPropagation()} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+            {/* Header */}
+            <div className="px-7 pt-7 pb-5 flex justify-between items-center border-b border-slate-100 shrink-0">
+              <h3 className="text-[20px] font-extrabold text-slate-900">Add New Contact</h3>
+              <button onClick={() => setShowAddContactModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1"><X size={20} strokeWidth={2} /></button>
+            </div>
+
+            {/* Body */}
+            <div className="px-7 py-6 space-y-5">
+              {/* First + Last Name */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">First Name</label>
+                  <input
+                    type="text"
+                    placeholder="First Name"
+                    value={draftContact.firstName}
+                    onChange={e => setDraftContact({...draftContact, firstName: e.target.value})}
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700"
+                  />
+                </div>
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Last Name</label>
+                  <input
+                    type="text"
+                    placeholder="Last Name"
+                    value={draftContact.lastName}
+                    onChange={e => setDraftContact({...draftContact, lastName: e.target.value})}
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700"
+                  />
+                </div>
+              </div>
+
+              {/* Role */}
+              <div>
+                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Role / Job Title</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Accounts Manager"
+                  value={draftContact.role}
+                  onChange={e => setDraftContact({...draftContact, role: e.target.value})}
+                  className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700"
+                />
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Email Address</label>
+                <input
+                  type="email"
+                  placeholder="email@company.com"
+                  value={draftContact.email}
+                  onChange={e => setDraftContact({...draftContact, email: e.target.value})}
+                  className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700"
+                />
+              </div>
+
+              {/* Phone */}
+              <div>
+                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Phone Number</label>
+                <input
+                  type="tel"
+                  placeholder="0400 000 000"
+                  value={draftContact.phone}
+                  onChange={e => setDraftContact({...draftContact, phone: e.target.value})}
+                  className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700"
+                />
+              </div>
+
+              {/* Primary checkbox */}
+              <div className="flex items-center gap-2.5 pt-1">
+                <input
+                  type="checkbox"
+                  id="primaryContactCheck"
+                  checked={draftContact.isPrimary}
+                  onChange={e => setDraftContact({...draftContact, isPrimary: e.target.checked})}
+                  className="w-4 h-4 rounded border-slate-300 text-indigo-600 cursor-pointer accent-indigo-600"
+                />
+                <label htmlFor="primaryContactCheck" className="text-[13px] font-medium text-slate-700 cursor-pointer select-none">Set as Primary Contact</label>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-7 py-5 flex justify-end gap-3 border-t border-slate-100 shrink-0">
+              <button
+                onClick={() => setShowAddContactModal(false)}
+                className="px-6 py-2.5 border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white"
+              >Cancel</button>
+              <button
+                onClick={() => {
+                  if (!draftContact.firstName.trim()) return;
+                  const newContact = {
+                    id: Date.now(),
+                    firstName: draftContact.firstName.trim(),
+                    lastName: draftContact.lastName.trim(),
+                    role: draftContact.role.trim() || 'Contact',
+                    email: draftContact.email.trim(),
+                    phone: draftContact.phone.trim(),
+                    isPrimary: draftContact.isPrimary,
+                  };
+                  const updatedContacts = draftContact.isPrimary
+                    ? [newContact, ...contacts.map(c => ({...c, isPrimary: false}))]
+                    : [...contacts, newContact];
+                  setContacts(updatedContacts);
+                  setShowAddContactModal(false);
+                }}
+                className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-indigo-200"
+              >Save</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Upload Document Modal */}
+      {showUploadDocumentModal && createPortal(
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-[1.5px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowUploadDocumentModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-[460px] max-h-[90vh] shadow-2xl flex flex-col overflow-hidden" onClick={e => e.stopPropagation()} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+            {/* Header */}
+            <div className="px-7 pt-7 pb-5 flex justify-between items-start border-b border-slate-100 shrink-0">
+              <div>
+                <h3 className="text-[18px] font-extrabold text-slate-900 leading-tight">Upload Document</h3>
+              </div>
+              <button onClick={() => setShowUploadDocumentModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1"><X size={18} strokeWidth={2} /></button>
+            </div>
+
+            {/* Body */}
+            <div className="px-7 py-6 space-y-5 overflow-y-auto">
+              {/* Drop Zone */}
+              <label className="block cursor-pointer">
+                <div className="border-2 border-dashed border-indigo-200 bg-indigo-50/40 rounded-xl py-10 px-6 flex flex-col items-center justify-center gap-3 hover:bg-indigo-50 hover:border-indigo-300 transition-all">
+                  <div className="w-12 h-12 rounded-xl bg-indigo-100 flex items-center justify-center">
+                    <Upload size={22} className="text-indigo-500" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[14px] font-bold text-slate-800">Click to browse or drag file here</p>
+                    <p className="text-[12px] font-normal text-slate-400 mt-1">Supports PDF, JPG, PNG up to 10MB</p>
+                  </div>
+                </div>
+                <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" />
+              </label>
+
+              {/* Document Type */}
+              <div>
+                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Document Type</label>
+                <div className="relative">
+                  <select className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer">
+                    <option>Contract</option>
+                    <option>Invoice</option>
+                    <option>Insurance Certificate</option>
+                    <option>Rate Card</option>
+                    <option>Agreement</option>
+                    <option>Other</option>
+                  </select>
+                  <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-7 py-5 flex justify-end gap-3 border-t border-slate-100 shrink-0">
+              <button onClick={() => setShowUploadDocumentModal(false)} className="px-5 py-2.5 border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white">Cancel</button>
+              <button onClick={() => setShowUploadDocumentModal(false)} className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-indigo-200">Save</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Edit Company Information Modal */}
+      {showEditCompanyInfoModal && createPortal(
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowEditCompanyInfoModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-[500px] max-h-[90vh] shadow-2xl flex flex-col overflow-hidden" onClick={e => e.stopPropagation()} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+            {/* Header */}
+            <div className="px-7 pt-7 pb-5 flex justify-between items-center border-b border-slate-100 shrink-0">
+              <h3 className="text-[18px] font-extrabold text-slate-900">Edit Section</h3>
+              <button onClick={() => setShowEditCompanyInfoModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1"><X size={18} strokeWidth={2} /></button>
+            </div>
+
+            {/* Body */}
+            <div className="px-7 py-6 overflow-y-auto">
+              <p className="text-[13px] text-slate-500 font-normal mb-5">Make changes to the Section section.</p>
+              <div className="grid grid-cols-2 gap-4 mb-5">
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider block mb-1.5">Trading Name</label>
+                  <input type="text" value={draftCompanyInfo.tradingName || ''} onChange={e => setDraftCompanyInfo({...draftCompanyInfo, tradingName: e.target.value})} className="w-full border border-slate-200 rounded-lg px-3.5 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-800" />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider block mb-1.5">Phone</label>
+                  <input type="text" value={draftCompanyInfo.phone || ''} onChange={e => setDraftCompanyInfo({...draftCompanyInfo, phone: e.target.value})} className="w-full border border-slate-200 rounded-lg px-3.5 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-800" />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider block mb-1.5">ABN</label>
+                  <input type="text" value={draftCompanyInfo.abn || ''} onChange={e => setDraftCompanyInfo({...draftCompanyInfo, abn: e.target.value})} className="w-full border border-slate-200 rounded-lg px-3.5 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-800" />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider block mb-1.5">Email</label>
+                  <input type="email" value={draftCompanyInfo.email || ''} onChange={e => setDraftCompanyInfo({...draftCompanyInfo, email: e.target.value})} className="w-full border border-slate-200 rounded-lg px-3.5 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-800" />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider block mb-1.5">ACN</label>
+                  <input type="text" value={draftCompanyInfo.acn || ''} onChange={e => setDraftCompanyInfo({...draftCompanyInfo, acn: e.target.value})} className="w-full border border-slate-200 rounded-lg px-3.5 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-800" />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider block mb-1.5">Website</label>
+                  <input type="text" value={draftCompanyInfo.website || ''} onChange={e => setDraftCompanyInfo({...draftCompanyInfo, website: e.target.value})} className="w-full border border-slate-200 rounded-lg px-3.5 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-800" />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider block mb-1.5">Industry</label>
+                  <input type="text" value={draftCompanyInfo.industry || ''} onChange={e => setDraftCompanyInfo({...draftCompanyInfo, industry: e.target.value})} className="w-full border border-slate-200 rounded-lg px-3.5 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-800" />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider block mb-1.5">Customer Since</label>
+                  <input type="text" value={draftCompanyInfo.customerSince || ''} onChange={e => setDraftCompanyInfo({...draftCompanyInfo, customerSince: e.target.value})} className="w-full border border-slate-200 rounded-lg px-3.5 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-800" />
+                </div>
+              </div>
+              <div className="mb-2">
+                <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider block mb-1.5">Address</label>
+                <textarea rows={3} value={draftCompanyInfo.address || ''} onChange={e => setDraftCompanyInfo({...draftCompanyInfo, address: e.target.value})} className="w-full border border-slate-200 rounded-lg px-3.5 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-800 resize-none" />
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-7 py-5 flex justify-end gap-3 border-t border-slate-100 shrink-0">
+              <button onClick={() => setShowEditCompanyInfoModal(false)} className="px-5 py-2.5 border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white">Cancel</button>
+              <button
+                onClick={() => { setCompanyInfo({...draftCompanyInfo}); setShowEditCompanyInfoModal(false); }}
+                className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-indigo-200"
+              >Save</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Edit Notes & Tags Modal */}
+      {showEditNotesTagsModal && createPortal(
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowEditNotesTagsModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-[500px] max-h-[90vh] shadow-2xl flex flex-col overflow-hidden" onClick={e => e.stopPropagation()} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+            {/* Header */}
+            <div className="px-7 pt-7 pb-5 flex justify-between items-center border-b border-slate-100 shrink-0">
+              <h3 className="text-[18px] font-extrabold text-slate-900">Edit Section</h3>
+              <button onClick={() => setShowEditNotesTagsModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1"><X size={18} strokeWidth={2} /></button>
+            </div>
+
+            {/* Body */}
+            <div className="px-7 py-6 space-y-6 overflow-y-auto">
+              <p className="text-[13px] text-slate-500 font-normal -mt-2">Make changes to the Section section.</p>
+
+              {/* Internal Notes */}
+              <div>
+                <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider block mb-2">Internal Notes</label>
+                <textarea
+                  rows={5}
+                  value={draftNotes}
+                  onChange={e => setDraftNotes(e.target.value)}
+                  className="w-full border border-slate-200 rounded-lg px-3.5 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-700 resize-none placeholder-slate-300"
+                />
+              </div>
+
+              {/* Tags */}
+              <div>
+                <label className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider block mb-2">Tags</label>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {draftTags.map((tag, i) => {
+                    const colors = [
+                      { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-100', x: 'text-indigo-400 hover:text-indigo-700' },
+                      { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-100', x: 'text-amber-400 hover:text-amber-700' },
+                      { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-100', x: 'text-emerald-400 hover:text-emerald-700' },
+                      { bg: 'bg-slate-100', text: 'text-slate-600', border: 'border-slate-200', x: 'text-slate-400 hover:text-slate-700' },
+                      { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-100', x: 'text-rose-400 hover:text-rose-700' },
+                      { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-100', x: 'text-purple-400 hover:text-purple-700' },
+                    ];
+                    const c = colors[i % colors.length];
+                    return (
+                      <span key={i} className={`flex items-center gap-1.5 px-2.5 py-1 ${c.bg} ${c.text} rounded-md text-[11px] font-bold border ${c.border}`}>
+                        {tag}
+                        <button onClick={() => setDraftTags(draftTags.filter((_, idx) => idx !== i))} className={`${c.x} cursor-pointer leading-none ml-0.5`}>×</button>
+                      </span>
+                    );
+                  })}
+                </div>
+                <input
+                  type="text"
+                  value={newTagInput}
+                  onChange={e => setNewTagInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && newTagInput.trim()) {
+                      setDraftTags([...draftTags, newTagInput.trim()]);
+                      setNewTagInput('');
+                    }
+                  }}
+                  placeholder="Add a new tag and press Enter..."
+                  className="w-full border border-slate-200 rounded-lg px-3.5 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700"
+                />
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-7 py-5 flex justify-end gap-3 border-t border-slate-100 shrink-0">
+              <button
+                onClick={() => setShowEditNotesTagsModal(false)}
+                className="px-5 py-2.5 border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white"
+              >Cancel</button>
+              <button
+                onClick={() => {
+                  setInternalNotes(draftNotes);
+                  setCustomerTags(draftTags);
+                  setShowEditNotesTagsModal(false);
+                }}
+                className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-indigo-200"
+              >Save</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Edit Special Instructions Modal */}
+      {showEditSpecialInstructionsModal && createPortal(
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowEditSpecialInstructionsModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-[500px] shadow-2xl flex flex-col overflow-hidden" onClick={e => e.stopPropagation()} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+            {/* Header */}
+            <div className="px-7 pt-7 pb-5 flex justify-between items-center border-b border-slate-100 shrink-0">
+              <h3 className="text-[18px] font-extrabold text-slate-900">Edit Section</h3>
+              <button onClick={() => setShowEditSpecialInstructionsModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1"><X size={18} strokeWidth={2} /></button>
+            </div>
+
+            {/* Body */}
+            <div className="px-7 py-6">
+              <p className="text-[13px] text-slate-500 font-normal mb-5">Make changes to the Section section.</p>
+              
+              <textarea
+                rows={6}
+                value={draftSpecialInstructions}
+                onChange={e => setDraftSpecialInstructions(e.target.value)}
+                placeholder="Existing content..."
+                className="w-full border border-slate-200 rounded-lg px-3.5 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-700 resize-none placeholder-slate-400"
+              />
+            </div>
+
+            {/* Footer */}
+            <div className="px-7 py-5 flex justify-end gap-3 border-t border-slate-100 shrink-0">
+              <button
+                onClick={() => setShowEditSpecialInstructionsModal(false)}
+                className="px-6 py-2.5 border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white"
+              >Cancel</button>
+              <button
+                onClick={() => {
+                  setSpecialInstructions(draftSpecialInstructions);
+                  setShowEditSpecialInstructionsModal(false);
+                }}
+                className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-indigo-200"
+              >Save</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      </>
     );
   }
 
@@ -3168,9 +5076,29 @@ export default function Customers() {
           <button className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all shadow-sm cursor-pointer">
             Export
           </button>
-          <button className="p-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg transition-all shadow-sm cursor-pointer">
-            <MoreVertical size={16} />
-          </button>
+          
+          <div className="relative">
+            <button 
+              onClick={() => setShowMainHeaderMenu(!showMainHeaderMenu)} 
+              className="p-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg transition-all shadow-sm cursor-pointer"
+            >
+              <MoreVertical size={16} />
+            </button>
+            
+            {showMainHeaderMenu && (
+              <>
+                <div className="fixed inset-0 z-[90]" onClick={() => setShowMainHeaderMenu(false)}></div>
+                <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-100 rounded-xl shadow-xl z-[100] py-2">
+                  <button onClick={() => setShowMainHeaderMenu(false)} className="w-full text-left px-4 py-2.5 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors cursor-pointer">
+                    Manage Billing Rules
+                  </button>
+                  <button onClick={() => setShowMainHeaderMenu(false)} className="w-full text-left px-4 py-2.5 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors cursor-pointer">
+                    View Permissions
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -3434,14 +5362,14 @@ export default function Customers() {
                             <button onClick={() => setSelectedCustomer(c)} className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer">
                               <Eye size={14} className="text-slate-400" /> View Details
                             </button>
-                            <button className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer">
+                            <button onClick={() => openEditCustomer(c)} className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer">
                               <Edit size={14} className="text-slate-400" /> Edit Customer
                             </button>
-                            <button className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer">
+                            <button onClick={() => openAssignManager(c)} className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer">
                               <UserCircle size={14} className="text-slate-400" /> Assign Manager
                             </button>
                             <div className="my-1 border-t border-slate-50"></div>
-                            <button className="w-full text-left px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer">
+                            <button onClick={() => openDeleteCustomer(c)} className="w-full text-left px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer">
                               <Trash2 size={14} /> Delete
                             </button>
                           </div>
@@ -3606,6 +5534,228 @@ export default function Customers() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Edit Customer Details Modal (List View) */}
+      {showEditCustomerModal && createPortal(
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-[1.5px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowEditCustomerModal(false)}>
+          <form onSubmit={handleSaveEditCustomer} className="bg-white rounded-2xl w-full max-w-[460px] max-h-[90vh] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+            {/* Header */}
+            <div className="px-7 pt-7 pb-5 flex justify-between items-start border-b border-slate-100 shrink-0">
+              <div>
+                <h3 className="text-[18px] font-extrabold text-slate-900 leading-tight">Edit Customer Details</h3>
+              </div>
+              <button type="button" onClick={() => setShowEditCustomerModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1"><X size={18} strokeWidth={2} /></button>
+            </div>
+
+            {/* Body */}
+            <div className="px-7 py-6 space-y-6 overflow-y-auto">
+              <div>
+                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Company Name</label>
+                <input 
+                  type="text" 
+                  value={editCustomerForm.name} 
+                  onChange={e => setEditCustomerForm({ ...editCustomerForm, name: e.target.value })}
+                  className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-700" 
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-5">
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">ABN</label>
+                  <input 
+                    type="text" 
+                    value={editCustomerForm.abn} 
+                    onChange={e => setEditCustomerForm({ ...editCustomerForm, abn: e.target.value })}
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-700" 
+                  />
+                </div>
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">ACN</label>
+                  <input 
+                    type="text" 
+                    value={editCustomerForm.acn} 
+                    onChange={e => setEditCustomerForm({ ...editCustomerForm, acn: e.target.value })}
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-700" 
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-5">
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Customer Type</label>
+                  <div className="relative">
+                    <select 
+                      value={editCustomerForm.type} 
+                      onChange={e => setEditCustomerForm({ ...editCustomerForm, type: e.target.value })}
+                      className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
+                    >
+                      <option value="Corporate">Corporate</option>
+                      <option value="Business">Business</option>
+                    </select>
+                    <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Status</label>
+                  <div className="relative">
+                    <select 
+                      value={editCustomerForm.status} 
+                      onChange={e => setEditCustomerForm({ ...editCustomerForm, status: e.target.value })}
+                      className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
+                    >
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                      <option value="Suspended">Suspended</option>
+                    </select>
+                    <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Account Category</label>
+                <div className="relative">
+                  <select 
+                    value={editCustomerForm.category} 
+                    onChange={e => setEditCustomerForm({ ...editCustomerForm, category: e.target.value })}
+                    className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
+                  >
+                    <option value="Strategic Account">Strategic Account</option>
+                    <option value="Standard Account">Standard Account</option>
+                  </select>
+                  <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-5">
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Billing Terms</label>
+                  <div className="relative">
+                    <select 
+                      value={editCustomerForm.billingTerms} 
+                      onChange={e => setEditCustomerForm({ ...editCustomerForm, billingTerms: e.target.value })}
+                      className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
+                    >
+                      <option value="7 Days">7 Days</option>
+                      <option value="14 Days">14 Days</option>
+                      <option value="14 Days EOM">14 Days EOM</option>
+                      <option value="30 Days EOM">30 Days EOM</option>
+                    </select>
+                    <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Credit Limit ($)</label>
+                  <input 
+                    type="number" 
+                    value={editCustomerForm.creditLimit} 
+                    onChange={e => setEditCustomerForm({ ...editCustomerForm, creditLimit: e.target.value })}
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all text-slate-700" 
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Account Manager</label>
+                <div className="relative">
+                  <select 
+                    value={editCustomerForm.manager} 
+                    onChange={e => setEditCustomerForm({ ...editCustomerForm, manager: e.target.value })}
+                    className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
+                  >
+                    <option value="Sarah Mitchell">Sarah Mitchell</option>
+                    <option value="Mike Thompson">Mike Thompson</option>
+                    <option value="John Davis">John Davis</option>
+                    <option value="Emily Rogers">Emily Rogers</option>
+                  </select>
+                  <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-7 py-5 flex justify-end gap-3 border-t border-slate-100 shrink-0">
+              <button type="button" onClick={() => setShowEditCustomerModal(false)} className="px-5 py-2.5 border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white">Cancel</button>
+              <button type="submit" className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-indigo-200">Save</button>
+            </div>
+          </form>
+        </div>,
+        document.body
+      )}
+
+      {/* Assign Manager Modal (List View) */}
+      {showAssignManagerModal && createPortal(
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-[1.5px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowAssignManagerModal(false)}>
+          <form onSubmit={handleSaveAssignManager} className="bg-white rounded-2xl w-full max-w-[420px] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+            {/* Header */}
+            <div className="px-7 pt-7 pb-5 flex justify-between items-start border-b border-slate-100 shrink-0">
+              <div>
+                <h3 className="text-[18px] font-extrabold text-slate-900 leading-tight">Assign Account Manager</h3>
+                <p className="text-xs text-slate-500 mt-1 font-medium">Select a manager for {assignManagerForm.name}</p>
+              </div>
+              <button type="button" onClick={() => setShowAssignManagerModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1"><X size={18} strokeWidth={2} /></button>
+            </div>
+
+            {/* Body */}
+            <div className="px-7 py-6 space-y-4">
+              <div>
+                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Account Manager</label>
+                <div className="relative">
+                  <select 
+                    value={assignManagerForm.manager} 
+                    onChange={e => setAssignManagerForm({ ...assignManagerForm, manager: e.target.value })}
+                    className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
+                  >
+                    <option value="Sarah Mitchell">Sarah Mitchell</option>
+                    <option value="Mike Thompson">Mike Thompson</option>
+                    <option value="John Davis">John Davis</option>
+                    <option value="Emily Rogers">Emily Rogers</option>
+                  </select>
+                  <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-7 py-5 flex justify-end gap-3 border-t border-slate-100 shrink-0">
+              <button type="button" onClick={() => setShowAssignManagerModal(false)} className="px-5 py-2.5 border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white">Cancel</button>
+              <button type="submit" className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-indigo-200">Assign</button>
+            </div>
+          </form>
+        </div>,
+        document.body
+      )}
+
+      {/* Delete Confirmation Modal (List View) */}
+      {showDeleteModal && createPortal(
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-[1.5px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowDeleteModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-[400px] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+            {/* Header */}
+            <div className="px-7 pt-7 pb-4 flex justify-between items-start shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-red-650 border border-red-105 shrink-0">
+                  <Trash2 size={20} />
+                </div>
+                <div>
+                  <h3 className="text-[16px] font-extrabold text-slate-900 leading-tight">Delete Customer</h3>
+                  <p className="text-xs text-slate-500 mt-1 font-medium">This action cannot be undone.</p>
+                </div>
+              </div>
+              <button onClick={() => setShowDeleteModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1"><X size={18} strokeWidth={2} /></button>
+            </div>
+
+            {/* Body */}
+            <div className="px-7 py-4">
+              <p className="text-[13px] font-medium text-slate-600 leading-relaxed">
+                Are you sure you want to delete <span className="font-bold text-slate-900">{deleteCustomerForm.name}</span>? All associated data, loads history, and settings will be permanently removed.
+              </p>
+            </div>
+
+            {/* Footer */}
+            <div className="px-7 py-5 flex justify-end gap-3 border-t border-slate-100 shrink-0 bg-slate-50/50 mt-4">
+              <button onClick={() => setShowDeleteModal(false)} className="px-5 py-2.5 border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white">Cancel</button>
+              <button onClick={handleConfirmDelete} className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-red-200">Delete Customer</button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
 
     </div>
