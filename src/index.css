@@ -706,3 +706,14 @@ table {
     font-size: 10px !important;
   }
 }
+
+/* Hide scrollbar utility for responsive horizontal menus */
+.scrollbar-none::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+}
+.scrollbar-none,
+.no-scrollbar {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
+}

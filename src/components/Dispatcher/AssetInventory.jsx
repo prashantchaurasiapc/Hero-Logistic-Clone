@@ -318,12 +318,12 @@ export default function AssetInventory() {
           </div>
 
           {/* Status Tabs Capsule */}
-          <div className="flex bg-slate-55 p-1 rounded-full border border-slate-200/50 overflow-x-auto max-w-full no-scrollbar">
+          <div className="flex bg-slate-55 p-1 rounded-full border border-slate-200/50 overflow-x-auto max-w-full no-scrollbar scrollbar-none flex-nowrap w-full">
             {['ALL', 'AWAITING LOAD', 'IN DEPOT', 'IN TRANSIT', 'DELIVERED'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 rounded-full text-[10px] font-extrabold cursor-pointer transition-all uppercase whitespace-nowrap tracking-wider ${
+                className={`px-4 py-2 rounded-full text-[10px] font-extrabold cursor-pointer transition-all uppercase whitespace-nowrap tracking-wider flex-shrink-0 ${
                   activeTab === tab
                     ? 'bg-white text-slate-900 border border-slate-200/80 shadow-xs font-black'
                     : 'text-slate-400 hover:text-slate-800'

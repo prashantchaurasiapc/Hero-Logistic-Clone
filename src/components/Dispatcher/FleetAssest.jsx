@@ -249,7 +249,7 @@ export default function FleetAssest() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
               <button 
                 onClick={() => triggerToast(`Viewing Service Log for ${selectedAsset.id}`)}
                 className="px-4 py-2 border border-slate-200 bg-white text-slate-650 hover:text-black rounded-lg text-xs font-bold transition-all cursor-pointer hover:bg-slate-50 shadow-3xs uppercase tracking-wider"

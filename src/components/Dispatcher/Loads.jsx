@@ -259,7 +259,7 @@ function LoadDetail({ load, onBack }) {
   return (
     <div className="flex flex-col h-full" style={{ background: '#f8fafc', minHeight: '100vh' }}>
       {/* Top Bar */}
-      <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-slate-100">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-4 bg-white border-b border-slate-100 gap-4">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -279,7 +279,7 @@ function LoadDetail({ load, onBack }) {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <button className="flex items-center gap-1.5 px-4 py-2 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
             <Edit3 className="w-3.5 h-3.5" /> Edit Load
           </button>
@@ -293,12 +293,12 @@ function LoadDetail({ load, onBack }) {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-0 px-6 bg-white border-b border-slate-100 overflow-x-auto">
+      <div className="flex items-center gap-0 px-6 bg-white border-b border-slate-100 overflow-x-auto scrollbar-none flex-nowrap w-full">
         {tabs.map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors ${
+            className={`px-4 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors flex-shrink-0 ${
               activeTab === tab
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -682,22 +682,22 @@ export default function Loads() {
   }
 
   return (
-    <div className="flex gap-5 p-5 min-h-screen" style={{ background: '#f8fafc' }}>
+    <div className="flex flex-col lg:flex-row gap-5 p-5" style={{ background: '#f8fafc' }}>
 
       {/* ── Main Content ── */}
-      <div className="flex-1 min-w-0 flex flex-col gap-4">
+      <div className="w-full lg:flex-1 flex flex-col gap-4">
 
         {/* Page Header */}
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-black text-slate-900">Loads</h1>
             <p className="text-sm text-slate-500 mt-0.5">Manage and track all loads in your operation</p>
           </div>
-          <div className="flex items-center gap-2">
-            <button className="flex items-center gap-1.5 px-3.5 py-2 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-sm">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <button className="flex items-center gap-1.5 px-3.5 py-2 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-55 transition-colors shadow-sm">
               <Upload className="w-3.5 h-3.5" /> Import
             </button>
-            <button className="flex items-center gap-1.5 px-3.5 py-2 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-sm">
+            <button className="flex items-center gap-1.5 px-3.5 py-2 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-55 transition-colors shadow-sm">
               <Download className="w-3.5 h-3.5" /> Export
             </button>
             <button className="flex items-center gap-1.5 px-4 py-2 border-2 border-blue-600 rounded-lg text-xs font-black text-blue-600 bg-white hover:bg-blue-50 transition-colors">
@@ -710,12 +710,12 @@ export default function Loads() {
         </div>
 
         {/* Tabs */}
-        <div className="flex items-center gap-0 border-b border-slate-200 bg-white rounded-t-xl px-1 overflow-x-auto">
+        <div className="flex items-center gap-0 border-b border-slate-200 bg-white rounded-t-xl px-1 overflow-x-auto scrollbar-none flex-nowrap w-full">
           {tabs.map(tab => (
             <button
               key={tab.label}
               onClick={() => { setActiveTab(tab.label); setCurrentPage(1); }}
-              className={`flex items-center gap-1.5 px-4 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors ${
+              className={`flex items-center gap-1.5 px-4 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors flex-shrink-0 ${
                 activeTab === tab.label
                   ? 'border-blue-600 text-blue-600'
                   : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -932,7 +932,7 @@ export default function Loads() {
       </div>
 
       {/* ── Right Sidebar ── */}
-      <div className="w-72 shrink-0 flex flex-col gap-4">
+      <div className="w-full lg:w-72 flex flex-col gap-4">
 
         {/* Load Overview */}
         <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">

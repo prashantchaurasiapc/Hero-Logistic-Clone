@@ -263,12 +263,12 @@ export default function RosterControl() {
         </div>
 
         {/* Switch Driver buttons */}
-        <div className="flex items-center gap-2.5 bg-slate-100/80 p-1 border border-slate-200/50 rounded-2xl overflow-x-auto max-w-full">
+        <div className="flex items-center gap-2.5 bg-slate-100/80 p-1 border border-slate-200/50 rounded-2xl overflow-x-auto max-w-full scrollbar-none flex-nowrap">
           {drivers.map(d => (
             <button
               key={d.id}
               onClick={() => setSelectedDriverId(d.id)}
-              className={`px-4 py-2 rounded-xl text-[10px] font-extrabold cursor-pointer transition-all uppercase whitespace-nowrap tracking-wider flex items-center gap-2 ${
+              className={`px-4 py-2 rounded-xl text-[10px] font-extrabold cursor-pointer transition-all uppercase whitespace-nowrap tracking-wider flex items-center gap-2 flex-shrink-0 ${
                 selectedDriverId === d.id
                   ? 'bg-white text-slate-900 border border-slate-200/80 shadow-xs font-black'
                   : 'text-slate-400 hover:text-slate-800'
