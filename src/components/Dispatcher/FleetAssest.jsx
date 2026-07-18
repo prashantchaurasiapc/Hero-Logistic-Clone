@@ -249,7 +249,7 @@ export default function FleetAssest() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
               <button 
                 onClick={() => triggerToast(`Viewing Service Log for ${selectedAsset.id}`)}
                 className="px-4 py-2 border border-slate-200 bg-white text-slate-650 hover:text-black rounded-lg text-xs font-bold transition-all cursor-pointer hover:bg-slate-50 shadow-3xs uppercase tracking-wider"
@@ -553,7 +553,7 @@ export default function FleetAssest() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-50/40 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  <tr className="bg-slate-50/40 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">
                     <th className="px-6 py-4">ASSET ID & REG</th>
                     <th className="px-6 py-4">TYPE</th>
                     <th className="px-6 py-4">STATUS & LOCATION</th>
@@ -584,7 +584,7 @@ export default function FleetAssest() {
                       </td>
 
                       {/* Status & Location Bar */}
-                      <td className="px-6 py-5 text-left min-w-[240px] align-middle">
+                      <td className="px-6 py-5 text-left min-w-[240px] whitespace-nowrap align-middle">
                         <div className={`p-2.5 rounded-xl flex items-center justify-between border ${asset.statusBg}`}>
                           <span className="text-[9px] font-black tracking-wider uppercase">{asset.status}</span>
                           <span className="text-[10px] font-bold flex items-center gap-1">

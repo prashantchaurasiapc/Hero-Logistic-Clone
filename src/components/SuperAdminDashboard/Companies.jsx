@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Search, Plus, Check, X, ShieldAlert, CheckCircle, ExternalLink, 
+import {
+  Search, Plus, Check, X, ShieldAlert, CheckCircle, ExternalLink,
   Settings, Download, FileText, Filter, ChevronDown, RefreshCw, AlertCircle
 } from 'lucide-react';
 
@@ -10,7 +10,7 @@ export default function Companies() {
   const [searchQuery, setSearchQuery] = useState('');
   const [advancedSearchOpen, setAdvancedSearchOpen] = useState(false);
   const [toast, setToast] = useState('');
-  
+
   // Advanced filters
   const [minUsersFilter, setMinUsersFilter] = useState('');
   const [selectedPlanFilter, setSelectedPlanFilter] = useState('All Plans');
@@ -95,83 +95,83 @@ export default function Companies() {
 
   // Mock Database exactly matching the table screenshot data
   const [companies, setCompanies] = useState([
-    { 
-      id: '#TEN-1', 
-      name: 'Falcon Logistics LLC', 
-      plan: 'Professional', 
-      status: 'ACTIVE', 
-      branches: 4, 
-      users: 12, 
-      drivers: 3, 
-      vehicles: 15, 
-      loads: 8, 
-      mrr: 8500, 
-      lastLogin: 'Today, 02:15 PM', 
-      expiry: 'N/A', 
+    {
+      id: '#TEN-1',
+      name: 'Falcon Logistics LLC',
+      plan: 'Professional',
+      status: 'ACTIVE',
+      branches: 4,
+      users: 12,
+      drivers: 3,
+      vehicles: 15,
+      loads: 8,
+      mrr: 8500,
+      lastLogin: 'Today, 02:15 PM',
+      expiry: 'N/A',
       created: '03/12/2026',
       manager: 'Alex W.'
     },
-    { 
-      id: '#TEN-2', 
-      name: 'Swift Cargo Express', 
-      plan: 'Professional', 
-      status: 'ACTIVE', 
-      branches: 2, 
-      users: 2, 
-      drivers: 3, 
-      vehicles: 4, 
-      loads: 2, 
-      mrr: 499, 
-      lastLogin: 'Yesterday, 04:30 PM', 
-      expiry: '07/15/2026', 
+    {
+      id: '#TEN-2',
+      name: 'Swift Cargo Express',
+      plan: 'Professional',
+      status: 'ACTIVE',
+      branches: 2,
+      users: 2,
+      drivers: 3,
+      vehicles: 4,
+      loads: 2,
+      mrr: 499,
+      lastLogin: 'Yesterday, 04:30 PM',
+      expiry: '07/15/2026',
       created: '04/19/2026',
       manager: 'Alex W.'
     },
-    { 
-      id: '#TEN-3', 
-      name: 'Global Shipping Solutions', 
-      plan: 'Enterprise', 
-      status: 'ACTIVE', 
-      branches: 15, 
-      users: 84, 
-      drivers: 142, 
-      vehicles: 98, 
-      loads: 45, 
-      mrr: 28000, 
-      lastLogin: 'Today, 03:24 PM', 
-      expiry: 'N/A', 
+    {
+      id: '#TEN-3',
+      name: 'Global Shipping Solutions',
+      plan: 'Enterprise',
+      status: 'ACTIVE',
+      branches: 15,
+      users: 84,
+      drivers: 142,
+      vehicles: 98,
+      loads: 45,
+      mrr: 28000,
+      lastLogin: 'Today, 03:24 PM',
+      expiry: 'N/A',
       created: '02/01/2026',
       manager: 'Sarah K.'
     },
-    { 
-      id: '#TEN-4', 
-      name: 'Texas Hotshot Carriers', 
-      plan: 'Professional', 
-      status: 'HOLD', 
-      branches: 1, 
-      users: 4, 
-      drivers: 6, 
-      vehicles: 2, 
-      loads: 0, 
-      mrr: 499, 
-      lastLogin: 'Yesterday, 10:15 AM', 
-      expiry: '06/15/2026', 
+    {
+      id: '#TEN-4',
+      name: 'Texas Hotshot Carriers',
+      plan: 'Professional',
+      status: 'HOLD',
+      branches: 1,
+      users: 4,
+      drivers: 6,
+      vehicles: 2,
+      loads: 0,
+      mrr: 499,
+      lastLogin: 'Yesterday, 10:15 AM',
+      expiry: '06/15/2026',
       created: '05/20/2026',
       manager: 'Alex W.'
     },
-    { 
-      id: '#TEN-5', 
-      name: 'Apex Logistics LLC', 
-      plan: 'Professional', 
-      status: 'ACTIVE', 
-      branches: 3, 
-      users: 16, 
-      drivers: 18, 
-      vehicles: 12, 
-      loads: 6, 
-      mrr: 4910, 
-      lastLogin: 'Today, 01:10 PM', 
-      expiry: 'N/A', 
+    {
+      id: '#TEN-5',
+      name: 'Apex Logistics LLC',
+      plan: 'Professional',
+      status: 'ACTIVE',
+      branches: 3,
+      users: 16,
+      drivers: 18,
+      vehicles: 12,
+      loads: 6,
+      mrr: 4910,
+      lastLogin: 'Today, 01:10 PM',
+      expiry: 'N/A',
       created: '06/19/2026',
       manager: 'Sarah K.'
     }
@@ -192,7 +192,7 @@ export default function Companies() {
       vehicles: 0,
       loads: 0,
       mrr: selectedPlan === 'Enterprise Tier' ? 28000 : selectedPlan === 'Professional Tier' ? 4910 : 499,
-      lastLogin: 'Today, ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+      lastLogin: 'Today, ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       expiry: 'N/A',
       created: new Date().toLocaleDateString('en-US'),
       manager: 'Sarah K.'
@@ -214,9 +214,9 @@ export default function Companies() {
 
   // Filter logic
   const filteredCompanies = companies.filter(c => {
-    const matchesSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          c.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          c.manager.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.manager.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesMinUsers = !minUsersFilter || c.users >= parseInt(minUsersFilter);
     const matchesPlan = selectedPlanFilter === 'All Plans' || c.plan.toLowerCase() === selectedPlanFilter.toLowerCase();
     const matchesStatus = selectedStatusFilter === 'All Statuses' || c.status.toLowerCase() === selectedStatusFilter.toLowerCase();
@@ -227,22 +227,22 @@ export default function Companies() {
   const exportCSV = () => {
     const headers = ['COMPANY NAME', 'COMPANY ID', 'SUBSCRIPTION PLAN', 'STATUS', 'BRANCHES', 'USERS', 'DRIVERS', 'FLEET VEHICLES', 'ACTIVE LOADS', 'MONTHLY REVENUE', 'LAST LOGIN', 'TRIAL EXPIRY', 'CREATED DATE', 'ACCOUNT MANAGER'];
     const csvRows = [headers.join(',')];
-    
+
     filteredCompanies.forEach(c => {
       csvRows.push([
-        `"${c.name}"`, 
-        `"${c.id}"`, 
-        `"${c.plan}"`, 
-        `"${c.status}"`, 
-        c.branches, 
-        c.users, 
-        c.drivers, 
-        c.vehicles, 
-        c.loads, 
-        `"$${c.mrr.toLocaleString()}"`, 
-        `"${c.lastLogin}"`, 
-        `"${c.expiry}"`, 
-        `"${c.created}"`, 
+        `"${c.name}"`,
+        `"${c.id}"`,
+        `"${c.plan}"`,
+        `"${c.status}"`,
+        c.branches,
+        c.users,
+        c.drivers,
+        c.vehicles,
+        c.loads,
+        `"$${c.mrr.toLocaleString()}"`,
+        `"${c.lastLogin}"`,
+        `"${c.expiry}"`,
+        `"${c.created}"`,
         `"${c.manager}"`
       ].join(','));
     });
@@ -259,8 +259,8 @@ export default function Companies() {
   };
 
   return (
-    <div className="flex-grow bg-[#F1F5F9] p-6 space-y-6 overflow-y-auto w-full text-left font-sans relative custom-scrollbar">
-      
+    <div className="flex-grow bg-[#F1F5F9] p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto w-full text-left font-sans relative custom-scrollbar">
+
       {/* Custom scrollbar layout style */}
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {
@@ -281,6 +281,13 @@ export default function Companies() {
           scrollbar-width: thin;
           scrollbar-color: #cbd5e1 transparent;
         }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
       `}</style>
 
       {/* Toast Notification */}
@@ -294,28 +301,28 @@ export default function Companies() {
       {/* Header Area */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pb-2">
         <div>
-          <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
             Super Admin <span className="text-slate-350 font-black">•</span> Companies
           </h1>
-          <p className="text-xs text-slate-400 font-semibold mt-1">
+          <p className="text-[11px] sm:text-xs text-slate-400 font-semibold mt-1">
             Configure global licensing rules, audit tenant margins, and resolve support tickets.
           </p>
         </div>
-        
-        <div className="flex items-center gap-2.5 self-start sm:self-auto">
-          <button 
+
+        <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto w-full sm:w-auto">
+          <button
             onClick={() => {
               alert(`SaaS Tenant Registry summary:\nTotal registered companies: ${companies.length}`);
               showNotification('Report compiled.');
             }}
-            className="border border-[#e2e8f0] hover:bg-slate-50 text-amber-500 font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer bg-white"
+            className="border border-[#e2e8f0] hover:bg-slate-50 text-amber-500 font-extrabold text-xs px-4 sm:px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer bg-white whitespace-nowrap flex-1 sm:flex-none"
           >
             Export Report
           </button>
 
-          <button 
+          <button
             onClick={() => setShowProvisionModal(true)}
-            className="bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs px-5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+            className="bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs px-4 sm:px-5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm whitespace-nowrap flex-1 sm:flex-none"
           >
             <Plus className="w-4 h-4" /> Provision Tenant
           </button>
@@ -323,7 +330,7 @@ export default function Companies() {
       </div>
 
       {/* Grid of 11 Metrics / KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {/* Card 1 */}
         <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between min-h-[100px]">
           <div>
@@ -450,9 +457,9 @@ export default function Companies() {
 
       {/* Advanced Filters Panel & Main Filters Toolbar */}
       <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-xs space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative w-64 text-left">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full xl:w-auto">
+            <div className="relative w-full sm:w-64 text-left">
               <input
                 type="text"
                 placeholder="Search workspaces..."
@@ -465,51 +472,49 @@ export default function Companies() {
 
             <button
               onClick={() => setAdvancedSearchOpen(!advancedSearchOpen)}
-              className={`flex items-center gap-1.5 border font-extrabold text-xs px-4 py-2.5 rounded-xl transition-colors cursor-pointer ${
-                advancedSearchOpen 
-                  ? 'border-black border bg-slate-50 text-slate-900' 
+              className={`flex items-center justify-center gap-1.5 border font-extrabold text-xs px-4 py-2.5 rounded-xl transition-colors cursor-pointer w-full sm:w-auto ${advancedSearchOpen
+                  ? 'border-black border bg-slate-50 text-slate-900'
                   : 'border-slate-200 hover:bg-slate-50 text-slate-600'
-              }`}
+                }`}
             >
               <Filter className="w-3.5 h-3.5" /> Advanced Filters
             </button>
           </div>
 
-          <div className="flex flex-col items-end gap-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full xl:w-auto xl:justify-end">
             {/* Export buttons */}
-            <div className="flex items-center gap-2">
-              <button 
+            <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 scrollbar-hide">
+              <button
                 onClick={exportCSV}
-                className="border border-amber-500 hover:bg-amber-50/10 text-yellow-600 font-extrabold text-[11px] px-3.5 py-2 rounded-xl transition-colors cursor-pointer bg-white"
+                className="border border-amber-500 hover:bg-amber-50/10 text-yellow-600 font-extrabold text-[11px] px-3.5 py-2 rounded-xl transition-colors cursor-pointer bg-white whitespace-nowrap"
               >
                 CSV Export
               </button>
-              <button 
+              <button
                 onClick={() => showNotification('Export generate successfully')}
-                className="border border-amber-500 hover:bg-amber-50/10 text-yellow-600 font-extrabold text-[11px] px-3.5 py-2 rounded-xl transition-colors cursor-pointer bg-white"
+                className="border border-amber-500 hover:bg-amber-50/10 text-yellow-600 font-extrabold text-[11px] px-3.5 py-2 rounded-xl transition-colors cursor-pointer bg-white whitespace-nowrap"
               >
                 Excel Export
               </button>
-              <button 
+              <button
                 onClick={() => showNotification('Export generate successfully')}
-                className="border border-amber-500 hover:bg-amber-50/10 text-yellow-600 font-extrabold text-[11px] px-3.5 py-2 rounded-xl transition-colors cursor-pointer bg-white"
+                className="border border-amber-500 hover:bg-amber-50/10 text-yellow-600 font-extrabold text-[11px] px-3.5 py-2 rounded-xl transition-colors cursor-pointer bg-white whitespace-nowrap"
               >
                 PDF Export
               </button>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
               {/* Density Selector */}
-              <div className="bg-slate-100 p-0.5 rounded-xl flex gap-0.5 border border-slate-200">
+              <div className="bg-slate-100 p-0.5 rounded-xl flex gap-0.5 border border-slate-200 shrink-0">
                 {['COMPACT', 'DEFAULT', 'RELAXED'].map((mode) => (
                   <button
                     key={mode}
                     onClick={() => setDensity(mode)}
-                    className={`px-3 py-1.5 text-[9px] font-black rounded-lg transition-all cursor-pointer ${
-                      density === mode
+                    className={`px-3 py-1.5 text-[9px] font-black rounded-lg transition-all cursor-pointer ${density === mode
                         ? 'bg-[#FFD400] text-black shadow-xs font-black'
                         : 'text-black hover:bg-slate-200/50'
-                    }`}
+                      }`}
                   >
                     {mode}
                   </button>
@@ -526,166 +531,166 @@ export default function Companies() {
                   <span>COLUMNS</span>
                 </button>
 
-              {showColumnsMenu && (
-                <div className="absolute right-0 mt-2 w-52 bg-white border border-slate-250 rounded-2xl shadow-xl p-3 z-45 space-y-1.5 text-left text-xs text-slate-750 font-black max-h-60 overflow-y-auto custom-scrollbar">
-                  <span className="block text-[9px] font-black text-slate-400 uppercase tracking-wider pb-1 border-b border-slate-100 mb-1.5">COLUMN VISIBILITY</span>
-                  
-                  {/* Master checklist checkboxes */}
-                  <label className="flex items-center gap-2 cursor-pointer py-0.5 hover:text-slate-900">
-                    <input
-                      type="checkbox"
-                      checked={visibleColumns.checkboxes}
-                      onChange={() => setVisibleColumns(prev => ({ ...prev, checkboxes: !prev.checkboxes }))}
-                      className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
-                    />
-                    <div className="w-3.5 h-3.5 border border-slate-300 rounded" />
-                  </label>
+                {showColumnsMenu && (
+                  <div className="absolute right-0 mt-2 w-52 bg-white border border-slate-250 rounded-2xl shadow-xl p-3 z-45 space-y-1.5 text-left text-xs text-slate-750 font-black max-h-60 overflow-y-auto custom-scrollbar">
+                    <span className="block text-[9px] font-black text-slate-400 uppercase tracking-wider pb-1 border-b border-slate-100 mb-1.5">COLUMN VISIBILITY</span>
 
-                  <label className="flex items-center gap-2 cursor-pointer py-0.5 hover:text-slate-900">
-                    <input
-                      type="checkbox"
-                      checked={visibleColumns.companyName}
-                      onChange={() => setVisibleColumns(prev => ({ ...prev, companyName: !prev.companyName }))}
-                      className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
-                    />
-                    <span>Company Name</span>
-                  </label>
+                    {/* Master checklist checkboxes */}
+                    <label className="flex items-center gap-2 cursor-pointer py-0.5 hover:text-slate-900">
+                      <input
+                        type="checkbox"
+                        checked={visibleColumns.checkboxes}
+                        onChange={() => setVisibleColumns(prev => ({ ...prev, checkboxes: !prev.checkboxes }))}
+                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                      />
+                      <div className="w-3.5 h-3.5 border border-slate-300 rounded" />
+                    </label>
 
-                  <label className="flex items-center gap-2 cursor-pointer py-0.5 hover:text-slate-900">
-                    <input
-                      type="checkbox"
-                      checked={visibleColumns.companyId}
-                      onChange={() => setVisibleColumns(prev => ({ ...prev, companyId: !prev.companyId }))}
-                      className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
-                    />
-                    <span>Company ID</span>
-                  </label>
+                    <label className="flex items-center gap-2 cursor-pointer py-0.5 hover:text-slate-900">
+                      <input
+                        type="checkbox"
+                        checked={visibleColumns.companyName}
+                        onChange={() => setVisibleColumns(prev => ({ ...prev, companyName: !prev.companyName }))}
+                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                      />
+                      <span>Company Name</span>
+                    </label>
 
-                  <label className="flex items-center gap-2 cursor-pointer py-0.5 hover:text-slate-900">
-                    <input
-                      type="checkbox"
-                      checked={visibleColumns.subscriptionPlan}
-                      onChange={() => setVisibleColumns(prev => ({ ...prev, subscriptionPlan: !prev.subscriptionPlan }))}
-                      className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
-                    />
-                    <span>Subscription Plan</span>
-                  </label>
+                    <label className="flex items-center gap-2 cursor-pointer py-0.5 hover:text-slate-900">
+                      <input
+                        type="checkbox"
+                        checked={visibleColumns.companyId}
+                        onChange={() => setVisibleColumns(prev => ({ ...prev, companyId: !prev.companyId }))}
+                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                      />
+                      <span>Company ID</span>
+                    </label>
 
-                  <label className="flex items-center gap-2 cursor-pointer py-0.5 hover:text-slate-900">
-                    <input
-                      type="checkbox"
-                      checked={visibleColumns.status}
-                      onChange={() => setVisibleColumns(prev => ({ ...prev, status: !prev.status }))}
-                      className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
-                    />
-                    <span>Status</span>
-                  </label>
+                    <label className="flex items-center gap-2 cursor-pointer py-0.5 hover:text-slate-900">
+                      <input
+                        type="checkbox"
+                        checked={visibleColumns.subscriptionPlan}
+                        onChange={() => setVisibleColumns(prev => ({ ...prev, subscriptionPlan: !prev.subscriptionPlan }))}
+                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                      />
+                      <span>Subscription Plan</span>
+                    </label>
 
-                  <label className="flex items-center gap-2 cursor-pointer py-0.5 hover:text-slate-900">
-                    <input
-                      type="checkbox"
-                      checked={visibleColumns.branches}
-                      onChange={() => setVisibleColumns(prev => ({ ...prev, branches: !prev.branches }))}
-                      className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
-                    />
-                    <span>Branches</span>
-                  </label>
+                    <label className="flex items-center gap-2 cursor-pointer py-0.5 hover:text-slate-900">
+                      <input
+                        type="checkbox"
+                        checked={visibleColumns.status}
+                        onChange={() => setVisibleColumns(prev => ({ ...prev, status: !prev.status }))}
+                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                      />
+                      <span>Status</span>
+                    </label>
 
-                  <label className="flex items-center gap-2 cursor-pointer py-0.5 hover:text-slate-900">
-                    <input
-                      type="checkbox"
-                      checked={visibleColumns.users}
-                      onChange={() => setVisibleColumns(prev => ({ ...prev, users: !prev.users }))}
-                      className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
-                    />
-                    <span>Users</span>
-                  </label>
+                    <label className="flex items-center gap-2 cursor-pointer py-0.5 hover:text-slate-900">
+                      <input
+                        type="checkbox"
+                        checked={visibleColumns.branches}
+                        onChange={() => setVisibleColumns(prev => ({ ...prev, branches: !prev.branches }))}
+                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                      />
+                      <span>Branches</span>
+                    </label>
 
-                  <label className="flex items-center gap-2 cursor-pointer py-0.5 hover:text-slate-900">
-                    <input
-                      type="checkbox"
-                      checked={visibleColumns.drivers}
-                      onChange={() => setVisibleColumns(prev => ({ ...prev, drivers: !prev.drivers }))}
-                      className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
-                    />
-                    <span>Drivers</span>
-                  </label>
+                    <label className="flex items-center gap-2 cursor-pointer py-0.5 hover:text-slate-900">
+                      <input
+                        type="checkbox"
+                        checked={visibleColumns.users}
+                        onChange={() => setVisibleColumns(prev => ({ ...prev, users: !prev.users }))}
+                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                      />
+                      <span>Users</span>
+                    </label>
 
-                  <label className="flex items-center gap-2 cursor-pointer py-0.5 hover:text-slate-900">
-                    <input
-                      type="checkbox"
-                      checked={visibleColumns.fleetVehicles}
-                      onChange={() => setVisibleColumns(prev => ({ ...prev, fleetVehicles: !prev.fleetVehicles }))}
-                      className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
-                    />
-                    <span>Fleet Vehicles</span>
-                  </label>
+                    <label className="flex items-center gap-2 cursor-pointer py-0.5 hover:text-slate-900">
+                      <input
+                        type="checkbox"
+                        checked={visibleColumns.drivers}
+                        onChange={() => setVisibleColumns(prev => ({ ...prev, drivers: !prev.drivers }))}
+                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                      />
+                      <span>Drivers</span>
+                    </label>
 
-                  <label className="flex items-center gap-2 cursor-pointer py-0.5 hover:text-slate-900">
-                    <input
-                      type="checkbox"
-                      checked={visibleColumns.activeLoads}
-                      onChange={() => setVisibleColumns(prev => ({ ...prev, activeLoads: !prev.activeLoads }))}
-                      className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
-                    />
-                    <span>Active Loads</span>
-                  </label>
+                    <label className="flex items-center gap-2 cursor-pointer py-0.5 hover:text-slate-900">
+                      <input
+                        type="checkbox"
+                        checked={visibleColumns.fleetVehicles}
+                        onChange={() => setVisibleColumns(prev => ({ ...prev, fleetVehicles: !prev.fleetVehicles }))}
+                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                      />
+                      <span>Fleet Vehicles</span>
+                    </label>
 
-                  <label className="flex items-center gap-2 cursor-pointer py-0.5 hover:text-slate-900">
-                    <input
-                      type="checkbox"
-                      checked={visibleColumns.monthlyRevenue}
-                      onChange={() => setVisibleColumns(prev => ({ ...prev, monthlyRevenue: !prev.monthlyRevenue }))}
-                      className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
-                    />
-                    <span>Monthly Revenue</span>
-                  </label>
+                    <label className="flex items-center gap-2 cursor-pointer py-0.5 hover:text-slate-900">
+                      <input
+                        type="checkbox"
+                        checked={visibleColumns.activeLoads}
+                        onChange={() => setVisibleColumns(prev => ({ ...prev, activeLoads: !prev.activeLoads }))}
+                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                      />
+                      <span>Active Loads</span>
+                    </label>
 
-                  <label className="flex items-center gap-2 cursor-pointer py-0.5 hover:text-slate-900">
-                    <input
-                      type="checkbox"
-                      checked={visibleColumns.lastLogin}
-                      onChange={() => setVisibleColumns(prev => ({ ...prev, lastLogin: !prev.lastLogin }))}
-                      className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
-                    />
-                    <span>Last Login</span>
-                  </label>
+                    <label className="flex items-center gap-2 cursor-pointer py-0.5 hover:text-slate-900">
+                      <input
+                        type="checkbox"
+                        checked={visibleColumns.monthlyRevenue}
+                        onChange={() => setVisibleColumns(prev => ({ ...prev, monthlyRevenue: !prev.monthlyRevenue }))}
+                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                      />
+                      <span>Monthly Revenue</span>
+                    </label>
 
-                  <label className="flex items-center gap-2 cursor-pointer py-0.5 hover:text-slate-900">
-                    <input
-                      type="checkbox"
-                      checked={visibleColumns.trialExpiry}
-                      onChange={() => setVisibleColumns(prev => ({ ...prev, trialExpiry: !prev.trialExpiry }))}
-                      className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
-                    />
-                    <span>Trial Expiry</span>
-                  </label>
+                    <label className="flex items-center gap-2 cursor-pointer py-0.5 hover:text-slate-900">
+                      <input
+                        type="checkbox"
+                        checked={visibleColumns.lastLogin}
+                        onChange={() => setVisibleColumns(prev => ({ ...prev, lastLogin: !prev.lastLogin }))}
+                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                      />
+                      <span>Last Login</span>
+                    </label>
 
-                  <label className="flex items-center gap-2 cursor-pointer py-0.5 hover:text-slate-900">
-                    <input
-                      type="checkbox"
-                      checked={visibleColumns.createdDate}
-                      onChange={() => setVisibleColumns(prev => ({ ...prev, createdDate: !prev.createdDate }))}
-                      className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
-                    />
-                    <span>Created Date</span>
-                  </label>
+                    <label className="flex items-center gap-2 cursor-pointer py-0.5 hover:text-slate-900">
+                      <input
+                        type="checkbox"
+                        checked={visibleColumns.trialExpiry}
+                        onChange={() => setVisibleColumns(prev => ({ ...prev, trialExpiry: !prev.trialExpiry }))}
+                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                      />
+                      <span>Trial Expiry</span>
+                    </label>
 
-                  <label className="flex items-center gap-2 cursor-pointer py-0.5 hover:text-slate-900">
-                    <input
-                      type="checkbox"
-                      checked={visibleColumns.accountManager}
-                      onChange={() => setVisibleColumns(prev => ({ ...prev, accountManager: !prev.accountManager }))}
-                      className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
-                    />
-                    <span>Account Manager</span>
-                  </label>
-                </div>
-              )}
+                    <label className="flex items-center gap-2 cursor-pointer py-0.5 hover:text-slate-900">
+                      <input
+                        type="checkbox"
+                        checked={visibleColumns.createdDate}
+                        onChange={() => setVisibleColumns(prev => ({ ...prev, createdDate: !prev.createdDate }))}
+                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                      />
+                      <span>Created Date</span>
+                    </label>
+
+                    <label className="flex items-center gap-2 cursor-pointer py-0.5 hover:text-slate-900">
+                      <input
+                        type="checkbox"
+                        checked={visibleColumns.accountManager}
+                        onChange={() => setVisibleColumns(prev => ({ ...prev, accountManager: !prev.accountManager }))}
+                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                      />
+                      <span>Account Manager</span>
+                    </label>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
         {/* Advanced Filters Expandable Content */}
         {advancedSearchOpen && (
@@ -734,7 +739,7 @@ export default function Companies() {
       {/* Corporate Tenants Table Card */}
       <div className="bg-white border border-slate-100 rounded-3xl shadow-xs overflow-hidden">
         <div className="overflow-x-auto custom-scrollbar">
-          <table className="w-full text-left border-collapse text-xs font-bold text-slate-700 min-w-[1300px]">
+          <table className="w-full text-left border-collapse text-xs font-bold text-slate-700 min-w-[1300px] whitespace-nowrap">
             <thead>
               <tr className="bg-slate-50/50 text-[9px] font-black text-slate-450 uppercase tracking-wider border-b border-slate-100">
                 {visibleColumns.checkboxes && (
@@ -788,13 +793,13 @@ export default function Companies() {
                           </td>
                         </>
                       )}
-                      
+
                       {visibleColumns.companyName && (
                         <td className={`${pyPadding} px-4`}>
-                          <span className="text-slate-900 font-black block whitespace-pre-line">{c.name}</span>
+                          <span className="text-slate-900 font-black block whitespace-nowrap">{c.name}</span>
                         </td>
                       )}
-                      
+
                       {visibleColumns.companyId && (
                         <td className={`${pyPadding} px-4 font-mono font-medium text-slate-400`}>
                           {c.id}
@@ -809,11 +814,10 @@ export default function Companies() {
 
                       {visibleColumns.status && (
                         <td className={`${pyPadding} px-4`}>
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
-                            c.status === 'ACTIVE'
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${c.status === 'ACTIVE'
                               ? 'bg-emerald-50 text-emerald-600'
                               : 'bg-amber-50 text-amber-600'
-                          }`}>
+                            }`}>
                             {c.status}
                           </span>
                         </td>
@@ -892,32 +896,32 @@ export default function Companies() {
 
                         {/* Action dropdown card */}
                         {activeActionsMenu === c.id && (
-                          <div 
+                          <div
                             ref={actionsMenuRef}
                             className="absolute right-6 mt-1 w-48 bg-white border border-slate-200 rounded-2xl shadow-xl p-2.5 z-40 space-y-1 text-left text-xs text-slate-700 font-bold"
                           >
-                            <button 
+                            <button
                               onClick={() => {
                                 setSelectedTenant(c);
                                 setActiveInspectorTab('Overview');
                                 setShowInspector(true);
                                 setActiveActionsMenu(null);
-                              }} 
+                              }}
                               className="w-full text-left px-3 py-1.5 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer"
                             >
                               View Company
                             </button>
-                            <button 
+                            <button
                               onClick={() => {
                                 setSelectedActionCompany(c);
                                 setShowEditCompanyModal(true);
                                 setActiveActionsMenu(null);
-                              }} 
+                              }}
                               className="w-full text-left px-3 py-1.5 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer"
                             >
                               Edit Company
                             </button>
-                            <button 
+                            <button
                               onClick={() => {
                                 setSelectedActionCompany(c);
                                 setShowSuspendCompanyModal(true);
@@ -927,32 +931,32 @@ export default function Companies() {
                             >
                               {c.status === 'ACTIVE' ? 'Suspend Company' : 'Activate Company'}
                             </button>
-                            <button 
+                            <button
                               onClick={() => {
                                 setSelectedActionCompany(c);
                                 setShowLoginAsModal(true);
                                 setActiveActionsMenu(null);
-                              }} 
+                              }}
                               className="w-full text-left px-3 py-1.5 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer mt-1"
                             >
                               Login as Company Admin
                             </button>
-                            <button 
+                            <button
                               onClick={() => {
                                 setSelectedActionCompany(c);
                                 setShowChangeSubscriptionModal(true);
                                 setActiveActionsMenu(null);
-                              }} 
+                              }}
                               className="w-full text-left px-3 py-1.5 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer"
                             >
                               Change Subscription
                             </button>
-                            <button 
+                            <button
                               onClick={() => {
                                 setSelectedActionCompany(c);
                                 setShowManageFeaturesModal(true);
                                 setActiveActionsMenu(null);
-                              }} 
+                              }}
                               className="w-full text-left px-3 py-1.5 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer"
                             >
                               Manage Features
@@ -960,26 +964,26 @@ export default function Companies() {
                             <button onClick={() => navigate('/admin/billing')} className="w-full text-left px-3 py-1.5 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer">
                               View Billing
                             </button>
-                            <button 
+                            <button
                               onClick={() => {
                                 showNotification(`Sent password reset instruction email to administrator of ${c.name}.`);
                                 setActiveActionsMenu(null);
-                              }} 
+                              }}
                               className="w-full text-left px-3 py-1.5 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer"
                             >
                               Reset Password
                             </button>
-                            <button 
+                            <button
                               onClick={() => {
                                 setSelectedActionCompany(c);
                                 setShowSendNotificationModal(true);
                                 setActiveActionsMenu(null);
-                              }} 
+                              }}
                               className="w-full text-left px-3 py-1.5 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer mb-1 border-b border-slate-100"
                             >
                               Send Notification
                             </button>
-                            <button 
+                            <button
                               onClick={() => {
                                 if (window.confirm(`Are you sure you want to permanently delete tenant: ${c.name}?`)) {
                                   setCompanies(prev => prev.filter(item => item.id !== c.id));
@@ -1007,11 +1011,11 @@ export default function Companies() {
       {showProvisionModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[999] p-4">
           <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-[420px] overflow-hidden shadow-2xl animate-fade-in text-left">
-            
+
             <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100">
               <h3 className="text-sm font-black text-slate-800">Provision New SaaS Tenant</h3>
-              <button 
-                onClick={() => setShowProvisionModal(false)} 
+              <button
+                onClick={() => setShowProvisionModal(false)}
                 className="text-slate-400 hover:text-slate-600 cursor-pointer"
               >
                 <X className="w-5 h-5" />
@@ -1110,7 +1114,7 @@ export default function Companies() {
                   <option>Enterprise Tier</option>
                 </select>
               </div>
-              <button 
+              <button
                 onClick={() => {
                   showNotification(`Configurations saved for ${selectedActionCompany.name}`);
                   setShowEditCompanyModal(false);
@@ -1143,7 +1147,7 @@ export default function Companies() {
                   {companies.filter(c => c.name !== selectedActionCompany.name).map(c => <option key={c.id}>{c.name}</option>)}
                 </select>
               </div>
-              <button 
+              <button
                 onClick={() => {
                   setCompanies(prev => prev.map(item => item.id === selectedActionCompany.id ? { ...item, status: 'HOLD' } : item));
                   showNotification(`Suspended license for ${selectedActionCompany.name}`);
@@ -1171,19 +1175,19 @@ export default function Companies() {
             <div className="p-6 space-y-5">
               <div className="space-y-1.5">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SELECT COMPANY WORKSPACE</label>
-                <select 
-                  defaultValue={selectedActionCompany.name} 
+                <select
+                  defaultValue={selectedActionCompany.name}
                   className="w-full px-4 py-3 bg-white border border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
                   onChange={(e) => {
-                     const comp = companies.find(c => c.name === e.target.value);
-                     if(comp) setSelectedActionCompany(comp);
+                    const comp = companies.find(c => c.name === e.target.value);
+                    if (comp) setSelectedActionCompany(comp);
                   }}
                 >
                   <option disabled>-- Select Company --</option>
                   {companies.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                 </select>
               </div>
-              <button 
+              <button
                 onClick={() => {
                   showNotification(`Logged in as admin of ${selectedActionCompany.name}`);
                   setShowLoginAsModal(false);
@@ -1210,7 +1214,7 @@ export default function Companies() {
             <div className="p-6 space-y-5">
               <div className="space-y-1.5">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SELECT SUBSCRIPTION PLAN TIER</label>
-                <select 
+                <select
                   defaultValue={`${selectedActionCompany.plan} Tier - $${selectedActionCompany.mrr}/mo`}
                   className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
                 >
@@ -1220,7 +1224,7 @@ export default function Companies() {
                   <option>Enterprise Tier - $28,000/mo</option>
                 </select>
               </div>
-              <button 
+              <button
                 onClick={() => {
                   showNotification(`Subscription updated for ${selectedActionCompany.name}`);
                   setShowChangeSubscriptionModal(false);
@@ -1246,12 +1250,12 @@ export default function Companies() {
             </div>
             <div className="p-6 space-y-4">
               <p className="text-xs font-medium text-slate-500 mb-2">Configure custom granular policies for the company workspace instance.</p>
-              
+
               <label className="flex items-center gap-3 cursor-pointer py-1">
                 <input type="checkbox" defaultChecked className="w-4 h-4 text-[#3B82F6] rounded border-slate-300 focus:ring-0 cursor-pointer" />
                 <span className="text-xs font-bold text-slate-600">GPS Geofencing Mapping</span>
               </label>
-              
+
               <label className="flex items-center gap-3 cursor-pointer py-1">
                 <input type="checkbox" defaultChecked className="w-4 h-4 text-[#3B82F6] rounded border-slate-300 focus:ring-0 cursor-pointer" />
                 <span className="text-xs font-bold text-slate-600">AI Route Dispatch Automation</span>
@@ -1267,7 +1271,7 @@ export default function Companies() {
                 <span className="text-xs font-bold text-slate-600">SMS Carrier Alerts</span>
               </label>
 
-              <button 
+              <button
                 onClick={() => {
                   showNotification(`Features updated for ${selectedActionCompany.name}`);
                   setShowManageFeaturesModal(false);
@@ -1281,7 +1285,7 @@ export default function Companies() {
         </div>
       )}
 
-                  {/* Broadcast Notification Modal */}
+      {/* Broadcast Notification Modal */}
       {showSendNotificationModal && selectedActionCompany && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[999] p-4">
           <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-[500px] overflow-hidden shadow-2xl animate-fade-in text-left">
@@ -1294,12 +1298,12 @@ export default function Companies() {
             <div className="p-6 space-y-5">
               <div className="space-y-1.5">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">NOTIFICATION PAYLOAD MESSAGE</label>
-                <textarea 
+                <textarea
                   placeholder="Type announcement message..."
                   className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-medium rounded-xl focus:outline-none text-slate-800 h-24 resize-none"
                 ></textarea>
               </div>
-              <button 
+              <button
                 onClick={() => {
                   showNotification(`Broadcast message sent to ${selectedActionCompany.name}`);
                   setShowSendNotificationModal(false);
@@ -1317,7 +1321,7 @@ export default function Companies() {
       {showInspector && (
         <div className="fixed inset-0 z-[1000] flex justify-end">
           {/* Backdrop */}
-          <div 
+          <div
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity cursor-pointer"
             onClick={() => setShowInspector(false)}
           ></div>
@@ -1327,8 +1331,8 @@ export default function Companies() {
             {/* Header */}
             <div className="flex justify-between items-center p-6 border-b border-slate-100 bg-white">
               <h3 className="text-lg font-extrabold text-slate-900">Tenant Workspace Inspector</h3>
-              <button 
-                onClick={() => setShowInspector(false)} 
+              <button
+                onClick={() => setShowInspector(false)}
                 className="text-slate-400 hover:text-slate-700 transition-colors p-1 rounded-lg hover:bg-slate-50 cursor-pointer"
               >
                 <X className="w-5 h-5" />
@@ -1337,17 +1341,16 @@ export default function Companies() {
 
             {/* Body */}
             <div className="p-8 overflow-y-auto custom-scrollbar flex-grow space-y-8 bg-[#F8FAFC]">
-              
+
               <div className="flex justify-between items-start">
                 <div>
                   <h2 className="text-[22px] font-black text-slate-900">{selectedTenant?.name || 'Falcon Logistics LLC'}</h2>
                   <p className="text-[10px] font-mono text-slate-400 mt-1 uppercase tracking-wider">Workspace ID: #TEN-{selectedTenant?.id || '1'}</p>
                 </div>
-                <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-bold tracking-wider ${
-                  (selectedTenant?.status || 'ACTIVE') === 'ACTIVE'
+                <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-bold tracking-wider ${(selectedTenant?.status || 'ACTIVE') === 'ACTIVE'
                     ? 'text-emerald-600 bg-emerald-50 border border-emerald-200'
                     : 'text-amber-600 bg-amber-50 border border-amber-200'
-                }`}>
+                  }`}>
                   {selectedTenant?.status || 'ACTIVE'}
                 </span>
               </div>
@@ -1355,14 +1358,13 @@ export default function Companies() {
               {/* Tabs */}
               <div className="flex overflow-x-auto custom-scrollbar pb-3 gap-2 border-b border-slate-200/60 items-center">
                 {['Overview', 'Subscriptions', 'Users', 'Branches', 'Fleet', 'Loads', 'Billing', 'Support Tickets', 'Feature Access', 'Audit Log'].map(tab => (
-                  <button 
+                  <button
                     key={tab}
                     onClick={() => setActiveInspectorTab(tab)}
-                    className={`shrink-0 px-4 py-1.5 text-[11px] rounded-xl whitespace-nowrap cursor-pointer transition-colors ${
-                      activeInspectorTab === tab 
+                    className={`shrink-0 px-4 py-1.5 text-[11px] rounded-xl whitespace-nowrap cursor-pointer transition-colors ${activeInspectorTab === tab
                         ? 'bg-[#FFD400] text-slate-900 font-black shadow-sm border-2 border-slate-900'
                         : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 font-bold border-2 border-transparent'
-                    }`}
+                      }`}
                   >
                     {tab}
                   </button>
@@ -1565,7 +1567,7 @@ export default function Companies() {
               {activeInspectorTab === 'Billing' && (
                 <div>
                   <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">BILLING SUMMARY & LEDGER</h4>
-                  
+
                   <div className="bg-white border border-slate-100 rounded-2xl p-5 mb-4 shadow-sm shadow-slate-200/40">
                     <div className="space-y-3.5">
                       <div className="flex justify-between items-center">
@@ -1685,7 +1687,7 @@ export default function Companies() {
                   Permanently Delete Company
                 </button>
               </div>
-              <button 
+              <button
                 onClick={() => setShowInspector(false)}
                 className="w-[150px] bg-white border border-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-[11px] font-bold hover:bg-slate-50 transition-colors text-center cursor-pointer"
               >

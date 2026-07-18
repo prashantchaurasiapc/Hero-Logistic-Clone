@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-
-// === ICONS ===
+import { useNavigate } from 'react-router-dom';// === ICONS ===
 const BoxIcon = ({ color }) => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line>
@@ -99,7 +98,7 @@ const CircleInfoIcon = () => (
 
 
 // === DUMMY DATA ===
-const warehouses = [
+const initialWarehouses = [
   { name: 'Sydney Head Office Warehouse', addr: '12 Logistics Ave, Wetherill Park NSW 2164', code: 'WH-001', branch: 'Sydney Head Office', type: 'General', status: 'Active', stock: '1,250', value: '$485,250.00', util: 78, isStar: true },
   { name: 'Melbourne Distribution Centre', addr: '45 Freight Rd, Truganina VIC 3029', code: 'WH-002', branch: 'Melbourne Branch', type: 'General', status: 'Active', stock: '980', value: '$326,750.00', util: 65, isStar: false },
   { name: 'Brisbane Warehouse', addr: '78 Export St, Lytton QLD 4178', code: 'WH-003', branch: 'Brisbane Branch', type: 'General', status: 'Active', stock: '650', value: '$218,300.00', util: 62, isStar: false },
@@ -109,8 +108,38 @@ const warehouses = [
 ];
 
 export default function WarehouseDashboard() {
+  const navigate = useNavigate();
   const [view, setView] = useState('list');
   const [selectedWh, setSelectedWh] = useState(null);
+  const [showMoreActions, setShowMoreActions] = useState(false);
+  const [openRowAction, setOpenRowAction] = useState(null);
+  const [whList, setWhList] = useState(initialWarehouses);
+  const [editModal, setEditModal] = useState(null);
+
+  const handleExport = () => {
+    const csvContent = "data:text/csv;charset=utf-8,Warehouse Name,Code,Branch,Type,Status,Stock Items,Inventory Value,Utilization\nSydney Head Office Warehouse,WH-001,Sydney Head Office,General,Active,1250,485250,78";
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "warehouse_list.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setShowMoreActions(false);
+  };
+
+  const handleImport = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv, .xlsx';
+    input.onchange = (e) => {
+      if (e.target.files && e.target.files.length > 0) {
+        alert("File '" + e.target.files[0].name + "' imported successfully!");
+      }
+    };
+    input.click();
+    setShowMoreActions(false);
+  };
 
   const handleWhClick = (w) => {
     setSelectedWh(w);
@@ -118,7 +147,7 @@ export default function WarehouseDashboard() {
   };
 
   if (view === 'details') {
-    const wh = selectedWh || warehouses[0];
+    const wh = selectedWh || whList[0];
     return (
       <div style={{ background: '#F8FAFC', minHeight: '100vh', padding: '24px 32px', fontFamily: "'Inter','Outfit',sans-serif", overflowX: 'hidden' }}>
 
@@ -864,12 +893,31 @@ export default function WarehouseDashboard() {
           <button onClick={() => setView('add')} style={{ padding: '5px 12px', borderRadius: 4, fontSize: 11, fontWeight: 600, border: '1px solid #E2E8F0', background: '#fff', color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
             <span style={{ fontSize: 14, fontWeight: 700 }}>+</span> Add Warehouse
           </button>
-          <button style={{ padding: '5px 12px', borderRadius: 4, fontSize: 11, fontWeight: 600, border: '1px solid #E2E8F0', background: '#fff', color: '#334155', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-            More Actions
-            <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M1 1L5 5L9 1" stroke="#334155" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
+          <div style={{ position: 'relative' }}>
+            <button onClick={() => setShowMoreActions(!showMoreActions)} style={{ padding: '5px 12px', borderRadius: 4, fontSize: 11, fontWeight: 600, border: '1px solid #E2E8F0', background: '#fff', color: '#334155', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+              More Actions
+              <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M1 1L5 5L9 1" stroke="#334155" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            {showMoreActions && (
+              <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: 8, width: 220, background: '#fff', border: '1px solid #E2E8F0', borderRadius: 8, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', zIndex: 50, padding: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div onClick={handleExport} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', borderRadius: 6, transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#F1F5F9'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
+                  Export Warehouse List
+                </div>
+                <div onClick={() => { navigate('/warehouse/reports'); setShowMoreActions(false); }} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', borderRadius: 6, transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#F1F5F9'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
+                  Generate Inventory Report
+                </div>
+                <div onClick={handleImport} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', borderRadius: 6, transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#F1F5F9'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
+                  Import Bulk Warehouses
+                </div>
+                <div style={{ height: 1, background: '#E2E8F0', margin: '4px 0' }}></div>
+                <div onClick={() => { navigate('/company-admin/company-settings'); setShowMoreActions(false); }} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#4F46E5', cursor: 'pointer', borderRadius: 6, transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
+                  Warehouse Settings
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -887,7 +935,10 @@ export default function WarehouseDashboard() {
               <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Active Warehouses</div>
             </div>
           </div>
-          <div style={{ marginTop: 'auto', fontSize: 11, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+          <div onClick={() => {
+            setView('list');
+            document.getElementById('warehouse-list')?.scrollIntoView({ behavior: 'smooth' });
+          }} style={{ marginTop: 'auto', fontSize: 11, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
             View all warehouses <span style={{ fontSize: 14 }}>→</span>
           </div>
         </div>
@@ -904,7 +955,7 @@ export default function WarehouseDashboard() {
               <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Across all warehouses</div>
             </div>
           </div>
-          <div style={{ marginTop: 'auto', fontSize: 11, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+          <div onClick={() => navigate('/warehouse/current-stock')} style={{ marginTop: 'auto', fontSize: 11, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
             View inventory <span style={{ fontSize: 14 }}>→</span>
           </div>
         </div>
@@ -921,7 +972,7 @@ export default function WarehouseDashboard() {
               <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>All warehouses</div>
             </div>
           </div>
-          <div style={{ marginTop: 'auto', fontSize: 11, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+          <div onClick={() => navigate('/warehouse/current-stock')} style={{ marginTop: 'auto', fontSize: 11, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
             View stock <span style={{ fontSize: 14 }}>→</span>
           </div>
         </div>
@@ -938,7 +989,7 @@ export default function WarehouseDashboard() {
               <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Requires attention</div>
             </div>
           </div>
-          <div style={{ marginTop: 'auto', fontSize: 11, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+          <div onClick={() => navigate('/warehouse/movements')} style={{ marginTop: 'auto', fontSize: 11, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
             View tasks <span style={{ fontSize: 14 }}>→</span>
           </div>
         </div>
@@ -955,7 +1006,7 @@ export default function WarehouseDashboard() {
               <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>In transit / Expected</div>
             </div>
           </div>
-          <div style={{ marginTop: 'auto', fontSize: 11, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+          <div onClick={() => navigate('/warehouse/inbound')} style={{ marginTop: 'auto', fontSize: 11, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
             View shipments <span style={{ fontSize: 14 }}>→</span>
           </div>
         </div>
@@ -972,7 +1023,7 @@ export default function WarehouseDashboard() {
               <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Scheduled / In progress</div>
             </div>
           </div>
-          <div style={{ marginTop: 'auto', fontSize: 11, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+          <div onClick={() => navigate('/warehouse/outbound')} style={{ marginTop: 'auto', fontSize: 11, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
             View shipments <span style={{ fontSize: 14 }}>→</span>
           </div>
         </div>
@@ -982,7 +1033,7 @@ export default function WarehouseDashboard() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 24, marginBottom: 24 }}>
 
         {/* WAREHOUSE LIST */}
-        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, overflow: 'hidden' }}>
+        <div id="warehouse-list" style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, overflow: 'hidden' }}>
           <div style={{ padding: '20px 24px', borderBottom: '1px solid #F1F5F9' }}>
             <h2 style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>WAREHOUSE LIST (6)</h2>
           </div>
@@ -1017,7 +1068,7 @@ export default function WarehouseDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {warehouses.map((w, i) => (
+                {whList.map((w, i) => (
                   <tr key={i} style={{ borderBottom: '1px solid #F8FAFC' }}>
                     <td style={{ padding: '16px 24px', verticalAlign: 'top' }}>
                       <div style={{ display: 'flex', gap: 8 }}>
@@ -1056,8 +1107,27 @@ export default function WarehouseDashboard() {
                         </div>
                       </div>
                     </td>
-                    <td style={{ padding: '16px 24px', verticalAlign: 'top' }}>
-                      <div style={{ color: '#94A3B8', fontWeight: 800, fontSize: 18, letterSpacing: '1px', cursor: 'pointer' }}>...</div>
+                    <td style={{ padding: '16px 24px', verticalAlign: 'top', position: 'relative' }}>
+                      <div onClick={() => setOpenRowAction(openRowAction === i ? null : i)} style={{ color: '#94A3B8', fontWeight: 800, fontSize: 18, letterSpacing: '1px', cursor: 'pointer', userSelect: 'none' }}>...</div>
+                      {openRowAction === i && (
+                        <div style={{ position: 'absolute', top: '100%', right: 24, marginTop: -10, width: 180, background: '#fff', border: '1px solid #E2E8F0', borderRadius: 8, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', zIndex: 100, padding: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                          <div onClick={() => { handleWhClick(w); setOpenRowAction(null); }} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', borderRadius: 6 }} onMouseOver={e => e.currentTarget.style.background = '#F1F5F9'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>View Details</div>
+                          <div onClick={() => { navigate('/warehouse/current-stock'); setOpenRowAction(null); }} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', borderRadius: 6 }} onMouseOver={e => e.currentTarget.style.background = '#F1F5F9'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>Manage Inventory</div>
+                          <div onClick={() => { 
+                            setEditModal({ ...w, index: i });
+                            setOpenRowAction(null); 
+                          }} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', borderRadius: 6 }} onMouseOver={e => e.currentTarget.style.background = '#F1F5F9'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>Edit Warehouse</div>
+                          <div style={{ height: 1, background: '#E2E8F0', margin: '4px 0' }}></div>
+                          <div onClick={() => { 
+                            if (window.confirm(`Are you sure you want to delete ${w.name}?`)) {
+                              const newList = [...whList];
+                              newList.splice(i, 1);
+                              setWhList(newList);
+                            }
+                            setOpenRowAction(null); 
+                          }} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#EF4444', cursor: 'pointer', borderRadius: 6 }} onMouseOver={e => e.currentTarget.style.background = '#FEF2F2'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>Delete</div>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -1418,6 +1488,49 @@ export default function WarehouseDashboard() {
         </div>
       </div>
 
+      {/* ── EDIT MODAL ── */}
+      {editModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: '#fff', width: 480, borderRadius: 16, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)', overflow: 'hidden' }}>
+            <div style={{ padding: '24px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: '#0F172A' }}>Edit Warehouse</h2>
+              <button onClick={() => setEditModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B', fontSize: 20 }}>&times;</button>
+            </div>
+            <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 6 }}>Warehouse Name</label>
+                <input type="text" value={editModal.name} onChange={(e) => setEditModal({...editModal, name: e.target.value})} style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none' }} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 6 }}>Warehouse Code</label>
+                  <input type="text" value={editModal.code} onChange={(e) => setEditModal({...editModal, code: e.target.value})} style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 6 }}>Status</label>
+                  <select value={editModal.status} onChange={(e) => setEditModal({...editModal, status: e.target.value})} style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none', background: '#fff' }}>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 6 }}>Branch / Location</label>
+                <input type="text" value={editModal.branch} onChange={(e) => setEditModal({...editModal, branch: e.target.value})} style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none' }} />
+              </div>
+            </div>
+            <div style={{ padding: '16px 24px', background: '#F8FAFC', borderTop: '1px solid #E2E8F0', display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+              <button onClick={() => setEditModal(null)} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid #CBD5E1', background: '#fff', color: '#475569', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+              <button onClick={() => {
+                const newList = [...whList];
+                newList[editModal.index] = { ...newList[editModal.index], ...editModal };
+                setWhList(newList);
+                setEditModal(null);
+              }} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Save Changes</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

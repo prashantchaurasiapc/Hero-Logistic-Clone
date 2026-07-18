@@ -19,9 +19,10 @@
   background-color: #111;
   position: relative;
   display: flex;
-  padding: 40px 60px;
+  flex-direction: column;
+  padding: 80px 60px 40px;
   overflow: hidden;
-  align-items: center;
+  align-items: flex-start;
 }
 
 .grid-overlay {
@@ -55,6 +56,34 @@
   display: flex;
   flex-direction: column;
   width: 100%;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.login-back-btn {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #a3a3a3;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  width: fit-content;
+  transition: all 0.2s ease;
+}
+
+.login-back-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  transform: translateX(-4px);
 }
 
 .login-logo {
@@ -169,6 +198,21 @@
   align-items: center;
   justify-content: center;
   padding: 40px 36px;
+  position: relative;
+}
+
+.auth-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #0a0a0a;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
 }
 
 .right-content {
@@ -341,22 +385,85 @@
 
 /* Make it responsive */
 @media (max-width: 1024px) {
+  .auth-overlay {
+    position: fixed;
+  }
+  
   .login-container {
     flex-direction: column;
     overflow-y: auto;
+    overflow-x: hidden;
     height: auto;
     min-height: 100vh;
+    position: relative;
   }
   .login-left, .login-right {
-    padding: 36px;
+    padding: 80px 40px 60px;
     height: auto;
+    flex: none;
+    width: 100%;
+    box-sizing: border-box;
   }
   .left-content {
-    margin: 0 auto;
+    margin: 40px auto 0;
+  }
+  .hero-headline {
+    font-size: 38px;
   }
 }
+
+@media (max-width: 768px) {
+  .login-left, .login-right {
+    padding: 70px 24px 40px;
+  }
+  .hero-headline {
+    font-size: 32px;
+  }
+  .login-back-btn {
+    top: 20px;
+    left: 20px;
+  }
+  .hero-stats {
+    gap: 20px;
+  }
+}
+
 @media (max-width: 600px) {
   .roles-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+  .welcome-title {
+    font-size: 26px;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-left, .login-right {
+    padding: 60px 16px 30px;
+  }
+  .hero-headline {
+    font-size: 28px;
+  }
+  .stat-num {
+    font-size: 20px;
+  }
+  .role-card {
+    padding: 8px 4px;
+    min-height: 64px;
+  }
+  .role-label {
+    font-size: 10px;
+  }
+  .login-back-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    top: 16px;
+    left: 16px;
+  }
+  .welcome-title {
+    font-size: 24px;
+  }
+  .welcome-desc {
+    font-size: 13px;
   }
 }

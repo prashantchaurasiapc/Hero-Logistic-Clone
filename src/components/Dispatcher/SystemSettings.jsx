@@ -111,14 +111,14 @@ export default function SystemSettings() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         
         {/* Left Side Navigation Panel */}
-        <div className="lg:col-span-4 bg-white border border-slate-100 rounded-[24px] shadow-sm p-4 flex flex-col gap-3">
+        <div className="lg:col-span-4 bg-white border border-slate-100 rounded-[24px] shadow-sm p-4 flex flex-row overflow-x-auto lg:flex-col gap-3 scrollbar-none flex-nowrap w-full">
           
           {/* Tab 1: My Account */}
           <button
             onClick={() => setActiveTab('account')}
-            className={`flex items-center gap-4 p-4 rounded-2xl border text-left transition-all duration-150 cursor-pointer ${
+            className={`flex items-center gap-4 p-4 rounded-2xl border text-left transition-all duration-150 cursor-pointer flex-shrink-0 whitespace-nowrap ${
               activeTab === 'account'
-                ? 'bg-white border-slate-200 shadow-md ring-1 ring-slate-100 border-l-[5px] border-l-[#FFA000]'
+                ? 'bg-white border-slate-200 shadow-md ring-1 ring-slate-100 border-b-[4px] border-b-[#FFA000] border-l-0 lg:border-l-[5px] lg:border-l-[#FFA000] lg:border-b-0'
                 : 'bg-white border-slate-50 hover:bg-slate-55 hover:border-slate-200'
             }`}
           >
@@ -134,9 +134,9 @@ export default function SystemSettings() {
           {/* Tab 2: Security */}
           <button
             onClick={() => setActiveTab('security')}
-            className={`flex items-center gap-4 p-4 rounded-2xl border text-left transition-all duration-150 cursor-pointer ${
+            className={`flex items-center gap-4 p-4 rounded-2xl border text-left transition-all duration-150 cursor-pointer flex-shrink-0 whitespace-nowrap ${
               activeTab === 'security'
-                ? 'bg-white border-slate-200 shadow-md ring-1 ring-slate-100 border-l-[5px] border-l-[#FFA000]'
+                ? 'bg-white border-slate-200 shadow-md ring-1 ring-slate-100 border-b-[4px] border-b-[#FFA000] border-l-0 lg:border-l-[5px] lg:border-l-[#FFA000] lg:border-b-0'
                 : 'bg-white border-slate-50 hover:bg-slate-55 hover:border-slate-200'
             }`}
           >
@@ -152,9 +152,9 @@ export default function SystemSettings() {
           {/* Tab 3: Preferences */}
           <button
             onClick={() => setActiveTab('preferences')}
-            className={`flex items-center gap-4 p-4 rounded-2xl border text-left transition-all duration-150 cursor-pointer ${
+            className={`flex items-center gap-4 p-4 rounded-2xl border text-left transition-all duration-150 cursor-pointer flex-shrink-0 whitespace-nowrap ${
               activeTab === 'preferences'
-                ? 'bg-white border-slate-200 shadow-md ring-1 ring-slate-100 border-l-[5px] border-l-[#FFA000]'
+                ? 'bg-white border-slate-200 shadow-md ring-1 ring-slate-100 border-b-[4px] border-b-[#FFA000] border-l-0 lg:border-l-[5px] lg:border-l-[#FFA000] lg:border-b-0'
                 : 'bg-white border-slate-50 hover:bg-slate-55 hover:border-slate-200'
             }`}
           >
@@ -170,9 +170,9 @@ export default function SystemSettings() {
           {/* Tab 4: Help & Support */}
           <button
             onClick={() => setActiveTab('support')}
-            className={`flex items-center gap-4 p-4 rounded-2xl border text-left transition-all duration-150 cursor-pointer ${
+            className={`flex items-center gap-4 p-4 rounded-2xl border text-left transition-all duration-150 cursor-pointer flex-shrink-0 whitespace-nowrap ${
               activeTab === 'support'
-                ? 'bg-white border-slate-200 shadow-md ring-1 ring-slate-100 border-l-[5px] border-l-[#FFA000]'
+                ? 'bg-white border-slate-200 shadow-md ring-1 ring-slate-100 border-b-[4px] border-b-[#FFA000] border-l-0 lg:border-l-[5px] lg:border-l-[#FFA000] lg:border-b-0'
                 : 'bg-white border-slate-50 hover:bg-slate-55 hover:border-slate-200'
             }`}
           >

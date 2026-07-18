@@ -3,7 +3,7 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Outfit", sans-serif;
+  --font-sans: "Inter", sans-serif;
   --color-brand-50: #FFFDF0;
   --color-brand-100: #FFF9C4;
   --color-brand-200: #FFF59D;
@@ -28,7 +28,7 @@ body {
 @layer base {
   body {
     @apply bg-slate-50 text-slate-800 dark:bg-[#0B0B0B] dark:text-slate-200 antialiased selection:bg-brand-500 selection:text-slate-950 transition-colors duration-200;
-    font-family: 'Outfit', sans-serif !important;
+    font-family: 'Inter', sans-serif !important;
     scroll-behavior: smooth;
   }
 
@@ -705,4 +705,15 @@ table {
   .light .text-\[9\.5px\] {
     font-size: 10px !important;
   }
+}
+
+/* Hide scrollbar utility for responsive horizontal menus */
+.scrollbar-none::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+}
+.scrollbar-none,
+.no-scrollbar {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
 }

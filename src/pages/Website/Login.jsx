@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import './Login.css';
-import { 
-  FiMail, FiLock, FiEye, FiShield, 
-  FiBarChart2, FiBriefcase, FiClipboard, 
-  FiTruck, FiBox, FiMap, FiFileText, FiShoppingCart 
+import {
+  FiMail, FiLock, FiEye, FiShield,
+  FiBarChart2, FiBriefcase, FiClipboard,
+  FiTruck, FiBox, FiMap, FiFileText, FiShoppingCart, FiArrowLeft
 } from 'react-icons/fi';
 
 const roleCards = [
@@ -20,7 +20,7 @@ const roleCards = [
 ];
 
 const tags = [
-  'Real-time GPS', 'AI Dispatch', 'Driver App', 
+  'Real-time GPS', 'AI Dispatch', 'Driver App',
   'Warehouse WMS', 'Payroll', 'Customer Portal'
 ];
 
@@ -110,18 +110,22 @@ const Login = () => {
 
       {/* Left Panel */}
       <div className="login-left">
+        <button onClick={() => navigate('/')} className="login-back-btn">
+          <FiArrowLeft size={16} />
+          <span>Back to Home</span>
+        </button>
         <div className="grid-overlay"></div>
         <div className="left-content">
-          <div className="login-logo" style={{ marginBottom: '2.2rem', display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <img src={logoSrc} alt="Logo" style={{ height: '62px', width: 'auto', objectFit: 'contain' }} />
+          <div className="login-logo" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0px' }}>
+            <img src={logoSrc} alt="Logo" style={{ height: '70px', width: 'auto', objectFit: 'contain', marginLeft: '-38px', marginRight: '-32px' }} />
             <div className="logo-text-group" style={{ display: 'flex', flexDirection: 'column' }}>
-              <span className="logo-title" style={{ fontSize: '22px', fontWeight: 805, color: '#ffffff', fontFamily: "'Outfit', system-ui, sans-serif", lineHeight: '1.1' }}>Hero Logistics</span>
-              <span className="logo-subtitle" style={{ fontSize: '10.5px', fontWeight: 700, color: '#64748b', letterSpacing: '2px', textTransform: 'uppercase', marginTop: '4px', lineHeight: '1' }}>Enterprise Suite</span>
+              <span className="logo-title" style={{ fontSize: '18px', fontWeight: 805, color: '#ffffff', fontFamily: "'Outfit', system-ui, sans-serif", lineHeight: '1.1' }}>Hero Logistics</span>
+              <span className="logo-subtitle" style={{ fontSize: '9px', fontWeight: 700, color: '#64748b', letterSpacing: '2px', textTransform: 'uppercase', marginTop: '4px', lineHeight: '1' }}>Enterprise Suite</span>
             </div>
           </div>
 
           <h1 className="hero-headline">
-            The Complete<br/>
+            The Complete<br />
             <span className="text-yellow">Logistics OS</span>
           </h1>
 
@@ -161,9 +165,9 @@ const Login = () => {
       {/* Right Panel */}
       <div className="login-right">
         {isAuthenticating ? (
-          <div className="right-content" style={{ textAlign: 'center' }}>
+          <div className="auth-overlay">
             {/* Green Tick Circular Badge */}
-            <div 
+            <div
               style={{
                 width: '64px',
                 height: '64px',
@@ -175,16 +179,14 @@ const Login = () => {
                 color: '#10b981',
                 backgroundColor: 'rgba(16, 185, 129, 0.1)',
                 marginBottom: '24px',
-                marginLeft: 'auto',
-                marginRight: 'auto',
                 boxShadow: '0 4px 12px rgba(16, 185, 129, 0.15)'
               }}
             >
-              <svg 
-                style={{ width: '28px', height: '28px' }} 
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24" 
+              <svg
+                style={{ width: '28px', height: '28px' }}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
                 strokeWidth="3.5"
               >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -194,13 +196,13 @@ const Login = () => {
             <h2 style={{ fontSize: '32px', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.5px', marginBottom: '8px' }}>
               Authenticated!
             </h2>
-            <p style={{ fontSize: '13px', fontWeight: 600, color: '#94a3b8', marginBottom: '32px' }}>
-              Logging in as {loggingInRole}...
+            <p style={{ fontSize: '13px', fontWeight: 600, color: '#4785c4', marginBottom: '32px' }}>
+              Redirecting to {loggingInRole} Dashboard...
             </p>
 
             {/* Gold Progress Loader Bar */}
-            <div style={{ width: '80px', backgroundColor: '#1e293b', height: '4px', borderRadius: '9999px', overflow: 'hidden', marginLeft: 'auto', marginRight: 'auto' }}>
-              <div 
+            <div style={{ width: '40px', backgroundColor: '#1e293b', height: '3px', borderRadius: '9999px', overflow: 'hidden' }}>
+              <div
                 style={{
                   height: '100%',
                   backgroundColor: '#fbbf24',
@@ -242,10 +244,10 @@ const Login = () => {
 
               <div className="roles-grid">
                 {roleCards.map(role => (
-                  <button 
-                    key={role.id} 
+                  <button
+                    key={role.id}
                     type="button"
-                    className="role-card" 
+                    className="role-card"
                     style={{ '--card-color': role.color, '--card-bg': role.bg }}
                     onClick={() => handleRoleLogin(role.id)}
                   >

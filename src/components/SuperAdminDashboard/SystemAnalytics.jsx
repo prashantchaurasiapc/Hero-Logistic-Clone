@@ -108,13 +108,13 @@ export default function SystemAnalytics() {
                 <XAxis dataKey="name" stroke="#94A3B8" fontSize={10} tickLine={false} axisLine={false} />
                 <YAxis stroke="#94A3B8" fontSize={10} tickLine={false} axisLine={false} domain={[0, 60000]} ticks={[0, 15000, 30000, 45000, 60000]} />
                 <Tooltip cursor={{ stroke: '#E2E8F0', strokeWidth: 1 }} />
-                <Line 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke="#00A3FF" 
-                  strokeWidth={3} 
-                  dot={{ fill: '#00A3FF', stroke: '#ffffff', strokeWidth: 2, r: 6 }} 
-                  activeDot={{ r: 8 }} 
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#00A3FF"
+                  strokeWidth={3}
+                  dot={{ fill: '#00A3FF', stroke: '#ffffff', strokeWidth: 2, r: 6 }}
+                  activeDot={{ r: 8 }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -179,13 +179,13 @@ export default function SystemAnalytics() {
                 <XAxis dataKey="name" stroke="#94A3B8" fontSize={10} tickLine={false} axisLine={false} />
                 <YAxis stroke="#94A3B8" fontSize={10} tickLine={false} axisLine={false} domain={[0, 1400]} ticks={[0, 350, 700, 1050, 1400]} />
                 <Tooltip cursor={{ stroke: '#E2E8F0', strokeWidth: 1 }} />
-                <Line 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke="#00A3FF" 
-                  strokeWidth={3} 
-                  dot={{ fill: '#00A3FF', stroke: '#ffffff', strokeWidth: 2, r: 5 }} 
-                  activeDot={{ r: 7 }} 
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#00A3FF"
+                  strokeWidth={3}
+                  dot={{ fill: '#00A3FF', stroke: '#ffffff', strokeWidth: 2, r: 5 }}
+                  activeDot={{ r: 7 }}
                 />
               </LineChart>
             </ResponsiveContainer>

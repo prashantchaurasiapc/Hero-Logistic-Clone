@@ -230,10 +230,14 @@ const roleConfigs = {
 /* ============================================================
    SIDEBAR COMPONENT
    ============================================================ */
-const Sidebar = ({ role }) => {
+const Sidebar = ({ role, isOpen, onClose }) => {
   const navigate = useNavigate();
   const config = roleConfigs[role];
   const [openSubMenus, setOpenSubMenus] = useState({});
+
+  const handleNavClick = () => {
+    if (onClose) onClose();
+  };
 
   if (!config) return null;
 
@@ -252,7 +256,16 @@ const Sidebar = ({ role }) => {
 
   return (
     <aside className="sidebar">
-      <div className="sidebar-header">
+      <div className="sidebar-header" style={{ position: 'relative' }}>
+        {onClose && (
+           <button 
+             onClick={onClose} 
+             className="sidebar-close-btn d-lg-none" 
+             style={{ position: 'absolute', top: 12, right: 12, background: 'transparent', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: 24, display: window.innerWidth <= 1024 ? 'block' : 'none' }}
+           >
+             &times;
+           </button>
+        )}
         <div className="logo-container">
           <img src="/image.png" alt="Logo" className="sidebar-logo" />
         </div>
@@ -277,6 +290,7 @@ const Sidebar = ({ role }) => {
               <NavLink
                 to={item.path}
                 className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                onClick={handleNavClick}
               >
                 <span className="nav-icon">{item.icon}</span>
                 <span className="nav-label">{item.label}</span>
@@ -303,6 +317,7 @@ const Sidebar = ({ role }) => {
                       <NavLink
                         to={subItem.path}
                         className={({ isActive }) => `submenu-item ${isActive ? 'active' : ''}`}
+                        onClick={handleNavClick}
                       >
                         {subItem.label}
                       </NavLink>
@@ -319,6 +334,7 @@ const Sidebar = ({ role }) => {
               <NavLink
                 to={item.path}
                 className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                onClick={handleNavClick}
               >
                 <span className="nav-icon">{item.icon}</span>
                 <span className="nav-label">{item.label}</span>

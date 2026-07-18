@@ -6,7 +6,7 @@ import {
   MapPin, Shield, Truck, Users, LayoutDashboard, Settings
 } from 'lucide-react';
 
-const Header = () => {
+const Header = ({ onMenuClick }) => {
   const location = useLocation();
   const navigate = useNavigate();
   
@@ -133,7 +133,7 @@ const Header = () => {
     <>
       <header className="header">
         <div className="header-left">
-          <button className="menu-btn" onClick={() => navigate('/company-admin/command-centre')}>
+          <button className="menu-btn" onClick={() => onMenuClick ? onMenuClick() : navigate('/company-admin/command-centre')}>
             <Menu className="w-5 h-5 text-slate-500" />
           </button>
           {isDispatcherPath && (

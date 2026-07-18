@@ -10,7 +10,7 @@ export default function SupportTickets() {
   const [showNewTicketModal, setShowNewTicketModal] = useState(false);
   const [showResponderModal, setShowResponderModal] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
-  
+
   // Assign Modal state
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [assignForm, setAssignForm] = useState({ ticketId: '', assigneeTier: 'L2 Senior Specialist' });
@@ -111,7 +111,7 @@ export default function SupportTickets() {
 
   const handleSaveAssignment = (e) => {
     e.preventDefault();
-    setTickets(prev => prev.map(t => 
+    setTickets(prev => prev.map(t =>
       t.id === assignForm.ticketId ? { ...t, assignee: assignForm.assigneeTier } : t
     ));
     setShowAssignModal(false);
@@ -133,7 +133,7 @@ export default function SupportTickets() {
 
     // Update ticket status
     setTickets(prev => prev.map(t => t.id === selectedTicket.id ? { ...t, status: 'RESOLVED', assignee: 'Super Admin' } : t));
-    
+
     // Add to history
     setResponseHistory([
       { ticketId: selectedTicket.id, subject: selectedTicket.subject, response: replyPayload },
@@ -164,7 +164,7 @@ export default function SupportTickets() {
   const handleExportCSV = () => {
     const headers = ['Ticket ID', 'Company', 'Subject', 'Priority', 'Status', 'Assignee', 'Created Date'];
     const rows = tickets.map(t => [`#${t.id}`, t.company, t.subject, t.priority, t.status, t.assignee, t.created]);
-    const csvContent = "data:text/csv;charset=utf-8," 
+    const csvContent = "data:text/csv;charset=utf-8,"
       + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
@@ -184,8 +184,8 @@ export default function SupportTickets() {
 
   const filteredTickets = tickets.filter(t => {
     const matchesSearch = t.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          t.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          t.id.toString().includes(searchQuery);
+      t.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.id.toString().includes(searchQuery);
     const matchesPriority = priorityFilter === 'All' || t.priority === priorityFilter;
     const matchesStatus = statusFilter === 'All' || t.status === statusFilter;
     return matchesSearch && matchesPriority && matchesStatus;
@@ -202,7 +202,7 @@ export default function SupportTickets() {
       )}
 
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
             Super Admin • Support
@@ -211,7 +211,7 @@ export default function SupportTickets() {
             Configure global licensing rules, audit tenant margins, and resolve support tickets.
           </p>
         </div>
-        <button 
+        <button
           onClick={handleExportCSV}
           className="border border-slate-200 bg-white hover:bg-slate-50 text-yellow-500 font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer"
         >
@@ -220,7 +220,7 @@ export default function SupportTickets() {
       </div>
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between h-32">
           <div>
             <span className="text-[10px] font-black text-slate-400 tracking-wider uppercase">TOTAL TICKETS</span>
@@ -288,12 +288,12 @@ export default function SupportTickets() {
             <h2 className="text-lg font-black text-slate-800 mb-1">Support Ticket Queue</h2>
             <p className="text-xs font-semibold text-slate-400">Manage Inbound platform support requests.</p>
           </div>
-          
-          <div className="flex flex-wrap items-center gap-3 shrink-0">
-            <div className="relative w-48">
-              <input 
-                type="text" 
-                placeholder="Search tickets..." 
+
+          <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 shrink-0 w-full sm:w-auto">
+            <div className="relative w-full sm:w-48">
+              <input
+                type="text"
+                placeholder="Search tickets..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none placeholder:text-slate-400 font-sans text-slate-800"
@@ -301,10 +301,10 @@ export default function SupportTickets() {
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
             </div>
 
-            <select 
+            <select
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value)}
-              className="px-4 py-2 bg-white border border-slate-200 text-xs font-bold rounded-xl focus:outline-none text-slate-700 cursor-pointer"
+              className="w-full sm:w-auto px-4 py-2 bg-white border border-slate-200 text-xs font-bold rounded-xl focus:outline-none text-slate-700 cursor-pointer"
             >
               <option value="All">All Priorities</option>
               <option value="High">High</option>
@@ -312,19 +312,19 @@ export default function SupportTickets() {
               <option value="Low">Low</option>
             </select>
 
-            <select 
+            <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 bg-white border border-slate-200 text-xs font-bold rounded-xl focus:outline-none text-slate-700 cursor-pointer"
+              className="w-full sm:w-auto px-4 py-2 bg-white border border-slate-200 text-xs font-bold rounded-xl focus:outline-none text-slate-700 cursor-pointer"
             >
               <option value="All">All Statuses</option>
               <option value="OPEN">OPEN</option>
               <option value="RESOLVED">RESOLVED</option>
             </select>
 
-            <button 
+            <button
               onClick={() => setShowNewTicketModal(true)}
-              className="bg-[#FFAB00] hover:bg-[#FFA000] text-black font-black text-xs px-4 py-2 rounded-xl shadow-xs transition-colors flex items-center gap-1 cursor-pointer"
+              className="w-full sm:w-auto justify-center bg-[#FFAB00] hover:bg-[#FFA000] text-black font-black text-xs px-4 py-2 rounded-xl shadow-xs transition-colors flex items-center gap-1 cursor-pointer"
             >
               <Plus className="w-4 h-4" /> New Ticket
             </button>
@@ -332,8 +332,8 @@ export default function SupportTickets() {
         </div>
 
         {/* Tickets Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+        <div className="overflow-x-auto custom-scrollbar">
+          <table className="w-full min-w-[900px] text-left border-collapse whitespace-nowrap">
             <thead>
               <tr className="border-b border-slate-150 text-[10px] font-black text-slate-400 uppercase tracking-wider">
                 <th className="pb-4 font-black">TICKET ID</th>
@@ -353,11 +353,10 @@ export default function SupportTickets() {
                   <td className="py-4 font-extrabold text-slate-800">{t.company}</td>
                   <td className="py-4 text-slate-800">{t.subject}</td>
                   <td className="py-4">
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
-                      t.priority === 'High' ? 'bg-[#FCE8E6] text-[#C5221F]' :
-                      t.priority === 'Medium' ? 'bg-[#FEF7E0] text-[#B06000]' :
-                      'bg-slate-100 text-slate-600'
-                    }`}>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${t.priority === 'High' ? 'bg-[#FCE8E6] text-[#C5221F]' :
+                        t.priority === 'Medium' ? 'bg-[#FEF7E0] text-[#B06000]' :
+                          'bg-slate-100 text-slate-600'
+                      }`}>
                       {t.priority}
                     </span>
                   </td>
@@ -418,8 +417,8 @@ export default function SupportTickets() {
           <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-lg overflow-hidden shadow-2xl animate-fade-in text-left">
             <div className="px-6 py-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
               <h3 className="text-lg font-black text-slate-900">Open Support Ticket</h3>
-              <button 
-                onClick={() => setShowNewTicketModal(false)} 
+              <button
+                onClick={() => setShowNewTicketModal(false)}
                 className="text-slate-400 hover:text-slate-650 cursor-pointer transition-colors p-1"
               >
                 <X className="w-5 h-5" />
@@ -442,7 +441,7 @@ export default function SupportTickets() {
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">CATEGORY</label>
                   <select
@@ -510,18 +509,18 @@ export default function SupportTickets() {
       {showResponderModal && selectedTicket && (
         <div className="fixed inset-0 z-[1000] flex justify-end">
           {/* Backdrop */}
-          <div 
+          <div
             className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm transition-opacity"
             onClick={() => setShowResponderModal(false)}
           ></div>
-          
+
           {/* Drawer Panel */}
           <div className="relative w-full max-w-[420px] bg-[#F8FAFC] h-full shadow-2xl flex flex-col animate-slide-in-right border-l border-slate-200">
             {/* Header */}
             <div className="px-6 py-5 border-b border-slate-200 bg-white flex justify-between items-center z-10 shrink-0">
               <h3 className="text-base font-black text-slate-900">Support Ticket Responder</h3>
-              <button 
-                onClick={() => setShowResponderModal(false)} 
+              <button
+                onClick={() => setShowResponderModal(false)}
                 className="text-slate-400 hover:text-slate-600 transition-colors p-1 cursor-pointer"
               >
                 <X className="w-5 h-5" />
@@ -531,7 +530,7 @@ export default function SupportTickets() {
             {/* Body */}
             <div className="flex-1 overflow-y-auto p-6">
               <form onSubmit={handleSubmitResolution} className="space-y-6">
-                
+
                 {/* Ticket Info & Subject */}
                 <div>
                   <div className="flex justify-between items-center mb-2">
@@ -594,8 +593,8 @@ export default function SupportTickets() {
           <div className="bg-white rounded-3xl w-full max-w-lg overflow-visible shadow-2xl animate-fade-in text-left">
             <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center">
               <h3 className="text-[17px] font-black text-slate-900">Assign Support Ticket</h3>
-              <button 
-                onClick={() => setShowAssignModal(false)} 
+              <button
+                onClick={() => setShowAssignModal(false)}
                 className="text-slate-400 hover:text-slate-650 cursor-pointer transition-colors p-1"
               >
                 <X className="w-5 h-5" />
@@ -603,7 +602,7 @@ export default function SupportTickets() {
             </div>
 
             <form onSubmit={handleSaveAssignment} className="p-6 space-y-6">
-              
+
               <div className="space-y-2">
                 <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">
                   SELECT OPEN TICKET
@@ -658,8 +657,8 @@ export default function SupportTickets() {
           <div className="bg-white rounded-3xl w-full max-w-lg overflow-visible shadow-2xl animate-fade-in text-left">
             <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center">
               <h3 className="text-[17px] font-black text-slate-900">Resolve Support Ticket</h3>
-              <button 
-                onClick={() => setShowResolveModal(false)} 
+              <button
+                onClick={() => setShowResolveModal(false)}
                 className="text-slate-400 hover:text-slate-650 cursor-pointer transition-colors p-1"
               >
                 <X className="w-5 h-5" />
@@ -667,7 +666,7 @@ export default function SupportTickets() {
             </div>
 
             <form onSubmit={handleSaveResolution} className="p-6 space-y-6">
-              
+
               <div className="space-y-2">
                 <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">
                   SELECT TICKET TO RESOLVE

@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { 
   MessageSquare, Phone, MoreVertical, Paperclip, Mic, Send, Search, 
-  CheckCheck, Volume2, X, ShieldAlert, Wifi, Info, User, BellOff, Trash2
+  CheckCheck, Volume2, X, ShieldAlert, Wifi, Info, User, BellOff, Trash2,
+  ArrowLeft
 } from 'lucide-react';
 
 export default function CommunicationDepot() {
@@ -61,6 +62,7 @@ export default function CommunicationDepot() {
   const [selectedChatId, setSelectedChatId] = useState('1');
   const [searchQuery, setSearchQuery] = useState('');
   const [messageInput, setMessageInput] = useState('');
+  const [mobileShowChat, setMobileShowChat] = useState(false);
 
   // Pre-select driver chat when navigated from Fleet Monitor with selectedDriverName
   useEffect(() => {
@@ -68,6 +70,7 @@ export default function CommunicationDepot() {
       const matchedChat = chats.find(c => c.name.toLowerCase().includes(location.state.selectedDriverName.toLowerCase()));
       if (matchedChat) {
         setSelectedChatId(matchedChat.id);
+        setMobileShowChat(true);
       }
     }
   }, [location.state, chats]);
@@ -128,6 +131,7 @@ export default function CommunicationDepot() {
 
   const handleSelectChat = (id) => {
     setSelectedChatId(id);
+    setMobileShowChat(true);
     setShowDropdown(false);
     setChats(prev => prev.map(c => {
       if (c.id === id) {
@@ -337,7 +341,7 @@ export default function CommunicationDepot() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[620px] items-stretch">
         
         {/* LEFT SIDEBAR: Messages list */}
-        <div className="lg:col-span-4 bg-white border border-slate-100 rounded-[24px] shadow-sm p-4 flex flex-col justify-start">
+        <div className={`lg:col-span-4 bg-white border border-slate-100 rounded-[24px] shadow-sm p-4 flex-col justify-start ${mobileShowChat ? 'hidden lg:flex' : 'flex'}`}>
           <h2 className="text-sm font-black text-slate-800 mb-4 px-1">Messages</h2>
           
           {/* Search chats */}
@@ -348,7 +352,7 @@ export default function CommunicationDepot() {
               placeholder="Search chats..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 bg-slate-50/55 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#FFA000] focus:border-[#FFA000] focus:bg-white transition-all shadow-3xs"
+              className="w-full pl-9 pr-4 py-2.5 bg-slate-50/55 border border-slate-200 rounded-xl text-xs font-semibold text-slate-705 placeholder-slate-405 focus:outline-none focus:ring-1 focus:ring-[#FFA000] focus:border-[#FFA000] focus:bg-white transition-all shadow-3xs"
             />
           </div>
 
@@ -366,7 +370,7 @@ export default function CommunicationDepot() {
                   className={`p-3.5 rounded-2xl border transition-all duration-200 relative cursor-pointer text-left ${
                     isSelected
                       ? 'bg-white border-slate-200 shadow-md ring-1 ring-slate-100 border-l-[5px] border-l-[#FFA000]'
-                      : 'bg-white border-slate-50 hover:bg-slate-50/80 hover:border-slate-200 hover:shadow-2xs'
+                      : 'bg-white border-slate-50 hover:bg-slate-55 hover:border-slate-200 hover:shadow-2xs'
                   }`}
                 >
                   <div className="flex justify-between items-start gap-2 mb-1">
@@ -375,8 +379,8 @@ export default function CommunicationDepot() {
                         <h4 className="text-xs font-extrabold text-slate-800">{c.name}</h4>
                         {isMuted && <BellOff size={11} className="text-slate-400" />}
                       </div>
-                      <span className={`text-[9px] font-black tracking-wider uppercase ${
-                        c.role.includes('INBOUND') ? 'text-indigo-600' : 'text-slate-450 font-extrabold'
+                      <span className={`text-[9px] font-black tracking-wider uppercase tracking-widest block mt-0.5 ${
+                        c.role.includes('INBOUND') ? 'text-indigo-650' : 'text-slate-400'
                       }`}>
                         {c.role}
                       </span>
@@ -409,11 +413,17 @@ export default function CommunicationDepot() {
         </div>
 
         {/* RIGHT SIDEBAR: Selected Chat Window */}
-        <div className="lg:col-span-8 bg-white border border-slate-100 rounded-[24px] shadow-sm flex flex-col justify-between overflow-hidden">
+        <div className={`lg:col-span-8 bg-white border border-slate-100 rounded-[24px] shadow-sm flex-col justify-between overflow-hidden ${mobileShowChat ? 'flex' : 'hidden lg:flex'}`}>
           
           {/* Active Chat Header */}
           <div className="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
             <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setMobileShowChat(false)}
+                className="lg:hidden p-2 -ml-2 hover:bg-slate-200/60 rounded-xl transition-colors text-slate-600 cursor-pointer mr-1 flex items-center justify-center shrink-0"
+              >
+                <ArrowLeft size={16} className="stroke-[2.5px]" />
+              </button>
               <img 
                 src={activeChat.avatar} 
                 alt={activeChat.name} 
