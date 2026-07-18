@@ -158,7 +158,7 @@ const WarehouseHoldingAreas = () => {
   };
 
   return (
-    <div className="warehouse-dashboard" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div className="warehouse-dashboard" style={{ display: 'flex', flexDirection: 'column' }}>
       {/* Header section matches WarehouseMap perfectly */}
       <div className="warehouse-header" style={{ marginBottom: '16px' }}>
         <div className="warehouse-header-titles" style={{ textAlign: 'left' }}>
@@ -169,6 +169,8 @@ const WarehouseHoldingAreas = () => {
       {/* Title & Description & Button header bar */}
       <div style={{
         display: 'flex',
+        flexWrap: 'wrap',
+        gap: '16px',
         justifyContent: 'space-between',
         alignItems: 'center',
         backgroundColor: '#ffffff',
@@ -194,7 +196,8 @@ const WarehouseHoldingAreas = () => {
             fontSize: '12px',
             fontWeight: '700',
             borderRadius: '12px',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            whiteSpace: 'nowrap'
           }}
         >
           <Plus className="w-4 h-4" />
@@ -203,13 +206,7 @@ const WarehouseHoldingAreas = () => {
       </div>
 
       {/* 2-Panel Layout Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: '24px',
-        alignItems: 'stretch',
-        flex: 1
-      }}>
+      <div className="responsive-two-panel-grid">
         
         {/* Left Panel: HOLDING ZONES STATUS */}
         <div style={{
@@ -224,11 +221,11 @@ const WarehouseHoldingAreas = () => {
           textAlign: 'left'
         }}>
           {/* Header controls for Left Table */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
             <h2 style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
               Holding Zones Status
             </h2>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
               {/* Density control */}
               <div className="wh-segmented-control">
                 {['COMPACT', 'DEFAULT', 'RELAXED'].map((mode) => {
@@ -244,7 +241,8 @@ const WarehouseHoldingAreas = () => {
                         borderRadius: '6px',
                         backgroundColor: isActive ? '#ffd400' : 'transparent',
                         color: isActive ? '#0f172a' : '#64748b',
-                        border: isActive ? '1px solid #000' : '1px solid transparent'
+                        border: isActive ? '1px solid #000' : '1px solid transparent',
+                        whiteSpace: 'nowrap'
                       }}
                     >
                       {mode}
@@ -269,7 +267,8 @@ const WarehouseHoldingAreas = () => {
                     border: leftColumnsOpen ? '1.5px solid #000000' : '1px solid #e2e8f0',
                     color: leftColumnsOpen ? '#0f172a' : '#64748b',
                     backgroundColor: '#ffffff',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap'
                   }}
                   onClick={() => setLeftColumnsOpen(!leftColumnsOpen)}
                 >
@@ -333,7 +332,7 @@ const WarehouseHoldingAreas = () => {
           </div>
 
           {/* Left Table */}
-          <div style={{ border: '1px solid #e2e8f0', borderRadius: '16px', overflow: 'hidden', backgroundColor: '#ffffff' }}>
+          <div style={{ border: '1px solid #e2e8f0', borderRadius: '16px', overflowX: 'auto', backgroundColor: '#ffffff' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc' }}>
@@ -346,17 +345,17 @@ const WarehouseHoldingAreas = () => {
                     />
                   </th>
                   {leftVisibleColumns.holdingArea && (
-                    <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
                       Holding Area
                     </th>
                   )}
                   {leftVisibleColumns.capacity && (
-                    <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
                       Capacity
                     </th>
                   )}
                   {leftVisibleColumns.status && (
-                    <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
                       Status
                     </th>
                   )}
@@ -394,7 +393,7 @@ const WarehouseHoldingAreas = () => {
                         </td>
                       )}
                       {leftVisibleColumns.status && (
-                        <td style={{ padding: getCellPadding(leftDensity) }}>
+                        <td style={{ padding: getCellPadding(leftDensity), whiteSpace: 'nowrap' }}>
                           <span style={{
                             fontSize: '9px',
                             fontWeight: '800',
@@ -403,7 +402,9 @@ const WarehouseHoldingAreas = () => {
                             border: '1.5px solid #e2e8f0',
                             borderRadius: '9999px',
                             padding: '4px 10px',
-                            letterSpacing: '0.05em'
+                            letterSpacing: '0.05em',
+                            display: 'inline-block',
+                            whiteSpace: 'nowrap'
                           }}>
                             {row.status}
                           </span>
@@ -430,11 +431,11 @@ const WarehouseHoldingAreas = () => {
           textAlign: 'left'
         }}>
           {/* Header controls for Right Table */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
             <h2 style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
               Assets in Holding
             </h2>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
               {/* Density control */}
               <div className="wh-segmented-control">
                 {['COMPACT', 'DEFAULT', 'RELAXED'].map((mode) => {
@@ -450,7 +451,8 @@ const WarehouseHoldingAreas = () => {
                         borderRadius: '6px',
                         backgroundColor: isActive ? '#ffd400' : 'transparent',
                         color: isActive ? '#0f172a' : '#64748b',
-                        border: isActive ? '1px solid #000' : '1px solid transparent'
+                        border: isActive ? '1px solid #000' : '1px solid transparent',
+                        whiteSpace: 'nowrap'
                       }}
                     >
                       {mode}
@@ -475,7 +477,8 @@ const WarehouseHoldingAreas = () => {
                     border: rightColumnsOpen ? '1.5px solid #000000' : '1px solid #e2e8f0',
                     color: rightColumnsOpen ? '#0f172a' : '#64748b',
                     backgroundColor: '#ffffff',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap'
                   }}
                   onClick={() => setRightColumnsOpen(!rightColumnsOpen)}
                 >
@@ -539,7 +542,7 @@ const WarehouseHoldingAreas = () => {
           </div>
 
           {/* Right Table */}
-          <div style={{ border: '1px solid #e2e8f0', borderRadius: '16px', overflow: 'hidden', backgroundColor: '#ffffff', minHeight: '142px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ border: '1px solid #e2e8f0', borderRadius: '16px', overflowX: 'auto', backgroundColor: '#ffffff', minHeight: '142px', display: 'flex', flexDirection: 'column' }}>
             {assets.length === 0 ? (
               <div style={{
                 flex: 1,
@@ -568,17 +571,17 @@ const WarehouseHoldingAreas = () => {
                       />
                     </th>
                     {rightVisibleColumns.assetCode && (
-                      <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
                         Asset Code
                       </th>
                     )}
                     {rightVisibleColumns.holdingArea && (
-                      <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
                         Holding Area
                       </th>
                     )}
                     {rightVisibleColumns.actions && (
-                      <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
                         Actions
                       </th>
                     )}

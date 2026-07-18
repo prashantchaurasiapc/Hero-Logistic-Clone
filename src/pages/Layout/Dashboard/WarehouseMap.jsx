@@ -222,7 +222,7 @@ const WarehouseMap = () => {
   };
 
   return (
-    <div className="warehouse-dashboard" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div className="warehouse-dashboard" style={{ display: 'flex', flexDirection: 'column' }}>
       {/* Header section matches design perfectly */}
       <div className="warehouse-header">
         <div className="warehouse-header-titles">
@@ -231,14 +231,7 @@ const WarehouseMap = () => {
       </div>
 
       {/* 3-Panel Main Layout Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '320px 1fr 340px',
-        gap: '24px',
-        flex: 1,
-        alignItems: 'stretch',
-        marginTop: '12px'
-      }}>
+      <div className="responsive-map-layout">
         
         {/* Left Panel: Independent Assets */}
         <div style={{
@@ -357,26 +350,26 @@ const WarehouseMap = () => {
         }}>
           <div>
             {/* Header controls for map */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
               <h2 style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
                 Yard / Warehouse Allocation Map
               </h2>
-              <div style={{ display: 'flex', gap: '14px', fontSize: '11px', fontWeight: '700' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', fontSize: '11px', fontWeight: '700' }}>
                 <button 
                   onClick={() => setLocationModalOpen(true)} 
-                  style={{ background: 'none', border: 'none', color: '#b45309', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px' }}
+                  style={{ background: 'none', border: 'none', color: '#b45309', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}
                 >
                   + Add Location
                 </button>
                 <button 
                   onClick={() => setHoldingModalOpen(true)} 
-                  style={{ background: 'none', border: 'none', color: '#b45309', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px' }}
+                  style={{ background: 'none', border: 'none', color: '#b45309', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}
                 >
                   + Add Holding
                 </button>
                 <button 
                   onClick={() => setLoadLaneModalOpen(true)} 
-                  style={{ background: 'none', border: 'none', color: '#b45309', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px' }}
+                  style={{ background: 'none', border: 'none', color: '#b45309', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}
                 >
                   + Add Load Lane
                 </button>
@@ -384,17 +377,13 @@ const WarehouseMap = () => {
             </div>
 
             {/* Map Dotted Grid Background */}
-            <div style={{
+            <div className="responsive-map-grid" style={{
               backgroundImage: 'radial-gradient(#cbd5e1 1.5px, transparent 1.5px)',
               backgroundSize: '16px 16px',
               backgroundColor: '#f8fafc',
               border: '1px dashed #cbd5e1',
               borderRadius: '20px',
-              padding: '20px',
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: '16px',
-              minHeight: '380px'
+              padding: '20px'
             }}>
               {slots.map((slot, index) => (
                 <div
@@ -450,6 +439,7 @@ const WarehouseMap = () => {
           {/* Bottom Actions Bar */}
           <div style={{
             display: 'flex',
+            flexWrap: 'wrap',
             justifyContent: 'center',
             gap: '16px',
             marginTop: '24px',
@@ -469,7 +459,8 @@ const WarehouseMap = () => {
                 fontSize: '11px',
                 fontWeight: '700',
                 color: '#0f172a',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                whiteSpace: 'nowrap'
               }}
             >
               <ArrowRight className="w-4 h-4" />
@@ -486,7 +477,8 @@ const WarehouseMap = () => {
                 fontSize: '11px',
                 fontWeight: '700',
                 color: '#b45309',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                whiteSpace: 'nowrap'
               }}
             >
               Move to Holding Area
@@ -502,7 +494,8 @@ const WarehouseMap = () => {
                 fontSize: '11px',
                 fontWeight: '700',
                 color: '#b45309',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                whiteSpace: 'nowrap'
               }}
             >
               Move to Load Lane
