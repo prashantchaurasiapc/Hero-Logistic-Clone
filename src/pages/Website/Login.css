@@ -198,6 +198,21 @@
   align-items: center;
   justify-content: center;
   padding: 40px 36px;
+  position: relative;
+}
+
+.auth-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #0a0a0a;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
 }
 
 .right-content {
@@ -370,6 +385,10 @@
 
 /* Make it responsive */
 @media (max-width: 1024px) {
+  .auth-overlay {
+    position: fixed;
+  }
+  
   .login-container {
     flex-direction: column;
     overflow-y: auto;
