@@ -389,7 +389,7 @@ export default function AssetInventory() {
         <div className="bg-white border border-slate-100 rounded-[20px] shadow-sm overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[900px]">
             <thead>
-              <tr className="border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50/50">
+              <tr className="border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50/50 whitespace-nowrap">
                 <th className="py-4 pl-6 w-12">
                   <div className="flex items-center">
                     <input
@@ -431,7 +431,7 @@ export default function AssetInventory() {
                     </td>
 
                     {/* Image & Description */}
-                    <td className="py-4 px-4 align-middle">
+                    <td className="py-4 px-4 align-middle whitespace-nowrap">
                       <div className="flex items-center gap-3.5">
                         <img 
                           src={asset.img} 
@@ -472,7 +472,7 @@ export default function AssetInventory() {
                     </td>
 
                     {/* Current Task */}
-                    <td className="py-4 px-4 align-middle">
+                    <td className="py-4 px-4 align-middle whitespace-nowrap">
                       <span className={`text-[11px] font-black tracking-tight ${
                         asset.task === 'Available' 
                           ? 'text-slate-400' 
@@ -483,7 +483,7 @@ export default function AssetInventory() {
                     </td>
 
                     {/* Target */}
-                    <td className="py-4 px-4 align-middle">
+                    <td className="py-4 px-4 align-middle whitespace-nowrap">
                       <div className="flex items-center gap-1.5">
                         <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                         <div className="text-left">

@@ -553,7 +553,7 @@ export default function FleetAssest() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-50/40 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  <tr className="bg-slate-50/40 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">
                     <th className="px-6 py-4">ASSET ID & REG</th>
                     <th className="px-6 py-4">TYPE</th>
                     <th className="px-6 py-4">STATUS & LOCATION</th>
@@ -584,7 +584,7 @@ export default function FleetAssest() {
                       </td>
 
                       {/* Status & Location Bar */}
-                      <td className="px-6 py-5 text-left min-w-[240px] align-middle">
+                      <td className="px-6 py-5 text-left min-w-[240px] whitespace-nowrap align-middle">
                         <div className={`p-2.5 rounded-xl flex items-center justify-between border ${asset.statusBg}`}>
                           <span className="text-[9px] font-black tracking-wider uppercase">{asset.status}</span>
                           <span className="text-[10px] font-bold flex items-center gap-1">

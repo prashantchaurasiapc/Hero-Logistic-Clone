@@ -271,7 +271,7 @@ export default function CommandCentre() {
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-slate-50/40 border-b border-slate-100">
+                    <tr className="bg-slate-50/40 border-b border-slate-100 whitespace-nowrap">
                       <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-left">LOAD ID</th>
                       <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-left">ROUTE / STATUS</th>
                       <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-left">RESOURCE</th>
@@ -285,7 +285,7 @@ export default function CommandCentre() {
                           <span className="text-xs font-bold text-slate-900 block leading-tight">{movement.id}</span>
                           <span className="text-[10px] text-slate-400 font-semibold mt-0.5 block leading-none">{movement.client}</span>
                         </td>
-                        <td className="px-6 py-5 text-left align-middle">
+                        <td className="px-6 py-5 text-left align-middle whitespace-nowrap">
                           <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
                             <span>{movement.from}</span>
                             <span className="text-slate-400">→</span>
