@@ -1988,166 +1988,283 @@ const Vehicles = () => {
 
   if (showAddModal) {
     return (
-      <form onSubmit={handleAddVehicle} className="p-2 sm:p-6 text-left animate-in fade-in duration-200 font-sans">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-5 mb-6">
-          <div className="flex items-center">
-            <button type="button" onClick={() => setShowAddModal(false)} className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 mr-4 cursor-pointer shadow-xs transition-colors">
-              <ArrowLeft size={18} />
-            </button>
+      <form onSubmit={handleAddVehicle} className="p-2 sm:p-6 text-left animate-in fade-in duration-200 font-sans min-h-screen bg-white">
+        <div className="max-w-[1200px] mx-auto space-y-6 pb-20">
+          
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-5 mb-6">
             <div>
-              <h2 className="text-2xl font-black text-gray-900 tracking-tight">Add Vehicle</h2>
-              <p className="text-sm text-gray-500 mt-0.5 font-medium">Register a new truck, trailer or van to the global fleet.</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <button type="button" onClick={() => setShowAddModal(false)} className="px-5 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl text-sm font-bold transition-all cursor-pointer shadow-xs">
-              Cancel
-            </button>
-            <button type="submit" className="flex items-center gap-2 px-5 py-2.5 bg-yellow-400 hover:bg-yellow-500 text-gray-900 rounded-xl text-sm font-bold transition-all cursor-pointer shadow-xs">
-              <Save size={16} strokeWidth={2.5} /> Save Vehicle
-            </button>
-          </div>
-        </div>
-
-        {/* Plan Limit Alert */}
-        <div className="bg-red-50 border border-red-100/60 rounded-xl p-4 flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-red-100/50 text-red-500 rounded-lg"><ShieldAlert size={20} /></div>
-            <div>
-              <h4 className="text-sm font-bold text-red-900">Plan Limit Reached (10/10)</h4>
-              <p className="text-xs text-red-700 font-bold mt-0.5">Your 'Starter Fleet' plan does not allow more vehicles. Additional assets will not be saved.</p>
-            </div>
-          </div>
-          <button type="button" className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-bold tracking-wider uppercase transition-colors shadow-sm cursor-pointer">
-            UPGRADE PLAN
-          </button>
-        </div>
-
-        {/* Form Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-          {/* Left Column (2 spans) */}
-          <div className="lg:col-span-2 space-y-6">
-
-            {/* Vehicle Identification */}
-            <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-xs">
-              <div className="flex items-center gap-2 mb-6">
-                <TruckIcon className="w-5 h-5 text-yellow-500" />
-                <h3 className="text-xs font-black text-gray-800 uppercase tracking-widest">VEHICLE IDENTIFICATION</h3>
+              <div className="flex items-center gap-2 text-xs font-semibold text-gray-500 mb-2">
+                <span>Home</span>
+                <ChevronRight size={12} />
+                <span>Vehicles</span>
+                <ChevronRight size={12} />
+                <span>Vehicles List</span>
+                <ChevronRight size={12} />
+                <span className="text-gray-900 font-bold">Add Vehicle</span>
+                <div className="ml-auto flex items-center gap-1.5 text-gray-500 text-xs">
+                  <Shield size={12}/> <span className="hidden sm:inline">Guide & Compliance</span>
+                </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+              <h2 className="text-2xl font-black text-gray-900 tracking-tight leading-none mb-2">Add New Vehicle</h2>
+              <p className="text-xs text-gray-500 font-medium">Create a new vehicle profile by entering all required information.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button type="button" onClick={() => setShowAddModal(false)} className="px-5 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-sm">
+                Cancel
+              </button>
+              <button type="button" className="px-5 py-2 bg-white border border-purple-200 hover:bg-purple-50 text-purple-700 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-sm">
+                Save as Draft
+              </button>
+              <button type="submit" className="flex items-center justify-center gap-2 px-5 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-xs font-bold transition-all cursor-pointer shadow-sm min-w-[140px]">
+                <Save size={14} strokeWidth={2.5} /> Save Vehicle
+              </button>
+            </div>
+          </div>
+
+          {/* 1. Vehicle Information */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h3 className="text-[13px] font-black text-gray-900">1. Vehicle Information</h3>
+            </div>
+            <div className="p-6 flex flex-col md:flex-row gap-8">
+              {/* Photo Upload */}
+              <div className="flex flex-col items-center gap-2 w-32 shrink-0">
+                <div className="text-[9px] font-black text-gray-500 tracking-widest uppercase mb-1">VEHICLE PHOTO</div>
+                <div className="relative w-24 h-24 rounded-full overflow-hidden border border-gray-200 hover:border-purple-400 cursor-pointer group bg-gray-50 flex items-center justify-center">
+                  <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                    <Camera className="w-5 h-5 text-white mb-1" />
+                    <span className="text-[9px] font-bold text-white uppercase tracking-wider">Upload</span>
+                  </div>
+                  <img src="https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?q=80&w=256&auto=format&fit=crop" className="w-full h-full object-cover" alt="Truck" />
+                </div>
+                <input type="text" placeholder="https://images.unsplash.com..." defaultValue="https://images.unsplash.co..." className="w-full text-center text-[9px] px-2 py-1.5 bg-gray-50 border border-gray-200 rounded mt-2 focus:outline-none focus:border-purple-400 text-gray-500" />
+              </div>
+
+              {/* Vehicle Fields */}
+              <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">REG / NUMBER PLATE</label>
-                  <input required type="text" placeholder="e.g. XQG-984" value={newVehicle.reg} onChange={e => setNewVehicle(p => ({ ...p, reg: e.target.value }))} className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-yellow-400" />
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">MAKE *</label>
+                  <input type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">VEHICLE CATEGORY</label>
-                  <select value={newVehicle.type} onChange={e => setNewVehicle(p => ({ ...p, type: e.target.value }))} className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-bold bg-white focus:outline-none cursor-pointer">
-                    <option value="HEAVY TRUCK">Heavy Truck (Semi)</option>
-                    <option value="DELIVERY VAN">Delivery Van</option>
-                    <option value="TRAILER FLATBED">Trailer Flatbed</option>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">MODEL *</label>
+                  <input type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">VEHICLE ID * (MANUAL EDIT OPTION)</label>
+                  <input type="text" defaultValue="VEH009" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-bold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+                </div>
+                
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">YEAR *</label>
+                  <div className="relative">
+                    <input type="text" placeholder="dd-mm-yyyy" className="w-full pl-3 pr-8 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+                    <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">COLOR *</label>
+                  <select className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
+                    <option>White</option>
+                    <option>Red</option>
+                    <option>Blue</option>
+                    <option>Black</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">TYPE *</label>
+                  <select className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
+                    <option>Australian</option>
+                    <option>Heavy Rigid (HR)</option>
+                    <option>Semi Trailer</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">REGISTRATION NO *</label>
+                  <input type="text" placeholder="e.g. 0412345678" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">VIN NUMBER *</label>
+                  <input type="text" placeholder="e.g. email@domain.com" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">ENGINE NUMBER *</label>
+                  <input type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+                </div>
+
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">ODOMETER *</label>
+                  <input type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">PRIMARY DEPOT *</label>
+                  <input type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+                </div>
+                <div></div>
+
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">CITY *</label>
+                  <input type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">STATE *</label>
+                  <input type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">POSTAL CODE *</label>
+                  <input type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 2. Registration Information */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h3 className="text-[13px] font-black text-gray-900">2. Registration Information</h3>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">REGISTRATION TYPE *</label>
+                  <select className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
+                    <option>HR (Heavy Rigid)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">REGISTRATION NUMBER *</label>
+                  <input type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">REGISTRATION STATE *</label>
+                  <select className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
+                    <option>NSW</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">ISSUE DATE *</label>
+                  <div className="relative">
+                    <input type="text" placeholder="dd-mm-yyyy" className="w-full pl-3 pr-8 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+                    <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">EXPIRY DATE *</label>
+                  <div className="relative">
+                    <input type="text" placeholder="dd-mm-yyyy" className="w-full pl-3 pr-8 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+                    <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">LICENCE CLASS</label>
+                  <select className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
+                    <option>Class HR</option>
                   </select>
                 </div>
               </div>
-              <div className="mb-5">
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">VIN / CHASSIS NUMBER</label>
-                <div className="relative">
-                  <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
-                  <input required type="text" placeholder="17-digit identification" value={newVehicle.id} onChange={e => setNewVehicle(p => ({ ...p, id: e.target.value }))} className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm font-mono font-medium focus:outline-none focus:ring-2 focus:ring-yellow-400" />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">MAKE & MODEL</label>
-                  <input type="text" placeholder="e.g. Kenworth T610" className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-yellow-400" />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">YEAR OF MANUFACTURE</label>
-                  <input type="text" placeholder="2024" className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-yellow-400" />
+
+              <div>
+                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">LICENCE DOCUMENT UPLOAD</label>
+                <div className="border border-dashed border-gray-300 rounded-xl p-8 flex flex-col items-center justify-center text-center hover:bg-gray-50/50 hover:border-purple-300 transition-colors cursor-pointer group">
+                  <div className="p-3 mb-3 group-hover:-translate-y-1 transition-transform">
+                    <Upload className="w-6 h-6 text-gray-400 group-hover:text-purple-600 transition-colors" />
+                  </div>
+                  <p className="text-[13px] font-bold text-gray-900 mb-1">Drag and drop file here, or click to browse</p>
+                  <p className="text-[11px] font-medium text-gray-500 mb-4">Support for PDF, PNG, JPG up to 10MB</p>
+                  <button type="button" className="px-5 py-2 bg-white border border-gray-200 hover:border-purple-300 text-gray-700 text-xs font-bold rounded-lg shadow-sm transition-colors">
+                    Browse File
+                  </button>
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Specs & Metrics */}
-            <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-xs">
-              <div className="flex items-center gap-2 mb-6">
-                <Settings className="w-5 h-5 text-gray-400" />
-                <h3 className="text-xs font-black text-gray-800 uppercase tracking-widest">SPECS & METRICS</h3>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">PAYLOAD CAPACITY (TONNES)</label>
-                  <input type="text" placeholder="e.g. 22" value={newVehicle.payload} onChange={e => setNewVehicle(p => ({ ...p, payload: e.target.value }))} className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-yellow-400" />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">INITIAL ODOMETER (KM)</label>
-                  <div className="relative">
-                    <Gauge className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
-                    <input type="text" placeholder="12500" className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-yellow-400" />
+          {/* 3. Compliance Documents */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h3 className="text-[13px] font-black text-gray-900">3. Compliance Documents</h3>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                  'Medical Certificate',
+                  'Police Verification',
+                  'Background Check',
+                  'Drug & Alcohol Certificate',
+                  'First Aid Certificate',
+                  'Training Certificate',
+                  'Other Documents'
+                ].map(doc => (
+                  <div key={doc} className="border border-gray-200 rounded-xl p-4 flex flex-col h-[90px] hover:border-purple-300 transition-colors group cursor-pointer bg-white relative">
+                    <h4 className="text-[11px] font-bold text-gray-700 leading-tight pr-6">{doc}</h4>
+                    <div className="absolute right-4 top-4 text-gray-400 group-hover:text-purple-600">
+                      <Upload size={14} />
+                    </div>
+                    <div className="mt-auto flex items-center justify-center gap-1.5 text-gray-500 group-hover:text-purple-700 transition-colors text-[10px] font-bold">
+                      <Upload size={12} /> Upload
+                    </div>
                   </div>
-                </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* 5. Maintenance Preferences */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h3 className="text-[13px] font-black text-gray-900">5. Maintenance Preferences</h3>
+            </div>
+            <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">PRIMARY MECHANIC</label>
+                <input type="text" defaultValue="Volvo FH16" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">FUEL TYPE / POWERTRAIN</label>
-                <select className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-bold bg-white focus:outline-none cursor-pointer">
-                  <option value="Diesel Engine">Diesel Engine</option>
-                  <option value="Electric">Electric</option>
-                  <option value="Hybrid">Hybrid</option>
+                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">PREFERRED ROUTES</label>
+                <input type="text" defaultValue="Sydney - Melbourne" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+              </div>
+              <div>
+                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">PREFERRED REGIONS</label>
+                <input type="text" defaultValue="East Coast" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+              </div>
+              
+              <div>
+                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">MAXIMUM DISTANCE PER TRIP (KM)</label>
+                <input type="text" defaultValue="1000" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+              </div>
+              <div>
+                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">DANGEROUS GOODS CERTIFIED</label>
+                <select className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
+                  <option>No</option>
+                  <option>Yes</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">HEAVY VEHICLE CERTIFIED</label>
+                <select className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
+                  <option>Yes</option>
+                  <option>No</option>
                 </select>
               </div>
             </div>
           </div>
 
-          {/* Right Column */}
-          <div className="space-y-6">
-
-            {/* Vehicle Photo & Notes */}
-            <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-xs">
-              <h3 className="text-[10px] font-black text-gray-800 uppercase tracking-widest text-center mb-4">VEHICLE PHOTO</h3>
-              <div className="border-2 border-dashed border-gray-200 rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-gray-50 transition-colors mb-6">
-                <div className="p-3 bg-gray-50 rounded-xl mb-3 border border-gray-100">
-                  <ImageIcon className="w-6 h-6 text-gray-400" />
-                </div>
-                <p className="text-sm font-bold text-gray-700">Upload Asset Photo</p>
-                <p className="text-[10px] text-gray-400 font-bold tracking-wide uppercase mt-1">JPEG, PNG up to 5MB</p>
-              </div>
-
-              <div className="border-t border-gray-100 pt-5">
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">ADDITIONAL NOTES</label>
-                <textarea rows="4" placeholder="Special requirements or history..." className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-yellow-400 resize-none"></textarea>
-              </div>
+          {/* 6. Notes & Comments */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h3 className="text-[13px] font-black text-gray-900">6. Notes & Comments</h3>
             </div>
-
-            {/* Initial Status Setup */}
-            <div className="bg-[#121824] rounded-2xl p-6 shadow-lg border border-gray-800/50">
-              <div className="flex items-center gap-2 mb-6">
-                <TruckIcon className="w-4 h-4 text-gray-400" />
-                <h3 className="text-xs font-black text-white uppercase tracking-widest">INITIAL STATUS SETUP</h3>
+            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">VEHICLE NOTES</label>
+                <textarea rows="4" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 resize-none"></textarea>
               </div>
-
-              <div className="space-y-5">
-                <div>
-                  <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">INITIAL STATUS</label>
-                  <select value={newVehicle.status} onChange={e => setNewVehicle(p => ({ ...p, status: e.target.value }))} className="w-full px-4 py-3 border border-gray-700 bg-gray-800/50 rounded-xl text-sm font-bold text-white focus:outline-none focus:border-yellow-400 cursor-pointer">
-                    <option value="ACTIVE">Active / Available</option>
-                    <option value="MAINTENANCE">Maintenance</option>
-                    <option value="INBOUND">Inbound</option>
-                  </select>
-                </div>
-
-                <div>
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <MapPin className="w-3 h-3 text-gray-500" />
-                    <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest">DEFAULT DEPOT</label>
-                  </div>
-                  <select value={newVehicle.branch} onChange={e => setNewVehicle(p => ({ ...p, branch: e.target.value }))} className="w-full px-4 py-3 border border-gray-700 bg-gray-800/50 rounded-xl text-sm font-bold text-white focus:outline-none focus:border-yellow-400 cursor-pointer">
-                    <option value="SYDNEY">Sydney Central Depot</option>
-                    <option value="MELBOURNE">Melbourne Depot</option>
-                    <option value="BRISBANE">Brisbane Port Branch</option>
-                    <option value="PERTH">Perth Hub</option>
-                  </select>
-                </div>
+              <div>
+                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">INTERNAL COMMENTS</label>
+                <textarea rows="4" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 resize-none"></textarea>
               </div>
             </div>
           </div>
