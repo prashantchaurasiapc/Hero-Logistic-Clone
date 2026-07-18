@@ -117,7 +117,7 @@ const Login = () => {
         <div className="grid-overlay"></div>
         <div className="left-content">
           <div className="login-logo" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0px' }}>
-            <img src={logoSrc} alt="Logo" style={{ height: '70px', width: 'auto', objectFit: 'contain', marginLeft: '-24px', marginRight: '-32px' }} />
+            <img src={logoSrc} alt="Logo" style={{ height: '70px', width: 'auto', objectFit: 'contain', marginLeft: '-38px', marginRight: '-32px' }} />
             <div className="logo-text-group" style={{ display: 'flex', flexDirection: 'column' }}>
               <span className="logo-title" style={{ fontSize: '22px', fontWeight: 805, color: '#ffffff', fontFamily: "'Outfit', system-ui, sans-serif", lineHeight: '1.1' }}>Hero Logistics</span>
               <span className="logo-subtitle" style={{ fontSize: '10.5px', fontWeight: 700, color: '#64748b', letterSpacing: '2px', textTransform: 'uppercase', marginTop: '4px', lineHeight: '1' }}>Enterprise Suite</span>
