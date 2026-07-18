@@ -156,6 +156,8 @@ import CustomerDispatcherChat from './pages/Layout/Dashboard/CustomerDispatcherC
 import CustomerSupport from './pages/Layout/Dashboard/CustomerSupport';
 import CustomerSettings from './pages/Layout/Dashboard/CustomerSettings';
 
+import CustomerPortal from './components/CustomerPortal/CustomerPortal';
+
 /* ============================================================
    APP ROUTES
    ============================================================ */
@@ -167,6 +169,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/onboarding" element={<OnboardingWizard />} />
+        <Route path="/customer-portal" element={<CustomerPortal />} />
 
         {/* ===== SUPER ADMIN ===== */}
         <Route path="/admin" element={<DashboardLayout role="super-admin" />}>

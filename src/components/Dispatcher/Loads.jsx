@@ -1,1032 +1,1085 @@
 import React, { useState } from 'react';
-import {
-  Search, Plus, Download, Upload, ChevronDown, Filter,
-  ArrowLeft, Phone, MoreHorizontal, Edit3, UserCheck,
-  MapPin, Clock, CheckCircle, Circle, Truck, Package,
-  MessageSquare, DollarSign, FileText, Camera, Receipt,
-  Activity, ChevronRight, AlertCircle, Eye, X, Bell,
-  Navigation, Thermometer, Star, User, Calendar, Map,
-  BarChart2, TrendingUp, Layers, Radio
+import { 
+  Search, Plus, MapPin, ArrowLeft, FileText, Camera, PlusCircle, Trash2, Globe, Clock, ChevronDown
 } from 'lucide-react';
 
-// ─── Mock Data ────────────────────────────────────────────────────────────────
-const LOADS = [
-  {
-    id: 'PO-12543', status: 'ACTIVE', statusLabel: 'En Route',
-    loadType: 'Car Carrying', customer: 'ABC Motors Pty Ltd',
-    route: { from: 'Melbourne', to: 'Adelaide', stops: 3 },
-    driver: { name: 'Mike Thompson', avatar: 'MT', status: 'On The Way', stops: '2 stops' },
-    truck: 'TRK-101', pickupDate: '16/07/2025', pickupTime: '05:00 AM',
-    priority: 'Normal', ref: 'PO-12543'
-  },
-  {
-    id: 'PO-13546', status: 'PLANNED', statusLabel: 'Ready',
-    loadType: 'General Freight', customer: 'Global Retail Group',
-    route: { from: 'Sydney', to: 'Newcastle', stops: 2 },
-    driver: { name: 'John Smith', avatar: 'JS', status: 'Ready', stops: '4 leads' },
-    truck: 'TRK-204', pickupDate: '18/07/2025', pickupTime: '04:00 AM',
-    priority: 'Normal', ref: 'PO-13546'
-  },
-  {
-    id: 'PO-12544', status: 'DRAFT', statusLabel: 'Not Ready',
-    loadType: 'Car Carrying', customer: 'Luxury Auto Imports',
-    route: { from: 'Perth', to: 'Melbourne', stops: 2 },
-    driver: null, truck: null,
-    pickupDate: '16/07/2025', pickupTime: '05:00 AM',
-    priority: 'Normal', ref: 'PO-12544'
-  },
-  {
-    id: 'PO-12543', status: 'ACTIVE', statusLabel: 'At Stop 2',
-    loadType: 'Car Carrying', customer: 'Cars R Us',
-    route: { from: 'Melbourne', to: 'Sydney', stops: 4 },
-    driver: { name: 'David Wilson', avatar: 'DW', status: 'On The Way', stops: '1 stop' },
-    truck: 'TRK-089', pickupDate: '16/07/2025', pickupTime: '08:00 AM',
-    priority: 'Normal', ref: 'PO-12543'
-  },
-  {
-    id: 'PO-11942', status: 'COMPLETED', statusLabel: 'Completed',
-    loadType: 'General Freight', customer: 'BuildCo Supplies',
-    route: { from: 'Brisbane', to: 'Gold Coast', stops: 2 },
-    driver: { name: 'Mark Davis', avatar: 'MD', status: 'Completed', stops: '2 stops' },
-    truck: 'TRK-156', pickupDate: '16/07/2025', pickupTime: '06:00 AM',
-    priority: 'Normal', ref: 'PO-11942'
-  },
-  {
-    id: 'PO-12549', status: 'CANCELLED', statusLabel: 'Cancelled',
-    loadType: 'Dangerous Goods', customer: 'Chemikals Solutions',
-    route: { from: 'Sydney', to: 'Newcastle', stops: 1 },
-    driver: null, truck: null,
-    pickupDate: '16/07/2025', pickupTime: '05:00 AM',
-    priority: 'Normal', ref: 'PO-12549'
-  },
-  {
-    id: 'PO-13510', status: 'PLANNED', statusLabel: 'Ready',
-    loadType: 'Car Carrying', customer: 'Premium Motors',
-    route: { from: 'Adelaide', to: 'Melbourne', stops: 3 },
-    driver: { name: 'Sarah Mitchell', avatar: 'SM', status: 'Ready', stops: '3 stops' },
-    truck: 'TRK-311', pickupDate: '17/07/2025', pickupTime: '05:00 AM',
-    priority: 'Normal', ref: 'PO-13510'
-  },
-  {
-    id: 'PO-13509', status: 'ACTIVE', statusLabel: 'En Route',
-    loadType: 'General Freight', customer: 'National Foods',
-    route: { from: 'Sydney', to: 'Canberra', stops: 2 },
-    driver: { name: 'Chris Lee', avatar: 'CL', status: 'On The Way', stops: '2 stops' },
-    truck: 'TRK-044', pickupDate: '17/07/2025', pickupTime: '02:00 AM',
-    priority: 'Normal', ref: 'PO-13509'
-  },
-  {
-    id: 'PO-13538', status: 'DRAFT', statusLabel: 'Not Ready',
-    loadType: 'Car Carrying', customer: 'ABC Motors Pty Ltd',
-    route: { from: 'Melbourne', to: 'Brisbane', stops: 3 },
-    driver: null, truck: null,
-    pickupDate: '17/07/2025', pickupTime: '12:00 AM',
-    priority: 'Normal', ref: 'PO-13538'
-  },
-  {
-    id: 'PO-13539', status: 'DRAFT', statusLabel: 'Not Ready',
-    loadType: 'General Freight', customer: 'Global Retail Group',
-    route: { from: 'Sydney', to: 'Wollongong', stops: 2 },
-    driver: null, truck: null,
-    pickupDate: '18/07/2025', pickupTime: '05:00 AM',
-    priority: 'Normal', ref: 'PO-13539'
-  },
-  {
-    id: 'PO-13536', status: 'DRAFT', statusLabel: 'Not Ready',
-    loadType: 'Dangerous Goods', customer: 'Luxury Auto Imports',
-    route: { from: 'Perth', to: 'Adelaide', stops: 2 },
-    driver: null, truck: null,
-    pickupDate: '18/07/2025', pickupTime: '05:00 AM',
-    priority: 'Normal', ref: 'PO-13536'
-  },
-  {
-    id: 'PO-13538', status: 'DRAFT', statusLabel: 'Not Ready',
-    loadType: 'Car Carrying', customer: 'Cars R Us',
-    route: { from: 'Melbourne', to: 'Sydney', stops: 3 },
-    driver: null, truck: null,
-    pickupDate: '18/07/2025', pickupTime: '04:00 AM',
-    priority: 'Normal', ref: 'PO-13538'
-  },
-  {
-    id: 'PO-13532', status: 'DRAFT', statusLabel: 'Not Ready',
-    loadType: 'General Freight', customer: 'BuildCo Supplies',
-    route: { from: 'Brisbane', to: 'Gold Coast', stops: 2 },
-    driver: null, truck: null,
-    pickupDate: '19/07/2025', pickupTime: '05:00 AM',
-    priority: 'Normal', ref: 'PO-13532'
-  },
-  {
-    id: 'PO-13533', status: 'DRAFT', statusLabel: 'Not Ready',
-    loadType: 'Dangerous Goods', customer: 'Chemikals Solutions',
-    route: { from: 'Sydney', to: 'Newcastle', stops: 1 },
-    driver: null, truck: null,
-    pickupDate: '19/07/2025', pickupTime: '05:00 AM',
-    priority: 'Normal', ref: 'PO-13533'
-  },
-  {
-    id: 'PO-13522', status: 'DRAFT', statusLabel: 'Not Ready',
-    loadType: 'Car Carrying', customer: 'Premium Motors',
-    route: { from: 'Adelaide', to: 'Melbourne', stops: 3 },
-    driver: null, truck: null,
-    pickupDate: '19/07/2025', pickupTime: '05:00 AM',
-    priority: 'Normal', ref: 'PO-13522'
-  },
-  {
-    id: 'PO-13524', status: 'DRAFT', statusLabel: 'Not Ready',
-    loadType: 'General Freight', customer: 'National Foods',
-    route: { from: 'Melbourne', to: 'Sydney', stops: 4 },
-    driver: null, truck: null,
-    pickupDate: '30/07/2025', pickupTime: '05:00 AM',
-    priority: 'Normal', ref: 'PO-13524'
-  },
-  {
-    id: 'PO-13526', status: 'DRAFT', statusLabel: 'Not Ready',
-    loadType: 'Dangerous Goods', customer: 'Premier Logistics',
-    route: { from: 'Sydney', to: 'Newcastle', stops: 2 },
-    driver: null, truck: null,
-    pickupDate: '30/07/2025', pickupTime: '05:00 AM',
-    priority: 'Normal', ref: 'PO-13526'
-  },
-  {
-    id: 'PO-13527', status: 'DRAFT', statusLabel: 'Not Ready',
-    loadType: 'Car Carrying', customer: 'Apex Warehousing',
-    route: { from: 'Perth', to: 'Melbourne', stops: 3 },
-    driver: null, truck: null,
-    pickupDate: '30/07/2025', pickupTime: '04:00 AM',
-    priority: 'Normal', ref: 'PO-13527'
-  },
-  {
-    id: 'PO-13528', status: 'DRAFT', statusLabel: 'Not Ready',
-    loadType: 'General Freight', customer: 'ABC Motors Pty Ltd',
-    route: { from: 'Melbourne', to: 'Sydney', stops: 2 },
-    driver: null, truck: null,
-    pickupDate: '21/07/2025', pickupTime: '05:00 AM',
-    priority: 'Normal', ref: 'PO-13528'
-  },
-  {
-    id: 'PO-13512', status: 'PLANNED', statusLabel: 'Ready',
-    loadType: 'Car Carrying', customer: 'ABC Motors Pty Ltd',
-    route: { from: 'Melbourne', to: 'Brisbane', stops: 4 },
-    driver: { name: 'Mike Thompson', avatar: 'MT', status: 'Ready', stops: '4 stops' },
-    truck: 'TRK-101', pickupDate: '21/07/2025', pickupTime: '05:00 AM',
-    priority: 'Normal', ref: 'PO-13512'
-  },
-];
+export default function Loads() {
+  const [view, setView] = useState('dashboard'); // 'dashboard', 'create-load', or 'full-details'
+  const [activeTab, setActiveTab] = useState('All'); // 'All', 'Local Pickups', 'Branch Transfers', 'Local Deliveries', 'Draft'
+  const [selectedStatCard, setSelectedStatCard] = useState('Unassigned'); // 'Unassigned', 'In Transit', 'Issues', 'Received'
+  const [searchQuery, setSearchQuery] = useState('');
+  const [toastMsg, setToastMsg] = useState('');
+  const [selectedLoad, setSelectedLoad] = useState(null); // Load object for quick-view modal
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
-// Status color mapping
-const statusConfig = {
-  ACTIVE:     { bg: 'bg-blue-100',   text: 'text-blue-700',   dot: 'bg-blue-500',    label: 'Active' },
-  PLANNED:    { bg: 'bg-green-100',  text: 'text-green-700',  dot: 'bg-green-500',   label: 'Planned' },
-  DRAFT:      { bg: 'bg-orange-100', text: 'text-orange-600', dot: 'bg-orange-400',  label: 'Draft' },
-  COMPLETED:  { bg: 'bg-purple-100', text: 'text-purple-700', dot: 'bg-purple-500',  label: 'Completed' },
-  CANCELLED:  { bg: 'bg-red-100',    text: 'text-red-600',    dot: 'bg-red-500',     label: 'Cancelled' },
-};
+  // Loads State List matching Image 1 data exactly
+  const [loadsList, setLoadsList] = useState([
+    {
+      id: 'SHP-9055',
+      ref: 'COKE-9901',
+      sn: 'STK-4401',
+      from: 'Sydney',
+      to: 'Canberra',
+      priority: 'HIGH',
+      load: '6.2t',
+      resource: 'Pending Assignment',
+      type: 'Local Pickups'
+    },
+    {
+      id: 'SHP-9054',
+      ref: 'PO-8822',
+      sn: 'STK-4402',
+      from: 'Sydney',
+      to: 'Penrith',
+      priority: 'MEDIUM',
+      load: '2.1t',
+      resource: 'Pending Assignment',
+      type: 'Local Deliveries'
+    },
+    {
+      id: 'SHP-9060',
+      ref: 'VL-X77',
+      sn: 'STK-4403',
+      from: 'Melbourne',
+      to: 'Brisbane',
+      priority: 'HIGH',
+      load: '14.5t',
+      resource: 'Pending Assignment',
+      type: 'Branch Transfers'
+    },
+    {
+      id: 'SHP-9080',
+      ref: 'DRAFT-001',
+      sn: 'STK-4404',
+      from: 'Sydney',
+      to: 'Melbourne',
+      priority: 'LOW',
+      load: '1.5t',
+      resource: 'Draft',
+      type: 'Draft'
+    }
+  ]);
 
-const avatarColors = ['bg-blue-500','bg-emerald-500','bg-violet-500','bg-amber-500','bg-rose-500','bg-cyan-500'];
-const getAvatarColor = (str) => avatarColors[str?.charCodeAt(0) % avatarColors.length] || 'bg-slate-500';
+  // Create Load Form States
+  const [customerRef, setCustomerRef] = useState('PO-12345');
+  const [priorityTier, setPriorityTier] = useState('NORMAL'); // 'NORMAL', 'EXPRESS', 'URGENT'
+  const [globalDeadline, setGlobalDeadline] = useState('');
+  const [internalNotes, setInternalNotes] = useState('');
+  
+  // Steps stops list state
+  const [stops, setStops] = useState([
+    { id: 1, type: 'Pickup', address: '', contact: '', phone: '', time: '' },
+    { id: 2, type: 'Drop', address: '', contact: '', phone: '', time: '' }
+  ]);
 
-// ─── Donut Chart ──────────────────────────────────────────────────────────────
-function DonutChart({ total, active, planned, draft, completed, cancelled }) {
-  const r = 54;
-  const circ = 2 * Math.PI * r;
-  const segments = [
-    { count: active,    color: '#3b82f6' },
-    { count: planned,   color: '#22c55e' },
-    { count: draft,     color: '#f97316' },
-    { count: completed, color: '#a855f7' },
-    { count: cancelled, color: '#ef4444' },
-  ];
-  let offset = 0;
-  const paths = segments.map((seg, i) => {
-    const pct = total > 0 ? seg.count / total : 0;
-    const dash = pct * circ;
-    const gap = circ - dash;
-    const el = (
-      <circle
-        key={i}
-        cx="64" cy="64" r={r}
-        fill="none"
-        stroke={seg.color}
-        strokeWidth="14"
-        strokeDasharray={`${dash} ${gap}`}
-        strokeDashoffset={-offset}
-        strokeLinecap="butt"
-        style={{ transform: 'rotate(-90deg)', transformOrigin: '64px 64px' }}
-      />
-    );
-    offset += dash;
-    return el;
+  // Declared items list state
+  const [declaredItems, setDeclaredItems] = useState([
+    { id: 1, client: 'Acme Corp', pickupStop: 'Stop #1: Pickup (No Address)', dropStop: 'Stop #2: Drop (No Address)', desc: '', weight: '' }
+  ]);
+
+  const triggerToast = (msg) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(''), 4000);
+  };
+
+  // Drag and drop states & handlers for declaredItems
+  const [draggedItemIndex, setDraggedItemIndex] = useState(null);
+
+  const handleDragStart = (index) => {
+    setDraggedItemIndex(index);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (index) => {
+    if (draggedItemIndex === null || draggedItemIndex === index) return;
+    const updated = [...declaredItems];
+    const [draggedItem] = updated.splice(draggedItemIndex, 1);
+    updated.splice(index, 0, draggedItem);
+    setDeclaredItems(updated);
+    setDraggedItemIndex(null);
+    triggerToast('Reordered cargo items successfully.');
+  };
+
+  // Add stop and remove stop handlers
+  const handleAddStop = () => {
+    const nextId = stops.length + 1;
+    setStops([...stops, { id: nextId, type: 'Drop', address: '', contact: '', phone: '', time: '' }]);
+    triggerToast('Added stop to route.');
+  };
+
+  const handleRemoveStop = (id) => {
+    if (stops.length <= 2) {
+      triggerToast('Cannot remove. Minimum 2 stops required.');
+      return;
+    }
+    setStops(stops.filter(s => s.id !== id));
+    triggerToast('Removed stop.');
+  };
+
+  // Add item and remove item handlers
+  const handleAddItem = () => {
+    const nextId = declaredItems.length + 1;
+    setDeclaredItems([...declaredItems, { 
+      id: nextId, 
+      client: 'Acme Corp', 
+      pickupStop: `Stop #1: Pickup (No Address)`, 
+      dropStop: `Stop #2: Drop (No Address)`, 
+      desc: '', 
+      weight: '' 
+    }]);
+    triggerToast('Added cargo item.');
+  };
+
+  const handleRemoveItem = (id) => {
+    if (declaredItems.length <= 1) {
+      triggerToast('Cannot remove. Minimum 1 item required.');
+      return;
+    }
+    setDeclaredItems(declaredItems.filter(item => item.id !== id));
+    triggerToast('Removed cargo item.');
+  };
+
+  // Activate load and return to dashboard
+  const handleActivateLoad = (e) => {
+    e.preventDefault();
+    const newLoadId = `SHP-${Math.floor(9061 + Math.random() * 50)}`;
+    const startPoint = stops[0]?.address || 'Sydney';
+    const endPoint = stops[stops.length - 1]?.address || 'Melbourne';
+
+    const activatedLoad = {
+      id: newLoadId,
+      ref: customerRef || 'REF-TBD',
+      sn: `STK-${Math.floor(4410 + Math.random() * 100)}`,
+      from: startPoint.split(',')[0] || 'Sydney',
+      to: endPoint.split(',')[0] || 'Melbourne',
+      priority: priorityTier === 'URGENT' ? 'HIGH' : priorityTier === 'EXPRESS' ? 'HIGH' : 'MEDIUM',
+      load: '4.5t',
+      resource: 'Pending Assignment',
+      type: 'Local Pickups'
+    };
+
+    setLoadsList([activatedLoad, ...loadsList]);
+    setView('dashboard');
+    triggerToast(`Load ${newLoadId} activated and dispatched successfully!`);
+  };
+
+  // Save draft and return to dashboard (as requested for 3rd image)
+  const handleSaveDraft = (e) => {
+    e.preventDefault();
+    const newLoadId = `SHP-${Math.floor(9061 + Math.random() * 50)}`;
+    const startPoint = stops[0]?.address || 'Sydney';
+    const endPoint = stops[stops.length - 1]?.address || 'Melbourne';
+
+    const draftLoad = {
+      id: newLoadId,
+      ref: customerRef || 'DRAFT-REF',
+      sn: `STK-${Math.floor(4410 + Math.random() * 100)}`,
+      from: startPoint.split(',')[0] || 'Sydney',
+      to: endPoint.split(',')[0] || 'Melbourne',
+      priority: 'LOW',
+      load: '1.2t',
+      resource: 'Draft',
+      type: 'Draft'
+    };
+
+    setLoadsList([draftLoad, ...loadsList]);
+    setView('dashboard');
+    setActiveTab('Draft'); // Switch to Draft tab to show the new draft immediately!
+    triggerToast(`Load ${newLoadId} saved as draft successfully!`);
+  };
+
+  // Filter logic for Loads Table
+  const filteredLoads = loadsList.filter(load => {
+    // Search query matches id, ref, from, to
+    const q = searchQuery.toLowerCase();
+    const matchesSearch = !q || 
+      load.id.toLowerCase().includes(q) || 
+      load.ref.toLowerCase().includes(q) || 
+      load.from.toLowerCase().includes(q) || 
+      load.to.toLowerCase().includes(q);
+
+    // Active tab matches load type
+    if (activeTab === 'All') return matchesSearch;
+    if (activeTab === 'Draft') return load.type === 'Draft' && matchesSearch;
+    return load.type === activeTab && matchesSearch;
   });
 
   return (
-    <div className="relative flex items-center justify-center" style={{ width: 128, height: 128 }}>
-      <svg width="128" height="128" viewBox="0 0 128 128">
-        <circle cx="64" cy="64" r={r} fill="none" stroke="#f1f5f9" strokeWidth="14" />
-        {paths}
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-2xl font-black text-slate-900">{total}</span>
-        <span className="text-[10px] font-semibold text-slate-400">Total</span>
-      </div>
-    </div>
-  );
-}
+    <div className="w-full min-h-screen bg-[#F8FAFC] px-8 py-8 space-y-6 text-left font-sans antialiased text-slate-800">
+      
+      {/* Toast Notification */}
+      {toastMsg && (
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-xl animate-fade-in">
+          {toastMsg}
+        </div>
+      )}
 
-// ─── Load Detail View ─────────────────────────────────────────────────────────
-function LoadDetail({ load, onBack }) {
-  const [activeTab, setActiveTab] = useState('Overview');
-  const tabs = ['Overview', 'Stops (4)', 'Items (1)', 'Driver & Vehicle', 'Expenses', 'Documents', 'Proof Photos', 'POD', 'Invoices', 'Activity'];
-
-  const routeSteps = [
-    { label: 'Dispatched', date: '15/07 07:30 AM', done: true },
-    { label: 'En Route', date: '15/07 10:30 AM', active: true },
-    { label: '3', date: '15/07 07:33 PM', done: false },
-    { label: '4', date: '17/07 04:00 PM', done: false },
-    { label: 'Delivered', date: '16/07 09:00 AM', done: false },
-  ];
-
-  const stops = [
-    { type: 'PICKUP', label: 'Pickup Yard', location: 'Melbourne', date: '15/07/2025 08:00 AM', status: 'COMPLETED', color: 'bg-green-500' },
-    { type: 'DELIVERY', label: 'Geelong Depot', location: 'Geelong', date: '15/07/2025 10:30 AM', status: 'UPCOMING', color: 'bg-blue-400' },
-    { type: 'DROP-OFF', label: 'Drop-off Depot', location: 'Sydney', date: '17/07/2025 04:00 PM', status: 'UPCOMING', color: 'bg-blue-400' },
-    { type: 'DROP-OFF', label: 'Drop-off Yard', location: 'Brisbane', date: '18/07/2025 09:00 AM', status: 'UPCOMING', color: 'bg-blue-400' },
-  ];
-
-  const proofPickup = ['#d97706','#b45309','#92400e','#d97706'];
-  const proofLoading = ['#1d4ed8','#1e40af','#1d4ed8','#1e40af','#1d4ed8'];
-  const proofDelivery = ['#064e3b','#065f46','#047857','#064e3b','#065f46','#047857'];
-
-  return (
-    <div className="flex flex-col h-full" style={{ background: '#f8fafc', minHeight: '100vh' }}>
-      {/* Top Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-4 bg-white border-b border-slate-100 gap-4">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onBack}
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 transition-colors"
+      {/* ===================== LOAD DETAILS QUICK-VIEW MODAL (Image 1) ===================== */}
+      {showDetailsModal && selectedLoad && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: 'rgba(30,41,59,0.55)', backdropFilter: 'blur(2px)' }}
+          onClick={() => setShowDetailsModal(false)}
+        >
+          <div
+            className="relative bg-white rounded-[28px] shadow-2xl w-[420px] max-w-[95vw] overflow-hidden"
+            onClick={e => e.stopPropagation()}
           >
-            <ArrowLeft className="w-4 h-4 text-slate-600" />
-          </button>
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl font-black text-slate-900">Load {load.id}</h1>
-              <span className="px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-bold border border-blue-200">
-                ● IN PROGRESS
-              </span>
+            {/* Top amber accent bar */}
+            <div className="h-1.5 w-full bg-gradient-to-r from-[#FFA000] to-[#FFD400]" />
+
+            <div className="p-7 space-y-5">
+              {/* Close button */}
+              <button
+                onClick={() => setShowDetailsModal(false)}
+                className="absolute top-5 right-5 w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors text-sm font-bold"
+              >
+                ✕
+              </button>
+
+              {/* Badges row */}
+              <div className="flex items-center gap-2 pt-1">
+                <span className="px-2.5 py-0.5 rounded-md border border-slate-200 text-[10px] font-black text-slate-700 uppercase tracking-wide">DRAFT</span>
+                <span className="px-2.5 py-0.5 rounded-md border border-amber-200 bg-amber-50 text-[10px] font-black text-amber-600 uppercase tracking-wide">HIGH PRIORITY</span>
+              </div>
+
+              {/* Load ID */}
+              <div>
+                <h2 className="text-3xl font-black text-slate-900 tracking-tight leading-tight">{selectedLoad.id}</h2>
+                <p className="text-[11px] text-slate-400 font-bold mt-1">
+                  REF: {selectedLoad.ref} &nbsp;•&nbsp; SN: {selectedLoad.sn}
+                </p>
+              </div>
+
+              {/* Route pill */}
+              <div className="bg-slate-900 text-white rounded-[14px] px-5 py-3.5 flex items-center gap-3">
+                <span className="text-amber-400 text-sm">📍</span>
+                <span className="font-black text-sm tracking-wide">{selectedLoad.from} → {selectedLoad.to}</span>
+              </div>
+
+              {/* Info grid */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-slate-50 rounded-[14px] p-4 space-y-1">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">👤 CLIENT</span>
+                  <span className="text-sm font-black text-slate-900">Coca Cola</span>
+                </div>
+                <div className="bg-slate-50 rounded-[14px] p-4 space-y-1">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">⚖ WEIGHT</span>
+                  <span className="text-sm font-black text-slate-900">{selectedLoad.load}</span>
+                </div>
+                <div className="bg-slate-50 rounded-[14px] p-4 space-y-1">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">🕐 ETA</span>
+                  <span className="text-sm font-black text-slate-900">Jun 19, 2026</span>
+                </div>
+                <div className="bg-slate-50 rounded-[14px] p-4 space-y-1">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">🚚 DRIVER</span>
+                  <span className="text-sm font-black text-slate-900">{selectedLoad.resource}</span>
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex gap-3 pt-1">
+                <button
+                  onClick={() => { setShowDetailsModal(false); setView('full-details'); }}
+                  className="flex-1 bg-[#FFA000] hover:bg-[#FF9000] text-black font-black text-xs py-3.5 rounded-[14px] flex items-center justify-center gap-2 transition-all uppercase tracking-wider shadow-sm"
+                >
+                  → VIEW FULL DETAILS
+                </button>
+                <button
+                  onClick={() => setShowDetailsModal(false)}
+                  className="px-5 border border-slate-200 hover:bg-slate-50 text-slate-700 font-black text-xs rounded-[14px] transition-colors uppercase tracking-wider"
+                >
+                  CLOSE
+                </button>
+              </div>
             </div>
-            <p className="text-xs text-slate-400 mt-0.5">
-              ☁ {load.loadType} • Created by Sarah Mitchell • {load.pickupDate} {load.pickupTime}
-            </p>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-          <button className="flex items-center gap-1.5 px-4 py-2 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
-            <Edit3 className="w-3.5 h-3.5" /> Edit Load
-          </button>
-          <button className="flex items-center gap-1.5 px-4 py-2 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
-            <UserCheck className="w-3.5 h-3.5" /> Reassign
-          </button>
-          <button className="flex items-center gap-1.5 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-bold transition-colors">
-            More Actions <ChevronDown className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </div>
+      )}
 
-      {/* Tabs */}
-      <div className="flex items-center gap-0 px-6 bg-white border-b border-slate-100 overflow-x-auto scrollbar-none flex-nowrap w-full">
-        {tabs.map(tab => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors flex-shrink-0 ${
-              activeTab === tab
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-auto">
-        <div className="grid grid-cols-12 gap-5 p-5">
-
-          {/* ── Left Column ── */}
-          <div className="col-span-12 lg:col-span-8 space-y-5">
-
-            {/* Load Summary */}
-            <div className="bg-white rounded-2xl border border-slate-100 p-5">
-              <h3 className="text-xs font-black text-slate-500 uppercase tracking-wider mb-4">Load Summary</h3>
-              <div className="grid grid-cols-2 gap-x-6 gap-y-3">
-                {[
-                  { icon: <FileText className="w-3.5 h-3.5 text-slate-400" />, label: 'Load Reference', value: load.id },
-                  { icon: <Layers className="w-3.5 h-3.5 text-slate-400" />, label: 'Load Type', value: load.loadType },
-                  { icon: <AlertCircle className="w-3.5 h-3.5 text-slate-400" />, label: 'Priority', value: '🔴 Normal' },
-                  { icon: <User className="w-3.5 h-3.5 text-slate-400" />, label: 'Booking Customer', value: 'Premium Motors' },
-                  { icon: <MapPin className="w-3.5 h-3.5 text-slate-400" />, label: 'Total Stops', value: '4 (2 Pickup, 2 Drop-off)' },
-                  { icon: <Package className="w-3.5 h-3.5 text-slate-400" />, label: 'Items / Vehicles', value: '1 Vehicle' },
-                  { icon: <Navigation className="w-3.5 h-3.5 text-slate-400" />, label: 'Total Distance (EST.)', value: '1,260 km' },
-                  { icon: <Thermometer className="w-3.5 h-3.5 text-slate-400" />, label: 'Total Weight (EST.)', value: '2,050 kg' },
-                  { icon: <BarChart2 className="w-3.5 h-3.5 text-slate-400" />, label: 'Total Volume (EST.)', value: '10.2 m³' },
-                  { icon: <Calendar className="w-3.5 h-3.5 text-slate-400" />, label: 'Created', value: '08/07/2025 09:15 AM' },
-                  { icon: <Clock className="w-3.5 h-3.5 text-slate-400" />, label: 'Last Updated', value: '15/07/2025 07:42 AM' },
-                ].map((row, i) => (
-                  <div key={i} className="flex items-start gap-2">
-                    <span className="mt-0.5 shrink-0">{row.icon}</span>
-                    <div>
-                      <p className="text-[10px] text-slate-400 font-medium">{row.label}</p>
-                      <p className="text-xs font-bold text-slate-800">{row.value}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Route Progress */}
-            <div className="bg-white rounded-2xl border border-slate-100 p-5">
-              <h3 className="text-xs font-black text-slate-500 uppercase tracking-wider mb-5">Route Progress</h3>
-              <div className="flex items-center gap-0 mb-5 overflow-x-auto pb-2">
-                {routeSteps.map((step, i) => (
-                  <React.Fragment key={i}>
-                    <div className="flex flex-col items-center gap-1 shrink-0">
-                      <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-black border-2 ${
-                        step.done && !step.active ? 'bg-green-500 border-green-500 text-white' :
-                        step.active ? 'bg-blue-500 border-blue-500 text-white' :
-                        'bg-white border-slate-200 text-slate-400'
-                      }`}>
-                        {step.done && !step.active ? <CheckCircle className="w-4 h-4" /> : i + 1}
-                      </div>
-                      <span className="text-[9px] font-bold text-slate-600 text-center w-16 leading-tight">{step.label}</span>
-                      {step.active && <span className="text-[8px] font-bold text-blue-500">In Progress</span>}
-                      <span className="text-[8px] text-slate-400">{step.date}</span>
-                    </div>
-                    {i < routeSteps.length - 1 && (
-                      <div className={`flex-1 h-0.5 mx-1 ${step.done ? 'bg-green-400' : 'bg-slate-200'}`} style={{ minWidth: 20 }} />
-                    )}
-                  </React.Fragment>
-                ))}
-              </div>
-
-              {/* Map placeholder */}
-              <div className="rounded-xl overflow-hidden border border-slate-100" style={{ height: 220, background: 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 40%, #7dd3fc 80%, #38bdf8 100%)' }}>
-                <div className="w-full h-full flex items-center justify-center relative" style={{
-                  backgroundImage: `
-                    repeating-linear-gradient(0deg, transparent, transparent 30px, rgba(99,102,241,0.07) 30px, rgba(99,102,241,0.07) 31px),
-                    repeating-linear-gradient(90deg, transparent, transparent 30px, rgba(99,102,241,0.07) 30px, rgba(99,102,241,0.07) 31px)
-                  `,
-                  background: '#dbeafe'
-                }}>
-                  {/* Road lines */}
-                  <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 220" preserveAspectRatio="none">
-                    <path d="M 30 180 Q 100 80 200 100 Q 300 120 370 40" stroke="#60a5fa" strokeWidth="4" fill="none" strokeDasharray="8,4" opacity="0.7"/>
-                    <circle cx="30" cy="180" r="8" fill="#3b82f6" />
-                    <circle cx="30" cy="180" r="14" fill="#3b82f6" opacity="0.2" />
-                    <circle cx="200" cy="100" r="8" fill="#f97316" />
-                    <circle cx="200" cy="100" r="14" fill="#f97316" opacity="0.2" />
-                    <circle cx="370" cy="40" r="8" fill="#10b981" />
-                    <circle cx="370" cy="40" r="14" fill="#10b981" opacity="0.2" />
-                    <text x="30" y="210" fill="#1e40af" fontSize="10" fontWeight="bold" textAnchor="middle">Melbourne</text>
-                    <text x="200" y="90" fill="#c2410c" fontSize="10" fontWeight="bold" textAnchor="middle">Geelong</text>
-                    <text x="370" y="30" fill="#065f46" fontSize="10" fontWeight="bold" textAnchor="middle">Sydney</text>
-                  </svg>
-                  <div className="absolute bottom-2 right-2 text-[9px] text-slate-500 bg-white/80 px-2 py-1 rounded">
-                    Leaflet | © OpenStreetMap contributors
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Items / Vehicles */}
-            <div className="bg-white rounded-2xl border border-slate-100 p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xs font-black text-slate-500 uppercase tracking-wider">Items / Vehicles (1)</h3>
-                <button className="text-xs font-bold text-blue-600 hover:underline">VIEW ALL</button>
-              </div>
-              <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
-                <div className="w-24 h-16 rounded-lg overflow-hidden bg-gradient-to-br from-amber-200 to-amber-400 flex items-center justify-center shrink-0">
-                  <Truck className="w-8 h-8 text-amber-700" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-xs font-black text-slate-900">1ABC234 - Toyota Hilux (2024)</p>
-                  <div className="grid grid-cols-2 gap-x-6 gap-y-1 mt-2">
-                    <div><p className="text-[10px] text-slate-400">CUSTOMER</p><p className="text-xs font-bold text-slate-700">Premium Motors</p></div>
-                    <div><p className="text-[10px] text-slate-400">PICKUP</p><p className="text-xs font-bold text-slate-700">Step 1 - Melbourne</p></div>
-                    <div><p className="text-[10px] text-slate-400">DROP-OFF</p><p className="text-xs font-bold text-slate-700">Step 2 - Sydney</p></div>
-                  </div>
-                  <div className="flex gap-2 mt-2">
-                    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[9px] font-bold rounded-full">DRIVABLE</span>
-                    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[9px] font-bold rounded-full">IN TRANSIT</span>
-                  </div>
-                </div>
-                <div className="text-right shrink-0">
-                  <span className="text-[9px] font-bold text-slate-400">PTE</span>
-                  <p className="text-xs font-black text-slate-800">CAR</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Messages */}
-            <div className="bg-white rounded-2xl border border-slate-100 p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xs font-black text-slate-500 uppercase tracking-wider">Messages</h3>
-                <button className="text-xs font-bold text-blue-600 hover:underline">VIEW ALL</button>
-              </div>
-              <div className="space-y-3">
-                {[
-                  { initials: 'MT', name: 'Mike Thompson (Driver)', color: 'bg-blue-500', time: '15/07/2025 08:12 AM', msg: 'En route to Stop 2. Traffic is light, ETA on time.' },
-                  { initials: 'SM', name: 'Sarah Mitchell (Dispatch)', color: 'bg-violet-500', time: '15/07/2025 08:15 AM', msg: 'Thanks Mike. Please send photos after loading.' },
-                ].map((m, i) => (
-                  <div key={i} className="flex items-start gap-3">
-                    <div className={`w-8 h-8 ${m.color} rounded-full flex items-center justify-center text-white text-[10px] font-black shrink-0`}>{m.initials}</div>
-                    <div className="flex-1 bg-slate-50 rounded-xl p-3">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] font-bold text-slate-700">{m.name}</span>
-                        <span className="text-[9px] text-slate-400">{m.time}</span>
-                      </div>
-                      <p className="text-xs text-slate-600">{m.msg}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Stops Timeline */}
-            <div className="bg-white rounded-2xl border border-slate-100 p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xs font-black text-slate-500 uppercase tracking-wider">Stops Timeline</h3>
-                <button className="text-xs font-bold text-blue-600 hover:underline">VIEW ALL</button>
-              </div>
-              <div className="space-y-3">
-                {stops.map((stop, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <div className={`w-3 h-3 ${stop.color} rounded-full shrink-0`} />
-                    <div className="flex-1 flex items-center justify-between">
-                      <div>
-                        <p className="text-xs font-bold text-slate-800">{stop.label}</p>
-                        <p className="text-[10px] text-slate-400">{stop.location} • {stop.date}</p>
-                      </div>
-                      <span className={`px-2 py-0.5 text-[9px] font-bold rounded-full ${
-                        stop.status === 'COMPLETED' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-600'
-                      }`}>{stop.status}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Load Notes */}
-            <div className="bg-white rounded-2xl border border-slate-100 p-5">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-xs font-black text-slate-500 uppercase tracking-wider">Load Notes</h3>
-                <button className="text-xs font-bold text-blue-600 hover:underline">EDIT</button>
-              </div>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Customer prefers delivery between 9am - 12pm. Please call customer 30 mins before arrival. Vehicle must be kept clean and free of debris..
+      {view === 'dashboard' ? (
+        <>
+          {/* Page Sub-Header Row */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-left">
+            <div>
+              <h1 className="text-3xl font-black text-slate-900 tracking-tight leading-none">
+                Load Queue
+              </h1>
+              <p className="text-xs font-black text-slate-400 uppercase tracking-widest mt-2.5 flex items-center gap-1.5">
+                <span>📁</span> Sydney Central Depot &bull; Command View
               </p>
             </div>
 
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              {/* Search Bar Input */}
+              <div className="relative flex-1 sm:w-64">
+                <Search className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input 
+                  type="text"
+                  placeholder="Search Reference, Client..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-850 bg-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
+                />
+              </div>
+              <button 
+                onClick={() => setView('create-load')}
+                className="bg-[#FFA000] hover:bg-[#FF9000] text-black font-black text-xs py-2.5 px-5 rounded-xl flex items-center gap-1 transition-all shadow-xs uppercase tracking-wider cursor-pointer font-extrabold"
+              >
+                <span className="text-sm font-black">+</span> CREATE LOAD
+              </button>
+            </div>
           </div>
 
-          {/* ── Right Column ── */}
-          <div className="col-span-12 lg:col-span-4 space-y-5">
-
-            {/* Load Status */}
-            <div className="bg-white rounded-2xl border border-slate-100 p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xs font-black text-slate-500 uppercase tracking-wider">Load Status</h3>
-                <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[9px] font-bold rounded-full border border-blue-200">IN PROGRESS</span>
+          {/* Stats Breakdown Row (4 horizontal cards) */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {/* Card 1: Unassigned */}
+            <div 
+              onClick={() => setSelectedStatCard('Unassigned')}
+              className={`bg-white rounded-[24px] p-6 text-left flex flex-col justify-between h-36 transition-all duration-200 cursor-pointer hover:border-slate-350 hover:shadow-xs select-none ${
+                selectedStatCard === 'Unassigned' 
+                  ? 'border-2 border-slate-900 shadow-sm' 
+                  : 'border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.01)]'
+              }`}
+            >
+              <div className="flex justify-between items-start">
+                <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center font-bold text-lg border border-amber-100/50">
+                  ✉
+                </div>
+                <h3 className="text-4xl font-black text-slate-900 leading-none">3</h3>
               </div>
-              <div className="space-y-3">
-                {[
-                  { label: 'Current Status', value: 'En Route to Stop 2', icon: <Radio className="w-3.5 h-3.5 text-blue-500" /> },
-                  { label: 'Current Location', value: 'Hume Hwy, Seymour VIC 3660', icon: <MapPin className="w-3.5 h-3.5 text-rose-500" /> },
-                  { label: 'Last Update', value: '15/07/2025 08:12 AM', icon: <Clock className="w-3.5 h-3.5 text-slate-400" /> },
-                  { label: 'Updated By', value: 'Mike Thompson (Driver)', icon: <User className="w-3.5 h-3.5 text-slate-400" /> },
-                  { label: 'Next Stop', value: 'Stop 2 - Geelong\nETA: 10:30 AM (16/07/2025)', icon: <Navigation className="w-3.5 h-3.5 text-green-500" /> },
-                ].map((item, i) => (
-                  <div key={i} className="flex items-start gap-2.5">
-                    <span className="mt-0.5 shrink-0">{item.icon}</span>
-                    <div>
-                      <p className="text-[10px] text-slate-400 font-medium">{item.label}</p>
-                      <p className="text-xs font-bold text-slate-800 whitespace-pre-line">{item.value}</p>
+              <div>
+                <p className="text-xs font-black text-slate-800 uppercase tracking-wide">Unassigned</p>
+                <p className="text-[10px] text-slate-400 font-semibold mt-1">Booked - awaiting driver assignment</p>
+              </div>
+            </div>
+
+            {/* Card 2: In Transit */}
+            <div 
+              onClick={() => setSelectedStatCard('In Transit')}
+              className={`bg-white rounded-[24px] p-6 text-left flex flex-col justify-between h-36 transition-all duration-200 cursor-pointer hover:border-slate-355 hover:shadow-xs select-none ${
+                selectedStatCard === 'In Transit' 
+                  ? 'border-2 border-slate-900 shadow-sm' 
+                  : 'border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.01)]'
+              }`}
+            >
+              <div className="flex justify-between items-start">
+                <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-500 flex items-center justify-center font-bold text-lg border border-blue-100/50">
+                  ⚡
+                </div>
+                <h3 className="text-4xl font-black text-slate-900 leading-none">1</h3>
+              </div>
+              <div>
+                <p className="text-xs font-black text-slate-800 uppercase tracking-wide">In Transit</p>
+                <p className="text-[10px] text-slate-400 font-semibold mt-1">Assigned & physically moving</p>
+              </div>
+            </div>
+
+            {/* Card 3: Issues */}
+            <div 
+              onClick={() => setSelectedStatCard('Issues')}
+              className={`bg-white rounded-[24px] p-6 text-left flex flex-col justify-between h-36 transition-all duration-200 cursor-pointer hover:border-slate-355 hover:shadow-xs select-none ${
+                selectedStatCard === 'Issues' 
+                  ? 'border-2 border-slate-900 shadow-sm' 
+                  : 'border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.01)]'
+              }`}
+            >
+              <div className="flex justify-between items-start">
+                <div className="w-10 h-10 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center font-bold text-lg border border-red-100/50">
+                  🛡️
+                </div>
+                <h3 className="text-4xl font-black text-slate-900 leading-none">1</h3>
+              </div>
+              <div>
+                <p className="text-xs font-black text-slate-800 uppercase tracking-wide">Issues</p>
+                <p className="text-[10px] text-slate-400 font-semibold mt-1">Delayed or delivery problems</p>
+              </div>
+            </div>
+
+            {/* Card 4: Received */}
+            <div 
+              onClick={() => setSelectedStatCard('Received')}
+              className={`bg-white rounded-[24px] p-6 text-left flex flex-col justify-between h-36 transition-all duration-200 cursor-pointer hover:border-slate-355 hover:shadow-xs select-none ${
+                selectedStatCard === 'Received' 
+                  ? 'border-2 border-slate-900 shadow-sm' 
+                  : 'border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.01)]'
+              }`}
+            >
+              <div className="flex justify-between items-start">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center font-bold text-lg border border-emerald-100/50">
+                  ✓
+                </div>
+                <h3 className="text-4xl font-black text-slate-900 leading-none">1</h3>
+              </div>
+              <div>
+                <p className="text-xs font-black text-slate-800 uppercase tracking-wide">Received</p>
+                <p className="text-[10px] text-slate-400 font-semibold mt-1">Handover complete / Delivered</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Table list card panel */}
+          <div className="bg-white rounded-[24px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.015)] overflow-hidden">
+            
+            {/* Filter tab buttons row */}
+            <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-white flex-wrap gap-3">
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-none flex-nowrap">
+                {['All', 'Local Pickups', 'Branch Transfers', 'Local Deliveries', 'Draft'].map(tab => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`px-4 py-1.5 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
+                      activeTab === tab 
+                        ? 'border border-slate-950 bg-slate-950 text-white shadow-3xs' 
+                        : 'border border-slate-200 text-slate-500 hover:text-slate-950 hover:bg-slate-50 bg-white'
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+              <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider">
+                {filteredLoads.length} results
+              </span>
+            </div>
+
+            {/* Loads Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/40 border-b border-slate-100 whitespace-nowrap">
+                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-left">REFERENCE</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-left">ROUTING</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-left">PRIORITY</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-left">LOAD</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-left">RESOURCE</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-right pr-10">ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredLoads.map((load, i) => (
+                    <tr key={i} className="hover:bg-slate-50/30 transition-colors">
+                      <td className="px-6 py-5 whitespace-nowrap text-left align-middle">
+                        <span className="text-xs font-black text-slate-950 block leading-tight">{load.id}</span>
+                        <span className="text-[9px] text-slate-400 font-bold mt-1.5 block leading-none">
+                          REF: {load.ref} &bull; SN: {load.sn}
+                        </span>
+                      </td>
+                      <td className="px-6 py-5 whitespace-nowrap text-left align-middle font-bold text-slate-800 text-xs">
+                        <span>{load.from}</span>
+                        <span className="text-slate-400 mx-1.5">&rarr;</span>
+                        <span>{load.to}</span>
+                      </td>
+                      <td className="px-6 py-5 whitespace-nowrap text-left align-middle">
+                        <span className={`px-2.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider leading-none ${
+                          load.priority === 'HIGH' ? 'bg-red-50 text-red-655 border border-red-100/50' :
+                          load.priority === 'MEDIUM' ? 'bg-amber-50 text-amber-600 border border-amber-100/50' :
+                          'bg-slate-50 text-slate-550 border border-slate-200'
+                        }`}>
+                          {load.priority}
+                        </span>
+                      </td>
+                      <td className="px-6 py-5 whitespace-nowrap text-left align-middle text-xs font-extrabold text-slate-800">
+                        {load.load}
+                      </td>
+                      <td className="px-6 py-5 whitespace-nowrap text-left align-middle text-xs font-bold text-slate-500 italic">
+                        {load.resource}
+                      </td>
+                      <td className="px-6 py-5 whitespace-nowrap text-right pr-10 align-middle">
+                        <button 
+                          onClick={() => { setSelectedLoad(load); setShowDetailsModal(true); }}
+                          className="px-4 py-1.5 border border-slate-250 hover:bg-slate-50 text-slate-700 font-extrabold text-[10px] rounded-xl cursor-pointer transition-colors shadow-3xs uppercase tracking-wider"
+                        >
+                          DETAILS
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Table Footer details */}
+            <div className="p-4 bg-slate-50/30 border-t border-slate-100 flex justify-between items-center text-[10px] text-slate-400 font-bold uppercase tracking-wider flex-wrap gap-2">
+              <span>⚙ {filteredLoads.length} loads &bull; Sydney Central Depot</span>
+              <span>Updated just now</span>
+            </div>
+          </div>
+        </>
+      ) : view === 'full-details' ? (
+        /* FULL DETAILS VIEW (Image 3) */
+        <div className="space-y-0 text-left">
+          {/* Back to Loads bar */}
+          <button
+            onClick={() => setView('dashboard')}
+            className="flex items-center gap-2 text-xs font-black text-slate-500 hover:text-slate-900 transition-colors mb-5 uppercase tracking-wider"
+          >
+            ‹ BACK TO LOADS
+          </button>
+
+          {/* Header row */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+                {selectedLoad ? selectedLoad.id : 'SHP-9055'}
+              </h1>
+              <span className="px-2.5 py-1 rounded-md bg-green-50 border border-green-200 text-[10px] font-black text-green-700 uppercase tracking-wide">● IN PROGRESS</span>
+              <span className="px-2.5 py-1 rounded-md border border-slate-200 text-[10px] font-black text-slate-600 uppercase tracking-wide">⊞ DEPOT-TO-DEPOT</span>
+              <span className="text-[10px] font-bold text-slate-400">CLIENT REF: ACME-221</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button onClick={() => triggerToast('POD collected successfully!')} className="px-3.5 py-2 bg-green-500 hover:bg-green-600 text-white font-black text-[10px] rounded-xl flex items-center gap-1.5 transition-all uppercase tracking-wide">✓ COLLECT POD</button>
+              <button onClick={() => triggerToast('Opening live tracking...')} className="px-3.5 py-2 bg-amber-400 hover:bg-amber-500 text-black font-black text-[10px] rounded-xl flex items-center gap-1.5 transition-all uppercase tracking-wide">📍 LIVE TRACKING</button>
+              <button onClick={() => triggerToast('Opening manifest...')} className="px-3.5 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 font-black text-[10px] rounded-xl transition-all uppercase tracking-wide">MANIFEST</button>
+              <button onClick={() => triggerToast('Opening edit job...')} className="px-3.5 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 font-black text-[10px] rounded-xl transition-all uppercase tracking-wide">EDIT JOB</button>
+            </div>
+          </div>
+
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Left: Transport Network Flow */}
+            <div className="lg:col-span-4 space-y-4">
+              <div className="bg-white border border-slate-100 rounded-[20px] p-5 shadow-sm">
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-4">TRANSPORT NETWORK FLOW</h3>
+                <div className="space-y-0">
+                  {/* Step 1: Pickup */}
+                  <div className="flex gap-3 items-start">
+                    <div className="flex flex-col items-center">
+                      <div className="w-3 h-3 rounded-full bg-green-500 mt-0.5 flex-shrink-0" />
+                      <div className="w-0.5 h-10 bg-slate-200 mt-1" />
                     </div>
+                    <div className="pb-4">
+                      <div className="text-[9px] font-black text-slate-400 uppercase tracking-wider">PICKUP</div>
+                      <div className="text-xs font-black text-slate-900">First Mile Pickup</div>
+                      <div className="text-[9px] text-slate-500 font-bold">Customer Site (Bond) / Local Courier</div>
+                    </div>
+                  </div>
+                  {/* Step 2: Sorting */}
+                  <div className="flex gap-3 items-start">
+                    <div className="flex flex-col items-center">
+                      <div className="w-3 h-3 rounded-full bg-green-500 mt-0.5 flex-shrink-0" />
+                      <div className="w-0.5 h-10 bg-slate-200 mt-1" />
+                    </div>
+                    <div className="pb-4">
+                      <div className="text-[9px] font-black text-slate-400 uppercase tracking-wider">SORTING</div>
+                      <div className="text-xs font-black text-slate-900">Inbound Sorting</div>
+                      <div className="text-[9px] text-slate-500 font-bold">Sydney Central Depot / Depot Manager</div>
+                    </div>
+                  </div>
+                  {/* Step 3: In Depot (Active) */}
+                  <div className="flex gap-3 items-start">
+                    <div className="flex flex-col items-center">
+                      <div className="w-3 h-3 rounded-full bg-amber-400 mt-0.5 flex-shrink-0 ring-2 ring-amber-200" />
+                      <div className="w-0.5 h-16 bg-slate-200 mt-1" />
+                    </div>
+                    <div className="pb-4 flex-1">
+                      <div className="text-[9px] font-black text-amber-500 uppercase tracking-wider">IN DEPOT</div>
+                      <div className="text-xs font-black text-slate-900">Depot Transfer (Trunk)</div>
+                      <div className="text-[9px] text-slate-500 font-bold">Sydney Depot → Melbourne Depot / Line-haul Truck</div>
+                      <button onClick={() => triggerToast('Assigning resource...')} className="mt-2 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-[9px] font-black rounded-lg uppercase tracking-wide transition-all">ASSIGN RESOURCE</button>
+                    </div>
+                  </div>
+                  {/* Step 4: Sorting */}
+                  <div className="flex gap-3 items-start">
+                    <div className="flex flex-col items-center">
+                      <div className="w-3 h-3 rounded-full bg-slate-300 mt-0.5 flex-shrink-0" />
+                      <div className="w-0.5 h-10 bg-slate-200 mt-1" />
+                    </div>
+                    <div className="pb-4">
+                      <div className="text-[9px] font-black text-slate-400 uppercase tracking-wider">SORTING</div>
+                      <div className="text-xs font-bold text-slate-400">Outbound Sorting</div>
+                      <div className="text-[9px] text-slate-400 font-bold">Melbourne Terminal / Depot Supervisor</div>
+                    </div>
+                  </div>
+                  {/* Step 5: Delivery */}
+                  <div className="flex gap-3 items-start">
+                    <div className="flex flex-col items-center">
+                      <div className="w-3 h-3 rounded-full bg-slate-300 mt-0.5 flex-shrink-0" />
+                    </div>
+                    <div>
+                      <div className="text-[9px] font-black text-slate-400 uppercase tracking-wider">DELIVERY</div>
+                      <div className="text-xs font-bold text-slate-400">Last Mile Delivery</div>
+                      <div className="text-[9px] text-slate-400 font-bold">Melbourne CBD / Local Courier</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Center: Consignor / Map */}
+            <div className="lg:col-span-5 space-y-4">
+              {/* Consignor & Consignee */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white border border-slate-100 rounded-[20px] p-4 shadow-sm space-y-1.5">
+                  <div className="text-[9px] font-black text-slate-400 uppercase tracking-wider">CONSIGNOR (SENDER)</div>
+                  <div className="text-xs font-black text-slate-900">Acme Corp Logistics</div>
+                  <div className="text-[10px] text-slate-500 font-semibold">Warehouse 4, 12 Botany Rd, Alexandria NSW 2015</div>
+                  <div className="text-[10px] text-slate-500 font-semibold pt-1">Contact: James Hargrove</div>
+                  <div className="text-[10px] font-bold text-slate-700">+61 2 9283 1122</div>
+                </div>
+                <div className="bg-white border border-slate-100 rounded-[20px] p-4 shadow-sm space-y-1.5">
+                  <div className="text-[9px] font-black text-slate-400 uppercase tracking-wider">CONSIGNEE (RECEIVER)</div>
+                  <div className="text-xs font-black text-slate-900">Tech Solutions Ltd</div>
+                  <div className="text-[10px] text-slate-500 font-semibold">1 Innovation Dr, Port Botany NSW 2036</div>
+                  <div className="text-[10px] text-slate-500 font-semibold pt-1">Contact: Tom Carey</div>
+                  <div className="text-[10px] font-bold text-slate-700">+61 2 9666 0011</div>
+                </div>
+              </div>
+
+              {/* Map placeholder */}
+              <div className="bg-slate-900 rounded-[20px] h-48 flex items-center justify-center">
+                <span className="text-slate-600 text-sm font-bold">🗺 Route Map</span>
+              </div>
+
+              {/* Terminal Operations */}
+              <div className="bg-white border border-slate-100 rounded-[20px] p-5 shadow-sm">
+                <div className="text-[9px] font-black text-amber-500 uppercase tracking-wider flex items-center gap-1.5 mb-3">⚡ TERMINAL OPERATIONS</div>
+                <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">CURRENT ASSET ALLOCATION</div>
+                <div className="text-xs text-slate-500 font-semibold mb-4">Waiting for resource assignment...</div>
+                <button
+                  onClick={() => triggerToast('Allocating driver & vehicle...')}
+                  className="w-full bg-[#FFA000] hover:bg-[#FF9000] text-black font-black text-xs py-3 rounded-[12px] uppercase tracking-wider transition-all"
+                >
+                  ALLOCATE DRIVER &amp; VEHICLE
+                </button>
+              </div>
+            </div>
+
+            {/* Right: Load Metadata */}
+            <div className="lg:col-span-3 space-y-4">
+              <div className="bg-white border border-slate-100 rounded-[20px] p-5 shadow-sm space-y-4">
+                <div className="text-[9px] font-black text-slate-400 uppercase tracking-wider">LOAD METADATA</div>
+                {[
+                  { label: 'CUSTOMER LOAD #', value: 'ACME 221' },
+                  { label: 'COMMODITY', value: 'Electronics' },
+                  { label: 'WEIGHT & VOL', value: '18.42t / 41 CBM' },
+                  { label: 'TARGET ETA', value: 'Today, 17:30' },
+                  { label: 'SERVICE', value: 'NORMAL', badge: true },
+                ].map((row) => (
+                  <div key={row.label} className="flex justify-between items-center border-b border-slate-50 pb-3 last:border-0 last:pb-0">
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">{row.label}</span>
+                    {row.badge ? (
+                      <span className="px-2 py-0.5 rounded bg-amber-50 border border-amber-200 text-[9px] font-black text-amber-600 uppercase tracking-wide">{row.value}</span>
+                    ) : (
+                      <span className="text-xs font-black text-slate-900">{row.value}</span>
+                    )}
                   </div>
                 ))}
               </div>
             </div>
-
-            {/* Driver & Vehicle (Live) */}
-            <div className="bg-white rounded-2xl border border-slate-100 p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xs font-black text-slate-500 uppercase tracking-wider">Driver & Vehicle (Live)</h3>
-                <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[9px] font-bold rounded-full">+ LIVE</span>
-              </div>
-              {/* Driver */}
-              <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
-                <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-black">MT</div>
-                <div className="flex-1">
-                  <p className="text-xs font-black text-slate-900">Mike Thompson (DRV001)</p>
-                  <p className="text-[10px] text-slate-400">PHONE: +61 412 345 • LICENSE: MC (VIC) 076</p>
-                  <p className="text-[10px] text-slate-400">WORK DIARY: 07:15 / 14:00</p>
-                </div>
-                <button className="w-7 h-7 bg-green-100 rounded-full flex items-center justify-center">
-                  <Phone className="w-3 h-3 text-green-600" />
-                </button>
-              </div>
-              {/* Truck */}
-              <div className="flex items-center gap-3 pt-3 pb-3 border-b border-slate-100">
-                <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
-                  <Truck className="w-5 h-5 text-slate-500" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-xs font-bold text-slate-800">Truck: TRK-101 | Volvo FH 540</p>
-                  <p className="text-[10px] text-slate-400">ODOMETER: 523,410 KM • STATUS: ON THE ROAD</p>
-                </div>
-              </div>
-              {/* Trailer */}
-              <div className="flex items-center gap-3 pt-3">
-                <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
-                  <Package className="w-5 h-5 text-slate-500" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-xs font-bold text-slate-800">Trailer: TRL-201 | 8 Car Carrier</p>
-                  <p className="text-[10px] text-slate-400">REG NO.: YQ-12-A8 • STATUS: ATTACHED</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Recent Proof Photos */}
-            <div className="bg-white rounded-2xl border border-slate-100 p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xs font-black text-slate-500 uppercase tracking-wider">Recent Proof Photos</h3>
-                <button className="text-xs font-bold text-blue-600 hover:underline">VIEW ALL</button>
-              </div>
-
-              {[
-                { label: 'PICKUP (BEFORE LOADING)', count: '4 FILES', colors: ['#d97706','#b45309','#92400e','#ca8a04'], extra: '+1' },
-                { label: 'LOADING (COC)', count: '5 FILES', colors: ['#1d4ed8','#1e40af','#1d4ed8'], extra: '+2' },
-                { label: 'DELIVERY (AFTER DELIVERY)', count: '6 FILES', colors: ['#064e3b','#065f46','#047857','#065f46'], extra: '+2' },
-              ].map((section, si) => (
-                <div key={si} className="mb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[9px] font-bold text-slate-400">{section.label}</span>
-                    <span className="text-[9px] text-slate-400">{section.count}</span>
-                  </div>
-                  <div className="flex gap-1.5 items-center">
-                    {section.colors.map((color, ci) => (
-                      <div key={ci} className="w-14 h-10 rounded-lg flex items-center justify-center" style={{ background: color }}>
-                        <Camera className="w-4 h-4 text-white opacity-60" />
-                      </div>
-                    ))}
-                    <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
-                      <span className="text-[10px] font-bold text-slate-500">{section.extra}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Financial Overview */}
-            <div className="bg-white rounded-2xl border border-slate-100 p-5">
-              <h3 className="text-xs font-black text-slate-500 uppercase tracking-wider mb-4">Financial Overview</h3>
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-600">Invoices</span>
-                  <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[9px] font-bold rounded-full">SEE GENERATED</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-600">Driver Pay</span>
-                  <span className="px-2 py-0.5 bg-orange-100 text-orange-600 text-[9px] font-bold rounded-full">PENDING</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-600">Expenses</span>
-                  <span className="text-xs font-bold text-slate-800">$150.00</span>
-                </div>
-              </div>
-              <button className="w-full mt-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors">
-                View Financials
-              </button>
-            </div>
-
           </div>
         </div>
-      </div>
-
-      {/* Bottom Action Bar */}
-      <div className="sticky bottom-0 bg-white border-t border-slate-200 px-6 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex gap-6">
-            {[
-              { icon: <MessageSquare className="w-4 h-4" />, label: 'Message' },
-              { icon: <DollarSign className="w-4 h-4" />, label: 'Expense' },
-              { icon: <FileText className="w-4 h-4" />, label: 'Document' },
-              { icon: <Activity className="w-4 h-4" />, label: 'Report' },
-            ].map((item, i) => (
-              <button key={i} className="flex flex-col items-center gap-0.5 text-slate-500 hover:text-blue-600 transition-colors">
-                {item.icon}
-                <span className="text-[9px] font-bold">{item.label}</span>
-              </button>
-            ))}
-          </div>
-          <button className="flex items-center gap-2 px-6 py-2.5 bg-purple-700 hover:bg-purple-800 text-white text-xs font-black rounded-full transition-colors">
-            <CheckCircle className="w-4 h-4" /> MARK LOAD AS COMPLETED
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Main Loads Component ─────────────────────────────────────────────────────
-export default function Loads() {
-  const [activeTab, setActiveTab] = useState('All Loads');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedLoad, setSelectedLoad] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 20;
-
-  const tabs = [
-    { label: 'All Loads', count: LOADS.length },
-    { label: 'Draft',     count: LOADS.filter(l => l.status === 'DRAFT').length },
-    { label: 'Planned',   count: LOADS.filter(l => l.status === 'PLANNED').length },
-    { label: 'Active',    count: LOADS.filter(l => l.status === 'ACTIVE').length },
-    { label: 'Completed', count: LOADS.filter(l => l.status === 'COMPLETED').length },
-    { label: 'Cancelled', count: LOADS.filter(l => l.status === 'CANCELLED').length },
-  ];
-
-  const statusMap = { 'All Loads': null, Draft: 'DRAFT', Planned: 'PLANNED', Active: 'ACTIVE', Completed: 'COMPLETED', Cancelled: 'CANCELLED' };
-
-  const filtered = LOADS.filter(l => {
-    const matchTab = !statusMap[activeTab] || l.status === statusMap[activeTab];
-    const q = searchQuery.toLowerCase();
-    const matchSearch = !q || l.id.toLowerCase().includes(q) || l.customer.toLowerCase().includes(q) ||
-      l.route.from.toLowerCase().includes(q) || l.route.to.toLowerCase().includes(q);
-    return matchTab && matchSearch;
-  });
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
-  const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
-
-  // Sidebar stats
-  const totalLoads = LOADS.length;
-  const activeCount = LOADS.filter(l => l.status === 'ACTIVE').length;
-  const inTransitCount = LOADS.filter(l => l.status === 'PLANNED').length;
-  const atStopCount = LOADS.filter(l => l.status === 'DRAFT').length;
-  const completedTodayCount = LOADS.filter(l => l.status === 'COMPLETED').length;
-  const cancelledCount = LOADS.filter(l => l.status === 'CANCELLED').length;
-
-  if (selectedLoad) {
-    return <LoadDetail load={selectedLoad} onBack={() => setSelectedLoad(null)} />;
-  }
-
-  return (
-    <div className="flex flex-col lg:flex-row gap-5 p-5" style={{ background: '#f8fafc' }}>
-
-      {/* ── Main Content ── */}
-      <div className="w-full lg:flex-1 flex flex-col gap-4">
-
-        {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-black text-slate-900">Loads</h1>
-            <p className="text-sm text-slate-500 mt-0.5">Manage and track all loads in your operation</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-            <button className="flex items-center gap-1.5 px-3.5 py-2 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-55 transition-colors shadow-sm">
-              <Upload className="w-3.5 h-3.5" /> Import
-            </button>
-            <button className="flex items-center gap-1.5 px-3.5 py-2 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-55 transition-colors shadow-sm">
-              <Download className="w-3.5 h-3.5" /> Export
-            </button>
-            <button className="flex items-center gap-1.5 px-4 py-2 border-2 border-blue-600 rounded-lg text-xs font-black text-blue-600 bg-white hover:bg-blue-50 transition-colors">
-              <Plus className="w-3.5 h-3.5" /> A LOAD
-            </button>
-            <button className="flex items-center gap-1.5 px-4 py-2 bg-[#FFA000] hover:bg-amber-500 rounded-lg text-xs font-black text-black transition-colors shadow-sm">
-              <Plus className="w-3.5 h-3.5" /> New Load
-            </button>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex items-center gap-0 border-b border-slate-200 bg-white rounded-t-xl px-1 overflow-x-auto scrollbar-none flex-nowrap w-full">
-          {tabs.map(tab => (
-            <button
-              key={tab.label}
-              onClick={() => { setActiveTab(tab.label); setCurrentPage(1); }}
-              className={`flex items-center gap-1.5 px-4 py-3 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors flex-shrink-0 ${
-                activeTab === tab.label
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              {tab.label}
-              <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-black ${
-                activeTab === tab.label ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-500'
-              }`}>{tab.count}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Filters Bar */}
-        <div className="bg-white border border-slate-200 rounded-xl p-3 flex flex-wrap items-center gap-2 shadow-sm">
-          {/* Search */}
-          <div className="relative">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search loads..."
-              value={searchQuery}
-              onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-              className="pl-8 pr-3 py-2 border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:border-blue-400 w-36"
-            />
-          </div>
-
-          {/* Date pickers placeholder */}
-          {['mm/dd/yyyy', 'mm/dd/yyyy'].map((ph, i) => (
-            <button key={i} className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 rounded-lg text-xs text-slate-500 hover:bg-slate-50 bg-white">
-              <Calendar className="w-3.5 h-3.5" /> {ph}
-            </button>
-          ))}
-
-          {/* Dropdowns */}
-          {['All Status', 'All Types', 'All Customer'].map((label, i) => (
-            <button key={i} className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 rounded-lg text-xs text-slate-600 hover:bg-slate-50 bg-white font-medium">
-              {label} <ChevronDown className="w-3 h-3" />
-            </button>
-          ))}
-
-          <div className="flex-1" />
-
-          <button className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 rounded-lg text-xs text-slate-600 hover:bg-slate-50 bg-white font-medium">
-            <Filter className="w-3.5 h-3.5" /> More Filters
-          </button>
-        </div>
-
-        {/* Sub-filter row */}
-        <div className="bg-white border border-slate-200 rounded-xl px-3 py-2 flex items-center gap-2 flex-wrap shadow-sm">
-          {['All Drivers', 'All Vehicles', 'All Locations'].map((label, i) => (
-            <button key={i} className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs text-slate-600 hover:bg-slate-50 bg-white font-medium flex items-center gap-1">
-              {label} <ChevronDown className="w-3 h-3" />
-            </button>
-          ))}
-        </div>
-
-        {/* Table */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          {/* Table header count */}
-          <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-600">{filtered.length} loads found</span>
-            <div className="flex items-center gap-2">
-              <button className="text-xs text-slate-500 hover:text-slate-700 font-medium flex items-center gap-1">
-                Columns <ChevronDown className="w-3 h-3" />
-              </button>
-              <button className="text-xs text-slate-500 hover:text-slate-700 font-medium flex items-center gap-1">
-                Group By <ChevronDown className="w-3 h-3" />
-              </button>
-              <button className="text-xs text-slate-500 hover:text-slate-700 font-medium flex items-center gap-1">
-                Sort By: Created Date (Newest) <ChevronDown className="w-3 h-3" />
-              </button>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-100">
-                  <th className="px-3 py-3 w-8">
-                    <input type="checkbox" className="rounded" />
-                  </th>
-                  {['LOAD REF', 'STATUS', 'LOAD TYPE', 'CUSTOMER', 'ROUTE', 'DRIVER / TRUCK', 'PICKUP DATE', 'ET'].map(col => (
-                    <th key={col} className="px-3 py-3 text-[10px] font-black text-slate-400 uppercase tracking-wider whitespace-nowrap">
-                      {col}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {paginated.map((load, i) => {
-                  const cfg = statusConfig[load.status] || statusConfig.DRAFT;
-                  return (
-                    <tr
-                      key={i}
-                      className="hover:bg-blue-50/30 transition-colors cursor-pointer group"
-                      onClick={() => setSelectedLoad(load)}
-                    >
-                      <td className="px-3 py-3">
-                        <input type="checkbox" className="rounded" onClick={e => e.stopPropagation()} />
-                      </td>
-
-                      {/* Load Ref */}
-                      <td className="px-3 py-3 whitespace-nowrap">
-                        <span className="text-xs font-black text-blue-600 group-hover:underline">{load.id}</span>
-                      </td>
-
-                      {/* Status */}
-                      <td className="px-3 py-3 whitespace-nowrap">
-                        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full ${cfg.bg}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-                          <span className={`text-[10px] font-black ${cfg.text}`}>{cfg.label}</span>
-                        </div>
-                        <p className={`text-[9px] font-semibold ${cfg.text} mt-0.5 pl-1`}>{load.statusLabel}</p>
-                      </td>
-
-                      {/* Load Type */}
-                      <td className="px-3 py-3 whitespace-nowrap">
-                        <span className="text-xs font-semibold text-slate-700">{load.loadType}</span>
-                      </td>
-
-                      {/* Customer */}
-                      <td className="px-3 py-3 whitespace-nowrap">
-                        <span className="text-xs font-semibold text-slate-800">{load.customer}</span>
-                      </td>
-
-                      {/* Route */}
-                      <td className="px-3 py-3 whitespace-nowrap">
-                        <div className="flex items-center gap-1 text-xs font-bold text-slate-800">
-                          <span>{load.route.from}</span>
-                          <ChevronRight className="w-3 h-3 text-slate-400 shrink-0" />
-                          <span>{load.route.to}</span>
-                        </div>
-                        <p className="text-[9px] text-slate-400 mt-0.5">{load.route.stops} stops</p>
-                      </td>
-
-                      {/* Driver / Truck */}
-                      <td className="px-3 py-3 whitespace-nowrap">
-                        {load.driver ? (
-                          <div className="flex items-center gap-2">
-                            <div className={`w-7 h-7 ${getAvatarColor(load.driver.initials || load.driver.name)} rounded-full flex items-center justify-center text-white text-[9px] font-black shrink-0`}>
-                              {load.driver.avatar}
-                            </div>
-                            <div>
-                              <p className="text-xs font-bold text-slate-800">{load.driver.name}</p>
-                              <p className="text-[9px] text-slate-400">{load.driver.status} • {load.driver.stops}</p>
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-slate-400 italic">Not Assigned</span>
-                        )}
-                      </td>
-
-                      {/* Pickup Date */}
-                      <td className="px-3 py-3 whitespace-nowrap">
-                        <p className="text-xs font-bold text-slate-800">{load.pickupDate}</p>
-                        <p className="text-[9px] text-slate-400">{load.pickupTime}</p>
-                      </td>
-
-                      {/* ET */}
-                      <td className="px-3 py-3 whitespace-nowrap">
-                        <span className="text-[9px] text-slate-400">—</span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          <div className="px-4 py-3 border-t border-slate-100 flex items-center justify-between">
-            <span className="text-xs text-slate-500">
-              Showing 1 to {Math.min(ITEMS_PER_PAGE, filtered.length)} of {filtered.length} loads
-            </span>
-            <div className="flex items-center gap-1">
-              {[...Array(Math.min(totalPages, 3))].map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrentPage(i + 1)}
-                  className={`w-7 h-7 rounded-lg text-xs font-bold transition-colors ${
-                    currentPage === i + 1
-                      ? 'bg-blue-600 text-white'
-                      : 'text-slate-500 hover:bg-slate-100'
-                  }`}
-                >
-                  {i + 1}
-                </button>
-              ))}
-              {totalPages > 3 && <span className="text-xs text-slate-400 px-1">...</span>}
-              <select
-                value={ITEMS_PER_PAGE}
-                className="ml-2 px-2 py-1 border border-slate-200 rounded-lg text-xs text-slate-600 cursor-pointer"
-                readOnly
+      ) : (
+        /* CREATE LOAD CONSOLE VIEW (Image 2) */
+        <div className="space-y-6">
+          {/* Console Header Bar */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-slate-200/80 text-left">
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={() => setView('dashboard')}
+                className="w-10 h-10 rounded-full border border-slate-255 flex items-center justify-center hover:bg-slate-50 cursor-pointer shadow-3xs"
               >
-                <option>20 per page</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom bulk bar */}
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-slate-500 font-medium">0 selected</span>
-          <div className="flex items-center gap-2">
-            <select className="px-3 py-2 border border-slate-200 rounded-lg text-xs text-slate-600 bg-white">
-              <option>Bulk Actions</option>
-            </select>
-            <button className="px-4 py-2 bg-slate-800 text-white text-xs font-bold rounded-lg hover:bg-slate-900 transition-colors">
-              Apply
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Right Sidebar ── */}
-      <div className="w-full lg:w-72 flex flex-col gap-4">
-
-        {/* Load Overview */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
-          <div className="flex items-center justify-between mb-1">
-            <h3 className="text-xs font-black text-slate-700">Load Overview</h3>
-            <span className="text-[9px] text-slate-400">TODAY · 16 JULY 2025</span>
-          </div>
-
-          <div className="space-y-2 mt-3">
-            {[
-              { label: 'Total Loads',      value: totalLoads,       color: 'text-slate-800', icon: <Layers className="w-4 h-4 text-slate-400" /> },
-              { label: 'Active Loads',     value: activeCount,      color: 'text-blue-600',  icon: <Radio className="w-4 h-4 text-blue-500" /> },
-              { label: 'In Transit',       value: inTransitCount,   color: 'text-green-600', icon: <Truck className="w-4 h-4 text-green-500" /> },
-              { label: 'At Stop',          value: atStopCount,      color: 'text-orange-500',icon: <MapPin className="w-4 h-4 text-orange-400" /> },
-              { label: 'Completed Today',  value: completedTodayCount, color: 'text-purple-600',icon: <CheckCircle className="w-4 h-4 text-purple-400" /> },
-            ].map((item, i) => (
-              <div key={i} className="flex items-center justify-between py-1.5 border-b border-slate-50 last:border-0">
+                <ArrowLeft className="w-5 h-5 text-slate-700" />
+              </button>
+              <div>
                 <div className="flex items-center gap-2">
-                  {item.icon}
-                  <span className="text-xs text-slate-600 font-medium">{item.label}</span>
+                  <h1 className="text-xl font-bold text-slate-900 tracking-tight leading-none">CREATE LOAD</h1>
+                  <span className="text-xl font-black text-[#FFA000]">CONSOLE</span>
                 </div>
-                <span className={`text-sm font-black ${item.color}`}>{item.value}</span>
+                <p className="text-slate-400 text-[9px] font-extrabold uppercase tracking-wider mt-1.5">
+                  OPERATIONAL PRINCIPLE: LOAD &rarr; STOPS &rarr; ITEMS
+                </p>
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
 
-        {/* Status Breakdown Donut */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
-          <h3 className="text-xs font-black text-slate-700 mb-4">Status Breakdown</h3>
-          <div className="flex flex-col items-center gap-4">
-            <DonutChart
-              total={totalLoads}
-              active={activeCount}
-              planned={inTransitCount}
-              draft={atStopCount}
-              completed={completedTodayCount}
-              cancelled={cancelledCount}
-            />
-            <div className="w-full space-y-1.5">
-              {[
-                { label: 'Active',    count: activeCount,         color: 'bg-blue-500',   pct: Math.round(activeCount/totalLoads*100) },
-                { label: 'Planned',   count: inTransitCount,      color: 'bg-green-500',  pct: Math.round(inTransitCount/totalLoads*100) },
-                { label: 'Draft',     count: atStopCount,         color: 'bg-orange-400', pct: Math.round(atStopCount/totalLoads*100) },
-                { label: 'Completed', count: completedTodayCount, color: 'bg-purple-500', pct: Math.round(completedTodayCount/totalLoads*100) },
-                { label: 'Cancelled', count: cancelledCount,      color: 'bg-red-500',    pct: Math.round(cancelledCount/totalLoads*100) },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className={`w-2.5 h-2.5 ${item.color} rounded-full shrink-0`} />
-                    <span className="text-xs text-slate-600">{item.label}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-black text-slate-800">{item.count}</span>
-                    <span className="text-[10px] text-slate-400">({item.pct}%)</span>
-                  </div>
-                </div>
-              ))}
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={handleSaveDraft}
+                className="px-5 py-2.5 border border-slate-250 hover:bg-slate-50 text-slate-700 font-extrabold text-xs rounded-xl cursor-pointer transition-colors shadow-3xs bg-white uppercase tracking-wider"
+              >
+                SAVE DRAFT
+              </button>
+              <button 
+                onClick={handleActivateLoad}
+                className="bg-[#0B0F17] hover:bg-slate-800 text-[#FFD400] font-black text-xs py-2.5 px-6 rounded-xl transition-all cursor-pointer shadow-xs uppercase tracking-wider flex items-center gap-1.5"
+              >
+                <span>⚡</span> ACTIVATE LOAD
+              </button>
             </div>
           </div>
-        </div>
 
-        {/* Recent Alerts */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xs font-black text-slate-700">Recent Alerts</h3>
-            <button className="text-[10px] font-bold text-blue-600 hover:underline">VIEW ALL</button>
-          </div>
-          <div className="space-y-3">
-            {[
-              { id: 'PO-12543', color: 'bg-rose-500', time: '20m ago', msg: 'Delay alert: Traffic congestion on M4 may be affected' },
-              { id: 'PO-12644', color: 'bg-orange-400', time: '45m ago', msg: 'Missing documents: POD required before dispatched' },
-              { id: 'PO-12546', color: 'bg-rose-500', time: '1h ago',  msg: 'Driver heads in 30 mins' },
-            ].map((alert, i) => (
-              <div key={i} className="flex items-start gap-2.5">
-                <div className={`w-6 h-6 ${alert.color} rounded-lg flex items-center justify-center shrink-0 mt-0.5`}>
-                  <AlertCircle className="w-3.5 h-3.5 text-white" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-black text-slate-800">{alert.id}</span>
-                    <span className="text-[9px] text-slate-400">{alert.time}</span>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start text-left">
+            {/* Left Column (Forms Stack - 2 cols) */}
+            <div className="lg:col-span-2 space-y-6">
+              
+              {/* STEP 1: Route configuration card */}
+              <div className="bg-white rounded-[24px] border border-slate-100 p-6 shadow-sm space-y-5">
+                <div className="flex justify-between items-center mb-2 pb-3 border-b border-slate-50">
+                  <div>
+                    <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-2">
+                      <span className="w-6 h-6 bg-blue-50 text-blue-655 rounded-lg flex items-center justify-center shrink-0 border border-blue-100">🌐</span>
+                      STEP 1: CONFIGURE ROUTE STOPS
+                    </h3>
+                    <p className="text-slate-400 text-[9px] font-extrabold uppercase tracking-wider mt-1">
+                      DEFINE ALL PHYSICAL LOCATIONS FOR THIS LOAD
+                    </p>
                   </div>
-                  <p className="text-[10px] text-slate-500 mt-0.5 leading-tight">{alert.msg}</p>
+                  <button 
+                    type="button" 
+                    onClick={handleAddStop}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-[10px] py-1.5 px-3.5 rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
+                  >
+                    + ADD STOP
+                  </button>
+                </div>
+
+                {/* Dashboard timeline representation of stops */}
+                <div className="relative pl-6 space-y-5 before:content-[''] before:absolute before:left-[9px] before:top-2 before:bottom-6 before:w-0.5 before:border-l before:border-dashed before:border-slate-200">
+                  {stops.map((stop, index) => (
+                    <div key={stop.id} className="relative bg-slate-50/50 border border-slate-150/60 p-5 rounded-2xl space-y-4">
+                      {/* Step Number Badge */}
+                      <span className="absolute -left-[22px] top-4 w-5 h-5 rounded-full bg-slate-900 border-2 border-white text-white flex items-center justify-center text-[9px] font-black shadow-xs z-10 select-none">
+                        {index + 1}
+                      </span>
+
+                      {/* Header with deletion options */}
+                      <div className="flex justify-between items-center">
+                        <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest block">
+                          STOP ENTRY #{index + 1}
+                        </span>
+                        {stops.length > 2 && (
+                          <button 
+                            type="button" 
+                            onClick={() => handleRemoveStop(stop.id)}
+                            className="text-[10px] text-red-500 hover:text-red-700 font-extrabold uppercase cursor-pointer"
+                          >
+                            REMOVE
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">STOP TYPE</label>
+                          <select 
+                            value={stop.type}
+                            onChange={(e) => {
+                              const updated = [...stops];
+                              updated[index].type = e.target.value;
+                              setStops(updated);
+                            }}
+                            className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
+                          >
+                            <option value="Pickup">Pickup</option>
+                            <option value="Drop">Drop</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">ADDRESS / SUBURB</label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-red-500">📍</span>
+                            <input 
+                              type="text" 
+                              placeholder="Full location address..."
+                              value={stop.address}
+                              onChange={(e) => {
+                                const updated = [...stops];
+                                updated[index].address = e.target.value;
+                                setStops(updated);
+                              }}
+                              className="w-full pl-8 pr-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">CONTACT NAME</label>
+                          <input 
+                            type="text" 
+                            placeholder="Receiver/Sender Name"
+                            value={stop.contact}
+                            onChange={(e) => {
+                              const updated = [...stops];
+                              updated[index].contact = e.target.value;
+                              setStops(updated);
+                            }}
+                            className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">PHONE</label>
+                          <input 
+                            type="text" 
+                            placeholder="+61..."
+                            value={stop.phone}
+                            onChange={(e) => {
+                              const updated = [...stops];
+                              updated[index].phone = e.target.value;
+                              setStops(updated);
+                            }}
+                            className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">REQUIRED TIME</label>
+                          <input 
+                            type="text" 
+                            placeholder="dd-mm-yyyy --:--"
+                            value={stop.time}
+                            onChange={(e) => {
+                              const updated = [...stops];
+                              updated[index].time = e.target.value;
+                              setStops(updated);
+                            }}
+                            className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
-          <button className="w-full mt-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors">
-            View All Alerts
-          </button>
-        </div>
 
-      </div>
+              {/* STEP 2: Cargo details configuration card */}
+              <div className="bg-white rounded-[24px] border border-slate-100 p-6 shadow-sm space-y-5">
+                <div className="flex justify-between items-center mb-2 pb-3 border-b border-slate-50">
+                  <div>
+                    <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-2">
+                      <span className="w-6 h-6 bg-amber-50 text-amber-500 rounded-lg flex items-center justify-center shrink-0 border border-amber-100">📦</span>
+                      STEP 2: DECLARE ITEMS / CARS
+                    </h3>
+                    <p className="text-slate-400 text-[9px] font-extrabold uppercase tracking-wider mt-1">
+                      LINK EACH ITEM TO THE CREATED STOPS ABOVE
+                    </p>
+                  </div>
+                  <button 
+                    type="button" 
+                    onClick={handleAddItem}
+                    className="bg-black hover:bg-slate-800 text-[#FFD400] font-bold text-[10px] py-1.5 px-3.5 rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
+                  >
+                    + ADD ITEM
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  {declaredItems.map((item, index) => (
+                    <div 
+                      key={item.id} 
+                      draggable
+                      onDragStart={() => handleDragStart(index)}
+                      onDragOver={handleDragOver}
+                      onDrop={() => handleDrop(index)}
+                      className={`p-5 border rounded-2xl transition-all ${
+                        draggedItemIndex === index ? 'border-amber-400 bg-amber-50/10' : 'border-slate-150/60 bg-white hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center mb-3">
+                        <div className="flex items-center gap-2 cursor-grab active:cursor-grabbing select-none" title="Drag to reorder entries">
+                          <span className="text-slate-400 text-sm font-black tracking-tighter">⋮⋮</span>
+                          <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">
+                            ITEM ENTRY #{index + 1}
+                          </span>
+                        </div>
+                        {declaredItems.length > 1 && (
+                          <button 
+                            type="button" 
+                            onClick={() => handleRemoveItem(item.id)}
+                            className="text-slate-400 hover:text-red-500 transition-colors shrink-0"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">CUSTOMER / OWNER</label>
+                          <input 
+                            type="text" 
+                            value={item.client}
+                            onChange={(e) => {
+                              const updated = [...declaredItems];
+                              updated[index].client = e.target.value;
+                              setDeclaredItems(updated);
+                            }}
+                            className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">LINK PICKUP STOP</label>
+                          <select 
+                            value={item.pickupStop}
+                            onChange={(e) => {
+                              const updated = [...declaredItems];
+                              updated[index].pickupStop = e.target.value;
+                              setDeclaredItems(updated);
+                            }}
+                            className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 bg-white focus:outline-none"
+                          >
+                            {stops.map((s, si) => (
+                              <option key={s.id} value={`Stop #${si + 1}: ${s.type} (${s.address || 'No Address'})`}>
+                                Stop #{si + 1}: {s.type} ({s.address || 'No Address'})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">LINK DROP OFF STOP</label>
+                          <select 
+                            value={item.dropStop}
+                            onChange={(e) => {
+                              const updated = [...declaredItems];
+                              updated[index].dropStop = e.target.value;
+                              setDeclaredItems(updated);
+                            }}
+                            className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 bg-white focus:outline-none"
+                          >
+                            {stops.map((s, si) => (
+                              <option key={s.id} value={`Stop #${si + 1}: ${s.type} (${s.address || 'No Address'})`}>
+                                Stop #{si + 1}: {s.type} ({s.address || 'No Address'})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                        <div className="md:col-span-9">
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">ITEM DESCRIPTION / IDENTIFICATION</label>
+                          <input 
+                            type="text" 
+                            placeholder="e.g. 2024 Toyota Hilux or General..."
+                            value={item.desc}
+                            onChange={(e) => {
+                              const updated = [...declaredItems];
+                              updated[index].desc = e.target.value;
+                              setDeclaredItems(updated);
+                            }}
+                            className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none"
+                          />
+                        </div>
+                        <div className="md:col-span-3">
+                          <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">WEIGHT (KG)</label>
+                          <input 
+                            type="text" 
+                            value={item.weight}
+                            onChange={(e) => {
+                              const updated = [...declaredItems];
+                              updated[index].weight = e.target.value;
+                              setDeclaredItems(updated);
+                            }}
+                            className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+
+            {/* Right Column (Specifications Sidebar - 1 col) */}
+            <div className="space-y-6">
+              
+              {/* Load Specifications Card */}
+              <div className="bg-[#0B0F17] text-white rounded-[24px] border border-slate-855 p-6 shadow-md text-left space-y-4">
+                <span className="text-[8px] font-black text-amber-500 tracking-wider block uppercase">LOAD SPECIFICATIONS</span>
+                
+                <div>
+                  <label className="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">
+                    CUSTOMER REFERENCE
+                  </label>
+                  <input 
+                    type="text"
+                    value={customerRef}
+                    onChange={(e) => setCustomerRef(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-800 rounded-xl text-xs font-bold text-slate-850 focus:outline-none"
+                  />
+                </div>
+
+                <div className="pt-1.5">
+                  <label className="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider mb-2">
+                    PRIORITY TIER
+                  </label>
+                  <div className="flex gap-2">
+                    {['NORMAL', 'EXPRESS', 'URGENT'].map((tier) => (
+                      <button
+                        key={tier}
+                        type="button"
+                        onClick={() => setPriorityTier(tier)}
+                        className={`flex-1 py-2 text-[9px] font-black rounded-lg uppercase tracking-wider transition-all cursor-pointer ${
+                          priorityTier === tier 
+                            ? 'bg-[#FFA000] text-black font-black shadow-xs' 
+                            : 'bg-slate-800 hover:bg-slate-750 text-slate-400 font-bold border border-slate-700/50'
+                        }`}
+                      >
+                        {tier}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pt-1.5">
+                  <label className="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider mb-1.5">
+                    GLOBAL DEADLINE
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-800 text-xs">⏰</span>
+                    <input 
+                      type="text"
+                      value={globalDeadline}
+                      onChange={(e) => setGlobalDeadline(e.target.value)}
+                      placeholder="dd-mm-yyyy --:--"
+                      className="w-full pl-8 pr-3.5 py-2.5 bg-white border border-slate-800 rounded-xl text-xs font-bold text-slate-850 focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Documents & Photos Card */}
+              <div className="bg-white rounded-[24px] border border-slate-100 p-6 shadow-sm text-left space-y-4">
+                <span className="text-[10px] font-bold text-slate-400 tracking-wider block uppercase">DOCUMENTS & PHOTOS</span>
+                <div className="grid grid-cols-2 gap-4">
+                  <div 
+                    onClick={() => triggerToast('Select and upload shipping manifest PDF...')}
+                    className="border border-dashed border-slate-200 p-5 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-slate-50 transition-colors cursor-pointer select-none"
+                  >
+                    <FileText className="w-5 h-5 text-slate-650" />
+                    <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wide">MANIFEST</span>
+                  </div>
+                  <div 
+                    onClick={() => triggerToast('Select and upload cargo photos...')}
+                    className="border border-dashed border-slate-200 p-5 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-slate-50 transition-colors cursor-pointer select-none"
+                  >
+                    <Camera className="w-5 h-5 text-slate-655" />
+                    <span className="text-[10px] font-bold text-slate-455 uppercase tracking-wide">PHOTOS</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Internal Dispatch Notes */}
+              <div className="bg-white rounded-[24px] border border-slate-100 p-6 shadow-sm text-left space-y-4">
+                <span className="text-[10px] font-bold text-slate-400 tracking-wider block uppercase">INTERNAL DISPATCH NOTES</span>
+                <textarea
+                  placeholder="Gate codes, site rules, or special procedures..."
+                  value={internalNotes}
+                  onChange={(e) => setInternalNotes(e.target.value)}
+                  rows={4}
+                  className="w-full p-4 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#FFD400] resize-none"
+                />
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 }
