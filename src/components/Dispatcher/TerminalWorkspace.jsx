@@ -93,19 +93,19 @@ export default function TerminalWorkspace() {
           <p className="text-xs text-indigo-755 leading-relaxed font-semibold">
             This module is used by Warehouse Staff when large line-haul trucks arrive at a Terminal. Workers scan every incoming box. The "Smart Sorter" instantly checks the Full Network Manifest (the master list of all cross-country jobs) to decide if the box should go out on a <span className="font-extrabold text-indigo-900">Local Delivery Van</span> or be loaded onto another <span className="font-extrabold text-indigo-900">Line-haul Truck for the next Depot</span>.
           </p>
-          <div className="flex items-center gap-1.5 text-xs text-indigo-600 font-bold select-none pt-1">
-            <Lightbulb className="w-3.5 h-3.5 text-amber-500 fill-amber-500/10" />
-            <span>Try scanning: </span>
+          <div className="flex flex-wrap items-center gap-1.5 text-xs text-indigo-600 font-bold select-none pt-1">
+            <Lightbulb className="w-3.5 h-3.5 text-amber-500 fill-amber-500/10 shrink-0" />
+            <span className="whitespace-nowrap">Try scanning: </span>
             <button 
               onClick={() => handleQuickScan('SHP-9041')}
-              className="underline hover:text-indigo-800 cursor-pointer"
+              className="underline hover:text-indigo-800 cursor-pointer whitespace-nowrap"
             >
               SHP-9041
             </button>
-            <span>or</span>
+            <span className="whitespace-nowrap">or</span>
             <button 
               onClick={() => handleQuickScan('SHP-9042')}
-              className="underline hover:text-indigo-800 cursor-pointer"
+              className="underline hover:text-indigo-800 cursor-pointer whitespace-nowrap"
             >
               SHP-9042
             </button>
