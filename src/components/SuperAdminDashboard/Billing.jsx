@@ -137,7 +137,7 @@ startxref
   const handleExportCSV = () => {
     const headers = ['Invoice ID', 'Company', 'Plan', 'Amount', 'Status', 'Date'];
     const rows = invoices.map(inv => [inv.id, inv.company, inv.plan, inv.amount, inv.status, inv.date]);
-    const csvContent = "data:text/csv;charset=utf-8," 
+    const csvContent = "data:text/csv;charset=utf-8,"
       + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
@@ -219,7 +219,7 @@ startxref
       const gst = inv.amount * 0.18;
       return [inv.id, inv.company, base.toFixed(2), gst.toFixed(2), inv.amount.toFixed(2), inv.date];
     });
-    const csvContent = "data:text/csv;charset=utf-8," 
+    const csvContent = "data:text/csv;charset=utf-8,"
       + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
@@ -260,7 +260,7 @@ startxref
       )}
 
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
             Super Admin • Billing
@@ -269,16 +269,16 @@ startxref
             Configure global licensing rules, audit tenant margins, and resolve support tickets.
           </p>
         </div>
-        <button 
+        <button
           onClick={handleExportPDFReport}
-          className="border border-slate-200 bg-white hover:bg-slate-50 text-yellow-500 font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer"
+          className="w-full sm:w-auto border border-slate-200 bg-white hover:bg-slate-50 text-yellow-500 font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer"
         >
           Export Report
         </button>
       </div>
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {metrics.map((m, idx) => (
           <div key={idx} className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between h-32">
             <div>
@@ -305,13 +305,13 @@ startxref
               <XAxis dataKey="name" stroke="#94A3B8" fontSize={10} tickLine={false} axisLine={false} />
               <YAxis stroke="#94A3B8" fontSize={10} tickLine={false} axisLine={false} domain={[0, 60000]} ticks={[0, 15000, 30000, 45000, 60000]} />
               <Tooltip cursor={{ stroke: '#E2E8F0', strokeWidth: 1 }} />
-              <Line 
-                type="monotone" 
-                dataKey="value" 
-                stroke="#00A3FF" 
-                strokeWidth={3} 
-                dot={{ fill: '#00A3FF', stroke: '#ffffff', strokeWidth: 2, r: 6 }} 
-                activeDot={{ r: 8 }} 
+              <Line
+                type="monotone"
+                dataKey="value"
+                stroke="#00A3FF"
+                strokeWidth={3}
+                dot={{ fill: '#00A3FF', stroke: '#ffffff', strokeWidth: 2, r: 6 }}
+                activeDot={{ r: 8 }}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -319,16 +319,15 @@ startxref
       </div>
 
       {/* Tabs Row */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {['INVOICES', 'PAYMENTS', 'FAILED PAYMENTS', 'TAX / GST SUMMARY'].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 font-black rounded-lg text-xs transition-colors cursor-pointer border ${
-              activeTab === tab 
-                ? 'bg-[#FFD400] text-black border-[#FFD400]' 
+            className={`px-4 py-2 font-black rounded-lg text-xs transition-colors cursor-pointer border ${activeTab === tab
+                ? 'bg-[#FFD400] text-black border-[#FFD400]'
                 : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
-            }`}
+              }`}
           >
             {tab}
           </button>
@@ -337,8 +336,8 @@ startxref
 
       {/* Main Data Table */}
       <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-xs w-full">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+        <div className="overflow-x-auto custom-scrollbar">
+          <table className="w-full min-w-[900px] text-left border-collapse whitespace-nowrap">
             <thead>
               <tr className="border-b border-slate-150 text-[10px] font-black text-slate-400 uppercase tracking-wider">
                 <th className="pb-4 font-black">INVOICE ID</th>
@@ -369,12 +368,11 @@ startxref
                     <>
                       <td className="py-4 text-emerald-500 font-extrabold">${row.amount.toFixed(2)}</td>
                       <td className="py-4">
-                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
-                          row.status === 'Paid' ? 'bg-[#E6F4EA] text-[#137333]' :
-                          row.status === 'Sent' ? 'bg-[#FEF7E0] text-[#B06000]' :
-                          row.status === 'Draft' ? 'bg-slate-100 text-slate-600' :
-                          'bg-[#FCE8E6] text-[#C5221F]'
-                        }`}>
+                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${row.status === 'Paid' ? 'bg-[#E6F4EA] text-[#137333]' :
+                            row.status === 'Sent' ? 'bg-[#FEF7E0] text-[#B06000]' :
+                              row.status === 'Draft' ? 'bg-slate-100 text-slate-600' :
+                                'bg-[#FCE8E6] text-[#C5221F]'
+                          }`}>
                           {row.status}
                         </span>
                       </td>
@@ -405,22 +403,22 @@ startxref
       {/* Bottom Export Row */}
       <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs w-full flex flex-col md:flex-row justify-between items-center gap-4">
         <span className="text-xs font-bold text-slate-500">Export billing records:</span>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap justify-center md:justify-end gap-3 w-full md:w-auto">
           <button
             onClick={handleExportPDFReport}
-            className="border border-slate-200 bg-white hover:bg-slate-50 text-yellow-500 font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer"
+            className="w-full sm:w-auto border border-slate-200 bg-white hover:bg-slate-50 text-yellow-500 font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer"
           >
             PDF Report
           </button>
           <button
             onClick={handleExportCSV}
-            className="border border-slate-200 bg-white hover:bg-slate-50 text-yellow-500 font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer"
+            className="w-full sm:w-auto border border-slate-200 bg-white hover:bg-slate-50 text-yellow-500 font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer"
           >
             CSV Export
           </button>
           <button
             onClick={handleExportTaxReport}
-            className="border border-slate-200 bg-white hover:bg-slate-50 text-yellow-500 font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer"
+            className="w-full sm:w-auto border border-slate-200 bg-white hover:bg-slate-50 text-yellow-500 font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer"
           >
             Tax Report
           </button>

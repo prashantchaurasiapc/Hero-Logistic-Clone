@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Layers, Plus, Trash2, Edit2, Check, X, ShieldAlert, 
-  Download, Filter, Calendar, Settings, FileText, ChevronDown, 
+import {
+  Layers, Plus, Trash2, Edit2, Check, X, ShieldAlert,
+  Download, Filter, Calendar, Settings, FileText, ChevronDown,
   TrendingUp, RefreshCw, BarChart2, Users, DollarSign, Search, CheckCircle, ArrowRight,
   Percent, AlertCircle, CreditCard, ArrowLeftRight
 } from 'lucide-react';
@@ -32,7 +32,7 @@ export default function MembershipPlans() {
   // Inspect Receipt Modal state
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
-  
+
   // Promo Coupon Modal state
   const [showPromoModal, setShowPromoModal] = useState(false);
 
@@ -95,7 +95,7 @@ export default function MembershipPlans() {
   // Bulk Migration Select values
   const [migrationSource, setMigrationSource] = useState('-- Select Plan --');
   const [migrationTarget, setMigrationTarget] = useState('-- Select Plan --');
-  
+
   const [plans, setPlans] = useState([
     {
       id: 'plan-starter',
@@ -338,7 +338,7 @@ export default function MembershipPlans() {
   const handleExportCSV = () => {
     const headers = ['Plan ID', 'Plan Name', 'Version', 'Status', 'Monthly Price', 'Annual Price', 'Trial Days', 'Subscribers', 'MRR'];
     const rows = plans.map(p => [p.id, p.name, p.version, p.status, `$${p.monthlyPrice}`, `$${p.annualPrice}`, `${p.trialDays} days`, p.subscribers, `$${p.mrr}`]);
-    const csvContent = "data:text/csv;charset=utf-8," 
+    const csvContent = "data:text/csv;charset=utf-8,"
       + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
@@ -423,8 +423,8 @@ export default function MembershipPlans() {
 
   // Filter plans list
   const filteredPlans = plans.filter(p => {
-    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          p.id.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.id.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesState = appliedFilters.state === 'All States' || p.status.toLowerCase() === appliedFilters.state.toLowerCase();
     const planPrice = billingCycle === 'monthly' ? p.monthlyPrice : Math.round(p.monthlyPrice * 0.85);
     const matchesMinPrice = !appliedFilters.minPrice || planPrice >= parseFloat(appliedFilters.minPrice);
@@ -434,16 +434,16 @@ export default function MembershipPlans() {
   });
 
   // Filter promos list
-  const filteredPromos = promos.filter(p => 
+  const filteredPromos = promos.filter(p =>
     p.code.toLowerCase().includes(promoSearchQuery.toLowerCase()) ||
     p.campaignName.toLowerCase().includes(promoSearchQuery.toLowerCase())
   );
 
   // Filter invoices list
   const filteredInvoices = invoices.filter(inv => {
-    const matchesSearch = inv.company.toLowerCase().includes(invoiceSearchQuery.toLowerCase()) || 
-                          inv.invoiceNo.toLowerCase().includes(invoiceSearchQuery.toLowerCase());
-    
+    const matchesSearch = inv.company.toLowerCase().includes(invoiceSearchQuery.toLowerCase()) ||
+      inv.invoiceNo.toLowerCase().includes(invoiceSearchQuery.toLowerCase());
+
     // Status filters
     let matchesStatus = true;
     if (invoiceStatusFilter !== 'All Invoices') {
@@ -459,14 +459,14 @@ export default function MembershipPlans() {
   });
 
   // Filter audit logs list
-  const filteredAudits = audits.filter(aud => 
+  const filteredAudits = audits.filter(aud =>
     aud.title.toLowerCase().includes(auditSearchQuery.toLowerCase()) ||
     aud.detail.toLowerCase().includes(auditSearchQuery.toLowerCase())
   );
 
   return (
     <div className="flex-grow bg-[#F8FAFC] p-6 space-y-6 overflow-y-auto w-full text-left font-sans relative custom-scrollbar">
-      
+
       {/* Custom scrollbar layout */}
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {
@@ -507,7 +507,7 @@ export default function MembershipPlans() {
             Configure global licensing rules, audit tenant margins, and resolve support tickets.
           </p>
         </div>
-        <button 
+        <button
           onClick={() => {
             alert(`SaaS Plans Registry summary:\nTotal Tiers: ${plans.length}\nActive MRR: $42,910`);
             showNotification('Report compiled.');
@@ -607,22 +607,20 @@ export default function MembershipPlans() {
               <button
                 type="button"
                 onClick={() => setBillingCycle('monthly')}
-                className={`px-4 py-2 text-xs font-extrabold rounded-lg transition-all cursor-pointer ${
-                  billingCycle === 'monthly'
+                className={`px-4 py-2 text-xs font-extrabold rounded-lg transition-all cursor-pointer ${billingCycle === 'monthly'
                     ? 'bg-[#FFD400] text-black shadow-xs'
                     : 'text-slate-655 hover:bg-slate-200'
-                }`}
+                  }`}
               >
                 Monthly Billing
               </button>
               <button
                 type="button"
                 onClick={() => setBillingCycle('annual')}
-                className={`px-4 py-2 text-xs font-extrabold rounded-lg transition-all cursor-pointer ${
-                  billingCycle === 'annual'
+                className={`px-4 py-2 text-xs font-extrabold rounded-lg transition-all cursor-pointer ${billingCycle === 'annual'
                     ? 'bg-[#FFD400] text-black shadow-xs'
                     : 'text-slate-655 hover:bg-slate-200'
-                }`}
+                  }`}
               >
                 Annual Billing (Save 15%)
               </button>
@@ -643,8 +641,8 @@ export default function MembershipPlans() {
           {plans.map((p) => {
             const price = billingCycle === 'monthly' ? p.monthlyPrice : Math.round(p.monthlyPrice * 0.85);
             return (
-              <div 
-                key={p.id} 
+              <div
+                key={p.id}
                 className="border border-slate-150 rounded-2xl p-5 bg-white space-y-4 hover:shadow-md transition-shadow relative flex flex-col justify-between"
               >
                 {/* Plan Header */}
@@ -689,13 +687,12 @@ export default function MembershipPlans() {
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Key Modules</span>
                   <div className="flex flex-wrap gap-1.5">
                     {p.modules.map((m, idx) => (
-                      <span 
-                        key={idx} 
-                        className={`text-[9px] font-black px-2 py-0.5 rounded-md ${
-                          m === 'AI dispatch'
+                      <span
+                        key={idx}
+                        className={`text-[9px] font-black px-2 py-0.5 rounded-md ${m === 'AI dispatch'
                             ? 'bg-amber-100 text-amber-700 border border-amber-200'
                             : 'bg-slate-100 text-slate-600'
-                        }`}
+                          }`}
                       >
                         {m}
                       </span>
@@ -745,7 +742,7 @@ export default function MembershipPlans() {
 
       {/* Registry Table & SubTabs Section */}
       <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-xs space-y-6">
-        
+
         {/* Horizontal Navigation Pills - SCROLLABLE with all required tags */}
         <div className="flex overflow-x-auto whitespace-nowrap pb-2.5 gap-2.5 custom-scrollbar border-b border-slate-100">
           {[
@@ -766,11 +763,10 @@ export default function MembershipPlans() {
               <button
                 key={subTab.id}
                 onClick={() => setActiveSubTab(subTab.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 font-extrabold text-xs rounded-xl transition-all cursor-pointer border inline-flex shrink-0 ${
-                  isActive
+                className={`flex items-center gap-2 px-4 py-2.5 font-extrabold text-xs rounded-xl transition-all cursor-pointer border inline-flex shrink-0 ${isActive
                     ? 'bg-[#FFD400] text-black border-black border-2 shadow-xs font-black'
                     : 'bg-slate-600 hover:bg-slate-700 text-slate-100 border-transparent'
-                }`}
+                  }`}
               >
                 <Icon className="w-3.5 h-3.5" />
                 {subTab.label}
@@ -782,7 +778,7 @@ export default function MembershipPlans() {
         {/* Tab content 1: Plan Registry */}
         {activeSubTab === 'Plan Registry' && (
           <div className="space-y-4">
-            
+
             {/* Toolbar Action row */}
             <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 relative">
               <div className="flex flex-wrap items-center gap-3 flex-grow max-w-xl">
@@ -800,11 +796,10 @@ export default function MembershipPlans() {
                 <button
                   type="button"
                   onClick={() => setShowFilters(!showFilters)}
-                  className={`flex items-center gap-1.5 border font-extrabold text-xs px-4 py-2.5 rounded-xl transition-colors cursor-pointer ${
-                    showFilters 
-                      ? 'border-black border-2 bg-slate-50 text-slate-900' 
+                  className={`flex items-center gap-1.5 border font-extrabold text-xs px-4 py-2.5 rounded-xl transition-colors cursor-pointer ${showFilters
+                      ? 'border-black border-2 bg-slate-50 text-slate-900'
                       : 'border-slate-200 hover:bg-slate-50 text-slate-655'
-                  }`}
+                    }`}
                 >
                   <Filter className="w-3.5 h-3.5" /> Filters
                 </button>
@@ -966,13 +961,12 @@ export default function MembershipPlans() {
                           )}
                           {visibleColumns.status && (
                             <td className="py-4 px-4 w-[110px] min-w-[110px] max-w-[110px] whitespace-nowrap">
-                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
-                                p.status === 'Published' 
-                                  ? 'bg-emerald-100 text-emerald-800' 
-                                  : p.status === 'Deprecated' 
-                                  ? 'bg-rose-100 text-rose-800'
-                                  : 'bg-slate-100 text-slate-700'
-                              }`}>
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${p.status === 'Published'
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : p.status === 'Deprecated'
+                                    ? 'bg-rose-100 text-rose-800'
+                                    : 'bg-slate-100 text-slate-700'
+                                }`}>
                                 {p.status}
                               </span>
                             </td>
@@ -1033,11 +1027,10 @@ export default function MembershipPlans() {
                                   type="button"
                                   disabled={p.status === 'Deprecated'}
                                   onClick={() => handleDeprecateClick(p)}
-                                  className={`inline-flex items-center font-black text-[11px] px-3 py-1.5 rounded-lg transition-colors shadow-sm ${
-                                    p.status === 'Deprecated'
+                                  className={`inline-flex items-center font-black text-[11px] px-3 py-1.5 rounded-lg transition-colors shadow-sm ${p.status === 'Deprecated'
                                       ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
                                       : 'border border-slate-800 bg-white hover:bg-slate-50 text-slate-900 cursor-pointer'
-                                  }`}
+                                    }`}
                                 >
                                   Deprecate
                                 </button>
@@ -1141,7 +1134,7 @@ export default function MembershipPlans() {
         {/* Tab content 3: Promos & Coupons (Screenshot 4 & 5!) */}
         {activeSubTab === 'Promos & Coupons' && (
           <div className="space-y-4">
-            
+
             {/* Promo Toolbar */}
             <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
               <div className="relative flex-grow max-w-xs text-left">
@@ -1267,11 +1260,10 @@ export default function MembershipPlans() {
                       <td className="py-5 px-4 text-rose-500 font-black">{t.daysRemaining}</td>
                       <td className="py-5 px-4 text-slate-400 font-semibold">{t.limitsViolations}</td>
                       <td className="py-5 px-4">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
-                          t.status === 'Active trial' 
-                            ? 'bg-emerald-50 text-emerald-600' 
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${t.status === 'Active trial'
+                            ? 'bg-emerald-50 text-emerald-600'
                             : 'bg-rose-50 text-rose-600'
-                        }`}>
+                          }`}>
                           {t.status}
                         </span>
                       </td>
@@ -1318,17 +1310,17 @@ export default function MembershipPlans() {
         {/* Tab content 5: Revenue Intelligence (Screenshot 2!) */}
         {activeSubTab === 'Revenue Intelligence' && (
           <div className="space-y-6">
-            
+
             {/* Grid for timeline and subscriber mix */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              
+
               {/* MRR timeline graph */}
               <div className="lg:col-span-2 border border-slate-150 rounded-2xl p-5 bg-white space-y-4">
                 <div className="flex justify-between items-center">
                   <h3 className="text-sm font-black text-slate-800">Dynamic MRR Expansion Timeline (USD)</h3>
                   <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Q1-Q2 Audited cash flow</span>
                 </div>
-                
+
                 {/* SVG Graph representation */}
                 <div className="relative pt-6 h-56 flex items-end">
                   <svg className="w-full h-40 overflow-visible" viewBox="0 0 600 150">
@@ -1384,7 +1376,7 @@ export default function MembershipPlans() {
                       <circle cx="50" cy="50" r="35" stroke="#10B981" strokeWidth="12" fill="transparent" strokeDasharray="219.9" strokeDashoffset="132" />
                       <circle cx="50" cy="50" r="35" stroke="#0EA5E9" strokeWidth="12" fill="transparent" strokeDasharray="219.9" strokeDashoffset="132" />
                     </svg>
-                    
+
                     <div className="absolute flex flex-col items-center justify-center text-center">
                       <span className="text-xl font-black text-slate-800">5</span>
                       <span className="text-[9px] font-black text-slate-400 tracking-wider">TENANTS</span>
@@ -1426,7 +1418,7 @@ export default function MembershipPlans() {
                 <span className="text-xl font-black text-slate-800 block mt-2">$18,450.00</span>
                 <span className="text-[10px] font-bold text-emerald-500 mt-2 block">LTV to CAC ratio: 4.8x (Excellent)</span>
               </div>
-              
+
               <div className="border border-slate-150 rounded-2xl p-5 bg-white text-left">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">CUSTOMER ACQUISITION COST (CAC)</span>
                 <span className="text-xl font-black text-slate-800 block mt-2">$3,840.00</span>
@@ -1462,7 +1454,7 @@ export default function MembershipPlans() {
             </div>
 
             <form onSubmit={(e) => { e.preventDefault(); showNotification('Gateway Configurations Saved!'); }} className="space-y-5">
-              
+
               {/* Row 1: Stripe */}
               <div className="border border-slate-150 rounded-2xl p-5 bg-white space-y-4">
                 <div className="flex justify-between items-center">
@@ -1567,7 +1559,7 @@ export default function MembershipPlans() {
             </div>
 
             <form onSubmit={(e) => { e.preventDefault(); showNotification(`Cohort migration executed successfully from ${migrationSource} to ${migrationTarget}!`); }} className="space-y-6">
-              
+
               <div className="border border-slate-150 rounded-2xl p-5 bg-white">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs font-bold text-slate-700">
                   <div className="space-y-2">
@@ -1606,7 +1598,7 @@ export default function MembershipPlans() {
         {/* Tab content 9: Billing Ledger (Screenshot 2!) */}
         {activeSubTab === 'Billing Ledger' && (
           <div className="space-y-4">
-            
+
             {/* Toolbar Row */}
             <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
               <div className="relative flex-grow max-w-xs text-left">
@@ -1677,15 +1669,14 @@ export default function MembershipPlans() {
                           {inv.date}
                         </td>
                         <td className="py-4 px-4">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
-                            inv.status === 'Paid'
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${inv.status === 'Paid'
                               ? 'bg-emerald-50 text-emerald-600'
                               : inv.status === 'Sent'
-                              ? 'bg-amber-50 text-amber-600'
-                              : inv.status === 'Draft'
-                              ? 'bg-slate-100 text-slate-550'
-                              : 'bg-rose-50 text-rose-600'
-                          }`}>
+                                ? 'bg-amber-50 text-amber-600'
+                                : inv.status === 'Draft'
+                                  ? 'bg-slate-100 text-slate-550'
+                                  : 'bg-rose-50 text-rose-600'
+                            }`}>
                             {inv.status}
                           </span>
                         </td>
@@ -1717,7 +1708,7 @@ export default function MembershipPlans() {
         {/* Tab content 10: Audit Center (Screenshot 4 & 5!) */}
         {activeSubTab === 'Audit Center' && (
           <div className="space-y-4">
-            
+
             {/* Toolbar Row */}
             <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
               <div className="relative flex-grow max-w-xs text-left">
@@ -1775,9 +1766,9 @@ export default function MembershipPlans() {
               <h3 className="text-base font-black text-slate-800">
                 {wizardMode === 'create' ? 'SaaS License Provisioning Wizard' : 'Configure Plan Licensing Rules'}
               </h3>
-              <button 
-                type="button" 
-                onClick={() => setShowWizard(false)} 
+              <button
+                type="button"
+                onClick={() => setShowWizard(false)}
                 className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
@@ -1794,16 +1785,14 @@ export default function MembershipPlans() {
                 { step: 5, label: 'Review' }
               ].map((s) => (
                 <div key={s.step} className="flex items-center gap-1.5 shrink-0">
-                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
-                    wizardStep === s.step
+                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${wizardStep === s.step
                       ? 'bg-[#FFD400] text-black'
                       : 'bg-slate-100 text-slate-400'
-                  }`}>
+                    }`}>
                     {s.step}
                   </span>
-                  <span className={`text-[10px] font-black uppercase tracking-wider ${
-                    wizardStep === s.step ? 'text-slate-800' : 'text-slate-400'
-                  }`}>
+                  <span className={`text-[10px] font-black uppercase tracking-wider ${wizardStep === s.step ? 'text-slate-800' : 'text-slate-400'
+                    }`}>
                     {s.label}
                   </span>
                 </div>
@@ -2077,9 +2066,9 @@ export default function MembershipPlans() {
             {/* Header */}
             <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100">
               <h3 className="text-base font-black text-slate-800">Validate State Lifecycle Transition</h3>
-              <button 
-                type="button" 
-                onClick={() => setShowDeprecateModal(false)} 
+              <button
+                type="button"
+                onClick={() => setShowDeprecateModal(false)}
                 className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
@@ -2128,9 +2117,9 @@ export default function MembershipPlans() {
             {/* Header */}
             <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100">
               <h3 className="text-base font-black text-slate-800">Launch Coupon Promotional Campaign</h3>
-              <button 
-                type="button" 
-                onClick={() => setShowPromoModal(false)} 
+              <button
+                type="button"
+                onClick={() => setShowPromoModal(false)}
                 className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
@@ -2139,7 +2128,7 @@ export default function MembershipPlans() {
 
             {/* Body Form */}
             <form onSubmit={handleLaunchPromo} className="p-6 space-y-4 text-xs font-semibold text-slate-700">
-              
+
               <div className="text-left">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">Coupon Promo Code</label>
                 <input
@@ -2294,9 +2283,8 @@ export default function MembershipPlans() {
                       <select
                         value={versionCompareA}
                         onChange={(e) => setVersionCompareA(e.target.value)}
-                        className={`w-full px-3 py-2.5 border rounded-2xl focus:outline-none focus:border-[#FFD400] text-xs font-bold appearance-none cursor-pointer pr-8 ${
-                          versionCompareA !== '-- Select A --' ? 'border-[#FFD400] border-2' : 'border-slate-200'
-                        } text-slate-700 bg-white`}
+                        className={`w-full px-3 py-2.5 border rounded-2xl focus:outline-none focus:border-[#FFD400] text-xs font-bold appearance-none cursor-pointer pr-8 ${versionCompareA !== '-- Select A --' ? 'border-[#FFD400] border-2' : 'border-slate-200'
+                          } text-slate-700 bg-white`}
                       >
                         <option>-- Select A --</option>
                         <option>v1.0.0</option>
@@ -2343,7 +2331,7 @@ export default function MembershipPlans() {
       {showReceiptModal && selectedInvoice && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[1001] p-4">
           <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-[560px] overflow-hidden shadow-2xl animate-fade-in text-left">
-            
+
             {/* Modal Header */}
             <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100">
               <div>
@@ -2359,19 +2347,17 @@ export default function MembershipPlans() {
             <div className="p-6 space-y-5">
 
               {/* Status Banner */}
-              <div className={`flex items-center justify-between px-4 py-3 rounded-2xl border ${
-                selectedInvoice.status === 'Paid' ? 'bg-emerald-50 border-emerald-200' :
-                selectedInvoice.status === 'Overdue' ? 'bg-rose-50 border-rose-200' :
-                selectedInvoice.status === 'Sent' ? 'bg-amber-50 border-amber-200' :
-                'bg-slate-50 border-slate-200'
-              }`}>
+              <div className={`flex items-center justify-between px-4 py-3 rounded-2xl border ${selectedInvoice.status === 'Paid' ? 'bg-emerald-50 border-emerald-200' :
+                  selectedInvoice.status === 'Overdue' ? 'bg-rose-50 border-rose-200' :
+                    selectedInvoice.status === 'Sent' ? 'bg-amber-50 border-amber-200' :
+                      'bg-slate-50 border-slate-200'
+                }`}>
                 <span className="text-xs font-bold text-slate-500">Payment Status</span>
-                <span className={`text-sm font-black uppercase tracking-wider ${
-                  selectedInvoice.status === 'Paid' ? 'text-emerald-600' :
-                  selectedInvoice.status === 'Overdue' ? 'text-rose-600' :
-                  selectedInvoice.status === 'Sent' ? 'text-amber-600' :
-                  'text-slate-600'
-                }`}>{selectedInvoice.status}</span>
+                <span className={`text-sm font-black uppercase tracking-wider ${selectedInvoice.status === 'Paid' ? 'text-emerald-600' :
+                    selectedInvoice.status === 'Overdue' ? 'text-rose-600' :
+                      selectedInvoice.status === 'Sent' ? 'text-amber-600' :
+                        'text-slate-600'
+                  }`}>{selectedInvoice.status}</span>
               </div>
 
               {/* Line Items */}

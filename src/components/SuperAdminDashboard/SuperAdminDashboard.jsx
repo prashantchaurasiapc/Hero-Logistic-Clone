@@ -68,7 +68,7 @@ export default function SuperAdminDashboard() {
   const [showResolveTicketModal, setShowResolveTicketModal] = useState(false);
   const [showRenewSubModal, setShowRenewSubModal] = useState(false);
   const [showUpgradeSubModal, setShowUpgradeSubModal] = useState(false);
-  
+
   const [showAddCompanyModal, setShowAddCompanyModal] = useState(false);
   const [showSuspendCompanyModal, setShowSuspendCompanyModal] = useState(false);
   const [showReactivateCompanyModal, setShowReactivateCompanyModal] = useState(false);
@@ -192,8 +192,8 @@ export default function SuperAdminDashboard() {
                       key={mode}
                       onClick={() => setDensity(mode)}
                       className={`px-3 py-1.5 text-[9px] font-black rounded-lg transition-all cursor-pointer ${density === mode
-                          ? 'bg-[#FFD400] text-black shadow-xs font-black'
-                          : 'text-black hover:bg-slate-200/50'
+                        ? 'bg-[#FFD400] text-black shadow-xs font-black'
+                        : 'text-black hover:bg-slate-200/50'
                         }`}
                     >
                       {mode}
@@ -325,8 +325,8 @@ export default function SuperAdminDashboard() {
                       {visibleColumns.status && (
                         <td className={`${getDensityPadding()} px-4`}>
                           <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-bold tracking-wider ${tenant.status === 'ACTIVE'
-                              ? 'text-emerald-700 bg-emerald-50 border border-emerald-200'
-                              : 'text-rose-700 bg-rose-50 border border-rose-200'
+                            ? 'text-emerald-700 bg-emerald-50 border border-emerald-200'
+                            : 'text-rose-700 bg-rose-50 border border-rose-200'
                             }`}>
                             {tenant.status}
                           </span>
@@ -819,8 +819,8 @@ export default function SuperAdminDashboard() {
           <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-[420px] overflow-hidden shadow-2xl animate-fade-in text-left">
             <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100">
               <h3 className="text-sm font-black text-slate-800">Provision New SaaS Tenant</h3>
-              <button 
-                onClick={() => setShowAddCompanyModal(false)} 
+              <button
+                onClick={() => setShowAddCompanyModal(false)}
                 className="text-slate-400 hover:text-slate-600 cursor-pointer"
               >
                 <X className="w-5 h-5" />

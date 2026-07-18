@@ -141,11 +141,10 @@ export default function AIControls() {
                 <h4 className="text-sm font-extrabold text-slate-800 mb-1">Load Parse AI</h4>
                 <span className="text-xs font-bold text-emerald-500">• Active</span>
               </div>
-              <button 
+              <button
                 onClick={() => toggleFeature('loadParse')}
-                className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 focus:outline-none flex items-center ${
-                  features.loadParse ? 'bg-[#FFD400] justify-end' : 'bg-slate-700 justify-start'
-                }`}
+                className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 focus:outline-none flex items-center ${features.loadParse ? 'bg-[#FFD400] justify-end' : 'bg-slate-700 justify-start'
+                  }`}
               >
                 <div className="w-4 h-4 bg-white rounded-full shadow-sm"></div>
               </button>
@@ -157,11 +156,10 @@ export default function AIControls() {
                 <h4 className="text-sm font-extrabold text-slate-800 mb-1">Receipt Scan OCR</h4>
                 <span className="text-xs font-bold text-emerald-500">• Active</span>
               </div>
-              <button 
+              <button
                 onClick={() => toggleFeature('receiptScan')}
-                className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 focus:outline-none flex items-center ${
-                  features.receiptScan ? 'bg-[#FFD400] justify-end' : 'bg-slate-700 justify-start'
-                }`}
+                className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 focus:outline-none flex items-center ${features.receiptScan ? 'bg-[#FFD400] justify-end' : 'bg-slate-700 justify-start'
+                  }`}
               >
                 <div className="w-4 h-4 bg-white rounded-full shadow-sm"></div>
               </button>
@@ -173,11 +171,10 @@ export default function AIControls() {
                 <h4 className="text-sm font-extrabold text-slate-800 mb-1">Odometer Detection</h4>
                 <span className="text-xs font-bold text-emerald-500">• Active</span>
               </div>
-              <button 
+              <button
                 onClick={() => toggleFeature('odometer')}
-                className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 focus:outline-none flex items-center ${
-                  features.odometer ? 'bg-[#FFD400] justify-end' : 'bg-slate-700 justify-start'
-                }`}
+                className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 focus:outline-none flex items-center ${features.odometer ? 'bg-[#FFD400] justify-end' : 'bg-slate-700 justify-start'
+                  }`}
               >
                 <div className="w-4 h-4 bg-white rounded-full shadow-sm"></div>
               </button>
@@ -189,11 +186,10 @@ export default function AIControls() {
                 <h4 className="text-sm font-extrabold text-slate-800 mb-1">Smart Dispatch</h4>
                 <span className="text-xs font-bold text-slate-400">• Inactive</span>
               </div>
-              <button 
+              <button
                 onClick={() => toggleFeature('smartDispatch')}
-                className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 focus:outline-none flex items-center ${
-                  features.smartDispatch ? 'bg-[#FFD400] justify-end' : 'bg-slate-700 justify-start'
-                }`}
+                className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 focus:outline-none flex items-center ${features.smartDispatch ? 'bg-[#FFD400] justify-end' : 'bg-slate-700 justify-start'
+                  }`}
               >
                 <div className="w-4 h-4 bg-white rounded-full shadow-sm"></div>
               </button>
@@ -205,11 +201,10 @@ export default function AIControls() {
                 <h4 className="text-sm font-extrabold text-slate-800 mb-1">ETA Prediction</h4>
                 <span className="text-xs font-bold text-emerald-500">• Active</span>
               </div>
-              <button 
+              <button
                 onClick={() => toggleFeature('etaPrediction')}
-                className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 focus:outline-none flex items-center ${
-                  features.etaPrediction ? 'bg-[#FFD400] justify-end' : 'bg-slate-700 justify-start'
-                }`}
+                className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 focus:outline-none flex items-center ${features.etaPrediction ? 'bg-[#FFD400] justify-end' : 'bg-slate-700 justify-start'
+                  }`}
               >
                 <div className="w-4 h-4 bg-white rounded-full shadow-sm"></div>
               </button>
@@ -221,17 +216,16 @@ export default function AIControls() {
                 <h4 className="text-sm font-extrabold text-slate-800 mb-1">Chat Assistant</h4>
                 <span className="text-xs font-bold text-slate-400">• Inactive</span>
               </div>
-              <button 
+              <button
                 onClick={() => toggleFeature('chatAssistant')}
-                className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 focus:outline-none flex items-center ${
-                  features.chatAssistant ? 'bg-[#FFD400] justify-end' : 'bg-slate-700 justify-start'
-                }`}
+                className={`w-12 h-6 rounded-full p-1 transition-colors duration-200 focus:outline-none flex items-center ${features.chatAssistant ? 'bg-[#FFD400] justify-end' : 'bg-slate-700 justify-start'
+                  }`}
               >
                 <div className="w-4 h-4 bg-white rounded-full shadow-sm"></div>
               </button>
             </div>
 
-            <button 
+            <button
               onClick={enableAll}
               className="w-full bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-extrabold text-xs py-3 rounded-xl transition-colors cursor-pointer text-center"
             >
@@ -292,7 +286,7 @@ export default function AIControls() {
             <p className="text-xs font-semibold text-slate-400 mb-6">Recent AI model events and processing history.</p>
 
             {/* Scrollable Container with Hidden Scrollbar */}
-            <div 
+            <div
               className="space-y-4 max-h-[290px] overflow-y-auto pr-1 hide-scrollbar"
               style={{
                 scrollbarWidth: 'none',
@@ -354,7 +348,7 @@ export default function AIControls() {
       {/* Bottom Section - Analytics */}
       <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-xs w-full">
         <h2 className="text-lg font-black text-slate-800 mb-6">AI Usage Analytics — Requests by Feature</h2>
-        
+
         <div className="space-y-4">
           {/* Row 1 */}
           <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">

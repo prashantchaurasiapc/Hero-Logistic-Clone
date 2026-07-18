@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { 
-  Settings as SettingsIcon, Palette, Clock, CreditCard, LayoutTemplate, 
-  Cpu, Compass, Database, Bell, FileText, Building2, CheckCircle2 
+import {
+  Settings as SettingsIcon, Palette, Clock, CreditCard, LayoutTemplate,
+  Cpu, Compass, Database, Bell, FileText, Building2, CheckCircle2
 } from 'lucide-react';
 
 export default function Settings() {
@@ -41,11 +41,10 @@ export default function Settings() {
             <button
               key={tab.name}
               onClick={() => setActiveTab(tab.name)}
-              className={`flex items-center gap-2 text-sm transition-colors ${
-                isActive 
-                  ? 'text-yellow-500 font-extrabold' 
+              className={`flex items-center gap-2 text-sm transition-colors ${isActive
+                  ? 'text-yellow-500 font-extrabold'
                   : 'text-slate-500 font-bold hover:text-slate-700'
-              }`}
+                }`}
             >
               <Icon className="w-4.5 h-4.5" />
               {tab.name}
@@ -95,7 +94,7 @@ export default function Settings() {
           <div className="bg-white rounded-2xl p-8 shadow-[0_1px_3px_rgb(0,0,0,0.02)] border border-slate-100 w-full max-w-4xl">
             <h2 className="text-lg font-black text-slate-800 mb-1">Company Branding & Custom Theme</h2>
             <p className="text-xs font-medium text-slate-500 mb-6">Customize the workspace color palette, layout mode, and upload your official company logo.</p>
-            
+
             <div className="space-y-6">
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Primary Workspace Theme Color</label>
@@ -145,7 +144,7 @@ export default function Settings() {
           <div className="bg-white rounded-2xl p-8 shadow-[0_1px_3px_rgb(0,0,0,0.02)] border border-slate-100 w-full max-w-3xl">
             <h2 className="text-lg font-black text-slate-800 mb-2">Default Terminal Business Hours</h2>
             <p className="text-xs font-medium text-slate-500 mb-6 leading-relaxed">Establish base operating hours across company depots. Individual depots can override these in Branch Settings.</p>
-            
+
             <div className="space-y-4 mb-6">
               <div className="bg-slate-600 rounded-xl p-5 flex justify-between items-center text-white">
                 <div>
@@ -157,7 +156,7 @@ export default function Settings() {
                   <div className="w-5 h-5 bg-white rounded-full flex items-center justify-center cursor-pointer"></div>
                 </div>
               </div>
-              
+
               <div className="bg-slate-600 rounded-xl p-5 flex justify-between items-center text-white">
                 <div>
                   <h4 className="text-sm font-extrabold mb-1 text-slate-50">Saturday</h4>
@@ -239,8 +238,8 @@ export default function Settings() {
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right">
-                       <div className="text-sm font-extrabold text-slate-50 mb-0.5">$499.00</div>
-                       <div className="text-[10px] font-black text-slate-300 uppercase">Paid</div>
+                      <div className="text-sm font-extrabold text-slate-50 mb-0.5">$499.00</div>
+                      <div className="text-[10px] font-black text-slate-300 uppercase">Paid</div>
                     </div>
                     <button className="bg-white text-slate-700 font-black text-xs px-4 py-2 rounded-xl shadow-sm hover:bg-slate-50">PDF</button>
                   </div>
@@ -252,8 +251,8 @@ export default function Settings() {
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right">
-                       <div className="text-sm font-extrabold text-slate-50 mb-0.5">$499.00</div>
-                       <div className="text-[10px] font-black text-slate-300 uppercase">Paid</div>
+                      <div className="text-sm font-extrabold text-slate-50 mb-0.5">$499.00</div>
+                      <div className="text-[10px] font-black text-slate-300 uppercase">Paid</div>
                     </div>
                     <button className="bg-white text-slate-700 font-black text-xs px-4 py-2 rounded-xl shadow-sm hover:bg-slate-50">PDF</button>
                   </div>
@@ -265,8 +264,8 @@ export default function Settings() {
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right">
-                       <div className="text-sm font-extrabold text-slate-50 mb-0.5">$499.00</div>
-                       <div className="text-[10px] font-black text-slate-300 uppercase">Paid</div>
+                      <div className="text-sm font-extrabold text-slate-50 mb-0.5">$499.00</div>
+                      <div className="text-[10px] font-black text-slate-300 uppercase">Paid</div>
                     </div>
                     <button className="bg-white text-slate-700 font-black text-xs px-4 py-2 rounded-xl shadow-sm hover:bg-slate-50">PDF</button>
                   </div>
@@ -280,7 +279,7 @@ export default function Settings() {
           <div className="bg-white rounded-2xl p-8 shadow-[0_1px_3px_rgb(0,0,0,0.02)] border border-slate-100 w-full max-w-4xl">
             <h2 className="text-lg font-black text-slate-800 mb-1">White Label & Domain Setup</h2>
             <p className="text-xs font-medium text-slate-500 mb-6">Customize the system workspace to match your own brand name and host it on your custom domain URL hostname.</p>
-            
+
             <div className="space-y-6">
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Custom Domain Hostname</label>
@@ -290,7 +289,7 @@ export default function Settings() {
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Login Screen Welcome Header Title</label>
                 <input type="text" defaultValue="Hero Logistics Operate System" className="w-full px-4 py-3 bg-white border border-slate-200 text-sm font-bold rounded-xl focus:outline-none focus:border-[#FFD400] text-slate-800" />
               </div>
-              
+
               <div className="pt-2">
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Brand Theme Options</label>
                 <div className="bg-slate-600 rounded-xl p-5 flex justify-between items-center text-white">
@@ -315,7 +314,7 @@ export default function Settings() {
           <div className="bg-white rounded-2xl p-8 shadow-[0_1px_3px_rgb(0,0,0,0.02)] border border-slate-100 w-full max-w-4xl">
             <h2 className="text-lg font-black text-slate-800 mb-1">Logistics Niche Configurations</h2>
             <p className="text-xs font-medium text-slate-500 mb-6">Configure active niches. Toggling off a niche hides related fields and tables across all dispatch dashboards.</p>
-            
+
             <div className="space-y-4 mb-6">
               <div className="bg-slate-600 rounded-xl p-5 flex justify-between items-center text-white">
                 <div>
@@ -358,7 +357,7 @@ export default function Settings() {
         {activeTab === 'GPS Providers' && (
           <div className="bg-white rounded-2xl p-8 shadow-[0_1px_3px_rgb(0,0,0,0.02)] border border-slate-100 w-full">
             <h2 className="text-lg font-black text-slate-800 mb-6">GPS Providers & ELD Integrations</h2>
-            
+
             <div className="space-y-4">
               <div className="border border-slate-200 rounded-2xl p-6 flex justify-between items-center bg-white shadow-sm">
                 <div>
@@ -407,7 +406,7 @@ export default function Settings() {
         {activeTab === 'Accounting Integration' && (
           <div className="bg-white rounded-2xl p-8 shadow-[0_1px_3px_rgb(0,0,0,0.02)] border border-slate-100 w-full">
             <h2 className="text-lg font-black text-slate-800 mb-6">Cloud Accounting Integrations</h2>
-            
+
             <div className="space-y-4">
               <div className="border border-slate-200 rounded-2xl p-6 flex justify-between items-center bg-white shadow-sm">
                 <div>
@@ -442,7 +441,7 @@ export default function Settings() {
         {activeTab === 'Notification Templates' && (
           <div className="bg-white rounded-2xl p-8 shadow-[0_1px_3px_rgb(0,0,0,0.02)] border border-slate-100 w-full">
             <h2 className="text-lg font-black text-slate-800 mb-6">System SMS & Email Notification Templates</h2>
-            
+
             <div className="space-y-4">
               <div className="border border-slate-200 rounded-2xl p-6 bg-white shadow-sm">
                 <div className="flex justify-between items-start mb-2">
@@ -487,7 +486,7 @@ export default function Settings() {
               <div className="flex items-center gap-3">
                 <div className="flex items-center bg-slate-100 p-0.5 rounded-xl">
                   {['COMPACT', 'DEFAULT', 'RELAXED'].map(view => (
-                    <button 
+                    <button
                       key={view}
                       className={`px-4 py-2 rounded-xl text-xs font-black tracking-wide transition-colors ${view === 'DEFAULT' ? 'bg-[#FFD400] text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
                     >
@@ -500,7 +499,7 @@ export default function Settings() {
                 </button>
               </div>
             </div>
-            
+
             <div className="border border-slate-200 rounded-2xl overflow-hidden">
               <table className="w-full text-left border-collapse">
                 <thead>
