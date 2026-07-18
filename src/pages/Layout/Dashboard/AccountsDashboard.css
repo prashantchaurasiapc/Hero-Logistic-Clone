@@ -518,6 +518,7 @@
 .quick-actions-section {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 16px;
   margin-bottom: 32px;
 }
@@ -563,6 +564,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-bottom: 8px;
 }
 
@@ -665,4 +668,15 @@
   .warehouse-header { flex-direction: column; gap: 16px; }
   .zone-cards { flex-direction: column; width: 100%; }
   .dashboard-row { flex-direction: column; }
+}
+
+.columns-dropdown-panel {
+  right: 0;
+}
+
+@media (max-width: 768px) {
+  .columns-dropdown-panel {
+    right: auto !important;
+    left: 0 !important;
+  }
 }

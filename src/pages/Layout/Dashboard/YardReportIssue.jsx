@@ -127,7 +127,7 @@ export default function YardReportIssue() {
   };
 
   return (
-    <div className="customer-dashboard" style={{ height: 'calc(100vh - 125px)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflow: 'hidden', padding: 0, width: '100%', maxWidth: 'none', fontFamily: "'Outfit', 'Inter', sans-serif" }}>
+    <div className="customer-dashboard yard-scan-in-wrapper">
 
       {/* Header Panel */}
       <div className="customer-header-container" style={{ flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px' }}>
@@ -141,56 +141,29 @@ export default function YardReportIssue() {
       </div>
 
       {/* Main Content Area */}
-      <div style={{ flex: 1, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', minHeight: 0, width: '100%', overflowY: 'auto' }}>
+      <div className="yard-main-content">
 
         {/* Full width container box */}
-        <div style={{
-          backgroundColor: '#ffffff',
-          borderRadius: 0,
-          padding: '24px 20px',
-          width: '100%',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
-          borderTop: '1px solid #e2e8f0',
-          borderBottom: 'none',
-          borderLeft: 'none',
-          borderRight: 'none',
-          textAlign: 'left'
-        }}>
+        <div className="yard-container-box">
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: '24px', alignItems: 'start' }}>
+          <div className="yard-grid" style={{ alignItems: 'start' }}>
 
             {/* Left Card: Form */}
-            <div style={{
-              backgroundColor: '#ffffff',
-              border: '1px solid #e2e8f0',
-              borderRadius: 16,
-              padding: '24px 20px',
-              boxSizing: 'border-box'
-            }}>
+            <div className="yard-card">
               <h2 style={{ fontSize: 14.5, fontWeight: '800', color: '#0f172a', margin: '0 0 20px 0' }}>Log Safety Inspection Report</h2>
 
               <form onSubmit={handleFormSubmit}>
 
                 {/* Issue Category */}
-                <div style={{ marginBottom: 16 }}>
-                  <label style={{ fontSize: 10.5, fontWeight: '800', color: '#64748b', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>
+                <div className="yard-form-group">
+                  <label className="yard-form-label">
                     REPORT ISSUE CATEGORY
                   </label>
                   <select
                     value={issueCategory}
                     onChange={(e) => setIssueCategory(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '12px 16px',
-                      borderRadius: 12,
-                      border: '1.5px solid #ffcc00',
-                      fontSize: 13,
-                      fontWeight: '600',
-                      outline: 'none',
-                      color: '#0f172a',
-                      backgroundColor: '#ffffff',
-                      boxSizing: 'border-box'
-                    }}
+                    className="yard-form-input"
+                    style={{ border: '1.5px solid #ffcc00', fontWeight: '600' }}
                   >
                     <option value="Container Damage Report">Container Damage Report</option>
                     <option value="Missing Security tools / chains">Missing Security tools / chains</option>
@@ -198,8 +171,8 @@ export default function YardReportIssue() {
                 </div>
 
                 {/* Trailer / Container ID */}
-                <div style={{ marginBottom: 16 }}>
-                  <label style={{ fontSize: 10.5, fontWeight: '800', color: '#64748b', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>
+                <div className="yard-form-group">
+                  <label className="yard-form-label">
                     TRAILER CONTAINER ID
                   </label>
                   <input
@@ -207,24 +180,13 @@ export default function YardReportIssue() {
                     placeholder="e.g. TR-9410"
                     value={trailerId}
                     onChange={(e) => setTrailerId(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '12px 16px',
-                      borderRadius: 12,
-                      border: '1px solid #cbd5e1',
-                      fontSize: 13,
-                      fontWeight: '500',
-                      outline: 'none',
-                      color: '#0f172a',
-                      backgroundColor: '#ffffff',
-                      boxSizing: 'border-box'
-                    }}
+                    className="yard-form-input"
                   />
                 </div>
 
                 {/* Report Details Description */}
-                <div style={{ marginBottom: 16 }}>
-                  <label style={{ fontSize: 10.5, fontWeight: '800', color: '#64748b', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>
+                <div className="yard-form-group">
+                  <label className="yard-form-label">
                     REPORT DETAILS DESCRIPTION
                   </label>
                   <input
@@ -232,41 +194,20 @@ export default function YardReportIssue() {
                     placeholder="e.g. Door latch seal ripped"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '12px 16px',
-                      borderRadius: 12,
-                      border: '1px solid #cbd5e1',
-                      fontSize: 13,
-                      fontWeight: '500',
-                      outline: 'none',
-                      color: '#0f172a',
-                      backgroundColor: '#ffffff',
-                      boxSizing: 'border-box'
-                    }}
+                    className="yard-form-input"
                   />
                 </div>
 
                 {/* Issue Severity */}
-                <div style={{ marginBottom: 16 }}>
-                  <label style={{ fontSize: 10.5, fontWeight: '800', color: '#64748b', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>
+                <div className="yard-form-group">
+                  <label className="yard-form-label">
                     ISSUE SEVERITY
                   </label>
                   <select
                     value={severity}
                     onChange={(e) => setSeverity(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '12px 16px',
-                      borderRadius: 12,
-                      border: '1px solid #cbd5e1',
-                      fontSize: 13,
-                      fontWeight: '600',
-                      outline: 'none',
-                      color: '#0f172a',
-                      backgroundColor: '#ffffff',
-                      boxSizing: 'border-box'
-                    }}
+                    className="yard-form-input"
+                    style={{ fontWeight: '600' }}
                   >
                     <option value="High (Immediate Ground)">High (Immediate Ground)</option>
                     <option value="Medium (Requires repair)">Medium (Requires repair)</option>
@@ -275,8 +216,8 @@ export default function YardReportIssue() {
                 </div>
 
                 {/* Inspection Checklist */}
-                <div style={{ marginBottom: 20 }}>
-                  <label style={{ fontSize: 10.5, fontWeight: '800', color: '#64748b', letterSpacing: '0.5px', display: 'block', marginBottom: 8 }}>
+                <div className="yard-form-group" style={{ marginBottom: 20 }}>
+                  <label className="yard-form-label" style={{ marginBottom: 8 }}>
                     INSPECTION CHECKLIST
                   </label>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -295,8 +236,8 @@ export default function YardReportIssue() {
                 </div>
 
                 {/* File Upload zone */}
-                <div style={{ marginBottom: 24 }}>
-                  <label style={{ fontSize: 10.5, fontWeight: '800', color: '#64748b', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>
+                <div className="yard-form-group" style={{ marginBottom: 24 }}>
+                  <label className="yard-form-label">
                     UPLOAD INSPECTIONS PHOTO EVIDENCE
                   </label>
                   <div style={{
@@ -319,48 +260,19 @@ export default function YardReportIssue() {
                 </div>
 
                 {/* Submit Buttons */}
-                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                <div className="yard-buttons-row">
                   <button
                     type="button"
                     onClick={handleReportMissingItem}
-                    onMouseEnter={() => setHoverBtn('missing-btn')}
-                    onMouseLeave={() => setHoverBtn(null)}
-                    style={{
-                      backgroundColor: '#ffffff',
-                      border: hoverBtn === 'missing-btn' ? '2.5px solid #000000' : '2px solid #0f172a',
-                      borderRadius: 12,
-                      padding: '12px 18px',
-                      fontSize: 13,
-                      color: '#0f172a',
-                      fontWeight: '800',
-                      cursor: 'pointer',
-                      outline: 'none',
-                      boxSizing: 'border-box',
-                      transition: 'all 0.15s ease'
-                    }}
+                    className="yard-btn-secondary"
+                    style={{ border: '2px solid #0f172a', color: '#0f172a' }}
                   >
                     Report Missing Item
                   </button>
 
                   <button
                     type="submit"
-                    onMouseEnter={() => setHoverBtn('submit-btn')}
-                    onMouseLeave={() => setHoverBtn(null)}
-                    style={{
-                      flex: 1,
-                      backgroundColor: '#ffcc00',
-                      color: '#000000',
-                      border: hoverBtn === 'submit-btn' ? '2px solid #000000' : '1px solid transparent',
-                      borderRadius: 12,
-                      padding: '12px 20px',
-                      fontSize: 13,
-                      fontWeight: '800',
-                      cursor: 'pointer',
-                      outline: 'none',
-                      boxShadow: '0 2px 4px rgba(255, 204, 0, 0.15)',
-                      transition: 'all 0.15s ease',
-                      boxSizing: 'border-box'
-                    }}
+                    className="yard-btn-primary"
                   >
                     Submit Inspection
                   </button>
@@ -370,13 +282,7 @@ export default function YardReportIssue() {
             </div>
 
             {/* Right Card: Active Issues */}
-            <div style={{
-              backgroundColor: '#ffffff',
-              border: '1px solid #e2e8f0',
-              borderRadius: 16,
-              padding: '24px 20px',
-              boxSizing: 'border-box'
-            }}>
+            <div className="yard-card">
               <h2 style={{ fontSize: 14.5, fontWeight: '800', color: '#0f172a', margin: '0 0 20px 0' }}>Active Safety Issues Index</h2>
 
               <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -391,7 +297,9 @@ export default function YardReportIssue() {
                         borderBottom: idx === issues.length - 1 ? 'none' : '1px solid #e2e8f0',
                         display: 'flex',
                         justifyContent: 'space-between',
-                        alignItems: 'center'
+                        alignItems: 'center',
+                        flexWrap: 'wrap',
+                        gap: 12
                       }}
                     >
                       <div style={{ textAlign: 'left', flex: 1, paddingRight: 16 }}>
@@ -463,21 +371,11 @@ export default function YardReportIssue() {
 
       {/* Floating Validation Warning Alert */}
       {validationAlert && (
-        <div style={{
-          position: 'fixed',
+        <div className="yard-toast-popup" style={{
           top: 30,
-          right: 32,
+          bottom: 'auto',
           backgroundColor: '#fef2f2',
-          border: '1px solid #fee2e2',
-          borderRadius: 12,
-          padding: '14px 20px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          zIndex: 3000,
-          boxShadow: '0 10px 25px -5px rgba(239, 68, 68, 0.1)',
-          maxWidth: 420,
-          textAlign: 'left'
+          border: '1px solid #fee2e2'
         }}>
           <AlertCircleIcon />
           <span style={{ fontSize: 13, fontWeight: '700', color: '#991b1b', flex: 1 }}>
@@ -494,22 +392,7 @@ export default function YardReportIssue() {
 
       {/* Toast Notification */}
       {toastMessage && (
-        <div style={{
-          position: 'fixed',
-          bottom: 30,
-          right: 32,
-          backgroundColor: '#eff6ff',
-          border: '1px solid #bfdbfe',
-          borderRadius: 12,
-          padding: '14px 20px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          zIndex: 2000,
-          boxShadow: '0 10px 25px -5px rgba(0,0,0,0.05)',
-          maxWidth: 420,
-          textAlign: 'left'
-        }}>
+        <div className="yard-toast-popup">
           <div style={{ backgroundColor: '#3b82f6', color: '#ffffff', width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>✓</div>
           <span style={{ fontSize: 13, fontWeight: '600', color: '#1e40af', flex: 1 }}>{toastMessage}</span>
           <button onClick={() => setToastMessage('')} style={{ background: 'none', border: 'none', fontSize: 16, color: '#64748b', cursor: 'pointer', marginLeft: 8 }}>✕</button>
@@ -534,7 +417,7 @@ export default function YardReportIssue() {
           <div style={{
             backgroundColor: '#ffffff',
             borderRadius: 24,
-            width: '100%',
+            width: 'calc(100% - 32px)',
             maxWidth: 480,
             boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
             border: '1px solid #e2e8f0',
@@ -559,7 +442,7 @@ export default function YardReportIssue() {
             {/* Modal Content */}
             <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 16 }}>
                 {/* Report Type */}
                 <div style={{ border: '1px solid #e2e8f0', borderRadius: 12, padding: '12px 16px' }}>
                   <span style={{ fontSize: 9.5, fontWeight: '800', color: '#64748b', display: 'block', marginBottom: 4, letterSpacing: '0.5px' }}>

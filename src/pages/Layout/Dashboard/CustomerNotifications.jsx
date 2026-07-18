@@ -147,7 +147,7 @@ const CustomerNotifications = () => {
   };
 
   return (
-    <div className="customer-dashboard" style={{ height: 'calc(100vh - 125px)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflow: 'hidden', padding: '16px 20px', width: '100%', maxWidth: 'none' }}>
+    <div className="customer-dashboard documents-wrapper" style={{ padding: '16px 20px', width: '100%', maxWidth: 'none' }}>
       {/* Header Panel */}
       <div className="customer-header-container" style={{ flexShrink: 0 }}>
         <div>
@@ -431,7 +431,8 @@ const S = {
     cursor: 'pointer',
     transition: 'all 0.15s ease',
     outline: 'none',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
+    whiteSpace: 'nowrap'
   },
   listWrapper: {
     flex: 1,
@@ -458,16 +459,19 @@ const S = {
     justifyContent: 'space-between',
     alignItems: 'center',
     transition: 'all 0.2s ease',
-    gap: 16
+    gap: 16,
+    flexWrap: 'wrap'
   },
   notifLeft: {
     display: 'flex',
     alignItems: 'flex-start',
     gap: 12,
-    flex: 1
+    flex: 1,
+    minWidth: 250
   },
   badgeContainer: {
-    marginTop: 2
+    marginTop: 2,
+    flexShrink: 0
   },
   badge: {
     display: 'inline-block',
@@ -476,7 +480,8 @@ const S = {
     padding: '3px 8px',
     borderRadius: 20,
     textTransform: 'capitalize',
-    letterSpacing: '0.2px'
+    letterSpacing: '0.2px',
+    whiteSpace: 'nowrap'
   },
   textContainer: {
     display: 'flex',
@@ -521,7 +526,8 @@ const S = {
     cursor: 'pointer',
     transition: 'all 0.15s ease',
     outline: 'none',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
+    whiteSpace: 'nowrap'
   },
   deleteBtn: {
     backgroundColor: '#ffffff',

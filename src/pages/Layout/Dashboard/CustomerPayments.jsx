@@ -44,12 +44,12 @@ const CustomerPayments = () => {
 
   // Column Visibility (Default: Amount Settled and Payment Date visible)
   const [visibleColumns, setVisibleColumns] = useState({
-    paymentId: false,
-    invoiceId: false,
+    paymentId: true,
+    invoiceId: true,
     amount: true,
     date: true,
-    status: false,
-    actions: false
+    status: true,
+    actions: true
   });
 
   const columnsList = [
@@ -207,7 +207,7 @@ Status: Cleared & Reconciled`;
   };
 
   return (
-    <div className="customer-dashboard" style={{ height: 'calc(100vh - 125px)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflow: 'hidden' }}>
+    <div className="customer-dashboard documents-wrapper">
       {/* Header Container */}
       <div className="customer-header-container" style={{ flexShrink: 0 }}>
         <div>
@@ -221,7 +221,7 @@ Status: Cleared & Reconciled`;
       <div style={S.mainCard}>
         <div style={S.cardHeader}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
               <h2 style={S.cardTitle}>Payments Center</h2>
               
               {/* Selected Pills (CSV Export) - Only shows when at least 1 checked */}
@@ -307,7 +307,7 @@ Status: Cleared & Reconciled`;
                 {showColumnsDropdown && (
                   <>
                     <div style={S.dropdownOverlay} onClick={() => setShowColumnsDropdown(false)} />
-                    <div style={S.dropdownPanel}>
+                    <div className="columns-dropdown-panel" style={S.dropdownPanel}>
                       <div style={S.dropdownTitle}>COLUMN VISIBILITY</div>
                       {columnsList.map((col) => (
                         <label key={col.key} style={S.dropdownLabel}>
@@ -489,6 +489,8 @@ const S = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 16,
     marginBottom: 20
   },
   cardTitle: {
@@ -512,12 +514,14 @@ const S = {
   topActionRow: {
     display: 'flex',
     gap: 12,
-    alignItems: 'center'
+    alignItems: 'center',
+    flexWrap: 'wrap'
   },
   bottomControlsRow: {
     display: 'flex',
     gap: 12,
-    alignItems: 'center'
+    alignItems: 'center',
+    flexWrap: 'wrap'
   },
   reminderBtn: {
     backgroundColor: '#ffffff',
@@ -558,7 +562,8 @@ const S = {
     fontSize: 11,
     fontWeight: '800',
     color: '#b45309',
-    letterSpacing: '0.5px'
+    letterSpacing: '0.5px',
+    whiteSpace: 'nowrap'
   },
   csvExportBtn: {
     backgroundColor: 'transparent',
@@ -571,7 +576,8 @@ const S = {
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
-    transition: 'all 0.15s ease'
+    transition: 'all 0.15s ease',
+    whiteSpace: 'nowrap'
   },
   densityPill: {
     display: 'flex',
@@ -650,12 +656,14 @@ const S = {
     backgroundColor: '#ffffff',
     borderRadius: 16,
     border: '1px solid #e2e8f0',
-    overflow: 'hidden'
+    overflowX: 'auto',
+    WebkitOverflowScrolling: 'touch'
   },
   table: {
     width: '100%',
     borderCollapse: 'collapse',
-    textAlign: 'left'
+    textAlign: 'left',
+    whiteSpace: 'nowrap'
   },
   theadRow: {
     borderBottom: '1px solid #e2e8f0',
@@ -687,7 +695,8 @@ const S = {
     cursor: 'pointer',
     transition: 'all 0.15s ease',
     outline: 'none',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
+    whiteSpace: 'nowrap'
   },
   modalOverlay: {
     position: 'fixed',

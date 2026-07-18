@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   Plus, Bell, ChevronDown, Check, Download, FileText,
   TrendingUp, Users, DollarSign, Target
 } from 'lucide-react';
@@ -38,11 +38,11 @@ export default function SalesReports() {
   const tabs = ['LEADS', 'CONVERSIONS', 'REVENUE', 'DEMOS', 'TRIALS', 'PROPOSALS', 'REP PERFORMANCE', 'ACTIVITIES'];
 
   // --- Computed Metrics for LEADS tab ---
-  const newLeadsCount    = leads.filter(l => l.stage === 'New Lead').length;
-  const activePipeline   = leads.filter(l => !['Won','Lost'].includes(l.stage)).length;
-  const wonCount         = leads.filter(l => l.stage === 'Won').length;
-  const lostCount        = leads.filter(l => l.stage === 'Lost').length;
-  const totalRevenue     = leads.reduce((s, l) => s + (l.revenue || 0), 0);
+  const newLeadsCount = leads.filter(l => l.stage === 'New Lead').length;
+  const activePipeline = leads.filter(l => !['Won', 'Lost'].includes(l.stage)).length;
+  const wonCount = leads.filter(l => l.stage === 'Won').length;
+  const lostCount = leads.filter(l => l.stage === 'Lost').length;
+  const totalRevenue = leads.reduce((s, l) => s + (l.revenue || 0), 0);
 
   // --- Stage badge styles ---
   const getStageStyle = (stage) => {
@@ -55,7 +55,7 @@ export default function SalesReports() {
   const repStats = repsList.map(rep => {
     const repLeads = leads.filter(l => l.rep === rep);
     const won = repLeads.filter(l => l.stage === 'Won').length;
-    const pipeline = repLeads.filter(l => !['Won','Lost'].includes(l.stage)).length;
+    const pipeline = repLeads.filter(l => !['Won', 'Lost'].includes(l.stage)).length;
     const rev = repLeads.reduce((s, l) => s + (l.revenue || 0), 0);
     return { rep, total: repLeads.length, won, pipeline, revenue: rev };
   });
@@ -91,7 +91,7 @@ export default function SalesReports() {
       </div>
 
       {/* Main Report Panel */}
-      <div className="flex-grow bg-white border border-slate-200/80 rounded-2xl shadow-xs flex flex-col overflow-hidden min-h-0">
+      <div className="shrink-0 bg-white border border-slate-200/80 rounded-2xl shadow-xs flex flex-col overflow-hidden">
 
         {/* Tab Bar */}
         <div className="flex items-center gap-2 px-6 pt-5 pb-4 border-b border-slate-100 overflow-x-auto scrollbar-none shrink-0">
@@ -99,11 +99,10 @@ export default function SalesReports() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 rounded-[8px] text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap border ${
-                activeTab === tab
+              className={`px-4 py-2 rounded-[8px] text-[11px] font-bold uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap border ${activeTab === tab
                   ? 'bg-[#ffcc00] text-slate-900 border-[#ffcc00]'
                   : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
-              }`}
+                }`}
             >
               {tab}
             </button>
@@ -111,11 +110,11 @@ export default function SalesReports() {
         </div>
 
         {/* Tab Content */}
-        <div className="flex-grow overflow-y-auto flex flex-col min-h-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <div className="flex flex-col">
 
           {/* ============ LEADS TAB ============ */}
           {activeTab === 'LEADS' && (
-            <div className="flex-grow flex flex-col px-6 py-5 space-y-5">
+            <div className="flex flex-col px-6 py-5 space-y-5">
               {/* Sub Header */}
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
@@ -147,8 +146,8 @@ export default function SalesReports() {
               </div>
 
               {/* Leads Table */}
-              <div className="flex-grow overflow-auto border border-slate-200 rounded-xl [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                <table className="w-full text-left border-collapse">
+              <div className="overflow-x-auto border border-slate-200 rounded-xl [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                <table className="w-full text-left border-collapse whitespace-nowrap">
                   <thead>
                     <tr className="bg-slate-50 text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-200">
                       <th className="py-3 px-4">Company</th>
@@ -184,7 +183,7 @@ export default function SalesReports() {
 
           {/* ============ CONVERSIONS TAB ============ */}
           {activeTab === 'CONVERSIONS' && (
-            <div className="flex-grow px-6 py-5 space-y-6 flex flex-col">
+            <div className="px-6 py-5 space-y-6 flex flex-col">
               <span className="text-[12px] font-black text-slate-700 uppercase tracking-widest">
                 CONVERSIONS FUNNEL REPORT
               </span>
@@ -199,7 +198,7 @@ export default function SalesReports() {
                     </div>
                   ))}
                 </div>
-                
+
                 {/* Bars */}
                 {(() => {
                   const data = [
@@ -239,7 +238,7 @@ export default function SalesReports() {
 
           {/* ============ REVENUE TAB ============ */}
           {activeTab === 'REVENUE' && (
-            <div className="flex-grow px-6 py-5 space-y-6 flex flex-col">
+            <div className="px-6 py-5 space-y-6 flex flex-col">
               <span className="text-[12px] font-black text-slate-700 uppercase tracking-widest">
                 REVENUE ANALYTICS REPORT
               </span>
@@ -269,7 +268,7 @@ export default function SalesReports() {
                     </div>
                   ))}
                 </div>
-                
+
                 {/* Bars */}
                 {(() => {
                   const data = [
@@ -295,7 +294,7 @@ export default function SalesReports() {
 
           {/* ============ DEMOS TAB ============ */}
           {activeTab === 'DEMOS' && (
-            <div className="flex-grow px-6 py-5 space-y-6 flex flex-col">
+            <div className="px-6 py-5 space-y-6 flex flex-col">
               <span className="text-[12px] font-black text-slate-700 uppercase tracking-widest">
                 DEMO BOOKINGS REPORT
               </span>
@@ -313,8 +312,8 @@ export default function SalesReports() {
                   <div className="text-[11px] font-black text-slate-500 uppercase tracking-widest mt-1">COMPLETED</div>
                 </div>
               </div>
-              <div className="border border-slate-200 rounded-xl overflow-hidden mt-2">
-                <table className="w-full text-left border-collapse">
+              <div className="border border-slate-200 rounded-xl overflow-x-auto mt-2">
+                <table className="w-full text-left border-collapse whitespace-nowrap">
                   <thead>
                     <tr className="bg-slate-50 text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-200">
                       <th className="py-4 px-5">Company</th>
@@ -333,11 +332,10 @@ export default function SalesReports() {
                         <td className="py-4 px-5 font-mono text-slate-500">{d.date}</td>
                         <td className="py-4 px-5 font-mono text-slate-500">{d.time}</td>
                         <td className="py-4 px-5">
-                          <span className={`px-2.5 py-1 rounded-[6px] text-[9px] font-black uppercase tracking-wider leading-none ${
-                            d.status === 'Completed' ? 'text-emerald-600 bg-emerald-50' :
-                            d.status === 'Cancelled' ? 'text-rose-600 bg-rose-50' :
-                            'text-[#D97706] bg-amber-50'
-                          }`}>{d.status}</span>
+                          <span className={`px-2.5 py-1 rounded-[6px] text-[9px] font-black uppercase tracking-wider leading-none ${d.status === 'Completed' ? 'text-emerald-600 bg-emerald-50' :
+                              d.status === 'Cancelled' ? 'text-rose-600 bg-rose-50' :
+                                'text-[#D97706] bg-amber-50'
+                            }`}>{d.status}</span>
                         </td>
                         <td className="py-4 px-5 text-slate-400">—</td>
                       </tr>
@@ -350,7 +348,7 @@ export default function SalesReports() {
 
           {/* ============ TRIALS TAB ============ */}
           {activeTab === 'TRIALS' && (
-            <div className="flex-grow px-6 py-5 space-y-6 flex flex-col">
+            <div className="px-6 py-5 space-y-6 flex flex-col">
               <span className="text-[12px] font-black text-slate-700 uppercase tracking-widest">
                 TRIAL WORKSPACES REPORT
               </span>
@@ -399,7 +397,7 @@ export default function SalesReports() {
 
           {/* ============ PROPOSALS TAB ============ */}
           {activeTab === 'PROPOSALS' && (
-            <div className="flex-grow px-6 py-5 space-y-5">
+            <div className="px-6 py-5 space-y-5">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
                   Licensing Proposals Registry
@@ -418,12 +416,12 @@ export default function SalesReports() {
                   <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Accepted</div>
                 </div>
                 <div className="border border-slate-200 rounded-xl p-4 text-center">
-                  <div className="text-xl font-black text-slate-600">${proposals.reduce((s,p) => s+(p.total||0), 0).toLocaleString()}</div>
+                  <div className="text-xl font-black text-slate-600">${proposals.reduce((s, p) => s + (p.total || 0), 0).toLocaleString()}</div>
                   <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Total Value</div>
                 </div>
               </div>
-              <div className="border border-slate-200 rounded-xl overflow-hidden">
-                <table className="w-full text-left border-collapse">
+              <div className="border border-slate-200 rounded-xl overflow-x-auto">
+                <table className="w-full text-left border-collapse whitespace-nowrap">
                   <thead>
                     <tr className="bg-slate-50 text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-200">
                       <th className="py-3 px-4">Company</th>
@@ -438,14 +436,13 @@ export default function SalesReports() {
                       <tr key={p.id} className="hover:bg-slate-50/50">
                         <td className="py-3 px-4 font-extrabold text-slate-900">{p.company}</td>
                         <td className="py-3 px-4 text-right font-black text-[#D97706] font-mono">${Number(p.value).toLocaleString()}/mo</td>
-                        <td className="py-3 px-4 text-right font-black text-slate-700 font-mono">${Number(p.total||0).toLocaleString()}</td>
+                        <td className="py-3 px-4 text-right font-black text-slate-700 font-mono">${Number(p.total || 0).toLocaleString()}</td>
                         <td className="py-3 px-4 text-slate-500 font-semibold">{p.validity}</td>
                         <td className="py-3 px-4">
-                          <span className={`px-2 py-0.5 rounded text-[8.5px] font-black uppercase tracking-wider leading-none ${
-                            p.status === 'Accepted' ? 'bg-emerald-50 border border-emerald-200 text-emerald-700' :
-                            p.status === 'Sent' ? 'bg-amber-50 border border-amber-200 text-amber-700' :
-                            'bg-slate-100 border border-slate-200 text-slate-600'
-                          }`}>{p.status}</span>
+                          <span className={`px-2 py-0.5 rounded text-[8.5px] font-black uppercase tracking-wider leading-none ${p.status === 'Accepted' ? 'bg-emerald-50 border border-emerald-200 text-emerald-700' :
+                              p.status === 'Sent' ? 'bg-amber-50 border border-amber-200 text-amber-700' :
+                                'bg-slate-100 border border-slate-200 text-slate-600'
+                            }`}>{p.status}</span>
                         </td>
                       </tr>
                     ))}
@@ -457,7 +454,7 @@ export default function SalesReports() {
 
           {/* ============ REP PERFORMANCE TAB ============ */}
           {activeTab === 'REP PERFORMANCE' && (
-            <div className="flex-grow px-6 py-5 space-y-5">
+            <div className="px-6 py-5 space-y-5">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
                   Account Executive Performance Scorecard
@@ -466,8 +463,8 @@ export default function SalesReports() {
                   {repsList.length} Active Reps
                 </span>
               </div>
-              <div className="border border-slate-200 rounded-xl overflow-hidden">
-                <table className="w-full text-left border-collapse">
+              <div className="border border-slate-200 rounded-xl overflow-x-auto">
+                <table className="w-full text-left border-collapse whitespace-nowrap">
                   <thead>
                     <tr className="bg-slate-50 text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-200">
                       <th className="py-3 px-4">Account Executive</th>
@@ -495,7 +492,7 @@ export default function SalesReports() {
 
           {/* ============ ACTIVITIES TAB ============ */}
           {activeTab === 'ACTIVITIES' && (
-            <div className="flex-grow px-6 py-5 space-y-5">
+            <div className="px-6 py-5 space-y-5">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
                   Sales Activity Summary

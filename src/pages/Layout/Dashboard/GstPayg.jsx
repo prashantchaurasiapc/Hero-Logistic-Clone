@@ -161,7 +161,12 @@ const S = {
     fontFamily: "'Outfit', 'Inter', sans-serif"
   },
   header: {
-    marginBottom: 24
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+    flexWrap: 'wrap',
+    gap: 16
   },
   pageTitle: {
     fontSize: 26,
@@ -184,12 +189,15 @@ const S = {
     padding: '16px 24px',
     border: '1px solid #e2e8f0',
     marginBottom: 24,
-    boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
+    boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
+    flexWrap: 'wrap',
+    gap: 16
   },
   quarterGroup: {
     display: 'flex',
     gap: 12,
-    alignItems: 'center'
+    alignItems: 'center',
+    flexWrap: 'wrap'
   },
   quarterBtn: {
     backgroundColor: '#ffffff',
@@ -215,7 +223,7 @@ const S = {
   },
   cardsGrid: {
     display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
     gap: 24
   },
   card: {

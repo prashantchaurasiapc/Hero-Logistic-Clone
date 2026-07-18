@@ -107,7 +107,7 @@ const DownloadIcon = () => (
 
 // Custom Checkbox Component
 const CustomCheckbox = ({ checked, onChange }) => (
-  <div 
+  <div
     onClick={onChange}
     style={{
       width: 16,
@@ -134,7 +134,7 @@ const CustomCheckbox = ({ checked, onChange }) => (
 
 // Toggle Switch Component
 const ToggleSwitch = ({ checked, onChange }) => (
-  <div 
+  <div
     onClick={onChange}
     style={{
       width: 40,
@@ -149,7 +149,7 @@ const ToggleSwitch = ({ checked, onChange }) => (
       boxSizing: 'border-box'
     }}
   >
-    <div 
+    <div
       style={{
         width: 18,
         height: 18,
@@ -286,7 +286,7 @@ const CustomerSettings = () => {
 
   // Audit Logs Select Row
   const handleSelectLog = (id) => {
-    setSelectedLogIds(prev => 
+    setSelectedLogIds(prev =>
       prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
     );
   };
@@ -313,7 +313,7 @@ const CustomerSettings = () => {
     if (visibleLogCols.authStatus) headers.push('Auth Status');
 
     const useFallback = headers.length === 0;
-    const finalHeaders = useFallback 
+    const finalHeaders = useFallback
       ? ['Timestamp', 'User Node', 'Event Action Description', 'IP Address', 'Auth Status']
       : headers;
 
@@ -363,7 +363,7 @@ const CustomerSettings = () => {
         return (
           <form onSubmit={(e) => handleSaveSettings(e, 'Profile settings saved successfully.')} style={S.formCard}>
             <h2 style={S.panelTitle}>Company Profile Settings</h2>
-            
+
             <div style={S.fieldGroup}>
               <label style={S.fieldLabel}>REGISTERED COMPANY NAME</label>
               <input
@@ -432,17 +432,17 @@ const CustomerSettings = () => {
                   { id: 'orange', color: '#F97316', name: 'Orange' },
                   { id: 'blue', color: '#3B82F6', name: 'Blue' }
                 ].map((item) => (
-                  <div 
-                    key={item.id} 
-                    onClick={() => setThemeColor(item.id)} 
+                  <div
+                    key={item.id}
+                    onClick={() => setThemeColor(item.id)}
                     style={S.colorCircleWrapper}
                   >
-                    <div 
+                    <div
                       style={{
                         ...S.colorCircle,
                         backgroundColor: item.color,
-                        boxShadow: themeColor === item.id 
-                          ? `0 0 0 2.5px #ffffff, 0 0 0 5px ${item.color}` 
+                        boxShadow: themeColor === item.id
+                          ? `0 0 0 2.5px #ffffff, 0 0 0 5px ${item.color}`
                           : '0 1px 3px rgba(0,0,0,0.1)'
                       }}
                     />
@@ -462,7 +462,7 @@ const CustomerSettings = () => {
                 accept="image/*"
                 style={{ display: 'none' }}
               />
-              <div 
+              <div
                 onClick={handleUploadAreaClick}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
@@ -497,9 +497,9 @@ const CustomerSettings = () => {
                   <span style={{ ...S.hoursRowStatus, color: hoursState.monFri.open ? '#10b981' : '#ef4444' }}>
                     {hoursState.monFri.open ? 'Open' : 'Closed'}
                   </span>
-                  <ToggleSwitch 
-                    checked={hoursState.monFri.open} 
-                    onChange={() => setHoursState(prev => ({ ...prev, monFri: { ...prev.monFri, open: !prev.monFri.open } }))} 
+                  <ToggleSwitch
+                    checked={hoursState.monFri.open}
+                    onChange={() => setHoursState(prev => ({ ...prev, monFri: { ...prev.monFri, open: !prev.monFri.open } }))}
                   />
                 </div>
               </div>
@@ -514,9 +514,9 @@ const CustomerSettings = () => {
                   <span style={{ ...S.hoursRowStatus, color: hoursState.sat.open ? '#10b981' : '#ef4444' }}>
                     {hoursState.sat.open ? 'Open' : 'Closed'}
                   </span>
-                  <ToggleSwitch 
-                    checked={hoursState.sat.open} 
-                    onChange={() => setHoursState(prev => ({ ...prev, sat: { ...prev.sat, open: !prev.sat.open } }))} 
+                  <ToggleSwitch
+                    checked={hoursState.sat.open}
+                    onChange={() => setHoursState(prev => ({ ...prev, sat: { ...prev.sat, open: !prev.sat.open } }))}
                   />
                 </div>
               </div>
@@ -531,9 +531,9 @@ const CustomerSettings = () => {
                   <span style={{ ...S.hoursRowStatus, color: hoursState.sun.open ? '#10b981' : '#ef4444' }}>
                     {hoursState.sun.open ? 'Open' : 'Closed'}
                   </span>
-                  <ToggleSwitch 
-                    checked={hoursState.sun.open} 
-                    onChange={() => setHoursState(prev => ({ ...prev, sun: { ...prev.sun, open: !prev.sun.open } }))} 
+                  <ToggleSwitch
+                    checked={hoursState.sun.open}
+                    onChange={() => setHoursState(prev => ({ ...prev, sun: { ...prev.sun, open: !prev.sun.open } }))}
                   />
                 </div>
               </div>
@@ -607,8 +607,8 @@ const CustomerSettings = () => {
                         <span style={{ fontSize: 13, fontWeight: '700', color: '#ffffff' }}>{inv.amount}</span>
                         <span style={{ fontSize: 9, fontWeight: '700', color: '#cbd5e1', letterSpacing: '0.5px' }}>PAID</span>
                       </div>
-                      <button 
-                        onClick={() => triggerToast(`Downloading PDF invoice: ${inv.id}`)} 
+                      <button
+                        onClick={() => triggerToast(`Downloading PDF invoice: ${inv.id}`)}
                         style={S.invoicePdfBtn}
                       >
                         PDF
@@ -672,7 +672,7 @@ const CustomerSettings = () => {
           <form onSubmit={(e) => handleSaveSettings(e, 'Niche setup saved successfully.')} style={S.formCard}>
             <h2 style={S.panelTitle}>Logistics Niche Configurations</h2>
             <p style={S.panelSubtitle}>Configure active niches. Toggling off a niche hides related fields and tables across all dispatch dashboards.</p>
-            
+
             <div style={S.hoursRowsContainer}>
               {/* Car Carrying */}
               <div style={S.hoursRow}>
@@ -680,7 +680,7 @@ const CustomerSettings = () => {
                   <h3 style={S.hoursRowTitle}>{nichesState.carCarrying.title}</h3>
                   <p style={{ ...S.hoursRowTime, color: '#94a3b8' }}>{nichesState.carCarrying.desc}</p>
                 </div>
-                <input 
+                <input
                   type="checkbox"
                   checked={nichesState.carCarrying.checked}
                   onChange={(e) => setNichesState(prev => ({ ...prev, carCarrying: { ...prev.carCarrying, checked: e.target.checked } }))}
@@ -694,7 +694,7 @@ const CustomerSettings = () => {
                   <h3 style={S.hoursRowTitle}>{nichesState.generalFreight.title}</h3>
                   <p style={{ ...S.hoursRowTime, color: '#94a3b8' }}>{nichesState.generalFreight.desc}</p>
                 </div>
-                <input 
+                <input
                   type="checkbox"
                   checked={nichesState.generalFreight.checked}
                   onChange={(e) => setNichesState(prev => ({ ...prev, generalFreight: { ...prev.generalFreight, checked: e.target.checked } }))}
@@ -708,7 +708,7 @@ const CustomerSettings = () => {
                   <h3 style={S.hoursRowTitle}>{nichesState.dangerousGoods.title}</h3>
                   <p style={{ ...S.hoursRowTime, color: '#94a3b8' }}>{nichesState.dangerousGoods.desc}</p>
                 </div>
-                <input 
+                <input
                   type="checkbox"
                   checked={nichesState.dangerousGoods.checked}
                   onChange={(e) => setNichesState(prev => ({ ...prev, dangerousGoods: { ...prev.dangerousGoods, checked: e.target.checked } }))}
@@ -719,9 +719,9 @@ const CustomerSettings = () => {
 
             <div style={S.fieldGroup}>
               <label style={S.fieldLabel}>DEFAULT NICHE SELECTION</label>
-              <select 
-                value={defaultNiche} 
-                onChange={(e) => setDefaultNiche(e.target.value)} 
+              <select
+                value={defaultNiche}
+                onChange={(e) => setDefaultNiche(e.target.value)}
                 style={S.select}
               >
                 <option value="Car Carrying">Car Carrying</option>
@@ -739,14 +739,14 @@ const CustomerSettings = () => {
           <div style={S.gridOuterContainer}>
             <div style={S.gpsPanelCard}>
               <h2 style={S.panelTitle}>GPS Providers &amp; ELD Integrations</h2>
-              
+
               <div style={S.gpsProvidersList}>
                 {gpsProviders.map((prov) => (
                   <div key={prov.id} style={S.gpsRow}>
                     <div style={S.gpsRowLeft}>
                       <div style={S.gpsNameHeader}>
                         <h4 style={S.gpsNameText}>{prov.name}</h4>
-                        <span 
+                        <span
                           style={{
                             ...S.gpsBadge,
                             backgroundColor: prov.badgeColor,
@@ -760,14 +760,14 @@ const CustomerSettings = () => {
                     </div>
 
                     <div style={S.gpsRowRight}>
-                      <button 
+                      <button
                         onClick={() => triggerToast(`Editing key credentials for: ${prov.name}`)}
                         style={S.editApiKeyTextBtn}
                       >
                         Edit API Key
                       </button>
                       {prov.status === 'Connected' && (
-                        <button 
+                        <button
                           onClick={() => triggerToast(`${prov.name} integration link tested successfully.`)}
                           style={S.testLinkBtn}
                         >
@@ -787,14 +787,14 @@ const CustomerSettings = () => {
           <div style={S.gridOuterContainer}>
             <div style={S.gpsPanelCard}>
               <h2 style={S.panelTitle}>Cloud Accounting Integrations</h2>
-              
+
               <div style={S.gpsProvidersList}>
                 {accountingIntegrations.map((acc) => (
                   <div key={acc.id} style={S.gpsRow}>
                     <div style={S.gpsRowLeft}>
                       <div style={S.gpsNameHeader}>
                         <h4 style={S.gpsNameText}>{acc.name}</h4>
-                        <span 
+                        <span
                           style={{
                             ...S.gpsBadge,
                             backgroundColor: acc.badgeColor,
@@ -810,13 +810,13 @@ const CustomerSettings = () => {
                     <div style={S.gpsRowRight}>
                       {acc.status === 'Connected' ? (
                         <>
-                          <button 
+                          <button
                             onClick={() => triggerToast(`${acc.name} synchronization initiated.`)}
                             style={S.syncNowBtn}
                           >
                             Sync Invoices Now
                           </button>
-                          <button 
+                          <button
                             onClick={() => triggerToast(`Disconnected ${acc.name} ledger.`)}
                             style={S.disconnectBtn}
                           >
@@ -824,7 +824,7 @@ const CustomerSettings = () => {
                           </button>
                         </>
                       ) : (
-                        <button 
+                        <button
                           onClick={() => triggerToast(`Redirecting to authentication portal for: ${acc.name}`)}
                           style={S.authLinkBtn}
                         >
@@ -844,7 +844,7 @@ const CustomerSettings = () => {
           <div style={S.gridOuterContainer}>
             <div style={S.gpsPanelCard}>
               <h2 style={S.panelTitle}>System SMS &amp; Email Notification Templates</h2>
-              
+
               <div style={S.gpsProvidersList}>
                 {[
                   {
@@ -876,7 +876,7 @@ const CustomerSettings = () => {
 
                     <div style={S.gpsRowRight}>
                       <span style={S.templateTypeBadge}>{temp.type}</span>
-                      <button 
+                      <button
                         onClick={() => triggerToast(`Opening template editor for: ${temp.title}`)}
                         style={S.editApiKeyTextBtn}
                       >
@@ -931,8 +931,8 @@ const CustomerSettings = () => {
 
                   {/* Columns Selector Button */}
                   <div style={{ position: 'relative' }}>
-                    <button 
-                      onClick={() => setShowLogColsDropdown(prev => !prev)} 
+                    <button
+                      onClick={() => setShowLogColsDropdown(prev => !prev)}
                       style={{
                         ...S.columnsBtn,
                         borderColor: showLogColsDropdown ? '#ffcc00' : '#cbd5e1',
@@ -945,9 +945,9 @@ const CustomerSettings = () => {
 
                     {/* Dropdown for Columns Visibility */}
                     {showLogColsDropdown && (
-                      <div style={S.dropdownMenu}>
+                      <div className="columns-dropdown-panel" style={S.dropdownMenu}>
                         <div style={S.dropdownHeader}>COLUMN VISIBILITY</div>
-                        
+
                         <label style={S.dropdownItem}>
                           <input
                             type="checkbox"
@@ -1009,9 +1009,9 @@ const CustomerSettings = () => {
                   <thead style={S.thead}>
                     <tr>
                       <th style={{ ...S.th, ...logPadding, width: 40 }}>
-                        <CustomCheckbox 
-                          checked={auditLogs.length > 0 && selectedLogIds.length === auditLogs.length} 
-                          onChange={handleSelectAllLogs} 
+                        <CustomCheckbox
+                          checked={auditLogs.length > 0 && selectedLogIds.length === auditLogs.length}
+                          onChange={handleSelectAllLogs}
                         />
                       </th>
                       {visibleLogCols.timestamp && <th style={{ ...S.th, ...logPadding }}>TIMESTAMP</th>}
@@ -1025,18 +1025,18 @@ const CustomerSettings = () => {
                     {auditLogs.map((log) => {
                       const isChecked = selectedLogIds.includes(log.id);
                       return (
-                        <tr 
-                          key={log.id} 
-                          style={{ 
+                        <tr
+                          key={log.id}
+                          style={{
                             ...S.tr,
                             backgroundColor: isChecked ? '#fffbeb' : '#ffffff',
                             borderBottom: '1px solid #f1f5f9'
                           }}
                         >
                           <td style={{ ...S.td, ...logPadding, width: 40 }}>
-                            <CustomCheckbox 
-                              checked={isChecked} 
-                              onChange={() => handleSelectLog(log.id)} 
+                            <CustomCheckbox
+                              checked={isChecked}
+                              onChange={() => handleSelectLog(log.id)}
                             />
                           </td>
                           {visibleLogCols.timestamp && (
@@ -1086,7 +1086,7 @@ const CustomerSettings = () => {
   };
 
   return (
-    <div className="customer-dashboard" style={{ height: 'calc(100vh - 125px)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflow: 'hidden', padding: '16px 20px', width: '100%', maxWidth: 'none' }}>
+    <div className="customer-dashboard" style={{ display: 'flex', flexDirection: 'column', boxSizing: 'border-box', padding: '16px 20px', width: '100%', maxWidth: 'none', minHeight: 'calc(100vh - 125px)' }}>
       {/* Header Panel */}
       <div className="customer-header-container" style={{ flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -1149,16 +1149,16 @@ const CustomerSettings = () => {
                 </svg>
               </button>
             </div>
-            
+
             <form onSubmit={handleSupportSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
               <div style={S.modalBody}>
                 <div style={S.fieldGroup}>
                   <label style={S.fieldLabel}>SUBJECT HEADING</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={supportSubject}
                     onChange={(e) => setSupportSubject(e.target.value)}
-                    placeholder="e.g. Settings system inquiry" 
+                    placeholder="e.g. Settings system inquiry"
                     style={S.input}
                     required
                   />
@@ -1166,10 +1166,10 @@ const CustomerSettings = () => {
 
                 <div style={S.fieldGroup}>
                   <label style={S.fieldLabel}>PROBLEM DESCRIPTION</label>
-                  <textarea 
+                  <textarea
                     value={supportDescription}
                     onChange={(e) => setSupportDescription(e.target.value)}
-                    placeholder="Please provide specific details..." 
+                    placeholder="Please provide specific details..."
                     style={S.textarea}
                     required
                   />
@@ -1238,7 +1238,6 @@ const S = {
   },
   panelContainer: {
     flex: 1,
-    overflowY: 'auto',
     marginTop: 16,
     boxSizing: 'border-box'
   },
@@ -1415,7 +1414,8 @@ const S = {
   },
   colorCirclesRow: {
     display: 'flex',
-    gap: 16
+    gap: 16,
+    flexWrap: 'wrap'
   },
   colorCircleWrapper: {
     display: 'flex',
@@ -1479,7 +1479,9 @@ const S = {
     justifyContent: 'space-between',
     alignItems: 'center',
     color: '#ffffff',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
+    flexWrap: 'wrap',
+    gap: 10
   },
   hoursRowTitle: {
     fontSize: 13,
@@ -1595,7 +1597,9 @@ const S = {
     justifyContent: 'space-between',
     alignItems: 'center',
     color: '#ffffff',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
+    flexWrap: 'wrap',
+    gap: 10
   },
   invoiceRowTitle: {
     fontSize: 13,
@@ -1611,7 +1615,8 @@ const S = {
   invoiceRowRight: {
     display: 'flex',
     alignItems: 'center',
-    gap: 14
+    gap: 14,
+    flexWrap: 'wrap'
   },
   invoicePaidText: {
     fontSize: 11,
@@ -1657,7 +1662,9 @@ const S = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
+    flexWrap: 'wrap',
+    gap: 10
   },
   gpsRowLeft: {
     display: 'flex',
@@ -1690,7 +1697,8 @@ const S = {
   gpsRowRight: {
     display: 'flex',
     alignItems: 'center',
-    gap: 12
+    gap: 12,
+    flexWrap: 'wrap'
   },
   editApiKeyTextBtn: {
     background: 'none',
@@ -1841,7 +1849,6 @@ const S = {
   dropdownMenu: {
     position: 'absolute',
     top: '100%',
-    right: 0,
     marginTop: 6,
     backgroundColor: '#ffffff',
     border: '1px solid #e2e8f0',

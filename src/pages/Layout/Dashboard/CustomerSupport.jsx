@@ -70,9 +70,9 @@ const CustomerSupport = () => {
   const [density, setDensity] = useState('RELAXED'); // COMPACT, DEFAULT, RELAXED
   const [showColumnsDropdown, setShowColumnsDropdown] = useState(false);
   const [visibleCols, setVisibleCols] = useState({
-    ticketId: false, // Match screenshot: only State Status visible initially
-    subject: false,
-    dateFiled: false,
+    ticketId: true,
+    subject: true,
+    dateFiled: true,
     stateStatus: true
   });
 
@@ -191,7 +191,7 @@ const CustomerSupport = () => {
   const densityPadding = getDensityStyle();
 
   return (
-    <div className="customer-dashboard" style={{ height: 'calc(100vh - 125px)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflow: 'hidden', padding: '16px 20px', width: '100%', maxWidth: 'none' }}>
+    <div className="customer-dashboard documents-wrapper">
       {/* Header Panel */}
       <div className="customer-header-container" style={{ flexShrink: 0 }}>
         <div>
@@ -202,7 +202,7 @@ const CustomerSupport = () => {
       </div>
 
       {/* Two Columns Layout */}
-      <div style={{ display: 'flex', gap: '16px', flex: 1, minHeight: 0, marginTop: 16 }}>
+      <div className="documents-grid">
         
         {/* Left Column: Support Tickets History */}
         <div style={S.leftPanel}>
@@ -257,7 +257,7 @@ const CustomerSupport = () => {
 
                 {/* Dropdown for Columns Visibility */}
                 {showColumnsDropdown && (
-                  <div style={S.dropdownMenu}>
+                  <div className="columns-dropdown-panel" style={S.dropdownMenu}>
                     <div style={S.dropdownHeader}>COLUMN VISIBILITY</div>
                     
                     <label style={S.dropdownItem}>
@@ -628,6 +628,8 @@ const S = {
   tableWrapper: {
     flex: 1,
     overflowY: 'auto',
+    overflowX: 'auto',
+    WebkitOverflowScrolling: 'touch',
     border: '1px solid #e2e8f0',
     borderRadius: 8,
     backgroundColor: '#ffffff'
@@ -635,7 +637,8 @@ const S = {
   table: {
     width: '100%',
     borderCollapse: 'collapse',
-    textAlign: 'left'
+    textAlign: 'left',
+    whiteSpace: 'nowrap'
   },
   thead: {
     backgroundColor: '#f8fafc',
@@ -669,7 +672,6 @@ const S = {
     color: '#475569'
   },
   rightPanel: {
-    width: 320,
     backgroundColor: '#ffffff',
     borderRadius: 12,
     border: '1px solid #e2e8f0',

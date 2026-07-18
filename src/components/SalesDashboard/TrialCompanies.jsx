@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Plus, Mail, Phone, ChevronRight, X, Sparkles, 
-  Edit3, Trash2, Bell, ShieldCheck, ChevronDown, Check, 
-  DollarSign, Building, Truck, RefreshCw, CreditCard, Calendar, ShieldAlert 
+import {
+  Plus, Mail, Phone, ChevronRight, X, Sparkles,
+  Edit3, Trash2, Bell, ShieldCheck, ChevronDown, Check,
+  DollarSign, Building, Truck, RefreshCw, CreditCard, Calendar, ShieldAlert
 } from 'lucide-react';
 import { crmRepository } from '../../services/crmRepository';
 import { crmStore } from '../../services/crmStore';
@@ -11,16 +11,16 @@ import { crmWorkflowEngine } from '../../services/crmEngines';
 export default function TrialCompanies() {
   // Database States loaded from localStorage crmStore
   const [trials, setTrials] = useState([]);
-  
+
   // UI states
   const [activeRole, setActiveRole] = useState('Sales Director');
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
   const [metrics, setMetrics] = useState({ trialsActive: 0, conversion: 10, expiredPortals: 0 });
-  
+
   // Modal states
   const [showExtendModal, setShowExtendModal] = useState(null); // trial object or null
   const [extensionDays, setExtensionDays] = useState(7);
-  
+
   // Toast feedback state
   const [toast, setToast] = useState(null);
 
@@ -30,14 +30,14 @@ export default function TrialCompanies() {
       const db = crmRepository.getCrmDatabase();
       const safeTrials = db.trials || [];
       const safeLeads = db.leads || [];
-      
+
       setTrials(safeTrials);
-      
+
       const wonLeads = safeLeads.filter(l => l.stage === 'Won').length;
       const totalLeads = safeLeads.length;
       const conversionRate = totalLeads > 0 ? Math.round((wonLeads / totalLeads) * 100) : 10;
       const expiredCount = safeTrials.filter(t => t.status === 'Expired').length;
-      
+
       setMetrics({
         trialsActive: safeTrials.filter(t => t.status === 'Active').length,
         conversion: conversionRate,
@@ -73,12 +73,12 @@ export default function TrialCompanies() {
       plan: trial.currentPlan || 'Professional',
       joinedAt: trial.startDate
     };
-    
+
     localStorage.setItem('hero_session', JSON.stringify(mockSession));
-    
+
     // Dispatch session-changed event
     window.dispatchEvent(new Event('storage'));
-    
+
     setToast({ text: `Impersonating admin session takeover context for ${trial.company}...` });
   };
 
@@ -103,7 +103,7 @@ export default function TrialCompanies() {
 
   return (
     <div className="flex-grow bg-[#F8FAFC] p-6 space-y-6 overflow-y-auto w-full text-left font-sans flex flex-col h-full min-h-0">
-      
+
       {/* Toast Notification */}
       {toast && (
         <div className="fixed bottom-6 right-6 z-50 flex items-center justify-between gap-4 px-5 py-3 bg-white border border-slate-300 text-slate-800 rounded-2xl shadow-2xl text-[13px] font-semibold animate-slide-in">
@@ -121,7 +121,7 @@ export default function TrialCompanies() {
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none">
               Trial Companies
             </h1>
-            
+
             {/* Enterprise Logistics Badge */}
             <div className="bg-[#FEF3C7] text-[#92400E] px-2.5 py-1 text-[9px] rounded-lg border border-[#FDE68A] uppercase font-black leading-none flex flex-col items-center justify-center shrink-0">
               <span className="text-[7px] text-[#B45309] font-bold tracking-wider mb-0.5">Enterprise</span>
@@ -146,8 +146,8 @@ export default function TrialCompanies() {
       </div>
 
       {/* Main Content Section (Quotas + Grid) */}
-      <div className="flex-grow bg-white border border-slate-200/80 rounded-2xl shadow-xs flex flex-col overflow-hidden min-h-0">
-        
+      <div className="shrink-0 bg-white border border-slate-200/80 rounded-2xl shadow-xs flex flex-col overflow-hidden">
+
         {/* SaaS Quotas Banner & Stats */}
         <div className="p-5 border-b border-slate-100 shrink-0 flex flex-col md:flex-row justify-between items-start md:items-center gap-5">
           <div>
@@ -160,13 +160,13 @@ export default function TrialCompanies() {
           </div>
 
           {/* Stats Row right-aligned */}
-          <div className="flex items-center gap-4 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 scrollbar-none select-none">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full md:w-auto mt-4 md:mt-0 select-none">
             {/* Box 1: ACTIVE TRIALS */}
             <div className="border border-slate-200 bg-slate-50/50 p-2.5 rounded-xl text-center min-w-[110px] shrink-0">
               <div className="text-[8px] font-black text-slate-400 uppercase tracking-wider">Active Trials</div>
               <div className="text-sm font-black text-slate-800 mt-1.5">{metrics.trialsActive}</div>
             </div>
-            
+
             {/* Box 2: CONVERSION RATE */}
             <div className="border border-slate-200 bg-slate-50/50 p-2.5 rounded-xl text-center min-w-[110px] shrink-0">
               <div className="text-[8px] font-black text-slate-400 uppercase tracking-wider">Conversion Rate</div>
@@ -182,102 +182,101 @@ export default function TrialCompanies() {
         </div>
 
         {/* Grid of Trial Cards */}
-        <div className="flex-grow overflow-y-auto p-5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <div className="p-5">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredTrials.map((trial) => {
-            const progressPercent = Math.min(100, Math.max(0, (trial.daysRemaining / 14) * 100));
-            
-            return (
-              <div 
-                key={trial.id}
-                className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xs hover:border-slate-350 hover:shadow-xs transition-all duration-250 flex flex-col justify-between space-y-4"
-              >
-                {/* Header */}
-                <div className="flex justify-between items-start gap-3">
-                  <div>
-                    <h3 className="text-slate-900 font-black text-[13px] leading-none tracking-tight">
-                      {trial.company}
-                    </h3>
-                    <span className="text-[11px] text-slate-400 font-semibold block mt-1.5">
-                      Admin: {trial.admin}
+            {filteredTrials.map((trial) => {
+              const progressPercent = Math.min(100, Math.max(0, (trial.daysRemaining / 14) * 100));
+
+              return (
+                <div
+                  key={trial.id}
+                  className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xs hover:border-slate-350 hover:shadow-xs transition-all duration-250 flex flex-col justify-between space-y-4"
+                >
+                  {/* Header */}
+                  <div className="flex justify-between items-start gap-3">
+                    <div>
+                      <h3 className="text-slate-900 font-black text-[13px] leading-none tracking-tight">
+                        {trial.company}
+                      </h3>
+                      <span className="text-[11px] text-slate-400 font-semibold block mt-1.5">
+                        Admin: {trial.admin}
+                      </span>
+                    </div>
+                    <span className={`px-2.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider shrink-0 leading-none ${trial.daysRemaining <= 2
+                        ? 'bg-rose-50 border border-rose-200 text-rose-700'
+                        : 'bg-emerald-50 border border-emerald-250 text-emerald-700'
+                      }`}>
+                      {trial.status === 'Active' && trial.daysRemaining <= 2 ? 'Expiring' : trial.status}
                     </span>
                   </div>
-                  <span className={`px-2.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider shrink-0 leading-none ${
-                    trial.daysRemaining <= 2 
-                      ? 'bg-rose-50 border border-rose-200 text-rose-700' 
-                      : 'bg-emerald-50 border border-emerald-250 text-emerald-700'
-                  }`}>
-                    {trial.status === 'Active' && trial.daysRemaining <= 2 ? 'Expiring' : trial.status}
-                  </span>
-                </div>
 
-                {/* Progress bar info */}
-                <div className="space-y-1.5 select-none">
-                  <div className="flex justify-between items-center text-[11px] font-bold">
-                    <span className="text-slate-450">Days Remaining</span>
-                    <span className="text-slate-900 font-mono font-black">
-                      {trial.daysRemaining} / 14 Days
-                    </span>
-                  </div>
-                  {/* Yellow progress bar line */}
-                  <div className="w-full bg-slate-100 rounded-full h-1.5">
-                    <div 
-                      className="bg-[#ffcc00] h-1.5 rounded-full transition-all duration-300"
-                      style={{ width: `${progressPercent}%` }}
-                    ></div>
-                  </div>
-                </div>
-
-                {/* Details List */}
-                <div className="space-y-3.5 text-[11px] font-bold text-slate-700 leading-none">
-                  {/* Term Period */}
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-400 font-semibold">Term Period:</span>
-                    <span className="text-slate-800 font-extrabold font-mono">{trial.startDate} to {trial.expiryDate}</span>
-                  </div>
-                  
-                  {/* Most Used Module */}
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-400 font-semibold">Most Used Module:</span>
-                    <span className="text-slate-850 font-extrabold">{trial.mostUsedModule || 'Live GPS tracking'}</span>
+                  {/* Progress bar info */}
+                  <div className="space-y-1.5 select-none">
+                    <div className="flex justify-between items-center text-[11px] font-bold">
+                      <span className="text-slate-450">Days Remaining</span>
+                      <span className="text-slate-900 font-mono font-black">
+                        {trial.daysRemaining} / 14 Days
+                      </span>
+                    </div>
+                    {/* Yellow progress bar line */}
+                    <div className="w-full bg-slate-100 rounded-full h-1.5">
+                      <div
+                        className="bg-[#ffcc00] h-1.5 rounded-full transition-all duration-300"
+                        style={{ width: `${progressPercent}%` }}
+                      ></div>
+                    </div>
                   </div>
 
-                  {/* Quota limits */}
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-400 font-semibold">Quota limits:</span>
-                    <span className="text-slate-850 font-extrabold">{trial.activeUsers || 3} Users • {trial.storage || '0.5 GB'}</span>
+                  {/* Details List */}
+                  <div className="space-y-3.5 text-[11px] font-bold text-slate-700 leading-none">
+                    {/* Term Period */}
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
+                      <span className="text-slate-400 font-semibold">Term Period:</span>
+                      <span className="text-slate-800 font-extrabold font-mono">{trial.startDate} to {trial.expiryDate}</span>
+                    </div>
+
+                    {/* Most Used Module */}
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
+                      <span className="text-slate-400 font-semibold">Most Used Module:</span>
+                      <span className="text-slate-850 font-extrabold">{trial.mostUsedModule || 'Live GPS tracking'}</span>
+                    </div>
+
+                    {/* Quota limits */}
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
+                      <span className="text-slate-400 font-semibold">Quota limits:</span>
+                      <span className="text-slate-850 font-extrabold">{trial.activeUsers || 3} Users • {trial.storage || '0.5 GB'}</span>
+                    </div>
+                  </div>
+
+                  {/* Actions Bottom */}
+                  <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-3 shrink-0 pt-2">
+                    <button
+                      onClick={() => handleLoginAsCompany(trial)}
+                      className="w-full sm:w-auto bg-[#ffcc00] hover:bg-[#e6b800] text-black font-extrabold text-[11px] px-5 py-2.5 rounded-xl cursor-pointer transition-colors shadow-xs"
+                    >
+                      Login As Company
+                    </button>
+                    <button
+                      onClick={() => {
+                        setExtensionDays(7);
+                        setShowExtendModal(trial);
+                      }}
+                      className="w-full sm:w-auto text-slate-500 hover:text-slate-805 font-extrabold text-[11.5px] cursor-pointer transition-colors hover:underline text-center"
+                    >
+                      Extend Trial
+                    </button>
                   </div>
                 </div>
+              );
+            })}
 
-                {/* Actions Bottom */}
-                <div className="flex items-center justify-between shrink-0 pt-2">
-                  <button 
-                    onClick={() => handleLoginAsCompany(trial)}
-                    className="bg-[#ffcc00] hover:bg-[#e6b800] text-black font-extrabold text-[11px] px-5 py-2.5 rounded-xl cursor-pointer transition-colors shadow-xs"
-                  >
-                    Login As Company
-                  </button>
-                  <button 
-                    onClick={() => {
-                      setExtensionDays(7);
-                      setShowExtendModal(trial);
-                    }}
-                    className="text-slate-500 hover:text-slate-805 font-extrabold text-[11.5px] cursor-pointer transition-colors hover:underline"
-                  >
-                    Extend Trial
-                  </button>
-                </div>
+            {filteredTrials.length === 0 && (
+              <div className="col-span-full py-16 text-center text-slate-400 font-bold text-xs uppercase tracking-wider select-none">
+                No active trial sandboxes provisioned.
               </div>
-            );
-          })}
-
-          {filteredTrials.length === 0 && (
-            <div className="col-span-full py-16 text-center text-slate-400 font-bold text-xs uppercase tracking-wider select-none">
-              No active trial sandboxes provisioned.
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
       </div> {/* <-- Closes Main Content Section */}
 
       {/* Extend Trial Modal */}
