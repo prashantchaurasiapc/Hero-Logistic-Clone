@@ -120,7 +120,7 @@ export default function WarehouseMap({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         
         {/* LEFT COLUMN: Independent Assets */}
-        <div className="lg:col-span-3.5 bg-white rounded-2xl p-4 border border-slate-200 text-left space-y-4 flex flex-col justify-between shadow-xs">
+        <div className="lg:col-span-4 bg-white rounded-2xl p-4 border border-slate-200 text-left space-y-4 flex flex-col justify-between shadow-xs">
           <div className="space-y-4 flex-1 flex flex-col">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Independent Assets</h3>
@@ -197,7 +197,7 @@ export default function WarehouseMap({
         </div>
 
         {/* CENTRE COLUMN: Allocation Map */}
-        <div className="lg:col-span-5.5 bg-white rounded-2xl p-5 border border-slate-200 text-left flex flex-col justify-between shadow-xs">
+        <div className="lg:col-span-5 bg-white rounded-2xl p-5 border border-slate-200 text-left flex flex-col justify-between shadow-xs">
           <div className="space-y-4 flex-1 flex flex-col justify-between">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
               <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Yard / Warehouse Allocation Map</h3>

@@ -185,7 +185,7 @@ export default function CurrentStock({
         </div>
 
         {/* Toggles and Column Popover Trigger Row */}
-        <div className="flex justify-end items-center gap-3 relative">
+        <div className="flex flex-wrap justify-end items-center gap-3 relative">
           {/* Density Selector */}
           <div className="flex bg-slate-100 border border-slate-200 rounded-xl p-1 text-[9px] font-bold">
             {['COMPACT', 'DEFAULT', 'RELAXED'].map((mode) => {
@@ -194,7 +194,7 @@ export default function CurrentStock({
                 <button
                   key={mode}
                   onClick={() => setDensity(mode.toLowerCase())}
-                  className={`px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer ${isActive ? 'bg-[#FFD400] text-slate-950 font-extrabold shadow-xs' : 'text-slate-550 hover:text-slate-700'}`}
+                  className={`px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer ${isActive ? 'bg-[#FFD400] text-slate-955 font-extrabold shadow-xs' : 'text-slate-550 hover:text-slate-700'} whitespace-nowrap`}
                 >
                   {mode}
                 </button>
@@ -205,7 +205,7 @@ export default function CurrentStock({
           {/* Columns button */}
           <button 
             onClick={() => setColumnsMenuOpen(!columnsMenuOpen)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 border border-slate-200 hover:bg-slate-50 text-slate-650 font-bold text-[9px] uppercase rounded-xl transition-all cursor-pointer focus:outline-none"
+            className="inline-flex items-center gap-1.5 px-3 py-2 border border-slate-200 hover:bg-slate-50 text-slate-655 font-bold text-[9px] uppercase rounded-xl transition-all cursor-pointer focus:outline-none whitespace-nowrap"
           >
             <Settings className="h-3.5 w-3.5 text-slate-400" />
             <span>Columns</span>

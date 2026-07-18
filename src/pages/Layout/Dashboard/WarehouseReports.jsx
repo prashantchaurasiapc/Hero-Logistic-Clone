@@ -217,7 +217,7 @@ const WarehouseReports = () => {
   ];
 
   return (
-    <div style={S.container}>
+    <div className="responsive-reports-container">
       {/* Page Header */}
       <div style={S.header}>
         <h1 style={S.pageTitle}>Reports &amp; Analytics Center</h1>
@@ -225,7 +225,7 @@ const WarehouseReports = () => {
       </div>
 
       {/* KPI Stats Grid */}
-      <div style={S.kpiGrid}>
+      <div className="responsive-reports-grid">
         <div style={S.kpiCard}>
           <div style={S.kpiHeader}>
             <span style={S.kpiLabel}>TOTAL REVENUE</span>
@@ -797,9 +797,10 @@ const S = {
   },
   filtersButtonsRow: {
     display: 'flex',
+    flexWrap: 'wrap',
     justifyContent: 'flex-end',
     alignItems: 'center',
-    gap: 16
+    gap: 12
   },
   btnExportCsv: {
     backgroundColor: '#ffffff',
@@ -880,9 +881,11 @@ const S = {
   },
   controlsRow: {
     display: 'flex',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
+    gap: 12,
     minHeight: 38
   },
   controlsLeft: {
@@ -916,8 +919,9 @@ const S = {
   },
   controlsRight: {
     display: 'flex',
+    flexWrap: 'wrap',
     alignItems: 'center',
-    gap: 16
+    gap: 12
   },
   densityPill: {
     display: 'flex',
@@ -933,7 +937,8 @@ const S = {
     fontWeight: '800',
     cursor: 'pointer',
     transition: 'all 0.15s ease-in-out',
-    border: 'none'
+    border: 'none',
+    whiteSpace: 'nowrap'
   },
   columnsBtn: {
     backgroundColor: '#ffffff',
@@ -945,7 +950,8 @@ const S = {
     display: 'flex',
     alignItems: 'center',
     gap: 6,
-    transition: 'all 0.15s ease-in-out'
+    transition: 'all 0.15s ease-in-out',
+    whiteSpace: 'nowrap'
   },
   columnsDropdown: {
     position: 'absolute',
@@ -990,7 +996,8 @@ const S = {
   tableContainer: {
     border: '1px solid #e2e8f0',
     borderRadius: 16,
-    overflow: 'hidden'
+    overflowX: 'auto',
+    backgroundColor: '#ffffff'
   },
   table: {
     width: '100%',
@@ -1008,7 +1015,8 @@ const S = {
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: '0.8px',
-    textAlign: 'left'
+    textAlign: 'left',
+    whiteSpace: 'nowrap'
   },
   tr: {
     borderBottom: '1px solid #f1f5f9',
@@ -1022,31 +1030,38 @@ const S = {
   tdMonoBold: {
     fontFamily: 'monospace',
     fontWeight: '800',
-    color: '#0f172a'
+    color: '#0f172a',
+    whiteSpace: 'nowrap'
   },
   tdSemibold: {
     fontWeight: '700',
-    color: '#334155'
+    color: '#334155',
+    whiteSpace: 'nowrap'
   },
   tdRegular: {
     fontWeight: '700',
-    color: '#334155'
+    color: '#334155',
+    whiteSpace: 'nowrap'
   },
   tdMuted: {
     fontWeight: '600',
-    color: '#64748b'
+    color: '#64748b',
+    whiteSpace: 'nowrap'
   },
   tdGoldBold: {
     fontWeight: '800',
-    color: '#b45309'
+    color: '#b45309',
+    whiteSpace: 'nowrap'
   },
   tdRedBold: {
     fontWeight: '800',
-    color: '#ef4444'
+    color: '#ef4444',
+    whiteSpace: 'nowrap'
   },
   tdGreenBold: {
     fontWeight: '800',
-    color: '#16a34a'
+    color: '#16a34a',
+    whiteSpace: 'nowrap'
   },
   statusBadge: {
     padding: '4px 8px',
