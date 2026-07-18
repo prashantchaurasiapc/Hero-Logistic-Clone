@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  CreditCard, Calendar, RefreshCw, ShieldAlert, ArrowUpRight, Search, 
+import {
+  CreditCard, Calendar, RefreshCw, ShieldAlert, ArrowUpRight, Search,
   Check, Edit2, Download, Filter, ChevronDown, DollarSign, Users, AlertCircle, FileText, X, CheckCircle, ArrowDownRight, Send, Layers, PauseCircle
 } from 'lucide-react';
 
@@ -55,63 +55,63 @@ export default function Subscriptions() {
 
   // Subscriptions data list based on screenshots
   const [subscriptions, setSubscriptions] = useState([
-    { 
-      id: 'SUB-1005', 
-      company: 'Apex Logistics LLC', 
-      plan: 'Professional', 
-      status: 'ACTIVE', 
-      billingPeriod: 'Monthly', 
-      startDate: '06/19/2026', 
-      nextRenewal: '07/19/2026', 
-      amount: 4910, 
+    {
+      id: 'SUB-1005',
+      company: 'Apex Logistics LLC',
+      plan: 'Professional',
+      status: 'ACTIVE',
+      billingPeriod: 'Monthly',
+      startDate: '06/19/2026',
+      nextRenewal: '07/19/2026',
+      amount: 4910,
       autoRenewal: 'Yes',
-      limitOverflow: 'Users (16/15)' 
+      limitOverflow: 'Users (16/15)'
     },
-    { 
-      id: 'SUB-1001', 
-      company: 'Falcon Logistics LLC', 
-      plan: 'Professional', 
-      status: 'ACTIVE', 
-      billingPeriod: 'Monthly', 
-      startDate: '03/12/2026', 
-      nextRenewal: '07/24/2026', 
-      amount: 8500, 
-      autoRenewal: 'Yes',
-      limitOverflow: null
-    },
-    { 
-      id: 'SUB-1003', 
-      company: 'Global Shipping Solutions', 
-      plan: 'Enterprise', 
-      status: 'ACTIVE', 
-      billingPeriod: 'Monthly', 
-      startDate: '02/01/2026', 
-      nextRenewal: '07/01/2026', 
-      amount: 28000, 
+    {
+      id: 'SUB-1001',
+      company: 'Falcon Logistics LLC',
+      plan: 'Professional',
+      status: 'ACTIVE',
+      billingPeriod: 'Monthly',
+      startDate: '03/12/2026',
+      nextRenewal: '07/24/2026',
+      amount: 8500,
       autoRenewal: 'Yes',
       limitOverflow: null
     },
-    { 
-      id: 'SUB-1002', 
-      company: 'Swift Cargo Express', 
-      plan: 'Professional', 
-      status: 'ACTIVE', 
-      billingPeriod: 'Monthly', 
-      startDate: '04/19/2026', 
-      nextRenewal: '07/19/2026', 
-      amount: 499, 
+    {
+      id: 'SUB-1003',
+      company: 'Global Shipping Solutions',
+      plan: 'Enterprise',
+      status: 'ACTIVE',
+      billingPeriod: 'Monthly',
+      startDate: '02/01/2026',
+      nextRenewal: '07/01/2026',
+      amount: 28000,
       autoRenewal: 'Yes',
       limitOverflow: null
     },
-    { 
-      id: 'SUB-1004', 
-      company: 'Texas Hotshot Carriers', 
-      plan: 'Professional', 
-      status: 'HOLD', 
-      billingPeriod: 'Monthly', 
-      startDate: '05/20/2026', 
-      nextRenewal: '06/20/2026', 
-      amount: 499, 
+    {
+      id: 'SUB-1002',
+      company: 'Swift Cargo Express',
+      plan: 'Professional',
+      status: 'ACTIVE',
+      billingPeriod: 'Monthly',
+      startDate: '04/19/2026',
+      nextRenewal: '07/19/2026',
+      amount: 499,
+      autoRenewal: 'Yes',
+      limitOverflow: null
+    },
+    {
+      id: 'SUB-1004',
+      company: 'Texas Hotshot Carriers',
+      plan: 'Professional',
+      status: 'HOLD',
+      billingPeriod: 'Monthly',
+      startDate: '05/20/2026',
+      nextRenewal: '06/20/2026',
+      amount: 499,
       autoRenewal: 'No',
       limitOverflow: null
     }
@@ -126,7 +126,7 @@ export default function Subscriptions() {
   const filteredSubs = subscriptions.filter(sub => {
     const matchesCompany = sub.company.toLowerCase().includes(searchCompany.toLowerCase());
     const matchesSubId = sub.id.toLowerCase().includes(searchSubId.toLowerCase());
-    
+
     const matchesPlan = selectedPlanFilter === 'All Plans' || sub.plan.toLowerCase() === selectedPlanFilter.toLowerCase();
     const matchesStatus = selectedStatusFilter === 'All Statuses' || sub.status.toLowerCase() === selectedStatusFilter.toLowerCase();
 
@@ -135,7 +135,7 @@ export default function Subscriptions() {
 
   return (
     <div className="flex-grow bg-[#F1F5F9] p-6 space-y-6 overflow-y-auto w-full text-left font-sans relative custom-scrollbar">
-      
+
       {/* Custom scrollbar layout style */}
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {
@@ -176,7 +176,7 @@ export default function Subscriptions() {
             Configure global licensing rules, audit tenant margins, and resolve support tickets.
           </p>
         </div>
-        <button 
+        <button
           onClick={() => {
             alert(`SaaS Subscriptions Status Summary:\nActive subscriptions: 4\nSuspended subscriptions: 1\nMRR: $41,909`);
             showNotification('Report compiled.');
@@ -187,10 +187,10 @@ export default function Subscriptions() {
         </button>
       </div>
 
-      {/* Horizontal KPI Metrics Cards Row */}
-      <div className="flex overflow-x-auto gap-4 pb-2.5 custom-scrollbar">
+      {/* KPI Metrics Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4 pb-2.5">
         {/* Metric 1 */}
-        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between min-w-[170px] flex-1">
+        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
           <div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">ACTIVE SUBS</span>
             <span className="text-2xl font-black text-slate-800 block mt-1.5">4</span>
@@ -199,7 +199,7 @@ export default function Subscriptions() {
         </div>
 
         {/* Metric 2 */}
-        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between min-w-[170px] flex-1">
+        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
           <div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">TRIAL SUBS</span>
             <span className="text-2xl font-black text-slate-800 block mt-1.5">0</span>
@@ -211,7 +211,7 @@ export default function Subscriptions() {
         </div>
 
         {/* Metric 3 */}
-        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between min-w-[170px] flex-1">
+        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
           <div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">EXPIRING TRIALS</span>
             <span className="text-2xl font-black text-slate-800 block mt-1.5">0</span>
@@ -220,7 +220,7 @@ export default function Subscriptions() {
         </div>
 
         {/* Metric 4 */}
-        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between min-w-[170px] flex-1">
+        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
           <div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">SUSPENDED SUBS</span>
             <span className="text-2xl font-black text-slate-800 block mt-1.5">1</span>
@@ -232,7 +232,7 @@ export default function Subscriptions() {
         </div>
 
         {/* Metric 5 */}
-        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between min-w-[170px] flex-1">
+        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
           <div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">MRR (USD)</span>
             <span className="text-2xl font-black text-slate-800 block mt-1.5">$41,909</span>
@@ -241,7 +241,7 @@ export default function Subscriptions() {
         </div>
 
         {/* Metric 6 */}
-        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between min-w-[170px] flex-1">
+        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
           <div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">ARR (USD)</span>
             <span className="text-2xl font-black text-slate-800 block mt-1.5">$5,02,908</span>
@@ -250,7 +250,7 @@ export default function Subscriptions() {
         </div>
 
         {/* Metric 7 */}
-        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between min-w-[170px] flex-1">
+        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
           <div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">FAILED PAYMENTS</span>
             <span className="text-2xl font-black text-slate-800 block mt-1.5">1</span>
@@ -264,16 +264,16 @@ export default function Subscriptions() {
 
       {/* Analytics & Churn Panel Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* Left Section: MRR & ARR Performance Analytics */}
         <div className="lg:col-span-2 bg-white border border-slate-100 rounded-2xl p-5 shadow-xs space-y-4">
           <h2 className="text-sm font-black text-slate-800">MRR & ARR Performance Analytics</h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Chart 1: Monthly Revenue Trend (USD) */}
             <div className="space-y-2">
               <span className="text-[11px] font-black text-slate-500 block">Monthly Revenue Trend (USD)</span>
-              
+
               {/* Custom SVG Line Chart */}
               <div className="relative border border-slate-50 rounded-xl p-3 h-52 flex items-end">
                 <svg className="w-full h-36 overflow-visible text-slate-400" viewBox="0 0 260 120">
@@ -281,22 +281,22 @@ export default function Subscriptions() {
                   <line x1="0" y1="90" x2="260" y2="90" stroke="#f1f5f9" strokeWidth="1" />
                   <line x1="0" y1="60" x2="260" y2="60" stroke="#f1f5f9" strokeWidth="1" />
                   <line x1="0" y1="30" x2="260" y2="30" stroke="#f1f5f9" strokeWidth="1" />
-                  
+
                   {/* Line Path */}
-                  <path 
-                    d="M 20 110 Q 50 60 70 60 Q 90 60 110 60 Q 150 60 170 60 Q 190 60 210 60 Q 230 40 250 30" 
-                    fill="none" 
-                    stroke="#0EA5E9" 
-                    strokeWidth="3.5" 
+                  <path
+                    d="M 20 110 Q 50 60 70 60 Q 90 60 110 60 Q 150 60 170 60 Q 190 60 210 60 Q 230 40 250 30"
+                    fill="none"
+                    stroke="#0EA5E9"
+                    strokeWidth="3.5"
                   />
-                  
+
                   {/* Circles */}
                   <circle cx="20" cy="110" r="3.5" fill="#FFFFFF" stroke="#0EA5E9" strokeWidth="2.5" />
                   <circle cx="70" cy="60" r="3.5" fill="#FFFFFF" stroke="#0EA5E9" strokeWidth="2.5" />
                   <circle cx="110" cy="60" r="3.5" fill="#FFFFFF" stroke="#0EA5E9" strokeWidth="2.5" />
                   <circle cx="210" cy="60" r="3.5" fill="#FFFFFF" stroke="#0EA5E9" strokeWidth="2.5" />
                   <circle cx="250" cy="30" r="3.5" fill="#FFFFFF" stroke="#0EA5E9" strokeWidth="2.5" />
-                  
+
                   {/* Tooltip on March */}
                   <g transform="translate(85, 20)">
                     <rect x="0" y="0" width="70" height="35" rx="8" fill="#FFFFFF" stroke="#e2e8f0" strokeWidth="1" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.04))" />
@@ -325,7 +325,7 @@ export default function Subscriptions() {
             {/* Chart 2: Annual Projection (USD) */}
             <div className="space-y-2">
               <span className="text-[11px] font-black text-slate-500 block">Annual Projection (USD)</span>
-              
+
               {/* Custom SVG Bar Chart */}
               <div className="relative border border-slate-50 rounded-xl p-3 h-52 flex items-end">
                 <svg className="w-full h-36 overflow-visible" viewBox="0 0 260 120">
@@ -367,8 +367,8 @@ export default function Subscriptions() {
         {/* Right Section: Churn & Plan Shifts */}
         <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs space-y-4">
           <h2 className="text-sm font-black text-slate-800">Churn & Plan Shifts</h2>
-          
-          <div className="grid grid-cols-2 gap-4 h-full">
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 h-full">
             {/* Box 1 */}
             <div className="border border-slate-100 rounded-2xl p-4 flex flex-col items-center justify-center text-center space-y-1 bg-white">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">UPGRADES</span>
@@ -399,7 +399,7 @@ export default function Subscriptions() {
 
       {/* Search, Filter dropdown row */}
       <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-xs flex flex-wrap items-center gap-3">
-        <div className="relative flex-grow max-w-xs text-left">
+        <div className="relative flex-grow w-full sm:max-w-xs text-left">
           <input
             type="text"
             placeholder="Search Company Name"
@@ -410,7 +410,7 @@ export default function Subscriptions() {
           <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
         </div>
 
-        <div className="relative flex-grow max-w-xs text-left">
+        <div className="relative flex-grow w-full sm:max-w-xs text-left">
           <input
             type="text"
             placeholder="Search Sub ID"
@@ -421,11 +421,11 @@ export default function Subscriptions() {
           <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
         </div>
 
-        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 w-full sm:w-auto">
           <select
             value={selectedPlanFilter}
             onChange={(e) => setSelectedPlanFilter(e.target.value)}
-            className="border border-slate-200 bg-white px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-[#FFD400] text-slate-800 font-black cursor-pointer min-w-[120px]"
+            className="w-full sm:w-auto border border-slate-200 bg-white px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-[#FFD400] text-slate-800 font-black cursor-pointer min-w-[120px]"
           >
             <option value="All Plans">All Plans</option>
             <option value="Starter">Starter</option>
@@ -434,11 +434,11 @@ export default function Subscriptions() {
           </select>
         </div>
 
-        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 w-full sm:w-auto">
           <select
             value={selectedStatusFilter}
             onChange={(e) => setSelectedStatusFilter(e.target.value)}
-            className="border border-slate-200 bg-white px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-[#FFD400] text-slate-800 font-black cursor-pointer min-w-[120px]"
+            className="w-full sm:w-auto border border-slate-200 bg-white px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-[#FFD400] text-slate-800 font-black cursor-pointer min-w-[120px]"
           >
             <option value="All Statuses">All Statuses</option>
             <option value="ACTIVE">ACTIVE</option>
@@ -450,7 +450,7 @@ export default function Subscriptions() {
       {/* Subscription licensing table */}
       <div className="bg-white border border-slate-100 rounded-3xl shadow-xs overflow-hidden">
         <div className="overflow-x-auto custom-scrollbar">
-          <table className="w-full text-left border-collapse text-xs font-bold text-slate-700 min-w-[1000px]">
+          <table className="w-full text-left border-collapse text-xs font-bold text-slate-700 min-w-[1000px] whitespace-nowrap">
             <thead>
               <tr className="bg-slate-50/50 text-[10px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100">
                 <th className="py-4 px-5 text-center w-12">
@@ -498,11 +498,10 @@ export default function Subscriptions() {
                       {sub.plan}
                     </td>
                     <td className="py-4 px-4">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
-                        sub.status === 'ACTIVE'
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${sub.status === 'ACTIVE'
                           ? 'bg-emerald-50 text-emerald-600'
                           : 'bg-amber-50 text-amber-600'
-                      }`}>
+                        }`}>
                         {sub.status}
                       </span>
                     </td>
@@ -534,78 +533,78 @@ export default function Subscriptions() {
 
                       {/* Dropdown Card (Screenshot 4 & 5!) */}
                       {activeActionsMenu === sub.id && (
-                        <div 
+                        <div
                           ref={actionsMenuRef}
                           className="absolute right-6 mt-1 w-52 bg-white border border-slate-200 rounded-2xl shadow-xl p-2.5 z-40 space-y-1 text-left text-xs text-slate-700 font-bold"
                         >
-                          <button 
+                          <button
                             onClick={() => {
                               setSelectedSub(sub);
                               setShowViewModal(true);
                               setActiveActionsMenu(null);
-                            }} 
+                            }}
                             className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer"
                           >
                             View Subscription
                           </button>
-                          <button 
+                          <button
                             onClick={() => {
                               setSelectedSub(sub);
                               setShowEditModal(true);
                               setActiveActionsMenu(null);
-                            }} 
+                            }}
                             className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer"
                           >
                             Edit Subscription
                           </button>
-                          
+
                           {/* Up/Down grades */}
-                          <button 
+                          <button
                             onClick={() => {
                               setSelectedSub(sub);
                               setShowUpgradeModal(true);
                               setActiveActionsMenu(null);
-                            }} 
+                            }}
                             className="w-full text-left px-3 py-2 hover:bg-emerald-50 rounded-lg text-emerald-600 cursor-pointer"
                           >
                             Upgrade Subscription
                           </button>
-                          <button 
+                          <button
                             onClick={() => {
                               setSelectedSub(sub);
                               setShowDowngradeModal(true);
                               setActiveActionsMenu(null);
-                            }} 
+                            }}
                             className="w-full text-left px-3 py-2 hover:bg-amber-50 rounded-lg text-yellow-600 cursor-pointer"
                           >
                             Downgrade Subscription
                           </button>
 
                           {/* Pause / Resume */}
-                          <button 
+                          <button
                             onClick={() => {
                               setSelectedSub(sub);
                               setShowPauseModal(true);
                               setActiveActionsMenu(null);
-                            }} 
+                            }}
                             className="w-full text-left px-3 py-2 hover:bg-rose-50 rounded-lg text-rose-500 cursor-pointer"
                           >
                             Pause Subscription
                           </button>
-                          <button 
+                          <button
                             onClick={() => {
                               showNotification(`Resumed subscription ${sub.id} successfully.`);
                               setActiveActionsMenu(null);
-                            }} 
+                            }}
                             className="w-full text-left px-3 py-2 hover:bg-emerald-50 rounded-lg text-emerald-600 cursor-pointer"
                           >
                             Resume Subscription
                           </button>
-                          <button 
+                          <button
                             onClick={() => {
                               showNotification(`Auto-Renewal cancelled for ${sub.company}.`);
                               setActiveActionsMenu(null);
-                            }} 
+                            }}
                             className="w-full text-left px-3 py-2 hover:bg-rose-50 rounded-lg text-rose-500 cursor-pointer"
                           >
                             Cancel Auto-Renewal
@@ -614,47 +613,47 @@ export default function Subscriptions() {
                           {/* Divider */}
                           <div className="border-t border-slate-100 my-1" />
 
-                          <button 
+                          <button
                             onClick={() => {
                               showNotification(`Manual renewal processed for ${sub.company} invoice cycle.`);
                               setActiveActionsMenu(null);
-                            }} 
+                            }}
                             className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer"
                           >
                             Renew Manually
                           </button>
-                          <button 
+                          <button
                             onClick={() => {
                               setSelectedSub(sub);
                               setShowAssignPlanModal(true);
                               setActiveActionsMenu(null);
-                            }} 
+                            }}
                             className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer"
                           >
                             Change Subscription
                           </button>
-                          <button 
-                            onClick={() => navigate('/admin/billing')} 
+                          <button
+                            onClick={() => navigate('/admin/billing')}
                             className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer"
                           >
                             Billing History
                           </button>
-                          <button 
+                          <button
                             onClick={() => {
                               setSelectedSub(sub);
                               setShowGenerateInvoiceModal(true);
                               setActiveActionsMenu(null);
-                            }} 
+                            }}
                             className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer"
                           >
                             Generate Invoice
                           </button>
-                          <button 
+                          <button
                             onClick={() => {
                               setSelectedSub(sub);
                               setShowSendReminderModal(true);
                               setActiveActionsMenu(null);
-                            }} 
+                            }}
                             className="w-full text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-slate-700 cursor-pointer"
                           >
                             Send Reminder
@@ -674,7 +673,7 @@ export default function Subscriptions() {
       {showViewModal && selectedSub && (
         <div className="fixed inset-0 z-[1000] flex justify-end">
           {/* Backdrop */}
-          <div 
+          <div
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity cursor-pointer"
             onClick={() => setShowViewModal(false)}
           ></div>
@@ -684,8 +683,8 @@ export default function Subscriptions() {
             {/* Header */}
             <div className="flex justify-between items-center p-6 border-b border-slate-100 bg-white">
               <h3 className="text-lg font-extrabold text-slate-900">Subscription Workspace Inspector</h3>
-              <button 
-                onClick={() => setShowViewModal(false)} 
+              <button
+                onClick={() => setShowViewModal(false)}
                 className="text-slate-400 hover:text-slate-700 transition-colors p-1 rounded-lg hover:bg-slate-50 cursor-pointer"
               >
                 <X className="w-5 h-5" />
@@ -694,17 +693,16 @@ export default function Subscriptions() {
 
             {/* Body */}
             <div className="p-8 overflow-y-auto custom-scrollbar flex-grow space-y-8 bg-[#F8FAFC]">
-              
+
               <div className="flex justify-between items-start">
                 <div>
                   <h2 className="text-[22px] font-black text-slate-900">{selectedSub.company}</h2>
                   <p className="text-[10px] font-mono text-slate-400 mt-1 uppercase tracking-wider">Subscription ID: #{selectedSub.id}</p>
                 </div>
-                <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-bold tracking-wider ${
-                  selectedSub.status === 'ACTIVE'
+                <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-bold tracking-wider ${selectedSub.status === 'ACTIVE'
                     ? 'text-emerald-600 bg-emerald-50 border border-emerald-200'
                     : 'text-amber-600 bg-amber-50 border border-amber-200'
-                }`}>
+                  }`}>
                   {selectedSub.status}
                 </span>
               </div>
@@ -712,14 +710,13 @@ export default function Subscriptions() {
               {/* Tabs */}
               <div className="flex overflow-x-auto custom-scrollbar pb-3 gap-2 border-b border-slate-200/60 items-center">
                 {['Overview', 'Plan Details', 'Billing & Cycle', 'Limits & Modules', 'Audit Log'].map(tab => (
-                  <button 
+                  <button
                     key={tab}
                     onClick={() => setActiveViewTab(tab)}
-                    className={`shrink-0 px-4 py-1.5 text-[11px] rounded-xl whitespace-nowrap cursor-pointer transition-colors ${
-                      activeViewTab === tab 
+                    className={`shrink-0 px-4 py-1.5 text-[11px] rounded-xl whitespace-nowrap cursor-pointer transition-colors ${activeViewTab === tab
                         ? 'bg-[#FFD400] text-slate-900 font-black shadow-sm border-2 border-slate-900'
                         : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 font-bold border-2 border-transparent'
-                    }`}
+                      }`}
                   >
                     {tab}
                   </button>
@@ -734,7 +731,7 @@ export default function Subscriptions() {
                       <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
                       General Information
                     </h4>
-                    <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-4">
                       <div>
                         <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Assigned Plan</p>
                         <p className="text-slate-800 font-bold text-[12px]">{selectedSub.plan} Tier</p>
@@ -760,7 +757,7 @@ export default function Subscriptions() {
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                       Contract Financials
                     </h4>
-                    <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-4">
                       <div>
                         <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Monthly MRR</p>
                         <p className="text-emerald-600 font-black text-sm font-mono">${selectedSub.amount.toLocaleString()}/mo</p>
@@ -881,7 +878,7 @@ export default function Subscriptions() {
 
             {/* Footer */}
             <div className="p-6 border-t border-slate-100 bg-white flex gap-3">
-              <button 
+              <button
                 onClick={() => {
                   setShowViewModal(false);
                   setShowUpgradeModal(true);
@@ -890,7 +887,7 @@ export default function Subscriptions() {
               >
                 Upgrade Plan Tier
               </button>
-              <button 
+              <button
                 onClick={() => {
                   setShowViewModal(false);
                   navigate('/admin/billing');
@@ -917,23 +914,23 @@ export default function Subscriptions() {
             <div className="p-6 space-y-4">
               <div>
                 <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">NEXT RENEWAL DATE</label>
-                <input 
-                  type="text" 
-                  defaultValue={selectedSub.nextRenewal} 
-                  className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-2xl focus:outline-none text-slate-800" 
+                <input
+                  type="text"
+                  defaultValue={selectedSub.nextRenewal}
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-2xl focus:outline-none text-slate-800"
                 />
               </div>
               <div className="flex items-center gap-3 pt-0.5">
-                <input 
-                  type="checkbox" 
-                  defaultChecked={selectedSub.autoRenewal === 'Yes'} 
-                  className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" 
+                <input
+                  type="checkbox"
+                  defaultChecked={selectedSub.autoRenewal === 'Yes'}
+                  className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
                 />
                 <span className="text-xs sm:text-sm font-bold text-slate-600 cursor-pointer">
                   Enable Auto-Renewal recurring billing
                 </span>
               </div>
-              <button 
+              <button
                 onClick={() => {
                   showNotification(`Subscription settings for ${selectedSub.company} updated successfully.`);
                   setShowEditModal(false);
@@ -963,7 +960,7 @@ export default function Subscriptions() {
                 <span className="text-sm font-black text-slate-900 mt-1 block">{selectedSub.plan} Plan ($ {selectedSub.amount}/mo) <span className="text-emerald-600">→ Enterprise ($28,000/mo)</span></span>
               </div>
               <p className="text-xs text-slate-500 font-medium">Pro-rata billing credit will be automatically applied to the next invoice cycle on {selectedSub.nextRenewal}.</p>
-              <button 
+              <button
                 onClick={() => {
                   showNotification(`Upgraded ${selectedSub.company} to Enterprise Tier.`);
                   setShowUpgradeModal(false);
@@ -999,7 +996,7 @@ export default function Subscriptions() {
                   <option>Basic Plan - $299/mo</option>
                 </select>
               </div>
-              <button 
+              <button
                 onClick={() => {
                   showNotification(`Downgraded ${selectedSub.company} subscription.`);
                   setShowDowngradeModal(false);
@@ -1034,7 +1031,7 @@ export default function Subscriptions() {
                   <option>Compliance Investigation</option>
                 </select>
               </div>
-              <button 
+              <button
                 onClick={() => {
                   showNotification(`Subscription ${selectedSub.id} placed on HOLD status.`);
                   setShowPauseModal(false);
@@ -1068,7 +1065,7 @@ export default function Subscriptions() {
                   <option>Custom White-Label Tier - $4,500/mo</option>
                 </select>
               </div>
-              <button 
+              <button
                 onClick={() => {
                   showNotification(`Subscription plan tier updated successfully for ${selectedSub.company}.`);
                   setShowAssignPlanModal(false);
@@ -1095,21 +1092,21 @@ export default function Subscriptions() {
             <div className="p-6 space-y-4">
               <div>
                 <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">INVOICE AMOUNT (USD)</label>
-                <input 
-                  type="number" 
-                  defaultValue={selectedSub.amount} 
-                  className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-2xl focus:outline-none text-slate-800 font-mono" 
+                <input
+                  type="number"
+                  defaultValue={selectedSub.amount}
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-2xl focus:outline-none text-slate-800 font-mono"
                 />
               </div>
               <div>
                 <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">BILLING PERIOD / DESCRIPTION</label>
-                <input 
-                  type="text" 
-                  defaultValue="Custom Administrative Invoice" 
-                  className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-2xl focus:outline-none text-slate-800" 
+                <input
+                  type="text"
+                  defaultValue="Custom Administrative Invoice"
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-2xl focus:outline-none text-slate-800"
                 />
               </div>
-              <button 
+              <button
                 onClick={() => {
                   showNotification(`Generated custom administrative invoice for ${selectedSub.company}.`);
                   setShowGenerateInvoiceModal(false);
@@ -1136,12 +1133,12 @@ export default function Subscriptions() {
             <div className="p-6 space-y-4">
               <div>
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">EMAIL MESSAGE TEMPLATE</label>
-                <textarea 
+                <textarea
                   defaultValue={`Hello Administrator of ${selectedSub.company},\n\nThis is a friendly reminder that your ${selectedSub.plan} Tier subscription (#${selectedSub.id}) is scheduled for renewal on ${selectedSub.nextRenewal} for the amount of $${selectedSub.amount}.\n\nPlease ensure your payment method is up to date.\n\nBest,\nHero Logistics Billing Team`}
                   className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-medium rounded-xl focus:outline-none text-slate-800 h-36 resize-none"
                 />
               </div>
-              <button 
+              <button
                 onClick={() => {
                   showNotification(`Sent renewal notification email to ${selectedSub.company}.`);
                   setShowSendReminderModal(false);

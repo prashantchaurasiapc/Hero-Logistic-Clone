@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  FileText, Sliders, Layout, Globe, Mail, Lock, Folder, RotateCw, Shield, Database, 
-  Play, Save, CheckCircle, X, Trash2, Eye, ShieldAlert, Settings, Plus 
+import {
+  FileText, Sliders, Layout, Globe, Mail, Lock, Folder, RotateCw, Shield, Database,
+  Play, Save, CheckCircle, X, Trash2, Eye, ShieldAlert, Settings, Plus
 } from 'lucide-react';
 
 export default function WhiteLabel() {
@@ -240,7 +240,7 @@ export default function WhiteLabel() {
     if (!newThemeName) return;
     const newTheme = {
       name: newThemeName,
-      accent: '#' + Math.floor(Math.random()*16777215).toString(16),
+      accent: '#' + Math.floor(Math.random() * 16777215).toString(16),
       sidebar: '#0f172a',
       header: '#1e293b',
       status: 'Draft'
@@ -276,7 +276,7 @@ export default function WhiteLabel() {
   const handleExportReport = () => {
     const headers = ['Configuration Option', 'Value'];
     const rows = Object.entries(liveBranding);
-    const csvContent = "data:text/csv;charset=utf-8," 
+    const csvContent = "data:text/csv;charset=utf-8,"
       + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
@@ -293,7 +293,7 @@ export default function WhiteLabel() {
     const rows = auditLogs.map(log => [
       log.title, log.desc, log.date, log.operator, log.ip, log.browser
     ]);
-    const csvContent = "data:text/csv;charset=utf-8," 
+    const csvContent = "data:text/csv;charset=utf-8,"
       + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
@@ -335,10 +335,10 @@ export default function WhiteLabel() {
       setApiIntegrations(prev => prev.map(item => {
         if (item.name === name) {
           const isFirebase = name === 'Firebase Integration';
-          return { 
-             ...item, 
-             status: isFirebase ? 'Not Connected' : name === 'Sendgrid Integration' ? 'Verified' : name === 'Twilio Integration' ? 'Operational' : name === 'Stripe Integration' ? 'Active' : 'Connected',
-             health: isFirebase ? 'Unknown' : 'Healthy'
+          return {
+            ...item,
+            status: isFirebase ? 'Not Connected' : name === 'Sendgrid Integration' ? 'Verified' : name === 'Twilio Integration' ? 'Operational' : name === 'Stripe Integration' ? 'Active' : 'Connected',
+            health: isFirebase ? 'Unknown' : 'Healthy'
           };
         }
         return item;
@@ -390,7 +390,7 @@ export default function WhiteLabel() {
             Configure global licensing rules, audit tenant margins, and resolve support tickets.
           </p>
         </div>
-        <button 
+        <button
           onClick={handleExportReport}
           className="border border-slate-200 bg-white hover:bg-slate-50 text-yellow-500 font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer"
         >
@@ -527,11 +527,10 @@ export default function WhiteLabel() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-5 py-2.5 font-bold rounded-full text-xs transition-all flex items-center gap-1.5 cursor-pointer border ${
-                  isActive 
-                    ? 'bg-[#FFD400] text-black border-2 border-black font-extrabold shadow-sm' 
+                className={`px-5 py-2.5 font-bold rounded-full text-xs transition-all flex items-center gap-1.5 cursor-pointer border ${isActive
+                    ? 'bg-[#FFD400] text-black border-2 border-black font-extrabold shadow-sm'
                     : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
-                }`}
+                  }`}
               >
                 {tab.icon}
                 <span>{tab.label}</span>
@@ -548,11 +547,10 @@ export default function WhiteLabel() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-5 py-2.5 font-bold rounded-full text-xs transition-all flex items-center gap-1.5 cursor-pointer border ${
-                  isActive 
-                    ? 'bg-[#FFD400] text-black border-2 border-black font-extrabold shadow-sm' 
+                className={`px-5 py-2.5 font-bold rounded-full text-xs transition-all flex items-center gap-1.5 cursor-pointer border ${isActive
+                    ? 'bg-[#FFD400] text-black border-2 border-black font-extrabold shadow-sm'
                     : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
-                }`}
+                  }`}
               >
                 {tab.icon}
                 <span>{tab.label}</span>
@@ -569,11 +567,10 @@ export default function WhiteLabel() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-5 py-2.5 font-bold rounded-full text-xs transition-all flex items-center gap-1.5 cursor-pointer border ${
-                  isActive 
-                    ? 'bg-[#FFD400] text-black border-2 border-black font-extrabold shadow-sm' 
+                className={`px-5 py-2.5 font-bold rounded-full text-xs transition-all flex items-center gap-1.5 cursor-pointer border ${isActive
+                    ? 'bg-[#FFD400] text-black border-2 border-black font-extrabold shadow-sm'
                     : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
-                }`}
+                  }`}
               >
                 {tab.icon}
                 <span>{tab.label}</span>
@@ -859,9 +856,8 @@ export default function WhiteLabel() {
                   <div key={idx} className="border border-slate-150 rounded-2xl p-5 space-y-4 bg-white relative hover:shadow-xs transition-shadow">
                     <div className="flex justify-between items-center">
                       <h4 className="text-base font-extrabold text-slate-850">{theme.name}</h4>
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
-                        theme.status === 'Published' ? 'bg-[#E6F4EA] text-[#137333]' : 'bg-slate-100 text-slate-650'
-                      }`}>
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${theme.status === 'Published' ? 'bg-[#E6F4EA] text-[#137333]' : 'bg-slate-100 text-slate-650'
+                        }`}>
                         {theme.status}
                       </span>
                     </div>
@@ -873,21 +869,21 @@ export default function WhiteLabel() {
                     </div>
 
                     <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
-                      <button 
+                      <button
                         onClick={() => handleCloneTheme(theme)}
                         className="border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-extrabold text-[10px] px-3.5 py-2 rounded-xl transition-colors cursor-pointer"
                       >
                         Clone/Duplicate
                       </button>
                       {theme.status !== 'Published' && (
-                        <button 
+                        <button
                           onClick={() => handlePublishTheme(theme.name)}
                           className="bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-[10px] px-3.5 py-2 rounded-xl transition-colors cursor-pointer"
                         >
                           Publish System
                         </button>
                       )}
-                      <button 
+                      <button
                         onClick={() => handleDeleteTheme(theme.name)}
                         className="bg-rose-50 hover:bg-rose-100 text-rose-500 p-2.5 rounded-xl border border-rose-100 transition-colors cursor-pointer ml-auto"
                       >
@@ -940,7 +936,7 @@ export default function WhiteLabel() {
                       </div>
                     </div>
 
-                    <button 
+                    <button
                       onClick={() => handleRenewSSL(dom.domain)}
                       className="border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-extrabold text-xs px-4 py-2 rounded-xl transition-colors cursor-pointer shrink-0 self-end md:self-auto"
                     >
@@ -1016,11 +1012,10 @@ export default function WhiteLabel() {
                     type="button"
                     key={sub}
                     onClick={() => handleCommSubTabChange(sub)}
-                    className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-colors cursor-pointer ${
-                      commSubTab === sub 
-                        ? 'bg-slate-850 text-white font-extrabold' 
+                    className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-colors cursor-pointer ${commSubTab === sub
+                        ? 'bg-slate-850 text-white font-extrabold'
                         : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
-                    }`}
+                      }`}
                   >
                     {sub}
                   </button>
@@ -1069,7 +1064,7 @@ export default function WhiteLabel() {
                       className="w-full px-3.5 py-2 bg-white border border-slate-200 text-xs rounded-xl focus:outline-none"
                     />
                   </div>
-                  <button 
+                  <button
                     onClick={handleSendTestEnvelope}
                     className="bg-[#FFD400] hover:bg-[#FFC800] text-black font-black text-xs px-5 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shrink-0"
                   >
@@ -1088,7 +1083,7 @@ export default function WhiteLabel() {
                       className="w-full px-3.5 py-2 bg-white border border-slate-200 text-xs rounded-xl focus:outline-none"
                     />
                   </div>
-                  <button 
+                  <button
                     onClick={handleSendTestSms}
                     className="bg-[#FFD400] hover:bg-[#FFC800] text-black font-black text-xs px-5 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shrink-0"
                   >
@@ -1306,7 +1301,7 @@ export default function WhiteLabel() {
               {/* Published Release Logs & Rollback Revisions */}
               <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-xs space-y-5">
                 <h3 className="text-sm font-black text-slate-800">Published Release Logs & Rollback Revisions</h3>
-                
+
                 <div className="space-y-4">
                   {releaseHistory.map((rel, idx) => (
                     <div key={idx} className="border border-slate-150 rounded-2xl p-5 flex flex-col md:flex-row md:justify-between md:items-center gap-4 bg-white">
@@ -1316,9 +1311,8 @@ export default function WhiteLabel() {
                           <span className="bg-slate-105 text-slate-500 text-[10px] font-black px-2 py-0.5 rounded">
                             Build #{rel.build}
                           </span>
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
-                            rel.status === 'Published' ? 'bg-[#E6F4EA] text-[#137333]' : 'bg-slate-100 text-slate-500'
-                          }`}>
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${rel.status === 'Published' ? 'bg-[#E6F4EA] text-[#137333]' : 'bg-slate-100 text-slate-500'
+                            }`}>
                             {rel.status}
                           </span>
                         </div>
@@ -1386,8 +1380,8 @@ export default function WhiteLabel() {
                 <div className="border border-slate-150 rounded-2xl overflow-hidden divide-y divide-slate-100">
                   {auditLogs
                     .filter(log => {
-                      const matchesSearch = log.title.toLowerCase().includes(auditSearch.toLowerCase()) || 
-                                            log.desc.toLowerCase().includes(auditSearch.toLowerCase());
+                      const matchesSearch = log.title.toLowerCase().includes(auditSearch.toLowerCase()) ||
+                        log.desc.toLowerCase().includes(auditSearch.toLowerCase());
                       const matchesFilter = auditFilter === 'All Actions' || log.type === auditFilter;
                       return matchesSearch && matchesFilter;
                     })
@@ -1475,7 +1469,7 @@ export default function WhiteLabel() {
               {/* Developer Secrets & Webhook Credentials */}
               <div className="space-y-4">
                 <h3 className="text-sm font-black text-slate-800">Developer Secrets & Webhook Credentials</h3>
-                
+
                 <div className="space-y-3">
                   {developerKeys.map((key) => (
                     <div key={key.id} className="border border-slate-150 rounded-2xl p-4 flex justify-between items-center gap-4 bg-white">
@@ -1540,24 +1534,22 @@ export default function WhiteLabel() {
                       <h4 className="text-sm font-extrabold text-slate-850">{item.name}</h4>
                       <div className="text-[10px] font-bold text-slate-450 mt-1.5 flex items-center gap-1">
                         <span>Status:</span>
-                        <span className={`${
-                          item.status === 'Testing...' 
-                            ? 'text-yellow-600 animate-pulse' 
-                            : item.status === 'Not Connected' 
-                              ? 'text-rose-500' 
+                        <span className={`${item.status === 'Testing...'
+                            ? 'text-yellow-600 animate-pulse'
+                            : item.status === 'Not Connected'
+                              ? 'text-rose-500'
                               : 'text-[#10B981]'
-                        } font-black`}>
+                          } font-black`}>
                           {item.status}
                         </span>
                         <span className="mx-1">•</span>
                         <span>Health:</span>
-                        <span className={`${
-                          item.health === 'Healthy' 
-                            ? 'text-[#10B981]' 
-                            : item.health === 'Unknown' 
-                              ? 'text-slate-400' 
+                        <span className={`${item.health === 'Healthy'
+                            ? 'text-[#10B981]'
+                            : item.health === 'Unknown'
+                              ? 'text-slate-400'
                               : 'text-[#10B981]'
-                        } font-black`}>
+                          } font-black`}>
                           {item.health}
                         </span>
                       </div>
@@ -1597,17 +1589,16 @@ export default function WhiteLabel() {
             <h3 className="text-sm font-black text-slate-800 flex items-center gap-1.5">
               <Eye className="w-4.5 h-4.5 text-yellow-600" /> Live Previews Workspace
             </h3>
-            
+
             <div className="flex gap-1.5">
               {['Portal UI', 'Email HTML', 'PDF Manifest', 'Login Panel'].map((pt) => (
                 <button
                   key={pt}
                   onClick={() => setPreviewTab(pt)}
-                  className={`px-3 py-1.5 font-bold rounded-lg text-[10px] transition-colors cursor-pointer border ${
-                    previewTab === pt
+                  className={`px-3 py-1.5 font-bold rounded-lg text-[10px] transition-colors cursor-pointer border ${previewTab === pt
                       ? 'border-[#FFD400] text-yellow-600 bg-yellow-50/10'
                       : 'border-slate-100 text-slate-400 bg-white hover:bg-slate-50/50'
-                  }`}
+                    }`}
                 >
                   {pt}
                 </button>
@@ -1617,7 +1608,7 @@ export default function WhiteLabel() {
 
           {/* Interactive Mock Window */}
           <div className="w-full bg-[#0F172A] border border-slate-900 rounded-2xl p-4 text-left font-sans text-white h-[360px] flex flex-col justify-between overflow-hidden shadow-inner relative">
-            
+
             {previewTab === 'Portal UI' && (
               <>
                 <div className="flex justify-between items-center border-b border-white/5 pb-2.5">
@@ -1640,7 +1631,7 @@ export default function WhiteLabel() {
                   <div className="flex-grow space-y-3 overflow-hidden">
                     <div className="flex justify-between items-center">
                       <span className="text-[10px] font-black text-white/50">{liveBranding.portalName}</span>
-                      <button 
+                      <button
                         style={{ borderRadius: liveBranding.buttonRadius.includes('16px') ? '12px' : liveBranding.buttonRadius.includes('8px') ? '6px' : '2px' }}
                         className="bg-[#00A3FF] hover:bg-[#0091FF] text-white text-[9px] font-black px-3 py-1 transition-all"
                       >
@@ -1660,7 +1651,7 @@ export default function WhiteLabel() {
                       </div>
                     </div>
 
-                    <div 
+                    <div
                       style={{ background: `linear-gradient(135deg, ${activeTheme.accent}, ${activeTheme.accent}aa)` }}
                       className="rounded-xl p-3 text-white space-y-1.5"
                     >
@@ -1768,7 +1759,7 @@ export default function WhiteLabel() {
           {/* Commit Draft button wrapper */}
           <div className="bg-slate-100 border border-slate-200/50 rounded-2xl p-4 flex justify-between items-center gap-4">
             <span className="text-[10px] font-bold text-slate-500">Modify preview attributes live using settings tabs.</span>
-            <button 
+            <button
               onClick={handleCommitDraft}
               className="bg-[#FFAB00] hover:bg-[#FFA000] text-black font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-xs transition-colors flex items-center gap-1 cursor-pointer shrink-0"
             >

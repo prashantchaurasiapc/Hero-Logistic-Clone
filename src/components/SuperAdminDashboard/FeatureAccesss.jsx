@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Shield, Plus, Search, CheckCircle, X, ChevronDown, ChevronRight, 
+import {
+  Shield, Plus, Search, CheckCircle, X, ChevronDown, ChevronRight,
   Download, Filter, Settings, FileText, ArrowRight, Trash2
 } from 'lucide-react';
 
@@ -43,289 +43,289 @@ export default function FeatureAccess() {
 
   // Features list state grouped or categorized (exactly matching all screenshots)
   const [features, setFeatures] = useState([
-    { 
-      id: 'feat-base-shell', 
-      name: 'Admin Panel Base Shell', 
-      version: 'v1.0.0', 
-      desc: 'Global navigation, theme styling engines, and...', 
+    {
+      id: 'feat-base-shell',
+      name: 'Admin Panel Base Shell',
+      version: 'v1.0.0',
+      desc: 'Global navigation, theme styling engines, and...',
       fullDesc: 'Global navigation, theme styling engines, and sidebar layouts.',
-      category: 'Platform', 
+      category: 'Platform',
       requiredModules: 'Platform Base',
       apiLoad: '120,000 requests',
       storage: '0.5 GB',
       footprint: 'Low',
-      plans: { Starter: true, Pro: true, Enterprise: true, Custom: true }, 
-      addon: 'No', 
-      licensing: 'Core', 
-      status: 'Enabled', 
-      usage: 1420, 
-      companies: 5 
+      plans: { Starter: true, Pro: true, Enterprise: true, Custom: true },
+      addon: 'No',
+      licensing: 'Core',
+      status: 'Enabled',
+      usage: 1420,
+      companies: 5
     },
-    { 
-      id: 'feat-rbac', 
-      name: 'Role-Based Access Controllers', 
-      version: 'v1.0.0', 
-      desc: 'Custom operator/dispatcher permissions, adm...', 
+    {
+      id: 'feat-rbac',
+      name: 'Role-Based Access Controllers',
+      version: 'v1.0.0',
+      desc: 'Custom operator/dispatcher permissions, adm...',
       fullDesc: 'Custom operator/dispatcher permissions, admin role matrices, and access policies.',
-      category: 'Platform', 
+      category: 'Platform',
       requiredModules: 'Platform Base',
       apiLoad: '85,000 requests',
       storage: '0.3 GB',
       footprint: 'Low',
-      plans: { Starter: true, Pro: true, Enterprise: true, Custom: true }, 
-      addon: 'No', 
-      licensing: 'Core', 
-      status: 'Enabled', 
-      usage: 1500, 
-      companies: 5 
+      plans: { Starter: true, Pro: true, Enterprise: true, Custom: true },
+      addon: 'No',
+      licensing: 'Core',
+      status: 'Enabled',
+      usage: 1500,
+      companies: 5
     },
-    { 
-      id: 'feat-ops-map', 
-      name: 'Interactive Operations Map', 
-      version: 'v1.2.0', 
-      desc: 'Real-time coordinate plotting for routes, deliv...', 
+    {
+      id: 'feat-ops-map',
+      name: 'Interactive Operations Map',
+      version: 'v1.2.0',
+      desc: 'Real-time coordinate plotting for routes, deliv...',
       fullDesc: 'Real-time coordinate plotting for routes, delivery stops, and fleet movement visualization.',
       dependsOn: 'feat-gps-pings',
-      category: 'Operations', 
+      category: 'Operations',
       requiredModules: 'GPS Tracking',
       apiLoad: '210,000 requests',
       storage: '2.1 GB',
       footprint: 'Medium',
-      plans: { Starter: true, Pro: true, Enterprise: true, Custom: true }, 
-      addon: 'No', 
-      licensing: 'Core', 
-      status: 'Enabled', 
-      usage: 940, 
-      companies: 4 
+      plans: { Starter: true, Pro: true, Enterprise: true, Custom: true },
+      addon: 'No',
+      licensing: 'Core',
+      status: 'Enabled',
+      usage: 940,
+      companies: 4
     },
-    { 
-      id: 'feat-fleet-logs', 
-      name: 'Fleet Asset Maintenance Logs', 
-      version: 'v1.0.0', 
-      desc: 'Vehicles, trailers, registrations, inspections an...', 
+    {
+      id: 'feat-fleet-logs',
+      name: 'Fleet Asset Maintenance Logs',
+      version: 'v1.0.0',
+      desc: 'Vehicles, trailers, registrations, inspections an...',
       fullDesc: 'Vehicles, trailers, registrations, inspections and maintenance scheduling logs.',
-      category: 'Fleet', 
+      category: 'Fleet',
       requiredModules: 'Fleet Management',
       apiLoad: '95,000 requests',
       storage: '4.8 GB',
       footprint: 'Low',
-      plans: { Starter: true, Pro: true, Enterprise: true, Custom: true }, 
-      addon: 'No', 
-      licensing: 'Core', 
-      status: 'Enabled', 
-      usage: 880, 
-      companies: 4 
+      plans: { Starter: true, Pro: true, Enterprise: true, Custom: true },
+      addon: 'No',
+      licensing: 'Core',
+      status: 'Enabled',
+      usage: 880,
+      companies: 4
     },
-    { 
-      id: 'feat-drivers-eld', 
-      name: 'ELD Driver Log Profiles', 
-      version: 'v1.1.0', 
-      desc: 'Compliance, training, licenses, drug screening...', 
+    {
+      id: 'feat-drivers-eld',
+      name: 'ELD Driver Log Profiles',
+      version: 'v1.1.0',
+      desc: 'Compliance, training, licenses, drug screening...',
       fullDesc: 'Compliance, training, licenses, drug screening, and ELD trainer logs.',
       dependsOn: 'feat-fleet-logs',
-      category: 'Drivers', 
+      category: 'Drivers',
       requiredModules: 'Driver Management',
       apiLoad: '75,000 requests',
       storage: '18.5 GB',
       footprint: 'Low',
-      plans: { Starter: true, Pro: true, Enterprise: true, Custom: true }, 
-      addon: 'No', 
-      licensing: 'Core', 
-      status: 'Enabled', 
-      usage: 1100, 
-      companies: 5 
+      plans: { Starter: true, Pro: true, Enterprise: true, Custom: true },
+      addon: 'No',
+      licensing: 'Core',
+      status: 'Enabled',
+      usage: 1100,
+      companies: 5
     },
-    { 
-      id: 'feat-dispatch-board', 
-      name: 'Dispatch Scheduling Board', 
-      version: 'v1.3.0', 
-      desc: 'Drag & drop load assignments, driver scheduli...', 
+    {
+      id: 'feat-dispatch-board',
+      name: 'Dispatch Scheduling Board',
+      version: 'v1.3.0',
+      desc: 'Drag & drop load assignments, driver scheduli...',
       fullDesc: 'Drag & drop load assignments, driver scheduling, and live dispatch board.',
       dependsOn: 'feat-drivers-eld',
-      category: 'Dispatch', 
+      category: 'Dispatch',
       requiredModules: 'Dispatch Core',
       apiLoad: '140,000 requests',
       storage: '3.2 GB',
       footprint: 'Medium',
-      plans: { Starter: true, Pro: true, Enterprise: true, Custom: true }, 
-      addon: 'No', 
-      licensing: 'Core', 
-      status: 'Enabled', 
-      usage: 780, 
-      companies: 5 
+      plans: { Starter: true, Pro: true, Enterprise: true, Custom: true },
+      addon: 'No',
+      licensing: 'Core',
+      status: 'Enabled',
+      usage: 780,
+      companies: 5
     },
-    { 
-      id: 'feat-load-registry', 
-      name: 'Load Booking Registry', 
-      version: 'v1.0.0', 
-      desc: 'Loads registry, route confirmation logs, BOL, a...', 
+    {
+      id: 'feat-load-registry',
+      name: 'Load Booking Registry',
+      version: 'v1.0.0',
+      desc: 'Loads registry, route confirmation logs, BOL, a...',
       fullDesc: 'Loads registry, route confirmation logs, BOL, and carrier contract storage.',
-      category: 'Loads', 
+      category: 'Loads',
       requiredModules: 'Load Management',
       apiLoad: '160,000 requests',
       storage: '5.5 GB',
       footprint: 'Low',
-      plans: { Starter: true, Pro: true, Enterprise: true, Custom: true }, 
-      addon: 'No', 
-      licensing: 'Core', 
-      status: 'Enabled', 
-      usage: 1200, 
-      companies: 5 
+      plans: { Starter: true, Pro: true, Enterprise: true, Custom: true },
+      addon: 'No',
+      licensing: 'Core',
+      status: 'Enabled',
+      usage: 1200,
+      companies: 5
     },
-    { 
-      id: 'feat-white-labeling', 
-      name: 'White-Label Brand Theme Configurations', 
-      version: 'v1.0.0', 
-      desc: 'Admin styling settings parameters (branded p...', 
+    {
+      id: 'feat-white-labeling',
+      name: 'White-Label Brand Theme Configurations',
+      version: 'v1.0.0',
+      desc: 'Admin styling settings parameters (branded p...',
       fullDesc: 'Admin styling settings parameters for branded portal themes and custom logo integrations.',
-      category: 'Administration', 
+      category: 'Administration',
       requiredModules: 'Theme Engine',
       apiLoad: '30,000 requests',
       storage: '1.2 GB',
       footprint: 'Low',
-      plans: { Starter: false, Pro: false, Enterprise: true, Custom: true }, 
-      addon: 'No', 
-      licensing: 'Premium', 
-      status: 'Enabled', 
-      usage: 220, 
-      companies: 3 
+      plans: { Starter: false, Pro: false, Enterprise: true, Custom: true },
+      addon: 'No',
+      licensing: 'Premium',
+      status: 'Enabled',
+      usage: 220,
+      companies: 3
     },
-    { 
-      id: 'feat-developer-sandbox', 
-      name: 'Developer Sandbox Credentials Access', 
-      version: 'v1.0.0', 
-      desc: 'Generate developer credentials sandbox API k...', 
+    {
+      id: 'feat-developer-sandbox',
+      name: 'Developer Sandbox Credentials Access',
+      version: 'v1.0.0',
+      desc: 'Generate developer credentials sandbox API k...',
       fullDesc: 'Generate developer credentials, sandbox API keys, and test environment access.',
-      category: 'API', 
+      category: 'API',
       requiredModules: 'API Gateway',
       apiLoad: '50,000 requests',
       storage: '0.8 GB',
       footprint: 'Low',
-      plans: { Starter: false, Pro: false, Enterprise: true, Custom: true }, 
-      addon: 'No', 
-      licensing: 'Enterprise Only', 
-      status: 'Enabled', 
-      usage: 150, 
-      companies: 1 
+      plans: { Starter: false, Pro: false, Enterprise: true, Custom: true },
+      addon: 'No',
+      licensing: 'Enterprise Only',
+      status: 'Enabled',
+      usage: 150,
+      companies: 1
     },
-    { 
-      id: 'feat-dev-debug', 
-      name: 'Live Application Event Debug Logs Logger', 
-      version: 'v1.0.0', 
-      desc: 'Developer debug console logging REST API ca...', 
+    {
+      id: 'feat-dev-debug',
+      name: 'Live Application Event Debug Logs Logger',
+      version: 'v1.0.0',
+      desc: 'Developer debug console logging REST API ca...',
       fullDesc: 'Developer debug console logging, REST API call tracing, and event pipeline monitoring.',
       dependsOn: 'feat-api-gateway',
-      category: 'Developer Tools', 
+      category: 'Developer Tools',
       requiredModules: 'API Gateway',
       apiLoad: '25,000 requests',
       storage: '2.4 GB',
       footprint: 'Low',
-      plans: { Starter: false, Pro: false, Enterprise: true, Custom: true }, 
-      addon: 'No', 
-      licensing: 'Enterprise Only', 
-      status: 'Enabled', 
-      usage: 130, 
-      companies: 1 
+      plans: { Starter: false, Pro: false, Enterprise: true, Custom: true },
+      addon: 'No',
+      licensing: 'Enterprise Only',
+      status: 'Enabled',
+      usage: 130,
+      companies: 1
     },
-    { 
-      id: 'feat-billing-ledger', 
-      name: 'Billing Ledger Gateway', 
-      version: 'v1.0.0', 
-      desc: 'Financial invoices processing queues.', 
+    {
+      id: 'feat-billing-ledger',
+      name: 'Billing Ledger Gateway',
+      version: 'v1.0.0',
+      desc: 'Financial invoices processing queues.',
       fullDesc: 'Financial invoices processing queues, payment gateway webhooks, and ledger reconciliation.',
-      category: 'Billing', 
+      category: 'Billing',
       requiredModules: 'Billing Engine',
       apiLoad: '90,000 requests',
       storage: '3.6 GB',
       footprint: 'Low',
-      plans: { Starter: true, Pro: true, Enterprise: true, Custom: true }, 
-      addon: 'No', 
-      licensing: 'Core', 
-      status: 'Enabled', 
-      usage: 710, 
-      companies: 5 
+      plans: { Starter: true, Pro: true, Enterprise: true, Custom: true },
+      addon: 'No',
+      licensing: 'Core',
+      status: 'Enabled',
+      usage: 710,
+      companies: 5
     },
-    { 
-      id: 'feat-crm-leads', 
-      name: 'CRM Leads Sales Tracker', 
-      version: 'v1.0.0', 
-      desc: 'Prospect trackers, conversions trackers, and d...', 
+    {
+      id: 'feat-crm-leads',
+      name: 'CRM Leads Sales Tracker',
+      version: 'v1.0.0',
+      desc: 'Prospect trackers, conversions trackers, and d...',
       fullDesc: 'Prospect trackers, conversion pipelines, deal logs and sales performance dashboards.',
-      category: 'CRM', 
+      category: 'CRM',
       requiredModules: 'CRM Engine',
       apiLoad: '45,000 requests',
       storage: '1.8 GB',
       footprint: 'Low',
-      plans: { Starter: true, Pro: true, Enterprise: true, Custom: true }, 
-      addon: 'No', 
-      licensing: 'Core', 
-      status: 'Enabled', 
-      usage: 380, 
-      companies: 5 
+      plans: { Starter: true, Pro: true, Enterprise: true, Custom: true },
+      addon: 'No',
+      licensing: 'Core',
+      status: 'Enabled',
+      usage: 380,
+      companies: 5
     },
-    { 
-      id: 'feat-cust-portal', 
-      name: 'Shipper Customer Gateway', 
-      version: 'v1.1.0', 
-      desc: 'Customer load booking screens, shipment trac...', 
+    {
+      id: 'feat-cust-portal',
+      name: 'Shipper Customer Gateway',
+      version: 'v1.1.0',
+      desc: 'Customer load booking screens, shipment trac...',
       fullDesc: 'Customer load booking screens, shipment tracking, and self-service support portal.',
-      category: 'Customer Portal', 
+      category: 'Customer Portal',
       requiredModules: 'Portal Engine',
       apiLoad: '65,000 requests',
       storage: '2.9 GB',
       footprint: 'Low',
-      plans: { Starter: false, Pro: true, Enterprise: true, Custom: true }, 
-      addon: 'No', 
-      licensing: 'Premium', 
-      status: 'Enabled', 
-      usage: 490, 
-      companies: 4 
+      plans: { Starter: false, Pro: true, Enterprise: true, Custom: true },
+      addon: 'No',
+      licensing: 'Premium',
+      status: 'Enabled',
+      usage: 490,
+      companies: 4
     },
-    { 
-      id: 'feat-tracking-gateway', 
-      name: 'Real-time GPS Tracking Gateway', 
-      version: 'v1.0.0', 
-      desc: 'High-frequency GPS ping coordinate pipelines.', 
+    {
+      id: 'feat-tracking-gateway',
+      name: 'Real-time GPS Tracking Gateway',
+      version: 'v1.0.0',
+      desc: 'High-frequency GPS ping coordinate pipelines.',
       fullDesc: 'High-frequency GPS ping coordinate pipelines, geofencing alerts, and live map feeds.',
-      category: 'Tracking', 
+      category: 'Tracking',
       requiredModules: 'GPS Engine',
       apiLoad: '350,000 requests',
       storage: '7.2 GB',
       footprint: 'Medium',
-      plans: { Starter: true, Pro: true, Enterprise: true, Custom: true }, 
-      addon: 'No', 
-      licensing: 'Core', 
-      status: 'Enabled', 
-      usage: 1800, 
-      companies: 5 
+      plans: { Starter: true, Pro: true, Enterprise: true, Custom: true },
+      addon: 'No',
+      licensing: 'Core',
+      status: 'Enabled',
+      usage: 1800,
+      companies: 5
     }
   ]);
 
   // Audit Center logs
   const [auditLogs, setAuditLogs] = useState([
-    { 
-      action: 'Feature Enabled', 
-      details: 'Admin Panel Base Shell enabled for all plans.', 
-      reason: 'Core module deployment', 
-      timestamp: '06/20/2026, 09:00:00 AM', 
-      operator: 'System Root', 
-      ip: '192.168.1.1' 
+    {
+      action: 'Feature Enabled',
+      details: 'Admin Panel Base Shell enabled for all plans.',
+      reason: 'Core module deployment',
+      timestamp: '06/20/2026, 09:00:00 AM',
+      operator: 'System Root',
+      ip: '192.168.1.1'
     },
-    { 
-      action: 'Feature Updated', 
-      details: 'Operations Map upgraded to v1.2.0.', 
-      reason: 'Performance upgrade', 
-      timestamp: '06/22/2026, 11:30:00 AM', 
-      operator: 'Alex W.', 
-      ip: '192.168.1.1' 
+    {
+      action: 'Feature Updated',
+      details: 'Operations Map upgraded to v1.2.0.',
+      reason: 'Performance upgrade',
+      timestamp: '06/22/2026, 11:30:00 AM',
+      operator: 'Alex W.',
+      ip: '192.168.1.1'
     },
-    { 
-      action: 'Company Override Created', 
-      details: 'Manual override enabled for Swift Cargo Express on Payroll module.', 
-      reason: 'Partner promotion extension', 
-      timestamp: '06/24/2026, 02:45:00 PM', 
-      operator: 'Super Admin', 
-      ip: '192.168.1.5' 
+    {
+      action: 'Company Override Created',
+      details: 'Manual override enabled for Swift Cargo Express on Payroll module.',
+      reason: 'Partner promotion extension',
+      timestamp: '06/24/2026, 02:45:00 PM',
+      operator: 'Super Admin',
+      ip: '192.168.1.5'
     }
   ]);
 
@@ -379,7 +379,7 @@ export default function FeatureAccess() {
       companies: 0
     };
     setFeatures(prev => [...prev, clonedFeature]);
-    
+
     // Add audit log
     const newAudit = {
       action: 'Feature Cloned',
@@ -431,7 +431,7 @@ export default function FeatureAccess() {
       companies: 0
     };
     setFeatures([...features, newFeature]);
-    
+
     // Add audit log
     const newAudit = {
       action: 'Feature Created',
@@ -454,7 +454,7 @@ export default function FeatureAccess() {
   const handleExportCSV = () => {
     const headers = ['ID', 'Name', 'Category', 'Licensing', 'Status', 'Usage', 'Companies'];
     const rows = features.map(f => [f.id, f.name, f.category, f.licensing, f.status, f.usage, f.companies]);
-    const csvContent = "data:text/csv;charset=utf-8," 
+    const csvContent = "data:text/csv;charset=utf-8,"
       + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
@@ -469,7 +469,7 @@ export default function FeatureAccess() {
   const handleExportAudits = () => {
     const headers = ['Action Type', 'Audit Details', 'Reason', 'Timestamp', 'Operator', 'IP Address'];
     const rows = auditLogs.map(log => [log.action, log.details, log.reason, log.timestamp, log.operator, log.ip]);
-    const csvContent = "data:text/csv;charset=utf-8," 
+    const csvContent = "data:text/csv;charset=utf-8,"
       + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
@@ -482,8 +482,8 @@ export default function FeatureAccess() {
   };
 
   // Filter features based on search query
-  const filteredFeatures = features.filter(f => 
-    f.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+  const filteredFeatures = features.filter(f =>
+    f.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     f.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
     f.desc.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -491,13 +491,13 @@ export default function FeatureAccess() {
   // Group names array
   const categoriesList = [
     'Platform', 'Operations', 'Fleet', 'Drivers', 'Dispatch', 'Loads',
-    'Administration', 'API', 'Developer Tools', 'Billing', 
+    'Administration', 'API', 'Developer Tools', 'Billing',
     'CRM', 'Customer Portal', 'Tracking'
   ];
 
   return (
     <div className="flex-grow bg-[#F8FAFC] p-6 space-y-6 overflow-y-auto w-full text-left font-sans relative custom-scrollbar">
-      
+
       {/* Scrollbar CSS Overrides (using standard light blue/lavender grey for thumb, transparent track) */}
       <style>{`
         /* Webkit scrollbar stylings */
@@ -541,7 +541,7 @@ export default function FeatureAccess() {
             Configure global licensing rules, audit tenant margins, and resolve support tickets.
           </p>
         </div>
-        <button 
+        <button
           onClick={() => {
             const dataReport = `Total Features: ${features.length}\nActive: ${features.filter(f => f.status === 'Enabled').length}`;
             alert(`SaaS Feature Access Matrix telemetry:\n\n${dataReport}`);
@@ -630,7 +630,7 @@ export default function FeatureAccess() {
 
       {/* Main Workspace Navigation Container */}
       <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-xs space-y-6">
-        
+
         {/* Horizontal Navigation Tabs (Exactly matching designs) */}
         <div className="flex flex-wrap gap-3">
           {[
@@ -644,11 +644,10 @@ export default function FeatureAccess() {
               <button
                 key={tb.id}
                 onClick={() => setActiveTab(tb.id)}
-                className={`flex items-center gap-2 px-5 py-3 font-extrabold text-xs rounded-xl transition-all cursor-pointer border ${
-                  isActive
+                className={`flex items-center gap-2 px-5 py-3 font-extrabold text-xs rounded-xl transition-all cursor-pointer border ${isActive
                     ? 'bg-[#FFD400] text-black border-black border-2 shadow-xs'
                     : 'bg-[#64748B]/10 hover:bg-[#64748B]/20 text-[#334155] border-transparent'
-                }`}
+                  }`}
               >
                 <Icon className={`w-4 h-4 ${isActive ? 'text-black' : 'text-[#334155]'}`} />
                 {tb.label}
@@ -660,7 +659,7 @@ export default function FeatureAccess() {
         {/* Tab content 1: Dynamic Features Matrix */}
         {activeTab === 'Dynamic Features Matrix' && (
           <div className="space-y-6">
-            
+
             {/* Toolbar Action row */}
             <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
               <div className="flex flex-wrap items-center gap-3 flex-grow max-w-xl">
@@ -723,11 +722,11 @@ export default function FeatureAccess() {
               {categoriesList.map((category) => {
                 const isAccordionOpen = accordions[category];
                 const catFeatures = filteredFeatures.filter(f => f.category.toLowerCase() === category.toLowerCase());
-                
+
                 return (
                   <div key={category} className="border border-slate-150 rounded-2xl overflow-hidden bg-white">
                     {/* Category Group Header Card */}
-                    <div 
+                    <div
                       onClick={() => handleAccordionToggle(category)}
                       className="bg-[#F8FAFC] px-5 py-4 flex justify-between items-center cursor-pointer border-b border-slate-100 hover:bg-slate-100/50 transition-colors"
                     >
@@ -895,10 +894,10 @@ export default function FeatureAccess() {
         {/* Tab content 2: Feature Usage Analytics */}
         {activeTab === 'Feature Usage Analytics' && (
           <div className="space-y-6">
-            
+
             {/* Grid Row */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              
+
               {/* Adoption rates card */}
               <div className="bg-white border border-slate-150 rounded-2xl p-6 space-y-4">
                 <h3 className="text-sm font-black text-slate-800">Dynamic Feature Adoption Rates</h3>
@@ -917,8 +916,8 @@ export default function FeatureAccess() {
                         <span className="text-amber-600">{ad.pct}% adoption</span>
                       </div>
                       <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                        <div 
-                          style={{ width: `${ad.pct}%` }} 
+                        <div
+                          style={{ width: `${ad.pct}%` }}
                           className="bg-[#FFD400] h-full rounded-full"
                         ></div>
                       </div>
@@ -945,8 +944,8 @@ export default function FeatureAccess() {
                         <span className="text-[#10B981]">{ut.pct}% utilization</span>
                       </div>
                       <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                        <div 
-                          style={{ width: `${ut.pct}%` }} 
+                        <div
+                          style={{ width: `${ut.pct}%` }}
                           className="bg-[#10B981] h-full rounded-full"
                         ></div>
                       </div>
@@ -990,7 +989,7 @@ export default function FeatureAccess() {
         {/* Tab content 3: Security & Audit Center */}
         {activeTab === 'Security & Audit Center' && (
           <div className="space-y-4 bg-white">
-            
+
             {/* Audits table header and export */}
             <div className="flex justify-between items-center pb-2">
               <h3 className="text-sm font-black text-slate-855 uppercase tracking-wider">Feature Modification Logs</h3>
@@ -1053,9 +1052,9 @@ export default function FeatureAccess() {
             {/* Modal Header */}
             <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100">
               <h3 className="text-base font-black text-slate-800">Register SaaS Licensed Feature</h3>
-              <button 
-                type="button" 
-                onClick={() => setShowAddModal(false)} 
+              <button
+                type="button"
+                onClick={() => setShowAddModal(false)}
                 className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
@@ -1280,11 +1279,10 @@ export default function FeatureAccess() {
                 <button
                   key={tab}
                   onClick={() => setConfigureTab(tab)}
-                  className={`px-3 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer whitespace-nowrap ${
-                    configureTab === tab
+                  className={`px-3 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer whitespace-nowrap ${configureTab === tab
                       ? 'bg-[#FFD400] text-black border-black border-2 font-black'
                       : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                  }`}
+                    }`}
                 >
                   {tab}
                 </button>
@@ -1424,7 +1422,7 @@ export default function FeatureAccess() {
                   {/* Header */}
                   <div className="flex items-center justify-between">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">RELEASE VERSION LOGS</p>
-                    <button 
+                    <button
                       onClick={() => setShowBumpForm(true)}
                       className="bg-[#FFD400] hover:bg-[#F2C900] text-slate-900 font-bold text-xs px-4 py-2 rounded-xl shadow-[0_2px_10px_rgba(255,212,0,0.3)] transition-all flex items-center gap-1.5 cursor-pointer"
                     >
@@ -1437,28 +1435,28 @@ export default function FeatureAccess() {
                     <div className="border border-slate-200 rounded-[1.25rem] p-4 bg-white space-y-4">
                       <div className="space-y-2">
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">TARGET VERSION STRING</p>
-                        <input 
-                          type="text" 
-                          placeholder="e.g. 1.2.0" 
+                        <input
+                          type="text"
+                          placeholder="e.g. 1.2.0"
                           className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400] transition-colors placeholder:text-slate-400"
                         />
                       </div>
                       <div className="space-y-2">
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">CHANGE LOG DESCRIPTION</p>
-                        <input 
-                          type="text" 
-                          placeholder="e.g. Bug fixes and performance boost..." 
+                        <input
+                          type="text"
+                          placeholder="e.g. Bug fixes and performance boost..."
                           className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400] transition-colors placeholder:text-slate-400"
                         />
                       </div>
                       <div className="flex items-center gap-3 pt-1">
-                        <button 
+                        <button
                           onClick={() => setShowBumpForm(false)}
                           className="px-5 py-2 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer shadow-sm"
                         >
                           Cancel
                         </button>
-                        <button 
+                        <button
                           onClick={() => { setShowBumpForm(false); showNotification('Version bumped successfully'); }}
                           className="px-5 py-2 text-xs font-bold text-slate-900 bg-[#FFD400] hover:bg-[#F2C900] rounded-xl shadow-[0_2px_10px_rgba(255,212,0,0.3)] transition-colors cursor-pointer"
                         >

@@ -45,9 +45,9 @@ export default function InterCompanyTransfers() {
   };
 
   const filteredTransfers = transfers.filter(tr => {
-    const matchesSearch = tr.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          tr.details.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          tr.id.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = tr.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tr.details.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tr.id.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'All' || tr.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -142,12 +142,12 @@ export default function InterCompanyTransfers() {
             <h2 className="text-lg font-black text-slate-800 mb-1">Inter-Company Transfer Registry</h2>
             <p className="text-xs font-semibold text-slate-400">Full audit log of all platform asset and load transfers.</p>
           </div>
-          
+
           <div className="flex items-center gap-3 shrink-0">
             <div className="relative w-64">
-              <input 
-                type="text" 
-                placeholder="Search transfers..." 
+              <input
+                type="text"
+                placeholder="Search transfers..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none placeholder:text-slate-400 font-sans text-slate-800"
@@ -155,7 +155,7 @@ export default function InterCompanyTransfers() {
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
             </div>
 
-            <select 
+            <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="px-4 py-2 bg-white border border-slate-200 text-xs font-extrabold rounded-xl focus:outline-none text-slate-700 cursor-pointer"
@@ -176,12 +176,11 @@ export default function InterCompanyTransfers() {
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-slate-400">{tr.id}</span>
-                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
-                    tr.status === 'Completed' ? 'bg-[#E6F4EA] text-[#137333]' :
-                    tr.status === 'Transit' ? 'bg-[#FEF7E0] text-[#B06000]' :
-                    tr.status === 'Pending' ? 'bg-[#FEF7E0] text-[#B06000]' :
-                    'bg-[#FCE8E6] text-[#C5221F]'
-                  }`}>
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${tr.status === 'Completed' ? 'bg-[#E6F4EA] text-[#137333]' :
+                      tr.status === 'Transit' ? 'bg-[#FEF7E0] text-[#B06000]' :
+                        tr.status === 'Pending' ? 'bg-[#FEF7E0] text-[#B06000]' :
+                          'bg-[#FCE8E6] text-[#C5221F]'
+                    }`}>
                     {tr.status}
                   </span>
                 </div>
@@ -196,13 +195,13 @@ export default function InterCompanyTransfers() {
               <div className="flex items-center gap-3 self-end md:self-auto">
                 {tr.status === 'Pending' ? (
                   <>
-                    <button 
+                    <button
                       onClick={() => handleApprove(tr.id)}
                       className="bg-[#0F9D58] hover:bg-[#0b8043] text-white px-5 py-2 rounded-xl text-xs font-extrabold shadow-sm transition-colors cursor-pointer"
                     >
                       Approve
                     </button>
-                    <button 
+                    <button
                       onClick={() => handleReject(tr.id)}
                       className="bg-[#DB4437] hover:bg-[#c53929] text-white px-5 py-2 rounded-xl text-xs font-extrabold shadow-sm transition-colors cursor-pointer"
                     >
