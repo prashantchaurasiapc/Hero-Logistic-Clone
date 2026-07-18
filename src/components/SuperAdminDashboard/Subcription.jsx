@@ -188,76 +188,76 @@ export default function Subscriptions() {
       </div>
 
       {/* KPI Metrics Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4 pb-2.5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 pb-2.5">
         {/* Metric 1 */}
-        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+        <div className="bg-white border border-slate-100 rounded-2xl p-3.5 xl:p-4 shadow-xs flex flex-col justify-between overflow-hidden">
           <div>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">ACTIVE SUBS</span>
-            <span className="text-2xl font-black text-slate-800 block mt-1.5">4</span>
+            <span className="text-[9px] xl:text-[10px] font-black text-slate-400 uppercase tracking-wider block truncate">ACTIVE SUBS</span>
+            <span className="text-xl xl:text-2xl font-black text-slate-800 block mt-1.5 truncate">4</span>
           </div>
-          <span className="text-[10px] font-semibold text-slate-400 mt-2 block whitespace-nowrap">Active workspac... Stable</span>
+          <span className="text-[9px] xl:text-[10px] font-semibold text-slate-400 mt-2 block truncate">Active workspac... Stable</span>
         </div>
 
         {/* Metric 2 */}
-        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+        <div className="bg-white border border-slate-100 rounded-2xl p-3.5 xl:p-4 shadow-xs flex flex-col justify-between overflow-hidden">
           <div>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">TRIAL SUBS</span>
-            <span className="text-2xl font-black text-slate-800 block mt-1.5">0</span>
+            <span className="text-[9px] xl:text-[10px] font-black text-slate-400 uppercase tracking-wider block truncate">TRIAL SUBS</span>
+            <span className="text-xl xl:text-2xl font-black text-slate-800 block mt-1.5 truncate">0</span>
           </div>
-          <div className="flex justify-between items-center mt-2">
-            <span className="text-[10px] font-semibold text-slate-400 whitespace-nowrap">Starter trials act...</span>
-            <span className="text-[9px] font-black text-emerald-500 bg-emerald-50 px-1.5 py-0.5 rounded-md shrink-0">+1 new</span>
+          <div className="flex justify-between items-center mt-2 gap-1">
+            <span className="text-[9px] xl:text-[10px] font-semibold text-slate-400 truncate">Starter trials act...</span>
+            <span className="text-[8px] xl:text-[9px] font-black text-emerald-500 bg-emerald-50 px-1.5 py-0.5 rounded-md shrink-0">+1 new</span>
           </div>
         </div>
 
         {/* Metric 3 */}
-        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+        <div className="bg-white border border-slate-100 rounded-2xl p-3.5 xl:p-4 shadow-xs flex flex-col justify-between overflow-hidden">
           <div>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">EXPIRING TRIALS</span>
-            <span className="text-2xl font-black text-slate-800 block mt-1.5">0</span>
+            <span className="text-[9px] xl:text-[10px] font-black text-slate-400 uppercase tracking-wider block truncate">EXPIRING TRIALS</span>
+            <span className="text-xl xl:text-2xl font-black text-slate-800 block mt-1.5 truncate">0</span>
           </div>
-          <span className="text-[10px] font-semibold text-slate-400 mt-2 block whitespace-nowrap">Trials requiring r... Stable</span>
+          <span className="text-[9px] xl:text-[10px] font-semibold text-slate-400 mt-2 block truncate">Trials requiring r... Stable</span>
         </div>
 
         {/* Metric 4 */}
-        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+        <div className="bg-white border border-slate-100 rounded-2xl p-3.5 xl:p-4 shadow-xs flex flex-col justify-between overflow-hidden">
           <div>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">SUSPENDED SUBS</span>
-            <span className="text-2xl font-black text-slate-800 block mt-1.5">1</span>
+            <span className="text-[9px] xl:text-[10px] font-black text-slate-400 uppercase tracking-wider block truncate">SUSPENDED SUBS</span>
+            <span className="text-xl xl:text-2xl font-black text-slate-800 block mt-1.5 truncate">1</span>
           </div>
-          <div className="flex justify-between items-center mt-2">
-            <span className="text-[10px] font-semibold text-slate-400 whitespace-nowrap">On-Hold worksp...</span>
-            <span className="text-[9px] font-black text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md shrink-0">0 alerts</span>
+          <div className="flex justify-between items-center mt-2 gap-1">
+            <span className="text-[9px] xl:text-[10px] font-semibold text-slate-400 truncate">On-Hold worksp...</span>
+            <span className="text-[8px] xl:text-[9px] font-black text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md shrink-0">0 alerts</span>
           </div>
         </div>
 
         {/* Metric 5 */}
-        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+        <div className="bg-white border border-slate-100 rounded-2xl p-3.5 xl:p-4 shadow-xs flex flex-col justify-between overflow-hidden">
           <div>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">MRR (USD)</span>
-            <span className="text-2xl font-black text-slate-800 block mt-1.5">$41,909</span>
+            <span className="text-[9px] xl:text-[10px] font-black text-slate-400 uppercase tracking-wider block truncate">MRR (USD)</span>
+            <span className="text-xl xl:text-2xl font-black text-slate-800 block mt-1.5 truncate">$41,909</span>
           </div>
-          <span className="text-[10px] font-semibold text-[#10B981] mt-2 block whitespace-nowrap">Monthly Recurring ... +8%</span>
+          <span className="text-[9px] xl:text-[10px] font-semibold text-[#10B981] mt-2 block truncate">Monthly Recurring ... +8%</span>
         </div>
 
         {/* Metric 6 */}
-        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+        <div className="bg-white border border-slate-100 rounded-2xl p-3.5 xl:p-4 shadow-xs flex flex-col justify-between overflow-hidden">
           <div>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">ARR (USD)</span>
-            <span className="text-2xl font-black text-slate-800 block mt-1.5">$5,02,908</span>
+            <span className="text-[9px] xl:text-[10px] font-black text-slate-400 uppercase tracking-wider block truncate">ARR (USD)</span>
+            <span className="text-xl xl:text-2xl font-black text-slate-800 block mt-1.5 truncate">$5,02,908</span>
           </div>
-          <span className="text-[10px] font-semibold text-[#10B981] mt-2 block whitespace-nowrap">Annual projection ... +12%</span>
+          <span className="text-[9px] xl:text-[10px] font-semibold text-[#10B981] mt-2 block truncate">Annual projection ... +12%</span>
         </div>
 
         {/* Metric 7 */}
-        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+        <div className="bg-white border border-slate-100 rounded-2xl p-3.5 xl:p-4 shadow-xs flex flex-col justify-between overflow-hidden">
           <div>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">FAILED PAYMENTS</span>
-            <span className="text-2xl font-black text-slate-800 block mt-1.5">1</span>
+            <span className="text-[9px] xl:text-[10px] font-black text-slate-400 uppercase tracking-wider block truncate">FAILED PAYMENTS</span>
+            <span className="text-xl xl:text-2xl font-black text-slate-800 block mt-1.5 truncate">1</span>
           </div>
-          <div className="flex justify-between items-center mt-2">
-            <span className="text-[10px] font-semibold text-slate-400 whitespace-nowrap">Gateway balan...</span>
-            <span className="text-[9px] font-black text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md shrink-0">0 issues</span>
+          <div className="flex justify-between items-center mt-2 gap-1">
+            <span className="text-[9px] xl:text-[10px] font-semibold text-slate-400 truncate">Gateway balan...</span>
+            <span className="text-[8px] xl:text-[9px] font-black text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md shrink-0">0 issues</span>
           </div>
         </div>
       </div>

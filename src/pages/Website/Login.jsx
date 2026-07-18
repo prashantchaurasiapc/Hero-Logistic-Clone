@@ -119,8 +119,8 @@ const Login = () => {
           <div className="login-logo" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0px' }}>
             <img src={logoSrc} alt="Logo" style={{ height: '70px', width: 'auto', objectFit: 'contain', marginLeft: '-38px', marginRight: '-32px' }} />
             <div className="logo-text-group" style={{ display: 'flex', flexDirection: 'column' }}>
-              <span className="logo-title" style={{ fontSize: '22px', fontWeight: 805, color: '#ffffff', fontFamily: "'Outfit', system-ui, sans-serif", lineHeight: '1.1' }}>Hero Logistics</span>
-              <span className="logo-subtitle" style={{ fontSize: '10.5px', fontWeight: 700, color: '#64748b', letterSpacing: '2px', textTransform: 'uppercase', marginTop: '4px', lineHeight: '1' }}>Enterprise Suite</span>
+              <span className="logo-title" style={{ fontSize: '18px', fontWeight: 805, color: '#ffffff', fontFamily: "'Outfit', system-ui, sans-serif", lineHeight: '1.1' }}>Hero Logistics</span>
+              <span className="logo-subtitle" style={{ fontSize: '9px', fontWeight: 700, color: '#64748b', letterSpacing: '2px', textTransform: 'uppercase', marginTop: '4px', lineHeight: '1' }}>Enterprise Suite</span>
             </div>
           </div>
 
@@ -165,7 +165,7 @@ const Login = () => {
       {/* Right Panel */}
       <div className="login-right">
         {isAuthenticating ? (
-          <div className="right-content" style={{ textAlign: 'center' }}>
+          <div className="auth-overlay">
             {/* Green Tick Circular Badge */}
             <div
               style={{
@@ -179,8 +179,6 @@ const Login = () => {
                 color: '#10b981',
                 backgroundColor: 'rgba(16, 185, 129, 0.1)',
                 marginBottom: '24px',
-                marginLeft: 'auto',
-                marginRight: 'auto',
                 boxShadow: '0 4px 12px rgba(16, 185, 129, 0.15)'
               }}
             >
@@ -198,12 +196,12 @@ const Login = () => {
             <h2 style={{ fontSize: '32px', fontWeight: 900, color: '#ffffff', letterSpacing: '-0.5px', marginBottom: '8px' }}>
               Authenticated!
             </h2>
-            <p style={{ fontSize: '13px', fontWeight: 600, color: '#94a3b8', marginBottom: '32px' }}>
-              Logging in as {loggingInRole}...
+            <p style={{ fontSize: '13px', fontWeight: 600, color: '#4785c4', marginBottom: '32px' }}>
+              Redirecting to {loggingInRole} Dashboard...
             </p>
 
             {/* Gold Progress Loader Bar */}
-            <div style={{ width: '80px', backgroundColor: '#1e293b', height: '4px', borderRadius: '9999px', overflow: 'hidden', marginLeft: 'auto', marginRight: 'auto' }}>
+            <div style={{ width: '40px', backgroundColor: '#1e293b', height: '3px', borderRadius: '9999px', overflow: 'hidden' }}>
               <div
                 style={{
                   height: '100%',

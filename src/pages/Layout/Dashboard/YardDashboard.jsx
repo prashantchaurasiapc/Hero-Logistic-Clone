@@ -395,7 +395,7 @@ export default function YardDashboard() {
     <div style={{ height: 'calc(100vh - 85px)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto', padding: '16px 20px', width: '100%', maxWidth: 'none', fontFamily: "'Outfit', 'Inter', sans-serif", backgroundColor: '#f8fafc' }}>
 
       {/* Header Panel */}
-      <div style={{ flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+      <div style={{ flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: 24 }}>🚧</span>
           <div style={{ textAlign: 'left' }}>
@@ -405,7 +405,7 @@ export default function YardDashboard() {
         </div>
 
         {/* Top Right Header Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           {/* Bell Icon */}
           <div style={{ position: 'relative' }}>
             <button
@@ -579,7 +579,7 @@ export default function YardDashboard() {
       </div>
 
       {/* Stats row (Top 5 boxes) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16, marginBottom: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 20 }}>
         {/* Trailers Spotted */}
         <div
           onMouseEnter={() => setHoveredStatCard('trailers')}
@@ -683,7 +683,7 @@ export default function YardDashboard() {
       </div>
 
       {/* Action Cards Row (Bottom 5 boxes with hover style matching Move Asset) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16, marginBottom: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 16, marginBottom: 20 }}>
         {/* Card 1: Move Asset */}
         <div
           onClick={() => triggerToast('Select Move Asset from sidebar to relocate assets.')}
@@ -796,7 +796,9 @@ export default function YardDashboard() {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 20
+        marginBottom: 20,
+        flexWrap: 'wrap',
+        gap: 16
       }}>
         {/* Left Side Status dot */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -813,7 +815,7 @@ export default function YardDashboard() {
         </div>
 
         {/* Right Side Buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <button
             onClick={() => setShowScheduleModal(true)}
             style={{
@@ -878,7 +880,7 @@ export default function YardDashboard() {
       <div style={{ backgroundColor: '#ffffff', borderRadius: 16, border: '1px solid #e2e8f0', padding: 20, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 14 }}>
 
         {/* Section Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: 12 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: 12, flexWrap: 'wrap', gap: 12 }}>
           <h2 style={{ fontSize: 15, fontWeight: '800', color: '#0f172a', margin: 0 }}>
             Spotted Relocator Task Queue &bull; <span style={{ color: '#64748b', fontSize: 13, fontWeight: '700' }}>3 Tasks</span>
           </h2>
@@ -899,7 +901,7 @@ export default function YardDashboard() {
         </div>
 
         {/* Task Cards */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: 8 }}>
           {tasks.map((task) => (
             <div
               key={task.id}
@@ -911,7 +913,9 @@ export default function YardDashboard() {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                gap: 16
+                gap: 16,
+                minWidth: 'max-content',
+                whiteSpace: 'nowrap'
               }}
             >
               {/* Left Side: Info */}

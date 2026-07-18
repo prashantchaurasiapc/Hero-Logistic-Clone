@@ -151,7 +151,7 @@ const VehicleCosts = () => {
                   COLUMNS
                 </button>
                 {showColumnsDropdown && (
-                  <div style={S.dropdownMenu}>
+                  <div className="columns-dropdown-panel" style={S.dropdownMenu}>
                     <div style={S.dropdownHeader}>COLUMN VISIBILITY</div>
                     <label style={S.dropdownItem}>
                       <input type="checkbox" checked={cols.vehiclePlate} onChange={() => toggleColumn('vehiclePlate')} style={S.dropdownCheckbox} />
@@ -330,7 +330,7 @@ const S = {
   // Cards Grid
   cardsGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(4, 1fr)',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
     gap: 20,
     marginBottom: 24
   },
@@ -396,10 +396,12 @@ const S = {
   mainSplit: {
     display: 'flex',
     gap: 24,
-    alignItems: 'stretch'
+    alignItems: 'stretch',
+    flexWrap: 'wrap'
   },
   leftSection: {
     flex: '2',
+    minWidth: 300,
     backgroundColor: '#ffffff',
     borderRadius: 16,
     padding: '24px',
@@ -408,6 +410,7 @@ const S = {
   },
   rightSection: {
     flex: '1',
+    minWidth: 300,
     backgroundColor: '#ffffff',
     borderRadius: 16,
     border: '1px solid #e2e8f0',
@@ -426,7 +429,9 @@ const S = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20
+    marginBottom: 20,
+    flexWrap: 'wrap',
+    gap: 16
   },
   sectionTitle: {
     fontSize: 16,
@@ -445,7 +450,8 @@ const S = {
   toolbarRight: {
     display: 'flex',
     gap: 12,
-    alignItems: 'center'
+    alignItems: 'center',
+    flexWrap: 'wrap'
   },
   segmentedControl: {
     display: 'flex',
@@ -484,7 +490,6 @@ const S = {
   dropdownMenu: {
     position: 'absolute',
     top: '100%',
-    right: 0,
     marginTop: 8,
     backgroundColor: '#ffffff',
     border: '1px solid #e2e8f0',
@@ -554,11 +559,13 @@ const S = {
   tableWrapper: {
     border: '1px solid #f1f5f9',
     borderRadius: 12,
-    overflow: 'hidden'
+    overflowX: 'auto',
+    WebkitOverflowScrolling: 'touch'
   },
   table: {
     width: '100%',
-    borderCollapse: 'collapse'
+    borderCollapse: 'collapse',
+    whiteSpace: 'nowrap'
   },
   theadRow: {
     backgroundColor: '#f8fafc',

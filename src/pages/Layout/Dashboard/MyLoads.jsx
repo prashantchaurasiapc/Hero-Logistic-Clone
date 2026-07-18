@@ -57,14 +57,14 @@ const MyLoads = () => {
     { id: 'LD-7713', specs: 'General Cargo', path: 'Miami FL ➔ Tampa FL', cost: '$600.00', status: 'Draft', checked: false }
   ]);
 
-  // Column Visibility (Default matches screenshot: only Transit State visible)
+  // Column Visibility (All visible by default)
   const [visibleColumns, setVisibleColumns] = useState({
-    loadId: false,
-    cargoSpecs: false,
-    path: false,
-    cost: false,
+    loadId: true,
+    cargoSpecs: true,
+    path: true,
+    cost: true,
     status: true,
-    actions: false
+    actions: true
   });
 
   const columnsList = [
@@ -192,7 +192,7 @@ const MyLoads = () => {
           <h1 className="customer-title">Customer Shipper Portal &bull; My Loads</h1>
           <p className="customer-subtitle">Request load deliveries, audit invoices, download BOL papers, and track active route paths.</p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
           <button onClick={() => setShowSupportModal(true)} className="contact-support-btn">Contact Support</button>
           <button onClick={() => setShowBookModal(true)} className="book-shipment-btn">+ Book Shipment</button>
         </div>
@@ -301,7 +301,7 @@ const MyLoads = () => {
               {showColumnsDropdown && (
                 <>
                   <div style={S.dropdownOverlay} onClick={() => setShowColumnsDropdown(false)} />
-                  <div style={S.dropdownPanel}>
+                  <div className="columns-dropdown-panel" style={S.dropdownPanel}>
                     <div style={S.dropdownTitle}>COLUMN VISIBILITY</div>
                     {columnsList.map((col) => (
                       <label key={col.key} style={S.dropdownLabel}>
@@ -534,6 +534,8 @@ const S = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 16,
     marginBottom: 20
   },
   cardTitle: {
@@ -553,7 +555,8 @@ const S = {
   headerControlsRight: {
     display: 'flex',
     gap: 12,
-    alignItems: 'center'
+    alignItems: 'center',
+    flexWrap: 'wrap'
   },
   searchWrapper: {
     display: 'flex',
@@ -589,6 +592,8 @@ const S = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 16,
     marginBottom: 24,
     marginTop: 16
   },
@@ -627,7 +632,8 @@ const S = {
   toolbarRight: {
     display: 'flex',
     gap: 16,
-    alignItems: 'center'
+    alignItems: 'center',
+    flexWrap: 'wrap'
   },
   densityPill: {
     display: 'flex',
@@ -706,12 +712,14 @@ const S = {
     backgroundColor: '#ffffff',
     borderRadius: 16,
     border: '1px solid #e2e8f0',
-    overflow: 'hidden'
+    overflowX: 'auto',
+    WebkitOverflowScrolling: 'touch'
   },
   table: {
     width: '100%',
     borderCollapse: 'collapse',
-    textAlign: 'left'
+    textAlign: 'left',
+    whiteSpace: 'nowrap'
   },
   theadRow: {
     borderBottom: '1px solid #e2e8f0',

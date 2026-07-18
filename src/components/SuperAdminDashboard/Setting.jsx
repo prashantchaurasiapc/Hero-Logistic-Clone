@@ -6,6 +6,14 @@ import {
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('Company Profile');
+  const [showLogColsDropdown, setShowLogColsDropdown] = useState(false);
+  const [visibleLogCols, setVisibleLogCols] = useState({
+    timestamp: true,
+    userNode: true,
+    event: true,
+    ipAddress: true,
+    authStatus: true
+  });
 
   const tabs = [
     { name: 'Company Profile', icon: SettingsIcon },
@@ -494,31 +502,80 @@ export default function Settings() {
                     </button>
                   ))}
                 </div>
-                <button className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-600 rounded-xl text-xs font-black tracking-wide hover:bg-slate-200 transition-colors border border-slate-200">
-                  <SettingsIcon className="w-4 h-4" /> COLUMNS
-                </button>
+                
+                <div className="relative">
+                  <button 
+                    onClick={() => setShowLogColsDropdown(prev => !prev)}
+                    className={`flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-600 rounded-xl text-xs font-black tracking-wide hover:bg-slate-200 transition-colors border ${showLogColsDropdown ? 'border-[#FFD400]' : 'border-slate-200'}`}
+                  >
+                    <SettingsIcon className="w-4 h-4" /> COLUMNS
+                  </button>
+
+                  {showLogColsDropdown && (
+                    <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-lg z-50 py-2">
+                      <div className="px-4 py-2 border-b border-slate-100 mb-2">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">COLUMN VISIBILITY</span>
+                      </div>
+                      <div className="max-h-64 overflow-y-auto px-2 space-y-1">
+                        {[
+                          { id: 'timestamp', label: 'Timestamp' },
+                          { id: 'userNode', label: 'User Node' },
+                          { id: 'event', label: 'Event Action Description' },
+                          { id: 'ipAddress', label: 'IP Address' },
+                          { id: 'authStatus', label: 'Auth Status' }
+                        ].map((col) => (
+                          <label key={col.id} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors">
+                            <input
+                              type="checkbox"
+                              checked={visibleLogCols[col.id]}
+                              onChange={() => setVisibleLogCols(prev => ({ ...prev, [col.id]: !prev[col.id] }))}
+                              className="w-4.5 h-4.5 rounded border-slate-300 text-blue-600 focus:ring-blue-600 cursor-pointer"
+                            />
+                            <span className="text-sm font-bold text-slate-700">{col.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
               </div>
             </div>
 
-            <div className="border border-slate-200 rounded-2xl overflow-hidden">
-              <table className="w-full text-left border-collapse">
+            <div className="border border-slate-200 rounded-2xl overflow-x-auto">
+              <table className="w-full text-left border-collapse whitespace-nowrap">
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50/50">
                     <th className="p-5 w-16 text-center">
-                      <input type="checkbox" className="w-5 h-5 rounded border-slate-300 text-[#FFD400] focus:ring-[#FFD400]" />
+                      <input type="checkbox" className="w-4.5 h-4.5 rounded border-slate-300 text-blue-600 focus:ring-blue-600 cursor-pointer" />
                     </th>
-                    <th className="p-5 text-xs font-black text-slate-400 uppercase tracking-wider">AUTH STATUS</th>
+                    {visibleLogCols.timestamp && <th className="p-5 text-xs font-black text-slate-400 uppercase tracking-wider">TIMESTAMP</th>}
+                    {visibleLogCols.userNode && <th className="p-5 text-xs font-black text-slate-400 uppercase tracking-wider">USER NODE</th>}
+                    {visibleLogCols.event && <th className="p-5 text-xs font-black text-slate-400 uppercase tracking-wider">EVENT ACTION DESCRIPTION</th>}
+                    {visibleLogCols.ipAddress && <th className="p-5 text-xs font-black text-slate-400 uppercase tracking-wider">IP ADDRESS</th>}
+                    {visibleLogCols.authStatus && <th className="p-5 text-xs font-black text-slate-400 uppercase tracking-wider">AUTH STATUS</th>}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200/80">
-                  {[1, 2, 3, 4].map((row, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/30">
+                <tbody className="divide-y divide-slate-100">
+                  {[
+                    { id: 1, ts: '13/7/2026, 5:28:37 pm', node: 'Super Admin', ev: 'Successfully converted trial account', ip: '192.168.1.1' },
+                    { id: 2, ts: '13/7/2026, 5:28:30 pm', node: 'System Root', ev: 'Plan updated successfully', ip: '192.168.1.1' },
+                    { id: 3, ts: '13/7/2026, 5:20:00 pm', node: 'Super Admin', ev: 'Login successful', ip: '192.168.1.1' },
+                    { id: 4, ts: '13/7/2026, 5:10:00 pm', node: 'System Root', ev: 'Settings updated', ip: '192.168.1.1' }
+                  ].map((row, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
                       <td className="p-5 text-center w-16">
-                        <input type="checkbox" className="w-5 h-5 rounded border-slate-300 text-[#FFD400] focus:ring-[#FFD400]" />
+                        <input type="checkbox" className="w-4.5 h-4.5 rounded border-slate-300 text-blue-600 focus:ring-blue-600 cursor-pointer" />
                       </td>
-                      <td className="p-5 flex items-center gap-2 text-sm font-bold text-slate-700">
-                        <CheckCircle2 className="w-4.5 h-4.5 text-slate-400" /> Success
-                      </td>
+                      {visibleLogCols.timestamp && <td className="p-5 text-sm font-medium text-slate-500">{row.ts}</td>}
+                      {visibleLogCols.userNode && <td className="p-5 text-sm font-bold text-slate-800">{row.node}</td>}
+                      {visibleLogCols.event && <td className="p-5 text-sm font-medium text-slate-600">{row.ev}</td>}
+                      {visibleLogCols.ipAddress && <td className="p-5 text-sm font-medium text-slate-500">{row.ip}</td>}
+                      {visibleLogCols.authStatus && (
+                        <td className="p-5 flex items-center gap-2 text-sm font-bold text-slate-700">
+                          <CheckCircle2 className="w-4.5 h-4.5 text-slate-400" /> Success
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

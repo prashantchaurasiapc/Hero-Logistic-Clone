@@ -163,7 +163,7 @@ const CustomerDocuments = () => {
   };
 
   return (
-    <div className="customer-dashboard" style={{ height: 'calc(100vh - 125px)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflow: 'hidden' }}>
+    <div className="customer-dashboard documents-wrapper">
       {/* Header Container */}
       <div className="customer-header-container" style={{ flexShrink: 0 }}>
         <div>
@@ -174,11 +174,11 @@ const CustomerDocuments = () => {
       </div>
 
       {/* Main Grid Layout */}
-      <div style={S.gridContainer}>
+      <div className="documents-grid">
         {/* Left: Secure Documents Vault */}
         <div style={S.leftCard}>
           <div style={S.cardHeader}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
               <h2 style={S.cardTitle}>Secure Documents Vault</h2>
               
               {/* Selected Pills */}
@@ -238,7 +238,7 @@ const CustomerDocuments = () => {
                 {showColumnsDropdown && (
                   <>
                     <div style={S.dropdownOverlay} onClick={() => setShowColumnsDropdown(false)} />
-                    <div style={S.dropdownPanel}>
+                    <div className="columns-dropdown-panel" style={S.dropdownPanel}>
                       <div style={S.dropdownTitle}>COLUMN VISIBILITY</div>
                       {columnsList.map((col) => (
                         <label key={col.key} style={S.dropdownLabel}>
@@ -424,14 +424,6 @@ const CustomerDocuments = () => {
 
 /* ─── Styles Object ─── */
 const S = {
-  gridContainer: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 380px',
-    gap: 24,
-    marginTop: 24,
-    flex: 1,
-    minHeight: 0
-  },
   leftCard: {
     backgroundColor: '#ffffff',
     borderRadius: 16,
@@ -448,6 +440,8 @@ const S = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 16,
     marginBottom: 20
   },
   cardTitle: {
@@ -459,7 +453,8 @@ const S = {
   headerControlsRight: {
     display: 'flex',
     gap: 12,
-    alignItems: 'center'
+    alignItems: 'center',
+    flexWrap: 'wrap'
   },
   selectedPill: {
     backgroundColor: '#fffbeb',
@@ -474,7 +469,8 @@ const S = {
     fontSize: 11,
     fontWeight: '800',
     color: '#b45309',
-    letterSpacing: '0.5px'
+    letterSpacing: '0.5px',
+    whiteSpace: 'nowrap'
   },
   csvExportBtn: {
     backgroundColor: 'transparent',
@@ -487,7 +483,8 @@ const S = {
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
-    transition: 'all 0.15s ease'
+    transition: 'all 0.15s ease',
+    whiteSpace: 'nowrap'
   },
   densityPill: {
     display: 'flex',
@@ -566,12 +563,14 @@ const S = {
     backgroundColor: '#ffffff',
     borderRadius: 16,
     border: '1px solid #e2e8f0',
-    overflow: 'hidden'
+    overflowX: 'auto',
+    WebkitOverflowScrolling: 'touch'
   },
   table: {
     width: '100%',
     borderCollapse: 'collapse',
-    textAlign: 'left'
+    textAlign: 'left',
+    whiteSpace: 'nowrap'
   },
   theadRow: {
     borderBottom: '1px solid #e2e8f0',

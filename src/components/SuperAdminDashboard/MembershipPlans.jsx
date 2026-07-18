@@ -643,7 +643,7 @@ export default function MembershipPlans() {
             return (
               <div
                 key={p.id}
-                className="border border-slate-150 rounded-2xl p-5 bg-white space-y-4 hover:shadow-md transition-shadow relative flex flex-col justify-between"
+                className="shadow-sm rounded-2xl p-5 bg-white space-y-4 hover:shadow-md transition-shadow relative flex flex-col justify-between"
               >
                 {/* Plan Header */}
                 <div className="space-y-1">
@@ -910,7 +910,7 @@ export default function MembershipPlans() {
             )}
 
             {/* Registry table aligned perfectly using table-fixed and custom scrollbars */}
-            <div className="border border-slate-150 rounded-2xl overflow-hidden bg-white">
+            <div className="border border-slate-100 rounded-2xl overflow-hidden bg-white">
               <div className="overflow-x-auto custom-scrollbar">
                 <table className="text-left border-collapse table-fixed min-w-[1500px] w-[1500px]">
                   <thead>
@@ -1059,7 +1059,7 @@ export default function MembershipPlans() {
         {/* Tab content 2: Feature Matrix (Screenshot 5 comparison grid!) */}
         {activeSubTab === 'Feature Matrix' && (
           <div className="space-y-4">
-            <div className="border border-slate-150 rounded-2xl overflow-hidden bg-white">
+            <div className="border border-slate-100 rounded-2xl overflow-hidden bg-white">
               <table className="w-full text-left border-collapse text-xs font-bold text-slate-700">
                 <thead>
                   <tr className="border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider bg-slate-50/50">
@@ -1102,7 +1102,7 @@ export default function MembershipPlans() {
                   ))}
 
                   {/* Threshold category header */}
-                  <tr className="bg-slate-50/70 border-y border-slate-150">
+                  <tr className="bg-slate-50/70 border-y border-slate-100">
                     <td colSpan="5" className="py-3 px-6 text-[10px] font-black text-amber-600 uppercase tracking-widest">
                       CAPACITY ALLOCATION THRESHOLDS
                     </td>
@@ -1158,7 +1158,7 @@ export default function MembershipPlans() {
             </div>
 
             {/* Promos Table */}
-            <div className="border border-slate-150 rounded-2xl overflow-hidden bg-white">
+            <div className="border border-slate-100 rounded-2xl overflow-hidden bg-white">
               <table className="w-full text-left border-collapse text-xs font-bold text-slate-700">
                 <thead>
                   <tr className="border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider bg-slate-50/50">
@@ -1238,7 +1238,7 @@ export default function MembershipPlans() {
         {/* Tab content 4: Trial Management (Screenshot 1!) */}
         {activeSubTab === 'Trial Management' && (
           <div className="space-y-4">
-            <div className="border border-slate-150 rounded-2xl overflow-hidden bg-white">
+            <div className="border border-slate-100 rounded-2xl overflow-hidden bg-white">
               <table className="w-full text-left border-collapse text-xs font-bold text-slate-700">
                 <thead>
                   <tr className="border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider bg-slate-50/50">
@@ -1315,7 +1315,7 @@ export default function MembershipPlans() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
               {/* MRR timeline graph */}
-              <div className="lg:col-span-2 border border-slate-150 rounded-2xl p-5 bg-white space-y-4">
+              <div className="lg:col-span-2 border border-slate-100 rounded-2xl p-5 bg-white space-y-4">
                 <div className="flex justify-between items-center">
                   <h3 className="text-sm font-black text-slate-800">Dynamic MRR Expansion Timeline (USD)</h3>
                   <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Q1-Q2 Audited cash flow</span>
@@ -1362,7 +1362,7 @@ export default function MembershipPlans() {
               </div>
 
               {/* Subscriber Mix Pie Donut Chart */}
-              <div className="border border-slate-150 rounded-2xl p-5 bg-white space-y-4">
+              <div className="border border-slate-100 rounded-2xl p-5 bg-white space-y-4">
                 <div>
                   <h3 className="text-sm font-black text-slate-800">Subscriber Mix Analytics</h3>
                   <p className="text-[10px] text-slate-400 font-bold mt-1">Distribution index of operational licensing accounts.</p>
@@ -1413,19 +1413,19 @@ export default function MembershipPlans() {
 
             {/* Bottom 3 metrics grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              <div className="border border-slate-150 rounded-2xl p-5 bg-white text-left">
+              <div className="border border-slate-100 rounded-2xl p-5 bg-white text-left">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">CUSTOMER LIFETIME VALUE (LTV)</span>
                 <span className="text-xl font-black text-slate-800 block mt-2">$18,450.00</span>
                 <span className="text-[10px] font-bold text-emerald-500 mt-2 block">LTV to CAC ratio: 4.8x (Excellent)</span>
               </div>
 
-              <div className="border border-slate-150 rounded-2xl p-5 bg-white text-left">
+              <div className="border border-slate-100 rounded-2xl p-5 bg-white text-left">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">CUSTOMER ACQUISITION COST (CAC)</span>
                 <span className="text-xl font-black text-slate-800 block mt-2">$3,840.00</span>
                 <span className="text-[10px] font-bold text-amber-500 mt-2 block">Payback period: 7.8 months</span>
               </div>
 
-              <div className="border border-slate-150 rounded-2xl p-5 bg-white text-left">
+              <div className="border border-slate-100 rounded-2xl p-5 bg-white text-left">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">REVENUE CHURN RATE (MRR CHURN)</span>
                 <span className="text-xl font-black text-rose-500 block mt-2">1.4% / mo</span>
                 <span className="text-[10px] font-bold text-slate-400 mt-2 block">Net Revenue Retention (NRR): 108.5%</span>
@@ -1456,7 +1456,7 @@ export default function MembershipPlans() {
             <form onSubmit={(e) => { e.preventDefault(); showNotification('Gateway Configurations Saved!'); }} className="space-y-5">
 
               {/* Row 1: Stripe */}
-              <div className="border border-slate-150 rounded-2xl p-5 bg-white space-y-4">
+              <div className="border border-slate-100 rounded-2xl p-5 bg-white space-y-4">
                 <div className="flex justify-between items-center">
                   <label className="flex items-center gap-2.5 cursor-pointer font-black text-slate-800 text-xs">
                     <input type="checkbox" defaultChecked className="w-4 h-4 rounded text-blue-650 cursor-pointer" />
@@ -1479,7 +1479,7 @@ export default function MembershipPlans() {
               </div>
 
               {/* Row 2: PayPal */}
-              <div className="border border-slate-150 rounded-2xl p-4 bg-white">
+              <div className="border border-slate-100 rounded-2xl p-4 bg-white">
                 <label className="flex items-center gap-2.5 cursor-pointer font-black text-slate-800 text-xs">
                   <input type="checkbox" className="w-4 h-4 rounded text-blue-650 cursor-pointer" />
                   <span>PayPal Checkout Express</span>
@@ -1487,7 +1487,7 @@ export default function MembershipPlans() {
               </div>
 
               {/* Row 3: ACH direct bank */}
-              <div className="border border-slate-150 rounded-2xl p-5 bg-white space-y-4">
+              <div className="border border-slate-100 rounded-2xl p-5 bg-white space-y-4">
                 <label className="flex items-center gap-2.5 cursor-pointer font-black text-slate-800 text-xs">
                   <input type="checkbox" defaultChecked className="w-4 h-4 rounded text-blue-650 cursor-pointer" />
                   <span>ACH Electronic Direct Bank Deposit (Plaid Secure Node)</span>
@@ -1505,7 +1505,7 @@ export default function MembershipPlans() {
               </div>
 
               {/* Row 4: Corporate wire transfer */}
-              <div className="border border-slate-150 rounded-2xl p-5 bg-white space-y-4">
+              <div className="border border-slate-100 rounded-2xl p-5 bg-white space-y-4">
                 <label className="flex items-center gap-2.5 cursor-pointer font-black text-slate-800 text-xs">
                   <input type="checkbox" defaultChecked className="w-4 h-4 rounded text-blue-650 cursor-pointer" />
                   <span>Corporate Wire Bank Transfer</span>
@@ -1527,7 +1527,7 @@ export default function MembershipPlans() {
               </div>
 
               {/* Row 5: Manual Invoicing */}
-              <div className="border border-slate-150 rounded-2xl p-5 bg-white space-y-4">
+              <div className="border border-slate-100 rounded-2xl p-5 bg-white space-y-4">
                 <label className="flex items-center gap-2.5 cursor-pointer font-black text-slate-800 text-xs">
                   <input type="checkbox" defaultChecked className="w-4 h-4 rounded text-blue-650 cursor-pointer" />
                   <span>Manual Invoicing & Purchase Order Terms</span>
@@ -1560,7 +1560,7 @@ export default function MembershipPlans() {
 
             <form onSubmit={(e) => { e.preventDefault(); showNotification(`Cohort migration executed successfully from ${migrationSource} to ${migrationTarget}!`); }} className="space-y-6">
 
-              <div className="border border-slate-150 rounded-2xl p-5 bg-white">
+              <div className="border border-slate-100 rounded-2xl p-5 bg-white">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs font-bold text-slate-700">
                   <div className="space-y-2">
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">Select Source Plan Level</label>
@@ -1628,7 +1628,7 @@ export default function MembershipPlans() {
             </div>
 
             {/* Invoices Table */}
-            <div className="border border-slate-150 rounded-2xl overflow-hidden bg-white">
+            <div className="border border-slate-100 rounded-2xl overflow-hidden bg-white">
               <table className="w-full text-left border-collapse text-xs font-bold text-slate-700">
                 <thead>
                   <tr className="border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider bg-slate-50/50">
@@ -1728,7 +1728,7 @@ export default function MembershipPlans() {
             </div>
 
             {/* Audit log list card layout */}
-            <div className="border border-slate-150 rounded-2xl bg-white divide-y divide-slate-100 overflow-hidden">
+            <div className="border border-slate-100 rounded-2xl bg-white divide-y divide-slate-100 overflow-hidden">
               {filteredAudits.length === 0 ? (
                 <div className="py-8 text-center text-slate-400 font-semibold w-full">
                   No system logs match search query.
@@ -1937,7 +1937,7 @@ export default function MembershipPlans() {
                       Select which key modules should be entitled automatically to this subscription level.
                     </p>
 
-                    <div className="grid grid-cols-2 gap-3 bg-[#F8FAFC] border border-slate-150 rounded-2xl p-4">
+                    <div className="grid grid-cols-2 gap-3 bg-[#F8FAFC] border border-slate-100 rounded-2xl p-4">
                       {['Dispatch Board', 'Fleet Maintenance', 'Real-time GPS', 'Driver Mobile App', 'AI Route Dispatcher', 'Billing ledger API'].map((m) => (
                         <label key={m} className="flex items-center gap-2.5 cursor-pointer">
                           <input type="checkbox" defaultChecked className="w-4 h-4 rounded text-blue-650 cursor-pointer" />
@@ -2030,7 +2030,7 @@ export default function MembershipPlans() {
                       </p>
                     </div>
 
-                    <div className="bg-[#F8FAFC] border border-slate-150 rounded-2xl p-4 text-left space-y-2 text-[11px] font-bold">
+                    <div className="bg-[#F8FAFC] border border-slate-100 rounded-2xl p-4 text-left space-y-2 text-[11px] font-bold">
                       <div className="flex justify-between"><span className="text-slate-400">Tier Name:</span><span className="text-slate-800">{formName}</span></div>
                       <div className="flex justify-between"><span className="text-slate-400">Version:</span><span className="font-mono text-slate-800">v{formVersion}</span></div>
                       <div className="flex justify-between"><span className="text-slate-400">Lifecycle Status:</span><span className="text-slate-800">{formStatus}</span></div>

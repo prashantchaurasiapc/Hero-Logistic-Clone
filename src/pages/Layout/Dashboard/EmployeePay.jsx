@@ -123,7 +123,7 @@ const EmployeePay = () => {
               {showColumnsDropdown && (
                 <>
                   <div style={S.dropdownOverlay} onClick={() => setShowColumnsDropdown(false)} />
-                  <div style={S.dropdownPanel}>
+                  <div className="columns-dropdown-panel" style={S.dropdownPanel}>
                     <div style={S.dropdownTitle}>COLUMN VISIBILITY</div>
                     {columnsList.map((col) => (
                       <label key={col.key} style={S.dropdownLabel}>
@@ -265,7 +265,8 @@ const S = {
   actionGroup: {
     display: 'flex',
     gap: 12,
-    alignItems: 'center'
+    alignItems: 'center',
+    flexWrap: 'wrap'
   },
   btnSecondary: {
     backgroundColor: '#ffffff',
@@ -281,7 +282,8 @@ const S = {
   toolbarRight: {
     display: 'flex',
     gap: 16,
-    alignItems: 'center'
+    alignItems: 'center',
+    flexWrap: 'wrap'
   },
   densityPill: {
     display: 'flex',
@@ -319,7 +321,6 @@ const S = {
   dropdownPanel: {
     position: 'absolute',
     top: 'calc(100% + 8px)',
-    right: 0,
     backgroundColor: '#ffffff',
     borderRadius: 12,
     boxShadow: '0 10px 25px -5px rgba(0,0,0,0.08), 0 8px 16px -6px rgba(0,0,0,0.04)',
@@ -355,13 +356,15 @@ const S = {
   tableWrapper: {
     border: '1px solid #e2e8f0',
     borderRadius: 12,
-    overflow: 'hidden',
+    overflowX: 'auto',
+    WebkitOverflowScrolling: 'touch',
     marginTop: 20
   },
   table: {
     width: '100%',
     borderCollapse: 'collapse',
-    textAlign: 'left'
+    textAlign: 'left',
+    whiteSpace: 'nowrap'
   },
   theadRow: {
     borderBottom: '1px solid #e2e8f0',

@@ -477,7 +477,7 @@ const AccountsReports = () => {
                   </button>
 
                   {isColumnsMenuOpen && (
-                    <div style={S.columnsDropdown}>
+                    <div className="columns-dropdown-panel" style={S.columnsDropdown}>
                       <div style={S.dropdownHeader}>COLUMN VISIBILITY</div>
                       {currentConfig.labels.map((lbl) => {
                         const colKey = getColKey(lbl);
@@ -858,7 +858,8 @@ const S = {
     display: 'flex',
     justifyContent: 'flex-end',
     alignItems: 'center',
-    gap: 16
+    gap: 16,
+    flexWrap: 'wrap'
   },
   btnExportCsv: {
     backgroundColor: '#ffffff',
@@ -942,11 +943,15 @@ const S = {
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
-    minHeight: 38
+    minHeight: 38,
+    flexWrap: 'wrap',
+    gap: 16
   },
   controlsLeft: {
     display: 'flex',
-    alignItems: 'center'
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 12
   },
   selectedPill: {
     backgroundColor: '#fffbeb',
@@ -976,7 +981,8 @@ const S = {
   controlsRight: {
     display: 'flex',
     alignItems: 'center',
-    gap: 16
+    gap: 16,
+    flexWrap: 'wrap'
   },
   densityPill: {
     display: 'flex',
@@ -1008,7 +1014,6 @@ const S = {
   },
   columnsDropdown: {
     position: 'absolute',
-    right: 0,
     top: 'calc(100% + 8px)',
     backgroundColor: '#ffffff',
     border: '1px solid #e2e8f0',
@@ -1049,12 +1054,14 @@ const S = {
   tableContainer: {
     border: '1px solid #e2e8f0',
     borderRadius: 16,
-    overflow: 'hidden'
+    overflowX: 'auto',
+    WebkitOverflowScrolling: 'touch'
   },
   table: {
     width: '100%',
     borderCollapse: 'collapse',
-    fontSize: 13
+    fontSize: 13,
+    whiteSpace: 'nowrap'
   },
   thead: {
     backgroundColor: '#f8fafc',
@@ -1120,7 +1127,9 @@ const S = {
     alignItems: 'center',
     padding: '14px 24px',
     borderTop: '1px solid #e2e8f0',
-    backgroundColor: '#ffffff'
+    backgroundColor: '#ffffff',
+    flexWrap: 'wrap',
+    gap: 12
   },
   paginationText: {
     fontSize: 12,
@@ -1130,7 +1139,8 @@ const S = {
   paginationButtons: {
     display: 'flex',
     alignItems: 'center',
-    gap: 8
+    gap: 8,
+    flexWrap: 'wrap'
   },
   pageArrow: {
     background: 'none',

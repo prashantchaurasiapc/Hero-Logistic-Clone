@@ -171,7 +171,7 @@ export default function FollowUps() {
       </div>
 
       {/* Tasks Panel */}
-      <div className="flex-grow bg-white border border-slate-200/80 rounded-2xl shadow-xs flex flex-col overflow-hidden min-h-0">
+      <div className="shrink-0 bg-white border border-slate-200/80 rounded-2xl shadow-xs flex flex-col overflow-hidden">
         {/* Panel Header */}
         <div className="px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shrink-0">
           <div>
@@ -199,7 +199,7 @@ export default function FollowUps() {
         </div>
 
         {/* Follow-Up Items List */}
-        <div className="flex-grow overflow-y-auto p-6 space-y-4 scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <div className="p-6 space-y-4">
           {filteredFollowups.map((f) => {
             const { icon, bg } = getTypeIcon(f.type);
 
@@ -275,7 +275,7 @@ export default function FollowUps() {
               </div>
 
               {/* 3 Columns */}
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {/* Task Type */}
                 <div className="space-y-2">
                   <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">TASK TYPE</label>

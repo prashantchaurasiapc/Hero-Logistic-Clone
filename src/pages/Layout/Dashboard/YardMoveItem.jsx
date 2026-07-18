@@ -66,10 +66,10 @@ export default function YardMoveItem() {
   };
 
   return (
-    <div className="customer-dashboard" style={{ height: 'calc(100vh - 125px)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflow: 'hidden', padding: 0, width: '100%', maxWidth: 'none', fontFamily: "'Outfit', 'Inter', sans-serif" }}>
+    <div className="customer-dashboard" style={{ height: 'calc(100vh - 125px)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto', padding: 0, width: '100%', maxWidth: 'none', fontFamily: "'Outfit', 'Inter', sans-serif" }}>
 
       {/* Header Panel */}
-      <div className="customer-header-container" style={{ flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px' }}>
+      <div className="customer-header-container" style={{ flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', flexWrap: 'wrap', gap: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: 24 }}>🚧</span>
           <div style={{ textAlign: 'left' }}>
@@ -96,7 +96,7 @@ export default function YardMoveItem() {
           textAlign: 'left'
         }}>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
 
             {/* Left Card: Form */}
             <div style={{
@@ -328,7 +328,7 @@ export default function YardMoveItem() {
                   <span>Available</span>
                 </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginTop: 8 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: 12, marginTop: 8 }}>
                 {yardSlots.map((slot) => (
                   <div
                     key={slot.id}

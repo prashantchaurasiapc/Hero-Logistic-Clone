@@ -48,6 +48,12 @@ const SentInvoices = () => {
     showToast('Outbound account statements queued for dispatch.');
   };
 
+  const selectedCount = invoices.filter(inv => inv.checked).length;
+
+  const handleCSVExport = () => {
+    showToast(`Exported ${selectedCount} selected invoices to CSV.`);
+  };
+
   // Master Checkbox Toggle
   const isAllChecked = invoices.length > 0 && invoices.every(inv => inv.checked);
   const handleMasterCheckbox = () => {
@@ -131,7 +137,27 @@ const SentInvoices = () => {
         </div>
 
         {/* Toolbar with controls */}
-        <div style={S.toolbar}>
+        <div style={{ ...S.toolbar, justifyContent: selectedCount > 0 ? 'space-between' : 'flex-end' }}>
+          {/* Bulk Actions (Left) */}
+          {selectedCount > 0 && (
+            <div style={S.bulkActions}>
+              <span style={S.selectedCountText}>{selectedCount} SELECTED</span>
+              <button 
+                onClick={handleCSVExport}
+                style={S.csvExportBtn}
+                onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(217, 119, 6, 0.1)'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: 6}}>
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                CSV Export
+              </button>
+            </div>
+          )}
+
           <div style={S.toolbarRight}>
             {/* Density Controls Pill */}
             <div style={S.densityPill}>
@@ -172,7 +198,7 @@ const SentInvoices = () => {
               {showColumnsDropdown && (
                 <>
                   <div style={S.dropdownOverlay} onClick={() => setShowColumnsDropdown(false)} />
-                  <div style={S.dropdownPanel}>
+                  <div className="columns-dropdown-panel" style={S.dropdownPanel}>
                     <div style={S.dropdownTitle}>COLUMN VISIBILITY</div>
                     {columnsList.map((col) => (
                       <label key={col.key} style={S.dropdownLabel}>
@@ -317,7 +343,8 @@ const S = {
   actionGroup: {
     display: 'flex',
     gap: 12,
-    alignItems: 'center'
+    alignItems: 'center',
+    flexWrap: 'wrap'
   },
   btnPrimary: {
     backgroundColor: '#FFCC00',
@@ -345,13 +372,45 @@ const S = {
   },
   toolbar: {
     display: 'flex',
-    justifyContent: 'flex-end',
-    marginBottom: 24
+    marginBottom: 24,
+    flexWrap: 'wrap',
+    gap: 16,
+    alignItems: 'center'
+  },
+  bulkActions: {
+    display: 'flex',
+    alignItems: 'center',
+    backgroundColor: '#fffbeb',
+    border: '1px solid #fde68a',
+    borderRadius: 30,
+    padding: '4px 6px 4px 16px',
+    gap: 12
+  },
+  selectedCountText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#d97706',
+    letterSpacing: '0.5px'
+  },
+  csvExportBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    border: 'none',
+    color: '#d97706',
+    fontSize: 12,
+    fontWeight: '800',
+    cursor: 'pointer',
+    padding: '6px 12px',
+    borderRadius: 20,
+    transition: 'all 0.15s ease',
+    outline: 'none'
   },
   toolbarRight: {
     display: 'flex',
     gap: 16,
-    alignItems: 'center'
+    alignItems: 'center',
+    flexWrap: 'wrap'
   },
   densityPill: {
     display: 'flex',
@@ -389,7 +448,6 @@ const S = {
   dropdownPanel: {
     position: 'absolute',
     top: 'calc(100% + 8px)',
-    right: 0,
     backgroundColor: '#ffffff',
     borderRadius: 12,
     boxShadow: '0 10px 25px -5px rgba(0,0,0,0.08), 0 8px 16px -6px rgba(0,0,0,0.04)',
@@ -425,12 +483,14 @@ const S = {
   tableWrapper: {
     border: '1px solid #e2e8f0',
     borderRadius: 12,
-    overflow: 'hidden'
+    overflowX: 'auto',
+    WebkitOverflowScrolling: 'touch'
   },
   table: {
     width: '100%',
     borderCollapse: 'collapse',
-    textAlign: 'left'
+    textAlign: 'left',
+    whiteSpace: 'nowrap'
   },
   theadRow: {
     borderBottom: '1px solid #e2e8f0',

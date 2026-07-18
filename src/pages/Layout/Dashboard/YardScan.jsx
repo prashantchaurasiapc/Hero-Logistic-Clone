@@ -159,11 +159,11 @@ export default function YardScan() {
   };
 
   return (
-    <div className="customer-dashboard" style={{ height: 'calc(100vh - 125px)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflow: 'hidden', padding: 0, width: '100%', maxWidth: 'none', fontFamily: "'Outfit', 'Inter', sans-serif" }}>
+    <div className="customer-dashboard" style={{ height: 'calc(100vh - 125px)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto', padding: 0, width: '100%', maxWidth: 'none', fontFamily: "'Outfit', 'Inter', sans-serif" }}>
 
 
       {/* Header Panel */}
-      <div className="customer-header-container" style={{ flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px' }}>
+      <div className="customer-header-container" style={{ flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', flexWrap: 'wrap', gap: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: 24 }}>🚧</span>
           <div style={{ textAlign: 'left' }}>
@@ -187,7 +187,8 @@ export default function YardScan() {
           borderBottom: 'none',
           borderLeft: 'none',
           borderRight: 'none',
-          textAlign: 'left'
+          textAlign: 'left',
+          boxSizing: 'border-box'
         }}>
           <h2 style={{ fontSize: 16, fontWeight: '800', color: '#0f172a', margin: 0 }}>Barcode & Asset Scanner</h2>
           <p style={{ fontSize: 13, color: '#64748b', margin: '4px 0 24px 0' }}>
@@ -195,7 +196,7 @@ export default function YardScan() {
           </p>
 
           {/* Three Cards Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 20 }}>
             {/* Card 1: Scan Item */}
             <div style={{
               backgroundColor: '#ffffff',
