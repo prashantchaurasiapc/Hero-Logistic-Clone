@@ -410,17 +410,17 @@ const WarehouseLoadLanes = () => {
                     />
                   </th>
                   {leftVisibleColumns.loadLane && (
-                    <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
                       Load Lane
                     </th>
                   )}
                   {leftVisibleColumns.assignedAssets && (
-                    <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
                       Assigned Assets
                     </th>
                   )}
                   {leftVisibleColumns.laneStatus && (
-                    <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
                       Lane Status
                     </th>
                   )}
@@ -467,12 +467,12 @@ const WarehouseLoadLanes = () => {
                         )}
                       </td>
                       {leftVisibleColumns.loadLane && (
-                        <td style={{ padding: getCellPadding(leftDensity), fontSize: '15px', fontWeight: '800', color: '#0f172a' }}>
+                        <td style={{ padding: getCellPadding(leftDensity), fontSize: '15px', fontWeight: '800', color: '#0f172a', whiteSpace: 'nowrap' }}>
                           {row.name}
                         </td>
                       )}
                       {leftVisibleColumns.assignedAssets && (
-                        <td style={{ padding: getCellPadding(leftDensity), fontSize: '14px', fontWeight: '700', color: '#b45309' }}>
+                        <td style={{ padding: getCellPadding(leftDensity), fontSize: '14px', fontWeight: '700', color: '#b45309', whiteSpace: 'nowrap' }}>
                           {assignedCount} Units
                         </td>
                       )}
@@ -663,22 +663,22 @@ const WarehouseLoadLanes = () => {
                       />
                     </th>
                     {rightVisibleColumns.assetCode && (
-                      <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
                         Asset Code
                       </th>
                     )}
                     {rightVisibleColumns.assignedLane && (
-                      <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
                         Assigned Lane
                       </th>
                     )}
                     {rightVisibleColumns.status && (
-                      <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
                         Status
                       </th>
                     )}
                     {rightVisibleColumns.actions && (
-                      <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
                         Actions
                       </th>
                     )}
@@ -705,12 +705,12 @@ const WarehouseLoadLanes = () => {
                           />
                         </td>
                         {rightVisibleColumns.assetCode && (
-                          <td style={{ padding: getCellPadding(rightDensity), fontSize: '13px', fontWeight: '800', color: '#0f172a', fontFamily: 'monospace' }}>
+                          <td style={{ padding: getCellPadding(rightDensity), fontSize: '13px', fontWeight: '800', color: '#0f172a', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
                             {row.code}
                           </td>
                         )}
                         {rightVisibleColumns.assignedLane && (
-                          <td style={{ padding: getCellPadding(rightDensity), fontSize: '13px', fontWeight: '700', color: '#475569' }}>
+                          <td style={{ padding: getCellPadding(rightDensity), fontSize: '13px', fontWeight: '700', color: '#475569', whiteSpace: 'nowrap' }}>
                             {row.lane || <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>Unassigned</span>}
                           </td>
                         )}
@@ -733,7 +733,7 @@ const WarehouseLoadLanes = () => {
                           </td>
                         )}
                         {rightVisibleColumns.actions && (
-                          <td style={{ padding: getCellPadding(rightDensity) }}>
+                          <td style={{ padding: getCellPadding(rightDensity), whiteSpace: 'nowrap' }}>
                             <div style={{ display: 'flex', gap: '8px' }}>
                               <button
                                 onClick={() => handleAssignClick(row.id)}
@@ -746,7 +746,8 @@ const WarehouseLoadLanes = () => {
                                   fontWeight: '700',
                                   color: '#0f172a',
                                   cursor: 'pointer',
-                                  boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
+                                  boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
+                                  whiteSpace: 'nowrap'
                                 }}
                               >
                                 Assign to Load Lane
@@ -764,7 +765,8 @@ const WarehouseLoadLanes = () => {
                                   cursor: 'pointer',
                                   boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
                                   outline: 'none',
-                                  transition: 'all 0.15s'
+                                  transition: 'all 0.15s',
+                                  whiteSpace: 'nowrap'
                                 }}
                                 onFocus={(e) => {
                                   e.target.style.outline = '2px solid #000';
