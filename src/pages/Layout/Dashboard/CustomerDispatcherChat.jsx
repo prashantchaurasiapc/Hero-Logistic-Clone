@@ -192,7 +192,7 @@ const CustomerDispatcherChat = () => {
   );
 
   return (
-    <div className="customer-dashboard" style={{ height: 'calc(100vh - 125px)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflow: 'hidden', padding: '16px 20px', width: '100%', maxWidth: 'none' }}>
+    <div className="customer-dashboard documents-wrapper" style={{ padding: '16px 20px', width: '100%', maxWidth: 'none' }}>
       {/* Header Panel */}
       <div className="customer-header-container" style={{ flexShrink: 0 }}>
         <div>
@@ -203,7 +203,7 @@ const CustomerDispatcherChat = () => {
       </div>
 
       {/* Main Grid: Sidebar + Chat Room */}
-      <div style={{ display: 'flex', gap: '16px', flex: 1, minHeight: 0, marginTop: 16 }}>
+      <div className="chat-grid">
         
         {/* Left Sidebar Panel */}
         <div style={S.sidebarPanel}>
@@ -438,7 +438,6 @@ const CustomerDispatcherChat = () => {
 /* Styles Object */
 const S = {
   sidebarPanel: {
-    width: 280,
     backgroundColor: '#ffffff',
     borderRadius: 12,
     border: '1px solid #e2e8f0',
@@ -586,7 +585,8 @@ const S = {
     cursor: 'pointer',
     transition: 'all 0.15s ease',
     outline: 'none',
-    boxShadow: '0 2px 4px rgba(255, 204, 0, 0.1)'
+    boxShadow: '0 2px 4px rgba(255, 204, 0, 0.1)',
+    whiteSpace: 'nowrap'
   },
   chatFeed: {
     flex: 1,

@@ -139,7 +139,7 @@ const InvoiceReview = () => {
             {showColumnsDropdown && (
               <>
                 <div style={S.dropdownOverlay} onClick={() => setShowColumnsDropdown(false)} />
-                <div style={S.dropdownPanel}>
+                <div className="columns-dropdown-panel" style={S.dropdownPanel}>
                   <div style={S.dropdownTitle}>COLUMN VISIBILITY</div>
                   {columnsList.map((col) => (
                     <label key={col.key} style={S.dropdownLabel}>
@@ -265,6 +265,7 @@ const S = {
     display: 'flex',
     gap: '12px',
     alignItems: 'center',
+    flexWrap: 'wrap',
   },
   btnSecondary: {
     backgroundColor: '#ffffff',
@@ -295,6 +296,8 @@ const S = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: '12px',
     marginBottom: '20px',
   },
   densityPill: {
@@ -333,7 +336,6 @@ const S = {
   dropdownPanel: {
     position: 'absolute',
     top: 'calc(100% + 8px)',
-    right: 0,
     backgroundColor: '#ffffff',
     borderRadius: '12px',
     boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
@@ -374,12 +376,15 @@ const S = {
   tableWrapper: {
     border: '1px solid #e2e8f0',
     borderRadius: '8px',
-    overflow: 'hidden',
+    overflowY: 'auto',
+    overflowX: 'auto',
+    WebkitOverflowScrolling: 'touch',
   },
   table: {
     width: '100%',
     borderCollapse: 'collapse',
     backgroundColor: '#ffffff',
+    whiteSpace: 'nowrap',
   },
   theadRow: {
     borderBottom: '1px solid #e2e8f0',

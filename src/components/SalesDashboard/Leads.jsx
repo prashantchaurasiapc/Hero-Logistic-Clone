@@ -338,7 +338,7 @@ export default function Leads() {
       </div>
 
       {/* Tabs list row */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 shrink-0 scrollbar-none">
+      <div className="flex flex-wrap items-center gap-2 pb-1 shrink-0">
         {[
           { key: 'ALL', label: 'ALL' },
           { key: 'MY LEADS', label: 'MY LEADS' },
@@ -410,9 +410,9 @@ export default function Leads() {
       <div className="flex-grow flex flex-col lg:flex-row gap-6 min-h-0 items-stretch">
         
         {/* Table wrapper */}
-        <div className="flex-1 bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden flex flex-col justify-between min-h-0">
-          <div className="flex-grow overflow-auto">
-            <table className="w-full text-left border-collapse min-w-[900px]">
+        <div className="flex-1 bg-white border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden flex flex-col justify-between min-h-[400px] lg:min-h-0">
+          <div className="flex-grow overflow-auto custom-scrollbar">
+            <table className="w-full text-left border-collapse min-w-[900px] whitespace-nowrap">
               <thead>
                 <tr className="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 select-none">
                   <th className="py-4 px-4 w-12 text-center">
@@ -728,7 +728,7 @@ export default function Leads() {
             {/* Modal Form Scrollable body (hidden scrollbar) */}
             <form onSubmit={handleFormSubmit} className="p-6 space-y-3 text-xs font-semibold text-slate-700 overflow-y-auto flex-grow bg-white [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               
-              <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
                 {/* Column 1 */}
                 {/* Company Legal Name */}
                 <div>

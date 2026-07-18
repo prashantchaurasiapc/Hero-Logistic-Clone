@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';// === ICONS ===
+import { useNavigate } from 'react-router-dom';
+import './WarehouseDashboard.css';
+// === ICONS ===
 const BoxIcon = ({ color }) => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line>
@@ -152,7 +154,7 @@ export default function WarehouseDashboard() {
       <div style={{ background: '#F8FAFC', minHeight: '100vh', padding: '24px 32px', fontFamily: "'Inter','Outfit',sans-serif", overflowX: 'hidden' }}>
 
         {/* BREADCRUMBS & HEADER */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 24 }}>
           <div>
             <div style={{ fontSize: 12, fontWeight: 600, color: '#64748B', marginBottom: 8, display: 'flex', gap: 6 }}>
               <span>Home</span> <span style={{ color: '#CBD5E1' }}>›</span> <span>Warehouse</span> <span style={{ color: '#CBD5E1' }}>›</span> <span>Warehouse List</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ color: '#0F172A' }}>Warehouse Details</span>
@@ -166,7 +168,7 @@ export default function WarehouseDashboard() {
             <p style={{ fontSize: 13, color: '#64748B', margin: '6px 0 0 0', fontWeight: 500 }}>View and manage warehouse information, settings, locations and operational details.</p>
           </div>
 
-          <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 14 }}>
             <button onClick={() => setView('list')} style={{ padding: '6px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600, border: '1px solid #E2E8F0', background: '#fff', color: '#1E293B', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', letterSpacing: '-0.2px' }}>
               &lt; Back to Warehouse List
             </button>
@@ -274,13 +276,13 @@ export default function WarehouseDashboard() {
         </div>
 
         {/* BOTTOM LAYOUT */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 24, marginBottom: 24 }}>
+        <div className="responsive-details-bottom">
 
           {/* LEFT COLUMN */}
           <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '24px', display: 'flex', flexDirection: 'column', gap: 32 }}>
 
             {/* WAREHOUSE INFORMATION & CONTACT SETTINGS */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+            <div className="responsive-details-info">
               <div>
                 <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: '0 0 16px 0' }}>WAREHOUSE INFORMATION</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 12px' }}>
@@ -659,7 +661,7 @@ export default function WarehouseDashboard() {
       <div style={{ background: '#F8FAFC', minHeight: '100vh', fontFamily: "'Inter','Outfit',sans-serif", overflowX: 'hidden' }}>
 
         {/* Header */}
-        <div style={{ padding: '32px 40px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="responsive-add-header">
           <div style={{ display: 'flex', gap: 16 }}>
             <button onClick={() => setView('list')} style={{ width: 40, height: 40, borderRadius: '50%', background: '#fff', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748B', fontWeight: 600 }}>&lt;</button>
             <div>
@@ -678,7 +680,7 @@ export default function WarehouseDashboard() {
           </div>
         </div>
 
-        <div style={{ maxWidth: 1300, margin: '32px auto', padding: '0 40px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <div className="responsive-add-container">
 
           {/* 1. BASIC INFORMATION */}
           <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 16, padding: '32px' }}>
@@ -692,7 +694,7 @@ export default function WarehouseDashboard() {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+            <div className="responsive-add-grid-2">
               <div>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Warehouse Name *</label>
                 <div style={{ position: 'relative' }}>
@@ -713,7 +715,7 @@ export default function WarehouseDashboard() {
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Status</label>
-                <div style={{ display: 'flex', gap: 12 }}>
+                <div className="responsive-status-buttons">
                   <button style={{ flex: 1, padding: '12px', borderRadius: 10, border: 'none', background: '#F97316', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Active</button>
                   <button style={{ flex: 1, padding: '12px', borderRadius: 10, border: '1px solid #E2E8F0', background: '#fff', color: '#475569', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Maintenance</button>
                   <button style={{ flex: 1, padding: '12px', borderRadius: 10, border: '1px solid #E2E8F0', background: '#fff', color: '#475569', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Out of Service</button>
@@ -734,7 +736,7 @@ export default function WarehouseDashboard() {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 24 }}>
+            <div className="responsive-add-grid-3">
               <div>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Area (SQM)</label>
                 <input placeholder="e.g. 5000" style={{ width: '100%', padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: 10, fontSize: 14, color: '#334155', boxSizing: 'border-box', outline: 'none' }} />
@@ -767,7 +769,7 @@ export default function WarehouseDashboard() {
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Street Address</label>
                 <input placeholder="e.g. 123 Logistics Way" style={{ width: '100%', padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: 10, fontSize: 14, color: '#334155', boxSizing: 'border-box', outline: 'none' }} />
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 24 }}>
+              <div className="responsive-add-grid-3">
                 <div>
                   <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Suburb / City</label>
                   <input placeholder="e.g. Wetherill Park" style={{ width: '100%', padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: 10, fontSize: 14, color: '#334155', boxSizing: 'border-box', outline: 'none' }} />
@@ -796,7 +798,7 @@ export default function WarehouseDashboard() {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+            <div className="responsive-add-grid-2">
               <div>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Manager Name</label>
                 <input placeholder="e.g. Sarah Mitchell" style={{ width: '100%', padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: 10, fontSize: 14, color: '#334155', boxSizing: 'border-box', outline: 'none' }} />
@@ -834,7 +836,7 @@ export default function WarehouseDashboard() {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+            <div className="responsive-add-grid-4">
               {['Cold Storage', 'Dangerous Goods', 'Cross-Docking', '24/7 Operations'].map((lbl, idx) => (
                 <label key={idx} style={{ display: 'flex', alignItems: 'center', gap: 12, border: '1px solid #E2E8F0', borderRadius: 10, padding: '16px 20px', cursor: 'pointer' }}>
                   <input type="checkbox" style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#4F46E5' }} />
@@ -862,7 +864,7 @@ export default function WarehouseDashboard() {
         </div>
 
         {/* Fixed Bottom Bar */}
-        <div style={{ position: 'sticky', bottom: 0, background: '#fff', borderTop: '1px solid #E2E8F0', padding: '16px 40px', display: 'flex', justifyContent: 'space-between', zIndex: 50, marginTop: 10 }}>
+        <div style={{ position: 'sticky', bottom: 0, background: '#fff', borderTop: '1px solid #E2E8F0', padding: '16px 20px', display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between', zIndex: 50, marginTop: 10 }}>
           <button onClick={() => setView('list')} style={{ padding: '12px 24px', borderRadius: 10, background: '#fff', border: '1px solid #E2E8F0', color: '#475569', fontSize: 13.5, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
           <button onClick={() => setView('list')} style={{ padding: '12px 24px', borderRadius: 10, background: '#F97316', border: 'none', color: '#fff', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
             Save Warehouse <span style={{ fontSize: 16 }}>→</span>
@@ -877,7 +879,7 @@ export default function WarehouseDashboard() {
     <div style={{ background: '#F8FAFC', minHeight: '100vh', padding: '24px 32px', fontFamily: "'Inter','Outfit',sans-serif", overflowX: 'hidden' }}>
 
       {/* ── BREADCRUMBS & HEADER ── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 24 }}>
         <div>
           <div style={{ fontSize: 12, fontWeight: 600, color: '#64748B', marginBottom: 8, display: 'flex', gap: 6 }}>
             <span>Home</span> <span style={{ color: '#CBD5E1' }}>›</span> <span>Warehouse</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ color: '#0F172A' }}>Warehouse Dashboard</span>
@@ -889,7 +891,7 @@ export default function WarehouseDashboard() {
           <p style={{ fontSize: 13, color: '#64748B', margin: '6px 0 0 0', fontWeight: 500 }}>View all warehouses, stock overview and real-time operational summary.</p>
         </div>
 
-        <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 18 }}>
           <button onClick={() => setView('add')} style={{ padding: '5px 12px', borderRadius: 4, fontSize: 11, fontWeight: 600, border: '1px solid #E2E8F0', background: '#fff', color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
             <span style={{ fontSize: 14, fontWeight: 700 }}>+</span> Add Warehouse
           </button>
@@ -922,7 +924,7 @@ export default function WarehouseDashboard() {
       </div>
 
       {/* ── METRICS CARDS ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12, marginBottom: 24 }}>
+      <div className="responsive-metrics-grid">
         {/* Card 1 */}
         <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '16px', display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
@@ -1030,7 +1032,7 @@ export default function WarehouseDashboard() {
       </div>
 
       {/* ── MIDDLE SECTION ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 24, marginBottom: 24 }}>
+      <div className="responsive-middle-grid">
 
         {/* WAREHOUSE LIST */}
         <div id="warehouse-list" style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, overflow: 'hidden' }}>
@@ -1038,24 +1040,26 @@ export default function WarehouseDashboard() {
             <h2 style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>WAREHOUSE LIST (6)</h2>
           </div>
 
-          <div style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid #F1F5F9' }}>
-            <div style={{ position: 'relative', flex: 1 }}>
+          <div style={{ padding: '16px 24px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12, borderBottom: '1px solid #F1F5F9' }}>
+            <div style={{ position: 'relative', flex: '1 1 200px' }}>
               <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }}><SearchIcon /></span>
               <input placeholder="Search warehouses..." style={{ width: '100%', padding: '9px 12px 9px 36px', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: 13, outline: 'none', color: '#0F172A', boxSizing: 'border-box' }} />
             </div>
 
             {/* Filter Dropdowns */}
             {['All Status', 'All Branches', 'All Types'].map(label => (
-              <select key={label} style={{ padding: '9px 32px 9px 12px', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: 13, fontWeight: 600, color: '#334155', appearance: 'none', background: '#fff url("data:image/svg+xml;utf8,<svg fill=\'%2364748B\' height=\'16\' viewBox=\'0 0 24 24\' width=\'16\' xmlns=\'http://www.w3.org/2000/svg\'><path d=\'M7 10l5 5 5-5z\'/></svg>") no-repeat right 8px center', outline: 'none' }}>
+              <select key={label} style={{ padding: '9px 32px 9px 12px', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: 13, fontWeight: 600, color: '#334155', appearance: 'none', background: '#fff url("data:image/svg+xml;utf8,<svg fill=\'%2364748B\' height=\'16\' viewBox=\'0 0 24 24\' width=\'16\' xmlns=\'http://www.w3.org/2000/svg\'><path d=\'M7 10l5 5 5-5z\'/></svg>") no-repeat right 8px center', outline: 'none', flex: '1 1 120px', minWidth: '120px' }}>
                 <option>{label}</option>
               </select>
             ))}
 
-            <button style={{ padding: '9px', border: '1px solid #E2E8F0', borderRadius: 8, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FilterIcon /></button>
-            <button style={{ padding: '9px 14px', border: '1px solid #E2E8F0', borderRadius: 8, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#334155' }}>
-              <ExportIcon /> Export
-            </button>
-            <button style={{ padding: '9px', border: '1px solid #E2E8F0', borderRadius: 8, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><RefreshIcon /></button>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button style={{ padding: '9px', border: '1px solid #E2E8F0', borderRadius: 8, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FilterIcon /></button>
+              <button style={{ padding: '9px 14px', border: '1px solid #E2E8F0', borderRadius: 8, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#334155', whiteSpace: 'nowrap' }}>
+                <ExportIcon /> Export
+              </button>
+              <button style={{ padding: '9px', border: '1px solid #E2E8F0', borderRadius: 8, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><RefreshIcon /></button>
+            </div>
           </div>
 
           <div style={{ overflowX: 'auto' }}>
@@ -1247,7 +1251,7 @@ export default function WarehouseDashboard() {
       </div>
 
       {/* ── BOTTOM PANELS ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16, marginBottom: 24 }}>
+      <div className="responsive-bottom-grid">
 
         {/* INVENTORY SUMMARY */}
         <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '16px' }}>
@@ -1414,7 +1418,7 @@ export default function WarehouseDashboard() {
           <h3 style={{ fontSize: 12, fontWeight: 900, color: '#312E81', letterSpacing: '0.5px', margin: 0 }}>DEVELOPER NOTES - WAREHOUSE DASHBOARD / LIST</h3>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 24 }}>
+        <div className="responsive-notes-grid">
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
               <span style={{ width: 16, height: 16, borderRadius: '50%', background: '#EEF2FF', color: '#4F46E5', fontSize: 9, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>1</span>

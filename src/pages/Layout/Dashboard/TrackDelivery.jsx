@@ -108,7 +108,7 @@ const TrackDelivery = () => {
       </div>
 
       {/* Grid Layout */}
-      <div style={S.gridContainer}>
+      <div className="track-delivery-grid">
         {/* Left Side Details Panel */}
         <div style={S.leftCard}>
           <div>
@@ -274,12 +274,6 @@ const TrackDelivery = () => {
 
 /* ─── Styles Object ─── */
 const S = {
-  gridContainer: {
-    display: 'grid',
-    gridTemplateColumns: '360px 1fr',
-    gap: 24,
-    marginTop: 24
-  },
   leftCard: {
     backgroundColor: '#ffffff',
     borderRadius: 16,

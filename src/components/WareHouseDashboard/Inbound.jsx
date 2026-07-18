@@ -29,10 +29,10 @@ export default function Inbound({ inboundData, setInboundData, onScanInClick, on
 
   return (
     <div className="glass rounded-2xl p-5 border border-slate-200 text-left space-y-4 bg-white shadow-xs">
-      <div className="flex justify-between items-center pb-2">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-2">
         <h3 className="text-sm font-extrabold text-slate-900">Inbound Staging Queue</h3>
         
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
           {/* Density Selector */}
           <div className="flex bg-slate-100 border border-slate-200 rounded-xl p-1 text-[9px] font-bold">
             {['COMPACT', 'DEFAULT', 'RELAXED'].map((mode) => {
@@ -41,7 +41,7 @@ export default function Inbound({ inboundData, setInboundData, onScanInClick, on
                 <button
                   key={mode}
                   onClick={() => setDensity(mode.toLowerCase())}
-                  className={`px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer ${isActive ? 'bg-[#FFD400] text-slate-950 font-extrabold shadow-xs' : 'text-slate-550 hover:text-slate-700'}`}
+                  className={`px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer ${isActive ? 'bg-[#FFD400] text-slate-950 font-extrabold shadow-xs' : 'text-slate-550 hover:text-slate-700'} whitespace-nowrap`}
                 >
                   {mode}
                 </button>
@@ -50,7 +50,7 @@ export default function Inbound({ inboundData, setInboundData, onScanInClick, on
           </div>
 
           {/* Columns button */}
-          <button className="inline-flex items-center gap-1.5 px-3 py-2 border border-slate-200 hover:bg-slate-50 text-slate-650 font-bold text-[9px] uppercase rounded-xl transition-all cursor-pointer focus:outline-none">
+          <button className="inline-flex items-center gap-1.5 px-3 py-2 border border-slate-200 hover:bg-slate-50 text-slate-650 font-bold text-[9px] uppercase rounded-xl transition-all cursor-pointer focus:outline-none whitespace-nowrap">
             <Settings className="h-3.5 w-3.5 text-slate-400" />
             <span>Columns</span>
           </button>
@@ -70,8 +70,8 @@ export default function Inbound({ inboundData, setInboundData, onScanInClick, on
                   className="w-4 h-4 rounded border-slate-300 text-amber-500 focus:ring-amber-500 cursor-pointer"
                 />
               </th>
-              <th className="px-6 py-4 font-extrabold">Receipt ID</th>
-              <th className="px-6 py-4 font-extrabold">Staged Actions</th>
+              <th className="px-6 py-4 font-extrabold whitespace-nowrap">Receipt ID</th>
+              <th className="px-6 py-4 font-extrabold whitespace-nowrap">Staged Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-slate-800">

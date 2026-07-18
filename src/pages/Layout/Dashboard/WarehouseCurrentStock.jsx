@@ -462,7 +462,7 @@ const WarehouseCurrentStock = () => {
         </div>
 
         {/* Custom Table matching design */}
-        <div className="overflow-x-auto w-full border border-slate-200 rounded-2xl bg-white" style={{ border: '1px solid #e2e8f0', borderRadius: '16px', overflow: 'hidden' }}>
+        <div className="overflow-x-auto w-full border border-slate-200 rounded-2xl bg-white" style={{ border: '1px solid #e2e8f0', borderRadius: '16px', overflowX: 'auto' }}>
           <table className="min-w-full divide-y divide-slate-200 text-left text-xs" style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead className="bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-wide" style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
               <tr>
@@ -475,14 +475,14 @@ const WarehouseCurrentStock = () => {
                     style={{ cursor: 'pointer' }}
                   />
                 </th>
-                {visibleColumns.itemNumber && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px' }}>Item Number</th>}
-                {visibleColumns.barcode && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px' }}>Barcode</th>}
-                {visibleColumns.palletDim && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px' }}>Pallet / Dim</th>}
-                {visibleColumns.customer && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px' }}>Customer</th>}
-                {visibleColumns.zone && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px' }}>Zone</th>}
-                {visibleColumns.holdingAreaBin && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px' }}>Holding Area / Bin</th>}
-                {visibleColumns.status && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px' }}>Status</th>}
-                {visibleColumns.actions && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px' }}>Actions</th>}
+                {visibleColumns.itemNumber && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px', whiteSpace: 'nowrap' }}>Item Number</th>}
+                {visibleColumns.barcode && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px', whiteSpace: 'nowrap' }}>Barcode</th>}
+                {visibleColumns.palletDim && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px', whiteSpace: 'nowrap' }}>Pallet / Dim</th>}
+                {visibleColumns.customer && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px', whiteSpace: 'nowrap' }}>Customer</th>}
+                {visibleColumns.zone && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px', whiteSpace: 'nowrap' }}>Zone</th>}
+                {visibleColumns.holdingAreaBin && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px', whiteSpace: 'nowrap' }}>Holding Area / Bin</th>}
+                {visibleColumns.status && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px', whiteSpace: 'nowrap' }}>Status</th>}
+                {visibleColumns.actions && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px', whiteSpace: 'nowrap' }}>Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-800" style={{ fontSize: '13px' }}>

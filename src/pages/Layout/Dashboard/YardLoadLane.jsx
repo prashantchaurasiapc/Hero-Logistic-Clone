@@ -179,7 +179,7 @@ export default function YardLoadLane() {
   ];
 
   return (
-    <div className="customer-dashboard" style={{ height: 'calc(100vh - 125px)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflow: 'hidden', padding: 0, width: '100%', maxWidth: 'none', fontFamily: "'Outfit', 'Inter', sans-serif" }}>
+    <div className="customer-dashboard yard-scan-in-wrapper">
 
       {/* Header Panel */}
       <div className="customer-header-container" style={{ flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px' }}>
@@ -193,24 +193,13 @@ export default function YardLoadLane() {
       </div>
 
       {/* Main Content Area */}
-      <div style={{ flex: 1, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', minHeight: 0, width: '100%' }}>
+      <div className="yard-main-content">
 
         {/* Full width container box */}
-        <div style={{
-          backgroundColor: '#ffffff',
-          borderRadius: 0,
-          padding: '24px 20px',
-          width: '100%',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
-          borderTop: '1px solid #e2e8f0',
-          borderBottom: 'none',
-          borderLeft: 'none',
-          borderRight: 'none',
-          textAlign: 'left'
-        }}>
+        <div className="yard-container-box">
 
           {/* Load Lane & Spotting Assignment Card Header Section */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+          <div className="yard-manifest-header" style={{ marginBottom: 24 }}>
             <div style={{ textAlign: 'left' }}>
               <h2 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: 0 }}>Load Lane &amp; Spotting Assignment</h2>
               <p style={{ fontSize: '12px', marginTop: '4px', color: '#64748b', margin: '4px 0 0 0' }}>
@@ -219,107 +208,30 @@ export default function YardLoadLane() {
             </div>
 
             {/* Top Right Header Buttons */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <button
-                onClick={handleMoveToLocation}
-                onMouseEnter={() => setHoverBtn('move-loc')}
-                onMouseLeave={() => setHoverBtn(null)}
-                style={{
-                  backgroundColor: '#ffffff',
-                  border: hoverBtn === 'move-loc' ? '2px solid #0f172a' : '1px solid #cbd5e1',
-                  borderRadius: 12,
-                  padding: '10px 18px',
-                  fontSize: 13,
-                  fontWeight: '700',
-                  color: '#334155',
-                  cursor: 'pointer',
-                  outline: 'none',
-                  transition: 'all 0.15s ease'
-                }}
-              >
+            <div className="yard-controls-grid">
+              <button onClick={handleMoveToLocation} className="yard-btn-secondary" style={{ padding: '10px 18px' }}>
                 Move to Location
               </button>
-
-              <button
-                onClick={handleMoveToLoadLane}
-                onMouseEnter={() => setHoverBtn('move-load')}
-                onMouseLeave={() => setHoverBtn(null)}
-                style={{
-                  backgroundColor: '#ffcc00',
-                  border: hoverBtn === 'move-load' ? '2px solid #000000' : '1px solid transparent',
-                  borderRadius: 12,
-                  padding: '10px 18px',
-                  fontSize: 13,
-                  fontWeight: '800',
-                  color: '#000000',
-                  cursor: 'pointer',
-                  outline: 'none',
-                  boxShadow: '0 2px 4px rgba(255, 204, 0, 0.15)',
-                  transition: 'all 0.15s ease'
-                }}
-              >
+              <button onClick={handleMoveToLoadLane} className="yard-btn-primary" style={{ flex: 'none', padding: '10px 18px' }}>
                 Move to Load Lane
               </button>
-
-              <button
-                onClick={handleAddNote}
-                onMouseEnter={() => setHoverBtn('add-note')}
-                onMouseLeave={() => setHoverBtn(null)}
-                style={{
-                  backgroundColor: '#ffffff',
-                  border: hoverBtn === 'add-note' ? '2px solid #0f172a' : '1px solid #cbd5e1',
-                  borderRadius: 12,
-                  padding: '10px 18px',
-                  fontSize: 13,
-                  fontWeight: '700',
-                  color: '#334155',
-                  cursor: 'pointer',
-                  outline: 'none',
-                  transition: 'all 0.15s ease'
-                }}
-              >
+              <button onClick={handleAddNote} className="yard-btn-secondary" style={{ padding: '10px 18px' }}>
                 Add Note
               </button>
-
-              <button
-                onClick={() => setShowYardMapModal(true)}
-                onMouseEnter={() => setHoverBtn('view-map')}
-                onMouseLeave={() => setHoverBtn(null)}
-                style={{
-                  backgroundColor: '#ffffff',
-                  border: hoverBtn === 'view-map' ? '2px solid #eab308' : '1px solid #ffcc00',
-                  borderRadius: 12,
-                  padding: '10px 18px',
-                  fontSize: 13,
-                  fontWeight: '800',
-                  color: '#b45309',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  cursor: 'pointer',
-                  outline: 'none',
-                  transition: 'all 0.15s ease'
-                }}
-              >
+              <button onClick={() => setShowYardMapModal(true)} className="yard-btn-secondary" style={{ padding: '10px 18px' }}>
                 🚧 View Yard Map
               </button>
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: '24px' }}>
+          <div className="yard-grid">
 
             {/* Left Column: Form Verify Load Status */}
-            <div style={{
-              backgroundColor: '#ffffff',
-              border: '1px solid #e2e8f0',
-              borderRadius: 16,
-              padding: '24px 20px',
-              boxSizing: 'border-box'
-            }}>
+            <div className="yard-card">
               <h2 style={{ fontSize: 14.5, fontWeight: '800', color: '#0f172a', margin: '0 0 16px 0' }}>Verify Load Status</h2>
 
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ fontSize: 10.5, fontWeight: '800', color: '#64748b', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>
+              <div className="yard-form-group">
+                <label className="yard-form-label">
                   TRAILER CONTAINER ID
                 </label>
                 <input
@@ -327,23 +239,12 @@ export default function YardLoadLane() {
                   placeholder="e.g. TR-9410"
                   value={trailerId}
                   onChange={(e) => setTrailerId(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    borderRadius: 12,
-                    border: '1px solid #cbd5e1',
-                    fontSize: 13,
-                    fontWeight: '500',
-                    outline: 'none',
-                    color: '#0f172a',
-                    backgroundColor: '#ffffff',
-                    boxSizing: 'border-box'
-                  }}
+                  className="yard-form-input"
                 />
               </div>
 
-              <div style={{ marginBottom: 20 }}>
-                <label style={{ fontSize: 10.5, fontWeight: '800', color: '#64748b', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>
+              <div className="yard-form-group" style={{ marginBottom: 20 }}>
+                <label className="yard-form-label">
                   UPLOAD SPOT PHOTO PROOF
                 </label>
                 <div
@@ -397,71 +298,24 @@ export default function YardLoadLane() {
               </div>
 
               {/* Confirm buttons */}
-              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                <button
-                  onClick={handleConfirmLoaded}
-                  onMouseEnter={() => setHoverBtn('confirm-loaded')}
-                  onMouseLeave={() => setHoverBtn(null)}
-                  style={{
-                    flex: 1.5,
-                    backgroundColor: '#ffcc00',
-                    color: '#000000',
-                    border: hoverBtn === 'confirm-loaded' ? '2px solid #000000' : '1px solid transparent',
-                    borderRadius: 12,
-                    padding: '12px 20px',
-                    fontSize: 13,
-                    fontWeight: '800',
-                    cursor: 'pointer',
-                    outline: 'none',
-                    boxShadow: '0 2px 4px rgba(255, 204, 0, 0.15)',
-                    transition: 'all 0.15s ease',
-                    boxSizing: 'border-box'
-                  }}
-                >
+              <div className="yard-buttons-row">
+                <button onClick={handleConfirmLoaded} className="yard-btn-primary" style={{ flex: 1.5 }}>
                   Confirm Loaded
                 </button>
-
-                <button
-                  onClick={handleConfirmUnloaded}
-                  onMouseEnter={() => setHoverBtn('confirm-unloaded')}
-                  onMouseLeave={() => setHoverBtn(null)}
-                  style={{
-                    flex: 1,
-                    backgroundColor: '#ffffff',
-                    border: hoverBtn === 'confirm-unloaded' ? '2px solid #000000' : '1px solid #ffcc00',
-                    borderRadius: 12,
-                    padding: '12px 16px',
-                    fontSize: 13,
-                    color: '#b45309',
-                    fontWeight: '800',
-                    cursor: 'pointer',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                    transition: 'all 0.15s ease'
-                  }}
-                >
+                <button onClick={handleConfirmUnloaded} className="yard-btn-secondary" style={{ flex: 1 }}>
                   Confirm Unloaded
                 </button>
               </div>
             </div>
 
             {/* Right Column: Yard Attendant Tasks List */}
-            <div style={{
-              backgroundColor: '#ffffff',
-              border: '1px solid #e2e8f0',
-              borderRadius: 16,
-              padding: '24px 20px',
-              boxSizing: 'border-box',
-              display: 'flex',
-              flexDirection: 'column',
-              position: 'relative'
-            }}>
+            <div className="yard-card" style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+              <div className="yard-manifest-header">
                 <h2 style={{ fontSize: 14.5, fontWeight: '800', color: '#0f172a', margin: 0 }}>Yard Attendant Tasks List</h2>
 
                 {/* Density & columns visibility */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div className="yard-controls-row">
 
                   <div style={{
                     display: 'flex',
@@ -514,20 +368,7 @@ export default function YardLoadLane() {
                     </button>
 
                     {showColumnDropdown && (
-                      <div style={{
-                        position: 'absolute',
-                        top: '100%',
-                        right: 0,
-                        marginTop: 6,
-                        backgroundColor: '#ffffff',
-                        border: '1px solid #cbd5e1',
-                        borderRadius: 12,
-                        padding: '12px 16px',
-                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                        zIndex: 100,
-                        width: 180,
-                        textAlign: 'left'
-                      }}>
+                      <div className="yard-dropdown-menu">
                         <span style={{ fontSize: 10.5, fontWeight: '800', color: '#64748b', display: 'block', marginBottom: 8, letterSpacing: '0.5px' }}>
                           COLUMN VISIBILITY
                         </span>
@@ -560,16 +401,7 @@ export default function YardLoadLane() {
 
               {/* Selected Action Row */}
               {selectedCount > 0 && (
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  marginBottom: 12,
-                  backgroundColor: '#fffdf5',
-                  border: '1px solid #fde047',
-                  borderRadius: 10,
-                  padding: '8px 12px'
-                }}>
+                <div className="yard-csv-action-row">
                   <span style={{ fontSize: 10, fontWeight: '800', color: '#b45309', letterSpacing: '0.5px' }}>
                     {selectedCount} SELECTED
                   </span>
@@ -599,10 +431,10 @@ export default function YardLoadLane() {
               <div style={{
                 border: '1px solid #e2e8f0',
                 borderRadius: 14,
-                overflow: 'hidden',
+                overflowX: 'auto',
                 backgroundColor: '#ffffff'
               }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', whiteSpace: 'nowrap' }}>
                   <thead>
                     <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
                       <th style={{ padding: '12px 16px', width: 40 }}>
@@ -688,7 +520,7 @@ export default function YardLoadLane() {
           <div style={{
             backgroundColor: '#ffffff',
             borderRadius: 24,
-            width: '100%',
+            width: 'calc(100% - 32px)',
             maxWidth: 580,
             boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
             border: '1px solid #e2e8f0',
@@ -706,7 +538,7 @@ export default function YardLoadLane() {
               </button>
             </div>
             <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: 12 }}>
                 {yardSlots.map((slot) => (
                   <div
                     key={slot.id}
@@ -739,21 +571,9 @@ export default function YardLoadLane() {
 
       {/* Exclamation or Success Toast Alert */}
       {toast && (
-        <div style={{
-          position: 'fixed',
-          bottom: 30,
-          right: 32,
+        <div className="yard-toast-popup" style={{
           backgroundColor: toastType === 'error' ? '#fef2f2' : '#eff6ff',
-          border: toastType === 'error' ? '1px solid #fecaca' : '1px solid #bfdbfe',
-          borderRadius: 12,
-          padding: '14px 20px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          zIndex: 2000,
-          boxShadow: '0 10px 25px -5px rgba(0,0,0,0.05)',
-          maxWidth: 420,
-          textAlign: 'left'
+          border: toastType === 'error' ? '1px solid #fecaca' : '1px solid #bfdbfe'
         }}>
           {toastType === 'error' ? (
             <div style={{

@@ -187,7 +187,7 @@ export default function Reports({
       </div>
 
       {/* KPI Metrics Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-left">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-left">
         <div className="bg-white border border-slate-200 rounded-2xl p-4.5 shadow-xs relative overflow-hidden">
           <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Total Revenue</span>
           <strong className="text-2xl font-black text-slate-900 block mt-1">${metrics.revenue}</strong>

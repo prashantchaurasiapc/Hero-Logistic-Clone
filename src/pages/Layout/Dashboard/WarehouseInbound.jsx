@@ -109,10 +109,10 @@ const WarehouseInbound = () => {
 
       {/* Inbound Staging Queue Table Card */}
       <div className="warehouse-bottom-section" style={{ textAlign: 'left' }}>
-        <div className="flex justify-between items-center pb-4" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-4" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center' }}>
           <h3 className="section-title" style={{ margin: 0, fontSize: '15px', fontWeight: '800' }}>Inbound Staging Queue</h3>
           
-          <div className="flex items-center gap-3" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className="flex flex-wrap items-center gap-3" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px' }}>
             {/* Density Selector */}
             <div className="wh-segmented-control" style={{ padding: '2px', borderRadius: '8px' }}>
               {['COMPACT', 'DEFAULT', 'RELAXED'].map((mode) => {
@@ -128,7 +128,8 @@ const WarehouseInbound = () => {
                       borderRadius: '6px',
                       backgroundColor: isActive ? '#ffd400' : 'transparent',
                       color: isActive ? '#0f172a' : '#64748b',
-                      border: isActive ? '1px solid #000' : '1px solid transparent'
+                      border: isActive ? '1px solid #000' : '1px solid transparent',
+                      whiteSpace: 'nowrap'
                     }}
                   >
                     {mode}
@@ -149,7 +150,8 @@ const WarehouseInbound = () => {
                   letterSpacing: '0.5px',
                   border: columnsMenuOpen ? '1.5px solid #000000' : '1px solid #e2e8f0',
                   color: columnsMenuOpen ? '#0f172a' : '#64748b',
-                  backgroundColor: '#ffffff'
+                  backgroundColor: '#ffffff',
+                  whiteSpace: 'nowrap'
                 }}
                 onClick={() => setColumnsMenuOpen(!columnsMenuOpen)}
               >
@@ -237,8 +239,8 @@ const WarehouseInbound = () => {
           </div>
         </div>
 
-        {/* Custom Table matching design */}
-        <div className="overflow-x-auto w-full border border-slate-200 rounded-2xl bg-white" style={{ border: '1px solid #e2e8f0', borderRadius: '16px', overflow: 'hidden' }}>
+         {/* Custom Table matching design */}
+        <div className="overflow-x-auto w-full border border-slate-200 rounded-2xl bg-white" style={{ border: '1px solid #e2e8f0', borderRadius: '16px', overflowX: 'auto' }}>
           <table className="min-w-full divide-y divide-slate-200 text-left text-xs" style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead className="bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-wide" style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
               <tr>
@@ -251,11 +253,11 @@ const WarehouseInbound = () => {
                     style={{ cursor: 'pointer' }}
                   />
                 </th>
-                {visibleColumns.receiptId && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px' }}>Receipt ID</th>}
-                {visibleColumns.carrierPartner && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px' }}>Carrier Partner</th>}
-                {visibleColumns.cargoSpecs && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px' }}>Inbound Cargo Specs</th>}
-                {visibleColumns.spottedLane && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px' }}>Spotted Lane</th>}
-                {visibleColumns.stagedActions && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px' }}>Staged Actions</th>}
+                {visibleColumns.receiptId && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px', whiteSpace: 'nowrap' }}>Receipt ID</th>}
+                {visibleColumns.carrierPartner && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px', whiteSpace: 'nowrap' }}>Carrier Partner</th>}
+                {visibleColumns.cargoSpecs && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px', whiteSpace: 'nowrap' }}>Inbound Cargo Specs</th>}
+                {visibleColumns.spottedLane && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px', whiteSpace: 'nowrap' }}>Spotted Lane</th>}
+                {visibleColumns.stagedActions && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px', whiteSpace: 'nowrap' }}>Staged Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-800" style={{ fontSize: '13px' }}>
