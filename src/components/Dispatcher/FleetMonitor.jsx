@@ -22,9 +22,9 @@ export default function FleetMonitor() {
       eta: '45 mins away',
       etaColor: 'text-slate-400',
       phone: '0412 888 221',
-      truckX: 245,
-      truckY: 250,
-      pathD: 'M 120 160 Q 240 250 350 350'
+      truckX: 184,
+      truckY: 187,
+      pathD: 'M 90 120 Q 180 187 262 262'
     },
     {
       id: 'VAN-08',
@@ -36,9 +36,9 @@ export default function FleetMonitor() {
       eta: 'Delayed away',
       etaColor: 'text-red-500 font-extrabold',
       phone: '0412 555 998',
-      truckX: 120,
-      truckY: 160,
-      pathD: 'M 120 160 Q 240 250 350 350'
+      truckX: 90,
+      truckY: 120,
+      pathD: 'M 90 120 Q 180 187 262 262'
     },
     {
       id: 'VAN-14',
@@ -50,9 +50,9 @@ export default function FleetMonitor() {
       eta: 'Pending away',
       etaColor: 'text-slate-400',
       phone: '0412 777 441',
-      truckX: 350,
-      truckY: 350,
-      pathD: 'M 120 160 Q 240 250 350 350'
+      truckX: 262,
+      truckY: 262,
+      pathD: 'M 90 120 Q 180 187 262 262'
     }
   ]);
 
@@ -100,7 +100,7 @@ export default function FleetMonitor() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 self-start md:self-auto select-none">
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto self-start md:self-auto select-none">
           {/* Layers Button */}
           <button 
             onClick={() => triggerToast('Toggling map overlay layers...')}
@@ -217,43 +217,43 @@ export default function FleetMonitor() {
         <div className="lg:col-span-8 bg-slate-100 border border-slate-200/60 rounded-[24px] shadow-sm min-h-[520px] relative flex flex-col justify-between overflow-hidden bg-[radial-gradient(#e2e8f0_1.5px,transparent_1.5px)] [background-size:18px_18px]">
           
           {/* Top floating bars */}
-          <div className="p-6 flex justify-between items-start w-full relative z-10 pointer-events-none">
+          <div className="p-3 sm:p-6 flex justify-between items-start w-full relative z-10 pointer-events-none">
             {/* Focus Area pill */}
-            <div className="bg-white px-4 py-2.5 rounded-xl border border-slate-100 shadow-sm flex items-center gap-3 pointer-events-auto select-none">
+            <div className="bg-white px-2.5 py-1.5 sm:px-4 sm:py-2.5 rounded-xl border border-slate-100 shadow-sm flex items-center gap-2 sm:gap-3 pointer-events-auto select-none">
               <div className="text-left">
-                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest block leading-none">
+                <span className="text-[7px] sm:text-[8px] font-black text-slate-400 uppercase tracking-widest block leading-none">
                   FOCUS AREA
                 </span>
-                <span className="text-xs font-extrabold text-slate-900 block mt-1 leading-none">
+                <span className="text-[10px] sm:text-xs font-extrabold text-slate-900 block mt-1 leading-none whitespace-nowrap">
                   SYDNEY CENTRAL DEPOT
                 </span>
               </div>
-              <div className="flex items-end gap-0.5 h-6">
-                <span className="w-1.5 h-3 bg-emerald-500 rounded-sm"></span>
-                <span className="w-1.5 h-5 bg-emerald-500 rounded-sm"></span>
-                <span className="w-1.5 h-4 bg-emerald-500 rounded-sm"></span>
+              <div className="flex items-end gap-0.5 h-4 sm:h-6 shrink-0">
+                <span className="w-1 h-2.5 sm:w-1.5 sm:h-3 bg-emerald-500 rounded-sm"></span>
+                <span className="w-1 h-4 sm:w-1.5 sm:h-5 bg-emerald-500 rounded-sm"></span>
+                <span className="w-1 h-3 sm:w-1.5 sm:h-4 bg-emerald-500 rounded-sm"></span>
               </div>
             </div>
 
             {/* Map Zoom Controls */}
-            <div className="flex items-center gap-2 pointer-events-auto select-none">
+            <div className="flex flex-col sm:flex-row items-center gap-2 pointer-events-auto select-none">
               <button 
                 onClick={() => triggerToast('Notification layers opened...')}
-                className="w-8 h-8 rounded-full bg-white text-amber-500 flex items-center justify-center border border-slate-150 shadow-3xs cursor-pointer"
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white text-amber-500 flex items-center justify-center border border-slate-150 shadow-3xs cursor-pointer"
               >
-                <Bell className="w-4 h-4" />
+                <Bell className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </button>
               <button 
                 onClick={() => triggerToast('Zooming in...')}
-                className="w-8 h-8 rounded-full bg-white text-slate-650 font-bold flex items-center justify-center border border-slate-150 shadow-3xs cursor-pointer text-sm"
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white text-slate-650 font-bold flex items-center justify-center border border-slate-150 shadow-3xs cursor-pointer text-sm"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </button>
               <button 
                 onClick={() => triggerToast('Zooming out...')}
-                className="w-8 h-8 rounded-full bg-white text-slate-650 font-bold flex items-center justify-center border border-slate-150 shadow-3xs cursor-pointer text-sm"
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white text-slate-650 font-bold flex items-center justify-center border border-slate-150 shadow-3xs cursor-pointer text-sm"
               >
-                <Minus className="w-4 h-4" />
+                <Minus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </button>
             </div>
           </div>
@@ -270,9 +270,9 @@ export default function FleetMonitor() {
               className="transition-all duration-300"
             />
             {/* Origin Dot (Green) */}
-            <circle cx="120" cy="160" r="5" fill="#10B981" stroke="#fff" strokeWidth="2" />
+            <circle cx="90" cy="120" r="5" fill="#10B981" stroke="#fff" strokeWidth="2" />
             {/* Destination Dot (Orange) */}
-            <circle cx="350" cy="350" r="5" fill="#F59E0B" stroke="#fff" strokeWidth="2" />
+            <circle cx="262" cy="262" r="5" fill="#F59E0B" stroke="#fff" strokeWidth="2" />
           </svg>
 
           {/* Floating Truck Indicator */}
@@ -306,7 +306,7 @@ export default function FleetMonitor() {
                   </span>
 
                   {/* Sub Badges row */}
-                  <div className="flex gap-2 mt-2 select-none">
+                  <div className="flex flex-wrap gap-2 mt-2 select-none">
                     <span className="px-2.5 py-0.5 border border-blue-200 text-blue-600 rounded-full text-[9px] font-black tracking-wider uppercase flex items-center gap-1 bg-blue-50/10">
                       <Phone className="w-2.5 h-2.5" /> MOBILE 0412
                     </span>

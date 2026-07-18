@@ -106,6 +106,33 @@ export default function PlatformDashboard() {
     return 'py-5 px-4'; // DEFAULT
   };
 
+  const handleExportReport = () => {
+    const headers = ['Company Name', 'Subscription Plan', 'Status', 'Active Users', 'Monthly Revenue', 'Trial Expiry', 'Last Login'];
+    const csvContent = [
+      headers.join(','),
+      ...recentTenants.map(t => `"${t.name}","${t.plan}","${t.status}","${t.users}","${t.mrr}","${t.trialExpiry}","${t.lastActive}"`)
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `platform_report_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'fixed bottom-4 right-4 bg-[#10B981] text-white font-bold px-6 py-3 rounded-xl shadow-lg z-[999]';
+    alertDiv.innerText = 'Report downloaded successfully!';
+    document.body.appendChild(alertDiv);
+    setTimeout(() => {
+      alertDiv.style.opacity = '0';
+      alertDiv.style.transition = 'opacity 0.5s ease';
+      setTimeout(() => alertDiv.remove(), 500);
+    }, 3000);
+  };
+
   return (
     <div className="flex-grow bg-[#F1F5F9] p-6 space-y-6 overflow-y-auto w-full text-left font-sans relative custom-scrollbar">
 
@@ -119,7 +146,7 @@ export default function PlatformDashboard() {
             Configure global licensing rules, audit tenant margins, and resolve support tickets.
           </p>
         </div>
-        <button className="mt-4 sm:mt-0 text-[13px] font-bold text-[#D97706] border border-amber-200 hover:bg-amber-50 px-6 py-2.5 rounded-xl transition-colors">
+        <button onClick={handleExportReport} className="mt-4 sm:mt-0 text-[13px] font-bold text-[#D97706] border border-amber-200 hover:bg-amber-50 px-6 py-2.5 rounded-xl transition-colors cursor-pointer">
           Export Report
         </button>
       </div>
@@ -448,13 +475,7 @@ export default function PlatformDashboard() {
               </button>
 
               <button
-                onClick={() => {
-                  const alertDiv = document.createElement('div');
-                  alertDiv.className = 'fixed bottom-4 right-4 bg-emerald-550 text-white font-bold px-6 py-3 rounded-xl shadow-lg z-[999] animate-bounce';
-                  alertDiv.innerText = 'Export generated successfully';
-                  document.body.appendChild(alertDiv);
-                  setTimeout(() => alertDiv.remove(), 3000);
-                }}
+                onClick={handleExportReport}
                 className="col-span-2 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-400 to-orange-500 shadow-md shadow-orange-500/30 hover:scale-[1.01] text-slate-900 font-extrabold text-[11px] py-2.5 px-4 rounded-2xl transition-all cursor-pointer mt-2"
               >
                 <FileText className="w-3 h-3" /> Export Report
