@@ -58,17 +58,17 @@ export default function TerminalWorkspace() {
       )}
 
       {/* HEADER */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-left">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 text-left">
         <div className="flex items-center gap-3">
           {/* Cube/Crate Icon */}
           <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-150 flex items-center justify-center text-slate-700 shadow-3xs shrink-0">
             <Box className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight leading-none">
-              Terminal Sortation
+            <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
+              Dispatcher Portal <span className="text-slate-400 text-xl mx-1">•</span> Terminal Workspace
             </h1>
-            <p className="text-xs font-semibold text-slate-500 mt-2.5">
+            <p className="text-[13px] text-slate-500 mt-1 font-medium">
               Sydney Depot Node 01 • Active Inbound
             </p>
           </div>

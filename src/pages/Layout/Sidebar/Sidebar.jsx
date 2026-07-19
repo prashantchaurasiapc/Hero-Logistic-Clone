@@ -169,7 +169,7 @@ const roleConfigs = {
   },
 
   'yard': {
-    portalName: 'YARD ATTENDANT\nPORTAL',
+    portalName: 'YARD ATTENDANT PORTAL',
     basePath: '/yard',
     userName: 'Admin',
     userRole: 'YARD ATTENDANT',

@@ -13,9 +13,15 @@ const Pnl = () => {
   return (
     <div style={S.container}>
       {/* Page Header */}
-      <div style={S.header}>
-        <h1 style={S.pageTitle}>Accounts &amp; Payroll &bull; P L</h1>
-        <p style={S.pageSubtitle}>Review invoice factoring, disburse driver paychecks, and analyze margins.</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+        <div>
+          <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
+            Accounts &amp; Payroll <span className="text-slate-400 text-xl mx-1">•</span> P&amp;L
+          </h1>
+          <p className="text-[13px] text-slate-500 mt-1 font-medium">
+            Review invoice factoring, disburse driver paychecks, and analyze margins.
+          </p>
+        </div>
       </div>
 
       {/* Main Ledger Card */}
@@ -219,10 +225,10 @@ const Pnl = () => {
 /* ─── Styles Object ─── */
 const S = {
   container: {
-    padding: '28px 40px',
+    padding: '24px 32px',
     backgroundColor: '#f8fafc',
-    minHeight: '100vh',
-    fontFamily: "'Outfit', 'Inter', sans-serif"
+    minHeight: '100%',
+    fontFamily: 'Inter, Outfit, sans-serif'
   },
   header: {
     marginBottom: 24

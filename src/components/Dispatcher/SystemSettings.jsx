@@ -102,8 +102,12 @@ export default function SystemSettings() {
           <Sliders className="w-5 h-5 text-[#FFA000]" />
         </div>
         <div>
-          <h1 className="text-xl font-black text-slate-900 tracking-tight leading-none mb-1.5">System Settings</h1>
-          <p className="text-slate-400 text-xs font-semibold">Configure your operator profile and terminal preferences</p>
+          <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
+            Dispatcher Portal <span className="text-slate-400 text-xl mx-1">•</span> System Settings
+          </h1>
+          <p className="text-[13px] text-slate-500 mt-1 font-medium">
+            Configure your operator profile and terminal preferences
+          </p>
         </div>
       </div>
 

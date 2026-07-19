@@ -130,13 +130,14 @@ export default function YardReportIssue() {
     <div className="customer-dashboard yard-scan-in-wrapper">
 
       {/* Header Panel */}
-      <div className="customer-header-container" style={{ flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 24 }}>🚧</span>
-          <div style={{ textAlign: 'left' }}>
-            <h1 className="customer-title" style={{ fontSize: '20px', fontWeight: '800', margin: 0 }}>Yard Attendant &bull; Report Issue</h1>
-            <p className="customer-subtitle" style={{ fontSize: '12.5px', marginTop: '2px', color: '#64748b' }}>Perform safety checks, log damages, and track active yard issue reports.</p>
-          </div>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8" style={{ flexShrink: 0, padding: '16px 20px', gap: 16 }}>
+        <div>
+          <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
+            Yard Attendant <span className="text-slate-400 text-xl mx-1">•</span> Report Issue
+          </h1>
+          <p className="text-[13px] text-slate-500 mt-1 font-medium">
+            Perform safety checks, log damages, and track active yard issue reports.
+          </p>
         </div>
       </div>
 

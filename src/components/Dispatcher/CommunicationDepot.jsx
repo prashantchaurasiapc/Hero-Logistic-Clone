@@ -305,8 +305,12 @@ export default function CommunicationDepot() {
             <MessageSquare className="w-5 h-5 text-[#FFA000]" />
           </div>
           <div>
-            <h1 className="text-xl font-black text-slate-900 tracking-tight leading-none mb-1.5">Communication Depot</h1>
-            <p className="text-slate-400 text-xs font-semibold">Real-time driver dispatch alerts and terminal broadcasts</p>
+            <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
+              Dispatcher Portal <span className="text-slate-400 text-xl mx-1">•</span> Communication Depot
+            </h1>
+            <p className="text-[13px] text-slate-500 mt-1 font-medium">
+              Real-time driver dispatch alerts and terminal broadcasts
+            </p>
           </div>
         </div>
 

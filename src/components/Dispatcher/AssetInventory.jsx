@@ -254,10 +254,12 @@ export default function AssetInventory() {
       )}
 
       {/* TOP HEADER BLOCK */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Asset Inventory</h1>
-          <p className="text-slate-500 text-xs font-medium mt-1">
+          <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
+            Dispatcher Portal <span className="text-slate-400 text-xl mx-1">•</span> Asset Inventory
+          </h1>
+          <p className="text-[13px] text-slate-500 mt-1 font-medium">
             {assets.length} assets registered · Global VIN Search
           </p>
         </div>

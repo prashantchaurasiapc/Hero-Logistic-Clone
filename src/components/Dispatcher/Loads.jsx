@@ -303,13 +303,13 @@ export default function Loads() {
       {view === 'dashboard' ? (
         <>
           {/* Page Sub-Header Row */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-left">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 text-left">
             <div>
-              <h1 className="text-3xl font-black text-slate-900 tracking-tight leading-none">
-                Load Queue
+              <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
+                Dispatcher Portal <span className="text-slate-400 text-xl mx-1">•</span> Loads
               </h1>
-              <p className="text-xs font-black text-slate-400 uppercase tracking-widest mt-2.5 flex items-center gap-1.5">
-                <span>📁</span> Sydney Central Depot &bull; Command View
+              <p className="text-[13px] text-slate-500 mt-1 font-medium">
+                Sydney Central Depot &bull; Command View
               </p>
             </div>
 

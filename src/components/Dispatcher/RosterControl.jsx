@@ -258,8 +258,12 @@ export default function RosterControl() {
       {/* TOP FILTER / DRIVER SWITCHER BAR */}
       <div className="bg-white border border-slate-100 rounded-[24px] p-4 mb-6 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Operational Roster</span>
-          <h1 className="text-lg font-black text-slate-950 mt-0.5 leading-none">Roster Control</h1>
+          <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
+            Dispatcher Portal <span className="text-slate-400 text-xl mx-1">•</span> Roster Control
+          </h1>
+          <p className="text-[13px] text-slate-500 mt-1 font-medium">
+            Operational Roster
+          </p>
         </div>
 
         {/* Switch Driver buttons */}
