@@ -291,7 +291,8 @@ const S = {
   cardHeaderActions: {
     display: 'flex',
     alignItems: 'center',
-    gap: 16
+    gap: 16,
+    flexWrap: 'wrap'
   },
   controlsRow: {
     display: 'flex',
@@ -350,7 +351,8 @@ const S = {
     display: 'flex',
     alignItems: 'center',
     gap: 6,
-    transition: 'all 0.15s ease-in-out'
+    transition: 'all 0.15s ease-in-out',
+    whiteSpace: 'nowrap'
   },
   columnsDropdown: {
     position: 'absolute',
@@ -395,10 +397,12 @@ const S = {
   tableContainer: {
     border: '1px solid #e2e8f0',
     borderRadius: 16,
-    overflow: 'hidden'
+    overflowX: 'auto',
+    width: '100%'
   },
   table: {
     width: '100%',
+    minWidth: 800,
     borderCollapse: 'collapse',
     fontSize: 13
   },
@@ -413,7 +417,8 @@ const S = {
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: '0.8px',
-    textAlign: 'left'
+    textAlign: 'left',
+    whiteSpace: 'nowrap'
   },
   tr: {
     borderBottom: '1px solid #f1f5f9',
@@ -427,19 +432,23 @@ const S = {
   tdMono: {
     fontFamily: 'monospace',
     fontWeight: '800',
-    color: '#0f172a'
+    color: '#0f172a',
+    whiteSpace: 'nowrap'
   },
   tdSemibold: {
     fontWeight: '700',
-    color: '#334155'
+    color: '#334155',
+    whiteSpace: 'nowrap'
   },
   tdRegular: {
     fontWeight: '600',
-    color: '#475569'
+    color: '#475569',
+    whiteSpace: 'nowrap'
   },
   tdMuted: {
     fontWeight: '500',
-    color: '#64748b'
+    color: '#64748b',
+    whiteSpace: 'nowrap'
   },
   // Toast Styles
   toastContainer: {

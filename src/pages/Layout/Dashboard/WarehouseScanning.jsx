@@ -96,7 +96,7 @@ const WarehouseScanning = () => {
         </div>
 
         {/* Outer Grid columns */}
-        <div style={S.grid}>
+        <div className="responsive-two-panel-grid" style={{ gap: '32px', alignItems: 'start' }}>
           {/* Left Panel: Scan Action Simulator */}
           <div style={S.panelLeft}>
             <h3 style={S.panelTitle}>Scan Action Simulator</h3>
@@ -554,13 +554,17 @@ const S = {
     color: '#10b981',
     border: '1px solid #a7f3d0',
     borderRadius: 8,
-    padding: '14px 28px',
-    fontSize: 13,
+    padding: '14px 16px',
+    fontSize: 12,
     fontWeight: '800',
     letterSpacing: '0.5px',
     textAlign: 'center',
     width: '100%',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexWrap: 'wrap'
   },
   statusFooter: {
     fontSize: 11,

@@ -1102,5 +1102,45 @@
   }
 }
 
+.responsive-map-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr 340px;
+  gap: 24px;
+  flex: 1;
+  align-items: stretch;
+  margin-top: 12px;
+}
+@media (max-width: 1024px) {
+  .responsive-map-layout {
+    grid-template-columns: 1fr;
+  }
+}
 
-
+.responsive-map-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  min-height: 380px;
+}
+@media (max-width: 768px) {
+  .responsive-map-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 480px) {
+  .responsive-map-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.responsive-two-panel-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: stretch;
+  flex: 1;
+}
+@media (max-width: 1024px) {
+  .responsive-two-panel-grid {
+    grid-template-columns: 1fr;
+  }
+}

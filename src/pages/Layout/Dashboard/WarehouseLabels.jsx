@@ -551,7 +551,7 @@ const S = {
   },
   statsGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(5, 1fr)',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
     gap: 16,
     marginBottom: 28
   },
@@ -787,7 +787,8 @@ const S = {
     color: '#64748b',
     textTransform: 'uppercase',
     letterSpacing: '0.8px',
-    textAlign: 'left'
+    textAlign: 'left',
+    whiteSpace: 'nowrap'
   },
   tr: {
     borderBottom: '1px solid #f1f5f9',
@@ -801,28 +802,34 @@ const S = {
   tdMono: {
     fontFamily: 'monospace',
     fontWeight: '800',
-    color: '#0f172a'
+    color: '#0f172a',
+    whiteSpace: 'nowrap'
   },
   tdSemibold: {
     fontWeight: '600',
-    color: '#334155'
+    color: '#334155',
+    whiteSpace: 'nowrap'
   },
   tdRegular: {
     fontWeight: '500',
-    color: '#475569'
+    color: '#475569',
+    whiteSpace: 'nowrap'
   },
   tdMuted: {
     fontWeight: '500',
-    color: '#64748b'
+    color: '#64748b',
+    whiteSpace: 'nowrap'
   },
   tdMonoMuted: {
     fontFamily: 'monospace',
     fontWeight: '600',
-    color: '#64748b'
+    color: '#64748b',
+    whiteSpace: 'nowrap'
   },
   tdOrangeBold: {
     fontWeight: '800',
-    color: '#d97706'
+    color: '#d97706',
+    whiteSpace: 'nowrap'
   },
   actionsWrapper: {
     display: 'flex',
