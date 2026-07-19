@@ -81,8 +81,8 @@ export default function Documents() {
 
       {/* Connection status toggle */}
       <div className="flex flex-col items-center gap-2 w-full">
-        <div className="w-full flex justify-between items-center p-3 bg-white border border-gray-150 rounded-2xl shadow-sm">
-          <span className="text-sm font-bold text-gray-600 flex items-center gap-2">
+        <div className="w-full flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 p-3 sm:p-4 bg-white border border-gray-150 rounded-2xl shadow-sm">
+          <span className="text-sm font-bold text-gray-600 flex items-center gap-2 justify-center sm:justify-start">
             <svg className="w-4 h-4 text-amber-500 rotate-45" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <polygon points="3 11 22 2 13 21 11 13 3 11" />
             </svg>
@@ -93,7 +93,7 @@ export default function Documents() {
               setIsOnline(prev => !prev);
               triggerToast(isOnline ? 'Connection switched to Offline Mode.' : 'Connection restored to Online Mode.');
             }}
-            className={`px-4 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-bold border cursor-pointer transition-all ${
+            className={`px-4 py-1.5 rounded-full flex items-center justify-center gap-1.5 text-xs font-bold border cursor-pointer transition-all w-full sm:w-auto ${
               isOnline
                 ? 'bg-[#E6F4EA] border-[#CEEAD6] text-[#137333]'
                 : 'bg-[#FEF7E0] border-[#FEEFC3] text-[#B06000]'
@@ -138,12 +138,12 @@ export default function Documents() {
       </div>
 
       {/* Header */}
-      <div className="bg-white border border-gray-150 rounded-3xl p-6 flex justify-between items-center shadow-sm">
+      <div className="bg-white border border-gray-150 rounded-3xl p-4 sm:p-6 flex justify-between items-center shadow-sm gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none">Driver Portal</h1>
-            <span className="text-xl font-bold text-gray-400">•</span>
-            <span className="text-xl font-black text-gray-800">documents</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-lg sm:text-xl font-black text-gray-900 tracking-tight leading-none">Driver Portal</h1>
+            <span className="text-lg sm:text-xl font-bold text-gray-400">•</span>
+            <span className="text-lg sm:text-xl font-black text-gray-800">documents</span>
           </div>
           <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider mt-1.5">ELD &amp; logistics operations controls.</p>
         </div>
@@ -153,7 +153,7 @@ export default function Documents() {
       </div>
 
       {/* Main Section Card */}
-      <div className="bg-white border border-amber-100 rounded-3xl p-6 shadow-sm text-left flex items-start gap-3">
+      <div className="bg-white border border-amber-100 rounded-3xl p-4 sm:p-6 shadow-sm text-left flex items-start gap-3">
         <FileText className="w-5 h-5 text-[#D97706] shrink-0 mt-0.5" />
         <div>
           <h2 className="text-base font-black text-gray-900 leading-tight">Driver Credentials</h2>
@@ -164,25 +164,25 @@ export default function Documents() {
       {/* Documents List */}
       <div className="space-y-4">
         {documents.map((doc) => (
-          <div key={doc.id} className="bg-white border border-gray-150 rounded-3xl p-5 shadow-sm hover:shadow transition-shadow">
-            <div className="flex justify-between items-start mb-4">
+          <div key={doc.id} className="bg-white border border-gray-150 rounded-3xl p-4 sm:p-5 shadow-sm hover:shadow transition-shadow">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-4">
               <div>
-                <h3 className="text-sm font-black text-gray-900">{doc.name}</h3>
+                <h3 className="text-sm font-black text-gray-900 leading-tight">{doc.name}</h3>
                 <p className="text-gray-500 text-[11px] font-semibold mt-1">Expires: {doc.expires}</p>
               </div>
-              <span className={`${doc.statusColor} text-[9px] font-black px-2.5 py-1 rounded uppercase tracking-wider`}>
+              <span className={`${doc.statusColor} text-[9px] font-black px-2.5 py-1 rounded uppercase tracking-wider self-start sm:self-auto`}>
                 {doc.status}
               </span>
             </div>
             
-            <div className="flex justify-between items-center pt-3 border-t border-gray-50">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 pt-3 border-t border-gray-50">
               <div className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-500 italic">
                 {doc.messageIcon}
                 <span>{doc.message}</span>
               </div>
               <button 
                 onClick={() => openRenewModal(doc.name)}
-                className="bg-[#FFD400] text-black font-black text-[10px] py-1.5 px-3 rounded-full hover:bg-yellow-400 transition-colors shadow-sm cursor-pointer"
+                className="bg-[#FFD400] text-black font-black text-[10px] py-2 px-4 rounded-full hover:bg-yellow-400 transition-colors shadow-sm cursor-pointer w-full sm:w-auto text-center justify-center"
               >
                 Renew / Upload
               </button>
@@ -211,14 +211,14 @@ export default function Documents() {
       {renewModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[110] p-4 animate-in fade-in zoom-in-95 duration-200">
           <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col">
-            <div className="p-5 flex justify-between items-center border-b border-gray-100">
+            <div className="p-4 sm:p-5 flex justify-between items-center border-b border-gray-100">
               <h2 className="text-lg font-black text-[#0F172A]">Renew Driver CDL Document</h2>
               <button onClick={closeRenewModal} className="p-1 text-gray-400 hover:text-gray-700 cursor-pointer">
                 <X size={20} strokeWidth={2.5} />
               </button>
             </div>
             
-            <div className="p-6 space-y-6">
+            <div className="p-4 sm:p-6 space-y-6">
               {/* Date Input */}
               <div>
                 <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">NEW EXPIRATION DATE</label>
@@ -231,9 +231,9 @@ export default function Documents() {
                   <Calendar className="w-4 h-4 text-gray-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
-
+ 
               {/* File Upload Box */}
-              <div className="border-2 border-dashed border-gray-200 rounded-2xl p-8 flex flex-col items-center justify-center text-center hover:bg-gray-50 transition-colors cursor-pointer group">
+              <div className="border-2 border-dashed border-gray-200 rounded-2xl p-6 sm:p-8 flex flex-col items-center justify-center text-center hover:bg-gray-50 transition-colors cursor-pointer group">
                 <div className="w-10 h-10 bg-white shadow-sm border border-gray-100 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                   <Upload className="w-5 h-5 text-gray-500" strokeWidth={2.5} />
                 </div>
@@ -241,8 +241,8 @@ export default function Documents() {
                 <span className="text-[11px] font-semibold text-gray-400 mt-1">PDF or JPEG file format</span>
               </div>
             </div>
-
-            <div className="p-6 pt-2">
+ 
+            <div className="p-4 sm:p-6 pt-2">
               <button 
                 onClick={handleUpdateDocument}
                 className="w-full bg-[#FFB000] text-black font-black text-sm py-3.5 rounded-xl hover:bg-[#F59E0B] transition-colors shadow-sm cursor-pointer"
@@ -257,7 +257,7 @@ export default function Documents() {
       {/* SOS EMERGENCY PANEL MODAL */}
       {sosModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[110] p-4">
-          <div className="bg-white rounded-3xl border border-gray-100 max-w-md w-full p-6 shadow-xl text-left">
+          <div className="bg-white rounded-3xl border border-gray-100 max-w-md w-full p-4 sm:p-6 shadow-xl text-left">
             <div className="flex justify-between items-center mb-5 pb-2 border-b border-gray-50">
               <h2 className="text-base font-bold text-gray-900">Emergency Dispatch SOS Panel</h2>
               <button onClick={() => setSosModalOpen(false)} className="p-1.5 hover:bg-gray-100 rounded-full cursor-pointer"><X size={18} /></button>
@@ -279,7 +279,7 @@ export default function Documents() {
                     triggerToast(`SOS ACTIVE: ${msg}`);
                     setSosModalOpen(false);
                   }}
-                  className={`p-5 border rounded-2xl hover:opacity-90 transition-opacity flex flex-col items-center justify-center gap-2 cursor-pointer ${color}`}
+                  className={`p-3 sm:p-5 border rounded-2xl hover:opacity-90 transition-opacity flex flex-col items-center justify-center gap-2 cursor-pointer ${color}`}
                 >
                   {icon}
                   <span className="text-xs font-medium">{label}</span>

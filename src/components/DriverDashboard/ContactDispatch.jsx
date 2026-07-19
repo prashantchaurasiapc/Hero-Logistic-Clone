@@ -75,7 +75,7 @@ export default function ContactDispatch() {
 
       {/* Connection status toggle */}
       <div className="flex flex-col items-center gap-2 w-full">
-        <div className="w-full flex justify-between items-center p-3 bg-white border border-gray-150 rounded-2xl shadow-sm">
+        <div className="w-full flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 p-3 bg-white border border-gray-150 rounded-2xl shadow-sm">
           <span className="text-sm font-bold text-gray-600 flex items-center gap-2">
             <svg className="w-4 h-4 text-amber-500 rotate-45" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <polygon points="3 11 22 2 13 21 11 13 3 11" />
@@ -87,7 +87,7 @@ export default function ContactDispatch() {
               setIsOnline(prev => !prev);
               triggerToast(isOnline ? 'Connection switched to Offline Mode.' : 'Connection restored to Online Mode.');
             }}
-            className={`px-4 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-bold border cursor-pointer transition-all ${
+            className={`px-4 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-bold border cursor-pointer transition-all w-full sm:w-auto justify-center ${
               isOnline
                 ? 'bg-[#E6F4EA] border-[#CEEAD6] text-[#137333]'
                 : 'bg-[#FFFBEB] border-[#000000] border-2 text-[#D97706]'
@@ -129,38 +129,38 @@ export default function ContactDispatch() {
 
       <div className="w-full space-y-6">
         {/* Header */}
-        <div className="bg-white border border-gray-150 rounded-3xl p-6 flex justify-between items-center shadow-sm">
+        <div className="bg-white border border-gray-150 rounded-2xl sm:rounded-3xl p-4 sm:p-6 flex justify-between items-center shadow-sm gap-4">
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-black text-[#0F172A] tracking-tight leading-none">Driver Portal</h1>
-              <span className="text-xl font-bold text-[#0F172A]">•</span>
-              <span className="text-2xl font-black text-[#0F172A]">chat</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-lg sm:text-2xl font-black text-[#0F172A] tracking-tight leading-none">Driver Portal</h1>
+              <span className="text-lg sm:text-xl font-bold text-[#0F172A]">•</span>
+              <span className="text-lg sm:text-2xl font-black text-[#0F172A]">chat</span>
             </div>
-            <p className="text-[#64748B] text-sm font-medium mt-1">ELD &amp; logistics operations controls.</p>
+            <p className="text-[#64748B] text-xs sm:text-sm font-medium mt-1">ELD &amp; logistics operations controls.</p>
           </div>
-          <div className="w-12 h-12 rounded-full bg-[#FFFBEB] flex items-center justify-center text-[#D97706] shrink-0">
-            <Compass className="w-6 h-6" />
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#FFFBEB] flex items-center justify-center text-[#D97706] shrink-0">
+            <Compass className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
         </div>
 
         {/* Chat Section */}
-        <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-gray-100 flex flex-col h-[70vh] min-h-[500px]">
-          <div className="mb-6">
-            <h2 className="text-xl font-black text-[#0F172A] leading-tight">Dispatch Communication Chat</h2>
-            <p className="text-sm font-medium text-[#64748B] mt-1">Live chat thread connected directly to dispatch team.</p>
+        <div className="bg-white rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 md:p-8 shadow-sm border border-gray-100 flex flex-col h-[70vh] min-h-[500px]">
+          <div className="mb-4 sm:mb-6">
+            <h2 className="text-lg sm:text-xl font-black text-[#0F172A] leading-tight">Dispatch Communication Chat</h2>
+            <p className="text-xs sm:text-sm font-medium text-[#64748B] mt-1">Live chat thread connected directly to dispatch team.</p>
           </div>
 
           {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto space-y-6 pr-2 custom-scrollbar flex flex-col pb-4">
+          <div className="flex-1 overflow-y-auto space-y-4 sm:space-y-6 pr-1 custom-scrollbar flex flex-col pb-4">
             {messages.map((msg) => (
               <div key={msg.id} className={`w-full max-w-[85%] sm:max-w-md ${msg.sender === 'YOU' ? 'self-end' : 'self-start'}`}>
                 {msg.sender === 'YOU' ? (
-                  <div className="bg-[#FFD400] rounded-2xl rounded-tr-sm p-4 shadow-sm relative">
+                  <div className="bg-[#FFD400] rounded-2xl rounded-tr-sm p-3.5 sm:p-4 shadow-sm relative">
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-[10px] font-black text-black uppercase tracking-widest">YOU</span>
                       <span className="text-[10px] font-bold text-black/80">{msg.time}</span>
                     </div>
-                    <p className="text-sm font-bold text-black leading-relaxed pb-3">
+                    <p className="text-xs sm:text-sm font-bold text-black leading-relaxed pb-3">
                       {msg.text}
                     </p>
                     <div className="absolute bottom-2 right-3 text-[10px] font-black text-black/80">
@@ -168,12 +168,12 @@ export default function ContactDispatch() {
                     </div>
                   </div>
                 ) : (
-                  <div className="bg-white border border-gray-200 rounded-2xl rounded-tl-sm p-4 shadow-sm">
+                  <div className="bg-white border border-gray-200 rounded-2xl rounded-tl-sm p-3.5 sm:p-4 shadow-sm">
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{msg.sender}</span>
                       <span className="text-[10px] font-bold text-gray-400">{msg.time}</span>
                     </div>
-                    <p className="text-sm font-medium text-gray-700 leading-relaxed">
+                    <p className="text-xs sm:text-sm font-medium text-gray-700 leading-relaxed">
                       {msg.text}
                     </p>
                   </div>
@@ -182,37 +182,36 @@ export default function ContactDispatch() {
             ))}
           </div>
 
-          {/* Input Area */}
-          <div className="pt-4 border-t border-gray-100 mt-2 space-y-4">
-            <div className="flex gap-3 items-center">
+          {/* Unified Input Area */}
+          <div className="pt-4 border-t border-gray-100 mt-2">
+            <div className="flex items-center gap-1 sm:gap-2 bg-gray-50 border border-gray-200 rounded-2xl p-1.5 focus-within:ring-2 focus-within:ring-[#FFD400] focus-within:border-transparent transition-all">
+              <button 
+                onClick={handleShareImage}
+                title="Share Image"
+                className="p-2 sm:p-2.5 text-gray-500 hover:text-[#0F172A] hover:bg-gray-200/50 rounded-xl transition-colors cursor-pointer shrink-0"
+              >
+                <Plus className="w-5 h-5" strokeWidth={2.5} />
+              </button>
+              <button 
+                onClick={handleVoiceNote}
+                title="Voice Note"
+                className="p-2 sm:p-2.5 text-gray-500 hover:text-[#0F172A] hover:bg-gray-200/50 rounded-xl transition-colors cursor-pointer shrink-0"
+              >
+                <Mic className="w-5 h-5" strokeWidth={2.5} />
+              </button>
               <input 
                 type="text" 
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 placeholder="Type dispatch update..." 
-                className="flex-1 bg-white border border-gray-300 text-gray-900 text-sm font-medium rounded-2xl focus:ring-2 focus:ring-[#FFD400] focus:border-transparent block w-full p-3.5 outline-none"
+                className="flex-1 bg-transparent text-gray-900 text-sm font-medium p-2 outline-none border-none focus:ring-0 focus:ring-offset-0"
               />
               <button 
                 onClick={handleSend}
-                className="bg-[#FFD400] hover:bg-yellow-400 text-black font-black py-3.5 px-6 rounded-2xl transition-colors shrink-0"
+                className="bg-[#FFD400] hover:bg-yellow-400 text-black font-black text-xs sm:text-sm py-2 px-4 sm:px-6 rounded-xl transition-colors shrink-0 cursor-pointer"
               >
                 Send
-              </button>
-            </div>
-            
-            <div className="flex flex-wrap items-center gap-3">
-              <button 
-                onClick={handleShareImage}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-xl text-sm font-medium transition-colors"
-              >
-                <Plus className="w-4 h-4" /> Share Image
-              </button>
-              <button 
-                onClick={handleVoiceNote}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 rounded-xl text-sm font-medium transition-colors"
-              >
-                <Mic className="w-4 h-4" /> Voice Note
               </button>
             </div>
           </div>
@@ -238,7 +237,7 @@ export default function ContactDispatch() {
       {/* SOS EMERGENCY PANEL MODAL */}
       {sosModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[110] p-4">
-          <div className="bg-white rounded-3xl border border-gray-100 max-w-md w-full p-6 shadow-xl text-left">
+          <div className="bg-white rounded-3xl border border-gray-100 max-w-md w-full p-4 sm:p-6 shadow-xl text-left">
             <div className="flex justify-between items-center mb-5 pb-2 border-b border-gray-50">
               <h2 className="text-base font-bold text-gray-900">Emergency Dispatch SOS Panel</h2>
               <button onClick={() => setSosModalOpen(false)} className="p-1.5 hover:bg-gray-100 rounded-full cursor-pointer"><X size={18} /></button>
@@ -246,7 +245,7 @@ export default function ContactDispatch() {
             <p className="text-xs text-gray-500 leading-relaxed mb-5">
               Triggering an emergency alerts the dispatch operations center immediately and logs active tracking.
             </p>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
               {[
                 { icon: <Shield className="w-5 h-5 text-red-500" />, label: 'Panic Button', color: 'bg-red-50/70 border-red-100 text-red-500', msg: 'Panic Alert dispatched!' },
                 { icon: <Truck className="w-5 h-5 text-amber-500" />, label: 'Breakdown', color: 'bg-[#FFFBEB] border-amber-200 text-[#D97706]', msg: 'Breakdown Alert dispatched!' },
@@ -260,7 +259,7 @@ export default function ContactDispatch() {
                     triggerToast(`SOS ACTIVE: ${msg}`);
                     setSosModalOpen(false);
                   }}
-                  className={`p-5 border rounded-2xl hover:opacity-90 transition-opacity flex flex-col items-center justify-center gap-2 cursor-pointer ${color}`}
+                  className={`p-3.5 sm:p-5 border rounded-2xl hover:opacity-90 transition-opacity flex flex-col items-center justify-center gap-2 cursor-pointer ${color}`}
                 >
                   {icon}
                   <span className="text-xs font-medium">{label}</span>

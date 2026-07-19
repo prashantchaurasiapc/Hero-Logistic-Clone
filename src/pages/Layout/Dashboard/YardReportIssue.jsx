@@ -292,68 +292,33 @@ export default function YardReportIssue() {
                   issues.map((item, idx) => (
                     <div
                       key={item.id}
-                      style={{
-                        padding: '16px 0',
-                        borderBottom: idx === issues.length - 1 ? 'none' : '1px solid #e2e8f0',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        flexWrap: 'wrap',
-                        gap: 12
-                      }}
+                      className={`yard-issue-item ${idx === issues.length - 1 ? 'last' : ''}`}
                     >
-                      <div style={{ textAlign: 'left', flex: 1, paddingRight: 16 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                          <span style={{
-                            fontSize: 10,
-                            fontWeight: '800',
-                            padding: '3px 8px',
-                            borderRadius: 6,
-                            backgroundColor: item.category === 'Damage' ? '#fee2e2' : '#fef3c7',
-                            color: item.category === 'Damage' ? '#ef4444' : '#b45309',
-                            letterSpacing: '0.3px',
-                            textTransform: 'uppercase'
-                          }}>
+                      <div className="yard-issue-details">
+                        <div className="yard-issue-meta">
+                          <span className={`yard-issue-badge ${item.category === 'Damage' ? 'badge-damage' : 'badge-missing'}`}>
                             {item.category}
                           </span>
-                          <span style={{ fontSize: 13.5, fontWeight: '800', color: '#0f172a' }}>
+                          <span className="yard-issue-trailer">
                             Trailer: {item.trailerId}
                           </span>
                         </div>
-                        <p style={{ fontSize: 12.5, color: '#475569', margin: '0 0 6px 0', lineHeight: '1.4' }}>
+                        <p className="yard-issue-desc">
                           {item.description}
                         </p>
-                        <span style={{ fontSize: 11, color: '#94a3b8' }}>
+                        <span className="yard-issue-date">
                           Logged date: {item.loggedDate}
                         </span>
                       </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <span style={{
-                          fontSize: 11,
-                          fontWeight: '800',
-                          color: item.severity === 'High' ? '#ef4444' : item.severity === 'Medium' ? '#d97706' : '#22c55e',
-                          backgroundColor: item.severity === 'High' ? '#fee2e2' : item.severity === 'Medium' ? '#fef3c7' : '#dcfce7',
-                          padding: '6px 12px',
-                          borderRadius: 20
-                        }}>
+                      <div className="yard-issue-actions">
+                        <span className={`yard-severity-badge severity-${item.severity.toLowerCase()}`}>
                           {item.severity} Severity
                         </span>
 
                         <button
                           onClick={() => setSelectedIssue(item)}
-                          style={{
-                            backgroundColor: '#ffffff',
-                            border: '1.5px solid #ffcc00',
-                            borderRadius: 10,
-                            padding: '6px 14px',
-                            fontSize: 11.5,
-                            fontWeight: '800',
-                            color: '#b45309',
-                            cursor: 'pointer',
-                            outline: 'none',
-                            transition: 'all 0.15s ease'
-                          }}
+                          className="yard-details-btn"
                         >
                           Details
                         </button>
@@ -519,7 +484,7 @@ export default function YardReportIssue() {
               </div>
 
               {/* Footer Actions */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 12, flexWrap: 'wrap' }}>
                 <button
                   type="button"
                   onClick={() => setSelectedIssue(null)}
