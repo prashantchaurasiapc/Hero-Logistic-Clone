@@ -89,7 +89,13 @@ const mockPerformance = [
 export default function WarehouseReportsAnalytics({ wh, onBack }) {
   const [showCustomReportModal, setShowCustomReportModal] = React.useState(false);
   return (
-    <div style={{ background: '#F8FAFC', minHeight: '100vh', padding: '24px 32px', fontFamily: "'Inter','Outfit',sans-serif", overflowX: 'hidden' }}>
+    <div className="wh-reports-container" style={{ background: '#F8FAFC', minHeight: '100vh', padding: '24px 32px', fontFamily: "'Inter','Outfit',sans-serif", overflowX: 'hidden' }}>
+      <style>{`
+        @media (max-width: 900px) {
+          .wh-reports-container { padding: 16px !important; }
+          .wh-devnotes-cols { grid-template-columns: 1fr !important; gap: 20px !important; }
+        }
+      `}</style>
       {/* BREADCRUMBS & HEADER */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, gap: 16, flexWrap: 'wrap' }}>
         <div style={{ flex: '1 1 300px', minWidth: 0 }}>
@@ -484,7 +490,7 @@ export default function WarehouseReportsAnalytics({ wh, onBack }) {
           <h2 style={{ fontSize: 16, fontWeight: 800, color: '#4F46E5', margin: 0, letterSpacing: '0.5px' }}>DEVELOPER NOTES - WAREHOUSE REPORTS & ANALYTICS</h2>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 24 }}>
+        <div className="wh-devnotes-cols" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 24 }}>
           <div>
             <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
               <div style={{ width: 16, height: 16, borderRadius: '50%', border: '1px solid #4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#4F46E5' }}>1</div>

@@ -2802,11 +2802,7 @@ export default function AssetDetails({ assetData, onBack }) {
       )}
 
       {/* OTHER TABS PLACEHOLDERS */}
-<<<<<<< HEAD
-      {activeTab !== 'Overview' && activeTab !== 'Specifications' && activeTab !== 'Assignments & History' && activeTab !== 'Costs & Depreciation' && (
-=======
-      {activeTab !== 'Overview' && activeTab !== 'Specifications' && activeTab !== 'Assignments & History' && activeTab !== 'Maintenance & Service' && activeTab !== 'Compliance & Documents' && (
->>>>>>> b59ce7932c59f4b071a5559594a349f77a6f789d
+      {activeTab !== 'Overview' && activeTab !== 'Specifications' && activeTab !== 'Assignments & History' && activeTab !== 'Costs & Depreciation' && activeTab !== 'Maintenance & Service' && activeTab !== 'Compliance & Documents' && (
         <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm text-center">
           <div className="w-12 h-12 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center mx-auto mb-3">
             <Layers size={24} />
