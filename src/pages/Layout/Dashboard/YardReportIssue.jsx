@@ -358,7 +358,7 @@ export default function YardReportIssue() {
 
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="yard-toast-popup">
+        <div className="yard-toast-popup settings-toast">
           <div style={{ backgroundColor: '#3b82f6', color: '#ffffff', width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>✓</div>
           <span style={{ fontSize: 13, fontWeight: '600', color: '#1e40af', flex: 1 }}>{toastMessage}</span>
           <button onClick={() => setToastMessage('')} style={{ background: 'none', border: 'none', fontSize: 16, color: '#64748b', cursor: 'pointer', marginLeft: 8 }}>✕</button>

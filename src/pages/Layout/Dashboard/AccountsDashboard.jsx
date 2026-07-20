@@ -262,7 +262,7 @@ const AccountsDashboard = () => {
 
       {/* Toast Notification */}
       {toast && (
-        <div style={{position:'fixed',bottom:80,right:32,background:'#ecfdf5',border:'1px solid #a7f3d0',borderRadius:12,padding:'14px 20px',display:'flex',alignItems:'center',gap:10,zIndex:1000,boxShadow:'0 8px 24px rgba(0,0,0,0.1)',maxWidth:420,animation:'slideIn 0.3s ease'}}>
+        <div className="settings-toast" style={{position:'fixed',bottom:80,right:32,background:'#ecfdf5',border:'1px solid #a7f3d0',borderRadius:12,padding:'14px 20px',display:'flex',alignItems:'center',gap:10,zIndex:1000,boxShadow:'0 8px 24px rgba(0,0,0,0.1)',maxWidth:420,animation:'slideIn 0.3s ease'}}>
           <span style={{color:'#10b981',fontSize:20}}>✓</span>
           <span style={{fontSize:14,fontWeight:600,color:'#065f46',flex:1}}>{toast}</span>
           <button onClick={()=>setToast(null)} style={{background:'none',border:'none',fontSize:16,color:'#64748b',cursor:'pointer',padding:0,lineHeight:1}}>✕</button>

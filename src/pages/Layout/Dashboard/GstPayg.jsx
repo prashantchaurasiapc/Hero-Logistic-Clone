@@ -68,7 +68,7 @@ const GstPayg = () => {
       {/* Content Cards */}
       <div style={S.cardsGrid}>
         {/* GST Summary Card */}
-        <div style={S.card}>
+        <div className="gst-summary-card" style={S.card}>
           <h2 style={S.cardTitle}>GST Summary (Goods &amp; Services Tax)</h2>
           
           <div style={S.cardBody}>
@@ -101,7 +101,7 @@ const GstPayg = () => {
         </div>
 
         {/* PAYG Summary Card */}
-        <div style={S.card}>
+        <div className="gst-summary-card" style={S.card}>
           <h2 style={S.cardTitle}>PAYG Summary (Pay As You Go Tax)</h2>
           
           <div style={S.cardBody}>
@@ -136,7 +136,7 @@ const GstPayg = () => {
 
       {/* Toast Notifications */}
       {toast && (
-        <div style={S.toastContainer}>
+        <div className="settings-toast" style={S.toastContainer}>
           <div style={S.toastIcon}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
@@ -253,7 +253,8 @@ const S = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: '12px 0'
+    padding: '12px 0',
+    gap: 12
   },
   divider: {
     height: 1,
@@ -269,13 +270,17 @@ const S = {
     fontSize: 13,
     color: '#0f172a',
     fontWeight: '800',
-    fontFamily: 'monospace'
+    fontFamily: 'monospace',
+    whiteSpace: 'nowrap',
+    flexShrink: 0
   },
   valSlateBlue: {
     fontSize: 13,
     color: '#64748b',
     fontWeight: '800',
-    fontFamily: 'monospace'
+    fontFamily: 'monospace',
+    whiteSpace: 'nowrap',
+    flexShrink: 0
   },
   labelRed: {
     fontSize: 13,
@@ -286,13 +291,17 @@ const S = {
     fontSize: 13,
     color: '#f87171',
     fontWeight: '800',
-    fontFamily: 'monospace'
+    fontFamily: 'monospace',
+    whiteSpace: 'nowrap',
+    flexShrink: 0
   },
   valGoldSmall: {
     fontSize: 13,
     color: '#d97706',
     fontWeight: '800',
-    fontFamily: 'monospace'
+    fontFamily: 'monospace',
+    whiteSpace: 'nowrap',
+    flexShrink: 0
   },
   labelTotalGold: {
     fontSize: 15,
@@ -303,13 +312,16 @@ const S = {
     fontSize: 15,
     color: '#d97706',
     fontWeight: '800',
-    fontFamily: 'monospace'
+    fontFamily: 'monospace',
+    whiteSpace: 'nowrap',
+    flexShrink: 0
   },
   dueText: {
     fontSize: 13,
     color: '#d97706',
     fontWeight: '700',
-    fontFamily: "'Outfit', 'Inter', sans-serif"
+    fontFamily: "'Outfit', 'Inter', sans-serif",
+    whiteSpace: 'nowrap'
   },
   toastContainer: {
     position: 'fixed',

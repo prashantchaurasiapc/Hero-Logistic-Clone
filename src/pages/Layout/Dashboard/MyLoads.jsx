@@ -495,7 +495,7 @@ const MyLoads = () => {
 
       {/* Toast Notification */}
       {toast && (
-        <div style={S.toastContainer}>
+        <div className="settings-toast" style={S.toastContainer}>
           <div style={S.toastIcon}>✓</div>
           <span style={S.toastText}>{toast}</span>
           <button onClick={() => setToast(null)} style={S.toastCloseBtn}>✕</button>

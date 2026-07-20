@@ -680,3 +680,13 @@
     left: 0 !important;
   }
 }
+
+.gst-summary-card {
+  box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+  .gst-summary-card {
+    padding: 20px 16px !important;
+  }
+}

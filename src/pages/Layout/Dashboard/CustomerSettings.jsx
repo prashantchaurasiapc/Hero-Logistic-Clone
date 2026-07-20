@@ -361,29 +361,31 @@ const CustomerSettings = () => {
     switch (activeTab) {
       case 'profile':
         return (
-          <form onSubmit={(e) => handleSaveSettings(e, 'Profile settings saved successfully.')} style={S.formCard}>
+          <form onSubmit={(e) => handleSaveSettings(e, 'Profile settings saved successfully.')} className="settings-form-card" style={S.formCard}>
             <h2 style={S.panelTitle}>Company Profile Settings</h2>
 
-            <div style={S.fieldGroup}>
-              <label style={S.fieldLabel}>REGISTERED COMPANY NAME</label>
-              <input
-                type="text"
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-                style={S.input}
-                required
-              />
-            </div>
+            <div className="settings-fields-grid">
+              <div style={S.fieldGroup}>
+                <label style={S.fieldLabel}>REGISTERED COMPANY NAME</label>
+                <input
+                  type="text"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  style={S.input}
+                  required
+                />
+              </div>
 
-            <div style={S.fieldGroup}>
-              <label style={S.fieldLabel}>CORPORATE REGISTRATION NUMBER</label>
-              <input
-                type="text"
-                value={regNumber}
-                onChange={(e) => setRegNumber(e.target.value)}
-                style={S.input}
-                required
-              />
+              <div style={S.fieldGroup}>
+                <label style={S.fieldLabel}>CORPORATE REGISTRATION NUMBER</label>
+                <input
+                  type="text"
+                  value={regNumber}
+                  onChange={(e) => setRegNumber(e.target.value)}
+                  style={S.input}
+                  required
+                />
+              </div>
             </div>
 
             <div style={S.fieldGroup}>
@@ -402,7 +404,7 @@ const CustomerSettings = () => {
               <div style={S.membershipHeader}>
                 <span style={S.membershipLabel}>PLATFORM MEMBERSHIP SUBSCRIPTION</span>
               </div>
-              <div style={S.membershipBody}>
+              <div style={S.membershipBody} className="settings-membership-body">
                 <div>
                   <h3 style={S.membershipPlanName}>Enterprise Tier Plan</h3>
                   <p style={S.membershipSubtext}>Your next billing cycle date: 07/20/2026 (Monthly invoice card: visa-8812)</p>
@@ -411,7 +413,7 @@ const CustomerSettings = () => {
               </div>
             </div>
 
-            <button type="submit" style={S.submitBtn}>Save Profile Settings</button>
+            <button type="submit" className="settings-submit-btn" style={S.submitBtn}>Save Profile Settings</button>
           </form>
         );
 
@@ -1004,8 +1006,8 @@ const CustomerSettings = () => {
               </div>
 
               {/* Table Container */}
-              <div style={S.tableWrapper}>
-                <table style={S.table}>
+              <div className="settings-audit-table-wrapper" style={S.tableWrapper}>
+                <table className="settings-audit-table" style={S.table}>
                   <thead style={S.thead}>
                     <tr>
                       <th style={{ ...S.th, ...logPadding, width: 40 }}>
@@ -1100,7 +1102,7 @@ const CustomerSettings = () => {
       </div>
 
       {/* Tabs Navigation Row */}
-      <div style={S.tabsRow}>
+      <div className="settings-tabs-row" style={S.tabsRow}>
         {[
           { id: 'profile', name: 'Company Profile', icon: (a) => <ProfileIcon active={a} /> },
           { id: 'branding', name: 'Branding & Theme', icon: (a) => <BrandingIcon active={a} /> },
@@ -1118,6 +1120,7 @@ const CustomerSettings = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
+              className="settings-tab-btn"
               style={{
                 ...S.tabItem,
                 color: isActive ? '#b45309' : '#64748b',
@@ -1187,7 +1190,7 @@ const CustomerSettings = () => {
 
       {/* Toast popup */}
       {toast && (
-        <div style={S.toastContainer}>
+        <div className="settings-toast" style={S.toastContainer}>
           <div style={S.toastIcon}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 6 9 17 4 12"></polyline>
@@ -1216,7 +1219,8 @@ const CustomerSettings = () => {
 const S = {
   tabsRow: {
     display: 'flex',
-    flexWrap: 'wrap',
+    overflowX: 'auto',
+    whiteSpace: 'nowrap',
     gap: 4,
     borderBottom: '1px solid #e2e8f0',
     paddingBottom: 4,
@@ -1234,7 +1238,9 @@ const S = {
     gap: 8,
     transition: 'all 0.15s ease',
     outline: 'none',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
+    whiteSpace: 'nowrap',
+    flexShrink: 0
   },
   panelContainer: {
     flex: 1,
@@ -1246,7 +1252,7 @@ const S = {
     border: '1px solid #e2e8f0',
     borderRadius: 12,
     padding: '24px 28px',
-    maxWidth: 520,
+    maxWidth: 800,
     width: '100%',
     display: 'flex',
     flexDirection: 'column',

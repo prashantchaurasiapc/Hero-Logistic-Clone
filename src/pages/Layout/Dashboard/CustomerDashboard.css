@@ -802,3 +802,96 @@
     left: 0 !important;
   }
 }
+
+/* ============================================================
+   CUSTOMER SETTINGS RESPONSIVE STYLES
+   ============================================================ */
+.settings-tabs-row {
+  display: flex !important;
+  overflow-x: auto !important;
+  white-space: nowrap !important;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding-bottom: 6px;
+}
+.settings-tabs-row::-webkit-scrollbar {
+  display: none;
+}
+
+.settings-tab-btn {
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+}
+
+.settings-form-card {
+  max-width: 800px !important;
+  width: 100% !important;
+  padding: 24px 28px;
+  box-sizing: border-box;
+}
+
+.settings-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.settings-membership-body {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .customer-dashboard {
+    padding: 12px 10px !important;
+  }
+
+  .settings-form-card {
+    padding: 16px 14px !important;
+    border-radius: 10px !important;
+  }
+
+  .settings-fields-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .settings-submit-btn {
+    width: 100% !important;
+  }
+
+  .customer-header-container {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  .contact-support-btn {
+    align-self: flex-start !important;
+  }
+
+  .settings-toast {
+    right: auto !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    max-width: calc(100vw - 32px) !important;
+    width: max-content !important;
+    box-sizing: border-box !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+  }
+}
+
+/* Audit Logs Table - horizontal scroll & single-line cells */
+.settings-audit-table-wrapper {
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+.settings-audit-table th,
+.settings-audit-table td {
+  white-space: nowrap !important;
+}
