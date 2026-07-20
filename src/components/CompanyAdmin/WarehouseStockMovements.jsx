@@ -136,7 +136,18 @@ export default function WarehouseStockMovements({ wh, onBack }) {
   const [showNewMovementModal, setShowNewMovementModal] = React.useState(false);
 
   return (
-    <div style={{ background: '#F8FAFC', minHeight: '100vh', padding: '24px 32px', fontFamily: "'Inter','Outfit',sans-serif", overflowX: 'hidden' }}>
+    <div className="wh-movements-container" style={{ background: '#F8FAFC', minHeight: '100vh', padding: '24px 32px', fontFamily: "'Inter','Outfit',sans-serif", overflowX: 'hidden' }}>
+      <style>{`
+        @media (max-width: 900px) {
+          .wh-movements-container { padding: 16px !important; }
+          .wh-movements-metrics { grid-template-columns: 1fr !important; gap: 12px !important; }
+          .wh-movements-split { grid-template-columns: 1fr !important; gap: 20px !important; }
+          .wh-devnotes-cols { grid-template-columns: 1fr !important; gap: 20px !important; }
+        }
+        @media (min-width: 480px) and (max-width: 900px) {
+          .wh-movements-metrics { grid-template-columns: repeat(2, 1fr) !important; }
+        }
+      `}</style>
 
       {/* HEADER */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
@@ -167,7 +178,7 @@ export default function WarehouseStockMovements({ wh, onBack }) {
       </div>
 
       {/* METRIC CARDS ROW */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16, marginBottom: 24 }}>
+      <div className="wh-movements-metrics" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16, marginBottom: 24 }}>
         
         {/* TOTAL MOVEMENTS */}
         <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '16px', display: 'flex', alignItems: 'flex-start', gap: 12 }}>
@@ -276,7 +287,7 @@ export default function WarehouseStockMovements({ wh, onBack }) {
         </div>
 
         {/* Split Content: Table & Sidebar */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 24 }}>
+        <div className="wh-movements-split" style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 24 }}>
           
           {/* LEFT: TABLE */}
           <div>
@@ -535,7 +546,7 @@ export default function WarehouseStockMovements({ wh, onBack }) {
           <h2 style={{ fontSize: 14, fontWeight: 800, color: '#4F46E5', letterSpacing: '0.5px', margin: 0 }}>DEVELOPER NOTES – STOCK MOVEMENTS</h2>
         </div>
         
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 24 }}>
+        <div className="wh-devnotes-cols" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 24 }}>
           
           <div>
             <h4 style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>

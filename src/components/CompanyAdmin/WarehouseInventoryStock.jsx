@@ -80,7 +80,14 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
   const [showAddStockModal, setShowAddStockModal] = useState(false);
 
   return (
-    <div style={{ background: '#F8FAFC', minHeight: '100vh', padding: '24px 32px', fontFamily: "'Inter','Outfit',sans-serif", overflowX: 'hidden' }}>
+    <div className="wh-inventory-container" style={{ background: '#F8FAFC', minHeight: '100vh', padding: '24px 32px', fontFamily: "'Inter','Outfit',sans-serif", overflowX: 'hidden' }}>
+      <style>{`
+        @media (max-width: 900px) {
+          .wh-inventory-container { padding: 16px !important; }
+          .wh-inventory-split { grid-template-columns: 1fr !important; gap: 20px !important; }
+          .wh-devnotes-cols { grid-template-columns: 1fr !important; gap: 20px !important; }
+        }
+      `}</style>
 
       {/* HEADER */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
@@ -225,7 +232,7 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
             </div>
 
             {/* Split Content: Table & Sidebar */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 24, paddingBottom: 24 }}>
+            <div className="wh-inventory-split" style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 24, paddingBottom: 24 }}>
               
               {/* LEFT: TABLE */}
               <div>
@@ -449,7 +456,7 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
           </div>
           <h3 style={{ fontSize: 12, fontWeight: 900, color: '#1E293B', margin: 0, letterSpacing: '0.5px' }}>DEVELOPER NOTES - INVENTORY & STOCK</h3>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 24 }}>
+        <div className="wh-devnotes-cols" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 24 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
               <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#EEF2FF', color: '#4F46E5', fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>1</div>

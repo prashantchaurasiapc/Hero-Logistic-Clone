@@ -178,7 +178,14 @@ const mockTasks = [
 export default function WarehousePickPackDispatch({ wh, onBack }) {
   const [showCreatePickTaskModal, setShowCreatePickTaskModal] = React.useState(false);
   return (
-    <div style={{ background: '#F8FAFC', minHeight: '100vh', padding: '24px 32px', fontFamily: "'Inter','Outfit',sans-serif", overflowX: 'hidden' }}>
+    <div className="wh-dispatch-container" style={{ background: '#F8FAFC', minHeight: '100vh', padding: '24px 32px', fontFamily: "'Inter','Outfit',sans-serif", overflowX: 'hidden' }}>
+      <style>{`
+        @media (max-width: 900px) {
+          .wh-dispatch-container { padding: 16px !important; }
+          .wh-dispatch-split { flex-direction: column !important; }
+          .wh-devnotes-cols { grid-template-columns: 1fr !important; gap: 20px !important; }
+        }
+      `}</style>
       {/* BREADCRUMBS & HEADER */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
         <div>
@@ -235,7 +242,7 @@ export default function WarehousePickPackDispatch({ wh, onBack }) {
         ))}
       </div>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
+      <div className="wh-dispatch-split" style={{ display: 'flex', flexWrap: 'wrap', gap: 24 }}>
         {/* LEFT MAIN */}
         <div style={{ flex: '1 1 500px', minWidth: 0 }}>
 
@@ -523,7 +530,7 @@ export default function WarehousePickPackDispatch({ wh, onBack }) {
           <h2 style={{ fontSize: 16, fontWeight: 800, color: '#4F46E5', margin: 0, letterSpacing: '0.5px' }}>DEVELOPER NOTES - PICK, PACK & DISPATCH</h2>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 24 }}>
+        <div className="wh-devnotes-cols" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 24 }}>
           {/* 1 */}
           <div>
             <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>

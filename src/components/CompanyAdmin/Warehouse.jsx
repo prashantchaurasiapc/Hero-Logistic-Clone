@@ -7,105 +7,198 @@ import WarehouseLocationsBins from './WarehouseLocationsBins';
 import WarehouseStaffEquipment from './WarehouseStaffEquipment';
 import WarehouseReportsAnalytics from './WarehouseReportsAnalytics';
 
-// === ICONS ===
+// ─── RESPONSIVE STYLES ────────────────────────────────────────────────────────
+const styles = `
+  .wh-page { background:#F8FAFC; min-height:100vh; padding:16px; font-family:'Inter','Outfit',sans-serif; overflow-x:hidden; box-sizing:border-box; }
+  @media(min-width:768px){ .wh-page { padding:24px 32px; } }
+
+  /* Header */
+  .wh-header { display:flex; flex-direction:column; gap:12px; margin-bottom:20px; }
+  @media(min-width:768px){ .wh-header { flex-direction:row; justify-content:space-between; align-items:flex-start; margin-bottom:24px; } }
+  .wh-header-actions { display:flex; gap:8px; flex-wrap:wrap; }
+
+  /* Metric Cards Grid */
+  .wh-metrics { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:20px; }
+  @media(min-width:480px){ .wh-metrics { grid-template-columns:repeat(3,1fr); } }
+  @media(min-width:1024px){ .wh-metrics { grid-template-columns:repeat(6,1fr); gap:12px; margin-bottom:24px; } }
+  .wh-metric-card { background:#fff; border:1px solid #E2E8F0; border-radius:12px; padding:14px; display:flex; flex-direction:column; }
+  .wh-metric-icon { width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .wh-metric-top { display:flex; gap:8px; margin-bottom:12px; }
+  .wh-metric-label { font-size:9px; font-weight:800; color:#64748B; letter-spacing:0.2px; text-transform:uppercase; margin-bottom:2px; }
+  .wh-metric-value { font-size:18px; font-weight:900; color:#0F172A; line-height:1; }
+  .wh-metric-sub { font-size:10px; color:#94A3B8; margin-top:4px; }
+  .wh-metric-link { margin-top:auto; font-size:11px; font-weight:700; color:#4F46E5; display:flex; align-items:center; gap:4px; cursor:pointer; padding-top:8px; }
+
+  /* Middle Section */
+  .wh-middle { display:flex; flex-direction:column; gap:20px; margin-bottom:20px; }
+  @media(min-width:1024px){ .wh-middle { display:grid; grid-template-columns:1fr 320px; gap:24px; margin-bottom:24px; } }
+
+  /* Warehouse List Card */
+  .wh-list-card { background:#fff; border:1px solid #E2E8F0; border-radius:12px; overflow:hidden; }
+  .wh-list-filters { padding:12px 16px; display:flex; flex-direction:column; gap:10px; border-bottom:1px solid #F1F5F9; }
+  @media(min-width:600px){ .wh-list-filters { flex-direction:row; align-items:center; flex-wrap:wrap; } }
+  .wh-search-box { position:relative; flex:1; min-width:160px; }
+  .wh-search-box input { width:100%; padding:9px 12px 9px 36px; border:1px solid #E2E8F0; border-radius:8px; font-size:13px; outline:none; color:#0F172A; box-sizing:border-box; }
+  .wh-search-icon { position:absolute; left:10px; top:50%; transform:translateY(-50%); }
+
+  /* Table – only shown on large screens */
+  .wh-table-wrap { overflow-x:auto; display:none; }
+  @media(min-width:900px){ .wh-table-wrap { display:block; } }
+  .wh-table { width:100%; border-collapse:collapse; text-align:left; }
+  .wh-table th { padding:14px 16px; font-size:10px; font-weight:800; color:#0F172A; white-space:nowrap; text-transform:capitalize; border-bottom:1px solid #F1F5F9; }
+  .wh-table td { padding:14px 16px; font-size:13px; vertical-align:top; border-bottom:1px solid #F8FAFC; }
+
+  /* Card list – shown on small screens */
+  .wh-cards-list { display:flex; flex-direction:column; gap:0; }
+  @media(min-width:900px){ .wh-cards-list { display:none; } }
+  .wh-wh-card { padding:16px; border-bottom:1px solid #F1F5F9; }
+  .wh-wh-card-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
+  .wh-wh-card-body { display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:12px; }
+  .wh-wh-card-label { font-size:10px; color:#94A3B8; font-weight:600; margin-bottom:2px; }
+  .wh-wh-card-val { font-weight:700; color:#0F172A; }
+  .wh-util-bar { width:100%; height:5px; background:#EEF2FF; border-radius:4px; overflow:hidden; margin-top:3px; }
+
+  /* Right side panels */
+  .wh-right-panels { display:flex; flex-direction:column; gap:16px; }
+  .wh-panel { background:#fff; border:1px solid #E2E8F0; border-radius:12px; padding:18px 20px; }
+  .wh-panel-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+  .wh-panel-title { font-size:11px; font-weight:800; color:#0F172A; letter-spacing:0.5px; text-transform:uppercase; margin:0; }
+  .wh-panel-link { font-size:11px; font-weight:700; color:#4F46E5; cursor:pointer; }
+
+  /* Bottom Grid */
+  .wh-bottom { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:20px; }
+  @media(min-width:600px){ .wh-bottom { grid-template-columns:repeat(3,1fr); } }
+  @media(min-width:1024px){ .wh-bottom { grid-template-columns:repeat(5,1fr); gap:16px; margin-bottom:24px; } }
+  .wh-bottom-card { background:#fff; border:1px solid #E2E8F0; border-radius:12px; padding:14px; }
+
+  /* Developer Notes */
+  .wh-devnotes { background:#F8FAFC; border:1px solid #E2E8F0; border-radius:12px; padding:18px; }
+  .wh-devnotes-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  @media(min-width:768px){ .wh-devnotes-grid { grid-template-columns:repeat(3,1fr); } }
+  @media(min-width:1200px){ .wh-devnotes-grid { grid-template-columns:repeat(5,1fr); } }
+
+  /* Detail View */
+  .wh-detail-page { background:#F8FAFC; min-height:100vh; padding:16px; font-family:'Inter','Outfit',sans-serif; overflow-x:hidden; }
+  @media(min-width:768px){ .wh-detail-page { padding:24px 32px; } }
+  .wh-detail-header { display:flex; flex-direction:column; gap:12px; margin-bottom:20px; }
+  @media(min-width:768px){ .wh-detail-header { flex-direction:row; justify-content:space-between; align-items:flex-start; } }
+  .wh-detail-profile { background:#fff; border:1px solid #E2E8F0; border-radius:12px; padding:20px; margin-bottom:20px; }
+  .wh-profile-top { display:flex; flex-direction:column; gap:16px; padding-bottom:20px; }
+  @media(min-width:768px){ .wh-profile-top { flex-direction:row; gap:24px; } }
+  .wh-profile-img { width:100%; max-width:280px; height:160px; border-radius:12px; overflow:hidden; flex-shrink:0; }
+  @media(min-width:768px){ .wh-profile-img { width:200px; height:160px; } }
+  .wh-profile-info { flex:1; display:flex; flex-direction:column; gap:16px; }
+  .wh-info-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  @media(min-width:600px){ .wh-info-grid { grid-template-columns:repeat(3,1fr); } }
+  .wh-detail-bottom { display:grid; grid-template-columns:1fr; gap:20px; margin-bottom:20px; }
+  @media(min-width:900px){ .wh-detail-bottom { grid-template-columns:1.6fr 1fr; gap:24px; } }
+  .wh-detail-left { background:#fff; border:1px solid #E2E8F0; border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:24px; }
+  .wh-detail-right { display:flex; flex-direction:column; gap:16px; }
+  .wh-2col { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .wh-overview-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:10px; }
+  .wh-overview-card { position:relative; overflow:hidden; border:1px solid #E2E8F0; border-radius:8px; padding:8px 10px; display:flex; align-items:center; gap:8px; }
+  .wh-services { display:flex; gap:12px; overflow-x:auto; padding-bottom:8px; }
+  .wh-service-item { display:flex; flex-direction:column; align-items:center; gap:6px; min-width:52px; }
+  .wh-qa-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px 14px; }
+  .wh-tabs { display:flex; gap:0; border-top:1px solid #E2E8F0; padding:0 8px; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .wh-tab { padding:14px 12px; flex-shrink:0; font-size:12px; font-weight:600; color:#64748B; border-bottom:2px solid transparent; cursor:pointer; white-space:nowrap; transition:color .2s; }
+  .wh-tab.active { color:#4F46E5; border-bottom-color:#4F46E5; font-weight:800; }
+
+  /* Add Warehouse Form */
+  .wh-add-page { background:#F8FAFC; min-height:100vh; font-family:'Inter','Outfit',sans-serif; overflow-x:hidden; }
+  .wh-add-header { padding:20px; border-bottom:1px solid #E2E8F0; display:flex; flex-direction:column; gap:12px; }
+  @media(min-width:600px){ .wh-add-header { flex-direction:row; justify-content:space-between; align-items:center; padding:24px 32px; } }
+  .wh-add-body { max-width:900px; margin:0 auto; padding:20px; display:flex; flex-direction:column; gap:20px; }
+  @media(min-width:600px){ .wh-add-body { padding:24px 32px; } }
+  .wh-form-section { background:#fff; border:1px solid #E2E8F0; border-radius:14px; padding:20px; }
+  .wh-form-grid-2 { display:grid; grid-template-columns:1fr; gap:18px; }
+  @media(min-width:480px){ .wh-form-grid-2 { grid-template-columns:1fr 1fr; } }
+  .wh-form-grid-3 { display:grid; grid-template-columns:1fr; gap:18px; }
+  @media(min-width:600px){ .wh-form-grid-3 { grid-template-columns:1fr 1fr 1fr; } }
+  .wh-form-grid-4 { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+  @media(min-width:600px){ .wh-form-grid-4 { grid-template-columns:repeat(4,1fr); } }
+  label.wh-label { display:block; font-size:11px; font-weight:800; color:#94A3B8; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px; }
+  .wh-input { width:100%; padding:11px 14px; border:1px solid #E2E8F0; border-radius:10px; font-size:13px; color:#334155; box-sizing:border-box; outline:none; font-family:inherit; }
+  .wh-input-icon { position:relative; }
+  .wh-input-icon .icon { position:absolute; left:13px; top:50%; transform:translateY(-50%); color:#94A3B8; font-size:15px; }
+  .wh-input-icon input { padding-left:40px; }
+  .wh-sticky-bar { position:sticky; bottom:0; background:#fff; border-top:1px solid #E2E8F0; padding:14px 20px; display:flex; justify-content:space-between; z-index:50; }
+  @media(min-width:600px){ .wh-sticky-bar { padding:14px 40px; } }
+
+  /* Edit Modal */
+  .wh-modal-backdrop { position:fixed; inset:0; background:rgba(15,23,42,0.4); backdrop-filter:blur(4px); z-index:1000; display:flex; align-items:center; justify-content:center; padding:16px; }
+  .wh-modal { background:#fff; width:100%; max-width:480px; border-radius:16px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1); overflow:hidden; }
+  .wh-modal-head { padding:20px 24px; border-bottom:1px solid #E2E8F0; display:flex; justify-content:space-between; align-items:center; }
+  .wh-modal-body { padding:20px 24px; display:flex; flex-direction:column; gap:14px; }
+  .wh-modal-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .wh-modal-foot { padding:14px 24px; background:#F8FAFC; border-top:1px solid #E2E8F0; display:flex; justify-content:flex-end; gap:10px; }
+
+  /* Utility */
+  .wh-badge { display:inline-block; font-size:10px; font-weight:800; padding:3px 10px; border-radius:6px; }
+  .wh-badge-green { background:#F0FDF4; color:#16A34A; }
+  .wh-badge-gray { background:#F1F5F9; color:#64748B; }
+  .wh-btn { padding:9px 16px; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; border:1px solid #E2E8F0; background:#fff; color:#334155; display:flex; align-items:center; gap:6px; white-space:nowrap; }
+  .wh-btn-primary { background:#4F46E5; color:#fff; border-color:#4F46E5; }
+  .wh-btn-accent { background:#F97316; color:#fff; border:none; }
+`;
+
+// ─── ICONS ─────────────────────────────────────────────────────────────────
 const BoxIcon = ({ color }) => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line>
-  </svg>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></svg>
 );
 const CheckCircleIcon = ({ color }) => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>
-  </svg>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
 );
 const ClockIcon = ({ color }) => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
-  </svg>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
 );
 const TruckIcon = ({ color }) => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle>
-  </svg>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13" /><polygon points="16 8 20 8 23 11 23 16 16 16 16 8" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" /></svg>
 );
 const SearchIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-  </svg>
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
 );
 const FilterIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-  </svg>
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></svg>
 );
 const ExportIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line>
-  </svg>
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
 );
 const RefreshIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-  </svg>
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></svg>
 );
 const AlertTriangleIcon = ({ color }) => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line>
-  </svg>
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
 );
 const InfoIcon = ({ color }) => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line>
-  </svg>
-);
-const ArrowUpRight = ({ color }) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline>
-  </svg>
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
 );
 const StarIcon = ({ color, fill }) => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill={fill} stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-  </svg>
+  <svg width="13" height="13" viewBox="0 0 24 24" fill={fill} stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>
 );
 const CodeIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline>
-  </svg>
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></svg>
 );
 const BuildingIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><path d="M9 22v-4h6v4"></path><path d="M8 6h.01"></path><path d="M16 6h.01"></path><path d="M12 6h.01"></path><path d="M12 10h.01"></path><path d="M12 14h.01"></path><path d="M16 10h.01"></path><path d="M16 14h.01"></path><path d="M8 10h.01"></path><path d="M8 14h.01"></path>
-  </svg>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" /><path d="M9 22v-4h6v4" /><path d="M8 6h.01" /><path d="M16 6h.01" /></svg>
 );
 const MapPinIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle>
-  </svg>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
 );
 const UsersIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-  </svg>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
 );
 const CubeIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line>
-  </svg>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></svg>
 );
 const ClipboardCheckIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#06B6D4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><polyline points="9 14 11 16 15 11"></polyline>
-  </svg>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#06B6D4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /><rect x="8" y="2" width="8" height="4" rx="1" /><polyline points="9 14 11 16 15 11" /></svg>
 );
 const CircleInfoIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line>
-  </svg>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
 );
 
-
-// === DUMMY DATA ===
+// ─── DATA ──────────────────────────────────────────────────────────────────
 const initialWarehouses = [
   { name: 'Sydney Head Office Warehouse', addr: '12 Logistics Ave, Wetherill Park NSW 2164', code: 'WH-001', branch: 'Sydney Head Office', type: 'General', status: 'Active', stock: '1,250', value: '$485,250.00', util: 78, isStar: true },
   { name: 'Melbourne Distribution Centre', addr: '45 Freight Rd, Truganina VIC 3029', code: 'WH-002', branch: 'Melbourne Branch', type: 'General', status: 'Active', stock: '980', value: '$326,750.00', util: 65, isStar: false },
@@ -115,6 +208,63 @@ const initialWarehouses = [
   { name: 'Auckland Warehouse', addr: '33 Logistics Dr, East Tamaki, Auckland', code: 'WH-006', branch: 'Auckland Branch', type: 'General', status: 'Active', stock: '615', value: '$20,700.00', util: 45, isStar: false },
 ];
 
+// ─── SMALL REUSABLE COMPONENTS ────────────────────────────────────────────
+function DevNotes({ title, cols }) {
+  return (
+    <div className="wh-devnotes">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+        <div style={{ width: 24, height: 24, borderRadius: 6, background: '#4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CodeIcon /></div>
+        <h3 style={{ fontSize: 11, fontWeight: 900, color: '#312E81', letterSpacing: '0.5px', margin: 0 }}>DEVELOPER NOTES – {title}</h3>
+      </div>
+      <div className="wh-devnotes-grid">
+        {cols.map((col, i) => (
+          <div key={i}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+              <span style={{ width: 15, height: 15, borderRadius: '50%', background: '#EEF2FF', color: '#4F46E5', fontSize: 8, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</span>
+              <h4 style={{ fontSize: 9, fontWeight: 800, color: '#312E81', letterSpacing: '0.5px', margin: 0 }}>{col.title}</h4>
+            </div>
+            <ul style={{ margin: 0, paddingLeft: 14, fontSize: 10, color: '#64748B', lineHeight: 1.6, display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {col.items.map((item, j) => <li key={j}>{item}</li>)}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MetricCard({ icon, bg, label, value, sub, linkText, onClick }) {
+  return (
+    <div className="wh-metric-card">
+      <div className="wh-metric-top">
+        <div className="wh-metric-icon" style={{ background: bg }}>{icon}</div>
+        <div style={{ overflow: 'hidden' }}>
+          <div className="wh-metric-label">{label}</div>
+          <div className="wh-metric-value">{value}</div>
+          <div className="wh-metric-sub">{sub}</div>
+        </div>
+      </div>
+      {linkText && <div className="wh-metric-link" onClick={onClick}>{linkText} <span style={{ fontSize: 14 }}>→</span></div>}
+    </div>
+  );
+}
+
+function AlertItem({ icon, color, title, time, desc }) {
+  return (
+    <div style={{ display: 'flex', gap: 10 }}>
+      <div style={{ flexShrink: 0, marginTop: 2 }}>{icon}</div>
+      <div style={{ flex: 1 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color, marginBottom: 2 }}>{title}</div>
+          <div style={{ fontSize: 10, color: '#94A3B8', whiteSpace: 'nowrap', marginLeft: 8 }}>{time}</div>
+        </div>
+        <div style={{ fontSize: 11, color: '#64748B' }}>{desc}</div>
+      </div>
+    </div>
+  );
+}
+
+// ─── MAIN COMPONENT ───────────────────────────────────────────────────────
 export default function Warehouse() {
   const navigate = useNavigate();
   const [view, setView] = useState('list');
@@ -125,10 +275,9 @@ export default function Warehouse() {
   const [editModal, setEditModal] = useState(null);
 
   const handleExport = () => {
-    const csvContent = "data:text/csv;charset=utf-8,Warehouse Name,Code,Branch,Type,Status,Stock Items,Inventory Value,Utilization\nSydney Head Office Warehouse,WH-001,Sydney Head Office,General,Active,1250,485250,78";
-    const encodedUri = encodeURI(csvContent);
+    const csvContent = "data:text/csv;charset=utf-8,Warehouse Name,Code,Branch,Type,Status\nSydney Head Office Warehouse,WH-001,Sydney Head Office,General,Active";
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
+    link.setAttribute("href", encodeURI(csvContent));
     link.setAttribute("download", "warehouse_list.csv");
     document.body.appendChild(link);
     link.click();
@@ -141,1423 +290,790 @@ export default function Warehouse() {
     input.type = 'file';
     input.accept = '.csv, .xlsx';
     input.onchange = (e) => {
-      if (e.target.files && e.target.files.length > 0) {
-        alert("File '" + e.target.files[0].name + "' imported successfully!");
-      }
+      if (e.target.files?.length > 0) alert("File '" + e.target.files[0].name + "' imported successfully!");
     };
     input.click();
     setShowMoreActions(false);
   };
 
-  const handleWhClick = (w) => {
-    setSelectedWh(w);
-    setView('details');
-  };
+  const handleWhClick = (w) => { setSelectedWh(w); setView('details'); };
 
-  if (view === 'inventory') {
-    const wh = selectedWh || whList[0];
-    return <WarehouseInventoryStock wh={wh} onBack={() => setView('details')} />;
-  }
+  // ── SUB VIEWS ──────────────────────────────────────────────────────────
+  if (view === 'inventory') return <WarehouseInventoryStock wh={selectedWh || whList[0]} onBack={() => setView('details')} />;
+  if (view === 'movements') return <WarehouseStockMovements wh={selectedWh || whList[0]} onBack={() => setView('inventory')} />;
+  if (view === 'pickpack') return <WarehousePickPackDispatch wh={selectedWh || whList[0]} onBack={() => setView('details')} />;
+  if (view === 'locations') return <WarehouseLocationsBins wh={selectedWh || whList[0]} onBack={() => setView('details')} />;
+  if (view === 'staffequipment') return <WarehouseStaffEquipment wh={selectedWh || whList[0]} onBack={() => setView('details')} />;
+  if (view === 'reports') return <WarehouseReportsAnalytics wh={selectedWh || whList[0]} onBack={() => setView('details')} />;
 
-  if (view === 'movements') {
-    const wh = selectedWh || whList[0];
-    return <WarehouseStockMovements wh={wh} onBack={() => setView('inventory')} />;
-  }
-
-  if (view === 'pickpack') {
-    const wh = selectedWh || whList[0];
-    return <WarehousePickPackDispatch wh={wh} onBack={() => setView('details')} />;
-  }
-
-  if (view === 'locations') {
-    const wh = selectedWh || whList[0];
-    return <WarehouseLocationsBins wh={wh} onBack={() => setView('details')} />;
-  }
-
-  if (view === 'staffequipment') {
-    const wh = selectedWh || whList[0];
-    return <WarehouseStaffEquipment wh={wh} onBack={() => setView('details')} />;
-  }
-
-  if (view === 'reports') {
-    const wh = selectedWh || whList[0];
-    return <WarehouseReportsAnalytics wh={wh} onBack={() => setView('details')} />;
-  }
-
+  // ── DETAIL VIEW ────────────────────────────────────────────────────────
   if (view === 'details') {
     const wh = selectedWh || whList[0];
     return (
-      <div style={{ background: '#F8FAFC', minHeight: '100vh', padding: '24px 32px', fontFamily: "'Inter','Outfit',sans-serif", overflowX: 'hidden' }}>
+      <>
+        <style>{styles}</style>
+        <div className="wh-detail-page">
 
-        {/* BREADCRUMBS & HEADER */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#64748B', marginBottom: 8, display: 'flex', gap: 6 }}>
-              <span>Home</span> <span style={{ color: '#CBD5E1' }}>›</span> <span>Warehouse</span> <span style={{ color: '#CBD5E1' }}>›</span> <span>Warehouse List</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ color: '#0F172A' }}>Warehouse Details</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-              <h1 style={{ fontSize: 22, fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.5px' }}>9.2 Warehouse Details - {wh.name}</h1>
-              <div style={{ width: 18, height: 18, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 4 }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          {/* Header */}
+          <div className="wh-detail-header">
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 6, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                <span>Home</span><span style={{ color: '#CBD5E1' }}>›</span><span>Warehouse</span><span style={{ color: '#CBD5E1' }}>›</span><span style={{ color: '#0F172A' }}>Warehouse Details</span>
               </div>
+              <h1 style={{ fontSize: 18, fontWeight: 900, color: '#0F172A', margin: '0 0 4px 0', letterSpacing: '-0.5px' }}>9.2 Warehouse Details</h1>
+              <p style={{ fontSize: 12, color: '#64748B', margin: 0, fontWeight: 500 }}>{wh.name}</p>
             </div>
-            <p style={{ fontSize: 13, color: '#64748B', margin: '6px 0 0 0', fontWeight: 500 }}>View and manage warehouse information, settings, locations and operational details.</p>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button onClick={() => setView('list')} className="wh-btn">← Back</button>
+              <button className="wh-btn" style={{ borderColor: '#C7D2FE', background: '#EEF2FF', color: '#4F46E5' }}>✏ Edit Warehouse</button>
+              <button className="wh-btn">More Actions ▾</button>
+            </div>
           </div>
 
-          <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
-            <button onClick={() => setView('list')} style={{ padding: '6px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600, border: '1px solid #E2E8F0', background: '#fff', color: '#1E293B', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', letterSpacing: '-0.2px', whiteSpace: 'nowrap' }}>
-              &lt; Back to Warehouse List
-            </button>
-            <button style={{ padding: '6px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600, border: '1px solid #C7D2FE', background: '#EEF2FF', color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', letterSpacing: '-0.2px', whiteSpace: 'nowrap' }}>
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-              Edit Warehouse
-            </button>
-            <button style={{ padding: '6px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600, border: '1px solid #E2E8F0', background: '#fff', color: '#1E293B', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', letterSpacing: '-0.2px', whiteSpace: 'nowrap' }}>
-              More Actions <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-            </button>
-          </div>
-        </div>
-
-        {/* TOP CARD (Profile) */}
-        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '24px 24px 0 24px', marginBottom: 24, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', gap: 32, paddingBottom: 24 }}>
-            {/* Image */}
-            <div style={{ width: 280, height: 180, borderRadius: 12, flexShrink: 0, overflow: 'hidden' }}>
-              <img src="/image copy.png" alt="Warehouse" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            </div>
-
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 20 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <h2 style={{ fontSize: 22, fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.5px' }}>{wh.name}</h2>
-                <span style={{ fontSize: 11, fontWeight: 800, color: wh.status === 'Active' ? '#10B981' : '#64748B', background: wh.status === 'Active' ? '#D1FAE5' : '#F1F5F9', padding: '4px 10px', borderRadius: 6 }}>{wh.status}</span>
+          {/* Profile Card */}
+          <div className="wh-detail-profile">
+            <div className="wh-profile-top">
+              <div className="wh-profile-img">
+                <img src="/image copy.png" alt="Warehouse" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: 32 }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                    <div>
-                      <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, marginBottom: 4 }}>Warehouse Code</div>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A' }}>{wh.code}</div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, marginBottom: 4 }}>Type</div>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A' }}>{wh.type}</div>
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, marginBottom: 4 }}>Branch / Location</div>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A' }}>{wh.branch}</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, marginBottom: 4 }}>Warehouse Manager</div>
-                    <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 6 }}>
-                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#F1F5F9', color: '#475569', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>JP</div>
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A' }}>James Patel</div>
-                        <div style={{ fontSize: 11, color: '#64748B' }}>+61 412 345 678</div>
-                        <div style={{ fontSize: 11, color: '#4F46E5', fontWeight: 500, wordBreak: 'break-all' }}>james.patel@hero.com.au</div>
-                      </div>
-                    </div>
-                  </div>
+              <div className="wh-profile-info">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <h2 style={{ fontSize: 18, fontWeight: 900, color: '#0F172A', margin: 0 }}>{wh.name}</h2>
+                  <span className={`wh-badge ${wh.status === 'Active' ? 'wh-badge-green' : 'wh-badge-gray'}`}>{wh.status}</span>
                 </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  <div>
-                    <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, marginBottom: 4 }}>Address</div>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', lineHeight: 1.4 }}>{wh.addr.split(',').map((line, i) => <span key={i}>{line.trim()}{i === 0 ? <br /> : ''}</span>)}</div>
-                    <div style={{ fontSize: 11, color: '#4F46E5', fontWeight: 600, marginTop: 4, display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>View on map ↗</div>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16, marginTop: 'auto' }}>
-                    <div>
-                      <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, marginBottom: 4 }}>Phone</div>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A' }}>+61 2 9756 4321</div>
+                <div className="wh-info-grid">
+                  {[
+                    { label: 'Warehouse Code', val: wh.code },
+                    { label: 'Type', val: wh.type },
+                    { label: 'Branch', val: wh.branch },
+                    { label: 'Phone', val: '+61 2 9756 4321' },
+                    { label: 'Email', val: 'warehouse.sydney@hero.com.au' },
+                    { label: 'Address', val: wh.addr },
+                  ].map((f, i) => (
+                    <div key={i}>
+                      <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>{f.label}</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A', wordBreak: 'break-word' }}>{f.val}</div>
                     </div>
-                    <div>
-                      <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, marginBottom: 4 }}>Email</div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: '#4F46E5', wordBreak: 'break-all' }}>warehouse.sydney@hero.com.au</div>
-                    </div>
-                  </div>
+                  ))}
                 </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#F1F5F9', color: '#475569', fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>JP</div>
                   <div>
-                    <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, marginBottom: 4 }}>Operating Hours</div>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', lineHeight: 1.5 }}>
-                      Mon - Fri: 7:00 AM - 5:00 PM<br />
-                      Sat: 8:00 AM - 12:00 PM<br />
-                      Sun: Closed
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, marginBottom: 4 }}>Time Zone</div>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A' }}>Australia/Sydney (AEST)</div>
-                  </div>
-                  <div style={{ marginTop: 'auto' }}>
-                    <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, marginBottom: 4 }}>Created</div>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', lineHeight: 1.4 }}>15 Mar 2024 10:22 AM<br />By Sarah Mitchell</div>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A' }}>James Patel — Warehouse Manager</div>
+                    <div style={{ fontSize: 11, color: '#4F46E5' }}>james.patel@hero.com.au</div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Tabs */}
-          <div style={{ display: 'flex', gap: 24, borderTop: '1px solid #E2E8F0', padding: '0 8px', overflowX: 'auto' }}>
-            {['Overview', 'Locations', 'Inventory and Stock', 'Stock Movements', 'Pick, Pack & Dispatch', 'Staff and Equipment', 'Warehouse Reports and Analytics'].map((tab, idx) => (
-              <div 
-                key={idx} 
-                onClick={() => {
+            {/* Tabs */}
+            <div className="wh-tabs">
+              {['Overview', 'Locations', 'Inventory and Stock', 'Stock Movements', 'Pick, Pack & Dispatch', 'Staff and Equipment', 'Warehouse Reports'].map((tab, idx) => (
+                <div key={idx} onClick={() => {
                   if (tab === 'Locations') setView('locations');
                   if (tab === 'Inventory and Stock') setView('inventory');
                   if (tab === 'Stock Movements') setView('movements');
                   if (tab === 'Pick, Pack & Dispatch') setView('pickpack');
                   if (tab === 'Staff and Equipment') setView('staffequipment');
-                  if (tab === 'Warehouse Reports and Analytics') setView('reports');
-                }}
-                style={{ padding: '16px 0', flexShrink: 0, fontSize: 13, fontWeight: idx === 0 ? 800 : 600, color: idx === 0 ? '#4F46E5' : '#64748B', borderBottom: idx === 0 ? '2px solid #4F46E5' : '2px solid transparent', cursor: 'pointer', whiteSpace: 'nowrap' }}
-              >
-                {tab}
-              </div>
-            ))}
+                  if (tab === 'Warehouse Reports') setView('reports');
+                }} className={`wh-tab${idx === 0 ? ' active' : ''}`}>{tab}</div>
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* BOTTOM LAYOUT */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 24, marginBottom: 24 }}>
+          {/* Bottom Layout */}
+          <div className="wh-detail-bottom">
+            {/* Left */}
+            <div className="wh-detail-left">
+              {/* Warehouse Info & Contact */}
+              <div className="wh-2col">
+                <div>
+                  <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: '0 0 14px 0' }}>WAREHOUSE INFORMATION</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 10px' }}>
+                    {[
+                      { l: 'Warehouse Code', v: wh.code }, { l: 'Total Area', v: '4,500 m²' },
+                      { l: 'Type', v: wh.type }, { l: 'Usable Area', v: '3,520 m²' },
+                      { l: 'Branch', v: wh.branch }, { l: 'Pallet Capacity', v: '2,000' },
+                      { l: 'Utilisation', v: `${wh.util}%` }, { l: 'Status', v: wh.status },
+                    ].map((f, i) => (
+                      <div key={i}>
+                        <div style={{ fontSize: 9, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>{f.l}</div>
+                        <div style={{ fontSize: 11, fontWeight: 800, color: '#0F172A' }}>{f.v}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: '0 0 14px 0' }}>CONTACT & SETTINGS</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 10px' }}>
+                    {[
+                      { l: 'Manager', v: 'James Patel' }, { l: 'Notif. Email', v: 'warehouse.sydney@hero.com.au' },
+                      { l: 'Phone', v: '+61 2 9756 4321' }, { l: 'Timezone', v: 'AEST' },
+                      { l: 'Mobile', v: '+61 412 345 678' }, { l: 'Auto Tasks', v: 'Enabled' },
+                    ].map((f, i) => (
+                      <div key={i}>
+                        <div style={{ fontSize: 9, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>{f.l}</div>
+                        <div style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', wordBreak: 'break-all' }}>{f.v}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
 
-          {/* LEFT COLUMN */}
-          <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '24px', display: 'flex', flexDirection: 'column', gap: 32 }}>
-
-            {/* WAREHOUSE INFORMATION & CONTACT SETTINGS */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+              {/* Services */}
               <div>
-                <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: '0 0 16px 0' }}>WAREHOUSE INFORMATION</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 12px' }}>
-                  <div>
-                    <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>Warehouse Code</div>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A' }}>{wh.code}</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>Total Area</div>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A' }}>4,500 m²</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>Warehouse Type</div>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A' }}>{wh.type}</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>Usable Area</div>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A' }}>3,520 m²</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>Branch / Location</div>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A' }}>{wh.branch}</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>Pallet Capacity</div>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A' }}>2,000</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>Parent Company</div>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A' }}>Hero Logistics Pty Ltd</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>Current Utilisation</div>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 12 }}>
-                      {wh.util}%
-                      <div style={{ width: 60, height: 6, background: '#EEF2FF', borderRadius: 4, overflow: 'hidden' }}>
-                        <div style={{ width: `${wh.util}%`, height: '100%', background: '#4F46E5', borderRadius: 4 }}></div>
+                <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: '0 0 14px 0' }}>SERVICES & CAPABILITIES</h3>
+                <div className="wh-services">
+                  {[
+                    { name: 'Receiving', on: true }, { name: 'Storage', on: true }, { name: 'Picking', on: true },
+                    { name: 'Packing', on: true }, { name: 'Dispatch', on: true }, { name: 'Returns', on: true },
+                    { name: 'Cross Docking', on: true }, { name: 'Value Added', on: false }, { name: 'Dangerous Goods', on: false },
+                  ].map((item, idx) => (
+                    <div key={idx} className="wh-service-item">
+                      <div style={{ width: 32, height: 32, borderRadius: 8, background: item.on ? '#EEF2FF' : '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>
+                        {item.on ? '📦' : '—'}
+                      </div>
+                      <div style={{ fontSize: 9, fontWeight: 700, color: '#334155', textAlign: 'center', lineHeight: 1.2 }}>{item.name}</div>
+                      <div style={{ fontSize: 9, fontWeight: 800, color: item.on ? '#10B981' : '#EF4444' }}>{item.on ? 'Yes' : 'No'}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Right */}
+            <div className="wh-detail-right">
+              {/* Overview */}
+              <div className="wh-panel">
+                <div className="wh-panel-header">
+                  <span className="wh-panel-title">WAREHOUSE OVERVIEW</span>
+                  <span className="wh-panel-link">View Report →</span>
+                </div>
+                <div className="wh-overview-grid">
+                  {[
+                    { label: 'Stock Items', value: wh.stock, color: '#4F46E5', bg: '#EEF2FF' },
+                    { label: 'Inventory Value', value: wh.value, color: '#10B981', bg: '#ECFDF5' },
+                    { label: 'Utilisation', value: `${wh.util}%`, color: '#3B82F6', bg: '#EFF6FF' },
+                    { label: 'Pending Tasks', value: '28', color: '#4F46E5', bg: '#EEF2FF' },
+                    { label: 'Inc. Shipments', value: '14', color: '#EF4444', bg: '#FEF2F2' },
+                    { label: 'Out. Shipments', value: '19', color: '#F97316', bg: '#FFF7ED' },
+                  ].map((c, i) => (
+                    <div key={i} className="wh-overview-card">
+                      <div style={{ width: 22, height: 22, borderRadius: 6, background: c.bg, flexShrink: 0 }} />
+                      <div>
+                        <div style={{ fontSize: 11, fontWeight: 900, color: '#0F172A' }}>{c.value}</div>
+                        <div style={{ fontSize: 9, color: '#64748B', fontWeight: 600 }}>{c.label}</div>
                       </div>
                     </div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>Status</div>
-                    <span style={{ fontSize: 10, fontWeight: 800, color: wh.status === 'Active' ? '#10B981' : '#64748B', background: wh.status === 'Active' ? '#D1FAE5' : '#F1F5F9', padding: '4px 10px', borderRadius: 6 }}>{wh.status}</span>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>Default Currency</div>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A' }}>AUD - Australian Dollar</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>Temperature Controlled</div>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A' }}>No</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>Tax Rate</div>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A' }}>10% (GST)</div>
-                  </div>
+                  ))}
                 </div>
               </div>
 
-              <div>
-                <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: '0 0 16px 0' }}>CONTACT & SETTINGS</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 12px' }}>
-                  <div>
-                    <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>Warehouse Manager</div>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A' }}>James Patel</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>Notification Email</div>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: '#4F46E5', wordBreak: 'break-all' }}>warehouse.sydney@hero.com.au</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>Phone</div>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A' }}>+61 2 9756 4321</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>Receiving Email</div>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: '#4F46E5', wordBreak: 'break-all' }}>receiving.sydney@hero.com.au</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>Mobile</div>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A' }}>+61 412 345 678</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>Timezone</div>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A' }}>Australia/Sydney (AEST)</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>Email</div>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: '#4F46E5', wordBreak: 'break-all' }}>james.patel@hero.com.au</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>Auto Task Assignment</div>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A' }}>Enabled</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>Secondary Contact</div>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A', lineHeight: 1.4 }}>Lisa Chen<br />+61 400 987 654<br /><span style={{ color: '#4F46E5', fontWeight: 500, wordBreak: 'break-all' }}>lisa.chen@hero.com.au</span></div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>Stock Counting Frequency</div>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A' }}>Monthly</div>
-                    <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600, marginTop: 8, marginBottom: 2 }}>Cycle Count Day</div>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A' }}>First Monday of each month</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* SERVICES & CAPABILITIES */}
-            <div>
-              <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: '0 0 16px 0' }}>SERVICES & CAPABILITIES</h3>
-              <div style={{ display: 'flex', gap: 16, overflowX: 'auto', paddingBottom: 8 }}>
-                {[
-                  { name: 'Receiving', icon: <CubeIcon />, color: '#4F46E5', on: true },
-                  { name: 'Storage', icon: <BoxIcon color="#4F46E5" />, color: '#4F46E5', on: true },
-                  { name: 'Picking', icon: <ClipboardCheckIcon />, color: '#4F46E5', on: true },
-                  { name: 'Packing', icon: <CubeIcon />, color: '#4F46E5', on: true },
-                  { name: 'Dispatch', icon: <TruckIcon color="#4F46E5" />, color: '#4F46E5', on: true },
-                  { name: 'Returns', icon: <RefreshIcon />, color: '#4F46E5', on: true },
-                  { name: 'Cross Docking', icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 3h5v5"></path><path d="M4 20L21 3"></path><path d="M21 16v5h-5"></path><path d="M15 15l6 6"></path><path d="M4 4l5 5"></path></svg>, color: '#4F46E5', on: true },
-                  { name: 'Value Added Services', icon: <StarIcon color="#F59E0B" fill="none" />, color: '#F59E0B', on: false },
-                  { name: 'Dangerous Goods', icon: <AlertTriangleIcon color="#EF4444" />, color: '#EF4444', on: false },
-                ].map((item, idx) => (
-                  <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, minWidth: 56 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 10, background: item.on ? '#EEF2FF' : (item.color === '#F59E0B' ? '#FFFBEB' : '#FEF2F2'), display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {item.icon}
-                    </div>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: '#334155', textAlign: 'center', lineHeight: 1.2 }}>{item.name}</div>
-                    <div style={{ fontSize: 10, fontWeight: 800, color: item.on ? '#10B981' : '#EF4444' }}>{item.on ? 'Yes' : 'No'}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-          </div>
-
-          {/* RIGHT COLUMN */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-
-            {/* WAREHOUSE OVERVIEW */}
-            <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>WAREHOUSE OVERVIEW</h3>
-                <div style={{ fontSize: 10, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }}>View Report →</div>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
-
-                <div style={{ position: 'relative', overflow: 'hidden', border: '1px solid #E2E8F0', borderRadius: 8, padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%) scale(2.5)', opacity: 0.04, color: '#4F46E5', pointerEvents: 'none' }}><UsersIcon /></div>
-                  <div style={{ width: 26, height: 26, borderRadius: 6, background: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4F46E5', flexShrink: 0, zIndex: 1 }}><UsersIcon /></div>
-                  <div style={{ zIndex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, fontWeight: 900, color: '#0F172A', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{wh.stock}</div>
-                    <div style={{ fontSize: 9, color: '#64748B', fontWeight: 600, whiteSpace: 'nowrap' }}>Stock Items</div>
-                  </div>
-                </div>
-
-                <div style={{ position: 'relative', overflow: 'hidden', border: '1px solid #E2E8F0', borderRadius: 8, padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%) scale(2.5)', opacity: 0.04, color: '#10B981', pointerEvents: 'none' }}><CheckCircleIcon color="#10B981" /></div>
-                  <div style={{ width: 26, height: 26, borderRadius: 6, background: '#ECFDF5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10B981', flexShrink: 0, zIndex: 1 }}><CheckCircleIcon color="#10B981" /></div>
-                  <div style={{ zIndex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 11, fontWeight: 900, color: '#0F172A', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{wh.value}</div>
-                    <div style={{ fontSize: 9, color: '#64748B', fontWeight: 600, whiteSpace: 'nowrap' }}>Inventory Value</div>
-                  </div>
-                </div>
-
-                <div style={{ position: 'relative', overflow: 'hidden', border: '1px solid #E2E8F0', borderRadius: 8, padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%) scale(2.5)', opacity: 0.04, color: '#3B82F6', pointerEvents: 'none' }}><ClockIcon color="#3B82F6" /></div>
-                  <div style={{ width: 26, height: 26, borderRadius: 6, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3B82F6', flexShrink: 0, zIndex: 1 }}><ClockIcon color="#3B82F6" /></div>
-                  <div style={{ zIndex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, fontWeight: 900, color: '#0F172A', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{wh.util}%</div>
-                    <div style={{ fontSize: 9, color: '#64748B', fontWeight: 600, whiteSpace: 'nowrap' }}>Utilisation</div>
-                  </div>
+              {/* Quick Actions */}
+              <div className="wh-panel">
+                <span className="wh-panel-title">QUICK ACTIONS</span>
+                <div className="wh-qa-grid" style={{ marginTop: 14 }}>
+                  {['📦 Manage Stock', '+ Add Stock', '✓ Create Pick Task', '↓ Receive Shipment', '⇄ Stock Transfer', '📍 View Locations', '☰ View All Tasks', '🖨️ Print Label'].map((a, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: '#0F172A', cursor: 'pointer' }}>{a}</div>
+                  ))}
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
-                <div style={{ position: 'relative', overflow: 'hidden', border: '1px solid #E2E8F0', borderRadius: 8, padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%) scale(2.5)', opacity: 0.04, color: '#4F46E5', pointerEvents: 'none' }}><ClipboardCheckIcon /></div>
-                  <div style={{ width: 26, height: 26, borderRadius: 6, background: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4F46E5', flexShrink: 0, zIndex: 1 }}><ClipboardCheckIcon /></div>
-                  <div style={{ zIndex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, fontWeight: 900, color: '#0F172A', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>28</div>
-                    <div style={{ fontSize: 9, color: '#64748B', fontWeight: 600, whiteSpace: 'nowrap' }}>Pending Tasks</div>
-                  </div>
+              {/* Locations */}
+              <div className="wh-panel">
+                <div className="wh-panel-header">
+                  <span className="wh-panel-title">WAREHOUSE LOCATIONS (5)</span>
+                  <span className="wh-panel-link">View All →</span>
                 </div>
-
-                <div style={{ position: 'relative', overflow: 'hidden', border: '1px solid #E2E8F0', borderRadius: 8, padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%) scale(2.5)', opacity: 0.04, color: '#EF4444', pointerEvents: 'none' }}><TruckIcon color="#EF4444" /></div>
-                  <div style={{ width: 26, height: 26, borderRadius: 6, background: '#FEF2F2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#EF4444', flexShrink: 0, zIndex: 1 }}><TruckIcon color="#EF4444" /></div>
-                  <div style={{ zIndex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, fontWeight: 900, color: '#0F172A', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>14</div>
-                    <div style={{ fontSize: 9, color: '#64748B', fontWeight: 600, whiteSpace: 'nowrap' }}>Inc. Shipments</div>
-                  </div>
-                </div>
-
-                <div style={{ position: 'relative', overflow: 'hidden', border: '1px solid #E2E8F0', borderRadius: 8, padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%) scale(2.5)', opacity: 0.04, color: '#F97316', pointerEvents: 'none' }}><TruckIcon color="#F97316" /></div>
-                  <div style={{ width: 26, height: 26, borderRadius: 6, background: '#FFF7ED', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F97316', flexShrink: 0, zIndex: 1 }}><TruckIcon color="#F97316" /></div>
-                  <div style={{ zIndex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, fontWeight: 900, color: '#0F172A', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>19</div>
-                    <div style={{ fontSize: 9, color: '#64748B', fontWeight: 600, whiteSpace: 'nowrap' }}>Out. Shipments</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* QUICK ACTIONS */}
-            <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '24px' }}>
-              <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: 16 }}>QUICK ACTIONS</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11.5, fontWeight: 600, color: '#0F172A', cursor: 'pointer' }}>
-                  <span style={{ color: '#4F46E5', fontSize: 14 }}>📦</span> Manage Stock
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11.5, fontWeight: 600, color: '#0F172A', cursor: 'pointer' }}>
-                  <span style={{ color: '#4F46E5', fontSize: 14 }}>+</span> Add Stock
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11.5, fontWeight: 600, color: '#0F172A', cursor: 'pointer' }}>
-                  <span style={{ color: '#4F46E5', fontSize: 14 }}>✓</span> Create Pick Task
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11.5, fontWeight: 600, color: '#0F172A', cursor: 'pointer' }}>
-                  <span style={{ color: '#4F46E5', fontSize: 14 }}>↓</span> Receive Shipment
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11.5, fontWeight: 600, color: '#0F172A', cursor: 'pointer' }}>
-                  <span style={{ color: '#4F46E5', fontSize: 14 }}>⇄</span> Create Stock Transfer
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11.5, fontWeight: 600, color: '#0F172A', cursor: 'pointer' }}>
-                  <span style={{ color: '#4F46E5', fontSize: 14 }}>📍</span> View Warehouse Locations
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11.5, fontWeight: 600, color: '#0F172A', cursor: 'pointer' }}>
-                  <span style={{ color: '#4F46E5', fontSize: 14 }}>☰</span> View All Tasks
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11.5, fontWeight: 600, color: '#0F172A', cursor: 'pointer' }}>
-                  <span style={{ color: '#4F46E5', fontSize: 14 }}>🖨️</span> Print Warehouse Label
-                </div>
-              </div>
-            </div>
-
-            {/* WAREHOUSE LOCATIONS (5) */}
-            <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>WAREHOUSE LOCATIONS (5)</h3>
-                <div style={{ fontSize: 10, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }}>View All →</div>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {[
-                  { name: 'Main Storage Area', code: 'A1 - A20', pct: 78, color: '#4F46E5', icon: 'M' },
-                  { name: 'Bulk Storage', code: 'B1 - B15', pct: 66, color: '#10B981', icon: 'B' },
-                  { name: 'Dispatch Area', code: 'D1 - D10', pct: 85, color: '#3B82F6', icon: 'D' },
-                  { name: 'Returns Area', code: 'R1 - R5', pct: 42, color: '#F59E0B', icon: 'R' },
-                  { name: 'Quarantine Area', code: 'Q1 - Q5', pct: 25, color: '#EF4444', icon: 'Q' },
-                ].map((loc, idx) => (
-                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 20, height: 20, borderRadius: 4, background: `${loc.color}15`, color: loc.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 800 }}>{loc.icon}</div>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: '#0F172A', flex: 1 }}>{loc.name}</div>
-                    <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600, width: 50 }}>{loc.code}</div>
-                    <div style={{ width: 60, height: 6, background: '#EEF2FF', borderRadius: 4, overflow: 'hidden' }}>
-                      <div style={{ width: `${loc.pct}%`, height: '100%', background: '#4F46E5', borderRadius: 4 }}></div>
-                    </div>
-                    <div style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', width: 26, textAlign: 'right' }}>{loc.pct}%</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* DOCUMENTS */}
-            <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>DOCUMENTS</h3>
-                <div style={{ fontSize: 10, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }}>View All →</div>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {[
-                  { name: 'Warehouse Lic...', full: 'LIC-WH-001.pdf', date: '15 Mar 2024' },
-                  { name: 'Insurance Cert...', full: 'INS-WH-001.pdf', date: '01 Jan 2025' },
-                  { name: 'Fire Safety Ce...', full: 'FSC-WH-001.pdf', date: '20 Feb 2025' },
-                  { name: 'OH&S Complia...', full: 'OHS-WH-001.pdf', date: '10 Apr 2025' },
-                  { name: 'Site Plan', full: 'SITE-WH-001.pdf', date: '15 Mar 2024' },
-                ].map((doc, idx) => (
-                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ color: '#64748B', fontSize: 12 }}>📄</div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 4 }}>
-                        {doc.name} <span style={{ fontSize: 10, color: '#94A3B8', fontWeight: 500 }}>{doc.full}</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {[
+                    { name: 'Main Storage Area', code: 'A1-A20', pct: 78 },
+                    { name: 'Bulk Storage', code: 'B1-B15', pct: 66 },
+                    { name: 'Dispatch Area', code: 'D1-D10', pct: 85 },
+                    { name: 'Returns Area', code: 'R1-R5', pct: 42 },
+                    { name: 'Quarantine Area', code: 'Q1-Q5', pct: 25 },
+                  ].map((loc, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#0F172A', flex: 1 }}>{loc.name}</div>
+                      <div style={{ fontSize: 10, color: '#64748B', width: 48 }}>{loc.code}</div>
+                      <div style={{ width: 50, height: 5, background: '#EEF2FF', borderRadius: 4, overflow: 'hidden' }}>
+                        <div style={{ width: `${loc.pct}%`, height: '100%', background: '#4F46E5', borderRadius: 4 }} />
                       </div>
+                      <div style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', width: 28, textAlign: 'right' }}>{loc.pct}%</div>
                     </div>
-                    <div style={{ fontSize: 10, color: '#0F172A', fontWeight: 700 }}>{doc.date}</div>
-                    <div style={{ color: '#64748B', cursor: 'pointer', fontSize: 12 }}>↓</div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+              </div>
+
+              {/* Documents */}
+              <div className="wh-panel">
+                <div className="wh-panel-header">
+                  <span className="wh-panel-title">DOCUMENTS</span>
+                  <span className="wh-panel-link">View All →</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {[
+                    { name: 'Warehouse Licence', full: 'LIC-WH-001.pdf', date: '15 Mar 2024' },
+                    { name: 'Insurance Cert', full: 'INS-WH-001.pdf', date: '01 Jan 2025' },
+                    { name: 'Fire Safety Cert', full: 'FSC-WH-001.pdf', date: '20 Feb 2025' },
+                    { name: 'OH&S Compliance', full: 'OHS-WH-001.pdf', date: '10 Apr 2025' },
+                    { name: 'Site Plan', full: 'SITE-WH-001.pdf', date: '15 Mar 2024' },
+                  ].map((doc, idx) => (
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 12, color: '#64748B' }}>📄</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: '#0F172A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.name}</div>
+                        <div style={{ fontSize: 10, color: '#94A3B8' }}>{doc.full}</div>
+                      </div>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap' }}>{doc.date}</div>
+                      <span style={{ fontSize: 12, color: '#64748B', cursor: 'pointer' }}>↓</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
+
+          {/* Developer Notes */}
+          <DevNotes title="WAREHOUSE DETAILS" cols={[
+            { title: 'PURPOSE', items: ['Central record for all warehouse information.', 'Manage settings, contacts and capabilities.', 'Access related data and operational actions.'] },
+            { title: 'KEY FEATURES', items: ['Warehouse overview and key metrics.', 'Contact details and operating settings.', 'Quick actions for daily operations.', 'Access to locations, inventory and tasks.'] },
+            { title: 'AUTOMATION & ALERTS', items: ['Alert on low utilisation or capacity issues.', 'Notify when documents are expiring.', 'Auto-create tasks based on settings.', 'Dashboard updates in real-time.'] },
+            { title: 'PERMISSIONS', items: ['Super Admin: Full access.', 'Admin/Manager: Full access.', 'Warehouse Staff: View assigned warehouse only.', 'Dispatcher: View warehouse info (read-only).'] },
+            { title: 'DATA SOURCES', items: ['Warehouses module.', 'Inventory & Stock module.', 'Tasks module.', 'Shipments & Purchase Orders.'] },
+          ]} />
         </div>
-
-        {/* DEVELOPER NOTES */}
-        <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 12, padding: '20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-            <div style={{ width: 26, height: 26, borderRadius: 6, background: '#4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <CodeIcon />
-            </div>
-            <h3 style={{ fontSize: 12, fontWeight: 900, color: '#312E81', letterSpacing: '0.5px', margin: 0 }}>DEVELOPER NOTES - WAREHOUSE DETAILS</h3>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 24 }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                <span style={{ width: 16, height: 16, borderRadius: '50%', background: '#EEF2FF', color: '#4F46E5', fontSize: 9, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>1</span>
-                <h4 style={{ fontSize: 9, fontWeight: 800, color: '#312E81', letterSpacing: '0.5px', margin: 0 }}>PURPOSE</h4>
-              </div>
-              <ul style={{ margin: 0, paddingLeft: 14, fontSize: 10, color: '#64748B', lineHeight: 1.5, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <li>Central record for all warehouse information.</li>
-                <li>Manage settings, contacts and capabilities.</li>
-                <li>Access related data and operational actions.</li>
-              </ul>
-            </div>
-
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                <span style={{ width: 16, height: 16, borderRadius: '50%', background: '#EEF2FF', color: '#4F46E5', fontSize: 9, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>2</span>
-                <h4 style={{ fontSize: 9, fontWeight: 800, color: '#312E81', letterSpacing: '0.5px', margin: 0 }}>KEY FEATURES</h4>
-              </div>
-              <ul style={{ margin: 0, paddingLeft: 14, fontSize: 10, color: '#64748B', lineHeight: 1.5, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <li>Warehouse overview and key metrics.</li>
-                <li>Contact details and operating settings.</li>
-                <li>Quick actions for daily operations.</li>
-                <li>Access to locations, inventory and tasks.</li>
-              </ul>
-            </div>
-
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                <span style={{ width: 16, height: 16, borderRadius: '50%', background: '#EEF2FF', color: '#4F46E5', fontSize: 9, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>3</span>
-                <h4 style={{ fontSize: 9, fontWeight: 800, color: '#312E81', letterSpacing: '0.5px', margin: 0 }}>AUTOMATION & ALERTS</h4>
-              </div>
-              <ul style={{ margin: 0, paddingLeft: 14, fontSize: 10, color: '#64748B', lineHeight: 1.5, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <li>Alert on low utilisation or capacity issues.</li>
-                <li>Notify when documents are expiring.</li>
-                <li>Auto-create tasks based on settings.</li>
-                <li>Dashboard updates in real-time.</li>
-              </ul>
-            </div>
-
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                <span style={{ width: 16, height: 16, borderRadius: '50%', background: '#EEF2FF', color: '#4F46E5', fontSize: 9, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>4</span>
-                <h4 style={{ fontSize: 9, fontWeight: 800, color: '#312E81', letterSpacing: '0.5px', margin: 0 }}>PERMISSIONS</h4>
-              </div>
-              <ul style={{ margin: 0, paddingLeft: 14, fontSize: 10, color: '#64748B', lineHeight: 1.5, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <li>Super Admin: Full access.</li>
-                <li>Admin/Manager: Full access.</li>
-                <li>Warehouse Staff: View assigned warehouse only.</li>
-                <li>Dispatcher: View warehouse info (read-only).</li>
-              </ul>
-            </div>
-
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                <span style={{ width: 16, height: 16, borderRadius: '50%', background: '#EEF2FF', color: '#4F46E5', fontSize: 9, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>5</span>
-                <h4 style={{ fontSize: 9, fontWeight: 800, color: '#312E81', letterSpacing: '0.5px', margin: 0 }}>DATA SOURCES</h4>
-              </div>
-              <ul style={{ margin: 0, paddingLeft: 14, fontSize: 10, color: '#64748B', lineHeight: 1.5, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <li>Warehouses module.</li>
-                <li>Inventory & Stock module.</li>
-                <li>Tasks module.</li>
-                <li>Shipments & Orders module.</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-      </div>
+      </>
     );
   }
 
+  // ── ADD WAREHOUSE VIEW ────────────────────────────────────────────────
   if (view === 'add') {
     return (
-      <div style={{ background: '#F8FAFC', minHeight: '100vh', fontFamily: "'Inter','Outfit',sans-serif", overflowX: 'hidden' }}>
-
-        {/* Header */}
-        <div style={{ padding: '32px 40px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', gap: 16 }}>
-            <button onClick={() => setView('list')} style={{ width: 40, height: 40, borderRadius: '50%', background: '#fff', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748B', fontWeight: 600 }}>&lt;</button>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <h1 style={{ fontSize: 24, fontWeight: 900, color: '#0F172A', margin: '0 0 4px 0', letterSpacing: '-0.5px' }}>Add New Warehouse</h1>
-                <span style={{ fontSize: 10, fontWeight: 800, color: '#10B981', background: '#D1FAE5', padding: '4px 8px', borderRadius: 4 }}>NEW</span>
-              </div>
-              <div style={{ fontSize: 13, color: '#64748B', fontWeight: 500 }}>Register a new warehouse facility with full profile and operational setup.</div>
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 12 }}>
-            <button onClick={() => setView('list')} style={{ padding: '10px 20px', borderRadius: 10, background: '#fff', border: '1px solid #E2E8F0', color: '#475569', fontSize: 13.5, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
-            <button onClick={() => setView('list')} style={{ padding: '10px 24px', borderRadius: 10, background: '#F59E0B', border: 'none', color: '#1E1B4B', fontSize: 13.5, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <CheckCircleIcon color="#1E1B4B" /> Save Warehouse
-            </button>
-          </div>
-        </div>
-
-        <div style={{ maxWidth: 1300, margin: '32px auto', padding: '0 40px', display: 'flex', flexDirection: 'column', gap: 24 }}>
-
-          {/* 1. BASIC INFORMATION */}
-          <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 16, padding: '32px' }}>
-            <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <BuildingIcon />
-              </div>
+      <>
+        <style>{styles}</style>
+        <div className="wh-add-page">
+          <div className="wh-add-header">
+            <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+              <button onClick={() => setView('list')} className="wh-btn" style={{ width: 38, height: 38, borderRadius: '50%', padding: 0, justifyContent: 'center' }}>←</button>
               <div>
-                <h2 style={{ fontSize: 14, fontWeight: 800, color: '#1E293B', margin: '0 0 4px 0' }}>1. BASIC INFORMATION</h2>
-                <div style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Facility Identity and Status</div>
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Warehouse Name *</label>
-                <div style={{ position: 'relative' }}>
-                  <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8', fontSize: 16 }}>🏢</span>
-                  <input placeholder="e.g. Sydney Main Depot" style={{ width: '100%', padding: '12px 16px 12px 42px', border: '1px solid #E2E8F0', borderRadius: 10, fontSize: 14, color: '#334155', boxSizing: 'border-box', outline: 'none' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <h1 style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', margin: 0 }}>Add New Warehouse</h1>
+                  <span style={{ fontSize: 9, fontWeight: 800, color: '#10B981', background: '#D1FAE5', padding: '3px 8px', borderRadius: 4 }}>NEW</span>
                 </div>
+                <p style={{ fontSize: 12, color: '#64748B', margin: '4px 0 0 0', fontWeight: 500 }}>Register a new warehouse facility.</p>
               </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Warehouse Code *</label>
-                <div style={{ position: 'relative' }}>
-                  <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8', fontSize: 16 }}>📦</span>
-                  <input placeholder="e.g. SYD-01" style={{ width: '100%', padding: '12px 16px 12px 42px', border: '1px solid #E2E8F0', borderRadius: 10, fontSize: 14, color: '#334155', boxSizing: 'border-box', outline: 'none' }} />
-                </div>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Branch / Region</label>
-                <input placeholder="Sydney Main" style={{ width: '100%', padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: 10, fontSize: 14, color: '#334155', boxSizing: 'border-box', outline: 'none' }} />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Status</label>
-                <div style={{ display: 'flex', gap: 12 }}>
-                  <button style={{ flex: 1, padding: '12px', borderRadius: 10, border: 'none', background: '#F97316', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Active</button>
-                  <button style={{ flex: 1, padding: '12px', borderRadius: 10, border: '1px solid #E2E8F0', background: '#fff', color: '#475569', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Maintenance</button>
-                  <button style={{ flex: 1, padding: '12px', borderRadius: 10, border: '1px solid #E2E8F0', background: '#fff', color: '#475569', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Out of Service</button>
-                </div>
-              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setView('list')} className="wh-btn">Cancel</button>
+              <button onClick={() => setView('list')} className="wh-btn wh-btn-accent">Save Warehouse →</button>
             </div>
           </div>
 
-          {/* 2. CAPACITY & SIZING */}
-          <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 16, padding: '32px' }}>
-            <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: '#ECFDF5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <CubeIcon />
+          <div className="wh-add-body">
+            {/* 1. Basic Info */}
+            <div className="wh-form-section">
+              <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 10, background: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><BuildingIcon /></div>
+                <div><h2 style={{ fontSize: 13, fontWeight: 800, color: '#1E293B', margin: '0 0 2px 0' }}>1. BASIC INFORMATION</h2><div style={{ fontSize: 10, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Facility Identity and Status</div></div>
               </div>
-              <div>
-                <h2 style={{ fontSize: 14, fontWeight: 800, color: '#1E293B', margin: '0 0 4px 0' }}>2. CAPACITY & SIZING</h2>
-                <div style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Physical Dimensions and Limits</div>
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 24 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Area (SQM)</label>
-                <input placeholder="e.g. 5000" style={{ width: '100%', padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: 10, fontSize: 14, color: '#334155', boxSizing: 'border-box', outline: 'none' }} />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Pallet Capacity</label>
-                <input placeholder="e.g. 15000" style={{ width: '100%', padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: 10, fontSize: 14, color: '#334155', boxSizing: 'border-box', outline: 'none' }} />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Loading Docks</label>
-                <input placeholder="e.g. 12" style={{ width: '100%', padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: 10, fontSize: 14, color: '#334155', boxSizing: 'border-box', outline: 'none' }} />
-              </div>
-            </div>
-          </div>
-
-          {/* 3. LOCATION DETAILS */}
-          <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 16, padding: '32px' }}>
-            <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <MapPinIcon />
-              </div>
-              <div>
-                <h2 style={{ fontSize: 14, fontWeight: 800, color: '#1E293B', margin: '0 0 4px 0' }}>3. LOCATION DETAILS</h2>
-                <div style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Geographic Address</div>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Street Address</label>
-                <input placeholder="e.g. 123 Logistics Way" style={{ width: '100%', padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: 10, fontSize: 14, color: '#334155', boxSizing: 'border-box', outline: 'none' }} />
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 24 }}>
+              <div className="wh-form-grid-2">
                 <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Suburb / City</label>
-                  <input placeholder="e.g. Wetherill Park" style={{ width: '100%', padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: 10, fontSize: 14, color: '#334155', boxSizing: 'border-box', outline: 'none' }} />
+                  <label className="wh-label">Warehouse Name *</label>
+                  <div className="wh-input-icon"><span className="icon">🏢</span><input className="wh-input" placeholder="e.g. Sydney Main Depot" /></div>
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>State</label>
-                  <input placeholder="e.g. NSW" style={{ width: '100%', padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: 10, fontSize: 14, color: '#334155', boxSizing: 'border-box', outline: 'none' }} />
+                  <label className="wh-label">Warehouse Code *</label>
+                  <div className="wh-input-icon"><span className="icon">📦</span><input className="wh-input" placeholder="e.g. SYD-01" /></div>
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Postal Code</label>
-                  <input placeholder="e.g. 2164" style={{ width: '100%', padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: 10, fontSize: 14, color: '#334155', boxSizing: 'border-box', outline: 'none' }} />
+                  <label className="wh-label">Branch / Region</label>
+                  <input className="wh-input" placeholder="Sydney Main" />
+                </div>
+                <div>
+                  <label className="wh-label">Status</label>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button style={{ flex: 1, padding: '10px', borderRadius: 8, border: 'none', background: '#F97316', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Active</button>
+                    <button style={{ flex: 1, padding: '10px', borderRadius: 8, border: '1px solid #E2E8F0', background: '#fff', color: '#475569', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Maintenance</button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* 4. KEY CONTACTS */}
-          <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 16, padding: '32px' }}>
-            <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: '#FFFBEB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <UsersIcon />
+            {/* 2. Capacity */}
+            <div className="wh-form-section">
+              <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 10, background: '#ECFDF5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><CubeIcon /></div>
+                <div><h2 style={{ fontSize: 13, fontWeight: 800, color: '#1E293B', margin: '0 0 2px 0' }}>2. CAPACITY & SIZING</h2><div style={{ fontSize: 10, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Physical Dimensions and Limits</div></div>
               </div>
-              <div>
-                <h2 style={{ fontSize: 14, fontWeight: 800, color: '#1E293B', margin: '0 0 4px 0' }}>4. KEY CONTACTS</h2>
-                <div style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Warehouse Management</div>
+              <div className="wh-form-grid-3">
+                <div><label className="wh-label">Total Area (SQM)</label><input className="wh-input" placeholder="e.g. 5000" /></div>
+                <div><label className="wh-label">Pallet Capacity</label><input className="wh-input" placeholder="e.g. 15000" /></div>
+                <div><label className="wh-label">Loading Docks</label><input className="wh-input" placeholder="e.g. 12" /></div>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Manager Name</label>
-                <input placeholder="e.g. Sarah Mitchell" style={{ width: '100%', padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: 10, fontSize: 14, color: '#334155', boxSizing: 'border-box', outline: 'none' }} />
+            {/* 3. Location */}
+            <div className="wh-form-section">
+              <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 10, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><MapPinIcon /></div>
+                <div><h2 style={{ fontSize: 13, fontWeight: 800, color: '#1E293B', margin: '0 0 2px 0' }}>3. LOCATION DETAILS</h2><div style={{ fontSize: 10, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Geographic Address</div></div>
               </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Manager Phone</label>
-                <div style={{ position: 'relative' }}>
-                  <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8', fontSize: 16 }}>📞</span>
-                  <input placeholder="0400 000 000" style={{ width: '100%', padding: '12px 16px 12px 42px', border: '1px solid #E2E8F0', borderRadius: 10, fontSize: 14, color: '#334155', boxSizing: 'border-box', outline: 'none' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div><label className="wh-label">Street Address</label><input className="wh-input" placeholder="e.g. 123 Logistics Way" /></div>
+                <div className="wh-form-grid-3">
+                  <div><label className="wh-label">Suburb / City</label><input className="wh-input" placeholder="e.g. Wetherill Park" /></div>
+                  <div><label className="wh-label">State</label><input className="wh-input" placeholder="e.g. NSW" /></div>
+                  <div><label className="wh-label">Postal Code</label><input className="wh-input" placeholder="e.g. 2164" /></div>
                 </div>
               </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Manager Email</label>
-                <div style={{ position: 'relative' }}>
-                  <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8', fontSize: 16 }}>🌐</span>
-                  <input placeholder="manager@company.com" style={{ width: '100%', padding: '12px 16px 12px 42px', border: '1px solid #E2E8F0', borderRadius: 10, fontSize: 14, color: '#334155', boxSizing: 'border-box', outline: 'none' }} />
-                </div>
+            </div>
+
+            {/* 4. Key Contacts */}
+            <div className="wh-form-section">
+              <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 10, background: '#FFFBEB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><UsersIcon /></div>
+                <div><h2 style={{ fontSize: 13, fontWeight: 800, color: '#1E293B', margin: '0 0 2px 0' }}>4. KEY CONTACTS</h2><div style={{ fontSize: 10, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Warehouse Management</div></div>
               </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#94A3B8', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Emergency After-hours</label>
-                <input placeholder="Security/Fire contact" style={{ width: '100%', padding: '12px 16px', border: '1px solid #E2E8F0', borderRadius: 10, fontSize: 14, color: '#334155', boxSizing: 'border-box', outline: 'none' }} />
+              <div className="wh-form-grid-2">
+                <div><label className="wh-label">Manager Name</label><input className="wh-input" placeholder="e.g. Sarah Mitchell" /></div>
+                <div><label className="wh-label">Manager Phone</label><input className="wh-input" placeholder="0400 000 000" /></div>
+                <div><label className="wh-label">Manager Email</label><input className="wh-input" placeholder="manager@company.com" /></div>
+                <div><label className="wh-label">Emergency After-hours</label><input className="wh-input" placeholder="Security/Fire contact" /></div>
               </div>
+            </div>
+
+            {/* 5. Capabilities */}
+            <div className="wh-form-section">
+              <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 10, background: '#ECFEFF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><ClipboardCheckIcon /></div>
+                <div><h2 style={{ fontSize: 13, fontWeight: 800, color: '#1E293B', margin: '0 0 2px 0' }}>5. OPERATING CAPABILITIES</h2><div style={{ fontSize: 10, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Facility Features</div></div>
+              </div>
+              <div className="wh-form-grid-4">
+                {['Cold Storage', 'Dangerous Goods', 'Cross-Docking', '24/7 Operations'].map((lbl, idx) => (
+                  <label key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, border: '1px solid #E2E8F0', borderRadius: 8, padding: '12px 14px', cursor: 'pointer' }}>
+                    <input type="checkbox" style={{ width: 15, height: 15, cursor: 'pointer', accentColor: '#4F46E5' }} />
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#334155' }}>{lbl}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* 6. Notes */}
+            <div className="wh-form-section">
+              <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 10, background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><CircleInfoIcon /></div>
+                <div><h2 style={{ fontSize: 13, fontWeight: 800, color: '#1E293B', margin: '0 0 2px 0' }}>6. NOTES & COMMENTS</h2><div style={{ fontSize: 10, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Additional Information</div></div>
+              </div>
+              <textarea className="wh-input" placeholder="Any specific instructions, hours, or operational notes..." style={{ height: 100, resize: 'vertical' }} />
             </div>
           </div>
 
-          {/* 5. OPERATING CAPABILITIES */}
-          <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 16, padding: '32px' }}>
-            <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: '#ECFEFF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <ClipboardCheckIcon />
-              </div>
-              <div>
-                <h2 style={{ fontSize: 14, fontWeight: 800, color: '#1E293B', margin: '0 0 4px 0' }}>5. OPERATING CAPABILITIES</h2>
-                <div style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Facility Features</div>
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
-              {['Cold Storage', 'Dangerous Goods', 'Cross-Docking', '24/7 Operations'].map((lbl, idx) => (
-                <label key={idx} style={{ display: 'flex', alignItems: 'center', gap: 12, border: '1px solid #E2E8F0', borderRadius: 10, padding: '16px 20px', cursor: 'pointer' }}>
-                  <input type="checkbox" style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#4F46E5' }} />
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#334155' }}>{lbl}</span>
-                </label>
-              ))}
-            </div>
+          <div className="wh-sticky-bar">
+            <button onClick={() => setView('list')} className="wh-btn">Cancel</button>
+            <button onClick={() => setView('list')} className="wh-btn wh-btn-accent">Save Warehouse →</button>
           </div>
-
-          {/* 6. NOTES & COMMENTS */}
-          <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 16, padding: '32px' }}>
-            <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <CircleInfoIcon />
-              </div>
-              <div>
-                <h2 style={{ fontSize: 14, fontWeight: 800, color: '#1E293B', margin: '0 0 4px 0' }}>6. NOTES & COMMENTS</h2>
-                <div style={{ fontSize: 11, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Additional Information</div>
-              </div>
-            </div>
-
-            <textarea placeholder="Any specific instructions, hours, or operational notes..." style={{ width: '100%', height: 120, padding: '16px', border: '1px solid #E2E8F0', borderRadius: 10, fontSize: 14, color: '#334155', boxSizing: 'border-box', outline: 'none', resize: 'none', fontFamily: 'inherit' }}></textarea>
-          </div>
-
         </div>
-
-        {/* Fixed Bottom Bar */}
-        <div style={{ position: 'sticky', bottom: 0, background: '#fff', borderTop: '1px solid #E2E8F0', padding: '16px 40px', display: 'flex', justifyContent: 'space-between', zIndex: 50, marginTop: 10 }}>
-          <button onClick={() => setView('list')} style={{ padding: '12px 24px', borderRadius: 10, background: '#fff', border: '1px solid #E2E8F0', color: '#475569', fontSize: 13.5, fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
-          <button onClick={() => setView('list')} style={{ padding: '12px 24px', borderRadius: 10, background: '#F97316', border: 'none', color: '#fff', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
-            Save Warehouse <span style={{ fontSize: 16 }}>→</span>
-          </button>
-        </div>
-
-      </div>
+      </>
     );
   }
 
+  // ── LIST / DASHBOARD VIEW ─────────────────────────────────────────────
   return (
-    <div style={{ background: '#F8FAFC', minHeight: '100vh', padding: '24px 32px', fontFamily: "'Inter','Outfit',sans-serif", overflowX: 'hidden' }}>
+    <>
+      <style>{styles}</style>
+      <div className="wh-page">
 
-      {/* ── BREADCRUMBS & HEADER ── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
-        <div>
-          <div style={{ fontSize: 12, fontWeight: 600, color: '#64748B', marginBottom: 8, display: 'flex', gap: 6 }}>
-            <span>Home</span> <span style={{ color: '#CBD5E1' }}>›</span> <span>Warehouse</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ color: '#0F172A' }}>Warehouse Dashboard</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <h1 style={{ fontSize: 22, fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.5px' }}>9.1 Warehouse Dashboard / List</h1>
-            <div style={{ width: 14, height: 14, borderRadius: 4, border: '2px solid #8B5CF6' }}></div>
-          </div>
-          <p style={{ fontSize: 13, color: '#64748B', margin: '6px 0 0 0', fontWeight: 500 }}>View all warehouses, stock overview and real-time operational summary.</p>
-        </div>
-
-        <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>
-          <button onClick={() => setView('add')} style={{ padding: '5px 12px', borderRadius: 4, fontSize: 11, fontWeight: 600, border: '1px solid #E2E8F0', background: '#fff', color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-            <span style={{ fontSize: 14, fontWeight: 700 }}>+</span> Add Warehouse
-          </button>
-          <div style={{ position: 'relative' }}>
-            <button onClick={() => setShowMoreActions(!showMoreActions)} style={{ padding: '5px 12px', borderRadius: 4, fontSize: 11, fontWeight: 600, border: '1px solid #E2E8F0', background: '#fff', color: '#334155', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-              More Actions
-              <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M1 1L5 5L9 1" stroke="#334155" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
-            {showMoreActions && (
-              <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: 8, width: 220, background: '#fff', border: '1px solid #E2E8F0', borderRadius: 8, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', zIndex: 50, padding: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <div onClick={handleExport} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', borderRadius: 6, transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#F1F5F9'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
-                  Export Warehouse List
-                </div>
-                <div onClick={() => { navigate('/warehouse/reports'); setShowMoreActions(false); }} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', borderRadius: 6, transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#F1F5F9'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
-                  Generate Inventory Report
-                </div>
-                <div onClick={handleImport} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', borderRadius: 6, transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#F1F5F9'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
-                  Import Bulk Warehouses
-                </div>
-                <div style={{ height: 1, background: '#E2E8F0', margin: '4px 0' }}></div>
-                <div onClick={() => { navigate('/company-admin/company-settings'); setShowMoreActions(false); }} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#4F46E5', cursor: 'pointer', borderRadius: 6, transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
-                  Warehouse Settings
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ── METRICS CARDS ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12, marginBottom: 24 }}>
-        {/* Card 1 */}
-        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '16px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 8, background: '#F5F3FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <BoxIcon color="#8B5CF6" />
+        {/* Header */}
+        <div className="wh-header">
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 6, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+              <span>Home</span><span style={{ color: '#CBD5E1' }}>›</span><span>Warehouse</span><span style={{ color: '#CBD5E1' }}>›</span><span style={{ color: '#0F172A' }}>Warehouse Dashboard</span>
             </div>
-            <div style={{ overflow: 'hidden' }}>
-              <div style={{ fontSize: 9.5, fontWeight: 800, color: '#64748B', letterSpacing: '0.2px', textTransform: 'uppercase', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>TOTAL WAREHOUSES</div>
-              <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>6</div>
-              <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Active Warehouses</div>
-            </div>
+            <h1 style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.5px' }}>9.1 Warehouse Dashboard / List</h1>
+            <p style={{ fontSize: 12, color: '#64748B', margin: '4px 0 0 0', fontWeight: 500 }}>View all warehouses, stock overview and real-time operational summary.</p>
           </div>
-          <div onClick={() => {
-            setView('list');
-            document.getElementById('warehouse-list')?.scrollIntoView({ behavior: 'smooth' });
-          }} style={{ marginTop: 'auto', fontSize: 11, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
-            View all warehouses <span style={{ fontSize: 14 }}>→</span>
-          </div>
-        </div>
-
-        {/* Card 2 */}
-        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '16px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 8, background: '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <CheckCircleIcon color="#10B981" />
-            </div>
-            <div style={{ overflow: 'hidden' }}>
-              <div style={{ fontSize: 9.5, fontWeight: 800, color: '#64748B', letterSpacing: '0.2px', textTransform: 'uppercase', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>TOTAL INVENTORY VALUE</div>
-              <div style={{ fontSize: 16, fontWeight: 900, color: '#0F172A', lineHeight: 1.1 }}>$1,256,850.00</div>
-              <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Across all warehouses</div>
-            </div>
-          </div>
-          <div onClick={() => navigate('/warehouse/current-stock')} style={{ marginTop: 'auto', fontSize: 11, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
-            View inventory <span style={{ fontSize: 14 }}>→</span>
-          </div>
-        </div>
-
-        {/* Card 3 */}
-        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '16px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 8, background: '#FFFBEB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <BoxIcon color="#F59E0B" />
-            </div>
-            <div style={{ overflow: 'hidden' }}>
-              <div style={{ fontSize: 9.5, fontWeight: 800, color: '#64748B', letterSpacing: '0.2px', textTransform: 'uppercase', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>TOTAL STOCK ITEMS</div>
-              <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>4,125</div>
-              <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>All warehouses</div>
-            </div>
-          </div>
-          <div onClick={() => navigate('/warehouse/current-stock')} style={{ marginTop: 'auto', fontSize: 11, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
-            View stock <span style={{ fontSize: 14 }}>→</span>
-          </div>
-        </div>
-
-        {/* Card 4 */}
-        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '16px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 8, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <ClockIcon color="#3B82F6" />
-            </div>
-            <div style={{ overflow: 'hidden' }}>
-              <div style={{ fontSize: 9.5, fontWeight: 800, color: '#64748B', letterSpacing: '0.2px', textTransform: 'uppercase', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>PENDING PICK TASKS</div>
-              <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>28</div>
-              <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Requires attention</div>
-            </div>
-          </div>
-          <div onClick={() => navigate('/warehouse/movements')} style={{ marginTop: 'auto', fontSize: 11, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
-            View tasks <span style={{ fontSize: 14 }}>→</span>
-          </div>
-        </div>
-
-        {/* Card 5 */}
-        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '16px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 8, background: '#F5F3FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <TruckIcon color="#8B5CF6" />
-            </div>
-            <div style={{ overflow: 'hidden' }}>
-              <div style={{ fontSize: 9.5, fontWeight: 800, color: '#64748B', letterSpacing: '0.2px', textTransform: 'uppercase', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>INCOMING SHIPMENTS</div>
-              <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>14</div>
-              <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>In transit / Expected</div>
-            </div>
-          </div>
-          <div onClick={() => navigate('/warehouse/inbound')} style={{ marginTop: 'auto', fontSize: 11, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
-            View shipments <span style={{ fontSize: 14 }}>→</span>
-          </div>
-        </div>
-
-        {/* Card 6 */}
-        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '16px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 8, background: '#FEF2F2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <TruckIcon color="#EF4444" />
-            </div>
-            <div style={{ overflow: 'hidden' }}>
-              <div style={{ fontSize: 9.5, fontWeight: 800, color: '#64748B', letterSpacing: '0.2px', textTransform: 'uppercase', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>OUTGOING SHIPMENTS</div>
-              <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>19</div>
-              <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Scheduled / In progress</div>
-            </div>
-          </div>
-          <div onClick={() => navigate('/warehouse/outbound')} style={{ marginTop: 'auto', fontSize: 11, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
-            View shipments <span style={{ fontSize: 14 }}>→</span>
-          </div>
-        </div>
-      </div>
-
-      {/* ── MIDDLE SECTION ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 24, marginBottom: 24 }}>
-
-        {/* WAREHOUSE LIST */}
-        <div id="warehouse-list" style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, overflow: 'hidden' }}>
-          <div style={{ padding: '20px 24px', borderBottom: '1px solid #F1F5F9' }}>
-            <h2 style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>WAREHOUSE LIST (6)</h2>
-          </div>
-
-          <div style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid #F1F5F9' }}>
-            <div style={{ position: 'relative', flex: 1 }}>
-              <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }}><SearchIcon /></span>
-              <input placeholder="Search warehouses..." style={{ width: '100%', padding: '9px 12px 9px 36px', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: 13, outline: 'none', color: '#0F172A', boxSizing: 'border-box' }} />
-            </div>
-
-            {/* Filter Dropdowns */}
-            {['All Status', 'All Branches', 'All Types'].map(label => (
-              <select key={label} style={{ padding: '9px 32px 9px 12px', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: 13, fontWeight: 600, color: '#334155', appearance: 'none', background: '#fff url("data:image/svg+xml;utf8,<svg fill=\'%2364748B\' height=\'16\' viewBox=\'0 0 24 24\' width=\'16\' xmlns=\'http://www.w3.org/2000/svg\'><path d=\'M7 10l5 5 5-5z\'/></svg>") no-repeat right 8px center', outline: 'none' }}>
-                <option>{label}</option>
-              </select>
-            ))}
-
-            <button style={{ padding: '9px', border: '1px solid #E2E8F0', borderRadius: 8, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FilterIcon /></button>
-            <button style={{ padding: '9px 14px', border: '1px solid #E2E8F0', borderRadius: 8, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#334155' }}>
-              <ExportIcon /> Export
-            </button>
-            <button style={{ padding: '9px', border: '1px solid #E2E8F0', borderRadius: 8, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><RefreshIcon /></button>
-          </div>
-
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-              <thead>
-                <tr style={{ background: '#fff', borderBottom: '1px solid #F1F5F9' }}>
-                  {['Warehouse Name', 'Code', 'Branch / Location', 'Type', 'Status', 'Stock Items', 'Inventory Value (AUD)', 'Utilization', 'Action'].map(h => (
-                    <th key={h} style={{ padding: '16px 24px', fontSize: 11, fontWeight: 800, color: '#0F172A', whiteSpace: 'nowrap', textTransform: 'capitalize' }}>{h}</th>
+          <div className="wh-header-actions">
+            <button onClick={() => setView('add')} className="wh-btn wh-btn-primary">+ Add Warehouse</button>
+            <div style={{ position: 'relative' }}>
+              <button onClick={() => setShowMoreActions(!showMoreActions)} className="wh-btn">
+                More Actions
+                <svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="#334155" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              </button>
+              {showMoreActions && (
+                <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: 8, width: 210, background: '#fff', border: '1px solid #E2E8F0', borderRadius: 8, boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', zIndex: 50, padding: 8 }}>
+                  {[
+                    { label: 'Export Warehouse List', fn: handleExport },
+                    { label: 'Generate Inventory Report', fn: () => { navigate('/warehouse/reports'); setShowMoreActions(false); } },
+                    { label: 'Import Bulk Warehouses', fn: handleImport },
+                  ].map((item, i) => (
+                    <div key={i} onClick={item.fn} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', borderRadius: 6 }}
+                      onMouseOver={e => e.currentTarget.style.background = '#F1F5F9'}
+                      onMouseOut={e => e.currentTarget.style.background = 'transparent'}>{item.label}</div>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
-                {whList.map((w, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid #F8FAFC' }}>
-                    <td style={{ padding: '16px 24px', verticalAlign: 'top' }}>
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <div style={{ marginTop: 2 }}><StarIcon fill={w.isStar ? '#4F46E5' : 'none'} color={w.isStar ? '#4F46E5' : '#CBD5E1'} /></div>
-                        <div>
-                          <div style={{ fontSize: 13.5, fontWeight: 800, color: '#0F172A', marginBottom: 4, width: 140 }}>{w.name}</div>
-                          <div style={{ fontSize: 11, color: '#64748B', lineHeight: 1.4, width: 120 }}>{w.addr}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td style={{ padding: '16px 24px', verticalAlign: 'top' }}>
-                      <span onClick={() => handleWhClick(w)} style={{ fontSize: 13, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }}>{w.code}</span>
-                    </td>
-                    <td style={{ padding: '16px 24px', verticalAlign: 'top' }}>
-                      <div style={{ fontSize: 13, color: '#475569', fontWeight: 500, width: 80 }}>{w.branch}</div>
-                    </td>
-                    <td style={{ padding: '16px 24px', verticalAlign: 'top' }}>
-                      <div style={{ fontSize: 13, color: '#475569' }}>{w.type}</div>
-                    </td>
-                    <td style={{ padding: '16px 24px', verticalAlign: 'top' }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 6, background: w.status === 'Active' ? '#F0FDF4' : '#F1F5F9', color: w.status === 'Active' ? '#16A34A' : '#64748B' }}>
-                        {w.status}
-                      </span>
-                    </td>
-                    <td style={{ padding: '16px 24px', verticalAlign: 'top' }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>{w.stock}</div>
-                    </td>
-                    <td style={{ padding: '16px 24px', verticalAlign: 'top' }}>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A' }}>{w.value}</div>
-                    </td>
-                    <td style={{ padding: '16px 24px', verticalAlign: 'top' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ fontSize: 13, color: '#0F172A', fontWeight: 600 }}>{w.util}%</div>
-                        <div style={{ width: 60, height: 6, background: '#EEF2FF', borderRadius: 4, overflow: 'hidden' }}>
-                          <div style={{ width: `${w.util}%`, height: '100%', background: '#4F46E5', borderRadius: 4 }}></div>
-                        </div>
-                      </div>
-                    </td>
-                    <td style={{ padding: '16px 24px', verticalAlign: 'top', position: 'relative' }}>
-                      <div onClick={() => setOpenRowAction(openRowAction === i ? null : i)} style={{ color: '#94A3B8', fontWeight: 800, fontSize: 18, letterSpacing: '1px', cursor: 'pointer', userSelect: 'none' }}>...</div>
-                      {openRowAction === i && (
-                        <div style={{ position: 'absolute', top: '100%', right: 24, marginTop: -10, width: 180, background: '#fff', border: '1px solid #E2E8F0', borderRadius: 8, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', zIndex: 100, padding: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                          <div onClick={() => { handleWhClick(w); setOpenRowAction(null); }} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', borderRadius: 6 }} onMouseOver={e => e.currentTarget.style.background = '#F1F5F9'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>View Details</div>
-                          <div onClick={() => { navigate('/warehouse/current-stock'); setOpenRowAction(null); }} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', borderRadius: 6 }} onMouseOver={e => e.currentTarget.style.background = '#F1F5F9'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>Manage Inventory</div>
-                          <div onClick={() => { 
-                            setEditModal({ ...w, index: i });
-                            setOpenRowAction(null); 
-                          }} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', borderRadius: 6 }} onMouseOver={e => e.currentTarget.style.background = '#F1F5F9'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>Edit Warehouse</div>
-                          <div style={{ height: 1, background: '#E2E8F0', margin: '4px 0' }}></div>
-                          <div onClick={() => { 
-                            if (window.confirm(`Are you sure you want to delete ${w.name}?`)) {
-                              const newList = [...whList];
-                              newList.splice(i, 1);
-                              setWhList(newList);
-                            }
-                            setOpenRowAction(null); 
-                          }} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#EF4444', cursor: 'pointer', borderRadius: 6 }} onMouseOver={e => e.currentTarget.style.background = '#FEF2F2'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>Delete</div>
-                        </div>
-                      )}
-                    </td>
+                  <div style={{ height: 1, background: '#E2E8F0', margin: '4px 0' }} />
+                  <div onClick={() => { navigate('/company-admin/company-settings'); setShowMoreActions(false); }}
+                    style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#4F46E5', cursor: 'pointer', borderRadius: 6 }}
+                    onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'}
+                    onMouseOut={e => e.currentTarget.style.background = 'transparent'}>Warehouse Settings</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Metric Cards */}
+        <div className="wh-metrics">
+          <MetricCard icon={<BoxIcon color="#8B5CF6" />} bg="#F5F3FF" label="TOTAL WAREHOUSES" value="6" sub="Active Warehouses" linkText="View all warehouses" onClick={() => {}} />
+          <MetricCard icon={<CheckCircleIcon color="#10B981" />} bg="#F0FDF4" label="TOTAL INVENTORY VALUE" value="$1.26M" sub="Across all warehouses" linkText="View inventory" onClick={() => navigate('/warehouse/current-stock')} />
+          <MetricCard icon={<BoxIcon color="#F59E0B" />} bg="#FFFBEB" label="TOTAL STOCK ITEMS" value="4,125" sub="All warehouses" linkText="View stock" onClick={() => navigate('/warehouse/current-stock')} />
+          <MetricCard icon={<ClockIcon color="#3B82F6" />} bg="#EFF6FF" label="PENDING PICK TASKS" value="28" sub="Requires attention" linkText="View tasks" onClick={() => navigate('/warehouse/movements')} />
+          <MetricCard icon={<TruckIcon color="#8B5CF6" />} bg="#F5F3FF" label="INCOMING SHIPMENTS" value="14" sub="In transit / Expected" linkText="View shipments" onClick={() => navigate('/warehouse/inbound')} />
+          <MetricCard icon={<TruckIcon color="#EF4444" />} bg="#FEF2F2" label="OUTGOING SHIPMENTS" value="19" sub="Scheduled / In progress" linkText="View shipments" onClick={() => navigate('/warehouse/outbound')} />
+        </div>
+
+        {/* Middle Section */}
+        <div className="wh-middle">
+          {/* Warehouse List */}
+          <div className="wh-list-card" id="warehouse-list">
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #F1F5F9' }}>
+              <h2 style={{ fontSize: 12, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>WAREHOUSE LIST ({whList.length})</h2>
+            </div>
+
+            {/* Filters */}
+            <div className="wh-list-filters">
+              <div className="wh-search-box">
+                <span className="wh-search-icon"><SearchIcon /></span>
+                <input placeholder="Search warehouses..." />
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {['All Status', 'All Branches', 'All Types'].map(label => (
+                  <select key={label} style={{ padding: '8px 10px', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#334155', background: '#fff', outline: 'none' }}>
+                    <option>{label}</option>
+                  </select>
+                ))}
+                <button className="wh-btn" style={{ padding: '8px 10px' }}><FilterIcon /></button>
+                <button className="wh-btn" style={{ padding: '8px 10px' }}><ExportIcon /><span>Export</span></button>
+                <button className="wh-btn" style={{ padding: '8px 10px' }}><RefreshIcon /></button>
+              </div>
+            </div>
+
+            {/* ── DESKTOP TABLE ── */}
+            <div className="wh-table-wrap">
+              <table className="wh-table">
+                <thead>
+                  <tr style={{ background: '#fff', borderBottom: '1px solid #F1F5F9' }}>
+                    {['Warehouse Name', 'Code', 'Branch / Location', 'Type', 'Status', 'Stock Items', 'Inventory Value', 'Utilization', 'Action'].map(h => (
+                      <th key={h}>{h}</th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {whList.map((w, i) => (
+                    <tr key={i} style={{ borderBottom: '1px solid #F8FAFC' }}
+                      onMouseOver={e => e.currentTarget.style.background = '#FAFAFA'}
+                      onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
+                      <td>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <div style={{ marginTop: 2 }}><StarIcon fill={w.isStar ? '#4F46E5' : 'none'} color={w.isStar ? '#4F46E5' : '#CBD5E1'} /></div>
+                          <div>
+                            <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', marginBottom: 2, maxWidth: 160 }}>{w.name}</div>
+                            <div style={{ fontSize: 10, color: '#64748B', maxWidth: 160, lineHeight: 1.4 }}>{w.addr}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td><span onClick={() => handleWhClick(w)} style={{ fontSize: 13, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }}>{w.code}</span></td>
+                      <td><div style={{ fontSize: 12, color: '#475569', maxWidth: 100 }}>{w.branch}</div></td>
+                      <td><div style={{ fontSize: 12, color: '#475569' }}>{w.type}</div></td>
+                      <td><span className={`wh-badge ${w.status === 'Active' ? 'wh-badge-green' : 'wh-badge-gray'}`}>{w.status}</span></td>
+                      <td><div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>{w.stock}</div></td>
+                      <td><div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A' }}>{w.value}</div></td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{ fontSize: 12, color: '#0F172A', fontWeight: 600 }}>{w.util}%</div>
+                          <div style={{ width: 50, height: 5, background: '#EEF2FF', borderRadius: 4, overflow: 'hidden' }}>
+                            <div style={{ width: `${w.util}%`, height: '100%', background: '#4F46E5', borderRadius: 4 }} />
+                          </div>
+                        </div>
+                      </td>
+                      <td style={{ position: 'relative' }}>
+                        <div onClick={() => setOpenRowAction(openRowAction === i ? null : i)} style={{ color: '#94A3B8', fontWeight: 800, fontSize: 16, cursor: 'pointer', userSelect: 'none', padding: '0 4px' }}>···</div>
+                        {openRowAction === i && (
+                          <div style={{ position: 'absolute', top: '100%', right: 16, marginTop: -8, width: 170, background: '#fff', border: '1px solid #E2E8F0', borderRadius: 8, boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', zIndex: 100, padding: 6 }}>
+                            {[
+                              { label: 'View Details', fn: () => { handleWhClick(w); setOpenRowAction(null); } },
+                              { label: 'Manage Inventory', fn: () => { navigate('/warehouse/current-stock'); setOpenRowAction(null); } },
+                              { label: 'Edit Warehouse', fn: () => { setEditModal({ ...w, index: i }); setOpenRowAction(null); } },
+                            ].map((a, ai) => (
+                              <div key={ai} onClick={a.fn} style={{ padding: '7px 10px', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', borderRadius: 5 }}
+                                onMouseOver={e => e.currentTarget.style.background = '#F1F5F9'}
+                                onMouseOut={e => e.currentTarget.style.background = 'transparent'}>{a.label}</div>
+                            ))}
+                            <div style={{ height: 1, background: '#E2E8F0', margin: '4px 0' }} />
+                            <div onClick={() => { if (window.confirm(`Delete ${w.name}?`)) { const nl = [...whList]; nl.splice(i, 1); setWhList(nl); } setOpenRowAction(null); }}
+                              style={{ padding: '7px 10px', fontSize: 12, fontWeight: 600, color: '#EF4444', cursor: 'pointer', borderRadius: 5 }}
+                              onMouseOver={e => e.currentTarget.style.background = '#FEF2F2'}
+                              onMouseOut={e => e.currentTarget.style.background = 'transparent'}>Delete</div>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* ── MOBILE CARD LIST ── */}
+            <div className="wh-cards-list">
+              {whList.map((w, i) => (
+                <div key={i} className="wh-wh-card">
+                  <div className="wh-wh-card-header">
+                    <div style={{ display: 'flex', gap: 8, flex: 1, minWidth: 0 }}>
+                      <div style={{ marginTop: 2, flexShrink: 0 }}><StarIcon fill={w.isStar ? '#4F46E5' : 'none'} color={w.isStar ? '#4F46E5' : '#CBD5E1'} /></div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{w.name}</div>
+                        <div style={{ fontSize: 10, color: '#64748B' }}>{w.addr}</div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+                      <span className={`wh-badge ${w.status === 'Active' ? 'wh-badge-green' : 'wh-badge-gray'}`}>{w.status}</span>
+                      <button onClick={() => handleWhClick(w)} className="wh-btn" style={{ padding: '5px 10px', fontSize: 11 }}>View</button>
+                    </div>
+                  </div>
+                  <div className="wh-wh-card-body">
+                    <div>
+                      <div className="wh-wh-card-label">Code</div>
+                      <div className="wh-wh-card-val" style={{ color: '#4F46E5' }}>{w.code}</div>
+                    </div>
+                    <div>
+                      <div className="wh-wh-card-label">Branch</div>
+                      <div className="wh-wh-card-val">{w.branch}</div>
+                    </div>
+                    <div>
+                      <div className="wh-wh-card-label">Type</div>
+                      <div className="wh-wh-card-val">{w.type}</div>
+                    </div>
+                    <div>
+                      <div className="wh-wh-card-label">Stock Items</div>
+                      <div className="wh-wh-card-val">{w.stock}</div>
+                    </div>
+                    <div>
+                      <div className="wh-wh-card-label">Inventory Value</div>
+                      <div className="wh-wh-card-val">{w.value}</div>
+                    </div>
+                    <div>
+                      <div className="wh-wh-card-label">Utilization</div>
+                      <div className="wh-wh-card-val">{w.util}%</div>
+                      <div className="wh-util-bar"><div style={{ width: `${w.util}%`, height: '100%', background: '#4F46E5', borderRadius: 4 }} /></div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                    <button onClick={() => handleWhClick(w)} className="wh-btn" style={{ flex: 1, justifyContent: 'center', fontSize: 11 }}>View Details</button>
+                    <button onClick={() => setEditModal({ ...w, index: i })} className="wh-btn" style={{ flex: 1, justifyContent: 'center', fontSize: 11 }}>Edit</button>
+                    <button onClick={() => { if (window.confirm(`Delete ${w.name}?`)) { const nl = [...whList]; nl.splice(i, 1); setWhList(nl); } }}
+                      className="wh-btn" style={{ flex: 1, justifyContent: 'center', fontSize: 11, color: '#EF4444', borderColor: '#FCA5A5' }}>Delete</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            <div style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #F1F5F9', flexWrap: 'wrap', gap: 10 }}>
+              <div style={{ fontSize: 12, color: '#64748B', fontWeight: 500 }}>Showing 1 to {whList.length} of {whList.length} warehouses</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  {['‹', '1', '›'].map((l, i) => (
+                    <button key={i} style={{ width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', background: i === 1 ? '#EEF2FF' : '#fff', border: '1px solid #E2E8F0', borderRadius: 6, cursor: 'pointer', color: i === 1 ? '#4F46E5' : '#64748B', fontWeight: i === 1 ? 700 : 400 }}>{l}</button>
+                  ))}
+                </div>
+                <select style={{ padding: '6px 10px', border: '1px solid #E2E8F0', borderRadius: 6, fontSize: 12, color: '#334155', background: '#fff', outline: 'none' }}>
+                  <option>10 / page</option>
+                </select>
+              </div>
+            </div>
           </div>
 
-          <div style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #F1F5F9' }}>
-            <div style={{ fontSize: 13, color: '#64748B', fontWeight: 500 }}>Showing 1 to 6 of 6 warehouses</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ display: 'flex', gap: 4 }}>
-                <button style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', border: '1px solid #E2E8F0', borderRadius: 6, cursor: 'pointer', color: '#64748B' }}>&lt;</button>
-                <button style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#EEF2FF', border: '1px solid #EEF2FF', borderRadius: 6, cursor: 'pointer', color: '#4F46E5', fontWeight: 700 }}>1</button>
-                <button style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', border: '1px solid #E2E8F0', borderRadius: 6, cursor: 'pointer', color: '#64748B' }}>&gt;</button>
+          {/* Right Side Panels */}
+          <div className="wh-right-panels">
+            {/* Warehouse Alerts */}
+            <div className="wh-panel">
+              <div className="wh-panel-header">
+                <span className="wh-panel-title">WAREHOUSE ALERTS</span>
+                <span className="wh-panel-link">View All →</span>
               </div>
-              <select style={{ padding: '7px 24px 7px 12px', border: '1px solid #E2E8F0', borderRadius: 6, fontSize: 13, fontWeight: 600, color: '#334155', appearance: 'none', background: '#fff url("data:image/svg+xml;utf8,<svg fill=\'%2364748B\' height=\'16\' viewBox=\'0 0 24 24\' width=\'16\' xmlns=\'http://www.w3.org/2000/svg\'><path d=\'M7 10l5 5 5-5z\'/></svg>") no-repeat right 6px center', outline: 'none' }}>
-                <option>10 / page</option>
-              </select>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <AlertItem icon={<AlertTriangleIcon color="#F97316" />} color="#EA580C" title="Low Stock Alert" time="12 min ago" desc="15 items below minimum stock level" />
+                <AlertItem icon={<AlertTriangleIcon color="#F97316" />} color="#EA580C" title="Stock Expiry Alert" time="1 hr ago" desc="8 items expiring within 30 days" />
+                <AlertItem icon={<InfoIcon color="#4F46E5" />} color="#4F46E5" title="Pick Tasks Overdue" time="2 hrs ago" desc="5 pick tasks are overdue" />
+                <AlertItem icon={<TruckIcon color="#4F46E5" />} color="#4F46E5" title="Incoming Shipment" time="3 hrs ago" desc="PO-55412 arriving today at WH-001" />
+              </div>
+            </div>
+
+            {/* Warehouse Locations Map */}
+            <div className="wh-panel">
+              <div className="wh-panel-header">
+                <span className="wh-panel-title">WAREHOUSE LOCATIONS</span>
+                <span className="wh-panel-link">View All →</span>
+              </div>
+              <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+                <div style={{ width: 130, height: 100, background: '#BFDBFE', borderRadius: 8, position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
+                  <div style={{ position: 'absolute', bottom: 4, left: 6, fontSize: 8, fontWeight: 800, color: '#1E3A8A' }}>Google</div>
+                  {[[40, 20], [60, 50], [25, 70]].map(([l, t], idx) => (
+                    <div key={idx} style={{ position: 'absolute', top: `${t}%`, left: `${l}%`, width: 14, height: 14, background: '#4F46E5', borderRadius: '50% 50% 50% 0', transform: 'rotate(-45deg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ fontSize: 7, color: '#fff', transform: 'rotate(45deg)', fontWeight: 800 }}>{idx + 1}</span>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, justifyContent: 'center', flex: 1 }}>
+                  {['Sydney Head Office', 'Melbourne DC', 'Brisbane Warehouse', 'Perth Hub', 'Adelaide Facility', 'Auckland Warehouse'].map((name, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <div style={{ width: 13, height: 13, borderRadius: '50%', background: '#4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 800, color: '#fff', flexShrink: 0 }}>{i + 1}</div>
+                      <div style={{ fontSize: 10, fontWeight: 600, color: '#0F172A' }}>{name}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* RIGHT SIDE PANELS */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-
-          {/* Warehouse Alerts */}
-          <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '20px 24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h3 style={{ fontSize: 12, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>WAREHOUSE ALERTS</h3>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 2, cursor: 'pointer' }}>View All →</div>
+        {/* Bottom Panels */}
+        <div className="wh-bottom">
+          {/* Inventory Summary */}
+          <div className="wh-bottom-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.2px', textTransform: 'uppercase', margin: 0 }}>INVENTORY SUMMARY</h3>
+              <span style={{ fontSize: 9, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }}>View →</span>
             </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              <div style={{ display: 'flex', gap: 12 }}>
-                <div style={{ flexShrink: 0, marginTop: 2 }}><AlertTriangleIcon color="#F97316" /></div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#EA580C', marginBottom: 2 }}>Low Stock Alert</div>
-                    <div style={{ fontSize: 11, color: '#94A3B8' }}>12 min ago</div>
-                  </div>
-                  <div style={{ fontSize: 11.5, color: '#64748B' }}>15 items below minimum stock level</div>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ width: 60, height: 60, borderRadius: '50%', background: 'conic-gradient(#10B981 0% 59.4%, #F59E0B 59.4% 74.4%, #8B5CF6 74.4% 84.8%, #3B82F6 84.8% 95.1%, #94A3B8 95.1% 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontSize: 10, fontWeight: 900, color: '#0F172A' }}>4,125</span>
+                  <span style={{ fontSize: 7, color: '#64748B', textAlign: 'center' }}>Total Items</span>
                 </div>
               </div>
-
-              <div style={{ display: 'flex', gap: 12 }}>
-                <div style={{ flexShrink: 0, marginTop: 2 }}><AlertTriangleIcon color="#F97316" /></div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#EA580C', marginBottom: 2 }}>Stock Expiry Alert</div>
-                    <div style={{ fontSize: 11, color: '#94A3B8' }}>1 hr ago</div>
-                  </div>
-                  <div style={{ fontSize: 11.5, color: '#64748B' }}>8 items expiring within 30 days</div>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: 12 }}>
-                <div style={{ flexShrink: 0, marginTop: 2 }}><InfoIcon color="#4F46E5" /></div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#4F46E5', marginBottom: 2 }}>Pick Tasks Overdue</div>
-                    <div style={{ fontSize: 11, color: '#94A3B8' }}>2 hrs ago</div>
-                  </div>
-                  <div style={{ fontSize: 11.5, color: '#64748B' }}>5 pick tasks are overdue</div>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: 12 }}>
-                <div style={{ flexShrink: 0, marginTop: 2 }}><TruckIcon color="#4F46E5" /></div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#4F46E5', marginBottom: 2 }}>Incoming Shipment</div>
-                    <div style={{ fontSize: 11, color: '#94A3B8' }}>3 hrs ago</div>
-                  </div>
-                  <div style={{ fontSize: 11.5, color: '#64748B' }}>PO-55412 arriving today at WH-001</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Warehouse Locations */}
-          <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '20px 24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h3 style={{ fontSize: 12, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>WAREHOUSE LOCATIONS</h3>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 2, cursor: 'pointer' }}>View All →</div>
-            </div>
-
-            <div style={{ display: 'flex', gap: 16 }}>
-              {/* Fake Map */}
-              <div style={{ width: 140, height: 110, background: '#BFDBFE', borderRadius: 8, position: 'relative', overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', bottom: 4, left: 6, fontSize: 9, fontWeight: 800, color: '#1E3A8A' }}>Google</div>
-                <div style={{ position: 'absolute', bottom: 4, right: 6, fontSize: 7, color: '#1E3A8A' }}>Map data ©2025 Google Terms</div>
-                {/* Pins */}
-                <div style={{ position: 'absolute', top: '40%', left: '20%', width: 16, height: 16, background: '#4F46E5', borderRadius: '50% 50% 50% 0', transform: 'rotate(-45deg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontSize: 8, color: '#fff', transform: 'rotate(45deg)', fontWeight: 800 }}>1</span>
-                </div>
-                <div style={{ position: 'absolute', top: '60%', left: '50%', width: 16, height: 16, background: '#4F46E5', borderRadius: '50% 50% 50% 0', transform: 'rotate(-45deg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontSize: 8, color: '#fff', transform: 'rotate(45deg)', fontWeight: 800 }}>2</span>
-                </div>
-                <div style={{ position: 'absolute', top: '25%', left: '70%', width: 16, height: 16, background: '#4F46E5', borderRadius: '50% 50% 50% 0', transform: 'rotate(-45deg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontSize: 8, color: '#fff', transform: 'rotate(45deg)', fontWeight: 800 }}>3</span>
-                </div>
-              </div>
-
-              {/* Legend */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, justifyContent: 'center' }}>
-                {['Sydney Head Office', 'Melbourne DC', 'Brisbane Warehouse', 'Perth Hub', 'Adelaide Facility', 'Auckland Warehouse'].map((name, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 800, color: '#fff' }}>{i + 1}</div>
-                    <div style={{ fontSize: 10, fontWeight: 600, color: '#0F172A' }}>{name}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5, flex: 1 }}>
+                {[{ c: '#10B981', t: 'Available', v: '2,450', p: '59.4%' }, { c: '#F59E0B', t: 'Reserved', v: '620', p: '15%' }, { c: '#8B5CF6', t: 'In Transit', v: '430', p: '10.4%' }, { c: '#3B82F6', t: 'On Order', v: '425', p: '10.3%' }].map(x => (
+                  <div key={x.t} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <div style={{ width: 5, height: 5, borderRadius: '50%', background: x.c, flexShrink: 0 }} />
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#0F172A', flex: 1 }}>{x.t}</div>
+                    <div style={{ fontSize: 10, fontWeight: 800, color: '#0F172A' }}>{x.v}</div>
                   </div>
                 ))}
               </div>
             </div>
           </div>
 
-        </div>
-      </div>
-
-      {/* ── BOTTOM PANELS ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16, marginBottom: 24 }}>
-
-        {/* INVENTORY SUMMARY */}
-        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h3 style={{ fontSize: 10.5, fontWeight: 800, color: '#0F172A', letterSpacing: '0.2px', textTransform: 'uppercase', margin: 0 }}>INVENTORY SUMMARY</h3>
-            <div style={{ fontSize: 9.5, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }}>View Report →</div>
-          </div>
-          <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-            <div style={{ width: 68, height: 68, borderRadius: '50%', background: 'conic-gradient(#10B981 0% 59.4%, #F59E0B 59.4% 74.4%, #8B5CF6 74.4% 84.8%, #3B82F6 84.8% 95.1%, #94A3B8 95.1% 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <div style={{ width: 50, height: 50, borderRadius: '50%', background: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontSize: 12, fontWeight: 900, color: '#0F172A', lineHeight: 1.1 }}>4,125</span>
-                <span style={{ fontSize: 7.5, color: '#64748B', textAlign: 'center', lineHeight: 1.1, marginTop: 1 }}>Total<br />Items</span>
-              </div>
+          {/* Stock Movements */}
+          <div className="wh-bottom-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+              <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0, lineHeight: 1.4 }}>STOCK MOVEMENTS<br />(THIS WEEK)</h3>
+              <span style={{ fontSize: 9, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }}>View →</span>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
-              {[{ c: '#10B981', t: 'Available', v: '2,450', p: '59.4%' }, { c: '#F59E0B', t: 'Reserved', v: '620', p: '15.0%' }, { c: '#8B5CF6', t: 'In Transit', v: '430', p: '10.4%' }, { c: '#3B82F6', t: 'On Order', v: '425', p: '10.3%' }, { c: '#94A3B8', t: 'Others', v: '200', p: '4.9%' }].map(x => (
-                <div key={x.t} style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: x.c }}></div>
-                    <div style={{ fontSize: 10.5, fontWeight: 700, color: '#0F172A' }}>{x.t}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {[['↓', '#F0FDF4', '#16A34A', 'Stock In', '1,250 Items'], ['↑', '#FEF2F2', '#DC2626', 'Stock Out', '980 Items'], ['⇄', '#EFF6FF', '#3B82F6', 'Transfers', '320 Items'], ['⚙', '#F5F3FF', '#8B5CF6', 'Adjustments', '45 Items']].map(([icon, bg, color, label, val], i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: '#334155' }}>
+                    <span style={{ width: 18, height: 18, borderRadius: 5, background: bg, color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10 }}>{icon}</span>{label}
                   </div>
-                  <div style={{ fontSize: 10.5, fontWeight: 800, color: '#0F172A', paddingLeft: 12 }}>{x.v} <span style={{ color: '#64748B', fontWeight: 500 }}>({x.p})</span></div>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: '#0F172A' }}>{val}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Pending Tasks */}
+          <div className="wh-bottom-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>PENDING TASKS</h3>
+              <span style={{ fontSize: 9, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }}>View All →</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {[['📋', 'Pick Tasks', '28'], ['⬇', 'Put Away Tasks', '16'], ['⇄', 'Stock Transfers', '8'], ['↻', 'Cycle Counts', '5']].map(([icon, label, val], i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, fontWeight: 600, color: '#0F172A' }}>
+                    <span style={{ color: '#8B5CF6' }}>{icon}</span>{label}
+                  </div>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A' }}>{val}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="wh-bottom-card">
+            <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: '0 0 14px 0' }}>QUICK ACTIONS</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {[['+', 'Add Warehouse', () => setView('add')], ['📦', 'Manage Stock', null], ['✓', 'Create Pick Task', null], ['⇄', 'Stock Transfer', null]].map(([icon, label, fn], i) => (
+                <div key={i} onClick={fn} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, fontWeight: 600, color: '#0F172A', cursor: 'pointer' }}>
+                  <span style={{ color: '#4F46E5', fontSize: 13 }}>{icon}</span>{label}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Recent Activity */}
+          <div className="wh-bottom-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>RECENT ACTIVITY</h3>
+              <span style={{ fontSize: 9, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }}>View All →</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {[
+                { dot: '#10B981', title: 'Stock received at WH-001', by: 'By James Patel', date: '10 May 2025' },
+                { dot: '#10B981', title: 'Pick task completed at WH-002', by: 'By Robert Taylor', date: '10 May 2025' },
+                { dot: '#F59E0B', title: 'Stock transfer WH-003 → WH-001', by: 'By Sarah Mitchell', date: '09 May 2025' },
+                { dot: '#F97316', title: 'Inventory adjusted at WH-004', by: 'By James Patel', date: '09 May 2025' },
+              ].map((a, i) => (
+                <div key={i} style={{ display: 'flex', gap: 8 }}>
+                  <div style={{ width: 7, height: 7, borderRadius: '50%', background: a.dot, marginTop: 4, flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#0F172A', lineHeight: 1.3, marginBottom: 1 }}>{a.title}</div>
+                    <div style={{ fontSize: 9, color: '#64748B' }}>{a.by}</div>
+                  </div>
+                  <div style={{ fontSize: 9, color: '#94A3B8', whiteSpace: 'nowrap' }}>{a.date}</div>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        {/* STOCK MOVEMENTS */}
-        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-            <h3 style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0, lineHeight: 1.4 }}>STOCK MOVEMENTS<br />(THIS WEEK)</h3>
-            <div style={{ fontSize: 10, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }}>View Report →</div>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: '#334155' }}>
-                <span style={{ width: 20, height: 20, borderRadius: 6, background: '#F0FDF4', color: '#16A34A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>↓</span> Stock In
-              </div>
-              <div style={{ fontSize: 11, fontWeight: 800, color: '#0F172A' }}>1,250 Items</div>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: '#334155' }}>
-                <span style={{ width: 20, height: 20, borderRadius: 6, background: '#FEF2F2', color: '#DC2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>↑</span> Stock Out
-              </div>
-              <div style={{ fontSize: 11, fontWeight: 800, color: '#0F172A' }}>980 Items</div>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: '#334155' }}>
-                <span style={{ width: 20, height: 20, borderRadius: 6, background: '#EFF6FF', color: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>⇄</span> Transfers
-              </div>
-              <div style={{ fontSize: 11, fontWeight: 800, color: '#0F172A' }}>320 Items</div>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: '#334155' }}>
-                <span style={{ width: 20, height: 20, borderRadius: 6, background: '#F5F3FF', color: '#8B5CF6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>⚙</span> Adjustments
-              </div>
-              <div style={{ fontSize: 11, fontWeight: 800, color: '#0F172A' }}>45 Items</div>
-            </div>
-          </div>
-        </div>
+        {/* Developer Notes */}
+        <DevNotes title="WAREHOUSE DASHBOARD / LIST" cols={[
+          { title: 'PURPOSE', items: ['Central overview of all warehouses.', 'Real-time stock, tasks, alerts and activity.', 'Quick access to key warehouse functions.'] },
+          { title: 'KEY FEATURES', items: ['Search, filter and view warehouses.', 'Stock and inventory summary widgets.', 'Map view of all warehouse locations.', 'Quick actions and recent activity feed.'] },
+          { title: 'AUTOMATION & ALERTS', items: ['Auto alerts for low stock, expiry and overdue tasks.', 'Incoming shipment and task notifications.', 'Dashboard updates in real-time.', 'AI insights for stock anomalies and trends.'] },
+          { title: 'PERMISSIONS', items: ['Super Admin: Full access.', 'Admin/Manager: Full access.', 'Warehouse Staff: View assigned warehouse only.', 'Dispatcher: View stock and tasks (read-only).'] },
+          { title: 'DATA SOURCES', items: ['Warehouses module.', 'Inventory & Stock module.', 'Tasks & Pick/Pack module.', 'Shipments & Purchase Orders.'] },
+        ]} />
 
-        {/* PENDING TASKS */}
-        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h3 style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>PENDING TASKS</h3>
-            <div style={{ fontSize: 10, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }}>View All →</div>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, fontWeight: 600, color: '#0F172A' }}>
-                <span style={{ color: '#8B5CF6' }}>📋</span> Pick Tasks
-              </div>
-              <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A' }}>28</div>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, fontWeight: 600, color: '#0F172A' }}>
-                <span style={{ color: '#8B5CF6' }}>⬇</span> Put Away Tasks
-              </div>
-              <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A' }}>16</div>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, fontWeight: 600, color: '#0F172A' }}>
-                <span style={{ color: '#F97316' }}>⇄</span> Stock Transfers
-              </div>
-              <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A' }}>8</div>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, fontWeight: 600, color: '#0F172A' }}>
-                <span style={{ color: '#3B82F6' }}>↻</span> Cycle Counts
-              </div>
-              <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A' }}>5</div>
-            </div>
-          </div>
-        </div>
-
-        {/* QUICK ACTIONS */}
-        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '16px' }}>
-          <h3 style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: 16, margin: 0 }}>QUICK ACTIONS</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 16 }}>
-            <div onClick={() => setView('add')} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, fontWeight: 600, color: '#0F172A', cursor: 'pointer' }}>
-              <span style={{ color: '#4F46E5', fontSize: 14 }}>+</span> Add Warehouse
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, fontWeight: 600, color: '#0F172A', cursor: 'pointer' }}>
-              <span style={{ color: '#4F46E5', fontSize: 12 }}>📦</span> Manage Stock
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, fontWeight: 600, color: '#0F172A', cursor: 'pointer' }}>
-              <span style={{ color: '#4F46E5', fontSize: 12 }}>✓</span> Create Pick Task
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, fontWeight: 600, color: '#0F172A', cursor: 'pointer' }}>
-              <span style={{ color: '#4F46E5', fontSize: 12 }}>⇄</span> Stock Transfer
-            </div>
-          </div>
-        </div>
-
-        {/* RECENT ACTIVITY */}
-        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h3 style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>RECENT ACTIVITY</h3>
-            <div style={{ fontSize: 10, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }}>View All →</div>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#10B981', marginTop: 4, flexShrink: 0 }}></div>
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#0F172A', lineHeight: 1.3, marginBottom: 2 }}>Stock received at<br />WH-001</div>
-                <div style={{ fontSize: 9.5, color: '#64748B' }}>By James Patel</div>
-              </div>
-              <div style={{ fontSize: 9, color: '#94A3B8', marginLeft: 'auto', whiteSpace: 'nowrap' }}>10 May 2025</div>
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#10B981', marginTop: 4, flexShrink: 0 }}></div>
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#0F172A', lineHeight: 1.3, marginBottom: 2 }}>Pick task completed<br />at WH-002</div>
-                <div style={{ fontSize: 9.5, color: '#64748B' }}>By Robert Taylor</div>
-              </div>
-              <div style={{ fontSize: 9, color: '#94A3B8', marginLeft: 'auto', whiteSpace: 'nowrap' }}>10 May 2025</div>
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#F59E0B', marginTop: 4, flexShrink: 0 }}></div>
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#0F172A', lineHeight: 1.3, marginBottom: 2 }}>Stock transfer WH-<br />003 → WH-001</div>
-                <div style={{ fontSize: 9.5, color: '#64748B' }}>By Sarah Mitchell</div>
-              </div>
-              <div style={{ fontSize: 9, color: '#94A3B8', marginLeft: 'auto', whiteSpace: 'nowrap' }}>09 May 2025</div>
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#F97316', marginTop: 4, flexShrink: 0 }}></div>
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#0F172A', lineHeight: 1.3, marginBottom: 2 }}>Inventory adjusted<br />at WH-004</div>
-                <div style={{ fontSize: 9.5, color: '#64748B' }}>By James Patel</div>
-              </div>
-              <div style={{ fontSize: 9, color: '#94A3B8', marginLeft: 'auto', whiteSpace: 'nowrap' }}>09 May 2025</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      {/* ── DEVELOPER NOTES ── */}
-      <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 12, padding: '20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-          <div style={{ width: 26, height: 26, borderRadius: 6, background: '#4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <CodeIcon />
-          </div>
-          <h3 style={{ fontSize: 12, fontWeight: 900, color: '#312E81', letterSpacing: '0.5px', margin: 0 }}>DEVELOPER NOTES - WAREHOUSE DASHBOARD / LIST</h3>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 24 }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-              <span style={{ width: 16, height: 16, borderRadius: '50%', background: '#EEF2FF', color: '#4F46E5', fontSize: 9, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>1</span>
-              <h4 style={{ fontSize: 9, fontWeight: 800, color: '#312E81', letterSpacing: '0.5px', margin: 0 }}>PURPOSE</h4>
-            </div>
-            <ul style={{ margin: 0, paddingLeft: 14, fontSize: 10, color: '#64748B', lineHeight: 1.5, display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <li>Central overview of all warehouses.</li>
-              <li>Real-time stock, tasks, alerts and activity.</li>
-              <li>Quick access to key warehouse functions.</li>
-            </ul>
-          </div>
-
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-              <span style={{ width: 16, height: 16, borderRadius: '50%', background: '#EEF2FF', color: '#4F46E5', fontSize: 9, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>2</span>
-              <h4 style={{ fontSize: 9, fontWeight: 800, color: '#312E81', letterSpacing: '0.5px', margin: 0 }}>KEY FEATURES</h4>
-            </div>
-            <ul style={{ margin: 0, paddingLeft: 14, fontSize: 10, color: '#64748B', lineHeight: 1.5, display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <li>Search, filter and view warehouses.</li>
-              <li>Stock and inventory summary widgets.</li>
-              <li>Map view of all warehouse locations.</li>
-              <li>Quick actions and recent activity feed.</li>
-            </ul>
-          </div>
-
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-              <span style={{ width: 16, height: 16, borderRadius: '50%', background: '#EEF2FF', color: '#4F46E5', fontSize: 9, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>3</span>
-              <h4 style={{ fontSize: 9, fontWeight: 800, color: '#312E81', letterSpacing: '0.5px', margin: 0 }}>AUTOMATION & ALERTS</h4>
-            </div>
-            <ul style={{ margin: 0, paddingLeft: 14, fontSize: 10, color: '#64748B', lineHeight: 1.5, display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <li>Auto alerts for low stock, expiry and overdue tasks.</li>
-              <li>Incoming shipment and task notifications.</li>
-              <li>Dashboard updates in real-time.</li>
-              <li>AI insights for stock anomalies and trends.</li>
-            </ul>
-          </div>
-
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-              <span style={{ width: 16, height: 16, borderRadius: '50%', background: '#EEF2FF', color: '#4F46E5', fontSize: 9, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>4</span>
-              <h4 style={{ fontSize: 9, fontWeight: 800, color: '#312E81', letterSpacing: '0.5px', margin: 0 }}>PERMISSIONS</h4>
-            </div>
-            <ul style={{ margin: 0, paddingLeft: 14, fontSize: 10, color: '#64748B', lineHeight: 1.5, display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <li>Super Admin: Full access.</li>
-              <li>Admin/Manager: Full access.</li>
-              <li>Warehouse Staff: View assigned warehouse only.</li>
-              <li>Dispatcher: View stock and tasks (read-only).</li>
-            </ul>
-          </div>
-
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-              <span style={{ width: 16, height: 16, borderRadius: '50%', background: '#EEF2FF', color: '#4F46E5', fontSize: 9, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>5</span>
-              <h4 style={{ fontSize: 9, fontWeight: 800, color: '#312E81', letterSpacing: '0.5px', margin: 0 }}>DATA SOURCES</h4>
-            </div>
-            <ul style={{ margin: 0, paddingLeft: 14, fontSize: 10, color: '#64748B', lineHeight: 1.5, display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <li>Warehouses module.</li>
-              <li>Inventory & Stock module.</li>
-              <li>Tasks & Pick/Pack module.</li>
-              <li>Shipments & Purchase Orders.</li>
-            </ul>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 18, paddingTop: 14, borderTop: '1px solid #E2E8F0' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16, paddingTop: 12, borderTop: '1px solid #E2E8F0', flexWrap: 'wrap', gap: 8 }}>
           <div style={{ fontSize: 10, color: '#64748B' }}>All times shown in your local time (AEST)</div>
-          <div style={{ fontSize: 10, color: '#64748B', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <RefreshIcon /> Data auto-refreshes every 5 minutes
-          </div>
+          <div style={{ fontSize: 10, color: '#64748B', display: 'flex', alignItems: 'center', gap: 6 }}><RefreshIcon /> Data auto-refreshes every 5 minutes</div>
         </div>
       </div>
 
-      {/* ── EDIT MODAL ── */}
+      {/* Edit Modal */}
       {editModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: '#fff', width: 480, borderRadius: 16, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)', overflow: 'hidden' }}>
-            <div style={{ padding: '24px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: '#0F172A' }}>Edit Warehouse</h2>
-              <button onClick={() => setEditModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B', fontSize: 20 }}>&times;</button>
+        <div className="wh-modal-backdrop" onClick={() => setEditModal(null)}>
+          <div className="wh-modal" onClick={e => e.stopPropagation()}>
+            <div className="wh-modal-head">
+              <h2 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#0F172A' }}>Edit Warehouse</h2>
+              <button onClick={() => setEditModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B', fontSize: 18 }}>&times;</button>
             </div>
-            <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div className="wh-modal-body">
               <div>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 6 }}>Warehouse Name</label>
-                <input type="text" value={editModal.name} onChange={(e) => setEditModal({...editModal, name: e.target.value})} style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none' }} />
+                <input type="text" value={editModal.name} onChange={e => setEditModal({ ...editModal, name: e.target.value })} className="wh-input" />
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div className="wh-modal-grid">
                 <div>
                   <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 6 }}>Warehouse Code</label>
-                  <input type="text" value={editModal.code} onChange={(e) => setEditModal({...editModal, code: e.target.value})} style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none' }} />
+                  <input type="text" value={editModal.code} onChange={e => setEditModal({ ...editModal, code: e.target.value })} className="wh-input" />
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 6 }}>Status</label>
-                  <select value={editModal.status} onChange={(e) => setEditModal({...editModal, status: e.target.value})} style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none', background: '#fff' }}>
+                  <select value={editModal.status} onChange={e => setEditModal({ ...editModal, status: e.target.value })} className="wh-input">
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
                   </select>
@@ -1565,21 +1081,16 @@ export default function Warehouse() {
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 6 }}>Branch / Location</label>
-                <input type="text" value={editModal.branch} onChange={(e) => setEditModal({...editModal, branch: e.target.value})} style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none' }} />
+                <input type="text" value={editModal.branch} onChange={e => setEditModal({ ...editModal, branch: e.target.value })} className="wh-input" />
               </div>
             </div>
-            <div style={{ padding: '16px 24px', background: '#F8FAFC', borderTop: '1px solid #E2E8F0', display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
-              <button onClick={() => setEditModal(null)} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid #CBD5E1', background: '#fff', color: '#475569', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
-              <button onClick={() => {
-                const newList = [...whList];
-                newList[editModal.index] = { ...newList[editModal.index], ...editModal };
-                setWhList(newList);
-                setEditModal(null);
-              }} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: '#4F46E5', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Save Changes</button>
+            <div className="wh-modal-foot">
+              <button onClick={() => setEditModal(null)} className="wh-btn">Cancel</button>
+              <button onClick={() => { const nl = [...whList]; nl[editModal.index] = { ...nl[editModal.index], ...editModal }; setWhList(nl); setEditModal(null); }} className="wh-btn wh-btn-primary">Save Changes</button>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
