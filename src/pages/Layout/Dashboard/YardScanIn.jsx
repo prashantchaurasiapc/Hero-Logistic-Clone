@@ -223,7 +223,7 @@ export default function YardScanIn() {
                 </div>
 
                 {/* Grid Density & Columns Control */}
-                <div className="yard-controls-row">
+                <div className="yard-controls-row" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
 
                   {/* Density tabs styled container */}
                   <div style={{
@@ -254,6 +254,36 @@ export default function YardScanIn() {
                       </button>
                     ))}
                   </div>
+
+                  {/* Selected CSV Action Box next to COLUMNS button */}
+                  {selectedCount > 0 && (
+                    <div
+                      onClick={handleCsvExport}
+                      style={{
+                        backgroundColor: '#fffdf5',
+                        border: '1.5px solid #fde047',
+                        borderRadius: 10,
+                        padding: '8px 12px',
+                        fontSize: 11,
+                        fontWeight: '800',
+                        color: '#b45309',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        cursor: 'pointer',
+                        outline: 'none',
+                        whiteSpace: 'nowrap',
+                        boxSizing: 'border-box'
+                      }}
+                    >
+                      <span style={{ fontSize: 10, fontWeight: '800', color: '#b45309', letterSpacing: '0.5px' }}>
+                        {selectedCount} SELECTED
+                      </span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#b45309' }}>
+                        <DownloadIcon /> CSV Export
+                      </span>
+                    </div>
+                  )}
 
                   {/* Columns Button */}
                   <div style={{ position: 'relative' }}>
@@ -318,34 +348,6 @@ export default function YardScanIn() {
 
                 </div>
               </div>
-
-              {/* Selected CSV Action row */}
-              {selectedCount > 0 && (
-                <div className="yard-csv-action-row">
-                  <span style={{ fontSize: 10, fontWeight: '800', color: '#b45309', letterSpacing: '0.5px' }}>
-                    {selectedCount} SELECTED
-                  </span>
-                  <button
-                    onClick={handleCsvExport}
-                    style={{
-                      backgroundColor: '#ffffff',
-                      border: '1px solid #ffcc00',
-                      borderRadius: 8,
-                      padding: '4px 10px',
-                      fontSize: 10.5,
-                      fontWeight: '800',
-                      color: '#b45309',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 4,
-                      cursor: 'pointer',
-                      outline: 'none'
-                    }}
-                  >
-                    <DownloadIcon /> CSV Export
-                  </button>
-                </div>
-              )}
 
               {/* Table Container */}
               <div style={{
@@ -598,7 +600,7 @@ export default function YardScanIn() {
 
       {/* Toast popup */}
       {toast && (
-        <div className="yard-toast-popup">
+        <div className="yard-toast-popup settings-toast">
           <div style={{ backgroundColor: '#3b82f6', color: '#ffffff', width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>✓</div>
           <span style={{ fontSize: 13, fontWeight: '600', color: '#1e40af', flex: 1 }}>{toast}</span>
           <button onClick={() => setToast(null)} style={{ background: 'none', border: 'none', fontSize: 16, color: '#64748b', cursor: 'pointer', marginLeft: 8 }}>✕</button>
