@@ -249,7 +249,7 @@ export default function RosterControl() {
       
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-5 py-3.5 rounded-xl shadow-xl flex items-center gap-3 border border-slate-750 transition-all duration-300">
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-5 py-3.5 rounded-xl shadow-xl flex items-center gap-3 border border-slate-700 transition-all duration-300">
           <ShieldCheck className="w-4 h-4 text-[#FFA000] animate-pulse" />
           <span className="text-xs font-semibold">{toastMessage}</span>
         </div>
@@ -368,7 +368,7 @@ export default function RosterControl() {
           
           {/* Contact details */}
           <div className="bg-white border border-slate-100 rounded-[24px] p-5 shadow-sm space-y-3.5">
-            <h3 className="text-[10px] font-black text-slate-450 uppercase tracking-widest border-b border-slate-50 pb-2 flex items-center gap-1.5">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50 pb-2 flex items-center gap-1.5">
               <User size={13} className="text-[#FFA000]" /> CONTACT DETAILS
             </h3>
             
@@ -412,7 +412,7 @@ export default function RosterControl() {
               {/* Asset pairing block */}
               <div className="flex justify-between items-center pt-1.5">
                 <div>
-                  <span className="text-slate-450 text-[9px] font-black block uppercase tracking-wider">Asset pairing</span>
+                  <span className="text-slate-400 text-[9px] font-black block uppercase tracking-wider">Asset pairing</span>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="font-mono font-black text-[11px] text-white">
                       {activeDriver.assignment.truck} <span className="text-white/40 mx-0.5">•</span> {activeDriver.assignment.plate}
@@ -432,7 +432,7 @@ export default function RosterControl() {
 
           {/* Legal & Compliance (License & Medical with light green border card) */}
           <div className="bg-white border border-slate-100 rounded-[24px] p-5 shadow-sm space-y-4">
-            <h3 className="text-[10px] font-black text-slate-450 uppercase tracking-widest border-b border-slate-50 pb-2 flex items-center gap-1.5">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50 pb-2 flex items-center gap-1.5">
               <Award size={13} className="text-[#FFA000]" /> LEGAL & COMPLIANCE
             </h3>
 
@@ -485,7 +485,7 @@ export default function RosterControl() {
 
           {/* Permission settings */}
           <div className="bg-white border border-slate-100 rounded-[24px] p-5 shadow-sm space-y-3.5">
-            <h3 className="text-[10px] font-black text-slate-450 uppercase tracking-widest border-b border-slate-50 pb-2 flex items-center gap-1.5">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50 pb-2 flex items-center gap-1.5">
               <Sliders size={13} className="text-[#FFA000]" /> PERMISSION SETTINGS
             </h3>
 
@@ -511,7 +511,7 @@ export default function RosterControl() {
           {/* Live Assignment Card */}
           <div className="bg-white border border-slate-100 rounded-[24px] p-5 shadow-sm space-y-5">
             <div className="flex justify-between items-center border-b border-slate-50 pb-3">
-              <h3 className="text-[10px] font-black text-slate-450 uppercase tracking-widest flex items-center gap-1.5">
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
                 <MapPin size={13} className="text-[#FFA000]" /> LIVE ASSIGNMENT
               </h3>
               
@@ -582,7 +582,7 @@ export default function RosterControl() {
           {/* Job History Card */}
           <div className="bg-white border border-slate-100 rounded-[24px] p-5 shadow-sm space-y-4">
             <div className="flex justify-between items-center border-b border-slate-50 pb-2">
-              <h3 className="text-[10px] font-black text-slate-450 uppercase tracking-widest flex items-center gap-1.5">
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
                 <FileSpreadsheet size={13} className="text-[#FFA000]" /> JOB HISTORY
               </h3>
               
@@ -632,7 +632,7 @@ export default function RosterControl() {
               </div>
               <button 
                 onClick={() => setShowEditModal(false)}
-                className="p-1 hover:bg-slate-100 rounded-lg text-slate-450 transition-colors cursor-pointer"
+                className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 transition-colors cursor-pointer"
               >
                 <X size={18} />
               </button>

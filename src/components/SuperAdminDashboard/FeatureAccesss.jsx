@@ -724,7 +724,7 @@ export default function FeatureAccess() {
                 const catFeatures = filteredFeatures.filter(f => f.category.toLowerCase() === category.toLowerCase());
 
                 return (
-                  <div key={category} className="border border-slate-150 rounded-2xl overflow-hidden bg-white">
+                  <div key={category} className="border border-slate-200 rounded-2xl overflow-hidden bg-white">
                     {/* Category Group Header Card */}
                     <div
                       onClick={() => handleAccordionToggle(category)}
@@ -832,7 +832,7 @@ export default function FeatureAccess() {
                                   <td className="py-4 px-4 text-center w-[70px] min-w-[70px] max-w-[70px] font-semibold text-slate-500 whitespace-nowrap">
                                     {feat.addon}
                                   </td>
-                                  <td className="py-4 px-4 w-[110px] min-w-[110px] max-w-[110px] font-extrabold text-slate-750 whitespace-nowrap truncate">
+                                  <td className="py-4 px-4 w-[110px] min-w-[110px] max-w-[110px] font-extrabold text-slate-700 whitespace-nowrap truncate">
                                     {feat.licensing}
                                   </td>
                                   <td className="py-4 px-4 w-[110px] min-w-[110px] max-w-[110px] whitespace-nowrap">
@@ -899,7 +899,7 @@ export default function FeatureAccess() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
               {/* Adoption rates card */}
-              <div className="bg-white border border-slate-150 rounded-2xl p-6 space-y-4">
+              <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4">
                 <h3 className="text-sm font-black text-slate-800">Dynamic Feature Adoption Rates</h3>
                 <div className="space-y-4">
                   {[
@@ -927,7 +927,7 @@ export default function FeatureAccess() {
               </div>
 
               {/* License utilization card */}
-              <div className="bg-white border border-slate-150 rounded-2xl p-6 space-y-4">
+              <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4">
                 <h3 className="text-sm font-black text-slate-800">License Utilization Index</h3>
                 <div className="space-y-4">
                   {[
@@ -956,16 +956,16 @@ export default function FeatureAccess() {
             </div>
 
             {/* Unused or Deprecated SaaS features card */}
-            <div className="bg-white border border-slate-150 rounded-2xl p-6 space-y-4">
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4">
               <div className="text-left">
                 <h3 className="text-sm font-black text-slate-800">Unused or Deprecated SaaS Features</h3>
                 <p className="text-xs text-slate-400 font-semibold mt-1">The following modules have zero active usage and are recommended for deprecation scans.</p>
               </div>
 
-              <div className="border border-slate-150 rounded-2xl overflow-hidden bg-[#F8FAFC]/50">
+              <div className="border border-slate-200 rounded-2xl overflow-hidden bg-[#F8FAFC]/50">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-slate-150 text-[10px] font-black text-slate-400 uppercase tracking-wider bg-slate-50/80">
+                    <tr className="border-b border-slate-200 text-[10px] font-black text-slate-400 uppercase tracking-wider bg-slate-50/80">
                       <th className="py-3 px-5 font-black">Feature</th>
                       <th className="py-3 px-4 font-black">Licensing Type</th>
                       <th className="py-3 px-4 font-black">Category</th>
@@ -1003,10 +1003,10 @@ export default function FeatureAccess() {
             </div>
 
             {/* Audit list container */}
-            <div className="border border-slate-150 rounded-2xl overflow-hidden bg-[#F8FAFC]/40">
+            <div className="border border-slate-200 rounded-2xl overflow-hidden bg-[#F8FAFC]/40">
               <table className="w-full text-left border-collapse min-w-[700px]">
                 <thead>
-                  <tr className="border-b border-slate-150 text-[10px] font-black text-slate-400 uppercase tracking-wider bg-slate-50/80">
+                  <tr className="border-b border-slate-200 text-[10px] font-black text-slate-400 uppercase tracking-wider bg-slate-50/80">
                     <th className="py-4 px-5 font-black">Action Type</th>
                     <th className="py-4 px-4 font-black">Audit Details</th>
                     <th className="py-4 px-4 font-black">Reason</th>
@@ -1176,7 +1176,7 @@ export default function FeatureAccess() {
                       Toggle which tenant subscriptions will automatically gain access to this gate upon registration.
                     </p>
 
-                    <div className="space-y-3 bg-[#F8FAFC] border border-slate-150 rounded-2xl p-4">
+                    <div className="space-y-3 bg-[#F8FAFC] border border-slate-200 rounded-2xl p-4">
                       {['Starter', 'Pro', 'Enterprise', 'Custom'].map((pln) => (
                         <label key={pln} className="flex items-center gap-3 cursor-pointer select-none">
                           <input type="checkbox" defaultChecked className="w-4 h-4 rounded text-blue-650 cursor-pointer" />
@@ -1219,7 +1219,7 @@ export default function FeatureAccess() {
                       </p>
                     </div>
 
-                    <div className="bg-[#F8FAFC] border border-slate-150 rounded-2xl p-4 text-left space-y-2 text-[11px] font-bold">
+                    <div className="bg-[#F8FAFC] border border-slate-200 rounded-2xl p-4 text-left space-y-2 text-[11px] font-bold">
                       <div className="flex justify-between"><span className="text-slate-400">ID:</span><span className="font-mono text-slate-800">{newFeatId}</span></div>
                       <div className="flex justify-between"><span className="text-slate-400">Name:</span><span className="text-slate-800">{newFeatName}</span></div>
                       <div className="flex justify-between"><span className="text-slate-400">Category:</span><span className="text-slate-800">{newFeatCategory}</span></div>

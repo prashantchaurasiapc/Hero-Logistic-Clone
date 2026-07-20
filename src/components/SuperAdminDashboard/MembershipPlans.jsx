@@ -465,7 +465,7 @@ export default function MembershipPlans() {
   );
 
   return (
-    <div className="flex-grow bg-[#F8FAFC] p-6 space-y-6 overflow-y-auto w-full text-left font-sans relative custom-scrollbar">
+    <div className="flex-grow bg-[#F8FAFC] p-3 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto w-full text-left font-sans relative custom-scrollbar max-w-full overflow-x-hidden">
 
       {/* Custom scrollbar layout */}
       <style>{`
@@ -498,9 +498,9 @@ export default function MembershipPlans() {
       )}
 
       {/* Header Area */}
-      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-b border-slate-100 pb-5 bg-white -mx-6 px-6 -mt-6 pt-6">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-b border-slate-100 pb-5 bg-white -mx-3 sm:-mx-6 px-3 sm:px-6 -mt-3 sm:-mt-6 pt-4 sm:pt-6">
         <div>
-          <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
             Super Admin <span className="text-slate-300">•</span> Plans
           </h1>
           <p className="text-xs text-slate-400 font-semibold mt-1">
@@ -519,9 +519,9 @@ export default function MembershipPlans() {
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Metric 1 */}
-        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between min-h-[100px]">
+        <div className="bg-white border border-slate-100 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col justify-between min-h-[100px]">
           <div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">TOTAL LICENSING PLANS</span>
             <span className="text-2xl font-black text-slate-800 block mt-1.5">{plans.length}</span>
@@ -530,7 +530,7 @@ export default function MembershipPlans() {
         </div>
 
         {/* Metric 2 */}
-        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between min-h-[100px]">
+        <div className="bg-white border border-slate-100 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col justify-between min-h-[100px]">
           <div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">ACTIVE SUBSCRIBERS</span>
             <span className="text-2xl font-black text-slate-800 block mt-1.5">4</span>
@@ -539,7 +539,7 @@ export default function MembershipPlans() {
         </div>
 
         {/* Metric 3 */}
-        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between min-h-[100px]">
+        <div className="bg-white border border-slate-100 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col justify-between min-h-[100px]">
           <div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">TRIAL SUBSCRIBERS</span>
             <span className="text-2xl font-black text-slate-800 block mt-1.5">1</span>
@@ -548,7 +548,7 @@ export default function MembershipPlans() {
         </div>
 
         {/* Metric 4 */}
-        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between min-h-[100px]">
+        <div className="bg-white border border-slate-100 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col justify-between min-h-[100px]">
           <div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">MONTHLY REVENUE (MRR)</span>
             <span className="text-2xl font-black text-slate-800 block mt-1.5">$42,910</span>
@@ -557,7 +557,7 @@ export default function MembershipPlans() {
         </div>
 
         {/* Metric 5 */}
-        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between min-h-[100px]">
+        <div className="bg-white border border-slate-100 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col justify-between min-h-[100px]">
           <div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">UPGRADE RATE</span>
             <span className="text-2xl font-black text-slate-800 block mt-1.5">12.5%</span>
@@ -566,7 +566,7 @@ export default function MembershipPlans() {
         </div>
 
         {/* Metric 6 */}
-        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between min-h-[100px]">
+        <div className="bg-white border border-slate-100 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col justify-between min-h-[100px]">
           <div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">DOWNGRADE RATE</span>
             <span className="text-2xl font-black text-slate-800 block mt-1.5">1.8%</span>
@@ -575,7 +575,7 @@ export default function MembershipPlans() {
         </div>
 
         {/* Metric 7 */}
-        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between min-h-[100px]">
+        <div className="bg-white border border-slate-100 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col justify-between min-h-[100px]">
           <div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">CHURN RATE</span>
             <span className="text-2xl font-black text-rose-500 block mt-1.5">2.4%</span>
@@ -584,7 +584,7 @@ export default function MembershipPlans() {
         </div>
 
         {/* Metric 8 */}
-        <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between min-h-[100px]">
+        <div className="bg-white border border-slate-100 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col justify-between min-h-[100px]">
           <div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">GROWTH INDEX</span>
             <span className="text-2xl font-black text-slate-800 block mt-1.5">94.8%</span>
@@ -594,20 +594,20 @@ export default function MembershipPlans() {
       </div>
 
       {/* Active Plans Card Grid Section */}
-      <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-xs space-y-6">
-        <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+      <div className="bg-white border border-slate-100 rounded-3xl p-4 sm:p-6 shadow-xs space-y-4 sm:space-y-6">
+        <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-4">
           <div>
             <h2 className="text-sm font-black text-slate-800">Active Licensing Plans Overview</h2>
             <p className="text-xs text-slate-400 font-semibold mt-1">Toggle billing terms and manage configurations of operational plan tires.</p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
             {/* Monthly / Annual billing switcher */}
-            <div className="bg-slate-100 p-1 rounded-xl flex gap-1">
+            <div className="bg-slate-100 p-1 rounded-xl flex flex-col sm:flex-row gap-1 w-full sm:w-auto">
               <button
                 type="button"
                 onClick={() => setBillingCycle('monthly')}
-                className={`px-4 py-2 text-xs font-extrabold rounded-lg transition-all cursor-pointer ${billingCycle === 'monthly'
+                className={`px-4 py-2 text-xs font-extrabold rounded-lg transition-all cursor-pointer text-center ${billingCycle === 'monthly'
                     ? 'bg-[#FFD400] text-black shadow-xs'
                     : 'text-slate-655 hover:bg-slate-200'
                   }`}
@@ -617,7 +617,7 @@ export default function MembershipPlans() {
               <button
                 type="button"
                 onClick={() => setBillingCycle('annual')}
-                className={`px-4 py-2 text-xs font-extrabold rounded-lg transition-all cursor-pointer ${billingCycle === 'annual'
+                className={`px-4 py-2 text-xs font-extrabold rounded-lg transition-all cursor-pointer text-center ${billingCycle === 'annual'
                     ? 'bg-[#FFD400] text-black shadow-xs'
                     : 'text-slate-655 hover:bg-slate-200'
                   }`}
@@ -629,7 +629,7 @@ export default function MembershipPlans() {
             <button
               type="button"
               onClick={() => handleOpenWizard('create')}
-              className="bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+              className="bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 w-full sm:w-auto"
             >
               <Plus className="w-4 h-4" /> Create Plan
             </button>
@@ -637,7 +637,7 @@ export default function MembershipPlans() {
         </div>
 
         {/* 4 Plans Grid Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {plans.map((p) => {
             const price = billingCycle === 'monthly' ? p.monthlyPrice : Math.round(p.monthlyPrice * 0.85);
             return (
@@ -741,10 +741,10 @@ export default function MembershipPlans() {
       </div>
 
       {/* Registry Table & SubTabs Section */}
-      <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-xs space-y-6">
+      <div className="bg-white border border-slate-100 rounded-3xl p-4 sm:p-6 shadow-xs space-y-4 sm:space-y-6">
 
         {/* Horizontal Navigation Pills - SCROLLABLE with all required tags */}
-        <div className="flex overflow-x-auto whitespace-nowrap pb-2.5 gap-2.5 custom-scrollbar border-b border-slate-100">
+        <div className="flex overflow-x-auto whitespace-nowrap pb-2.5 gap-2 sm:gap-2.5 custom-scrollbar border-b border-slate-100 max-w-full touch-pan-x">
           {[
             { id: 'Plan Registry', label: 'Plan Registry', icon: Layers },
             { id: 'Feature Matrix', label: 'Feature Matrix', icon: ShieldAlert },
@@ -780,9 +780,9 @@ export default function MembershipPlans() {
           <div className="space-y-4">
 
             {/* Toolbar Action row */}
-            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 relative">
-              <div className="flex flex-wrap items-center gap-3 flex-grow max-w-xl">
-                <div className="relative flex-grow">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3 sm:gap-4 relative">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 flex-grow w-full md:max-w-xl">
+                <div className="relative flex-grow min-w-[180px] w-full sm:w-auto">
                   <input
                     type="text"
                     placeholder="Search plans name or ID..."
@@ -796,7 +796,7 @@ export default function MembershipPlans() {
                 <button
                   type="button"
                   onClick={() => setShowFilters(!showFilters)}
-                  className={`flex items-center gap-1.5 border font-extrabold text-xs px-4 py-2.5 rounded-xl transition-colors cursor-pointer ${showFilters
+                  className={`flex items-center justify-center gap-1.5 border font-extrabold text-xs px-4 py-2.5 rounded-xl transition-colors cursor-pointer flex-1 sm:flex-none ${showFilters
                       ? 'border-black border-2 bg-slate-50 text-slate-900'
                       : 'border-slate-200 hover:bg-slate-50 text-slate-655'
                     }`}
@@ -805,18 +805,18 @@ export default function MembershipPlans() {
                 </button>
 
                 {/* Columns Visibility Selector */}
-                <div className="relative" ref={columnsDropdownRef}>
+                <div className="relative flex-1 sm:flex-none" ref={columnsDropdownRef}>
                   <button
                     type="button"
                     onClick={() => setShowColumnsDropdown(!showColumnsDropdown)}
-                    className="flex items-center gap-1.5 border border-slate-200 hover:bg-slate-50 text-slate-655 font-extrabold text-xs px-4 py-2.5 rounded-xl transition-colors cursor-pointer"
+                    className="w-full flex items-center justify-center gap-1.5 border border-slate-200 hover:bg-slate-50 text-slate-655 font-extrabold text-xs px-4 py-2.5 rounded-xl transition-colors cursor-pointer"
                   >
                     Columns <ChevronDown className="w-3 h-3" />
                   </button>
 
                   {/* Columns drop card */}
                   {showColumnsDropdown && (
-                    <div className="absolute left-0 mt-2 w-48 bg-white border border-slate-200 rounded-2xl shadow-xl p-4 z-40 space-y-2.5 text-xs text-slate-700 font-bold">
+                    <div className="absolute left-0 sm:left-auto right-0 mt-2 w-48 bg-white border border-slate-200 rounded-2xl shadow-xl p-4 z-40 space-y-2.5 text-xs text-slate-700 font-bold">
                       {Object.keys(visibleColumns).map((colKey) => (
                         <label key={colKey} className="flex items-center gap-2.5 cursor-pointer select-none hover:text-slate-900">
                           <input
@@ -833,18 +833,18 @@ export default function MembershipPlans() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 shrink-0 w-full md:w-auto">
                 <button
                   type="button"
                   onClick={handleExportCSV}
-                  className="border border-amber-255 bg-white hover:bg-amber-50/10 text-yellow-600 font-extrabold text-xs px-4 py-2.5 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
+                  className="flex-1 sm:flex-none border border-amber-255 bg-white hover:bg-amber-50/10 text-yellow-600 font-extrabold text-xs px-4 py-2.5 rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-1.5"
                 >
                   <Download className="w-4 h-4" /> CSV Export
                 </button>
                 <button
                   type="button"
                   onClick={() => handleOpenWizard('create')}
-                  className="bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+                  className="flex-1 sm:flex-none bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5"
                 >
                   <Plus className="w-4 h-4" /> Create Plan
                 </button>
@@ -853,13 +853,13 @@ export default function MembershipPlans() {
 
             {/* Collapsible Filter panel from Screenshot 3 */}
             {showFilters && (
-              <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-wrap items-end gap-5 text-xs font-extrabold">
-                <div className="space-y-1.5 text-left">
+              <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-end gap-4 text-xs font-extrabold">
+                <div className="space-y-1.5 text-left flex-1 sm:flex-none">
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">STATE LIFECYCLE</span>
                   <select
                     value={filterState}
                     onChange={(e) => setFilterState(e.target.value)}
-                    className="border border-slate-250 bg-white px-3 py-2 rounded-xl focus:outline-none focus:border-[#FFD400] text-slate-700 min-w-[180px] font-bold cursor-pointer"
+                    className="w-full sm:w-[180px] border border-slate-200 bg-white px-3 py-2 rounded-xl focus:outline-none focus:border-[#FFD400] text-slate-700 font-bold cursor-pointer"
                   >
                     <option value="All States">All States</option>
                     <option value="Published">Published</option>
@@ -868,40 +868,40 @@ export default function MembershipPlans() {
                   </select>
                 </div>
 
-                <div className="space-y-1.5 text-left">
+                <div className="space-y-1.5 text-left flex-1 sm:flex-none">
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">MIN PRICE ($)</span>
                   <input
                     type="number"
                     placeholder="e.g. 100"
                     value={filterMinPrice}
                     onChange={(e) => setFilterMinPrice(e.target.value)}
-                    className="border border-slate-200 px-3 py-2 rounded-xl focus:outline-none focus:border-[#FFD400] text-slate-700 w-36 font-bold"
+                    className="w-full sm:w-36 border border-slate-200 px-3 py-2 rounded-xl focus:outline-none focus:border-[#FFD400] text-slate-700 font-bold"
                   />
                 </div>
 
-                <div className="space-y-1.5 text-left">
+                <div className="space-y-1.5 text-left flex-1 sm:flex-none">
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">MAX PRICE ($)</span>
                   <input
                     type="number"
                     placeholder="e.g. 2000"
                     value={filterMaxPrice}
                     onChange={(e) => setFilterMaxPrice(e.target.value)}
-                    className="border border-slate-200 px-3 py-2 rounded-xl focus:outline-none focus:border-[#FFD400] text-slate-700 w-36 font-bold"
+                    className="w-full sm:w-36 border border-slate-200 px-3 py-2 rounded-xl focus:outline-none focus:border-[#FFD400] text-slate-700 font-bold"
                   />
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-1 sm:flex-none pt-2 sm:pt-0">
                   <button
                     type="button"
                     onClick={handleResetFilters}
-                    className="px-5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-extrabold"
+                    className="flex-1 sm:flex-none px-5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-extrabold"
                   >
                     Reset
                   </button>
                   <button
                     type="button"
                     onClick={handleApplyFilters}
-                    className="px-6 py-2.5 bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold rounded-xl shadow-xs transition-colors"
+                    className="flex-1 sm:flex-none px-6 py-2.5 bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold rounded-xl shadow-xs transition-colors"
                   >
                     Apply
                   </button>
@@ -910,57 +910,62 @@ export default function MembershipPlans() {
             )}
 
             {/* Registry table aligned perfectly using table-fixed and custom scrollbars */}
-            <div className="border border-slate-100 rounded-2xl overflow-hidden bg-white">
-              <div className="overflow-x-auto custom-scrollbar">
-                <table className="text-left border-collapse table-fixed min-w-[1500px] w-[1500px]">
-                  <thead>
+            <div className="border border-slate-100 rounded-2xl overflow-hidden bg-white w-full">
+              <div className="overflow-x-auto custom-scrollbar max-w-full">
+                <table className="text-left border-collapse table-fixed w-full block lg:table lg:min-w-[1500px]">
+                  <thead className="hidden lg:table-header-group">
                     <tr className="border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider bg-slate-50/50">
-                      <th className="py-4 px-5 text-center w-[50px] min-w-[50px] max-w-[50px]">
+                      <th className="py-4 px-5 text-center w-[50px]">
                         <input type="checkbox" className="w-4 h-4 rounded cursor-pointer" />
                       </th>
-                      {visibleColumns.id && <th className="py-4 px-4 font-black w-[200px] min-w-[200px] max-w-[200px]">Plan ID</th>}
-                      {visibleColumns.name && <th className="py-4 px-4 font-black w-[180px] min-w-[180px] max-w-[180px]">Plan Name ▲</th>}
-                      {visibleColumns.version && <th className="py-4 px-4 font-black w-[90px] min-w-[90px] max-w-[90px]">Version</th>}
-                      {visibleColumns.status && <th className="py-4 px-4 font-black w-[110px] min-w-[110px] max-w-[110px]">Status</th>}
-                      {visibleColumns.pricing && <th className="py-4 px-4 font-black w-[110px] min-w-[110px] max-w-[110px]">Pricing</th>}
-                      {visibleColumns.trialDays && <th className="py-4 px-4 font-black w-[90px] min-w-[90px] max-w-[90px]">Trial Days</th>}
-                      {visibleColumns.subscribers && <th className="py-4 px-4 text-center font-black w-[100px] min-w-[100px] max-w-[100px]">Subscribers</th>}
-                      {visibleColumns.revenue && <th className="py-4 px-4 text-right font-black w-[110px] min-w-[110px] max-w-[110px]">Revenue (MRR)</th>}
-                      {visibleColumns.createdBy && <th className="py-4 px-4 font-black w-[120px] min-w-[120px] max-w-[120px]">Created By</th>}
-                      {visibleColumns.lastUpdated && <th className="py-4 px-4 font-black w-[180px] min-w-[180px] max-w-[180px]">Last Updated</th>}
-                      {visibleColumns.actions && <th className="py-4 px-5 text-center font-black w-[260px] min-w-[260px] max-w-[260px]">Actions</th>}
+                      {visibleColumns.id && <th className="py-4 px-4 font-black lg:w-[200px]">Plan ID</th>}
+                      {visibleColumns.name && <th className="py-4 px-4 font-black lg:w-[180px]">Plan Name ▲</th>}
+                      {visibleColumns.version && <th className="py-4 px-4 font-black lg:w-[90px]">Version</th>}
+                      {visibleColumns.status && <th className="py-4 px-4 font-black lg:w-[110px]">Status</th>}
+                      {visibleColumns.pricing && <th className="py-4 px-4 font-black lg:w-[110px]">Pricing</th>}
+                      {visibleColumns.trialDays && <th className="py-4 px-4 font-black lg:w-[90px]">Trial Days</th>}
+                      {visibleColumns.subscribers && <th className="py-4 px-4 lg:text-center font-black lg:w-[100px]">Subscribers</th>}
+                      {visibleColumns.revenue && <th className="py-4 px-4 lg:text-right font-black lg:w-[110px]">Revenue (MRR)</th>}
+                      {visibleColumns.createdBy && <th className="py-4 px-4 font-black lg:w-[120px]">Created By</th>}
+                      {visibleColumns.lastUpdated && <th className="py-4 px-4 font-black lg:w-[180px]">Last Updated</th>}
+                      {visibleColumns.actions && <th className="py-4 px-5 lg:text-center font-black lg:w-[260px]">Actions</th>}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 text-xs font-bold text-slate-700 bg-white">
+                  <tbody className="block lg:table-row-group text-xs font-bold text-slate-700 lg:bg-white lg:divide-y lg:divide-slate-100 space-y-4 lg:space-y-0 p-4 lg:p-0 bg-slate-50/50 lg:bg-transparent">
                     {filteredPlans.length === 0 ? (
-                      <tr>
-                        <td colSpan="12" className="py-8 text-center text-slate-400 font-semibold bg-white w-full">
+                      <tr className="block lg:table-row">
+                        <td colSpan="12" className="py-8 text-center text-slate-400 font-semibold bg-white w-full block lg:table-cell rounded-2xl border border-slate-100 lg:border-none">
                           No membership plans registered matching filters.
                         </td>
                       </tr>
                     ) : (
                       filteredPlans.map((p) => (
-                        <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="py-4 px-5 text-center w-[50px] min-w-[50px] max-w-[50px]">
+                        <tr key={p.id} className="block lg:table-row border border-slate-200 lg:border-none rounded-2xl lg:rounded-none p-4 lg:p-0 bg-white hover:bg-slate-50/50 transition-colors shadow-sm lg:shadow-none">
+                          <td className="flex lg:table-cell justify-between items-center py-3 lg:py-4 px-0 lg:px-5 lg:text-center border-b border-slate-50 lg:border-none">
+                            <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Select</span>
                             <input type="checkbox" className="w-4 h-4 rounded cursor-pointer" />
                           </td>
                           {visibleColumns.id && (
-                            <td className="py-4 px-4 w-[200px] min-w-[200px] max-w-[200px] font-mono text-slate-450 truncate">
-                              {p.id}
+                            <td className="flex lg:table-cell flex-col lg:flex-row justify-between items-start lg:items-center py-3 lg:py-4 px-0 lg:px-4 border-b border-slate-50 lg:border-none lg:w-[200px] font-mono text-slate-400 lg:truncate gap-1">
+                              <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Plan ID</span>
+                              <span className="truncate max-w-full lg:max-w-none">{p.id}</span>
                             </td>
                           )}
                           {visibleColumns.name && (
-                            <td className="py-4 px-4 w-[180px] min-w-[180px] max-w-[180px] text-slate-900 font-extrabold truncate">
-                              {p.name}
+                            <td className="flex lg:table-cell flex-col lg:flex-row justify-between items-start lg:items-center py-3 lg:py-4 px-0 lg:px-4 border-b border-slate-50 lg:border-none lg:w-[180px] text-slate-900 font-extrabold lg:truncate gap-1">
+                              <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Plan Name</span>
+                              <span>{p.name}</span>
                             </td>
                           )}
                           {visibleColumns.version && (
-                            <td className="py-4 px-4 w-[90px] min-w-[90px] max-w-[90px] font-mono font-medium whitespace-nowrap">
-                              {p.version}
+                            <td className="flex lg:table-cell justify-between items-center py-3 lg:py-4 px-0 lg:px-4 border-b border-slate-50 lg:border-none lg:w-[90px] font-mono font-medium whitespace-nowrap">
+                              <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Version</span>
+                              <span>{p.version}</span>
                             </td>
                           )}
                           {visibleColumns.status && (
-                            <td className="py-4 px-4 w-[110px] min-w-[110px] max-w-[110px] whitespace-nowrap">
+                            <td className="flex lg:table-cell justify-between items-center py-3 lg:py-4 px-0 lg:px-4 border-b border-slate-50 lg:border-none lg:w-[110px] whitespace-nowrap">
+                              <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Status</span>
                               <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${p.status === 'Published'
                                   ? 'bg-emerald-100 text-emerald-800'
                                   : p.status === 'Deprecated'
@@ -972,43 +977,49 @@ export default function MembershipPlans() {
                             </td>
                           )}
                           {visibleColumns.pricing && (
-                            <td className="py-4 px-4 w-[110px] min-w-[110px] max-w-[110px] whitespace-nowrap text-slate-800">
-                              ${billingCycle === 'monthly' ? p.monthlyPrice : Math.round(p.monthlyPrice * 0.85)}/mo
+                            <td className="flex lg:table-cell justify-between items-center py-3 lg:py-4 px-0 lg:px-4 border-b border-slate-50 lg:border-none lg:w-[110px] whitespace-nowrap text-slate-800">
+                              <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Pricing</span>
+                              <span>${billingCycle === 'monthly' ? p.monthlyPrice : Math.round(p.monthlyPrice * 0.85)}/mo</span>
                             </td>
                           )}
                           {visibleColumns.trialDays && (
-                            <td className="py-4 px-4 w-[90px] min-w-[90px] max-w-[90px] text-slate-500 font-medium whitespace-nowrap">
-                              {p.trialDays} days
+                            <td className="flex lg:table-cell justify-between items-center py-3 lg:py-4 px-0 lg:px-4 border-b border-slate-50 lg:border-none lg:w-[90px] text-slate-500 font-medium whitespace-nowrap">
+                              <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Trial Days</span>
+                              <span>{p.trialDays} days</span>
                             </td>
                           )}
                           {visibleColumns.subscribers && (
-                            <td className="py-4 px-4 w-[100px] min-w-[100px] max-w-[100px] text-center text-slate-800 font-black whitespace-nowrap">
-                              {p.subscribers}
+                            <td className="flex lg:table-cell justify-between items-center py-3 lg:py-4 px-0 lg:px-4 border-b border-slate-50 lg:border-none lg:w-[100px] lg:text-center text-slate-800 font-black whitespace-nowrap">
+                              <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Subscribers</span>
+                              <span>{p.subscribers}</span>
                             </td>
                           )}
                           {visibleColumns.revenue && (
-                            <td className="py-4 px-4 w-[110px] min-w-[110px] max-w-[110px] text-right text-emerald-600 font-black whitespace-nowrap">
-                              ${p.mrr.toLocaleString()}
+                            <td className="flex lg:table-cell justify-between items-center py-3 lg:py-4 px-0 lg:px-4 border-b border-slate-50 lg:border-none lg:w-[110px] lg:text-right text-emerald-600 font-black whitespace-nowrap">
+                              <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Revenue</span>
+                              <span>${p.mrr.toLocaleString()}</span>
                             </td>
                           )}
                           {visibleColumns.createdBy && (
-                            <td className="py-4 px-4 w-[120px] min-w-[120px] max-w-[120px] text-slate-655 truncate">
-                              {p.createdBy}
+                            <td className="flex lg:table-cell flex-col lg:flex-row justify-between items-start lg:items-center py-3 lg:py-4 px-0 lg:px-4 border-b border-slate-50 lg:border-none lg:w-[120px] text-slate-655 lg:truncate gap-1">
+                              <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Created By</span>
+                              <span>{p.createdBy}</span>
                             </td>
                           )}
                           {visibleColumns.lastUpdated && (
-                            <td className="py-4 px-4 w-[180px] min-w-[180px] max-w-[180px] text-slate-400 font-medium truncate">
-                              {p.createdDate}
+                            <td className="flex lg:table-cell flex-col lg:flex-row justify-between items-start lg:items-center py-3 lg:py-4 px-0 lg:px-4 border-b border-slate-50 lg:border-none lg:w-[180px] text-slate-400 font-medium lg:truncate gap-1">
+                              <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Last Updated</span>
+                              <span>{p.createdDate}</span>
                             </td>
                           )}
                           {visibleColumns.actions && (
-                            <td className="py-4 px-5 w-[260px] min-w-[260px] max-w-[260px] whitespace-nowrap text-center">
-                              <div className="flex items-center gap-1.5 justify-center flex-wrap">
+                            <td className="block lg:table-cell py-4 px-0 lg:px-5 lg:w-[260px] whitespace-nowrap lg:text-center border-t border-slate-100 lg:border-none mt-2 lg:mt-0 pt-4 lg:pt-4">
+                              <div className="flex items-center gap-2 justify-start lg:justify-center flex-wrap">
                                 {/* Configure */}
                                 <button
                                   type="button"
                                   onClick={() => handleOpenWizard('configure', p)}
-                                  className="inline-flex items-center border border-slate-800 bg-white hover:bg-slate-50 text-slate-900 font-black text-[11px] px-3 py-1.5 rounded-lg transition-colors cursor-pointer shadow-sm"
+                                  className="inline-flex flex-1 lg:flex-none justify-center items-center border border-slate-800 bg-white hover:bg-slate-50 text-slate-900 font-black text-[11px] px-3 py-2 lg:py-1.5 rounded-lg transition-colors cursor-pointer shadow-sm"
                                 >
                                   Configure
                                 </button>
@@ -1017,7 +1028,7 @@ export default function MembershipPlans() {
                                 <button
                                   type="button"
                                   onClick={() => { setVersioningPlan(p); setVersionCompareA('-- Select A --'); setVersionCompareB('-- Select B --'); setShowVersioningDrawer(true); }}
-                                  className="inline-flex items-center border border-slate-800 bg-white hover:bg-slate-50 text-slate-900 font-black text-[11px] px-3 py-1.5 rounded-lg transition-colors cursor-pointer shadow-sm"
+                                  className="inline-flex flex-1 lg:flex-none justify-center items-center border border-slate-800 bg-white hover:bg-slate-50 text-slate-900 font-black text-[11px] px-3 py-2 lg:py-1.5 rounded-lg transition-colors cursor-pointer shadow-sm"
                                 >
                                   Versioning
                                 </button>
@@ -1027,7 +1038,7 @@ export default function MembershipPlans() {
                                   type="button"
                                   disabled={p.status === 'Deprecated'}
                                   onClick={() => handleDeprecateClick(p)}
-                                  className={`inline-flex items-center font-black text-[11px] px-3 py-1.5 rounded-lg transition-colors shadow-sm ${p.status === 'Deprecated'
+                                  className={`inline-flex flex-1 lg:flex-none justify-center items-center font-black text-[11px] px-3 py-2 lg:py-1.5 rounded-lg transition-colors shadow-sm ${p.status === 'Deprecated'
                                       ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
                                       : 'border border-slate-800 bg-white hover:bg-slate-50 text-slate-900 cursor-pointer'
                                     }`}
@@ -1039,9 +1050,9 @@ export default function MembershipPlans() {
                                 <button
                                   type="button"
                                   onClick={() => handleDeletePlan(p.id, p.name)}
-                                  className="inline-flex items-center justify-center bg-rose-500 hover:bg-rose-600 text-white font-extrabold p-2 rounded-lg transition-colors cursor-pointer shadow-sm"
+                                  className="inline-flex justify-center items-center bg-rose-500 hover:bg-rose-600 text-white font-extrabold p-2 rounded-lg transition-colors cursor-pointer shadow-sm"
                                 >
-                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <Trash2 className="w-4 h-4 lg:w-3.5 lg:h-3.5" />
                                 </button>
                               </div>
                             </td>
@@ -1059,74 +1070,96 @@ export default function MembershipPlans() {
         {/* Tab content 2: Feature Matrix (Screenshot 5 comparison grid!) */}
         {activeSubTab === 'Feature Matrix' && (
           <div className="space-y-4">
-            <div className="border border-slate-100 rounded-2xl overflow-hidden bg-white">
-              <table className="w-full text-left border-collapse text-xs font-bold text-slate-700">
-                <thead>
-                  <tr className="border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider bg-slate-50/50">
-                    <th className="py-4 px-6">SERVICE MODULE FEATURE</th>
-                    <th className="py-4 px-4 text-center">STARTER</th>
-                    <th className="py-4 px-4 text-center">PROFESSIONAL</th>
-                    <th className="py-4 px-4 text-center">ENTERPRISE</th>
-                    <th className="py-4 px-4 text-center">CUSTOM ENTERPRISE</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {/* Service modules */}
-                  {[
-                    { label: 'Route Dispatch & Booking Console', starter: true, pro: true, enterprise: true, custom: true },
-                    { label: 'Fleet Asset Maintenance Logs', starter: true, pro: true, enterprise: true, custom: true },
-                    { label: 'Live GPS Coordinates Geofences', starter: true, pro: true, enterprise: true, custom: true },
-                    { label: 'Digital ELD Driver Mobile App', starter: true, pro: true, enterprise: true, custom: true },
-                    { label: 'Carrier Expense Factoring Rules', starter: false, pro: true, enterprise: true, custom: true },
-                    { label: 'AI Optimization Autopiloting Dispatch', starter: false, pro: false, enterprise: true, custom: true },
-                    { label: 'Global Business Intelligence Reports', starter: false, pro: true, enterprise: true, custom: true },
-                    { label: 'Granular Developers API Integration Sandbox', starter: false, pro: false, enterprise: true, custom: true },
-                    { label: 'White-Label Shipper Portal Gateway', starter: false, pro: true, enterprise: true, custom: true },
-                    { label: 'Third-Party Brokers TMS Integration Connectors', starter: false, pro: true, enterprise: true, custom: true }
-                  ].map((row, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="py-3.5 px-6 font-extrabold text-slate-800">{row.label}</td>
-                      <td className="py-3.5 px-4 text-center">
-                        {row.starter ? <Check className="w-5 h-5 text-emerald-500 mx-auto" /> : <span className="text-slate-350 font-bold font-mono">-</span>}
-                      </td>
-                      <td className="py-3.5 px-4 text-center">
-                        {row.pro ? <Check className="w-5 h-5 text-emerald-500 mx-auto" /> : <span className="text-slate-350 font-bold font-mono">-</span>}
-                      </td>
-                      <td className="py-3.5 px-4 text-center">
-                        {row.enterprise ? <Check className="w-5 h-5 text-emerald-500 mx-auto" /> : <span className="text-slate-350 font-bold font-mono">-</span>}
-                      </td>
-                      <td className="py-3.5 px-4 text-center">
-                        {row.custom ? <Check className="w-5 h-5 text-emerald-500 mx-auto" /> : <span className="text-slate-350 font-bold font-mono">-</span>}
+            <div className="border border-slate-100 rounded-2xl overflow-hidden bg-white w-full">
+              <div className="overflow-x-auto custom-scrollbar max-w-full">
+                <table className="w-full text-left border-collapse text-xs font-bold text-slate-700 block lg:table lg:min-w-[650px]">
+                  <thead className="hidden lg:table-header-group">
+                    <tr className="border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider bg-slate-50/50">
+                      <th className="py-4 px-6 lg:min-w-[220px]">SERVICE MODULE FEATURE</th>
+                      <th className="py-4 px-4 text-center lg:min-w-[100px]">STARTER</th>
+                      <th className="py-4 px-4 text-center lg:min-w-[110px]">PROFESSIONAL</th>
+                      <th className="py-4 px-4 text-center lg:min-w-[100px]">ENTERPRISE</th>
+                      <th className="py-4 px-4 text-center lg:min-w-[130px]">CUSTOM ENTERPRISE</th>
+                    </tr>
+                  </thead>
+                  <tbody className="block lg:table-row-group lg:divide-y lg:divide-slate-100 space-y-4 lg:space-y-0 p-4 lg:p-0 bg-slate-50/50 lg:bg-transparent">
+                    {/* Service modules */}
+                    {[
+                      { label: 'Route Dispatch & Booking Console', starter: true, pro: true, enterprise: true, custom: true },
+                      { label: 'Fleet Asset Maintenance Logs', starter: true, pro: true, enterprise: true, custom: true },
+                      { label: 'Live GPS Coordinates Geofences', starter: true, pro: true, enterprise: true, custom: true },
+                      { label: 'Digital ELD Driver Mobile App', starter: true, pro: true, enterprise: true, custom: true },
+                      { label: 'Carrier Expense Factoring Rules', starter: false, pro: true, enterprise: true, custom: true },
+                      { label: 'AI Optimization Autopiloting Dispatch', starter: false, pro: false, enterprise: true, custom: true },
+                      { label: 'Global Business Intelligence Reports', starter: false, pro: true, enterprise: true, custom: true },
+                      { label: 'Granular Developers API Integration Sandbox', starter: false, pro: false, enterprise: true, custom: true },
+                      { label: 'White-Label Shipper Portal Gateway', starter: false, pro: true, enterprise: true, custom: true },
+                      { label: 'Third-Party Brokers TMS Integration Connectors', starter: false, pro: true, enterprise: true, custom: true }
+                    ].map((row, idx) => (
+                      <tr key={idx} className="block lg:table-row hover:bg-slate-50/50 transition-colors border border-slate-200 lg:border-none rounded-2xl lg:rounded-none p-4 lg:p-0 bg-white lg:bg-transparent shadow-sm lg:shadow-none">
+                        <td className="block lg:table-cell py-3.5 px-0 lg:px-6 font-extrabold text-slate-800 border-b border-slate-100 lg:border-none mb-2 lg:mb-0 pb-2 lg:pb-3.5 text-[13px] lg:text-xs">
+                          {row.label}
+                        </td>
+                        <td className="flex lg:table-cell justify-between items-center py-2 lg:py-3.5 px-0 lg:px-4 lg:text-center border-b border-slate-50 lg:border-none">
+                          <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Starter</span>
+                          {row.starter ? <Check className="w-5 h-5 text-emerald-500 lg:mx-auto" /> : <span className="text-slate-400 font-bold font-mono">-</span>}
+                        </td>
+                        <td className="flex lg:table-cell justify-between items-center py-2 lg:py-3.5 px-0 lg:px-4 lg:text-center border-b border-slate-50 lg:border-none">
+                          <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Professional</span>
+                          {row.pro ? <Check className="w-5 h-5 text-emerald-500 lg:mx-auto" /> : <span className="text-slate-400 font-bold font-mono">-</span>}
+                        </td>
+                        <td className="flex lg:table-cell justify-between items-center py-2 lg:py-3.5 px-0 lg:px-4 lg:text-center border-b border-slate-50 lg:border-none">
+                          <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Enterprise</span>
+                          {row.enterprise ? <Check className="w-5 h-5 text-emerald-500 lg:mx-auto" /> : <span className="text-slate-400 font-bold font-mono">-</span>}
+                        </td>
+                        <td className="flex lg:table-cell justify-between items-center py-2 lg:py-3.5 px-0 lg:px-4 lg:text-center">
+                          <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Custom Enterprise</span>
+                          {row.custom ? <Check className="w-5 h-5 text-emerald-500 lg:mx-auto" /> : <span className="text-slate-400 font-bold font-mono">-</span>}
+                        </td>
+                      </tr>
+                    ))}
+
+                    {/* Threshold category header */}
+                    <tr className="block lg:table-row bg-transparent lg:bg-slate-50/70 lg:border-y border-slate-100 mt-4 lg:mt-0">
+                      <td colSpan="5" className="block lg:table-cell py-2 lg:py-3 px-0 lg:px-6 text-[10px] font-black text-amber-600 uppercase tracking-widest bg-amber-50 lg:bg-transparent rounded-xl lg:rounded-none px-4 lg:px-6 mb-2 lg:mb-0">
+                        CAPACITY ALLOCATION THRESHOLDS
                       </td>
                     </tr>
-                  ))}
 
-                  {/* Threshold category header */}
-                  <tr className="bg-slate-50/70 border-y border-slate-100">
-                    <td colSpan="5" className="py-3 px-6 text-[10px] font-black text-amber-600 uppercase tracking-widest">
-                      CAPACITY ALLOCATION THRESHOLDS
-                    </td>
-                  </tr>
-
-                  {/* Threshold rows */}
-                  {[
-                    { label: 'Users Limit', starter: '3', pro: '15', enterprise: '999', custom: '9999' },
-                    { label: 'Drivers Limit', starter: '5', pro: '30', enterprise: '999', custom: '9999' },
-                    { label: 'Vehicles Limit', starter: '5', pro: '30', enterprise: '999', custom: '9999' },
-                    { label: 'Branches Limit', starter: '1', pro: '5', enterprise: '999', custom: '9999' },
-                    { label: 'Storage Limit', starter: '10 GB', pro: '100 GB', enterprise: '1000 GB', custom: '10000 GB' },
-                    { label: 'Api Calls Limit', starter: '10000', pro: '100000', enterprise: '1000000', custom: '10000000' }
-                  ].map((row, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="py-3.5 px-6 font-extrabold text-slate-800">{row.label}</td>
-                      <td className="py-3.5 px-4 text-center text-slate-800 font-extrabold">{row.starter}</td>
-                      <td className="py-3.5 px-4 text-center text-slate-800 font-extrabold">{row.pro}</td>
-                      <td className="py-3.5 px-4 text-center text-slate-800 font-extrabold">{row.enterprise}</td>
-                      <td className="py-3.5 px-4 text-center text-slate-800 font-extrabold">{row.custom}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                    {/* Threshold rows */}
+                    {[
+                      { label: 'Users Limit', starter: '3', pro: '15', enterprise: '999', custom: '9999' },
+                      { label: 'Drivers Limit', starter: '5', pro: '30', enterprise: '999', custom: '9999' },
+                      { label: 'Vehicles Limit', starter: '5', pro: '30', enterprise: '999', custom: '9999' },
+                      { label: 'Branches Limit', starter: '1', pro: '5', enterprise: '999', custom: '9999' },
+                      { label: 'Storage Limit', starter: '10 GB', pro: '100 GB', enterprise: '1000 GB', custom: '10000 GB' },
+                      { label: 'Api Calls Limit', starter: '10000', pro: '100000', enterprise: '1000000', custom: '10000000' }
+                    ].map((row, idx) => (
+                      <tr key={idx} className="block lg:table-row hover:bg-slate-50/50 transition-colors border border-slate-200 lg:border-none rounded-2xl lg:rounded-none p-4 lg:p-0 bg-white lg:bg-transparent shadow-sm lg:shadow-none">
+                        <td className="block lg:table-cell py-3.5 px-0 lg:px-6 font-extrabold text-slate-800 border-b border-slate-100 lg:border-none mb-2 lg:mb-0 pb-2 lg:pb-3.5 text-[13px] lg:text-xs">
+                          {row.label}
+                        </td>
+                        <td className="flex lg:table-cell justify-between items-center py-2 lg:py-3.5 px-0 lg:px-4 lg:text-center text-slate-800 font-extrabold border-b border-slate-50 lg:border-none">
+                          <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Starter</span>
+                          <span>{row.starter}</span>
+                        </td>
+                        <td className="flex lg:table-cell justify-between items-center py-2 lg:py-3.5 px-0 lg:px-4 lg:text-center text-slate-800 font-extrabold border-b border-slate-50 lg:border-none">
+                          <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Professional</span>
+                          <span>{row.pro}</span>
+                        </td>
+                        <td className="flex lg:table-cell justify-between items-center py-2 lg:py-3.5 px-0 lg:px-4 lg:text-center text-slate-800 font-extrabold border-b border-slate-50 lg:border-none">
+                          <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Enterprise</span>
+                          <span>{row.enterprise}</span>
+                        </td>
+                        <td className="flex lg:table-cell justify-between items-center py-2 lg:py-3.5 px-0 lg:px-4 lg:text-center text-slate-800 font-extrabold">
+                          <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Custom Enterprise</span>
+                          <span>{row.custom}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
@@ -1136,8 +1169,8 @@ export default function MembershipPlans() {
           <div className="space-y-4">
 
             {/* Promo Toolbar */}
-            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-              <div className="relative flex-grow max-w-xs text-left">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+              <div className="relative w-full sm:max-w-xs text-left">
                 <input
                   type="text"
                   placeholder="Search codes or campaign"
@@ -1151,85 +1184,95 @@ export default function MembershipPlans() {
               <button
                 type="button"
                 onClick={() => setShowPromoModal(true)}
-                className="bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+                className="bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 w-full sm:w-auto"
               >
                 <Plus className="w-4 h-4" /> Add Coupon Code
               </button>
             </div>
 
             {/* Promos Table */}
-            <div className="border border-slate-100 rounded-2xl overflow-hidden bg-white">
-              <table className="w-full text-left border-collapse text-xs font-bold text-slate-700">
-                <thead>
-                  <tr className="border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider bg-slate-50/50">
-                    <th className="py-4 px-6">PROMO CODE</th>
-                    <th className="py-4 px-4">CAMPAIGN NAME</th>
-                    <th className="py-4 px-4">TYPE</th>
-                    <th className="py-4 px-4">DISCOUNT VALUE</th>
-                    <th className="py-4 px-4" colSpan="2">REDEMPTIONS</th>
-                    <th className="py-4 px-4">EXPIRY DATE</th>
-                    <th className="py-4 px-4">STATUS</th>
-                    <th className="py-4 px-6 text-center">ACTIONS</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredPromos.length === 0 ? (
-                    <tr>
-                      <td colSpan="9" className="py-8 text-center text-slate-400 font-semibold bg-white w-full">
-                        No promotional campaign codes found.
-                      </td>
+            <div className="border border-slate-100 rounded-2xl overflow-hidden bg-white w-full">
+              <div className="overflow-x-auto custom-scrollbar max-w-full">
+                <table className="w-full text-left border-collapse text-xs font-bold text-slate-700 block lg:table lg:min-w-[850px]">
+                  <thead className="hidden lg:table-header-group">
+                    <tr className="border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider bg-slate-50/50">
+                      <th className="py-4 px-6">PROMO CODE</th>
+                      <th className="py-4 px-4">CAMPAIGN NAME</th>
+                      <th className="py-4 px-4">TYPE</th>
+                      <th className="py-4 px-4">DISCOUNT VALUE</th>
+                      <th className="py-4 px-4" colSpan="2">REDEMPTIONS</th>
+                      <th className="py-4 px-4">EXPIRY DATE</th>
+                      <th className="py-4 px-4">STATUS</th>
+                      <th className="py-4 px-6 text-center">ACTIONS</th>
                     </tr>
-                  ) : (
-                    filteredPromos.map((p) => {
-                      const percent = Math.min(100, Math.round((p.redemptions / p.limit) * 100));
-                      return (
-                        <tr key={p.code} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="py-4 px-6 text-yellow-600 font-black tracking-wide font-mono">
-                            {p.code}
-                          </td>
-                          <td className="py-4 px-4 text-slate-900 font-extrabold">
-                            {p.campaignName}
-                          </td>
-                          <td className="py-4 px-4 text-slate-450 font-medium">
-                            {p.type}
-                          </td>
-                          <td className="py-4 px-4 text-slate-800 font-black">
-                            {p.valueText}
-                          </td>
-                          <td className="py-4 px-4 w-28 whitespace-nowrap">
-                            <div className="flex items-center gap-2">
-                              <span className="text-slate-800 font-bold">{p.redemptions}</span>
-                              <div className="w-16 bg-slate-100 h-1.5 rounded-full overflow-hidden shrink-0">
-                                <div className="bg-[#FFD400] h-full" style={{ width: `${percent}%` }} />
+                  </thead>
+                  <tbody className="block lg:table-row-group lg:divide-y lg:divide-slate-100 space-y-4 lg:space-y-0 p-4 lg:p-0 bg-slate-50/50 lg:bg-transparent">
+                    {filteredPromos.length === 0 ? (
+                      <tr className="block lg:table-row">
+                        <td colSpan="9" className="py-8 text-center text-slate-400 font-semibold bg-white w-full block lg:table-cell rounded-2xl border border-slate-100 lg:border-none">
+                          No promotional campaign codes found.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredPromos.map((p) => {
+                        const percent = Math.min(100, Math.round((p.redemptions / p.limit) * 100));
+                        return (
+                          <tr key={p.code} className="block lg:table-row hover:bg-slate-50/50 transition-colors border border-slate-200 lg:border-none rounded-2xl lg:rounded-none p-4 lg:p-0 bg-white lg:bg-transparent shadow-sm lg:shadow-none">
+                            <td className="flex lg:table-cell justify-between items-center py-2 lg:py-4 px-0 lg:px-6 text-yellow-600 font-black tracking-wide font-mono border-b border-slate-50 lg:border-none">
+                              <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Promo Code</span>
+                              <span>{p.code}</span>
+                            </td>
+                            <td className="flex lg:table-cell flex-col lg:flex-row justify-between items-start lg:items-center py-2 lg:py-4 px-0 lg:px-4 text-slate-900 font-extrabold border-b border-slate-50 lg:border-none gap-1">
+                              <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Campaign Name</span>
+                              <span>{p.campaignName}</span>
+                            </td>
+                            <td className="flex lg:table-cell justify-between items-center py-2 lg:py-4 px-0 lg:px-4 text-slate-400 font-medium border-b border-slate-50 lg:border-none">
+                              <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Type</span>
+                              <span>{p.type}</span>
+                            </td>
+                            <td className="flex lg:table-cell justify-between items-center py-2 lg:py-4 px-0 lg:px-4 text-slate-800 font-black border-b border-slate-50 lg:border-none">
+                              <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Discount Value</span>
+                              <span>{p.valueText}</span>
+                            </td>
+                            <td className="flex lg:table-cell flex-col lg:flex-row justify-between items-start lg:items-center py-2 lg:py-4 px-0 lg:px-4 lg:w-28 whitespace-nowrap border-b border-slate-50 lg:border-none lg:border-r-0 gap-2">
+                              <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Redemptions</span>
+                              <div className="flex items-center gap-2 w-full lg:w-auto justify-end">
+                                <span className="text-slate-800 font-bold">{p.redemptions}</span>
+                                <div className="w-full lg:w-16 max-w-[100px] bg-slate-100 h-1.5 rounded-full overflow-hidden shrink-0">
+                                  <div className="bg-[#FFD400] h-full" style={{ width: `${percent}%` }} />
+                                </div>
                               </div>
-                            </div>
-                          </td>
-                          <td className="py-4 px-2 text-slate-400 text-[10px] font-bold whitespace-nowrap">
-                            {p.limit} max
-                          </td>
-                          <td className="py-4 px-4 text-slate-500 font-medium">
-                            {p.expiryDate}
-                          </td>
-                          <td className="py-4 px-4">
-                            <span className="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full text-[10px] font-black uppercase">
-                              {p.status}
-                            </span>
-                          </td>
-                          <td className="py-4 px-6 text-center">
-                            <button
-                              type="button"
-                              onClick={() => handleDeletePromo(p.code)}
-                              className="bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-xs p-2 rounded-xl transition-colors cursor-pointer inline-flex items-center justify-center shadow-xs"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
+                            </td>
+                            <td className="flex lg:table-cell justify-end items-center py-0 lg:py-4 px-0 lg:px-2 text-slate-400 text-[10px] font-bold whitespace-nowrap border-b border-slate-50 lg:border-none -mt-2 lg:mt-0 pb-2 lg:pb-4">
+                              <span>{p.limit} max</span>
+                            </td>
+                            <td className="flex lg:table-cell justify-between items-center py-2 lg:py-4 px-0 lg:px-4 text-slate-500 font-medium border-b border-slate-50 lg:border-none">
+                              <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Expiry Date</span>
+                              <span>{p.expiryDate}</span>
+                            </td>
+                            <td className="flex lg:table-cell justify-between items-center py-2 lg:py-4 px-0 lg:px-4 border-b border-slate-50 lg:border-none">
+                              <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Status</span>
+                              <span className="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full text-[10px] font-black uppercase">
+                                {p.status}
+                              </span>
+                            </td>
+                            <td className="block lg:table-cell py-4 px-0 lg:px-6 lg:text-center mt-2 lg:mt-0">
+                              <button
+                                type="button"
+                                onClick={() => handleDeletePromo(p.code)}
+                                className="bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-xs py-3 lg:p-2 w-full lg:w-auto rounded-xl transition-colors cursor-pointer inline-flex items-center justify-center shadow-xs gap-2"
+                              >
+                                <Trash2 className="w-4 h-4 lg:w-3.5 lg:h-3.5" />
+                                <span className="lg:hidden">Delete Promo</span>
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
           </div>
@@ -1238,71 +1281,89 @@ export default function MembershipPlans() {
         {/* Tab content 4: Trial Management (Screenshot 1!) */}
         {activeSubTab === 'Trial Management' && (
           <div className="space-y-4">
-            <div className="border border-slate-100 rounded-2xl overflow-hidden bg-white">
-              <table className="w-full text-left border-collapse text-xs font-bold text-slate-700">
-                <thead>
-                  <tr className="border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider bg-slate-50/50">
-                    <th className="py-4 px-6">TENANT COMPANY</th>
-                    <th className="py-4 px-4">WORKSPACE ADMIN</th>
-                    <th className="py-4 px-4">TRIAL EXPIRY DATE</th>
-                    <th className="py-4 px-4">DAYS REMAINING</th>
-                    <th className="py-4 px-4">LIMITS VIOLATIONS</th>
-                    <th className="py-4 px-4">REDEMPTION STATUS</th>
-                    <th className="py-4 px-6 text-center">ACTIONS</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700 font-bold">
-                  {trials.map((t, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="py-5 px-6 font-extrabold text-slate-900">{t.company}</td>
-                      <td className="py-5 px-4 text-slate-500 font-medium">{t.admin}</td>
-                      <td className="py-5 px-4 text-slate-800 font-black">{t.expiryDate}</td>
-                      <td className="py-5 px-4 text-rose-500 font-black">{t.daysRemaining}</td>
-                      <td className="py-5 px-4 text-slate-400 font-semibold">{t.limitsViolations}</td>
-                      <td className="py-5 px-4">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${t.status === 'Active trial'
-                            ? 'bg-emerald-50 text-emerald-600'
-                            : 'bg-rose-50 text-rose-600'
-                          }`}>
-                          {t.status}
-                        </span>
-                      </td>
-                      <td className="py-5 px-6 text-center">
-                        <div className="flex items-center gap-1.5 justify-center">
-                          <button
-                            type="button"
-                            onClick={() => showNotification(`Converting ${t.company} to active billing.`)}
-                            className="bg-[#10B981] hover:bg-[#059669] text-white font-extrabold text-[11px] px-3 py-2 rounded-xl transition-colors cursor-pointer"
-                          >
-                            Convert to Paid
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => showNotification(`Extended trial period for ${t.company} by 14 days.`)}
-                            className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 font-extrabold text-[11px] px-3 py-2 rounded-xl transition-colors cursor-pointer"
-                          >
-                            Extend (+14d)
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => showNotification(`Notification sent to admin of ${t.company}.`)}
-                            className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 font-extrabold text-[11px] px-3 py-2 rounded-xl transition-colors cursor-pointer"
-                          >
-                            Notify
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => showNotification(`Trial cancellation triggered for ${t.company}.`)}
-                            className="bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-[11px] px-3 py-2 rounded-xl transition-colors cursor-pointer"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </td>
+            <div className="border border-slate-100 rounded-2xl overflow-hidden bg-white w-full">
+              <div className="overflow-x-auto custom-scrollbar max-w-full">
+                <table className="w-full text-left border-collapse text-xs font-bold text-slate-700 block lg:table lg:min-w-[950px]">
+                  <thead className="hidden lg:table-header-group">
+                    <tr className="border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider bg-slate-50/50">
+                      <th className="py-4 px-6">TENANT COMPANY</th>
+                      <th className="py-4 px-4">WORKSPACE ADMIN</th>
+                      <th className="py-4 px-4">TRIAL EXPIRY DATE</th>
+                      <th className="py-4 px-4">DAYS REMAINING</th>
+                      <th className="py-4 px-4">LIMITS VIOLATIONS</th>
+                      <th className="py-4 px-4">REDEMPTION STATUS</th>
+                      <th className="py-4 px-6 text-center">ACTIONS</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="block lg:table-row-group text-slate-700 font-bold lg:divide-y lg:divide-slate-100 space-y-4 lg:space-y-0 p-4 lg:p-0 bg-slate-50/50 lg:bg-transparent">
+                    {trials.map((t, idx) => (
+                      <tr key={idx} className="block lg:table-row hover:bg-slate-50/50 transition-colors border border-slate-200 lg:border-none rounded-2xl lg:rounded-none p-4 lg:p-0 bg-white lg:bg-transparent shadow-sm lg:shadow-none">
+                        <td className="flex lg:table-cell flex-col lg:flex-row justify-between items-start lg:items-center py-2 lg:py-5 px-0 lg:px-6 font-extrabold text-slate-900 border-b border-slate-50 lg:border-none gap-1">
+                          <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Tenant Company</span>
+                          <span>{t.company}</span>
+                        </td>
+                        <td className="flex lg:table-cell justify-between items-center py-2 lg:py-5 px-0 lg:px-4 text-slate-500 font-medium border-b border-slate-50 lg:border-none">
+                          <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Workspace Admin</span>
+                          <span>{t.admin}</span>
+                        </td>
+                        <td className="flex lg:table-cell justify-between items-center py-2 lg:py-5 px-0 lg:px-4 text-slate-800 font-black border-b border-slate-50 lg:border-none">
+                          <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Trial Expiry Date</span>
+                          <span>{t.expiryDate}</span>
+                        </td>
+                        <td className="flex lg:table-cell justify-between items-center py-2 lg:py-5 px-0 lg:px-4 text-rose-500 font-black border-b border-slate-50 lg:border-none">
+                          <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Days Remaining</span>
+                          <span>{t.daysRemaining}</span>
+                        </td>
+                        <td className="flex lg:table-cell justify-between items-center py-2 lg:py-5 px-0 lg:px-4 text-slate-400 font-semibold border-b border-slate-50 lg:border-none">
+                          <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Limits Violations</span>
+                          <span>{t.limitsViolations}</span>
+                        </td>
+                        <td className="flex lg:table-cell justify-between items-center py-2 lg:py-5 px-0 lg:px-4 border-b border-slate-50 lg:border-none">
+                          <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Redemption Status</span>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${t.status === 'Active trial'
+                              ? 'bg-emerald-50 text-emerald-600'
+                              : 'bg-rose-50 text-rose-600'
+                            }`}>
+                            {t.status}
+                          </span>
+                        </td>
+                        <td className="block lg:table-cell py-4 px-0 lg:px-6 lg:text-center mt-2 lg:mt-0 pt-4 lg:pt-5 border-t border-slate-100 lg:border-none">
+                          <div className="flex flex-wrap items-center gap-2 lg:gap-1.5 justify-start lg:justify-center">
+                            <button
+                              type="button"
+                              onClick={() => showNotification(`Converting ${t.company} to active billing.`)}
+                              className="flex-1 lg:flex-none justify-center bg-[#10B981] hover:bg-[#059669] text-white font-extrabold text-[11px] px-3 py-2 rounded-xl transition-colors cursor-pointer"
+                            >
+                              Convert to Paid
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => showNotification(`Extended trial period for ${t.company} by 14 days.`)}
+                              className="flex-1 lg:flex-none justify-center bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 font-extrabold text-[11px] px-3 py-2 rounded-xl transition-colors cursor-pointer"
+                            >
+                              Extend (+14d)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => showNotification(`Notification sent to admin of ${t.company}.`)}
+                              className="flex-1 lg:flex-none justify-center bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 font-extrabold text-[11px] px-3 py-2 rounded-xl transition-colors cursor-pointer"
+                            >
+                              Notify
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => showNotification(`Trial cancellation triggered for ${t.company}.`)}
+                              className="flex-1 lg:flex-none justify-center bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-[11px] px-3 py-2 rounded-xl transition-colors cursor-pointer"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
@@ -1315,15 +1376,15 @@ export default function MembershipPlans() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
               {/* MRR timeline graph */}
-              <div className="lg:col-span-2 border border-slate-100 rounded-2xl p-5 bg-white space-y-4">
-                <div className="flex justify-between items-center">
+              <div className="lg:col-span-2 border border-slate-100 rounded-2xl p-4 sm:p-5 bg-white space-y-4 overflow-hidden">
+                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
                   <h3 className="text-sm font-black text-slate-800">Dynamic MRR Expansion Timeline (USD)</h3>
                   <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Q1-Q2 Audited cash flow</span>
                 </div>
 
                 {/* SVG Graph representation */}
-                <div className="relative pt-6 h-56 flex items-end">
-                  <svg className="w-full h-40 overflow-visible" viewBox="0 0 600 150">
+                <div className="relative pt-6 h-56 flex items-end overflow-x-auto custom-scrollbar">
+                  <svg className="w-full min-w-[450px] h-40 overflow-visible" viewBox="0 0 600 150">
                     <defs>
                       <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#0EA5E9" stopOpacity="0.25" />
@@ -1362,7 +1423,7 @@ export default function MembershipPlans() {
               </div>
 
               {/* Subscriber Mix Pie Donut Chart */}
-              <div className="border border-slate-100 rounded-2xl p-5 bg-white space-y-4">
+              <div className="border border-slate-100 rounded-2xl p-4 sm:p-5 bg-white space-y-4">
                 <div>
                   <h3 className="text-sm font-black text-slate-800">Subscriber Mix Analytics</h3>
                   <p className="text-[10px] text-slate-400 font-bold mt-1">Distribution index of operational licensing accounts.</p>
@@ -1389,21 +1450,21 @@ export default function MembershipPlans() {
                         <span className="w-2.5 h-2.5 bg-[#0EA5E9] rounded-full" />
                         <span>Professional Plan</span>
                       </div>
-                      <span className="text-slate-850 font-black">40% mix</span>
+                      <span className="text-slate-800 font-black">40% mix</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
                         <span className="w-2.5 h-2.5 bg-[#10B981] rounded-full" />
                         <span>Starter Plan</span>
                       </div>
-                      <span className="text-slate-850 font-black">40% mix</span>
+                      <span className="text-slate-800 font-black">40% mix</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
                         <span className="w-2.5 h-2.5 bg-[#334155] rounded-full" />
                         <span>Enterprise Plan</span>
                       </div>
-                      <span className="text-slate-850 font-black">20% mix</span>
+                      <span className="text-slate-800 font-black">20% mix</span>
                     </div>
                   </div>
                 </div>
@@ -1412,20 +1473,20 @@ export default function MembershipPlans() {
             </div>
 
             {/* Bottom 3 metrics grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              <div className="border border-slate-100 rounded-2xl p-5 bg-white text-left">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
+              <div className="border border-slate-100 rounded-2xl p-4 sm:p-5 bg-white text-left">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">CUSTOMER LIFETIME VALUE (LTV)</span>
                 <span className="text-xl font-black text-slate-800 block mt-2">$18,450.00</span>
                 <span className="text-[10px] font-bold text-emerald-500 mt-2 block">LTV to CAC ratio: 4.8x (Excellent)</span>
               </div>
 
-              <div className="border border-slate-100 rounded-2xl p-5 bg-white text-left">
+              <div className="border border-slate-100 rounded-2xl p-4 sm:p-5 bg-white text-left">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">CUSTOMER ACQUISITION COST (CAC)</span>
                 <span className="text-xl font-black text-slate-800 block mt-2">$3,840.00</span>
                 <span className="text-[10px] font-bold text-amber-500 mt-2 block">Payback period: 7.8 months</span>
               </div>
 
-              <div className="border border-slate-100 rounded-2xl p-5 bg-white text-left">
+              <div className="border border-slate-100 rounded-2xl p-4 sm:p-5 bg-white text-left">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">REVENUE CHURN RATE (MRR CHURN)</span>
                 <span className="text-xl font-black text-rose-500 block mt-2">1.4% / mo</span>
                 <span className="text-[10px] font-bold text-slate-400 mt-2 block">Net Revenue Retention (NRR): 108.5%</span>
@@ -1437,7 +1498,7 @@ export default function MembershipPlans() {
 
         {/* Tab content 6: Overage Billing (Placeholder for layout flow) */}
         {activeSubTab === 'Overage Billing' && (
-          <div className="space-y-4 py-8 text-center text-slate-400 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+          <div className="space-y-4 py-8 px-4 text-center text-slate-400 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
             <ShieldAlert className="w-10 h-10 mx-auto text-slate-400" />
             <h3 className="text-sm font-black text-slate-700">Overage Billing Panel</h3>
             <p className="text-xs text-slate-455 max-w-sm mx-auto">
@@ -1456,17 +1517,17 @@ export default function MembershipPlans() {
             <form onSubmit={(e) => { e.preventDefault(); showNotification('Gateway Configurations Saved!'); }} className="space-y-5">
 
               {/* Row 1: Stripe */}
-              <div className="border border-slate-100 rounded-2xl p-5 bg-white space-y-4">
-                <div className="flex justify-between items-center">
+              <div className="border border-slate-100 rounded-2xl p-4 sm:p-5 bg-white space-y-4">
+                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
                   <label className="flex items-center gap-2.5 cursor-pointer font-black text-slate-800 text-xs">
-                    <input type="checkbox" defaultChecked className="w-4 h-4 rounded text-blue-650 cursor-pointer" />
+                    <input type="checkbox" defaultChecked className="w-4 h-4 rounded text-blue-650 cursor-pointer shrink-0" />
                     <span>Stripe Credit Card Gateway Integration</span>
                   </label>
-                  <span className="bg-amber-100 text-amber-700 border border-amber-200 text-[9px] font-black px-2 py-0.5 rounded-full uppercase">
+                  <span className="bg-amber-100 text-amber-700 border border-amber-200 text-[9px] font-black px-2 py-0.5 rounded-full uppercase self-start sm:self-auto">
                     CORE PAYMENT NODE
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-4 text-xs font-bold text-slate-700">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-bold text-slate-700">
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Stripe Publishable API Key</label>
                     <input type="password" defaultValue="pk_live_*******************" className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] rounded-xl focus:outline-none font-mono" />
@@ -1481,18 +1542,18 @@ export default function MembershipPlans() {
               {/* Row 2: PayPal */}
               <div className="border border-slate-100 rounded-2xl p-4 bg-white">
                 <label className="flex items-center gap-2.5 cursor-pointer font-black text-slate-800 text-xs">
-                  <input type="checkbox" className="w-4 h-4 rounded text-blue-650 cursor-pointer" />
+                  <input type="checkbox" className="w-4 h-4 rounded text-blue-650 cursor-pointer shrink-0" />
                   <span>PayPal Checkout Express</span>
                 </label>
               </div>
 
               {/* Row 3: ACH direct bank */}
-              <div className="border border-slate-100 rounded-2xl p-5 bg-white space-y-4">
+              <div className="border border-slate-100 rounded-2xl p-4 sm:p-5 bg-white space-y-4">
                 <label className="flex items-center gap-2.5 cursor-pointer font-black text-slate-800 text-xs">
-                  <input type="checkbox" defaultChecked className="w-4 h-4 rounded text-blue-650 cursor-pointer" />
+                  <input type="checkbox" defaultChecked className="w-4 h-4 rounded text-blue-650 cursor-pointer shrink-0" />
                   <span>ACH Electronic Direct Bank Deposit (Plaid Secure Node)</span>
                 </label>
-                <div className="grid grid-cols-2 gap-4 text-xs font-bold text-slate-700">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-bold text-slate-700">
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">ACH Clearing Routing Transit Number</label>
                     <input type="text" defaultValue="123456789" className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] rounded-xl focus:outline-none" />
@@ -1505,12 +1566,12 @@ export default function MembershipPlans() {
               </div>
 
               {/* Row 4: Corporate wire transfer */}
-              <div className="border border-slate-100 rounded-2xl p-5 bg-white space-y-4">
+              <div className="border border-slate-100 rounded-2xl p-4 sm:p-5 bg-white space-y-4">
                 <label className="flex items-center gap-2.5 cursor-pointer font-black text-slate-800 text-xs">
-                  <input type="checkbox" defaultChecked className="w-4 h-4 rounded text-blue-650 cursor-pointer" />
+                  <input type="checkbox" defaultChecked className="w-4 h-4 rounded text-blue-650 cursor-pointer shrink-0" />
                   <span>Corporate Wire Bank Transfer</span>
                 </label>
-                <div className="grid grid-cols-3 gap-4 text-xs font-bold text-slate-700">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-bold text-slate-700">
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Wire Bank Name</label>
                     <input type="text" defaultValue="Chase Bank" className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] rounded-xl focus:outline-none" />
@@ -1527,9 +1588,9 @@ export default function MembershipPlans() {
               </div>
 
               {/* Row 5: Manual Invoicing */}
-              <div className="border border-slate-100 rounded-2xl p-5 bg-white space-y-4">
+              <div className="border border-slate-100 rounded-2xl p-4 sm:p-5 bg-white space-y-4">
                 <label className="flex items-center gap-2.5 cursor-pointer font-black text-slate-800 text-xs">
-                  <input type="checkbox" defaultChecked className="w-4 h-4 rounded text-blue-650 cursor-pointer" />
+                  <input type="checkbox" defaultChecked className="w-4 h-4 rounded text-blue-650 cursor-pointer shrink-0" />
                   <span>Manual Invoicing & Purchase Order Terms</span>
                 </label>
                 <div className="text-xs font-bold text-slate-700">
@@ -1540,7 +1601,7 @@ export default function MembershipPlans() {
 
               <button
                 type="submit"
-                className="w-[#250px] bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs py-3 rounded-xl shadow-xs transition-colors cursor-pointer text-center"
+                className="w-full sm:w-[#250px] bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs py-3 rounded-xl shadow-xs transition-colors cursor-pointer text-center"
               >
                 Save Gateway configurations
               </button>
@@ -1560,7 +1621,7 @@ export default function MembershipPlans() {
 
             <form onSubmit={(e) => { e.preventDefault(); showNotification(`Cohort migration executed successfully from ${migrationSource} to ${migrationTarget}!`); }} className="space-y-6">
 
-              <div className="border border-slate-100 rounded-2xl p-5 bg-white">
+              <div className="border border-slate-100 rounded-2xl p-4 sm:p-5 bg-white">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs font-bold text-slate-700">
                   <div className="space-y-2">
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">Select Source Plan Level</label>
@@ -1591,6 +1652,13 @@ export default function MembershipPlans() {
                   </div>
                 </div>
               </div>
+
+              <button
+                type="submit"
+                className="w-full sm:w-[#250px] bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs py-3 rounded-xl shadow-xs transition-colors cursor-pointer text-center"
+              >
+                Execute Bulk Migration
+              </button>
             </form>
           </div>
         )}
@@ -1600,11 +1668,11 @@ export default function MembershipPlans() {
           <div className="space-y-4">
 
             {/* Toolbar Row */}
-            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-              <div className="relative flex-grow max-w-xs text-left">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+              <div className="relative w-full sm:max-w-xs text-left">
                 <input
                   type="text"
-                  placeholder="Search invoices by compa"
+                  placeholder="Search invoices by company..."
                   value={invoiceSearchQuery}
                   onChange={(e) => setInvoiceSearchQuery(e.target.value)}
                   className="w-full pl-9 pr-4 py-2.5 bg-[#F8FAFC] border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none placeholder:text-slate-400 text-slate-800 font-bold"
@@ -1612,12 +1680,12 @@ export default function MembershipPlans() {
                 <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
               </div>
 
-              <div className="flex items-center gap-2 text-xs font-extrabold text-slate-700">
-                <span>Status Filter:</span>
+              <div className="flex items-center gap-2 text-xs font-extrabold text-slate-700 w-full sm:w-auto">
+                <span className="shrink-0">Status Filter:</span>
                 <select
                   value={invoiceStatusFilter}
                   onChange={(e) => setInvoiceStatusFilter(e.target.value)}
-                  className="border border-slate-200 bg-white px-3 py-2 rounded-xl focus:outline-none focus:border-[#FFD400] text-slate-700 font-bold cursor-pointer min-w-[130px]"
+                  className="w-full sm:w-auto border border-slate-200 bg-white px-3 py-2 rounded-xl focus:outline-none focus:border-[#FFD400] text-slate-700 font-bold cursor-pointer min-w-[130px]"
                 >
                   <option value="All Invoices">All Invoices</option>
                   <option value="Paid">Paid</option>
@@ -1628,78 +1696,89 @@ export default function MembershipPlans() {
             </div>
 
             {/* Invoices Table */}
-            <div className="border border-slate-100 rounded-2xl overflow-hidden bg-white">
-              <table className="w-full text-left border-collapse text-xs font-bold text-slate-700">
-                <thead>
-                  <tr className="border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider bg-slate-50/50">
-                    <th className="py-4 px-6">INVOICE NUMBER</th>
-                    <th className="py-4 px-4">COMPANY WORKSPACE</th>
-                    <th className="py-4 px-4">PLAN LEVEL</th>
-                    <th className="py-4 px-4">BILLING PERIOD</th>
-                    <th className="py-4 px-4">ISSUED DATE</th>
-                    <th className="py-4 px-4">STATUS</th>
-                    <th className="py-4 px-4">METHOD</th>
-                    <th className="py-4 px-4">TOTAL AMOUNT</th>
-                    <th className="py-4 px-6 text-center">ACTIONS</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredInvoices.length === 0 ? (
-                    <tr>
-                      <td colSpan="9" className="py-8 text-center text-slate-400 font-semibold bg-white w-full">
-                        No invoices logged matching the filters.
-                      </td>
+            <div className="border border-slate-100 rounded-2xl overflow-hidden bg-white w-full">
+              <div className="overflow-x-auto custom-scrollbar max-w-full">
+                <table className="w-full text-left border-collapse text-xs font-bold text-slate-700 block lg:table lg:min-w-[950px]">
+                  <thead className="hidden lg:table-header-group">
+                    <tr className="border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider bg-slate-50/50">
+                      <th className="py-4 px-6">INVOICE NUMBER</th>
+                      <th className="py-4 px-4">COMPANY WORKSPACE</th>
+                      <th className="py-4 px-4">PLAN LEVEL</th>
+                      <th className="py-4 px-4">BILLING PERIOD</th>
+                      <th className="py-4 px-4">ISSUED DATE</th>
+                      <th className="py-4 px-4">STATUS</th>
+                      <th className="py-4 px-4">METHOD</th>
+                      <th className="py-4 px-4">TOTAL AMOUNT</th>
+                      <th className="py-4 px-6 text-center">ACTIONS</th>
                     </tr>
-                  ) : (
-                    filteredInvoices.map((inv, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="py-4 px-6 text-slate-400 font-mono font-medium whitespace-nowrap">
-                          {inv.invoiceNo}
-                        </td>
-                        <td className="py-4 px-4 text-slate-900 font-extrabold">
-                          {inv.company}
-                        </td>
-                        <td className="py-4 px-4 text-slate-500 font-medium">
-                          {inv.plan}
-                        </td>
-                        <td className="py-4 px-4 text-slate-450 font-mono font-medium">
-                          {inv.period}
-                        </td>
-                        <td className="py-4 px-4 text-slate-500 font-mono font-medium">
-                          {inv.date}
-                        </td>
-                        <td className="py-4 px-4">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${inv.status === 'Paid'
-                              ? 'bg-emerald-50 text-emerald-600'
-                              : inv.status === 'Sent'
-                                ? 'bg-amber-50 text-amber-600'
-                                : inv.status === 'Draft'
-                                  ? 'bg-slate-100 text-slate-550'
-                                  : 'bg-rose-50 text-rose-600'
-                            }`}>
-                            {inv.status}
-                          </span>
-                        </td>
-                        <td className="py-4 px-4 text-slate-500 font-medium">
-                          {inv.method}
-                        </td>
-                        <td className="py-4 px-4 text-slate-900 font-black">
-                          {inv.amount}
-                        </td>
-                        <td className="py-4 px-6 text-center">
-                          <button
-                            type="button"
-                            onClick={() => { setSelectedInvoice(inv); setShowReceiptModal(true); }}
-                            className="border border-slate-800 bg-white hover:bg-slate-50 text-slate-900 font-black text-xs px-4 py-2 rounded-xl transition-colors cursor-pointer shadow-sm leading-tight"
-                          >
-                            Inspect<br />Receipt
-                          </button>
+                  </thead>
+                  <tbody className="block lg:table-row-group lg:divide-y lg:divide-slate-100 space-y-4 lg:space-y-0 p-4 lg:p-0 bg-slate-50/50 lg:bg-transparent">
+                    {filteredInvoices.length === 0 ? (
+                      <tr className="block lg:table-row">
+                        <td colSpan="9" className="py-8 text-center text-slate-400 font-semibold bg-white w-full block lg:table-cell rounded-2xl border border-slate-100 lg:border-none">
+                          No invoices logged matching the filters.
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : (
+                      filteredInvoices.map((inv, idx) => (
+                        <tr key={idx} className="block lg:table-row hover:bg-slate-50/50 transition-colors border border-slate-200 lg:border-none rounded-2xl lg:rounded-none p-4 lg:p-0 bg-white lg:bg-transparent shadow-sm lg:shadow-none">
+                          <td className="flex lg:table-cell justify-between items-center py-2 lg:py-4 px-0 lg:px-6 text-slate-400 font-mono font-medium whitespace-nowrap border-b border-slate-50 lg:border-none">
+                            <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Invoice Number</span>
+                            <span>{inv.invoiceNo}</span>
+                          </td>
+                          <td className="flex lg:table-cell flex-col lg:flex-row justify-between items-start lg:items-center py-2 lg:py-4 px-0 lg:px-4 text-slate-900 font-extrabold border-b border-slate-50 lg:border-none gap-1">
+                            <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Company Workspace</span>
+                            <span>{inv.company}</span>
+                          </td>
+                          <td className="flex lg:table-cell justify-between items-center py-2 lg:py-4 px-0 lg:px-4 text-slate-500 font-medium border-b border-slate-50 lg:border-none">
+                            <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Plan Level</span>
+                            <span>{inv.plan}</span>
+                          </td>
+                          <td className="flex lg:table-cell justify-between items-center py-2 lg:py-4 px-0 lg:px-4 text-slate-400 font-mono font-medium border-b border-slate-50 lg:border-none">
+                            <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Billing Period</span>
+                            <span>{inv.period}</span>
+                          </td>
+                          <td className="flex lg:table-cell justify-between items-center py-2 lg:py-4 px-0 lg:px-4 text-slate-500 font-mono font-medium border-b border-slate-50 lg:border-none">
+                            <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Issued Date</span>
+                            <span>{inv.date}</span>
+                          </td>
+                          <td className="flex lg:table-cell justify-between items-center py-2 lg:py-4 px-0 lg:px-4 border-b border-slate-50 lg:border-none">
+                            <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Status</span>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${inv.status === 'Paid'
+                                ? 'bg-emerald-50 text-emerald-600'
+                                : inv.status === 'Sent'
+                                  ? 'bg-amber-50 text-amber-600'
+                                  : inv.status === 'Draft'
+                                    ? 'bg-slate-100 text-slate-500'
+                                    : 'bg-rose-50 text-rose-600'
+                              }`}>
+                              {inv.status}
+                            </span>
+                          </td>
+                          <td className="flex lg:table-cell justify-between items-center py-2 lg:py-4 px-0 lg:px-4 text-slate-500 font-medium border-b border-slate-50 lg:border-none">
+                            <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Method</span>
+                            <span>{inv.method}</span>
+                          </td>
+                          <td className="flex lg:table-cell justify-between items-center py-2 lg:py-4 px-0 lg:px-4 text-slate-900 font-black border-b border-slate-50 lg:border-none">
+                            <span className="lg:hidden font-black text-[10px] text-slate-400 uppercase tracking-wider">Total Amount</span>
+                            <span>{inv.amount}</span>
+                          </td>
+                          <td className="block lg:table-cell py-4 px-0 lg:px-6 lg:text-center mt-2 lg:mt-0 pt-4 lg:pt-4 border-t border-slate-100 lg:border-none">
+                            <button
+                              type="button"
+                              onClick={() => { setSelectedInvoice(inv); setShowReceiptModal(true); }}
+                              className="w-full lg:w-auto flex items-center justify-center border border-slate-800 bg-white hover:bg-slate-50 text-slate-900 font-black text-xs px-4 py-3 lg:py-2 rounded-xl transition-colors cursor-pointer shadow-sm leading-tight gap-2"
+                            >
+                              <span className="lg:hidden">Inspect Receipt</span>
+                              <span className="hidden lg:inline">Inspect<br />Receipt</span>
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
           </div>
@@ -1710,11 +1789,11 @@ export default function MembershipPlans() {
           <div className="space-y-4">
 
             {/* Toolbar Row */}
-            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-              <div className="relative flex-grow max-w-xs text-left">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+              <div className="relative w-full sm:max-w-xs text-left">
                 <input
                   type="text"
-                  placeholder="Search audit actions or descriptio"
+                  placeholder="Search audit actions..."
                   value={auditSearchQuery}
                   onChange={(e) => setAuditSearchQuery(e.target.value)}
                   className="w-full pl-9 pr-4 py-2.5 bg-[#F8FAFC] border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none placeholder:text-slate-400 text-slate-800 font-bold"
@@ -1735,17 +1814,17 @@ export default function MembershipPlans() {
                 </div>
               ) : (
                 filteredAudits.map((aud, idx) => (
-                  <div key={idx} className="p-5 text-left space-y-2 hover:bg-slate-50/50 transition-colors">
-                    <div className="flex justify-between items-start gap-4">
-                      <h4 className="font-extrabold text-slate-850 text-[13px]">{aud.title}</h4>
-                      <span className="text-[10px] font-mono text-slate-400 font-medium whitespace-nowrap">{aud.date}</span>
+                  <div key={idx} className="p-4 sm:p-5 text-left space-y-2 hover:bg-slate-50/50 transition-colors">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-4">
+                      <h4 className="font-extrabold text-slate-900 text-[13px]">{aud.title}</h4>
+                      <span className="text-[10px] font-mono text-slate-500 font-medium whitespace-nowrap">{aud.date}</span>
                     </div>
-                    <p className="text-xs text-slate-500 font-semibold leading-relaxed">
+                    <p className="text-xs text-slate-600 font-semibold leading-relaxed">
                       {aud.detail}
                     </p>
-                    <div className="flex gap-4 text-[10px] font-mono text-slate-400 pt-1">
-                      <span>Operator: <span className="font-bold text-slate-600">{aud.operator}</span></span>
-                      <span>IP Address: <span className="font-bold text-slate-600">{aud.ip}</span></span>
+                    <div className="flex flex-wrap gap-3 sm:gap-4 text-[10px] font-mono text-slate-500 pt-1">
+                      <span>Operator: <span className="font-bold text-slate-800">{aud.operator}</span></span>
+                      <span>IP Address: <span className="font-bold text-slate-800">{aud.ip}</span></span>
                     </div>
                   </div>
                 ))
@@ -1760,9 +1839,9 @@ export default function MembershipPlans() {
       {/* SaaS License Provisioning Wizard Modal (Configuring or Creating) */}
       {showWizard && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[999] p-4">
-          <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-lg overflow-hidden shadow-2xl animate-fade-in text-left">
+          <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-lg overflow-hidden shadow-2xl animate-fade-in text-left flex flex-col max-h-[90vh]">
             {/* Modal Header */}
-            <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100">
+            <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100 shrink-0">
               <h3 className="text-base font-black text-slate-800">
                 {wizardMode === 'create' ? 'SaaS License Provisioning Wizard' : 'Configure Plan Licensing Rules'}
               </h3>
@@ -1776,7 +1855,7 @@ export default function MembershipPlans() {
             </div>
 
             {/* Steps bar */}
-            <div className="px-6 py-3 bg-[#F8FAFC] border-b border-slate-100 flex items-center justify-between gap-2 overflow-x-auto custom-scrollbar">
+            <div className="px-6 py-3 bg-[#F8FAFC] border-b border-slate-100 flex items-center justify-between gap-2 overflow-x-auto custom-scrollbar shrink-0">
               {[
                 { step: 1, label: 'Info' },
                 { step: 2, label: 'Limits' },
@@ -1800,10 +1879,10 @@ export default function MembershipPlans() {
             </div>
 
             {/* Form steps */}
-            <form onSubmit={handleWizardSubmit} className="p-6 space-y-5 text-xs font-semibold text-slate-700">
+            <form onSubmit={handleWizardSubmit} className="p-4 sm:p-6 space-y-5 text-xs font-semibold text-slate-700 overflow-y-auto custom-scrollbar flex-1">
               {wizardStep === 1 ? (
                 <>
-                  <div className="grid grid-cols-2 gap-4 text-left">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
                     <div>
                       <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Plan Tier Name</label>
                       <input
@@ -1876,7 +1955,7 @@ export default function MembershipPlans() {
                       Set maximum thresholds for active tenants. Enter 0 or "Unlimited" for no limits.
                     </p>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Max User Logins</label>
                         <input
@@ -1937,7 +2016,7 @@ export default function MembershipPlans() {
                       Select which key modules should be entitled automatically to this subscription level.
                     </p>
 
-                    <div className="grid grid-cols-2 gap-3 bg-[#F8FAFC] border border-slate-100 rounded-2xl p-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-[#F8FAFC] border border-slate-100 rounded-2xl p-4">
                       {['Dispatch Board', 'Fleet Maintenance', 'Real-time GPS', 'Driver Mobile App', 'AI Route Dispatcher', 'Billing ledger API'].map((m) => (
                         <label key={m} className="flex items-center gap-2.5 cursor-pointer">
                           <input type="checkbox" defaultChecked className="w-4 h-4 rounded text-blue-650 cursor-pointer" />
@@ -1972,7 +2051,7 @@ export default function MembershipPlans() {
                       Set base recurring prices. Ensure correct currency config.
                     </p>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Monthly Price ($)</label>
                         <input
@@ -2137,7 +2216,7 @@ export default function MembershipPlans() {
                   value={promoCode}
                   onChange={(e) => setPromoCode(e.target.value)}
                   placeholder="e.g. OFF50PCT"
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] rounded-xl focus:outline-none text-slate-800 text-xs font-bold font-mono placeholder:text-slate-350"
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] rounded-xl focus:outline-none text-slate-800 text-xs font-bold font-mono placeholder:text-slate-400"
                 />
               </div>
 
@@ -2162,7 +2241,7 @@ export default function MembershipPlans() {
                   value={promoValue}
                   onChange={(e) => setPromoValue(e.target.value)}
                   placeholder="e.g. 10 or 30"
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] rounded-xl focus:outline-none text-slate-800 text-xs font-bold placeholder:text-slate-350"
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] rounded-xl focus:outline-none text-slate-800 text-xs font-bold placeholder:text-slate-400"
                 />
               </div>
 
@@ -2174,7 +2253,7 @@ export default function MembershipPlans() {
                   value={promoCampaignName}
                   onChange={(e) => setPromoCampaignName(e.target.value)}
                   placeholder="e.g. Winter Sales Kickoff"
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] rounded-xl focus:outline-none text-slate-800 text-xs font-bold placeholder:text-slate-350"
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] rounded-xl focus:outline-none text-slate-800 text-xs font-bold placeholder:text-slate-400"
                 />
               </div>
 

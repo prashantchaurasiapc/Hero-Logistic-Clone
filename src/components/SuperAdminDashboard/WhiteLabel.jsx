@@ -412,7 +412,7 @@ export default function WhiteLabel() {
           </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
-          <span className="bg-white text-slate-850 px-4 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1">
+          <span className="bg-white text-slate-800 px-4 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1">
             Active Version: <span className="text-yellow-600">{activeVersion}</span>
           </span>
           <span className="bg-white text-emerald-600 px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider">
@@ -601,7 +601,7 @@ export default function WhiteLabel() {
                       { name: 'Auto System sync', value: 10, color: 'bg-indigo-500' }
                     ].map((row, idx) => (
                       <div key={idx} className="space-y-1">
-                        <div className="flex justify-between text-xs font-bold text-slate-650">
+                        <div className="flex justify-between text-xs font-bold text-slate-600">
                           <span>{row.name}</span>
                           <span>{row.value}%</span>
                         </div>
@@ -622,7 +622,7 @@ export default function WhiteLabel() {
                       { name: 'Shipper Customer Portal', value: 90, color: 'bg-[#FFD400]' }
                     ].map((row, idx) => (
                       <div key={idx} className="space-y-1">
-                        <div className="flex justify-between text-xs font-bold text-slate-650">
+                        <div className="flex justify-between text-xs font-bold text-slate-600">
                           <span>{row.name}</span>
                           <span>{row.value}%</span>
                         </div>
@@ -825,17 +825,17 @@ export default function WhiteLabel() {
                   </select>
                 </div>
 
-                <div className="col-span-1 md:col-span-2 flex justify-end gap-3.5 pt-4">
+                <div className="col-span-1 md:col-span-2 flex flex-col sm:flex-row justify-end gap-3.5 pt-4">
                   <button
                     type="button"
                     onClick={handleDiscardBranding}
-                    className="border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer"
+                    className="w-full sm:w-auto border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer text-center"
                   >
                     Discard Draft
                   </button>
                   <button
                     type="submit"
-                    className="bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer"
+                    className="w-full sm:w-auto bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer text-center"
                   >
                     Save Branding Configuration
                   </button>
@@ -853,16 +853,16 @@ export default function WhiteLabel() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {themes.map((theme, idx) => (
-                  <div key={idx} className="border border-slate-150 rounded-2xl p-5 space-y-4 bg-white relative hover:shadow-xs transition-shadow">
+                  <div key={idx} className="border border-slate-200 rounded-2xl p-5 space-y-4 bg-white relative hover:shadow-xs transition-shadow">
                     <div className="flex justify-between items-center">
-                      <h4 className="text-base font-extrabold text-slate-850">{theme.name}</h4>
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${theme.status === 'Published' ? 'bg-[#E6F4EA] text-[#137333]' : 'bg-slate-100 text-slate-650'
+                      <h4 className="text-base font-extrabold text-slate-800">{theme.name}</h4>
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${theme.status === 'Published' ? 'bg-[#E6F4EA] text-[#137333]' : 'bg-slate-100 text-slate-600'
                         }`}>
                         {theme.status}
                       </span>
                     </div>
 
-                    <div className="text-xs font-bold text-slate-450 space-y-1 font-mono">
+                    <div className="text-xs font-bold text-slate-400 space-y-1 font-mono">
                       <div>Accent: <span className="text-sky-500">{theme.accent}</span></div>
                       <div>Sidebar: <span>{theme.sidebar}</span></div>
                       <div>Header: <span>{theme.header}</span></div>
@@ -896,18 +896,18 @@ export default function WhiteLabel() {
 
               <div className="border-t border-slate-100 pt-6">
                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-3">Register Custom Theme Skin</h3>
-                <form onSubmit={handleRegisterTheme} className="flex gap-3">
+                <form onSubmit={handleRegisterTheme} className="flex flex-col sm:flex-row gap-3">
                   <input
                     type="text"
                     required
                     placeholder="Enter custom theme name (e.g. Amber Minimalist)..."
                     value={newThemeName}
                     onChange={(e) => setNewThemeName(e.target.value)}
-                    className="flex-grow px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800"
+                    className="flex-grow w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800"
                   />
                   <button
                     type="submit"
-                    className="bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1 shrink-0"
+                    className="w-full sm:w-auto justify-center bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1 shrink-0"
                   >
                     <Plus className="w-4 h-4" /> Register Theme
                   </button>
@@ -925,10 +925,10 @@ export default function WhiteLabel() {
 
               <div className="space-y-4">
                 {domains.map((dom, idx) => (
-                  <div key={idx} className="border border-slate-150 rounded-2xl p-5 flex flex-col md:flex-row md:justify-between md:items-center gap-4 bg-white">
+                  <div key={idx} className="border border-slate-200 rounded-2xl p-5 flex flex-col md:flex-row md:justify-between md:items-center gap-4 bg-white">
                     <div className="space-y-1.5">
-                      <h4 className="text-sm font-extrabold text-slate-850">{dom.domain} <span className="text-xs text-slate-400 font-bold font-mono">CNAME maps to {dom.mapsTo}</span></h4>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] font-bold text-slate-450">
+                      <h4 className="text-sm font-extrabold text-slate-800">{dom.domain} <span className="text-xs text-slate-400 font-bold font-mono">CNAME maps to {dom.mapsTo}</span></h4>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] font-bold text-slate-400">
                         <span className="text-emerald-500 font-black">SSL: {dom.status} (Expires: {dom.expires})</span>
                         <span>DNS Check: <span className="text-emerald-500">{dom.dns}</span></span>
                         <span>Health: <span className="text-emerald-500 font-black">{dom.health}</span></span>
@@ -1013,7 +1013,7 @@ export default function WhiteLabel() {
                     key={sub}
                     onClick={() => handleCommSubTabChange(sub)}
                     className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-colors cursor-pointer ${commSubTab === sub
-                        ? 'bg-slate-850 text-white font-extrabold'
+                        ? 'bg-slate-800 text-white font-extrabold'
                         : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
                       }`}
                   >
@@ -1029,7 +1029,7 @@ export default function WhiteLabel() {
                     type="text"
                     value={commEmailSubject}
                     onChange={(e) => setCommEmailSubject(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-855"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800"
                   />
                 </div>
 
@@ -1039,7 +1039,7 @@ export default function WhiteLabel() {
                     type="text"
                     value={commGreeting}
                     onChange={(e) => setCommGreeting(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-855"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800"
                   />
                 </div>
 
@@ -1049,43 +1049,43 @@ export default function WhiteLabel() {
                     rows="4"
                     value={commMessageBody}
                     onChange={(e) => setCommMessageBody(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-855 placeholder:text-slate-400 font-sans"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800 placeholder:text-slate-400 font-sans"
                   />
                 </div>
 
                 {/* Send Test Email target address */}
-                <div className="bg-slate-50 border border-slate-150 rounded-2xl p-4 flex flex-col md:flex-row md:items-end justify-between gap-4">
-                  <div className="flex-grow">
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col md:flex-row md:items-end justify-between gap-4">
+                  <div className="flex-grow w-full md:w-auto">
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">Enter Test Email Target Address</label>
                     <input
                       type="email"
                       value={testEmailAddress}
                       onChange={(e) => setTestEmailAddress(e.target.value)}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 text-xs rounded-xl focus:outline-none"
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 text-xs rounded-xl focus:outline-none text-slate-800"
                     />
                   </div>
                   <button
                     onClick={handleSendTestEnvelope}
-                    className="bg-[#FFD400] hover:bg-[#FFC800] text-black font-black text-xs px-5 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shrink-0"
+                    className="w-full md:w-auto bg-[#FFD400] hover:bg-[#FFC800] text-black font-black text-xs px-5 py-2.5 rounded-xl transition-all cursor-pointer flex justify-center items-center gap-1.5 shrink-0"
                   >
                     <Play className="w-3.5 h-3.5 fill-black" /> Send Test Envelope
                   </button>
                 </div>
 
                 {/* Send Test SMS */}
-                <div className="bg-slate-50 border border-slate-150 rounded-2xl p-4 flex flex-col md:flex-row md:items-end justify-between gap-4">
-                  <div className="flex-grow">
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col md:flex-row md:items-end justify-between gap-4">
+                  <div className="flex-grow w-full md:w-auto">
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">Enter Test SMS Target Telephone</label>
                     <input
                       type="text"
                       value={testSmsPhone}
                       onChange={(e) => setTestSmsPhone(e.target.value)}
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 text-xs rounded-xl focus:outline-none"
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 text-xs rounded-xl focus:outline-none text-slate-800"
                     />
                   </div>
                   <button
                     onClick={handleSendTestSms}
-                    className="bg-[#FFD400] hover:bg-[#FFC800] text-black font-black text-xs px-5 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shrink-0"
+                    className="w-full md:w-auto bg-[#FFD400] hover:bg-[#FFC800] text-black font-black text-xs px-5 py-2.5 rounded-xl transition-all cursor-pointer flex justify-center items-center gap-1.5 shrink-0"
                   >
                     <Play className="w-3.5 h-3.5 fill-black" /> Send Test SMS
                   </button>
@@ -1108,7 +1108,7 @@ export default function WhiteLabel() {
                     type="text"
                     value={pdfHeader}
                     onChange={(e) => setPdfHeader(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800"
                   />
                 </div>
 
@@ -1118,12 +1118,12 @@ export default function WhiteLabel() {
                     type="text"
                     value={pdfFooter}
                     onChange={(e) => setPdfFooter(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="border border-slate-150 rounded-2xl p-4 flex items-center justify-between">
+                  <div className="border border-slate-200 rounded-2xl p-4 flex items-center justify-between">
                     <div>
                       <h4 className="text-xs font-extrabold text-slate-800">Document Watermark</h4>
                       <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Inject watermark on PODs & receipts.</p>
@@ -1136,7 +1136,7 @@ export default function WhiteLabel() {
                     />
                   </div>
 
-                  <div className="border border-slate-150 rounded-2xl p-4 flex items-center justify-between">
+                  <div className="border border-slate-200 rounded-2xl p-4 flex items-center justify-between">
                     <div>
                       <h4 className="text-xs font-extrabold text-slate-800">Verification QR Code</h4>
                       <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Attach tracking links to manifests.</p>
@@ -1150,17 +1150,17 @@ export default function WhiteLabel() {
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-3.5 pt-4">
+                <div className="flex flex-col sm:flex-row justify-end gap-3.5 pt-4">
                   <button
                     type="button"
                     onClick={() => { setPdfHeader('HERO LOGISTICS ENTERPRISE SOLUTION'); setPdfFooter('Confidential Document • Page {page} of {total}'); showNotification('Defaults loaded.'); }}
-                    className="border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer"
+                    className="w-full sm:w-auto border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer justify-center text-center"
                   >
                     Discard Changes
                   </button>
                   <button
                     type="submit"
-                    className="bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+                    className="w-full sm:w-auto bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex justify-center items-center gap-1.5"
                   >
                     <Save className="w-4 h-4" /> Save PDF Layout
                   </button>
@@ -1183,7 +1183,7 @@ export default function WhiteLabel() {
                     type="text"
                     value={loginGreeting}
                     onChange={(e) => setLoginGreeting(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800"
                   />
                 </div>
 
@@ -1207,13 +1207,13 @@ export default function WhiteLabel() {
                       type="text"
                       value={loginSupportUrl}
                       onChange={(e) => setLoginSupportUrl(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none"
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800"
                     />
                   </div>
                 </div>
 
                 {/* Toggles Matrix */}
-                <div className="border border-slate-150 rounded-2xl p-5 space-y-4 bg-white">
+                <div className="border border-slate-200 rounded-2xl p-5 space-y-4 bg-white">
                   <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider">Portal Overrides Branding Toggles Matrix</h3>
                   <div className="flex flex-wrap gap-8 text-xs font-bold text-slate-700">
                     <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -1248,17 +1248,17 @@ export default function WhiteLabel() {
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-3.5 pt-4">
+                <div className="flex flex-col sm:flex-row justify-end gap-3.5 pt-4">
                   <button
                     type="button"
                     onClick={() => { setLoginGreeting('Welcome to Enterprise Logistics OS'); showNotification('Defaults loaded.'); }}
-                    className="border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer"
+                    className="w-full sm:w-auto border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer justify-center text-center"
                   >
                     Discard Changes
                   </button>
                   <button
                     type="submit"
-                    className="bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+                    className="w-full sm:w-auto bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex justify-center items-center gap-1.5"
                   >
                     <Save className="w-4 h-4" /> Save Login Options
                   </button>
@@ -1285,7 +1285,7 @@ export default function WhiteLabel() {
                       placeholder="Detail the changes in this build (e.g. Unified portal theme, updated lights logos, redirected SMTP relays)..."
                       value={changelogText}
                       onChange={(e) => setChangelogText(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none placeholder:text-slate-400 font-sans"
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800 placeholder:text-slate-400 font-sans"
                     />
                   </div>
 
@@ -1304,7 +1304,7 @@ export default function WhiteLabel() {
 
                 <div className="space-y-4">
                   {releaseHistory.map((rel, idx) => (
-                    <div key={idx} className="border border-slate-150 rounded-2xl p-5 flex flex-col md:flex-row md:justify-between md:items-center gap-4 bg-white">
+                    <div key={idx} className="border border-slate-200 rounded-2xl p-5 flex flex-col md:flex-row md:justify-between md:items-center gap-4 bg-white">
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-2 flex-wrap">
                           <h4 className="text-base font-extrabold text-slate-800">{rel.version}</h4>
@@ -1352,7 +1352,7 @@ export default function WhiteLabel() {
                   <button
                     type="button"
                     onClick={handleExportAuditsCSV}
-                    className="border border-slate-200 bg-white hover:bg-slate-50 text-slate-750 font-extrabold text-xs px-4 py-2 rounded-xl shadow-xs transition-colors cursor-pointer"
+                    className="border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-extrabold text-xs px-4 py-2 rounded-xl shadow-xs transition-colors cursor-pointer"
                   >
                     Export Audits CSV
                   </button>
@@ -1377,7 +1377,7 @@ export default function WhiteLabel() {
                   </select>
                 </div>
 
-                <div className="border border-slate-150 rounded-2xl overflow-hidden divide-y divide-slate-100">
+                <div className="border border-slate-200 rounded-2xl overflow-hidden divide-y divide-slate-100">
                   {auditLogs
                     .filter(log => {
                       const matchesSearch = log.title.toLowerCase().includes(auditSearch.toLowerCase()) ||
@@ -1389,8 +1389,8 @@ export default function WhiteLabel() {
                       <div key={idx} className="p-5 flex justify-between items-start gap-4 hover:bg-slate-50/30 transition-colors bg-white">
                         <div className="space-y-1.5 text-left">
                           <h4 className="text-sm font-extrabold text-slate-800">{log.title}</h4>
-                          <p className="text-xs text-slate-650 font-semibold">{log.desc}</p>
-                          <div className="text-[10px] text-slate-450 font-bold mt-1">
+                          <p className="text-xs text-slate-600 font-semibold">{log.desc}</p>
+                          <div className="text-[10px] text-slate-400 font-bold mt-1">
                             Operator: {log.operator} • IP: {log.ip} • Browser: {log.browser}
                           </div>
                         </div>
@@ -1410,10 +1410,10 @@ export default function WhiteLabel() {
               </div>
 
               {/* MFA & CDN Policies Grid */}
-              <div className="bg-slate-50/30 border border-slate-150 rounded-2xl p-5">
+              <div className="bg-slate-50/30 border border-slate-200 rounded-2xl p-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <h3 className="text-xs font-black text-slate-450 uppercase tracking-wider mb-3">MFA Enforcement Toggles</h3>
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-3">MFA Enforcement Toggles</h3>
                     <label className="flex items-center gap-2.5 cursor-pointer select-none">
                       <input
                         type="checkbox"
@@ -1426,7 +1426,7 @@ export default function WhiteLabel() {
                   </div>
 
                   <div>
-                    <h3 className="text-xs font-black text-slate-450 uppercase tracking-wider mb-3">Branding Deployment Approval Policy</h3>
+                    <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-3">Branding Deployment Approval Policy</h3>
                     <label className="flex items-center gap-2.5 cursor-pointer select-none">
                       <input
                         type="checkbox"
@@ -1439,7 +1439,7 @@ export default function WhiteLabel() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5 pt-5 border-t border-slate-150">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5 pt-5 border-t border-slate-200">
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">Session Timeout limits</label>
                     <select
@@ -1472,15 +1472,15 @@ export default function WhiteLabel() {
 
                 <div className="space-y-3">
                   {developerKeys.map((key) => (
-                    <div key={key.id} className="border border-slate-150 rounded-2xl p-4 flex justify-between items-center gap-4 bg-white">
-                      <div className="text-left">
+                    <div key={key.id} className="border border-slate-200 rounded-2xl p-4 flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-white">
+                      <div className="text-left w-full sm:w-auto overflow-hidden">
                         <h4 className="text-xs font-extrabold text-slate-800">{key.name}</h4>
-                        <p className="text-[10px] font-mono text-slate-500 mt-1 font-semibold">
+                        <p className="text-[10px] font-mono text-slate-500 mt-1 font-semibold truncate block">
                           {key.visible ? key.value : '••••••••••••••••••••••••••••••••••••••••'}
                         </p>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
                         <button
                           type="button"
                           onClick={() => handleToggleKeyVisibility(key.id)}
@@ -1500,18 +1500,18 @@ export default function WhiteLabel() {
                   ))}
                 </div>
 
-                <form onSubmit={handleAddKey} className="flex gap-3 pt-2">
+                <form onSubmit={handleAddKey} className="flex flex-col sm:flex-row gap-3 pt-2">
                   <input
                     type="text"
                     required
                     placeholder="Add key name context (e.g. Stripe client secret)..."
                     value={newKeyName}
                     onChange={(e) => setNewKeyName(e.target.value)}
-                    className="flex-grow px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800"
+                    className="flex-grow w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800"
                   />
                   <button
                     type="submit"
-                    className="bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1 shrink-0"
+                    className="w-full sm:w-auto justify-center bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1 shrink-0"
                   >
                     <Plus className="w-4 h-4" /> Add Key
                   </button>
@@ -1529,10 +1529,10 @@ export default function WhiteLabel() {
 
               <div className="space-y-3">
                 {apiIntegrations.map((item, idx) => (
-                  <div key={idx} className="border border-slate-150 rounded-2xl p-5 flex justify-between items-center gap-4 bg-white hover:shadow-xs transition-shadow">
-                    <div className="text-left">
-                      <h4 className="text-sm font-extrabold text-slate-850">{item.name}</h4>
-                      <div className="text-[10px] font-bold text-slate-450 mt-1.5 flex items-center gap-1">
+                  <div key={idx} className="border border-slate-200 rounded-2xl p-5 flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-white hover:shadow-xs transition-shadow">
+                    <div className="text-left w-full sm:w-auto">
+                      <h4 className="text-sm font-extrabold text-slate-800">{item.name}</h4>
+                      <div className="text-[10px] font-bold text-slate-500 mt-1.5 flex items-center gap-1 flex-wrap">
                         <span>Status:</span>
                         <span className={`${item.status === 'Testing...'
                             ? 'text-yellow-600 animate-pulse'
@@ -1542,7 +1542,7 @@ export default function WhiteLabel() {
                           } font-black`}>
                           {item.status}
                         </span>
-                        <span className="mx-1">•</span>
+                        <span className="mx-1 hidden sm:inline">•</span>
                         <span>Health:</span>
                         <span className={`${item.health === 'Healthy'
                             ? 'text-[#10B981]'
@@ -1559,7 +1559,7 @@ export default function WhiteLabel() {
                       type="button"
                       onClick={() => handleTestConnection(item.name)}
                       disabled={item.status === 'Testing...'}
-                      className="border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-extrabold text-xs px-4 py-2 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 shrink-0"
+                      className="w-full sm:w-auto border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-extrabold text-xs px-4 py-2 rounded-xl transition-colors cursor-pointer flex justify-center items-center gap-1.5 shrink-0"
                     >
                       <Play className="w-3 h-3 fill-slate-700 text-slate-700" /> Test Connection
                     </button>
@@ -1575,7 +1575,7 @@ export default function WhiteLabel() {
                 <h2 className="text-lg font-black text-slate-800 mb-1">Asset Library Workspace</h2>
                 <p className="text-xs font-semibold text-slate-400">View and manage uploaded images, background assets, documents, and logos.</p>
               </div>
-              <div className="bg-slate-50 border border-slate-150 rounded-xl p-6 text-center text-xs text-slate-500 font-bold flex items-center justify-center gap-2">
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 text-center text-xs text-slate-500 font-bold flex items-center justify-center gap-2">
                 <ShieldAlert className="w-5 h-5 text-slate-400 shrink-0" />
                 Asset Library sub-module is active and verified.
               </div>
@@ -1671,7 +1671,7 @@ export default function WhiteLabel() {
             )}
 
             {previewTab === 'Email HTML' && (
-              <div className="flex-grow flex flex-col justify-between text-slate-850 bg-white border border-slate-100 rounded-xl p-4 overflow-hidden h-full shadow-inner">
+              <div className="flex-grow flex flex-col justify-between text-slate-800 bg-white border border-slate-100 rounded-xl p-4 overflow-hidden h-full shadow-inner">
                 <div className="space-y-2.5">
                   <div className="border-b border-slate-100 pb-2">
                     <div className="text-[9px] font-bold text-slate-400">From: <span className="text-slate-600 font-extrabold">notifications@herologistics.com</span></div>
@@ -1702,7 +1702,7 @@ export default function WhiteLabel() {
                 <div className="space-y-3">
                   <div className="border-b border-slate-200 pb-2 text-center">
                     <h3 className="text-xs font-black text-slate-900 tracking-wider uppercase">{pdfHeader}</h3>
-                    <span className="text-[8px] text-slate-450 font-bold block mt-0.5">VERIFIED BY {liveBranding.shortName.toUpperCase()} OS</span>
+                    <span className="text-[8px] text-slate-400 font-bold block mt-0.5">VERIFIED BY {liveBranding.shortName.toUpperCase()} OS</span>
                   </div>
                   <div className="space-y-1 text-[9px] text-slate-600 font-bold flex justify-between items-end">
                     <div className="space-y-1">
@@ -1711,7 +1711,7 @@ export default function WhiteLabel() {
                       <div>CARRIER ID: <span>SWIFT-CARGO-EXP</span></div>
                     </div>
                     {pdfQrCode && (
-                      <div className="w-12 h-12 bg-white border border-slate-250 p-1 flex items-center justify-center shrink-0">
+                      <div className="w-12 h-12 bg-white border border-slate-200 p-1 flex items-center justify-center shrink-0">
                         <div className="w-full h-full bg-slate-800 grid grid-cols-3 gap-0.5 p-0.5 opacity-80">
                           <div className="bg-white"></div><div className="bg-slate-800"></div><div className="bg-white"></div>
                           <div className="bg-slate-800"></div><div className="bg-white"></div><div className="bg-slate-800"></div>
@@ -1729,11 +1729,11 @@ export default function WhiteLabel() {
             )}
 
             {previewTab === 'Login Panel' && (
-              <div className="flex-grow flex flex-col items-center justify-center text-slate-850 bg-slate-100 rounded-xl p-5 overflow-hidden h-full relative" style={{ backgroundImage: `url(${liveBranding.loginBg})`, backgroundSize: 'cover' }}>
+              <div className="flex-grow flex flex-col items-center justify-center text-slate-800 bg-slate-100 rounded-xl p-5 overflow-hidden h-full relative" style={{ backgroundImage: `url(${liveBranding.loginBg})`, backgroundSize: 'cover' }}>
                 <div className="bg-white/95 border border-slate-200/50 rounded-2xl p-4 shadow-md w-full max-w-[210px] text-center space-y-3">
                   <div>
                     <h4 className="text-[10px] font-black text-slate-900">{loginGreeting}</h4>
-                    <span className="text-[7px] text-slate-450 font-bold block mt-0.5">Illustration: {loginIllustration}</span>
+                    <span className="text-[7px] text-slate-400 font-bold block mt-0.5">Illustration: {loginIllustration}</span>
                   </div>
 
                   <div className="space-y-1">
@@ -1741,7 +1741,7 @@ export default function WhiteLabel() {
                     <input type="password" disabled placeholder="password" className="w-full px-2 py-1 text-[8px] bg-slate-50 border border-slate-200 rounded focus:outline-none" />
                   </div>
 
-                  <div className="flex justify-center gap-1.5 text-[6px] font-bold text-slate-450">
+                  <div className="flex justify-center gap-1.5 text-[6px] font-bold text-slate-400">
                     {loginToggles.driverApp && <span>• Driver</span>}
                     {loginToggles.dispatcherPortal && <span>• Dispatcher</span>}
                     {loginToggles.customerPortal && <span>• Customer</span>}

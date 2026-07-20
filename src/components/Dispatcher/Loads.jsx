@@ -322,7 +322,7 @@ export default function Loads() {
                   placeholder="Search Reference, Client..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-850 bg-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
+                  className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 bg-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
                 />
               </div>
               <button 
@@ -339,7 +339,7 @@ export default function Loads() {
             {/* Card 1: Unassigned */}
             <div 
               onClick={() => setSelectedStatCard('Unassigned')}
-              className={`bg-white rounded-[24px] p-6 text-left flex flex-col justify-between h-36 transition-all duration-200 cursor-pointer hover:border-slate-350 hover:shadow-xs select-none ${
+              className={`bg-white rounded-[24px] p-6 text-left flex flex-col justify-between h-36 transition-all duration-200 cursor-pointer hover:border-slate-400 hover:shadow-xs select-none ${
                 selectedStatCard === 'Unassigned' 
                   ? 'border-2 border-slate-900 shadow-sm' 
                   : 'border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.01)]'
@@ -477,7 +477,7 @@ export default function Loads() {
                         <span className={`px-2.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider leading-none ${
                           load.priority === 'HIGH' ? 'bg-red-50 text-red-655 border border-red-100/50' :
                           load.priority === 'MEDIUM' ? 'bg-amber-50 text-amber-600 border border-amber-100/50' :
-                          'bg-slate-50 text-slate-550 border border-slate-200'
+                          'bg-slate-50 text-slate-500 border border-slate-200'
                         }`}>
                           {load.priority}
                         </span>
@@ -491,7 +491,7 @@ export default function Loads() {
                       <td className="px-6 py-5 whitespace-nowrap text-right pr-10 align-middle">
                         <button 
                           onClick={() => { setSelectedLoad(load); setShowDetailsModal(true); }}
-                          className="px-4 py-1.5 border border-slate-250 hover:bg-slate-50 text-slate-700 font-extrabold text-[10px] rounded-xl cursor-pointer transition-colors shadow-3xs uppercase tracking-wider"
+                          className="px-4 py-1.5 border border-slate-200 hover:bg-slate-50 text-slate-700 font-extrabold text-[10px] rounded-xl cursor-pointer transition-colors shadow-3xs uppercase tracking-wider"
                         >
                           DETAILS
                         </button>
@@ -698,7 +698,7 @@ export default function Loads() {
             <div className="flex items-center gap-3">
               <button 
                 onClick={handleSaveDraft}
-                className="px-5 py-2.5 border border-slate-250 hover:bg-slate-50 text-slate-700 font-extrabold text-xs rounded-xl cursor-pointer transition-colors shadow-3xs bg-white uppercase tracking-wider"
+                className="px-5 py-2.5 border border-slate-200 hover:bg-slate-50 text-slate-700 font-extrabold text-xs rounded-xl cursor-pointer transition-colors shadow-3xs bg-white uppercase tracking-wider"
               >
                 SAVE DRAFT
               </button>
@@ -739,7 +739,7 @@ export default function Loads() {
                 {/* Dashboard timeline representation of stops */}
                 <div className="relative pl-6 space-y-5 before:content-[''] before:absolute before:left-[9px] before:top-2 before:bottom-6 before:w-0.5 before:border-l before:border-dashed before:border-slate-200">
                   {stops.map((stop, index) => (
-                    <div key={stop.id} className="relative bg-slate-50/50 border border-slate-150/60 p-5 rounded-2xl space-y-4">
+                    <div key={stop.id} className="relative bg-slate-50/50 border border-slate-200/60 p-5 rounded-2xl space-y-4">
                       {/* Step Number Badge */}
                       <span className="absolute -left-[22px] top-4 w-5 h-5 rounded-full bg-slate-900 border-2 border-white text-white flex items-center justify-center text-[9px] font-black shadow-xs z-10 select-none">
                         {index + 1}
@@ -875,7 +875,7 @@ export default function Loads() {
                       onDragOver={handleDragOver}
                       onDrop={() => handleDrop(index)}
                       className={`p-5 border rounded-2xl transition-all ${
-                        draggedItemIndex === index ? 'border-amber-400 bg-amber-50/10' : 'border-slate-150/60 bg-white hover:border-slate-300'
+                        draggedItemIndex === index ? 'border-amber-400 bg-amber-50/10' : 'border-slate-200/60 bg-white hover:border-slate-300'
                       }`}
                     >
                       <div className="flex justify-between items-center mb-3">
@@ -999,7 +999,7 @@ export default function Loads() {
                     type="text"
                     value={customerRef}
                     onChange={(e) => setCustomerRef(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-800 rounded-xl text-xs font-bold text-slate-850 focus:outline-none"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-800 rounded-xl text-xs font-bold text-slate-800 focus:outline-none"
                   />
                 </div>
 
@@ -1016,7 +1016,7 @@ export default function Loads() {
                         className={`flex-1 py-2 text-[9px] font-black rounded-lg uppercase tracking-wider transition-all cursor-pointer ${
                           priorityTier === tier 
                             ? 'bg-[#FFA000] text-black font-black shadow-xs' 
-                            : 'bg-slate-800 hover:bg-slate-750 text-slate-400 font-bold border border-slate-700/50'
+                            : 'bg-slate-800 hover:bg-slate-700 text-slate-400 font-bold border border-slate-700/50'
                         }`}
                       >
                         {tier}
@@ -1036,7 +1036,7 @@ export default function Loads() {
                       value={globalDeadline}
                       onChange={(e) => setGlobalDeadline(e.target.value)}
                       placeholder="dd-mm-yyyy --:--"
-                      className="w-full pl-8 pr-3.5 py-2.5 bg-white border border-slate-800 rounded-xl text-xs font-bold text-slate-850 focus:outline-none"
+                      className="w-full pl-8 pr-3.5 py-2.5 bg-white border border-slate-800 rounded-xl text-xs font-bold text-slate-800 focus:outline-none"
                     />
                   </div>
                 </div>
@@ -1050,8 +1050,8 @@ export default function Loads() {
                     onClick={() => triggerToast('Select and upload shipping manifest PDF...')}
                     className="border border-dashed border-slate-200 p-5 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-slate-50 transition-colors cursor-pointer select-none"
                   >
-                    <FileText className="w-5 h-5 text-slate-650" />
-                    <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wide">MANIFEST</span>
+                    <FileText className="w-5 h-5 text-slate-600" />
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">MANIFEST</span>
                   </div>
                   <div 
                     onClick={() => triggerToast('Select and upload cargo photos...')}
