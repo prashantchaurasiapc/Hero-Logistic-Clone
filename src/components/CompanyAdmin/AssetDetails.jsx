@@ -2414,15 +2414,24 @@ export default function AssetDetails({ assetData, onBack }) {
 
       {/* MAIN SECTION BELOW TABS: COSTS & DEPRECIATION TAB */}
       {activeTab === 'Costs & Depreciation' && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col mb-8 overflow-hidden">
-          
+        <div className="space-y-6">
+          {/* Inner Navigation Tabs */}
+          <div className="flex items-center gap-6 border-b border-slate-200 overflow-x-auto custom-scrollbar">
+            {['Cost Overview', 'All Costs & Expenses', 'Depreciation Schedule', 'Cost by Category', 'Cost by Branch / Location', 'Tax & Compliance'].map(tab => (
+              <button
+                key={tab}
+                onClick={() => setActiveCostTab(tab)}
+                className={`pb-3 text-xs font-bold transition-all border-b-2 cursor-pointer whitespace-nowrap ${activeCostTab === tab ? 'text-purple-700 border-purple-700' : 'text-slate-500 border-transparent hover:text-slate-800'}`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
 
-
-          {/* Tab Content Area */}
-          <div className="flex flex-col xl:flex-row border-t border-slate-100">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
             
             {/* Left Column (Table) */}
-            <div className="flex-1 border-r border-slate-200 p-0 flex flex-col min-w-0">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full">
               
               {/* Filter Bar */}
               <div className="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-white">
@@ -2529,10 +2538,10 @@ export default function AssetDetails({ assetData, onBack }) {
             </div>
 
             {/* Right Column (Sidebar Summaries) */}
-            <div className="w-full xl:w-[320px] bg-white p-5 flex flex-col gap-6 shrink-0">
+            <div className="flex flex-col gap-6">
               
               {/* Cost Summary Section */}
-              <div>
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
                 <div className="flex justify-between items-center mb-3">
                   <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">COST SUMMARY (FY 2024-2025)</h4>
                   <span className="text-[9px] font-bold text-purple-600 cursor-pointer hover:underline">View Report →</span>
@@ -2573,7 +2582,7 @@ export default function AssetDetails({ assetData, onBack }) {
               </div>
 
               {/* Depreciation Summary */}
-              <div>
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
                 <div className="flex justify-between items-center mb-3">
                   <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">DEPRECIATION SUMMARY</h4>
                   <span className="text-[9px] font-bold text-purple-600 cursor-pointer hover:underline">View Report →</span>
@@ -2663,7 +2672,7 @@ export default function AssetDetails({ assetData, onBack }) {
               </div>
 
               {/* Chart: Cost By Category */}
-              <div>
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
                 <div className="flex justify-between items-center mb-3">
                   <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">COST BY CATEGORY (FY 2024-2025)</h4>
                   <span className="text-[9px] font-bold text-purple-600 cursor-pointer hover:underline">View Chart →</span>
@@ -2711,7 +2720,7 @@ export default function AssetDetails({ assetData, onBack }) {
               </div>
 
               {/* Chart: Monthly Cost Trend */}
-              <div>
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
                 <div className="flex justify-between items-center mb-3">
                   <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">MONTHLY COST TREND (FY 2024-2025)</h4>
                   <span className="text-[9px] font-bold text-purple-600 cursor-pointer hover:underline">View Chart →</span>
@@ -2742,7 +2751,7 @@ export default function AssetDetails({ assetData, onBack }) {
               </div>
 
               {/* Quick Actions & Recent Cost Alerts Row */}
-              <div className="flex gap-4">
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex gap-4">
                 <div className="flex-1">
                   <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest mb-2">QUICK ACTIONS</h4>
                   <div className="space-y-2">
@@ -2796,17 +2805,101 @@ export default function AssetDetails({ assetData, onBack }) {
               </div>
 
             </div>
+          </div>
 
+          {/* DEVELOPER NOTES (For Costs & Depreciation) */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mt-6">
+            <div className="p-4 border-b border-slate-100 flex items-center gap-2">
+              <div className="bg-purple-600 p-1.5 rounded text-white">
+                <Code size={14} />
+              </div>
+              <h3 className="text-[11px] font-black text-purple-700 uppercase tracking-widest">DEVELOPER NOTES - ASSET COSTS & DEPRECIATION</h3>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-6 p-6">
+              {/* Col 1 */}
+              <div>
+                <h4 className="text-[11px] font-black text-slate-800 mb-3 flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center text-[9px] text-slate-600 border border-slate-200">1</div> 
+                  <span>PURPOSE</span>
+                </h4>
+                <ul className="space-y-2 text-[10px] font-semibold text-slate-500 list-disc list-inside marker:text-slate-300">
+                  <li className="pl-1">Track all costs, expenses and depreciation.</li>
+                  <li className="pl-1">Support financial reporting and tax compliance.</li>
+                  <li className="pl-1">Provide clear visibility of asset profitability.</li>
+                </ul>
+              </div>
+              
+              {/* Col 2 */}
+              <div>
+                <h4 className="text-[11px] font-black text-slate-800 mb-3 flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center text-[9px] text-slate-600 border border-slate-200">2</div> 
+                  <span>KEY FEATURES</span>
+                </h4>
+                <ul className="space-y-2 text-[10px] font-semibold text-slate-500 list-disc list-inside marker:text-slate-300">
+                  <li className="pl-1">Record recurring and one-off costs.</li>
+                  <li className="pl-1">Depreciation calculation (straight line by default).</li>
+                  <li className="pl-1">Cost categorisation and trend analysis.</li>
+                  <li className="pl-1">Export reports for accounting integration.</li>
+                </ul>
+              </div>
+              
+              {/* Col 3 */}
+              <div>
+                <h4 className="text-[11px] font-black text-slate-800 mb-3 flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center text-[9px] text-slate-600 border border-slate-200">3</div> 
+                  <span>AUTOMATION & ALERTS</span>
+                </h4>
+                <ul className="space-y-2 text-[10px] font-semibold text-slate-500 list-disc list-inside marker:text-slate-300">
+                  <li className="pl-1">Auto-calculate depreciation based on rules.</li>
+                  <li className="pl-1">Alert for upcoming large expenses.</li>
+                  <li className="pl-1">Predict annual cost based on patterns.</li>
+                  <li className="pl-1">AI insights for cost optimisation (AI add-on).</li>
+                </ul>
+              </div>
+
+              {/* Col 4 */}
+              <div>
+                <h4 className="text-[11px] font-black text-slate-800 mb-3 flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center text-[9px] text-slate-600 border border-slate-200">4</div> 
+                  <span>PERMISSIONS</span>
+                </h4>
+                <ul className="space-y-2 text-[10px] font-semibold text-slate-500 list-disc list-inside marker:text-slate-300">
+                  <li className="pl-1">Super Admin: Full access.</li>
+                  <li className="pl-1">Admin/Manager: Create, edit, approve.</li>
+                  <li className="pl-1">Accounts: View financial data & export.</li>
+                  <li className="pl-1">Staff: View assigned asset costs.</li>
+                </ul>
+              </div>
+
+              {/* Col 5 */}
+              <div>
+                <h4 className="text-[11px] font-black text-slate-800 mb-3 flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center text-[9px] text-slate-600 border border-slate-200">5</div> 
+                  <span>DATA SOURCES</span>
+                </h4>
+                <ul className="space-y-2 text-[10px] font-semibold text-slate-500 list-disc list-inside marker:text-slate-300">
+                  <li className="pl-1">Costs & Expenses module.</li>
+                  <li className="pl-1">Maintenance module.</li>
+                  <li className="pl-1">Fuel & Usage module.</li>
+                  <li className="pl-1">Invoices & Receipts (OCR).</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div className="bg-slate-50/80 border-t border-slate-100 p-4 flex items-center justify-between">
+              <span className="text-[9px] font-bold text-slate-500">All times shown in your local time (AEST)</span>
+              <div className="flex items-center gap-2 text-[9px] font-bold text-slate-500">
+                Data auto-refreshes every 5 minutes
+                <RefreshCw size={10} className="text-slate-400" />
+              </div>
+            </div>
           </div>
         </div>
       )}
 
       {/* OTHER TABS PLACEHOLDERS */}
-<<<<<<< HEAD
-      {activeTab !== 'Overview' && activeTab !== 'Specifications' && activeTab !== 'Assignments & History' && activeTab !== 'Costs & Depreciation' && (
-=======
-      {activeTab !== 'Overview' && activeTab !== 'Specifications' && activeTab !== 'Assignments & History' && activeTab !== 'Maintenance & Service' && activeTab !== 'Compliance & Documents' && (
->>>>>>> b59ce7932c59f4b071a5559594a349f77a6f789d
+      {activeTab !== 'Overview' && activeTab !== 'Specifications' && activeTab !== 'Assignments & History' && activeTab !== 'Costs & Depreciation' && activeTab !== 'Maintenance & Service' && activeTab !== 'Compliance & Documents' && (
         <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm text-center">
           <div className="w-12 h-12 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center mx-auto mb-3">
             <Layers size={24} />
@@ -3214,45 +3307,7 @@ export default function AssetDetails({ assetData, onBack }) {
         </div>
       )}
 
-      {/* DEVELOPER NOTES (For Costs & Depreciation) */}
-      {activeTab === 'Costs & Depreciation' && (
-        <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-5 mb-8">
-          <div className="flex items-center gap-2 mb-3">
-            <Info size={16} className="text-blue-600" />
-            <h4 className="text-xs font-black text-blue-900 uppercase tracking-widest">Developer Notes: Costs & Depreciation Module</h4>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-            <div>
-              <ul className="space-y-2">
-                <li className="flex items-start gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0"></div>
-                  <p className="text-[11px] text-blue-800 leading-relaxed font-medium"><strong>Purpose:</strong> This view provides a comprehensive breakdown of all costs associated with the asset (fuel, maintenance, insurance) alongside its current depreciation schedule and book value.</p>
-                </li>
-                <li className="flex items-start gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0"></div>
-                  <p className="text-[11px] text-blue-800 leading-relaxed font-medium"><strong>Key Features:</strong> Sub-tabs for granular cost analysis, filterable cost expense table, interactive donut chart (Cost by Category), line chart (Monthly Trend), and actionable alerts.</p>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <ul className="space-y-2">
-                <li className="flex items-start gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0"></div>
-                  <p className="text-[11px] text-blue-800 leading-relaxed font-medium"><strong>Automation & Alerts:</strong> "Recent Cost Alerts" pulls data from upcoming maintenance schedules and impending insurance/registration renewals.</p>
-                </li>
-                <li className="flex items-start gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0"></div>
-                  <p className="text-[11px] text-blue-800 leading-relaxed font-medium"><strong>Permissions:</strong> Financial data (Purchase Price, Depreciation, Total Costs) is restricted to Finance/Admin roles. Standard drivers only see basic info.</p>
-                </li>
-                <li className="flex items-start gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0"></div>
-                  <p className="text-[11px] text-blue-800 leading-relaxed font-medium"><strong>Data Sources:</strong> Costs pull from <code className="bg-blue-100 px-1 py-0.5 rounded text-[10px]">assets_costs</code> and <code className="bg-blue-100 px-1 py-0.5 rounded text-[10px]">asset_depreciation</code> tables.</p>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      )}
+
 
     </div>
   );
