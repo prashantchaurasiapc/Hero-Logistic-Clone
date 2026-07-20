@@ -233,7 +233,7 @@ export default function SystemAnalytics() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-slate-150 text-[10px] font-black text-slate-400 uppercase tracking-wider">
+              <tr className="border-b border-slate-200 text-[10px] font-black text-slate-400 uppercase tracking-wider">
                 <th className="pb-4 font-black">COMPANY</th>
                 <th className="pb-4 text-center font-black">MONTHLY LOGINS</th>
                 <th className="pb-4 text-center font-black">ACTIVE USERS</th>

@@ -12,13 +12,13 @@ export default function Labels({
   const [density, setDensity] = useState('compact');
   const [colsMenuOpen, setColsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   // Selected rows
   const [selectedRows, setSelectedRows] = useState([]);
-  
+
   // Preview modal state
   const [previewLabel, setPreviewLabel] = useState(null);
-  
+
   // Details modal state
   const [detailsLabel, setDetailsLabel] = useState(null);
 
@@ -156,7 +156,7 @@ export default function Labels({
             </button>
             <button
               onClick={() => setLogisticsMode('general_freight')}
-              className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ${logisticsMode === 'general_freight' ? 'bg-[#FFD400] text-slate-955 font-extrabold shadow-xs' : 'text-slate-550'}`}
+              className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ${logisticsMode === 'general_freight' ? 'bg-[#FFD400] text-slate-955 font-extrabold shadow-xs' : 'text-slate-500'}`}
             >
               General Freight
             </button>
@@ -168,14 +168,14 @@ export default function Labels({
           >
             <span>Barcode Simulator</span>
           </button>
-          
+
           <button
             onClick={onManualEntryClick}
             className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-bold border border-[#f59e0b]/40 text-[#f59e0b] hover:bg-[#f59e0b]/10 rounded-xl transition-all hover:scale-[1.03] active:scale-[0.97] cursor-pointer shadow-xs select-none focus:outline-none"
           >
             <span>Manual Entry</span>
           </button>
-          
+
           <button
             onClick={onExportStockClick}
             className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-black bg-gradient-to-r from-[#FFD400] to-[#FF9A00] text-slate-950 rounded-xl transition-all hover:scale-[1.03] active:scale-[0.97] cursor-pointer shadow-md select-none hover:shadow-lg focus:outline-none"
@@ -190,38 +190,38 @@ export default function Labels({
         <div className="bg-white border border-slate-200 rounded-2xl p-4.5 shadow-xs">
           <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Total Labels</span>
           <strong className="text-2xl font-black text-slate-900 block mt-1">{totalLabels}</strong>
-          <span className="text-[10px] text-slate-450 font-medium block mt-1">Generated tags</span>
+          <span className="text-[10px] text-slate-400 font-medium block mt-1">Generated tags</span>
         </div>
         <div className="bg-white border border-slate-200 rounded-2xl p-4.5 shadow-xs">
           <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Printed Labels</span>
           <strong className="text-2xl font-black text-slate-900 block mt-1">{printedCount}</strong>
-          <span className="text-[10px] text-slate-450 font-medium block mt-1">Successfully spooled</span>
+          <span className="text-[10px] text-slate-400 font-medium block mt-1">Successfully spooled</span>
         </div>
         <div className="bg-white border border-slate-200 rounded-2xl p-4.5 shadow-xs">
           <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Pending Labels</span>
           <strong className="text-2xl font-black text-slate-900 block mt-1">{pendingCount}</strong>
-          <span className="text-[10px] text-slate-450 font-medium block mt-1">In print queue</span>
+          <span className="text-[10px] text-slate-400 font-medium block mt-1">In print queue</span>
         </div>
         <div className="bg-white border border-slate-200 rounded-2xl p-4.5 shadow-xs">
           <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Failed Labels</span>
           <strong className="text-2xl font-black text-slate-900 block mt-1">{failedCount}</strong>
-          <span className="text-[10px] text-slate-450 font-medium block mt-1">Printer errors</span>
+          <span className="text-[10px] text-slate-400 font-medium block mt-1">Printer errors</span>
         </div>
         <div className="bg-white border border-slate-200 rounded-2xl p-4.5 shadow-xs">
           <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Reprinted Labels</span>
           <strong className="text-2xl font-black text-slate-900 block mt-1">{reprintedCount}</strong>
-          <span className="text-[10px] text-slate-450 font-medium block mt-1">Duplicate tags</span>
+          <span className="text-[10px] text-slate-400 font-medium block mt-1">Duplicate tags</span>
         </div>
       </div>
 
       {/* Main Label Management Card Container */}
       <div className="glass rounded-2xl p-5 border border-slate-200 bg-white text-left space-y-4 shadow-xs">
-        
+
         {/* Table top header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-2 border-b border-slate-100">
           <div>
             <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Label Management</h3>
-            <p className="text-xs text-slate-450 mt-1">Manage and track generated asset barcode tags.</p>
+            <p className="text-xs text-slate-400 mt-1">Manage and track generated asset barcode tags.</p>
           </div>
 
           <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -250,7 +250,7 @@ export default function Labels({
 
         {/* Table density and column filters control row */}
         <div className="flex justify-end items-center gap-3 relative">
-          
+
           {/* Density selection */}
           <div className="flex bg-slate-100 border border-slate-200 rounded-xl p-1 text-[9px] font-bold">
             {['COMPACT', 'DEFAULT', 'RELAXED'].map((mode) => {
@@ -259,7 +259,7 @@ export default function Labels({
                 <button
                   key={mode}
                   onClick={() => setDensity(mode.toLowerCase())}
-                  className={`px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer ${isActive ? 'bg-[#FFD400] text-slate-950 font-extrabold shadow-xs' : 'text-slate-550'}`}
+                  className={`px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer ${isActive ? 'bg-[#FFD400] text-slate-950 font-extrabold shadow-xs' : 'text-slate-500'}`}
                 >
                   {mode}
                 </button>
@@ -280,8 +280,8 @@ export default function Labels({
           {colsMenuOpen && (
             <div className="absolute right-0 top-full mt-2 z-20 w-48 bg-white border border-slate-200 rounded-2xl shadow-2xl p-4 text-slate-800 animate-fade-in">
               <div className="flex justify-between items-center pb-2 border-b border-slate-100 mb-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-550">Column Visibility</span>
-                <button onClick={() => setColsMenuOpen(false)} className="text-slate-450">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Column Visibility</span>
+                <button onClick={() => setColsMenuOpen(false)} className="text-slate-400">
                   <X className="h-3 w-3" />
                 </button>
               </div>
@@ -367,7 +367,7 @@ export default function Labels({
                       </td>
                     )}
                     {visibleCols.assetType && (
-                      <td className={`text-slate-550 whitespace-nowrap ${getPaddingClass(density)}`}>
+                      <td className={`text-slate-500 whitespace-nowrap ${getPaddingClass(density)}`}>
                         {row.assetType}
                       </td>
                     )}
@@ -385,12 +385,11 @@ export default function Labels({
                     )}
                     {visibleCols.printStatus && (
                       <td className={`whitespace-nowrap ${getPaddingClass(density)}`}>
-                        <span className={`inline-flex px-2 py-0.5 text-[9px] font-black rounded-lg border uppercase ${
-                          row.status === 'PRINTED' ? 'bg-slate-50 text-slate-600 border-slate-200' :
-                          row.status === 'PENDING' ? 'bg-amber-50 text-amber-500 border-amber-250/50' :
-                          row.status === 'FAILED' ? 'bg-rose-50 text-rose-600 border-rose-200' :
-                          'bg-slate-50 text-slate-550 border-slate-200' // Reprinted
-                        }`}>
+                        <span className={`inline-flex px-2 py-0.5 text-[9px] font-black rounded-lg border uppercase ${row.status === 'PRINTED' ? 'bg-slate-50 text-slate-600 border-slate-200' :
+                            row.status === 'PENDING' ? 'bg-amber-50 text-amber-500 border-amber-250/50' :
+                              row.status === 'FAILED' ? 'bg-rose-50 text-rose-600 border-rose-200' :
+                                'bg-slate-50 text-slate-500 border-slate-200' // Reprinted
+                          }`}>
                           {row.status}
                         </span>
                       </td>
@@ -405,14 +404,14 @@ export default function Labels({
                             <Printer className="h-3 w-3 text-slate-400" />
                             <span>Print</span>
                           </button>
-                          
+
                           <button
                             onClick={() => handleReprint(row.id)}
                             className="inline-flex items-center justify-center gap-1 py-1.5 px-2 bg-white hover:bg-slate-50 border border-[#f59e0b]/45 text-[#f59e0b] text-[10px] font-bold rounded-lg transition-all hover:scale-[1.02] cursor-pointer"
                           >
                             <span>Reprint</span>
                           </button>
-                          
+
                           <button
                             onClick={() => setPreviewLabel(row)}
                             className="inline-flex items-center justify-center gap-1 py-1.5 px-2 bg-white hover:bg-slate-50 border border-[#f59e0b]/45 text-[#f59e0b] text-[10px] font-bold rounded-lg transition-all hover:scale-[1.02] cursor-pointer"
@@ -420,7 +419,7 @@ export default function Labels({
                             <Eye className="h-3 w-3 text-[#f59e0b]/80" />
                             <span>Preview</span>
                           </button>
-                          
+
                           <button
                             onClick={() => {
                               if (triggerToast) triggerToast(`Mock PDF tag document generated for ${row.id}`);
@@ -430,7 +429,7 @@ export default function Labels({
                             <Download className="h-3 w-3 text-[#f59e0b]/80" />
                             <span>PDF</span>
                           </button>
-                          
+
                           <button
                             onClick={() => setDetailsLabel(row)}
                             className="inline-flex items-center justify-center gap-1 py-1.5 px-2 bg-white hover:bg-slate-50 border border-[#f59e0b]/45 text-[#f59e0b] text-[10px] font-bold rounded-lg transition-all hover:scale-[1.02] cursor-pointer"
@@ -438,7 +437,7 @@ export default function Labels({
                             <Info className="h-3 w-3 text-[#f59e0b]/80" />
                             <span>Details</span>
                           </button>
-                          
+
                           <button
                             onClick={() => {
                               if (triggerToast) triggerToast(`Audit log history fetched for label ${row.id}`);
@@ -472,7 +471,7 @@ export default function Labels({
 
             <div className="text-center pb-2 border-b border-slate-100">
               <strong className="text-sm font-black text-slate-900 uppercase tracking-wider">Zebra Barcode Preview</strong>
-              <p className="text-[10px] text-slate-450 mt-0.5">Asset tag generated on {previewLabel.generated}</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">Asset tag generated on {previewLabel.generated}</p>
             </div>
 
             {/* Mock Zebra Physical Barcode Sticker */}
@@ -539,7 +538,7 @@ export default function Labels({
                 </div>
                 <div>
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">VIN / SKU</span>
-                  <strong className="text-slate-850 font-mono font-bold block mt-0.5">{detailsLabel.vin}</strong>
+                  <strong className="text-slate-800 font-mono font-bold block mt-0.5">{detailsLabel.vin}</strong>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">

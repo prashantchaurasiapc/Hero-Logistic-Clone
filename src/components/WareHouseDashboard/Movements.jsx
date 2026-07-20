@@ -85,7 +85,7 @@ export default function Movements({
             </button>
             <button
               onClick={() => setLogisticsMode('general_freight')}
-              className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ${logisticsMode === 'general_freight' ? 'bg-[#FFD400] text-slate-955 font-extrabold shadow-xs' : 'text-slate-550'}`}
+              className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ${logisticsMode === 'general_freight' ? 'bg-[#FFD400] text-slate-955 font-extrabold shadow-xs' : 'text-slate-500'}`}
             >
               General Freight
             </button>
@@ -123,14 +123,14 @@ export default function Movements({
           
           <div className="flex items-center gap-3 relative self-end sm:self-auto">
             {/* Density switch */}
-            <div className="flex bg-slate-100 border border-slate-200 rounded-xl p-1 text-[9px] font-bold">
+            <div className="flex bg-slate-100 border border-slate-200 rounded-xl p-1 text-[9px] font-bold shrink-0">
               {['COMPACT', 'DEFAULT', 'RELAXED'].map((mode) => {
                 const isActive = density === mode.toLowerCase();
                 return (
                   <button
                     key={mode}
                     onClick={() => setDensity(mode.toLowerCase())}
-                    className={`px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer ${isActive ? 'bg-[#FFD400] text-slate-950 font-extrabold shadow-xs' : 'text-slate-550'}`}
+                    className={`px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer ${isActive ? 'bg-[#FFD400] text-slate-950 font-extrabold shadow-xs' : 'text-slate-500'}`}
                   >
                     {mode}
                   </button>
@@ -141,7 +141,7 @@ export default function Movements({
             {/* Columns configure */}
             <button
               onClick={() => setColsMenuOpen(!colsMenuOpen)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 border border-slate-200 hover:bg-slate-50 text-slate-655 font-bold text-[9px] uppercase rounded-xl cursor-pointer focus:outline-none"
+              className="inline-flex items-center gap-1.5 px-3 py-2 border border-slate-200 hover:bg-slate-50 text-slate-655 font-bold text-[9px] uppercase rounded-xl cursor-pointer focus:outline-none shrink-0 whitespace-nowrap"
             >
               <Settings className="h-3.5 w-3.5 text-slate-400" />
               <span>Columns</span>
@@ -151,8 +151,8 @@ export default function Movements({
             {colsMenuOpen && (
               <div className="absolute right-0 top-full mt-2 z-20 w-48 bg-white border border-slate-200 rounded-2xl shadow-2xl p-4 text-slate-800 animate-fade-in">
                 <div className="flex justify-between items-center pb-2 border-b border-slate-100 mb-2">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-550">Column Visibility</span>
-                  <button onClick={() => setColsMenuOpen(false)} className="text-slate-450">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Column Visibility</span>
+                  <button onClick={() => setColsMenuOpen(false)} className="text-slate-400">
                     <X className="h-3 w-3" />
                   </button>
                 </div>

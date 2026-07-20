@@ -163,7 +163,7 @@ export default function WarehouseMap({
                       className={`p-3.5 rounded-xl border transition-all cursor-pointer text-xs space-y-2 text-left relative ${
                         isSelected
                           ? 'bg-white border-[#f59e0b] shadow-md shadow-[#f59e0b]/5 ring-1 ring-[#f59e0b]'
-                          : 'bg-white border-slate-200 hover:border-slate-350'
+                          : 'bg-white border-slate-200 hover:border-slate-400'
                       }`}
                     >
                       <div className="flex justify-between items-center">
@@ -218,7 +218,7 @@ export default function WarehouseMap({
                     className={`p-4 rounded-xl border relative flex flex-col justify-between transition-all select-none min-h-[92px] ${
                       isActive
                         ? 'bg-amber-500/5 border-[#f59e0b] shadow-md ring-1 ring-[#f59e0b]'
-                        : 'bg-white/80 border-slate-200 border-dashed hover:border-slate-350'
+                        : 'bg-white/80 border-slate-200 border-dashed hover:border-slate-400'
                     }`}
                   >
                     <div>
@@ -364,7 +364,7 @@ export default function WarehouseMap({
                   onClick={onAssignToLaneClick}
                   className="w-full inline-flex items-center justify-center gap-1.5 py-2.5 px-4 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-extrabold rounded-xl transition-all cursor-pointer focus:outline-none"
                 >
-                  <Move className="h-4 w-4 text-slate-450 rotate-90" />
+                  <Move className="h-4 w-4 text-slate-400 rotate-90" />
                   <span>Assign to Load Lane</span>
                 </button>
 

@@ -157,7 +157,7 @@ export default function Reports({
             </button>
             <button
               onClick={() => setLogisticsMode('general_freight')}
-              className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ${logisticsMode === 'general_freight' ? 'bg-[#FFD400] text-slate-955 font-extrabold shadow-xs' : 'text-slate-550'}`}
+              className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ${logisticsMode === 'general_freight' ? 'bg-[#FFD400] text-slate-955 font-extrabold shadow-xs' : 'text-slate-500'}`}
             >
               General Freight
             </button>
@@ -192,7 +192,7 @@ export default function Reports({
           <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Total Revenue</span>
           <strong className="text-2xl font-black text-slate-900 block mt-1">${metrics.revenue}</strong>
           <div className="flex justify-between items-center mt-2.5">
-            <span className="text-[10px] text-slate-450 font-medium">Across selected period</span>
+            <span className="text-[10px] text-slate-400 font-medium">Across selected period</span>
             <span className="inline-flex items-center px-1.5 py-0.5 text-[9px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-md">+18.4%</span>
           </div>
         </div>
@@ -234,7 +234,7 @@ export default function Reports({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <label className="block text-[10px] font-extrabold text-slate-450 uppercase tracking-wide">Time Period</label>
+            <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-wide">Time Period</label>
             <select
               value={timePeriod}
               onChange={(e) => setTimePeriod(e.target.value)}
@@ -247,7 +247,7 @@ export default function Reports({
           </div>
           
           <div className="space-y-1.5">
-            <label className="block text-[10px] font-extrabold text-slate-450 uppercase tracking-wide">Branch / Territory</label>
+            <label className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-wide">Branch / Territory</label>
             <select
               value={branch}
               onChange={(e) => setBranch(e.target.value)}
@@ -297,7 +297,7 @@ export default function Reports({
               className={`flex items-center gap-2 py-3.5 px-5 font-black text-xs border-b-2 transition-all cursor-pointer ${
                 isActive 
                   ? 'border-[#FFD400] text-[#f59e0b]' 
-                  : 'border-transparent text-slate-450 hover:text-slate-700'
+                  : 'border-transparent text-slate-400 hover:text-slate-700'
               }`}
             >
               <Icon className="h-4 w-4" />
@@ -354,14 +354,14 @@ export default function Reports({
             
             <div className="flex items-center gap-3">
               {/* Density Toggle */}
-              <div className="flex bg-slate-100 border border-slate-200 rounded-xl p-1 text-[9px] font-bold">
+              <div className="flex bg-slate-100 border border-slate-200 rounded-xl p-1 text-[9px] font-bold shrink-0">
                 {['COMPACT', 'DEFAULT', 'RELAXED'].map((mode) => {
                   const isActive = density === mode.toLowerCase();
                   return (
                     <button
                       key={mode}
                       onClick={() => setDensity(mode.toLowerCase())}
-                      className={`px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer ${isActive ? 'bg-[#FFD400] text-slate-950 font-extrabold shadow-xs' : 'text-slate-550'}`}
+                      className={`px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer ${isActive ? 'bg-[#FFD400] text-slate-950 font-extrabold shadow-xs' : 'text-slate-500'}`}
                     >
                       {mode}
                     </button>
@@ -372,7 +372,7 @@ export default function Reports({
               {/* Columns Popover Toggle */}
               <button
                 onClick={() => setColsMenuOpen(!colsMenuOpen)}
-                className="inline-flex items-center gap-1.5 px-3 py-2 border border-slate-200 hover:bg-slate-50 text-slate-655 font-bold text-[9px] uppercase rounded-xl cursor-pointer focus:outline-none"
+                className="inline-flex items-center gap-1.5 px-3 py-2 border border-slate-200 hover:bg-slate-50 text-slate-655 font-bold text-[9px] uppercase rounded-xl cursor-pointer focus:outline-none shrink-0 whitespace-nowrap"
               >
                 <Settings className="h-3.5 w-3.5 text-slate-400" />
                 <span>Columns</span>
@@ -383,7 +383,7 @@ export default function Reports({
                 <div className="absolute right-0 top-full mt-2 z-20 w-48 bg-white border border-slate-200 rounded-2xl shadow-2xl p-4 text-slate-800 animate-fade-in">
                   <div className="flex justify-between items-center pb-2 border-b border-slate-100 mb-2">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-slate-555">Column Visibility</span>
-                    <button onClick={() => setColsMenuOpen(false)} className="text-slate-450">
+                    <button onClick={() => setColsMenuOpen(false)} className="text-slate-400">
                       <X className="h-3 w-3" />
                     </button>
                   </div>

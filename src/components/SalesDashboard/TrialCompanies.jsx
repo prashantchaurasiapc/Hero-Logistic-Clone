@@ -190,7 +190,7 @@ export default function TrialCompanies() {
               return (
                 <div
                   key={trial.id}
-                  className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xs hover:border-slate-350 hover:shadow-xs transition-all duration-250 flex flex-col justify-between space-y-4"
+                  className="bg-white border border-slate-200 rounded-2xl p-6 shadow-2xs hover:border-slate-400 hover:shadow-xs transition-all duration-250 flex flex-col justify-between space-y-4"
                 >
                   {/* Header */}
                   <div className="flex justify-between items-start gap-3">
@@ -213,7 +213,7 @@ export default function TrialCompanies() {
                   {/* Progress bar info */}
                   <div className="space-y-1.5 select-none">
                     <div className="flex justify-between items-center text-[11px] font-bold">
-                      <span className="text-slate-450">Days Remaining</span>
+                      <span className="text-slate-400">Days Remaining</span>
                       <span className="text-slate-900 font-mono font-black">
                         {trial.daysRemaining} / 14 Days
                       </span>
@@ -238,13 +238,13 @@ export default function TrialCompanies() {
                     {/* Most Used Module */}
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
                       <span className="text-slate-400 font-semibold">Most Used Module:</span>
-                      <span className="text-slate-850 font-extrabold">{trial.mostUsedModule || 'Live GPS tracking'}</span>
+                      <span className="text-slate-800 font-extrabold">{trial.mostUsedModule || 'Live GPS tracking'}</span>
                     </div>
 
                     {/* Quota limits */}
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
                       <span className="text-slate-400 font-semibold">Quota limits:</span>
-                      <span className="text-slate-850 font-extrabold">{trial.activeUsers || 3} Users • {trial.storage || '0.5 GB'}</span>
+                      <span className="text-slate-800 font-extrabold">{trial.activeUsers || 3} Users • {trial.storage || '0.5 GB'}</span>
                     </div>
                   </div>
 

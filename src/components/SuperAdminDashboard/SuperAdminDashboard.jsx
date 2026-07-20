@@ -212,7 +212,7 @@ export default function SuperAdminDashboard() {
                   </button>
 
                   {showColumnsMenu && (
-                    <div className="absolute right-0 mt-2 w-52 bg-white border border-slate-200 rounded-2xl shadow-xl p-3 z-45 space-y-1.5 text-left text-xs text-slate-700 font-bold max-h-60 overflow-y-auto">
+                    <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-52 bg-white border border-slate-200 rounded-2xl shadow-xl p-3 z-50 space-y-1.5 text-left text-xs text-slate-700 font-bold max-h-60 overflow-y-auto">
                       <span className="block text-[9px] font-black text-slate-400 uppercase tracking-wider pb-1 border-b border-slate-100 mb-1.5">COLUMN VISIBILITY</span>
 
                       <label className="flex items-center gap-2 cursor-pointer py-0.5 hover:text-slate-900">
@@ -290,9 +290,9 @@ export default function SuperAdminDashboard() {
               </div>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse whitespace-nowrap">
-                <thead>
+                <thead className="hidden lg:table-header-group">
                   <tr className="border-b border-slate-100">
                     <th className="py-4 px-6 w-10">
                       <input type="checkbox" className="w-4 h-4 text-[#FFD400] rounded focus:ring-0 cursor-pointer" />
@@ -306,24 +306,28 @@ export default function SuperAdminDashboard() {
                     {visibleColumns.lastLogin && <th className="py-4 px-6 text-[11px] font-bold text-slate-500 uppercase tracking-wider">LAST LOGIN</th>}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50">
+                <tbody className="divide-y divide-slate-50 block lg:table-row-group">
                   {recentTenants.map((tenant) => (
-                    <tr key={tenant.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className={`${getDensityPadding()} px-6`}>
+                    <tr key={tenant.id} className="block lg:table-row hover:bg-slate-50/50 transition-colors border-b border-slate-100 lg:border-none p-4 lg:p-0 space-y-3 lg:space-y-0 relative">
+                      <td className={`block lg:table-cell ${getDensityPadding()} lg:px-6`}>
+                        <span className="lg:hidden text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">SELECT</span>
                         <input type="checkbox" className="w-4 h-4 text-[#FFD400] rounded focus:ring-0 cursor-pointer" />
                       </td>
                       {visibleColumns.companyName && (
-                        <td className={`${getDensityPadding()} px-2`}>
+                        <td className={`block lg:table-cell ${getDensityPadding()} lg:px-2`}>
+                          <span className="lg:hidden text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">COMPANY</span>
                           <span className="font-bold text-slate-900 text-[13px]">{tenant.name}</span>
                         </td>
                       )}
                       {visibleColumns.subscriptionPlan && (
-                        <td className={`${getDensityPadding()} px-4`}>
+                        <td className={`block lg:table-cell ${getDensityPadding()} lg:px-4`}>
+                          <span className="lg:hidden text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">SUBSCRIPTION PLAN</span>
                           <span className="text-[13px] font-semibold text-slate-600">{tenant.plan}</span>
                         </td>
                       )}
                       {visibleColumns.status && (
-                        <td className={`${getDensityPadding()} px-4`}>
+                        <td className={`block lg:table-cell ${getDensityPadding()} lg:px-4`}>
+                          <span className="lg:hidden text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">STATUS</span>
                           <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-bold tracking-wider ${tenant.status === 'ACTIVE'
                             ? 'text-emerald-700 bg-emerald-50 border border-emerald-200'
                             : 'text-rose-700 bg-rose-50 border border-rose-200'
@@ -333,22 +337,26 @@ export default function SuperAdminDashboard() {
                         </td>
                       )}
                       {visibleColumns.activeUsers && (
-                        <td className={`${getDensityPadding()} px-4`}>
+                        <td className={`block lg:table-cell ${getDensityPadding()} lg:px-4`}>
+                          <span className="lg:hidden text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">ACTIVE USERS</span>
                           <span className="text-[13px] font-bold text-slate-700">{tenant.users}</span>
                         </td>
                       )}
                       {visibleColumns.monthlyRevenue && (
-                        <td className={`${getDensityPadding()} px-4`}>
+                        <td className={`block lg:table-cell ${getDensityPadding()} lg:px-4`}>
+                          <span className="lg:hidden text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">MONTHLY REVENUE</span>
                           <span className="text-[13px] font-bold text-[#10B981]">{tenant.mrr}</span>
                         </td>
                       )}
                       {visibleColumns.trialExpiry && (
-                        <td className={`${getDensityPadding()} px-4`}>
+                        <td className={`block lg:table-cell ${getDensityPadding()} lg:px-4`}>
+                          <span className="lg:hidden text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">TRIAL EXPIRY</span>
                           <span className="text-[13px] font-medium text-slate-500">{tenant.trialExpiry}</span>
                         </td>
                       )}
                       {visibleColumns.lastLogin && (
-                        <td className={`${getDensityPadding()} px-6`}>
+                        <td className={`block lg:table-cell ${getDensityPadding()} lg:px-6`}>
+                          <span className="lg:hidden text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">LAST LOGIN</span>
                           <span className="text-[12px] font-medium text-slate-500">{tenant.lastActive}</span>
                         </td>
                       )}

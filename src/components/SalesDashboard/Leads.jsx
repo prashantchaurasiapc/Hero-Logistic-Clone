@@ -275,7 +275,7 @@ export default function Leads() {
       )}
 
       {/* Header Container */}
-      <div className="flex justify-between items-center mb-2 shrink-0">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2 shrink-0">
         <div>
           <h1 className="text-2xl font-black text-slate-900 mb-1">
             Leads
@@ -298,7 +298,7 @@ export default function Leads() {
             </button>
             
             {showRoleDropdown && (
-              <div className="absolute right-0 mt-1.5 w-64 bg-white border border-slate-200 rounded-xl shadow-xl z-50 py-1.5 text-xs text-slate-700">
+              <div className="absolute left-0 md:right-0 md:left-auto mt-1.5 w-64 bg-white border border-slate-200 rounded-xl shadow-xl z-50 py-1.5 text-xs text-slate-700">
                 <div className="px-3 py-1 text-[9px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100 mb-1">Select Session Identity</div>
                 <button 
                   onClick={() => { setActiveRole('Sales Director'); setShowRoleDropdown(false); }}
@@ -372,7 +372,7 @@ export default function Leads() {
             value={searchQuery}
             onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
             placeholder="Search contact details."
-            className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 hover:border-slate-350 focus:border-[#ffcc00] text-xs font-semibold rounded-xl focus:outline-none placeholder:text-slate-400 text-slate-800 transition-colors"
+            className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 hover:border-slate-400 focus:border-[#ffcc00] text-xs font-semibold rounded-xl focus:outline-none placeholder:text-slate-400 text-slate-800 transition-colors"
           />
           <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
         </div>
@@ -382,7 +382,7 @@ export default function Leads() {
           <select
             value={nicheFilter}
             onChange={(e) => { setNicheFilter(e.target.value); setCurrentPage(1); }}
-            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 hover:border-slate-350 focus:border-[#ffcc00] text-xs font-bold rounded-xl focus:outline-none cursor-pointer text-slate-700 transition-colors"
+            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 hover:border-slate-400 focus:border-[#ffcc00] text-xs font-bold rounded-xl focus:outline-none cursor-pointer text-slate-700 transition-colors"
           >
             <option value="All Transport Niches">All Transport Niches</option>
             {niches.map(n => (
@@ -396,7 +396,7 @@ export default function Leads() {
           <select
             value={fleetFilter}
             onChange={(e) => { setFleetFilter(e.target.value); setCurrentPage(1); }}
-            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 hover:border-slate-350 focus:border-[#ffcc00] text-xs font-bold rounded-xl focus:outline-none cursor-pointer text-slate-700 transition-colors"
+            className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 hover:border-slate-400 focus:border-[#ffcc00] text-xs font-bold rounded-xl focus:outline-none cursor-pointer text-slate-700 transition-colors"
           >
             <option value="All Fleet Sizes">All Fleet Sizes</option>
             <option value="Small (< 50 Trucks)">Small (&lt; 50 Trucks)</option>
@@ -534,7 +534,7 @@ export default function Leads() {
 
           {/* Table pagination footer */}
           <div className="shrink-0 flex items-center justify-between border-t border-slate-200 bg-slate-50 px-5 py-3">
-            <span className="text-[10px] font-black text-slate-450 uppercase tracking-widest">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
               PAGE {currentPage} OF {totalPages}
             </span>
             <div className="flex items-center gap-1">
@@ -542,7 +542,7 @@ export default function Leads() {
               <button
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                className="p-2 border border-slate-250 bg-white hover:bg-slate-100 rounded-lg text-slate-600 cursor-pointer disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                className="p-2 border border-slate-200 bg-white hover:bg-slate-100 rounded-lg text-slate-600 cursor-pointer disabled:opacity-30 disabled:pointer-events-none transition-colors"
               >
                 &lt;
               </button>
@@ -555,7 +555,7 @@ export default function Leads() {
                   className={`w-8 h-8 rounded-lg border text-xs font-black transition-all cursor-pointer ${
                     currentPage === i + 1
                       ? 'bg-[#ffcc00] text-black border-[#D97706] shadow-sm'
-                      : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-250'
+                      : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200'
                   }`}
                 >
                   {i + 1}
@@ -566,7 +566,7 @@ export default function Leads() {
               <button
                 disabled={currentPage === totalPages}
                 onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                className="p-2 border border-slate-250 bg-white hover:bg-slate-100 rounded-lg text-slate-600 cursor-pointer disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                className="p-2 border border-slate-200 bg-white hover:bg-slate-100 rounded-lg text-slate-600 cursor-pointer disabled:opacity-30 disabled:pointer-events-none transition-colors"
               >
                 &gt;
               </button>
@@ -653,7 +653,7 @@ export default function Leads() {
                     <select
                       value={selectedLead.stage}
                       onChange={(e) => handleUpdateStage(selectedLead.id, e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 hover:border-slate-350 focus:border-[#ffcc00] rounded-xl text-slate-850 cursor-pointer text-xs font-bold focus:outline-none transition-colors"
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 hover:border-slate-400 focus:border-[#ffcc00] rounded-xl text-slate-800 cursor-pointer text-xs font-bold focus:outline-none transition-colors"
                     >
                       <option value="New Lead">New Lead</option>
                       <option value="Contacted">Contacted</option>
@@ -674,13 +674,13 @@ export default function Leads() {
                     {selectedLead.currentSoftware && (
                       <div>
                         <span className="text-amber-800 font-bold">Current Software: </span>
-                        <span className="text-slate-650 font-semibold">{selectedLead.currentSoftware}</span>
+                        <span className="text-slate-600 font-semibold">{selectedLead.currentSoftware}</span>
                       </div>
                     )}
                     {selectedLead.painPoints && (
                       <div>
                         <span className="text-amber-800 font-bold">Pain Points: </span>
-                        <span className="text-slate-650 font-semibold">{selectedLead.painPoints}</span>
+                        <span className="text-slate-600 font-semibold">{selectedLead.painPoints}</span>
                       </div>
                     )}
                   </div>

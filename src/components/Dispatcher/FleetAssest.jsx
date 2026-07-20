@@ -252,7 +252,7 @@ export default function FleetAssest() {
             <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
               <button 
                 onClick={() => triggerToast(`Viewing Service Log for ${selectedAsset.id}`)}
-                className="px-4 py-2 border border-slate-200 bg-white text-slate-650 hover:text-black rounded-lg text-xs font-bold transition-all cursor-pointer hover:bg-slate-50 shadow-3xs uppercase tracking-wider"
+                className="px-4 py-2 border border-slate-200 bg-white text-slate-600 hover:text-black rounded-lg text-xs font-bold transition-all cursor-pointer hover:bg-slate-50 shadow-3xs uppercase tracking-wider"
               >
                 Service Log
               </button>
@@ -286,7 +286,7 @@ export default function FleetAssest() {
 
               {/* Alternate Fleet Thumbnails */}
               <div className="flex items-center gap-4 bg-white p-4 rounded-[24px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.015)]">
-                <div className="w-16 h-12 rounded-lg overflow-hidden border border-slate-150 shrink-0">
+                <div className="w-16 h-12 rounded-lg overflow-hidden border border-slate-200 shrink-0">
                   <img 
                     src={truckMaintenanceImg} 
                     alt="Alt Fleet Thumb" 
@@ -411,7 +411,7 @@ export default function FleetAssest() {
                 <div className="space-y-4">
                   {selectedAsset.drivers.map((drv, i) => (
                     <div key={i} className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-slate-50 border border-slate-150 flex items-center justify-center text-xs font-black text-slate-600 shrink-0">
+                      <div className="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-xs font-black text-slate-600 shrink-0">
                         {drv.initials}
                       </div>
                       <div className="flex-1 min-w-0 text-left">
@@ -432,13 +432,13 @@ export default function FleetAssest() {
                 <div className="flex gap-2.5 pt-2">
                   <button 
                     onClick={() => triggerToast(`Assign Driver feature coming soon for ${selectedAsset.id}`)}
-                    className="flex-1 py-2 border border-slate-200 text-slate-650 hover:text-black rounded-lg text-xs font-bold transition-all cursor-pointer hover:bg-slate-50 text-center uppercase tracking-wider shadow-3xs"
+                    className="flex-1 py-2 border border-slate-200 text-slate-600 hover:text-black rounded-lg text-xs font-bold transition-all cursor-pointer hover:bg-slate-50 text-center uppercase tracking-wider shadow-3xs"
                   >
                     + Assign Driver
                   </button>
                   <button 
                     onClick={() => triggerToast(`Managing shift roster for ${selectedAsset.id}`)}
-                    className="flex-1 py-2 border border-slate-200 text-slate-650 hover:text-black rounded-lg text-xs font-bold transition-all cursor-pointer hover:bg-slate-50 text-center uppercase tracking-wider shadow-3xs"
+                    className="flex-1 py-2 border border-slate-200 text-slate-600 hover:text-black rounded-lg text-xs font-bold transition-all cursor-pointer hover:bg-slate-50 text-center uppercase tracking-wider shadow-3xs"
                   >
                     Manage List
                   </button>
@@ -452,13 +452,13 @@ export default function FleetAssest() {
                 <div className="flex flex-col gap-2.5">
                   <button 
                     onClick={() => triggerToast(`Scheduling service for ${selectedAsset.id}`)}
-                    className="w-full py-2.5 border border-slate-200 hover:border-slate-350 text-slate-650 hover:text-black bg-white rounded-xl text-xs font-bold transition-all cursor-pointer text-center uppercase tracking-wider shadow-3xs"
+                    className="w-full py-2.5 border border-slate-200 hover:border-slate-400 text-slate-600 hover:text-black bg-white rounded-xl text-xs font-bold transition-all cursor-pointer text-center uppercase tracking-wider shadow-3xs"
                   >
                     Schedule Service
                   </button>
                   <button 
                     onClick={() => triggerToast(`Viewing full service log for ${selectedAsset.id}`)}
-                    className="w-full py-2.5 border border-slate-200 hover:border-slate-350 text-slate-650 hover:text-black bg-white rounded-xl text-xs font-bold transition-all cursor-pointer text-center uppercase tracking-wider shadow-3xs"
+                    className="w-full py-2.5 border border-slate-200 hover:border-slate-400 text-slate-600 hover:text-black bg-white rounded-xl text-xs font-bold transition-all cursor-pointer text-center uppercase tracking-wider shadow-3xs"
                   >
                     View Service Log
                   </button>
@@ -480,7 +480,7 @@ export default function FleetAssest() {
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
             <div className="flex items-center gap-3 text-left">
-              <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-150 flex items-center justify-center text-slate-700 shadow-3xs shrink-0">
+              <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-700 shadow-3xs shrink-0">
                 <Truck className="w-6 h-6" />
               </div>
               <div>
@@ -606,7 +606,7 @@ export default function FleetAssest() {
                       <td className="px-6 py-5 whitespace-nowrap text-right pr-8 align-middle">
                         <button 
                           onClick={() => setSelectedAsset(asset)}
-                          className="px-4 py-1.5 border border-slate-200 text-slate-650 hover:text-black rounded-lg text-xs font-bold transition-all cursor-pointer hover:bg-slate-50 shadow-3xs uppercase tracking-wider"
+                          className="px-4 py-1.5 border border-slate-200 text-slate-600 hover:text-black rounded-lg text-xs font-bold transition-all cursor-pointer hover:bg-slate-50 shadow-3xs uppercase tracking-wider"
                         >
                           VIEW DETAILS
                         </button>
@@ -614,7 +614,7 @@ export default function FleetAssest() {
                     </tr>
                   )) : (
                     <tr>
-                      <td colSpan="5" className="px-6 py-12 text-center text-slate-450 font-bold text-xs">
+                      <td colSpan="5" className="px-6 py-12 text-center text-slate-400 font-bold text-xs">
                         No assets matching filter and search query
                       </td>
                     </tr>

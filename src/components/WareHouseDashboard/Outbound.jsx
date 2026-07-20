@@ -34,14 +34,14 @@ export default function Outbound({ outboundData, setOutboundData, onScanOutClick
         
         <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
           {/* Density Selector */}
-          <div className="flex bg-slate-100 border border-slate-200 rounded-xl p-1 text-[9px] font-bold">
+          <div className="flex bg-slate-100 border border-slate-200 rounded-xl p-1 text-[9px] font-bold shrink-0">
             {['COMPACT', 'DEFAULT', 'RELAXED'].map((mode) => {
               const isActive = density === mode.toLowerCase();
               return (
                 <button
                   key={mode}
                   onClick={() => setDensity(mode.toLowerCase())}
-                  className={`px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer ${isActive ? 'bg-[#FFD400] text-slate-950 font-extrabold shadow-xs' : 'text-slate-550 hover:text-slate-700'} whitespace-nowrap`}
+                  className={`px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer ${isActive ? 'bg-[#FFD400] text-slate-950 font-extrabold shadow-xs' : 'text-slate-500 hover:text-slate-700'} whitespace-nowrap`}
                 >
                   {mode}
                 </button>
@@ -50,7 +50,7 @@ export default function Outbound({ outboundData, setOutboundData, onScanOutClick
           </div>
 
           {/* Columns button */}
-          <button className="inline-flex items-center gap-1.5 px-3 py-2 border border-slate-200 hover:bg-slate-50 text-slate-655 font-bold text-[9px] uppercase rounded-xl transition-all cursor-pointer focus:outline-none whitespace-nowrap">
+          <button className="inline-flex items-center gap-1.5 px-3 py-2 border border-slate-200 hover:bg-slate-50 text-slate-655 font-bold text-[9px] uppercase rounded-xl transition-all cursor-pointer focus:outline-none whitespace-nowrap shrink-0">
             <Settings className="h-3.5 w-3.5 text-slate-400" />
             <span>Columns</span>
           </button>

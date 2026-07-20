@@ -87,7 +87,7 @@ export default function FleetMonitor() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 text-left">
         <div className="flex items-center gap-3">
           {/* Target Radar Icon */}
-          <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-150 flex items-center justify-center text-pink-500 shadow-3xs shrink-0">
+          <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-pink-500 shadow-3xs shrink-0">
             <Target className="w-6 h-6" />
           </div>
           <div>
@@ -106,7 +106,7 @@ export default function FleetMonitor() {
             onClick={() => triggerToast('Toggling map overlay layers...')}
             className="px-5 py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-705 font-extrabold text-xs rounded-xl cursor-pointer transition-all shadow-3xs flex items-center gap-2 tracking-wider"
           >
-            <Layers className="w-4 h-4 text-slate-550" /> LAYERS
+            <Layers className="w-4 h-4 text-slate-500" /> LAYERS
           </button>
           
           {/* Full Screen Button */}
@@ -239,19 +239,19 @@ export default function FleetMonitor() {
             <div className="flex flex-col sm:flex-row items-center gap-2 pointer-events-auto select-none">
               <button 
                 onClick={() => triggerToast('Notification layers opened...')}
-                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white text-amber-500 flex items-center justify-center border border-slate-150 shadow-3xs cursor-pointer"
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white text-amber-500 flex items-center justify-center border border-slate-200 shadow-3xs cursor-pointer"
               >
                 <Bell className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </button>
               <button 
                 onClick={() => triggerToast('Zooming in...')}
-                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white text-slate-650 font-bold flex items-center justify-center border border-slate-150 shadow-3xs cursor-pointer text-sm"
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white text-slate-600 font-bold flex items-center justify-center border border-slate-200 shadow-3xs cursor-pointer text-sm"
               >
                 <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </button>
               <button 
                 onClick={() => triggerToast('Zooming out...')}
-                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white text-slate-650 font-bold flex items-center justify-center border border-slate-150 shadow-3xs cursor-pointer text-sm"
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white text-slate-600 font-bold flex items-center justify-center border border-slate-200 shadow-3xs cursor-pointer text-sm"
               >
                 <Minus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </button>
