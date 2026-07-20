@@ -46,8 +46,8 @@ export default function StartWork() {
 
       {/* Connection status toggle */}
       <div className="flex flex-col items-center gap-2 w-full">
-        <div className="w-full flex justify-between items-center p-3 bg-white border border-gray-150 rounded-2xl shadow-sm">
-          <span className="text-sm font-bold text-gray-600 flex items-center gap-2">
+        <div className="w-full flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 p-3 sm:p-4 bg-white border border-gray-150 rounded-2xl shadow-sm">
+          <span className="text-sm font-bold text-gray-600 flex items-center gap-2 justify-center sm:justify-start">
             <svg className="w-4 h-4 text-amber-500 rotate-45" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <polygon points="3 11 22 2 13 21 11 13 3 11" />
             </svg>
@@ -58,7 +58,7 @@ export default function StartWork() {
               setIsOnline(prev => !prev);
               triggerToast(isOnline ? 'Connection switched to Offline Mode.' : 'Connection restored to Online Mode.');
             }}
-            className={`px-4 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-bold border cursor-pointer transition-all ${
+            className={`px-4 py-1.5 rounded-full flex items-center justify-center gap-1.5 text-xs font-bold border cursor-pointer transition-all w-full sm:w-auto ${
               isOnline
                 ? 'bg-[#E6F4EA] border-[#CEEAD6] text-[#137333]'
                 : 'bg-[#FEF7E0] border-[#FEEFC3] text-[#B06000]'
@@ -103,22 +103,22 @@ export default function StartWork() {
       </div>
 
       {/* Header */}
-      <div className="bg-white border border-gray-150 rounded-3xl p-6 flex justify-between items-center shadow-3xs">
+      <div className="bg-white border border-gray-150 rounded-3xl p-4 sm:p-6 flex justify-between items-center shadow-3xs gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none">Driver Portal</h1>
-            <span className="text-xl font-bold text-gray-400">•</span>
-            <span className="text-xl font-black text-gray-800">start finish</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-lg sm:text-xl font-black text-gray-900 tracking-tight leading-none">Driver Portal</h1>
+            <span className="text-lg sm:text-xl font-bold text-gray-400">•</span>
+            <span className="text-lg sm:text-xl font-black text-gray-800">start finish</span>
           </div>
           <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider mt-1.5">ELD & logistics operations controls.</p>
         </div>
-        <div className="w-8 h-8 rounded-full bg-amber-50 border border-amber-100 flex items-center justify-center text-[#D97706] cursor-pointer" title="ELD Info">
+        <div className="w-8 h-8 rounded-full bg-amber-50 border border-amber-100 flex items-center justify-center text-[#D97706] cursor-pointer shrink-0" title="ELD Info">
           <Link className="w-4 h-4" />
         </div>
       </div>
 
       {/* Shift status log Box */}
-      <div className="bg-white border border-gray-150 rounded-3xl p-5 shadow-3xs flex justify-between items-center">
+      <div className="bg-white border border-gray-150 rounded-3xl p-4 sm:p-5 shadow-3xs flex justify-between items-center gap-4">
         <div className="text-left">
           <span className="text-[9px] font-black text-gray-400 tracking-wider block uppercase mb-1">SHIFT LOGGING SYSTEM</span>
           <div className="flex items-center gap-2">
@@ -130,32 +130,32 @@ export default function StartWork() {
             <span className="text-xs font-bold text-gray-900">{shiftActive ? 'Shift Active (On Duty)' : 'Shift Inactive (Off Duty)'}</span>
           </div>
         </div>
-        <div className="w-9 h-9 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400">
+        <div className="w-9 h-9 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 shrink-0">
           <Clock className="w-5 h-5" />
         </div>
       </div>
 
       {/* Today's Assigned Manifest Card */}
-      <div className="bg-white border border-gray-150 rounded-3xl p-6 shadow-3xs text-left space-y-4">
+      <div className="bg-white border border-gray-150 rounded-3xl p-4 sm:p-6 shadow-3xs text-left space-y-4">
         <div className="flex justify-between items-center pb-2 border-b border-gray-50">
           <span className="text-[10px] font-black text-gray-900 tracking-wider block uppercase">TODAY'S ASSIGNED MANIFEST</span>
         </div>
 
-        <div className="p-4 border border-gray-150 rounded-2xl bg-white space-y-4">
-          <div className="flex justify-between items-start">
+        <div className="p-3 sm:p-4 border border-gray-150 rounded-2xl bg-white space-y-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
             <div>
               <span className="text-[9px] font-bold text-gray-400 block uppercase">LOAD ID: LD-9411</span>
               <h3 className="text-sm font-bold text-gray-900 mt-1">Automotive Components (Flatbed)</h3>
             </div>
-            <span className="bg-amber-50 text-[#D97706] text-[8px] font-black px-2.5 py-0.5 rounded tracking-wide uppercase border border-amber-100">
+            <span className="bg-amber-50 text-[#D97706] text-[8px] font-black px-2.5 py-0.5 rounded tracking-wide uppercase border border-amber-100 self-start sm:self-auto">
               IN TRANSIT
             </span>
           </div>
 
           <div className="text-xs font-bold text-gray-700">
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 flex-wrap">
               <span>Route: Chicago IL</span>
-              <ArrowRight className="w-3.5 h-3.5 text-gray-400" />
+              <ArrowRight className="w-3.5 h-3.5 text-gray-400 shrink-0" />
               <span>Dallas TX</span>
             </div>
           </div>
@@ -185,7 +185,7 @@ export default function StartWork() {
       </div>
 
       {/* Start Shift Checklist Form */}
-      <div className="bg-white border border-gray-150 rounded-3xl p-6 shadow-3xs text-left space-y-5">
+      <div className="bg-white border border-gray-150 rounded-3xl p-4 sm:p-6 shadow-3xs text-left space-y-5">
         <span className="text-[10px] font-black text-gray-900 tracking-wider block uppercase">START SHIFT CHECKLIST</span>
         
         <form onSubmit={handleStartShift} className="space-y-4">
@@ -211,7 +211,7 @@ export default function StartWork() {
             </select>
           </div>
 
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">INITIAL ODOMETER READING (MILES)</label>
               <input 
@@ -254,15 +254,15 @@ export default function StartWork() {
           </div>
 
           {/* GPS Telemetry Block */}
-          <div className="p-4 bg-gray-50 border border-gray-150 rounded-2xl flex justify-between items-center">
+          <div className="p-4 bg-gray-50 border border-gray-150 rounded-2xl flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
             <div className="text-left">
               <span className="text-[9px] font-bold text-gray-450 block uppercase">LIVE GPS TELEMETRY</span>
-              <span className="text-xs font-bold text-emerald-600 block mt-0.5">Verified ✓ (41.8781° N, 87.6298° W)</span>
+              <span className="text-xs font-bold text-emerald-600 block mt-0.5 break-all">Verified ✓ (41.8781° N, 87.6298° W)</span>
             </div>
             <button 
               type="button"
               onClick={() => triggerToast('GPS coordinates reset and locked.')}
-              className="bg-emerald-700 text-white font-bold text-[9px] py-1.5 px-3 rounded-lg flex items-center justify-center cursor-pointer shadow-sm hover:bg-emerald-800 transition-colors"
+              className="bg-emerald-700 text-white font-bold text-[9px] py-2 px-3 rounded-lg flex items-center justify-center cursor-pointer shadow-sm hover:bg-emerald-800 transition-colors w-full sm:w-auto"
             >
               Lock Reset
             </button>
@@ -299,7 +299,7 @@ export default function StartWork() {
       {/* SOS EMERGENCY PANEL MODAL */}
       {sosModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-[110] p-4">
-          <div className="bg-white rounded-3xl border border-gray-100 max-w-md w-full p-6 shadow-xl text-left animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-3xl border border-gray-100 max-w-md w-full p-4 sm:p-6 shadow-xl text-left animate-in fade-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center mb-5 pb-2 border-b border-gray-50">
               <h2 className="text-base font-bold text-gray-900">Emergency Dispatch SOS Panel</h2>
               <button onClick={() => setSosModalOpen(false)} className="p-1.5 hover:bg-gray-100 rounded-full cursor-pointer"><X size={18} /></button>
@@ -323,7 +323,7 @@ export default function StartWork() {
                     triggerToast(`SOS ACTIVE: ${msg}`);
                     setSosModalOpen(false);
                   }}
-                  className={`p-5 border rounded-2xl hover:opacity-90 transition-opacity flex flex-col items-center justify-center gap-2 cursor-pointer ${color}`}
+                  className={`p-3 sm:p-5 border rounded-2xl hover:opacity-90 transition-opacity flex flex-col items-center justify-center gap-2 cursor-pointer ${color}`}
                 >
                   {icon}
                   <span className="text-xs font-medium">{label}</span>

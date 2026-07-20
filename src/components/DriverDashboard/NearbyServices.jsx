@@ -67,8 +67,8 @@ export default function NearbyServices() {
 
       {/* Connection status toggle */}
       <div className="flex flex-col items-center gap-2 w-full">
-        <div className="w-full flex justify-between items-center p-3 bg-white border border-gray-150 rounded-2xl shadow-sm">
-          <span className="text-sm font-bold text-gray-600 flex items-center gap-2">
+        <div className="w-full flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 p-3 sm:p-4 bg-white border border-gray-150 rounded-2xl shadow-sm">
+          <span className="text-sm font-bold text-gray-600 flex items-center gap-2 justify-center sm:justify-start">
             <svg className="w-4 h-4 text-amber-500 rotate-45" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <polygon points="3 11 22 2 13 21 11 13 3 11" />
             </svg>
@@ -79,7 +79,7 @@ export default function NearbyServices() {
               setIsOnline(prev => !prev);
               triggerToast(isOnline ? 'Connection switched to Offline Mode.' : 'Connection restored to Online Mode.');
             }}
-            className={`px-4 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-bold border cursor-pointer transition-all ${
+            className={`px-4 py-1.5 rounded-full flex items-center justify-center gap-1.5 text-xs font-bold border cursor-pointer transition-all w-full sm:w-auto ${
               isOnline
                 ? 'bg-[#E6F4EA] border-[#CEEAD6] text-[#137333]'
                 : 'bg-[#FEF7E0] border-[#FEEFC3] text-[#B06000]'
@@ -124,22 +124,22 @@ export default function NearbyServices() {
       </div>
 
       {/* Header */}
-      <div className="bg-white border border-gray-150 rounded-3xl p-6 flex justify-between items-center shadow-sm">
+      <div className="bg-white border border-gray-150 rounded-3xl p-4 sm:p-6 flex justify-between items-center shadow-sm gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none">Driver Portal</h1>
-            <span className="text-xl font-bold text-gray-400">•</span>
-            <span className="text-xl font-black text-gray-800">nearby services</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-lg sm:text-xl font-black text-gray-900 tracking-tight leading-none">Driver Portal</h1>
+            <span className="text-lg sm:text-xl font-bold text-gray-400">•</span>
+            <span className="text-lg sm:text-xl font-black text-gray-800">nearby services</span>
           </div>
           <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider mt-1.5">ELD &amp; logistics operations controls.</p>
         </div>
-        <div className="w-8 h-8 rounded-full bg-amber-50 border border-amber-100 flex items-center justify-center text-[#D97706] cursor-pointer" title="ELD Info">
+        <div className="w-8 h-8 rounded-full bg-amber-50 border border-amber-100 flex items-center justify-center text-[#D97706] cursor-pointer shrink-0" title="ELD Info">
           <Link className="w-4 h-4" />
         </div>
       </div>
 
       {/* Main Nearby Services Card */}
-      <div className="bg-white border border-amber-100 rounded-3xl p-6 shadow-sm text-left flex items-start gap-4">
+      <div className="bg-white border border-amber-100 rounded-3xl p-4 sm:p-6 shadow-sm text-left flex items-start gap-4">
         <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-[#D97706] shrink-0">
           <MapPin className="w-5 h-5" />
         </div>
@@ -152,12 +152,12 @@ export default function NearbyServices() {
       {/* Services List */}
       <div className="space-y-4">
         {services.map((service) => (
-          <div key={service.id} className="bg-white border border-gray-150 rounded-3xl p-6 shadow-sm flex justify-between items-center hover:border-amber-200 transition-colors">
+          <div key={service.id} className="bg-white border border-gray-150 rounded-3xl p-4 sm:p-6 shadow-sm flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 hover:border-amber-200 transition-colors">
             <div className="text-left space-y-2">
               <span className="bg-[#FFFBEB] text-[#B45309] border border-amber-200 text-[9px] font-black px-2.5 py-0.5 rounded uppercase tracking-wider inline-block">
                 {service.category}
               </span>
-              <h3 className="text-base font-black text-gray-900">{service.name}</h3>
+              <h3 className="text-base font-black text-gray-900 leading-tight">{service.name}</h3>
               <p className="text-xs font-semibold text-gray-500">{service.description}</p>
               <div className="text-[11px] font-bold text-gray-400 flex items-center gap-1.5 pt-0.5">
                 <span>{service.distance}</span>
@@ -168,7 +168,7 @@ export default function NearbyServices() {
 
             <button
               onClick={() => triggerToast(`Routing path to ${service.name} loaded.`)}
-              className="bg-[#FFD400] border border-[#FEF3C7] text-black font-black text-xs py-2 px-4 rounded-full flex items-center gap-1 shadow-md hover:bg-yellow-400 transition-all cursor-pointer select-none"
+              className="bg-[#FFD400] border border-[#FEF3C7] text-black font-black text-xs py-2 px-4 rounded-full flex items-center justify-center gap-1 shadow-md hover:bg-yellow-400 transition-all cursor-pointer select-none w-full sm:w-auto shrink-0 self-stretch sm:self-auto"
             >
               <Navigation className="w-3.5 h-3.5 rotate-45" fill="black" />
               <span>Route</span>
@@ -196,7 +196,7 @@ export default function NearbyServices() {
       {/* SOS EMERGENCY PANEL MODAL */}
       {sosModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[110] p-4">
-          <div className="bg-white rounded-3xl border border-gray-100 max-w-md w-full p-6 shadow-xl text-left">
+          <div className="bg-white rounded-3xl border border-gray-100 max-w-md w-full p-4 sm:p-6 shadow-xl text-left">
             <div className="flex justify-between items-center mb-5 pb-2 border-b border-gray-50">
               <h2 className="text-base font-bold text-gray-900">Emergency Dispatch SOS Panel</h2>
               <button onClick={() => setSosModalOpen(false)} className="p-1.5 hover:bg-gray-100 rounded-full cursor-pointer"><X size={18} /></button>
@@ -218,7 +218,7 @@ export default function NearbyServices() {
                     triggerToast(`SOS ACTIVE: ${msg}`);
                     setSosModalOpen(false);
                   }}
-                  className={`p-5 border rounded-2xl hover:opacity-90 transition-opacity flex flex-col items-center justify-center gap-2 cursor-pointer ${color}`}
+                  className={`p-3 sm:p-5 border rounded-2xl hover:opacity-90 transition-opacity flex flex-col items-center justify-center gap-2 cursor-pointer ${color}`}
                 >
                   {icon}
                   <span className="text-xs font-medium">{label}</span>

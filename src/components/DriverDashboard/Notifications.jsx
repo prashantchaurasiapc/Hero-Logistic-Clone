@@ -74,8 +74,8 @@ export default function Notifications() {
 
       {/* Connection status toggle */}
       <div className="flex flex-col items-center gap-2 w-full">
-        <div className="w-full flex justify-between items-center p-3 bg-white border border-gray-150 rounded-2xl shadow-sm">
-          <span className="text-sm font-bold text-gray-600 flex items-center gap-2">
+        <div className="w-full flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 p-3 sm:p-4 bg-white border border-gray-150 rounded-2xl shadow-sm">
+          <span className="text-sm font-bold text-gray-600 flex items-center gap-2 justify-center sm:justify-start">
             <svg className="w-4 h-4 text-amber-500 rotate-45" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <polygon points="3 11 22 2 13 21 11 13 3 11" />
             </svg>
@@ -86,7 +86,7 @@ export default function Notifications() {
               setIsOnline(prev => !prev);
               triggerToast(isOnline ? 'Connection switched to Offline Mode.' : 'Connection restored to Online Mode.');
             }}
-            className={`px-4 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-bold border cursor-pointer transition-all ${
+            className={`px-4 py-1.5 rounded-full flex items-center justify-center gap-1.5 text-xs font-bold border cursor-pointer transition-all w-full sm:w-auto ${
               isOnline
                 ? 'bg-[#E6F4EA] border-[#CEEAD6] text-[#137333]'
                 : 'bg-[#FEF7E0] border-[#FEEFC3] text-[#B06000]'
@@ -131,35 +131,41 @@ export default function Notifications() {
       </div>
 
       {/* Header */}
-      <div className="bg-white border border-gray-150 rounded-3xl p-6 flex justify-between items-center shadow-sm">
+      <div className="bg-white border border-gray-150 rounded-3xl p-4 sm:p-6 flex justify-between items-center shadow-sm gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none">Driver Portal</h1>
-            <span className="text-xl font-bold text-gray-400">•</span>
-            <span className="text-xl font-black text-gray-800">notifications</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-lg sm:text-xl font-black text-gray-900 tracking-tight leading-none">Driver Portal</h1>
+            <span className="text-lg sm:text-xl font-bold text-gray-400">•</span>
+            <span className="text-lg sm:text-xl font-black text-gray-800">notifications</span>
           </div>
           <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider mt-1.5">ELD &amp; logistics operations controls.</p>
         </div>
-        <div className="w-8 h-8 rounded-full bg-amber-50 border border-amber-100 flex items-center justify-center text-[#D97706] cursor-pointer" title="ELD Info">
+        <div className="w-8 h-8 rounded-full bg-amber-50 border border-amber-100 flex items-center justify-center text-[#D97706] cursor-pointer shrink-0" title="ELD Info">
           <Link className="w-4 h-4" />
         </div>
       </div>
 
       {/* Main Notifications Card */}
-      <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-sm text-left flex items-start gap-4">
-        <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
-          <Bell className="w-5 h-5" />
+      <div className="bg-white border border-gray-200 rounded-3xl p-4 sm:p-6 shadow-sm text-left flex flex-col sm:flex-row items-stretch sm:items-start gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
+            <Bell className="w-5 h-5" />
+          </div>
+          <div className="sm:hidden">
+            <h2 className="text-lg font-black text-gray-900 leading-tight">Notifications</h2>
+            <p className="text-gray-500 text-[11px] mt-0.5 font-semibold">Updates from dispatch & system.</p>
+          </div>
         </div>
-        <div className="flex-1 flex justify-between items-center">
-          <div>
+        <div className="flex-1 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+          <div className="hidden sm:block">
             <h2 className="text-lg font-black text-gray-900 leading-tight">Notifications</h2>
             <p className="text-gray-500 text-xs mt-1.5 font-semibold">Updates and alerts from dispatch and system.</p>
           </div>
           <button 
             onClick={markAllRead}
-            className="text-xs font-bold text-[#1E3A8A] bg-blue-50 hover:bg-blue-100 border border-blue-100 px-4 py-2 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
+            className="text-xs font-bold text-[#1E3A8A] bg-blue-50 hover:bg-blue-100 border border-blue-100 px-4 py-2.5 rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-1.5 w-full sm:w-auto self-stretch sm:self-auto"
           >
-            <CheckCircle2 className="w-4 h-4" />
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
             Mark All Read
           </button>
         </div>
@@ -173,7 +179,7 @@ export default function Notifications() {
           </div>
         ) : (
           notifications.map((notification) => (
-            <div key={notification.id} className={`bg-white border ${notification.read ? 'border-gray-150 opacity-70' : 'border-blue-200'} rounded-3xl p-6 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-colors`}>
+            <div key={notification.id} className={`bg-white border ${notification.read ? 'border-gray-150 opacity-70' : 'border-blue-200'} rounded-3xl p-4 sm:p-6 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-colors`}>
               <div className="text-left space-y-2">
                 <span className={`text-[9px] font-black px-2.5 py-0.5 rounded uppercase tracking-wider inline-block ${notification.type === 'ALERT' ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-blue-50 text-blue-600 border border-blue-100'}`}>
                   {notification.type}
@@ -230,7 +236,7 @@ export default function Notifications() {
       {/* SOS EMERGENCY PANEL MODAL */}
       {sosModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[110] p-4">
-          <div className="bg-white rounded-3xl border border-gray-100 max-w-md w-full p-6 shadow-xl text-left">
+          <div className="bg-white rounded-3xl border border-gray-100 max-w-md w-full p-4 sm:p-6 shadow-xl text-left">
             <div className="flex justify-between items-center mb-5 pb-2 border-b border-gray-50">
               <h2 className="text-base font-bold text-gray-900">Emergency Dispatch SOS Panel</h2>
               <button onClick={() => setSosModalOpen(false)} className="p-1.5 hover:bg-gray-100 rounded-full cursor-pointer"><X size={18} /></button>
@@ -252,7 +258,7 @@ export default function Notifications() {
                     triggerToast(`SOS ACTIVE: ${msg}`);
                     setSosModalOpen(false);
                   }}
-                  className={`p-5 border rounded-2xl hover:opacity-90 transition-opacity flex flex-col items-center justify-center gap-2 cursor-pointer ${color}`}
+                  className={`p-3 sm:p-5 border rounded-2xl hover:opacity-90 transition-opacity flex flex-col items-center justify-center gap-2 cursor-pointer ${color}`}
                 >
                   {icon}
                   <span className="text-xs font-medium">{label}</span>

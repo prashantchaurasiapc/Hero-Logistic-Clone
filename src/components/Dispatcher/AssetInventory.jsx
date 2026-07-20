@@ -254,10 +254,12 @@ export default function AssetInventory() {
       )}
 
       {/* TOP HEADER BLOCK */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Asset Inventory</h1>
-          <p className="text-slate-500 text-xs font-medium mt-1">
+          <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
+            Dispatcher Portal <span className="text-slate-400 text-xl mx-1">•</span> Asset Inventory
+          </h1>
+          <p className="text-[13px] text-slate-500 mt-1 font-medium">
             {assets.length} assets registered · Global VIN Search
           </p>
         </div>
@@ -343,7 +345,7 @@ export default function AssetInventory() {
             <span className="text-xs font-bold text-slate-300">
               Selected <span className="text-[#FFA000] font-black">{selectedIds.length}</span> assets
             </span>
-            <div className="h-4 w-px bg-slate-750 hidden md:block"></div>
+            <div className="h-4 w-px bg-slate-700 hidden md:block"></div>
             <button 
               onClick={() => setSelectedIds([])}
               className="text-[10px] font-black text-slate-400 hover:text-white uppercase transition-colors"
@@ -363,7 +365,7 @@ export default function AssetInventory() {
                 {st.replace('_', ' ')}
               </button>
             ))}
-            <div className="h-5 w-px bg-slate-750"></div>
+            <div className="h-5 w-px bg-slate-700"></div>
             <button
               onClick={handleBulkDelete}
               className="bg-rose-900/60 hover:bg-rose-800 text-rose-200 text-[10px] font-extrabold px-3 py-1.5 rounded-lg border border-rose-900 transition-colors uppercase cursor-pointer flex items-center gap-1.5"
@@ -465,7 +467,7 @@ export default function AssetInventory() {
                         asset.status === 'DELIVERED' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
                         asset.status === 'IN TRANSIT' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
                         asset.status === 'IN DEPOT' ? 'bg-blue-50 text-blue-600 border border-blue-100' :
-                        'bg-slate-100 text-slate-600 border border-slate-150'
+                        'bg-slate-100 text-slate-600 border border-slate-200'
                       }`}>
                         {asset.status.replace('_', ' ')}
                       </span>
@@ -534,7 +536,7 @@ export default function AssetInventory() {
                 className={`bg-white rounded-2xl border transition-all duration-200 overflow-hidden shadow-sm flex flex-col ${
                   isSelected 
                     ? 'border-[#FFA000] ring-1 ring-[#FFA000]' 
-                    : 'border-slate-100 hover:border-slate-250 hover:shadow-md'
+                    : 'border-slate-100 hover:border-slate-200 hover:shadow-md'
                 }`}
               >
                 {/* Header Image Cover */}

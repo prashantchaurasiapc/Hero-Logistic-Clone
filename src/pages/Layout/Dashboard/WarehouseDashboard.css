@@ -1102,5 +1102,111 @@
   }
 }
 
+.responsive-map-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr 340px;
+  gap: 24px;
+  flex: 1;
+  align-items: stretch;
+  margin-top: 12px;
+}
+@media (max-width: 1024px) {
+  .responsive-map-layout {
+    grid-template-columns: 1fr;
+  }
+}
 
+.responsive-map-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  min-height: 380px;
+}
+@media (max-width: 768px) {
+  .responsive-map-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 480px) {
+  .responsive-map-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.responsive-two-panel-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: stretch;
+  flex: 1;
+}
+@media (max-width: 1024px) {
+  .responsive-two-panel-grid {
+    grid-template-columns: 1fr;
+  }
+}
 
+/* Custom Responsive Grid Classes for Warehouse Details */
+.responsive-top-card {
+  display: flex;
+  gap: 32px;
+}
+.responsive-top-img {
+  width: 280px;
+  height: 180px;
+}
+.responsive-top-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr;
+  gap: 32px;
+}
+.responsive-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 12px;
+}
+.responsive-overview-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+.responsive-quick-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+}
+
+@media (max-width: 1024px) {
+  .responsive-top-card {
+    flex-direction: column;
+    gap: 20px;
+  }
+  .responsive-top-img {
+    width: 100%;
+    height: 240px;
+  }
+  .responsive-top-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .responsive-info-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .responsive-top-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .responsive-overview-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .responsive-quick-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .responsive-overview-grid {
+    grid-template-columns: 1fr;
+  }
+}

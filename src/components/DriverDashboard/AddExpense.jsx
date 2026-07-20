@@ -90,8 +90,8 @@ export default function AddExpense() {
 
       {/* Connection status toggle */}
       <div className="flex flex-col items-center gap-2 w-full">
-        <div className="w-full flex justify-between items-center p-3 bg-white border border-gray-150 rounded-2xl shadow-sm">
-          <span className="text-sm font-bold text-gray-600 flex items-center gap-2">
+        <div className="w-full flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 p-3 sm:p-4 bg-white border border-gray-150 rounded-2xl shadow-sm">
+          <span className="text-sm font-bold text-gray-600 flex items-center gap-2 justify-center sm:justify-start">
             <svg className="w-4 h-4 text-amber-500 rotate-45" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <polygon points="3 11 22 2 13 21 11 13 3 11" />
             </svg>
@@ -102,7 +102,7 @@ export default function AddExpense() {
               setIsOnline(prev => !prev);
               triggerToast(isOnline ? 'Connection switched to Offline Mode.' : 'Connection restored to Online Mode.');
             }}
-            className={`px-4 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-bold border cursor-pointer transition-all ${
+            className={`px-4 py-1.5 rounded-full flex items-center justify-center gap-1.5 text-xs font-bold border cursor-pointer transition-all w-full sm:w-auto ${
               isOnline
                 ? 'bg-[#E6F4EA] border-[#CEEAD6] text-[#137333]'
                 : 'bg-[#FFFBEB] border-[#000000] border-2 text-[#D97706]'
@@ -143,12 +143,12 @@ export default function AddExpense() {
       </div>
 
       {/* Header */}
-      <div className="bg-white border border-gray-150 rounded-3xl p-6 flex justify-between items-center shadow-sm">
+      <div className="bg-white border border-gray-150 rounded-3xl p-4 sm:p-6 flex justify-between items-center shadow-sm gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none">Driver Portal</h1>
-            <span className="text-xl font-bold text-gray-400">•</span>
-            <span className="text-xl font-black text-gray-800">add expense</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-lg sm:text-xl font-black text-gray-900 tracking-tight leading-none">Driver Portal</h1>
+            <span className="text-lg sm:text-xl font-bold text-gray-400">•</span>
+            <span className="text-lg sm:text-xl font-black text-gray-800">add expense</span>
           </div>
           <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider mt-1.5">ELD &amp; logistics operations controls.</p>
         </div>
@@ -159,7 +159,7 @@ export default function AddExpense() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl">
         {/* Main Form Card */}
-        <div className="bg-white border border-gray-100 rounded-3xl p-6 md:p-8 shadow-sm text-left w-full h-fit">
+        <div className="bg-white border border-gray-100 rounded-3xl p-4 sm:p-6 md:p-8 shadow-sm text-left w-full h-fit">
           <h2 className="text-lg font-black text-[#0F172A] leading-tight mb-6">Log Trip Expense</h2>
 
           <div className="space-y-6">
@@ -201,7 +201,7 @@ export default function AddExpense() {
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
               <button 
                 onClick={handleAddExpense}
                 className="w-full bg-[#FFB000] text-black font-black text-sm py-3.5 px-4 rounded-xl hover:bg-[#F59E0B] transition-all shadow-sm border border-[#FFB000] cursor-pointer"
@@ -217,22 +217,24 @@ export default function AddExpense() {
             </div>
 
             {/* AI Receipt Reader Extract */}
-            <div className="mt-6 border border-gray-200 rounded-2xl p-5">
+            <div className="mt-6 border border-gray-200 rounded-2xl p-4 sm:p-5">
               <h3 className="text-[10px] font-black text-[#D97706] uppercase tracking-widest mb-1">AI RECEIPT READER EXTRACT</h3>
               <p className="text-sm font-black text-gray-900">Expense detected: $420.50</p>
               <p className="text-xs text-gray-500 font-mono mb-4">Source: Pilot Travel Center</p>
               
-              <div className="flex items-center gap-4 text-xs font-bold">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-xs font-bold">
                 <span className="text-gray-600">Review AI Result</span>
-                <button onClick={() => handleAiAction('Confirmed')} className="bg-[#FFD400] text-black px-4 py-1.5 rounded hover:bg-yellow-400 transition-colors cursor-pointer">
-                  Confirm
-                </button>
-                <button onClick={() => handleAiAction('Editing')} className="text-gray-600 hover:text-black transition-colors cursor-pointer">
-                  Edit
-                </button>
-                <button onClick={() => handleAiAction('Rejected')} className="bg-red-50 text-red-500 px-4 py-1.5 rounded hover:bg-red-100 transition-colors cursor-pointer">
-                  Reject
-                </button>
+                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                  <button onClick={() => handleAiAction('Confirmed')} className="bg-[#FFD400] text-black px-4 py-1.5 rounded hover:bg-yellow-400 transition-colors cursor-pointer flex-1 sm:flex-initial text-center justify-center">
+                    Confirm
+                  </button>
+                  <button onClick={() => handleAiAction('Editing')} className="text-gray-600 hover:text-black transition-colors cursor-pointer px-3 py-1.5 border border-gray-200 rounded hover:bg-gray-50 flex-1 sm:flex-initial text-center justify-center">
+                    Edit
+                  </button>
+                  <button onClick={() => handleAiAction('Rejected')} className="bg-red-50 text-red-500 px-4 py-1.5 rounded hover:bg-red-100 transition-colors cursor-pointer flex-1 sm:flex-initial text-center justify-center">
+                    Reject
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -243,7 +245,7 @@ export default function AddExpense() {
           <h3 className="text-[11px] font-black text-gray-500 uppercase tracking-widest pl-2">LOGGED EXPENSES HISTORY</h3>
           
           {selectedRows.length > 0 && (
-            <div className="bg-[#FFFBEB] border border-[#FEF08A] rounded-2xl p-2 px-4 flex items-center justify-between w-max gap-4 shadow-sm">
+            <div className="bg-[#FFFBEB] border border-[#FEF08A] rounded-2xl p-2.5 px-4 flex items-center justify-between w-full sm:w-max gap-4 shadow-sm">
               <span className="text-xs font-black text-[#D97706] tracking-widest uppercase">{selectedRows.length} SELECTED</span>
               <button 
                 onClick={() => triggerToast('Exporting to CSV...')}
@@ -254,13 +256,13 @@ export default function AddExpense() {
             </div>
           )}
           
-          <div className="flex justify-between items-center bg-white border border-gray-150 p-2 rounded-2xl shadow-sm">
-            <div className="flex bg-gray-50 rounded-xl p-1">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 bg-white border border-gray-150 p-2 rounded-2xl shadow-sm">
+            <div className="flex bg-gray-50 rounded-xl p-1 w-full sm:w-auto overflow-x-auto">
               {['COMPACT', 'DEFAULT', 'RELAXED'].map(mode => (
                 <button
                   key={mode}
                   onClick={() => setViewMode(mode)}
-                  className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
+                  className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors cursor-pointer flex-1 sm:flex-initial text-center ${
                     viewMode === mode 
                       ? 'bg-[#FFD400] text-black shadow-sm' 
                       : 'text-gray-500 hover:text-gray-800'
@@ -274,9 +276,9 @@ export default function AddExpense() {
             <div className="relative">
               <button 
                 onClick={() => setColumnsOpen(!columnsOpen)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${columnsOpen ? 'border-gray-800 text-gray-800 bg-gray-50' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+                className={`flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-bold border transition-colors cursor-pointer ${columnsOpen ? 'border-gray-800 text-gray-800 bg-gray-50' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}
               >
-                <Settings className="w-4 h-4" />
+                <Settings className="w-3.5 h-3.5" />
                 COLUMNS
               </button>
               
@@ -306,7 +308,7 @@ export default function AddExpense() {
             </div>
           </div>
 
-          <div className="bg-white border border-gray-150 rounded-2xl overflow-hidden shadow-sm">
+          <div className="bg-white border border-gray-150 rounded-2xl overflow-x-auto shadow-sm">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50/50">
@@ -387,7 +389,7 @@ export default function AddExpense() {
       {/* SOS EMERGENCY PANEL MODAL */}
       {sosModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[110] p-4">
-          <div className="bg-white rounded-3xl border border-gray-100 max-w-md w-full p-6 shadow-xl text-left">
+          <div className="bg-white rounded-3xl border border-gray-100 max-w-md w-full p-4 sm:p-6 shadow-xl text-left">
             <div className="flex justify-between items-center mb-5 pb-2 border-b border-gray-50">
               <h2 className="text-base font-bold text-gray-900">Emergency Dispatch SOS Panel</h2>
               <button onClick={() => setSosModalOpen(false)} className="p-1.5 hover:bg-gray-100 rounded-full cursor-pointer"><X size={18} /></button>
@@ -409,7 +411,7 @@ export default function AddExpense() {
                     triggerToast(`SOS ACTIVE: ${msg}`);
                     setSosModalOpen(false);
                   }}
-                  className={`p-5 border rounded-2xl hover:opacity-90 transition-opacity flex flex-col items-center justify-center gap-2 cursor-pointer ${color}`}
+                  className={`p-3 sm:p-5 border rounded-2xl hover:opacity-90 transition-opacity flex flex-col items-center justify-center gap-2 cursor-pointer ${color}`}
                 >
                   {icon}
                   <span className="text-xs font-medium">{label}</span>

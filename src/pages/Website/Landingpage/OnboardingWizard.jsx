@@ -560,7 +560,7 @@ export default function OnboardingWizard() {
               </div>
 
               <button
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate('/company-admin/command-centre')}
                 className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-brand-500 to-emerald-500 hover:from-brand-600 hover:to-emerald-600 text-slate-950 font-black rounded-xl shadow-xl shadow-brand-500/20 hover:shadow-brand-500/35 transition-all text-sm cursor-pointer"
               >
                 Launch Company Admin Dashboard

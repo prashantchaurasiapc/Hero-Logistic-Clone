@@ -130,28 +130,30 @@ export default function KnowledgeBase() {
   if (view === 'article') {
     const fullTitle = activeCategory ? `${activeCategory.title}: ${activeArticle}` : activeArticle;
     return (
-      <div style={{ background: '#F8FAFC', minHeight: '100vh', padding: '28px 40px', fontFamily: "'Inter','Outfit',sans-serif" }}>
-        <div style={{ maxWidth: 860, margin: '0 auto' }}>
-          <button onClick={activeCategory ? backToCategory : backToMain}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', fontSize: 13.5, fontWeight: 600, color: '#64748B', cursor: 'pointer', marginBottom: 28, padding: 0 }}>
+      <div className="min-h-screen bg-[#F8FAFC] p-4 sm:p-6 lg:p-8 font-sans text-left">
+        <div className="max-w-3xl mx-auto">
+          <button 
+            onClick={activeCategory ? backToCategory : backToMain}
+            className="flex items-center gap-2 bg-none border-none text-[13.5px] font-bold text-gray-500 hover:text-gray-800 cursor-pointer mb-6 p-0"
+          >
             ← Back
           </button>
 
-          <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 20, padding: '40px 44px', boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}>
-            <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0F172A', margin: '0 0 18px 0', lineHeight: 1.35 }}>{fullTitle}</h1>
-            <p style={{ fontSize: 13.5, color: '#475569', lineHeight: 1.7, margin: '0 0 10px 0' }}>
-              This is a detailed guide on <strong style={{ color: '#334155' }}>{fullTitle}</strong>.
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-10 shadow-xs">
+            <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 mb-4.5 leading-snug">{fullTitle}</h1>
+            <p className="text-[13.5px] text-gray-600 leading-relaxed mb-2.5">
+              This is a detailed guide on <strong className="text-gray-700">{fullTitle}</strong>.
             </p>
-            <p style={{ fontSize: 13.5, color: '#475569', lineHeight: 1.7, margin: '0 0 28px 0' }}>
+            <p className="text-[13.5px] text-gray-600 leading-relaxed mb-6">
               Here you would typically find step-by-step instructions, troubleshooting tips, and best practices related to the topic.
             </p>
 
-            <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 14, padding: '20px 24px' }}>
-              <h3 style={{ fontSize: 13.5, fontWeight: 800, color: '#0F172A', margin: '0 0 14px 0' }}>Key Takeaways</h3>
-              <ul style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <li style={{ fontSize: 13, color: '#475569', lineHeight: 1.6 }}>Ensure all system settings are configured correctly.</li>
-                <li style={{ fontSize: 13, color: '#475569', lineHeight: 1.6 }}>Review your entered data carefully before submitting.</li>
-                <li style={{ fontSize: 13, color: '#475569', lineHeight: 1.6 }}>Contact support via the ticketing system if the issue persists.</li>
+            <div className="bg-[#F8FAFC] border border-gray-200 rounded-xl p-5">
+              <h3 className="text-[13.5px] font-extrabold text-gray-900 mb-3.5">Key Takeaways</h3>
+              <ul className="m-0 pl-4.5 flex flex-col gap-2 list-disc">
+                <li className="text-[13px] text-gray-600 leading-relaxed">Ensure all system settings are configured correctly.</li>
+                <li className="text-[13px] text-gray-600 leading-relaxed">Review your entered data carefully before submitting.</li>
+                <li className="text-[13px] text-gray-600 leading-relaxed">Contact support via the ticketing system if the issue persists.</li>
               </ul>
             </div>
           </div>
@@ -164,49 +166,47 @@ export default function KnowledgeBase() {
   if (view === 'category' && activeCategory) {
     const cat = activeCategory;
     return (
-      <div style={{ background: '#F8FAFC', minHeight: '100vh', padding: '28px 40px', fontFamily: "'Inter','Outfit',sans-serif" }}>
-        <div style={{ maxWidth: 860, margin: '0 auto' }}>
-          <button onClick={backToMain}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', fontSize: 13.5, fontWeight: 600, color: '#64748B', cursor: 'pointer', marginBottom: 28, padding: 0 }}>
+      <div className="min-h-screen bg-[#F8FAFC] p-4 sm:p-6 lg:p-8 font-sans text-left">
+        <div className="max-w-3xl mx-auto">
+          <button 
+            onClick={backToMain}
+            className="flex items-center gap-2 bg-none border-none text-[13.5px] font-bold text-gray-500 hover:text-gray-800 cursor-pointer mb-6 p-0"
+          >
             ← Back to Knowledge Base
           </button>
 
-          <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 20, overflow: 'hidden', boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}>
-
+          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-xs">
             {/* Category header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '28px 32px', borderBottom: '1px solid #F1F5F9' }}>
-              <div style={{ width: 52, height: 52, borderRadius: 14, background: '#FFF9E6', border: '1px solid #FDE68A', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <div className="flex items-center gap-4.5 p-6 sm:p-8 border-b border-gray-100">
+              <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0">
                 <cat.Icon color="#D97706" />
               </div>
               <div>
-                <h1 style={{ fontSize: 20, fontWeight: 800, color: '#0F172A', margin: '0 0 4px 0' }}>{cat.title}</h1>
-                <p style={{ fontSize: 13, color: '#64748B', margin: 0 }}>{cat.desc}</p>
+                <h1 className="text-lg font-extrabold text-gray-900 mb-1 leading-tight">{cat.title}</h1>
+                <p className="text-[13px] text-gray-400 font-semibold">{cat.desc}</p>
               </div>
             </div>
 
             {/* Articles list */}
-            <div style={{ padding: '24px 32px' }}>
-              <h2 style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', letterSpacing: '1px', textTransform: 'uppercase', margin: '0 0 20px 0' }}>Articles in this Category</h2>
+            <div className="p-6 sm:p-8">
+              <h2 className="text-[10px] font-black text-gray-900 tracking-wider uppercase mb-5">Articles in this Category</h2>
 
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <div className="flex flex-col">
                 {cat.articles.map((article, i) => (
                   <div key={i}>
                     <div
                       onClick={() => openArticle(article, cat)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 4px', cursor: 'pointer' }}
-                      onMouseEnter={e => e.currentTarget.style.opacity = '0.75'}
-                      onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                      className="flex items-center gap-3.5 py-4 px-1 cursor-pointer transition-opacity hover:opacity-75"
                     >
-                      <span style={{ flexShrink: 0 }}><DocIcon /></span>
-                      <span style={{ flex: 1, fontSize: 13.5, fontWeight: 600, color: '#334155' }}>{article}</span>
-                      <span style={{ flexShrink: 0 }}><ChevRight /></span>
+                      <span className="shrink-0"><DocIcon /></span>
+                      <span className="flex-grow text-[13.5px] font-semibold text-gray-700">{article}</span>
+                      <span className="shrink-0"><ChevRight /></span>
                     </div>
-                    {i < cat.articles.length - 1 && <div style={{ height: 1, background: '#F1F5F9' }} />}
+                    {i < cat.articles.length - 1 && <div className="h-px bg-gray-100" />}
                   </div>
                 ))}
               </div>
             </div>
-
           </div>
         </div>
       </div>
@@ -215,50 +215,41 @@ export default function KnowledgeBase() {
 
   // ── MAIN PAGE ───────────────────────────────────────────────
   return (
-    <div style={{ background: '#F8FAFC', minHeight: '100vh', padding: '32px 40px', fontFamily: "'Inter','Outfit',sans-serif" }}>
-      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+    <div className="min-h-screen bg-[#F8FAFC] p-4 sm:p-6 lg:p-8 font-sans text-left">
+      <div className="max-w-[1100px] mx-auto">
 
         {/* Hero */}
-        <div style={{
-          background: '#F1F5F9',
-          border: '1px solid #CBD5E1',
-          borderRadius: 20,
-          padding: '56px 32px 48px',
-          textAlign: 'center',
-          marginBottom: 40,
-          backgroundImage: 'radial-gradient(circle, #CBD5E1 1px, transparent 1px)',
-          backgroundSize: '20px 20px',
-          position: 'relative',
-        }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 48, height: 48, borderRadius: '50%', border: '2px solid #FFCC00', color: '#FFCC00', fontSize: 22, fontWeight: 900, marginBottom: 18, background: 'rgba(255,255,255,0.6)' }}>?</div>
-          <h1 style={{ fontSize: 32, fontWeight: 900, color: '#0F172A', margin: '0 0 10px 0' }}>How can we help you?</h1>
-          <p style={{ fontSize: 14, color: '#64748B', margin: '0 0 28px 0' }}>Search our extensive knowledge base or browse categories below</p>
+        <div className="bg-slate-100 border border-slate-200 rounded-2xl py-12 px-6 sm:px-10 text-center mb-8 bg-[radial-gradient(circle,#CBD5E1_1px,transparent_1px)] bg-[size:20px_20px] relative">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full border-2 border-yellow-500 text-yellow-600 text-lg font-extrabold mb-4 bg-white/60">?</div>
+          <h1 className="text-2xl sm:text-3xl font-black text-gray-900 mb-2 tracking-tight">How can we help you?</h1>
+          <p className="text-sm text-gray-500 font-semibold mb-6">Search our extensive knowledge base or browse categories below</p>
 
-          <div style={{ position: 'relative', maxWidth: 520, margin: '0 auto' }}>
-            <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)' }}><SearchIcon /></span>
+          <div className="relative max-w-lg mx-auto">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2"><SearchIcon /></span>
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search for articles, guides, or FAQs..."
-              style={{ width: '100%', padding: '13px 16px 13px 46px', border: '1px solid #E2E8F0', borderRadius: 12, fontSize: 13.5, fontFamily: 'inherit', outline: 'none', color: '#0F172A', background: '#fff', boxSizing: 'border-box', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}
+              className="w-full bg-white border border-gray-200 rounded-xl pl-11 pr-4 py-3 text-[13.5px] font-semibold text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-yellow-500 transition-colors shadow-sm"
             />
 
             {/* Live search dropdown */}
             {search.trim() && (
-              <div style={{ position: 'absolute', left: 0, right: 0, top: '110%', background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.08)', overflow: 'hidden', textAlign: 'left', zIndex: 100 }}>
+              <div className="absolute left-0 right-0 top-[110%] bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden text-left z-20">
                 {filteredArticles.length > 0 ? filteredArticles.map(({ title, cat }, i) => (
-                  <div key={i} onClick={() => openArticle(title, cat)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', cursor: 'pointer', borderBottom: i < filteredArticles.length - 1 ? '1px solid #F1F5F9' : 'none', background: '#fff' }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#F8FAFC'}
-                    onMouseLeave={e => e.currentTarget.style.background = '#fff'}>
+                  <div 
+                    key={i} 
+                    onClick={() => openArticle(title, cat)}
+                    className="flex items-center gap-2.5 p-3.5 cursor-pointer border-b border-gray-100 last:border-none bg-white hover:bg-slate-50 transition-colors"
+                  >
                     <DocIcon />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>{title}</div>
-                      <div style={{ fontSize: 10.5, color: '#94A3B8', marginTop: 1 }}>{cat.title}</div>
+                    <div className="flex-grow">
+                      <div className="text-[13px] font-bold text-gray-700">{title}</div>
+                      <div className="text-[10px] text-gray-400 font-bold mt-0.5">{cat.title}</div>
                     </div>
                   </div>
                 )) : (
-                  <div style={{ padding: '14px 16px', fontSize: 13, color: '#94A3B8' }}>No results for "{search}"</div>
+                  <div className="p-4 text-sm text-gray-400 font-medium">No results for "{search}"</div>
                 )}
               </div>
             )}
@@ -266,26 +257,25 @@ export default function KnowledgeBase() {
         </div>
 
         {/* Two column layout */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 32, alignItems: 'start' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-8 items-start">
 
           {/* LEFT: Browse Categories */}
           <div>
-            <h2 style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', letterSpacing: '1px', textTransform: 'uppercase', margin: '0 0 18px 0' }}>Browse Categories</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            <h2 className="text-[10px] font-black text-gray-900 tracking-wider uppercase mb-4.5">Browse Categories</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {categories.map(cat => (
-                <div key={cat.id}
+                <div 
+                  key={cat.id}
                   onClick={() => openCategory(cat)}
-                  style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 16, padding: '20px 20px 18px', display: 'flex', alignItems: 'flex-start', gap: 14, cursor: 'pointer', transition: 'box-shadow 0.15s, border-color 0.15s' }}
-                  onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 14px rgba(0,0,0,0.08)'; e.currentTarget.style.borderColor = '#CBD5E1'; }}
-                  onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = '#E2E8F0'; }}
+                  className="bg-white border border-gray-200 rounded-2xl p-5 flex items-start gap-4 cursor-pointer transition-all hover:shadow-md hover:border-slate-300"
                 >
-                  <div style={{ width: 44, height: 44, borderRadius: 12, background: '#F8FAFC', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: '#64748B' }}>
+                  <div className="w-11 h-11 rounded-xl bg-slate-50 border border-gray-100 flex items-center justify-center shrink-0 text-slate-500">
                     <cat.Icon color="#64748B" />
                   </div>
                   <div>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: '#0F172A', marginBottom: 4 }}>{cat.title}</div>
-                    <div style={{ fontSize: 11.5, color: '#64748B', lineHeight: 1.5, marginBottom: 10 }}>{cat.desc}</div>
-                    <span style={{ fontSize: 10, fontWeight: 800, color: '#D97706', letterSpacing: '0.5px', textTransform: 'uppercase' }}>{cat.count} ARTICLES</span>
+                    <div className="text-[14.5px] font-extrabold text-gray-900 mb-1 leading-tight">{cat.title}</div>
+                    <div className="text-[11.5px] text-gray-400 font-semibold leading-relaxed mb-2.5">{cat.desc}</div>
+                    <span className="text-[9px] font-black text-yellow-600 tracking-wider uppercase">{cat.count} ARTICLES</span>
                   </div>
                 </div>
               ))}
@@ -294,21 +284,21 @@ export default function KnowledgeBase() {
 
           {/* RIGHT: Popular Articles */}
           <div>
-            <h2 style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', letterSpacing: '1px', textTransform: 'uppercase', margin: '0 0 18px 0' }}>Popular Articles</h2>
-            <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 16, overflow: 'hidden' }}>
+            <h2 className="text-[10px] font-black text-gray-900 tracking-wider uppercase mb-4.5">Popular Articles</h2>
+            <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-2xs">
               {popularArticles.map(({ title, catId }, i) => {
                 const cat = categories.find(c => c.id === catId);
                 return (
                   <div key={i}>
-                    <div onClick={() => openArticle(title, cat)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '15px 18px', cursor: 'pointer', background: '#fff' }}
-                      onMouseEnter={e => e.currentTarget.style.background = '#F8FAFC'}
-                      onMouseLeave={e => e.currentTarget.style.background = '#fff'}>
-                      <span style={{ flexShrink: 0 }}><DocIcon /></span>
-                      <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#334155', lineHeight: 1.4 }}>{title}</span>
-                      <span style={{ flexShrink: 0 }}><ChevRight /></span>
+                    <div 
+                      onClick={() => openArticle(title, cat)}
+                      className="flex items-center gap-3 p-4 cursor-pointer bg-white hover:bg-slate-50 transition-colors"
+                    >
+                      <span className="shrink-0"><DocIcon /></span>
+                      <span className="flex-grow text-[13px] font-bold text-gray-700 leading-snug">{title}</span>
+                      <span className="shrink-0"><ChevRight /></span>
                     </div>
-                    {i < popularArticles.length - 1 && <div style={{ height: 1, background: '#F1F5F9', margin: '0 18px' }} />}
+                    {i < popularArticles.length - 1 && <div className="h-px bg-gray-100 mx-4" />}
                   </div>
                 );
               })}

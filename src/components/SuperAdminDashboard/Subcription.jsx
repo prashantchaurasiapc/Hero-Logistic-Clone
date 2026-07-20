@@ -170,7 +170,7 @@ export default function Subscriptions() {
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pb-2">
         <div>
           <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
-            Super Admin <span className="text-slate-350 font-black">•</span> Subscriptions
+            Super Admin <span className="text-slate-400 font-black">•</span> Subscriptions
           </h1>
           <p className="text-xs text-slate-400 font-semibold mt-1">
             Configure global licensing rules, audit tenant margins, and resolve support tickets.
@@ -481,7 +481,7 @@ export default function Subscriptions() {
                     <td className="py-4 px-5 text-center w-12">
                       <input type="checkbox" className="w-4 h-4 rounded cursor-pointer" />
                     </td>
-                    <td className="py-4 px-4 font-mono font-medium text-slate-450">
+                    <td className="py-4 px-4 font-mono font-medium text-slate-400">
                       {sub.id}
                     </td>
                     <td className="py-4 px-4">

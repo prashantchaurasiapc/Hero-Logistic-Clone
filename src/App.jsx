@@ -94,6 +94,7 @@ import Vehicles from './components/CompanyAdmin/Vehicles';
 import Customers from './components/CompanyAdmin/Customers';
 import Branches from './components/CompanyAdmin/Branches';
 import Assets from './components/CompanyAdmin/Assets';
+import AssetDetails from './components/CompanyAdmin/AssetDetails';
 import CreateAsset from './components/CompanyAdmin/CreateAsset';
 import Warehouse from './components/CompanyAdmin/Warehouse';
 import Finance from './components/CompanyAdmin/Finance';
@@ -213,6 +214,7 @@ function App() {
           <Route path="branches" element={<Branches />} />
           <Route path="assets" element={<Assets />} />
           <Route path="assets/new" element={<CreateAsset />} />
+          <Route path="assets/:id" element={<AssetDetails />} />
           <Route path="warehouse" element={<Warehouse />} />
           <Route path="finance" element={<Finance />} />
           <Route path="reports" element={<Reports />} />

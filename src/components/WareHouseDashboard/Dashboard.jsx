@@ -156,7 +156,7 @@ function LocalSearchInput({ value, onChange, onClear, placeholder, className = "
         </svg>
       </span>
       {value && (
-        <button onClick={onClear} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-650 transition-colors">
+        <button onClick={onClear} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors">
           <X className="h-4 w-4" />
         </button>
       )}
@@ -254,7 +254,7 @@ function LocalStatusBadge({ status }) {
     Ready: 'bg-amber-50 text-amber-700 border border-amber-200/50',
     Staged: 'bg-amber-50 text-amber-700 border border-amber-200/50',
     Inwarded: 'bg-emerald-50 text-emerald-700 border border-emerald-200/50',
-    Dispatched: 'bg-slate-50 text-slate-650 border border-slate-200/50',
+    Dispatched: 'bg-slate-50 text-slate-600 border border-slate-200/50',
     Missing: 'bg-rose-50 text-rose-700 border border-rose-200/50',
     Printed: 'bg-emerald-50 text-emerald-700 border border-emerald-200/50',
     Pending: 'bg-amber-50 text-amber-700 border border-amber-200/50',
@@ -1417,7 +1417,7 @@ export default function Dashboard({ activeTab = 'overview' }) {
           {selectedAsset && (
             <div className="border-b border-slate-200 pb-3">
               <strong className="text-slate-900 block text-sm font-mono">{logisticsMode === 'car_carrying' ? selectedAsset.vin : selectedAsset.itemNo}</strong>
-              <span className="text-[10px] text-slate-550">Asset chain of custody log</span>
+              <span className="text-[10px] text-slate-500">Asset chain of custody log</span>
             </div>
           )}
           <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
@@ -1430,7 +1430,7 @@ export default function Dashboard({ activeTab = 'overview' }) {
                     <span className="text-[#FF9A00]">{h.action}</span>
                     <span className="text-slate-500 font-mono">{h.time}</span>
                   </div>
-                  <p className="text-[10px] text-slate-550">Operated by: {h.user}</p>
+                  <p className="text-[10px] text-slate-500">Operated by: {h.user}</p>
                 </div>
               ))
             )}

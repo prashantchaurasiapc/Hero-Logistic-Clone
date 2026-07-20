@@ -15,13 +15,13 @@ const TRAILERS    = ['TRL-201 · B Car Carrier', 'TRL-202 · Flatbed', 'TRL-203 
 
 function SectionHeader({ number, title, subtitle, action, colorCls = "bg-indigo-600" }) {
   return (
-    <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
-      <div className="flex items-center gap-4">
-        <div className={`w-9 h-9 rounded-full text-white text-[15px] font-black flex items-center justify-center shrink-0 ${colorCls}`}>
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 border-b border-slate-100 pb-4">
+      <div className="flex items-center gap-3 sm:gap-4">
+        <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full text-white text-xs sm:text-[15px] font-black flex items-center justify-center shrink-0 ${colorCls}`}>
           {number}
         </div>
         <div>
-          <h2 className="text-[17px] font-black text-slate-900 tracking-tight">{title}</h2>
+          <h2 className="text-base sm:text-[17px] font-black text-slate-900 tracking-tight">{title}</h2>
           {subtitle && <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider mt-0.5">{subtitle}</p>}
         </div>
       </div>
@@ -32,14 +32,14 @@ function SectionHeader({ number, title, subtitle, action, colorCls = "bg-indigo-
 
 function FieldLabel({ children, required }) {
   return (
-    <label className="block text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2">
+    <label className="block text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1.5">
       {children}{required && <span className="text-rose-500 ml-1">*</span>}
     </label>
   );
 }
 
-const inputCls = "w-full px-4 py-3 bg-white border border-slate-200 focus:border-indigo-400 rounded-xl focus:outline-none text-[13px] font-bold text-slate-800 placeholder-slate-400 transition-colors shadow-sm";
-const selectCls = "w-full px-4 py-3 bg-white border border-slate-200 focus:border-indigo-400 rounded-xl focus:outline-none text-[13px] font-bold text-slate-800 cursor-pointer transition-colors appearance-none shadow-sm";
+const inputCls = "w-full px-3.5 py-2.5 sm:py-3 bg-white border border-slate-200 focus:border-indigo-400 rounded-xl focus:outline-none text-xs sm:text-[13px] font-bold text-slate-800 placeholder-slate-400 transition-colors shadow-xs";
+const selectCls = "w-full px-3.5 py-2.5 sm:py-3 bg-white border border-slate-200 focus:border-indigo-400 rounded-xl focus:outline-none text-xs sm:text-[13px] font-bold text-slate-800 cursor-pointer transition-colors appearance-none shadow-xs";
 
 export default function CreateLoad({ onBack }) {
   const [stops, setStops] = useState([
@@ -49,9 +49,11 @@ export default function CreateLoad({ onBack }) {
     { id: 4, type: 'Drop-off', address: '789 Depot Rd, Brisba', contactName: 'Peter Brown', contactPhone: '+61 433 221 122', date: '2025-07-18', time: '09:00' }
   ]);
 
+  const [activeStopMenu, setActiveStopMenu] = useState(null);
+
   const [items, setItems] = useState([
     {
-      id: 1, customer: 'ABC Motors Pty Ltd', pickupStop: 'Stop#1 - Pickup (123 Smit...',
+      id: 1, customer: 'ABC Motors Pty Ltd', pickupStop: 'Stop#1 - Pickup (123 Smit...)',
       dropStop: 'Stop#3 - Drop-off (456 Ja...)', rcog: 'ABC234', vin: 'JMM2EJH77A5B00125',
       stockRec: 'STK-7900', make: 'Toyota', model: 'HiLux', year: '2024', colour: 'White',
       length: '5,325', width: '1,955', height: '1,875', weight: '2,050',
@@ -101,36 +103,35 @@ export default function CreateLoad({ onBack }) {
 
   return (
     <div 
-      className="flex-grow bg-[#F8FAFC] w-full overflow-y-auto min-h-0 flex flex-col"
-      style={{ fontFamily: "'Inter', sans-serif" }}
+      className="flex-grow bg-[#F8FAFC] w-full overflow-y-auto min-h-0 flex flex-col font-sans text-left"
     >
 
       {/* ── Sticky Top Bar ───────────────────────── */}
-      <div className="sticky top-0 z-30 bg-white border-b border-slate-200 shadow-xs px-8 py-4 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-5">
+      <div className="sticky top-0 z-30 bg-white border-b border-slate-200 shadow-xs px-4 sm:px-8 py-3.5 sm:py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between shrink-0 gap-3">
+        <div className="flex items-center gap-3 sm:gap-4">
           <button
             onClick={onBack}
-            className="w-10 h-10 flex items-center justify-center bg-white border-2 border-slate-100 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors shadow-sm"
+            className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center bg-white border-2 border-slate-100 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors shadow-xs shrink-0"
           >
             <ChevronLeft className="w-5 h-5 stroke-[2.5px]" />
           </button>
           <div>
             <div className="flex items-baseline gap-2">
-              <h1 className="text-[22px] font-black text-slate-900 uppercase tracking-tight">CREATE LOAD</h1>
-              <span className="text-[22px] font-bold text-amber-500 uppercase tracking-tight italic">CONSOLE</span>
+              <h1 className="text-lg sm:text-[22px] font-black text-slate-900 uppercase tracking-tight">CREATE LOAD</h1>
+              <span className="text-lg sm:text-[22px] font-bold text-amber-500 uppercase tracking-tight italic">CONSOLE</span>
             </div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+            <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
               OPERATIONAL PRINCIPLE: LOAD → STOPS → ITEMS
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <button className="px-5 py-2.5 bg-white border border-slate-300 rounded-lg text-[11px] font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm uppercase tracking-wider">
+        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+          <button className="flex-1 sm:flex-none justify-center px-4 sm:px-5 py-2.5 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-xs uppercase tracking-wider">
             SAVE DRAFT
           </button>
           <button
             onClick={handleActivate}
-            className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-[11px] font-black flex items-center gap-2 transition-colors shadow-sm uppercase tracking-wider"
+            className="flex-1 sm:flex-none justify-center px-4 sm:px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-black flex items-center gap-2 transition-colors shadow-xs uppercase tracking-wider"
           >
             <Zap className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> ACTIVATE LOAD
           </button>
@@ -138,13 +139,13 @@ export default function CreateLoad({ onBack }) {
       </div>
 
       {/* ── Form Body ────────────────────────────── */}
-      <form onSubmit={handleActivate} className="p-8 md:p-12 space-y-8 max-w-[1400px] w-full mx-auto">
+      <form onSubmit={handleActivate} className="p-4 sm:p-8 md:p-12 space-y-6 sm:space-y-8 max-w-[1400px] w-full mx-auto">
 
         {/* ═══════ Section 1: Load Information ═══════ */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-4 sm:p-6">
           <SectionHeader number="1" title="Load Information" colorCls="bg-indigo-600" />
 
-          <div className="grid grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="col-span-1">
               <FieldLabel>Booking Customer (Optional)</FieldLabel>
               <div className="relative">
@@ -157,7 +158,7 @@ export default function CreateLoad({ onBack }) {
                 />
                 <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               </div>
-              <p className="text-[10.5px] font-bold text-emerald-500 mt-2 leading-snug">
+              <p className="text-[10.5px] font-bold text-emerald-500 mt-1.5 leading-snug">
                 Fields below will change based on load type
               </p>
             </div>
@@ -219,7 +220,7 @@ export default function CreateLoad({ onBack }) {
         </div>
 
         {/* ═══════ Section 2: Route Stops ═══════════ */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-4 sm:p-6">
           <SectionHeader
             number="2"
             title="Route Stops"
@@ -229,132 +230,243 @@ export default function CreateLoad({ onBack }) {
               <button
                 type="button"
                 onClick={addStop}
-                className="flex items-center gap-1.5 px-4 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-full text-[10px] font-black transition-colors uppercase tracking-wider shadow-sm"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-full text-[10px] font-black transition-colors uppercase tracking-wider shadow-xs"
               >
                 <Plus className="w-3.5 h-3.5 stroke-[3px]" /> ADD STOP
               </button>
             }
           />
 
-          {/* Stop table header */}
-          <div className="grid grid-cols-12 gap-3 mb-2 px-2">
-            {['#', 'Type', 'Address / Suburb', 'Contact', 'Date', 'Time', 'Actions'].map((h, i) => (
-              <div
-                key={i}
-                className={`text-[8.5px] font-black text-slate-400 uppercase tracking-widest ${
-                  i === 0 ? 'col-span-1' :
-                  i === 1 ? 'col-span-2' :
-                  i === 2 ? 'col-span-3' :
-                  i === 3 ? 'col-span-2' :
-                  i === 4 ? 'col-span-2' :
-                  i === 5 ? 'col-span-1' : 'col-span-1'
-                }`}
-              >
-                {h}
-              </div>
-            ))}
-          </div>
-
-          <div className="space-y-3">
+          {/* Mobile View: Cards (< md) */}
+          <div className="block md:hidden space-y-3">
             {stops.map((stop, idx) => (
-              <div key={stop.id} className="grid grid-cols-12 gap-3 items-center bg-white rounded-[14px] p-2.5 border border-slate-200 hover:border-slate-300 transition-colors group">
-                {/* # */}
-                <div className="col-span-1 flex items-center gap-2 pl-1">
-                  <GripVertical className="w-4 h-4 text-slate-300 cursor-grab" />
-                  <span className="text-xs font-black text-slate-700">{idx + 1}</span>
-                </div>
-
-                {/* Type */}
-                <div className="col-span-2">
-                  <div className="relative">
-                    <MapPin className={`absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 ${
-                      stop.type === 'Pickup' ? 'text-purple-600' : 'text-blue-600'
-                    }`} />
-                    <select
-                      value={stop.type}
-                      onChange={e => updateStop(stop.id, 'type', e.target.value)}
-                      className={`${selectCls} text-[11px] py-2 pl-8 font-bold ${
-                        stop.type === 'Pickup'
-                          ? 'bg-purple-50 border-purple-200 text-purple-700'
-                          : 'bg-blue-50 border-blue-200 text-blue-700'
-                      }`}
+              <div key={stop.id} className="bg-white rounded-xl p-3.5 border border-slate-200 shadow-xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <GripVertical className="w-4 h-4 text-slate-300 cursor-grab" />
+                    <span className="text-xs font-black text-slate-700">Stop #{idx + 1}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <select
+                        value={stop.type}
+                        onChange={e => updateStop(stop.id, 'type', e.target.value)}
+                        className={`text-[11px] py-1 pl-3 pr-7 font-bold rounded-lg border appearance-none ${
+                          stop.type === 'Pickup'
+                            ? 'bg-purple-50 border-purple-200 text-purple-700'
+                            : 'bg-blue-50 border-blue-200 text-blue-700'
+                        }`}
+                      >
+                        {STOP_TYPES.map(t => <option key={t}>{t}</option>)}
+                      </select>
+                      <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeStop(stop.id)}
+                      className="p-1 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"
                     >
-                      {STOP_TYPES.map(t => <option key={t}>{t}</option>)}
-                    </select>
-                    <ChevronDown className={`absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none ${
-                      stop.type === 'Pickup' ? 'text-purple-400' : 'text-blue-400'
-                    }`} />
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
 
-                {/* Address */}
-                <div className="col-span-3">
+                <div>
+                  <FieldLabel>Address / Suburb</FieldLabel>
                   <input
                     type="text"
                     value={stop.address}
                     onChange={e => updateStop(stop.id, 'address', e.target.value)}
-                    className={`${inputCls} text-[11px] py-2`}
+                    className={`${inputCls} text-xs py-2`}
                     placeholder="Address or suburb..."
                   />
                 </div>
 
-                {/* Contact */}
-                <div className="col-span-2 flex flex-col gap-1 px-1">
-                  <input
-                    type="text"
-                    value={stop.contactName || ''}
-                    onChange={e => updateStop(stop.id, 'contactName', e.target.value)}
-                    className="w-full bg-transparent border-none p-0 text-[10.5px] font-black text-slate-900 focus:ring-0 placeholder-slate-400 outline-none leading-none"
-                    placeholder="Contact Name"
-                  />
-                  <input
-                    type="text"
-                    value={stop.contactPhone || ''}
-                    onChange={e => updateStop(stop.id, 'contactPhone', e.target.value)}
-                    className="w-full bg-transparent border-none p-0 text-[9.5px] font-bold text-slate-500 focus:ring-0 placeholder-slate-300 outline-none leading-none"
-                    placeholder="Phone Number"
-                  />
-                </div>
-
-                {/* Date */}
-                <div className="col-span-2">
-                  <div className="relative">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <FieldLabel>Contact Name</FieldLabel>
                     <input
-                      type="date"
-                      value={stop.date || ''}
-                      onChange={e => updateStop(stop.id, 'date', e.target.value)}
-                      className={`${inputCls} text-[11px] py-2 pr-8 relative z-10 bg-transparent [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-8 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
+                      type="text"
+                      value={stop.contactName || ''}
+                      onChange={e => updateStop(stop.id, 'contactName', e.target.value)}
+                      className={`${inputCls} text-xs py-2`}
+                      placeholder="Contact Name"
                     />
-                    <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none z-0" />
+                  </div>
+                  <div>
+                    <FieldLabel>Phone Number</FieldLabel>
+                    <input
+                      type="text"
+                      value={stop.contactPhone || ''}
+                      onChange={e => updateStop(stop.id, 'contactPhone', e.target.value)}
+                      className={`${inputCls} text-xs py-2`}
+                      placeholder="Phone Number"
+                    />
                   </div>
                 </div>
 
-                {/* Time */}
-                <div className="col-span-1">
-                  <div className="relative">
-                    <input
-                      type="time"
-                      value={stop.time || ''}
-                      onChange={e => updateStop(stop.id, 'time', e.target.value)}
-                      className={`${inputCls} text-[11px] py-2 pr-8 relative z-10 bg-transparent [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-8 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
-                    />
-                    <Clock className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none z-0" />
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <FieldLabel>Date</FieldLabel>
+                    <div className="relative">
+                      <input
+                        type="date"
+                        value={stop.date || ''}
+                        onChange={e => updateStop(stop.id, 'date', e.target.value)}
+                        className={`${inputCls} text-xs py-2 pr-8 relative z-10 bg-white [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-8 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
+                      />
+                      <Calendar className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none z-20" />
+                    </div>
                   </div>
-                </div>
-
-                {/* Actions */}
-                <div className="col-span-1 flex justify-end pr-2">
-                  <button
-                    type="button"
-                    onClick={() => removeStop(stop.id)}
-                    className="p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"
-                  >
-                    <MoreVertical className="w-4 h-4" />
-                  </button>
+                  <div>
+                    <FieldLabel>Time</FieldLabel>
+                    <div className="relative">
+                      <input
+                        type="time"
+                        value={stop.time || ''}
+                        onChange={e => updateStop(stop.id, 'time', e.target.value)}
+                        className={`${inputCls} text-xs py-2 pr-8 relative z-10 bg-white [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-8 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
+                      />
+                      <Clock className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none z-20" />
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
+
+          {/* Desktop View: Table Grid (>= md) */}
+          <div className="hidden md:block overflow-x-auto custom-scrollbar">
+            <div className="min-w-[780px]">
+              {/* Stop table header */}
+              <div className="flex items-center gap-3 mb-2 px-3">
+                <div className="w-8 shrink-0 text-[8.5px] font-black text-slate-400 uppercase tracking-widest">#</div>
+                <div className="w-32 shrink-0 text-[8.5px] font-black text-slate-400 uppercase tracking-widest">Type</div>
+                <div className="flex-1 text-[8.5px] font-black text-slate-400 uppercase tracking-widest">Address / Suburb</div>
+                <div className="w-36 shrink-0 text-[8.5px] font-black text-slate-400 uppercase tracking-widest">Contact</div>
+                <div className="w-36 shrink-0 text-[8.5px] font-black text-slate-400 uppercase tracking-widest">Date</div>
+                <div className="w-32 shrink-0 text-[8.5px] font-black text-slate-400 uppercase tracking-widest">Time</div>
+                <div className="w-8 shrink-0 text-right text-[8.5px] font-black text-slate-400 uppercase tracking-widest">Actions</div>
+              </div>
+
+              <div className="space-y-3">
+                {stops.map((stop, idx) => (
+                  <div key={stop.id} className="flex items-center gap-3 bg-white rounded-[14px] p-2.5 border border-slate-200 hover:border-slate-300 transition-colors group">
+                    {/* # */}
+                    <div className="w-8 shrink-0 flex items-center gap-1.5 pl-0.5">
+                      <GripVertical className="w-4 h-4 text-slate-300 cursor-grab" />
+                      <span className="text-xs font-black text-slate-700">{idx + 1}</span>
+                    </div>
+
+                    {/* Type */}
+                    <div className="w-32 shrink-0">
+                      <div className="relative">
+                        <MapPin className={`absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 ${
+                          stop.type === 'Pickup' ? 'text-purple-600' : 'text-blue-600'
+                        }`} />
+                        <select
+                          value={stop.type}
+                          onChange={e => updateStop(stop.id, 'type', e.target.value)}
+                          className={`${selectCls} text-[11px] py-2 pl-7 pr-6 font-bold ${
+                            stop.type === 'Pickup'
+                              ? 'bg-purple-50 border-purple-200 text-purple-700'
+                              : 'bg-blue-50 border-blue-200 text-blue-700'
+                          }`}
+                        >
+                          {STOP_TYPES.map(t => <option key={t}>{t}</option>)}
+                        </select>
+                        <ChevronDown className={`absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none ${
+                          stop.type === 'Pickup' ? 'text-purple-400' : 'text-blue-400'
+                        }`} />
+                      </div>
+                    </div>
+
+                    {/* Address */}
+                    <div className="flex-1 min-w-[160px]">
+                      <input
+                        type="text"
+                        value={stop.address}
+                        onChange={e => updateStop(stop.id, 'address', e.target.value)}
+                        className={`${inputCls} text-[11px] py-2`}
+                        placeholder="Address or suburb..."
+                      />
+                    </div>
+
+                    {/* Contact */}
+                    <div className="w-36 shrink-0 flex flex-col gap-1 px-1">
+                      <input
+                        type="text"
+                        value={stop.contactName || ''}
+                        onChange={e => updateStop(stop.id, 'contactName', e.target.value)}
+                        className="w-full bg-transparent border-none p-0 text-[10.5px] font-black text-slate-900 focus:ring-0 placeholder-slate-400 outline-none leading-none"
+                        placeholder="Contact Name"
+                      />
+                      <input
+                        type="text"
+                        value={stop.contactPhone || ''}
+                        onChange={e => updateStop(stop.id, 'contactPhone', e.target.value)}
+                        className="w-full bg-transparent border-none p-0 text-[9.5px] font-bold text-slate-500 focus:ring-0 placeholder-slate-300 outline-none leading-none"
+                        placeholder="Phone Number"
+                      />
+                    </div>
+
+                    {/* Date */}
+                    <div className="w-36 shrink-0">
+                      <div className="relative">
+                        <input
+                          type="date"
+                          value={stop.date || ''}
+                          onChange={e => updateStop(stop.id, 'date', e.target.value)}
+                          className={`${inputCls} text-[11px] py-2 pl-2.5 pr-8 relative z-10 bg-white [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-8 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
+                        />
+                        <Calendar className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none z-20" />
+                      </div>
+                    </div>
+
+                    {/* Time */}
+                    <div className="w-32 shrink-0">
+                      <div className="relative">
+                        <input
+                          type="time"
+                          value={stop.time || ''}
+                          onChange={e => updateStop(stop.id, 'time', e.target.value)}
+                          className={`${inputCls} text-[11px] py-2 pl-2.5 pr-8 relative z-10 bg-white [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-8 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
+                        />
+                        <Clock className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none z-20" />
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="w-8 shrink-0 flex justify-end relative">
+                      <button
+                        type="button"
+                        onClick={() => setActiveStopMenu(activeStopMenu === stop.id ? null : stop.id)}
+                        className="p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+                      {activeStopMenu === stop.id && (
+                        <div className="absolute right-0 top-8 z-50 bg-white border border-slate-200 rounded-xl shadow-lg py-1 min-w-[130px]">
+                          <button
+                            type="button"
+                            onClick={() => { removeStop(stop.id); setActiveStopMenu(null); }}
+                            className="w-full flex items-center gap-2 px-3.5 py-2 text-[12px] font-bold text-rose-600 hover:bg-rose-50 transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" /> Delete Stop
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile Actions menu dismiss overlay */}
+          {activeStopMenu !== null && (
+            <div className="fixed inset-0 z-40" onClick={() => setActiveStopMenu(null)} />
+          )}
 
           <p className="text-[10px] font-medium text-slate-400 mt-3 italic">
             Drag to reorder stops. Pickup stops first, then drop-off stops.
@@ -362,24 +474,24 @@ export default function CreateLoad({ onBack }) {
         </div>
 
         {/* ═══════ Section 3: Items ══════════════════ */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-4 sm:p-6">
           <SectionHeader
             number="3"
             title="Items"
             colorCls="bg-indigo-600"
             subtitle="ADD CARS / VEHICLES TO BE TRANSPORTED"
             action={
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                 <button
                   type="button"
-                  className="flex items-center gap-1.5 px-4 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-[11px] font-bold transition-colors uppercase tracking-wider shadow-sm"
+                  className="flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-[10px] font-bold transition-colors uppercase tracking-wider shadow-xs"
                 >
                   <Upload className="w-3.5 h-3.5" /> BULK IMPORT
                 </button>
                 <button
                   type="button"
                   onClick={addItem}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[11px] font-bold transition-colors shadow-sm uppercase tracking-wider"
+                  className="flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-bold transition-colors shadow-xs uppercase tracking-wider"
                 >
                   <Plus className="w-3.5 h-3.5 stroke-[3px]" /> ADD ITEM
                 </button>
@@ -410,11 +522,11 @@ export default function CreateLoad({ onBack }) {
                   )}
                 </div>
 
-                <div className="flex gap-4 p-4">
+                <div className="flex flex-col lg:flex-row gap-4 p-4">
                   {/* Left: Item Fields */}
-                  <div className="flex-1 space-y-4">
+                  <div className="flex-1 space-y-4 min-w-0">
                     {/* Row 1 */}
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
                         <FieldLabel required>Customer / Owner</FieldLabel>
                         <input type="text" value={item.customer} onChange={e => updateItem(item.id, 'customer', e.target.value)}
@@ -453,7 +565,7 @@ export default function CreateLoad({ onBack }) {
                     </div>
 
                     {/* Row 2: RCOG / VIN / Stock */}
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
                         <FieldLabel>Rego *</FieldLabel>
                         <div className="relative">
@@ -478,7 +590,7 @@ export default function CreateLoad({ onBack }) {
                     </div>
 
                     {/* Row 3: Make / Model / Year / Colour */}
-                    <div className="grid grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       <div>
                         <FieldLabel>Make</FieldLabel>
                         <div className="relative">
@@ -526,7 +638,7 @@ export default function CreateLoad({ onBack }) {
                     </div>
 
                     {/* Row 4: Dimensions */}
-                    <div className="grid grid-cols-5 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                       <div>
                         <FieldLabel>Length (mm)</FieldLabel>
                         <input type="text" value={item.length} onChange={e => updateItem(item.id, 'length', e.target.value)}
@@ -547,7 +659,7 @@ export default function CreateLoad({ onBack }) {
                         <input type="text" value={item.weight} onChange={e => updateItem(item.id, 'weight', e.target.value)}
                           className={`${inputCls} text-center font-bold`} placeholder="2,050" />
                       </div>
-                      <div>
+                      <div className="col-span-2 sm:col-span-1">
                         <FieldLabel>Vehicle Type</FieldLabel>
                         <input type="text" value={item.vehicleType} onChange={e => updateItem(item.id, 'vehicleType', e.target.value)}
                           className={`${inputCls} text-center font-bold`} placeholder="Ute / Utility" />
@@ -555,7 +667,7 @@ export default function CreateLoad({ onBack }) {
                     </div>
 
                     {/* Row 5: Keys / Damage / Notes */}
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
                         <FieldLabel>Keys</FieldLabel>
                         <div className="relative">
@@ -577,7 +689,7 @@ export default function CreateLoad({ onBack }) {
                       <div>
                         <FieldLabel>Additional Notes</FieldLabel>
                         <input type="text" value={item.notes} onChange={e => updateItem(item.id, 'notes', e.target.value)}
-                          className={inputCls} placeholder="Any special notes about this vehic" />
+                          className={inputCls} placeholder="Any special notes about this vehicle" />
                       </div>
                     </div>
 
@@ -594,7 +706,7 @@ export default function CreateLoad({ onBack }) {
                   </div>
 
                   {/* Right: Proof Photos */}
-                  <div className="w-64 shrink-0 bg-white border border-orange-200 rounded-xl p-4 self-start">
+                  <div className="w-full lg:w-64 shrink-0 bg-white border border-orange-200 rounded-xl p-4 self-start">
                     <div className="flex justify-between items-center mb-3">
                       <div className="flex items-center gap-1.5">
                         <Camera className="w-3.5 h-3.5 text-orange-600" />
@@ -696,10 +808,10 @@ export default function CreateLoad({ onBack }) {
         </div>
 
         {/* ═══════ Section 4: Assign Truck & Driver ══ */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-4 sm:p-6">
           <SectionHeader number="4" title="Assign Truck & Driver" colorCls="bg-indigo-600" />
 
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <FieldLabel required>Truck</FieldLabel>
               <div className="relative">
@@ -757,8 +869,6 @@ export default function CreateLoad({ onBack }) {
             </div>
           </div>
         </div>
-
-
 
       </form>
     </div>

@@ -335,11 +335,11 @@ startxref
       </div>
 
       {/* Main Data Table */}
-      <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-xs w-full">
-        <div className="overflow-x-auto custom-scrollbar">
-          <table className="w-full min-w-[900px] text-left border-collapse whitespace-nowrap">
-            <thead>
-              <tr className="border-b border-slate-150 text-[10px] font-black text-slate-400 uppercase tracking-wider">
+      <div className="bg-white border border-slate-100 rounded-2xl lg:p-6 p-4 shadow-xs w-full">
+        <div className="overflow-x-auto lg:overflow-visible custom-scrollbar">
+          <table className="w-full text-left border-collapse block lg:table">
+            <thead className="hidden lg:table-header-group">
+              <tr className="border-b border-slate-200 text-[10px] font-black text-slate-400 uppercase tracking-wider">
                 <th className="pb-4 font-black">INVOICE ID</th>
                 <th className="pb-4 font-black">COMPANY</th>
                 <th className="pb-4 font-black">PLAN TIER</th>
@@ -349,16 +349,24 @@ startxref
                 <th className="pb-4 text-right pr-0 font-black">ACTIONS</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-xs font-bold text-slate-700">
+            <tbody className="divide-y divide-slate-100 text-xs font-bold text-slate-700 block lg:table-row-group">
               {getFilteredData().map((row, idx) => (
-                <tr key={idx} className="hover:bg-slate-50/10">
-                  <td className="py-4 text-slate-500">{row.id}</td>
-                  <td className="py-4 font-extrabold text-slate-800">{row.company}</td>
-                  <td className="py-4 text-slate-500">{row.plan}</td>
+                <tr key={idx} className="hover:bg-slate-50/10 block lg:table-row border border-slate-100 lg:border-none rounded-xl lg:rounded-none mb-4 lg:mb-0 bg-white lg:bg-transparent shadow-sm lg:shadow-none p-4 lg:p-0">
+                  <td className="flex lg:table-cell justify-between items-center py-2 lg:py-4 border-b border-slate-50 lg:border-none before:content-['INVOICE_ID'] before:font-bold before:text-[10px] before:text-slate-400 lg:before:hidden before:uppercase">
+                    <span className="text-slate-500">{row.id}</span>
+                  </td>
+                  <td className="flex lg:table-cell justify-between items-center py-2 lg:py-4 border-b border-slate-50 lg:border-none before:content-['COMPANY'] before:font-bold before:text-[10px] before:text-slate-400 lg:before:hidden before:uppercase text-right lg:text-left">
+                    <span className="font-extrabold text-slate-800">{row.company}</span>
+                  </td>
+                  <td className="flex lg:table-cell justify-between items-center py-2 lg:py-4 border-b border-slate-50 lg:border-none before:content-['PLAN_TIER'] before:font-bold before:text-[10px] before:text-slate-400 lg:before:hidden before:uppercase text-right lg:text-left">
+                    <span className="text-slate-500">{row.plan}</span>
+                  </td>
                   {activeTab === 'TAX / GST SUMMARY' ? (
                     <>
-                      <td className="py-4 text-slate-800 font-extrabold">${(row.amount * 0.82).toFixed(2)} Base</td>
-                      <td className="py-4">
+                      <td className="flex lg:table-cell justify-between items-center py-2 lg:py-4 border-b border-slate-50 lg:border-none before:content-['BASE_AMOUNT'] before:font-bold before:text-[10px] before:text-slate-400 lg:before:hidden before:uppercase text-right lg:text-left">
+                        <span className="text-slate-800 font-extrabold">${(row.amount * 0.82).toFixed(2)} Base</span>
+                      </td>
+                      <td className="flex lg:table-cell justify-between items-center py-2 lg:py-4 border-b border-slate-50 lg:border-none before:content-['GST'] before:font-bold before:text-[10px] before:text-slate-400 lg:before:hidden before:uppercase text-right lg:text-left">
                         <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-[10px]">
                           18% GST ($ {(row.amount * 0.18).toFixed(2)})
                         </span>
@@ -366,8 +374,10 @@ startxref
                     </>
                   ) : (
                     <>
-                      <td className="py-4 text-emerald-500 font-extrabold">${row.amount.toFixed(2)}</td>
-                      <td className="py-4">
+                      <td className="flex lg:table-cell justify-between items-center py-2 lg:py-4 border-b border-slate-50 lg:border-none before:content-['AMOUNT'] before:font-bold before:text-[10px] before:text-slate-400 lg:before:hidden before:uppercase text-right lg:text-left">
+                        <span className="text-emerald-500 font-extrabold">${row.amount.toFixed(2)}</span>
+                      </td>
+                      <td className="flex lg:table-cell justify-between items-center py-2 lg:py-4 border-b border-slate-50 lg:border-none before:content-['STATUS'] before:font-bold before:text-[10px] before:text-slate-400 lg:before:hidden before:uppercase text-right lg:text-left">
                         <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${row.status === 'Paid' ? 'bg-[#E6F4EA] text-[#137333]' :
                             row.status === 'Sent' ? 'bg-[#FEF7E0] text-[#B06000]' :
                               row.status === 'Draft' ? 'bg-slate-100 text-slate-600' :
@@ -378,20 +388,24 @@ startxref
                       </td>
                     </>
                   )}
-                  <td className="py-4 text-slate-400 font-semibold">{row.date}</td>
-                  <td className="py-4 text-right pr-0 flex items-center justify-end gap-2">
-                    <button
-                      onClick={() => handleDownloadPDF(row)}
-                      className="border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-extrabold text-[10px] px-3 py-1.5 rounded-lg shadow-xs transition-colors cursor-pointer"
-                    >
-                      Download
-                    </button>
-                    <button
-                      onClick={() => handleRegenerate(row.id)}
-                      className="border border-[#FFD400] bg-white hover:bg-slate-50 text-[#CC7B00] font-extrabold text-[10px] px-3 py-1.5 rounded-lg shadow-xs transition-colors cursor-pointer"
-                    >
-                      Regenerate
-                    </button>
+                  <td className="flex lg:table-cell justify-between items-center py-2 lg:py-4 border-b border-slate-50 lg:border-none before:content-['DUE_DATE'] before:font-bold before:text-[10px] before:text-slate-400 lg:before:hidden before:uppercase text-right lg:text-left">
+                    <span className="text-slate-400 font-semibold">{row.date}</span>
+                  </td>
+                  <td className="flex lg:table-cell justify-between items-center py-2 lg:py-4 lg:border-none before:content-['ACTIONS'] before:font-bold before:text-[10px] before:text-slate-400 lg:before:hidden before:uppercase pt-4 lg:pt-0 pb-2 lg:pb-0 text-right lg:text-left">
+                    <div className="flex justify-end gap-2 items-center">
+                      <button
+                        onClick={() => handleDownloadPDF(row)}
+                        className="border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-extrabold text-[10px] px-3 py-1.5 rounded-lg shadow-xs transition-colors cursor-pointer"
+                      >
+                        Download
+                      </button>
+                      <button
+                        onClick={() => handleRegenerate(row.id)}
+                        className="border border-[#FFD400] bg-white hover:bg-slate-50 text-[#CC7B00] font-extrabold text-[10px] px-3 py-1.5 rounded-lg shadow-xs transition-colors cursor-pointer"
+                      >
+                        Regenerate
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

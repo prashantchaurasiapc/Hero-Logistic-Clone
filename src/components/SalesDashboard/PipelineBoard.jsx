@@ -233,7 +233,7 @@ export default function PipelineBoard() {
           </div>
           <button 
             onClick={() => setToast(null)} 
-            className="text-slate-450 hover:text-slate-700 p-0.5 rounded-md hover:bg-slate-50 cursor-pointer transition-colors"
+            className="text-slate-400 hover:text-slate-700 p-0.5 rounded-md hover:bg-slate-50 cursor-pointer transition-colors"
           >
             <X className="w-4 h-4 shrink-0" />
           </button>
@@ -287,7 +287,7 @@ export default function PipelineBoard() {
                 <span className="font-extrabold text-[11px] text-slate-800 uppercase tracking-widest">
                   {colStage}
                 </span>
-                <span className="bg-slate-200/70 border border-slate-250 text-slate-700 font-extrabold text-[10px] px-2.5 py-0.5 rounded-full shrink-0">
+                <span className="bg-slate-200/70 border border-slate-200 text-slate-700 font-extrabold text-[10px] px-2.5 py-0.5 rounded-full shrink-0">
                   {stageLeads.length}
                 </span>
               </div>
@@ -303,7 +303,7 @@ export default function PipelineBoard() {
                       draggable="true"
                       onDragStart={(e) => handleDragStart(e, lead.id)}
                       onClick={() => setSelectedLead(lead)}
-                      className={`bg-white border border-slate-200 rounded-xl p-4 shadow-2xs space-y-3 cursor-grab active:cursor-grabbing hover:border-slate-350 hover:shadow-xs transition-all duration-200 text-left relative ${
+                      className={`bg-white border border-slate-200 rounded-xl p-4 shadow-2xs space-y-3 cursor-grab active:cursor-grabbing hover:border-slate-400 hover:shadow-xs transition-all duration-200 text-left relative ${
                         selectedLead && selectedLead.id === lead.id ? 'ring-2 ring-[#F59E0B] border-transparent' : ''
                       }`}
                     >
@@ -331,12 +331,12 @@ export default function PipelineBoard() {
                       <div className="flex justify-between items-center pt-2.5 border-t border-slate-100 text-[9px] font-bold text-slate-400 shrink-0">
                         {/* Rep first name */}
                         <div className="flex items-center gap-1">
-                          <User className="w-3.5 h-3.5 text-slate-350 shrink-0" />
+                          <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                           <span>{lead.rep.split(' ')[0]}</span>
                         </div>
                         {/* Fleet Trucks */}
                         <div className="flex items-center gap-1 font-mono">
-                          <Truck className="w-3.5 h-3.5 text-slate-350 shrink-0" />
+                          <Truck className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                           <span>{lead.fleetSize} Trk</span>
                         </div>
                       </div>
@@ -345,7 +345,7 @@ export default function PipelineBoard() {
                 })}
                 
                 {stageLeads.length === 0 && (
-                  <div className="h-32 border border-dashed border-slate-200/80 rounded-xl flex flex-col items-center justify-center text-slate-450 font-bold text-[9px] text-center select-none uppercase tracking-widest bg-slate-100/30">
+                  <div className="h-32 border border-dashed border-slate-200/80 rounded-xl flex flex-col items-center justify-center text-slate-400 font-bold text-[9px] text-center select-none uppercase tracking-widest bg-slate-100/30">
                     <Grab className="w-5 h-5 text-slate-300 mb-1 shrink-0" />
                     Drop Cards Here
                   </div>
@@ -560,7 +560,7 @@ export default function PipelineBoard() {
               </h3>
               <button 
                 onClick={() => setShowAddModal(false)} 
-                className="text-slate-450 hover:text-slate-655 cursor-pointer p-1 rounded-lg hover:bg-slate-150 transition-colors"
+                className="text-slate-400 hover:text-slate-655 cursor-pointer p-1 rounded-lg hover:bg-slate-200 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -737,7 +737,7 @@ export default function PipelineBoard() {
                   onChange={(e) => setModalForm({ ...modalForm, notes: e.target.value })}
                   placeholder="Describe main requirements or software pain points..."
                   rows="3"
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-850 text-xs font-semibold resize-none"
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-800 text-xs font-semibold resize-none"
                 />
               </div>
 
@@ -746,7 +746,7 @@ export default function PipelineBoard() {
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="flex-1 bg-white hover:bg-slate-50 text-slate-700 font-extrabold text-xs py-3 rounded-xl border border-slate-250 transition-colors cursor-pointer text-center"
+                  className="flex-1 bg-white hover:bg-slate-50 text-slate-700 font-extrabold text-xs py-3 rounded-xl border border-slate-200 transition-colors cursor-pointer text-center"
                 >
                   Cancel
                 </button>
@@ -1008,7 +1008,7 @@ export default function PipelineBoard() {
               {/* Plans */}
               <div>
                 <div className="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-4">AVAILABLE LICENSE PLAN TIERS</div>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
                   {/* Starter */}
                   <div className="border border-slate-200 rounded-2xl p-4 flex flex-col gap-3">

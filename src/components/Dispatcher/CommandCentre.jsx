@@ -211,12 +211,12 @@ export default function CommandCentre() {
       {view === 'dashboard' ? (
         <>
           {/* Page Sub-Header Row */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-left">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 text-left">
             <div>
-              <h1 className="text-3xl font-black text-slate-900 tracking-tight leading-none">
-                Command Center
+              <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
+                Dispatcher Portal <span className="text-slate-400 text-xl mx-1">•</span> Command Center
               </h1>
-              <p className="text-xs font-black text-slate-400 uppercase tracking-widest mt-1.5">
+              <p className="text-[13px] text-slate-500 mt-1 font-medium">
                 FLEET INTELLIGENCE HQ
               </p>
             </div>
@@ -354,7 +354,7 @@ export default function CommandCentre() {
                               movement.status === 'IN TRANSIT' ? 'bg-blue-50 text-blue-600 border border-blue-100/50' :
                               movement.status === 'ARRIVING SOON' ? 'bg-amber-50 text-amber-600 border border-amber-100/50' :
                               movement.status === 'IN SORTING' ? 'bg-purple-50 text-purple-600 border border-purple-100/50' :
-                              'bg-slate-50 text-slate-550 border border-slate-200'
+                              'bg-slate-50 text-slate-500 border border-slate-200'
                             }`}>
                               {movement.status}
                             </span>
@@ -375,7 +375,7 @@ export default function CommandCentre() {
                               </div>
                             )}
                             <div>
-                              <span className={`text-xs font-bold block ${movement.driver === 'Unassigned' ? 'text-red-500' : 'text-slate-850'}`}>
+                              <span className={`text-xs font-bold block ${movement.driver === 'Unassigned' ? 'text-red-500' : 'text-slate-800'}`}>
                                 {movement.driver}
                               </span>
                               <span className="text-[10px] text-slate-400 font-semibold block mt-0.5 leading-none">
@@ -390,7 +390,7 @@ export default function CommandCentre() {
                               setSelectedLoadId(movement.id);
                               setView('manage-load');
                             }}
-                            className="px-4 py-1.5 border border-slate-200 text-slate-650 hover:text-black rounded-full text-xs font-bold transition-all cursor-pointer hover:bg-slate-50 shadow-3xs uppercase tracking-wider"
+                            className="px-4 py-1.5 border border-slate-200 text-slate-600 hover:text-black rounded-full text-xs font-bold transition-all cursor-pointer hover:bg-slate-50 shadow-3xs uppercase tracking-wider"
                           >
                             MANAGE
                           </button>
@@ -411,7 +411,7 @@ export default function CommandCentre() {
                     <MapPin className="w-4 h-4 text-red-500" />
                     Fleet Map
                   </h3>
-                  <ArrowRight className="w-4 h-4 text-slate-450 hover:text-black cursor-pointer transition-colors" />
+                  <ArrowRight className="w-4 h-4 text-slate-400 hover:text-black cursor-pointer transition-colors" />
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">LIVE NETWORK MONITOR</p>
@@ -429,7 +429,7 @@ export default function CommandCentre() {
                 <div className="space-y-3">
                   <div className="p-3.5 bg-white border border-slate-100 rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.005)] text-left transition-all duration-200 hover:border-red-200 hover:bg-red-50/30 hover:shadow-[0_4px_20px_rgb(239,68,68,0.07)] cursor-pointer">
                     <p className="text-xs font-bold text-slate-800">SHP-20483 geofence breach.</p>
-                    <span className="text-[9px] text-slate-450 font-semibold block mt-1">4m ago</span>
+                    <span className="text-[9px] text-slate-400 font-semibold block mt-1">4m ago</span>
                   </div>
                   <div className="p-3.5 bg-white border border-slate-100 rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.005)] text-left transition-all duration-200 hover:border-red-200 hover:bg-red-50/30 hover:shadow-[0_4px_20px_rgb(239,68,68,0.07)] cursor-pointer">
                     <p className="text-xs font-bold text-slate-800">Unassigned SHP-20484 timeout.</p>
@@ -449,7 +449,7 @@ export default function CommandCentre() {
             <div className="flex items-center gap-4">
               <button 
                 onClick={() => setView('dashboard')}
-                className="w-10 h-10 rounded-full border border-slate-250 flex items-center justify-center hover:bg-slate-50 cursor-pointer shadow-3xs"
+                className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center hover:bg-slate-50 cursor-pointer shadow-3xs"
               >
                 <ArrowLeft className="w-5 h-5 text-slate-700" />
               </button>
@@ -552,7 +552,7 @@ export default function CommandCentre() {
                           <div>
                             <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">CONTACT NAME</label>
                             <div className="relative">
-                              <User className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-450" />
+                              <User className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                               <input 
                                 type="text"
                                 placeholder="Receiver/Sender Name"
@@ -659,7 +659,7 @@ export default function CommandCentre() {
                               const val = e.target.value;
                               setDeclaredItems(prev => prev.map(d => d.id === item.id ? { ...d, client: val } : d));
                             }}
-                            className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-850 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
+                            className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
                           />
                         </div>
                         <div>
@@ -670,7 +670,7 @@ export default function CommandCentre() {
                               const val = e.target.value;
                               setDeclaredItems(prev => prev.map(d => d.id === item.id ? { ...d, pickupStop: val } : d));
                             }}
-                            className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-850 focus:outline-none bg-white cursor-pointer"
+                            className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none bg-white cursor-pointer"
                           >
                             {stops.map(s => (
                               <option key={s.id}>{`Stop #${s.id}: ${s.type} (${s.address || 'No Address'})`}</option>
@@ -685,7 +685,7 @@ export default function CommandCentre() {
                               const val = e.target.value;
                               setDeclaredItems(prev => prev.map(d => d.id === item.id ? { ...d, dropStop: val } : d));
                             }}
-                            className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-850 focus:outline-none bg-white cursor-pointer"
+                            className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none bg-white cursor-pointer"
                           >
                             {stops.map(s => (
                               <option key={s.id}>{`Stop #${s.id}: ${s.type} (${s.address || 'No Address'})`}</option>
@@ -705,13 +705,13 @@ export default function CommandCentre() {
                               const val = e.target.value;
                               setDeclaredItems(prev => prev.map(d => d.id === item.id ? { ...d, desc: val } : d));
                             }}
-                            className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-850 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
+                            className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
                           />
                         </div>
                         <div className="md:col-span-1">
                           <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">WEIGHT (KG)</label>
                           <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-450 text-xs">⚖️</span>
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">⚖️</span>
                             <input 
                               type="text"
                               placeholder="0"
@@ -720,7 +720,7 @@ export default function CommandCentre() {
                                 const val = e.target.value;
                                 setDeclaredItems(prev => prev.map(d => d.id === item.id ? { ...d, weight: val } : d));
                               }}
-                              className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-850 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
+                              className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
                             />
                           </div>
                         </div>
@@ -791,13 +791,13 @@ export default function CommandCentre() {
                     className="border border-dashed border-slate-200 p-5 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-slate-50 transition-colors cursor-pointer select-none"
                   >
                     <Clipboard className="w-5 h-5 text-indigo-500 shrink-0" />
-                    <span className="text-[10px] font-bold text-slate-450 uppercase tracking-wide">MANIFEST</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">MANIFEST</span>
                   </div>
                   <div 
                     onClick={() => triggerToast('Select and upload cargo photos...')}
                     className="border border-dashed border-slate-200 p-5 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-slate-50 transition-colors cursor-pointer select-none"
                   >
-                    <Camera className="w-5 h-5 text-slate-650" />
+                    <Camera className="w-5 h-5 text-slate-600" />
                     <span className="text-[10px] font-bold text-slate-455 uppercase tracking-wide">PHOTOS</span>
                   </div>
                 </div>
@@ -826,7 +826,7 @@ export default function CommandCentre() {
           <div className="flex flex-col gap-2 pb-4 border-b border-slate-200/80">
             <button 
               onClick={() => setView('dashboard')}
-              className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1 hover:text-slate-650 cursor-pointer self-start"
+              className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1 hover:text-slate-600 cursor-pointer self-start"
             >
               &lt; Back to Loads
             </button>
@@ -893,7 +893,7 @@ export default function CommandCentre() {
                   <div className="space-y-0.5 pl-1.5">
                     <span className="text-[8px] font-black text-[#10B981] uppercase tracking-wider block">PICKUP</span>
                     <span className="text-xs font-extrabold text-slate-800 block">First Mile Pickup</span>
-                    <span className="text-[9px] font-bold text-slate-450 block">Customer Site (Bondi) / Local Courier</span>
+                    <span className="text-[9px] font-bold text-slate-400 block">Customer Site (Bondi) / Local Courier</span>
                   </div>
                 </div>
 
@@ -905,7 +905,7 @@ export default function CommandCentre() {
                   <div className="space-y-0.5 pl-1.5">
                     <span className="text-[8px] font-black text-[#10B981] uppercase tracking-wider block">SORTING</span>
                     <span className="text-xs font-extrabold text-slate-800 block">Inbound Sorting</span>
-                    <span className="text-[9px] font-bold text-slate-450 block">Sydney Central Depot / Depot Manager</span>
+                    <span className="text-[9px] font-bold text-slate-400 block">Sydney Central Depot / Depot Manager</span>
                   </div>
                 </div>
 
@@ -922,7 +922,7 @@ export default function CommandCentre() {
                     </div>
                     <button 
                       onClick={() => setIsAssignModalOpen(true)}
-                      className="bg-white border border-slate-200 hover:border-slate-350 hover:bg-slate-50 px-2.5 py-1 text-[8px] font-black rounded-lg text-slate-700 shrink-0 cursor-pointer shadow-3xs uppercase tracking-wider"
+                      className="bg-white border border-slate-200 hover:border-slate-400 hover:bg-slate-50 px-2.5 py-1 text-[8px] font-black rounded-lg text-slate-700 shrink-0 cursor-pointer shadow-3xs uppercase tracking-wider"
                     >
                       ASSIGN RESOURCE
                     </button>
@@ -987,7 +987,7 @@ export default function CommandCentre() {
               </div>
 
               {/* Map Placeholder Panel */}
-              <div className="bg-[#0B0F17] h-48 border border-slate-800 rounded-[24px] flex items-center justify-center text-xs text-slate-550 font-black tracking-widest uppercase bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px]">
+              <div className="bg-[#0B0F17] h-48 border border-slate-800 rounded-[24px] flex items-center justify-center text-xs text-slate-500 font-black tracking-widest uppercase bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px]">
                 🗺️ MAP VECTOR INTEGRATION ZONE
               </div>
 
@@ -1005,7 +1005,7 @@ export default function CommandCentre() {
                     </div>
                     <div className="mt-4">
                       <span className="block text-[9px] font-black text-slate-400 uppercase tracking-wider">CURRENT ASSET ALLOCATION</span>
-                      <span className="block text-xs font-bold text-slate-450 italic mt-1.5">Waiting for resource assignment...</span>
+                      <span className="block text-xs font-bold text-slate-400 italic mt-1.5">Waiting for resource assignment...</span>
                     </div>
                   </div>
 
@@ -1076,7 +1076,7 @@ export default function CommandCentre() {
           <div className="flex flex-col gap-2 pb-4 border-b border-slate-200/80">
             <button 
               onClick={() => setView('manage-load')}
-              className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1 hover:text-slate-650 cursor-pointer self-start"
+              className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1 hover:text-slate-600 cursor-pointer self-start"
             >
               &lt; Back to Details
             </button>
@@ -1140,7 +1140,7 @@ export default function CommandCentre() {
                       type="text"
                       value={customerLoadNo}
                       onChange={(e) => setCustomerLoadNo(e.target.value)}
-                      className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-850 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
+                      className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
                     />
                   </div>
                   <div>
@@ -1152,7 +1152,7 @@ export default function CommandCentre() {
                       value={internalDeptCode}
                       onChange={(e) => setInternalDeptCode(e.target.value)}
                       placeholder="Optional cost center"
-                      className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-850 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
+                      className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
                     />
                   </div>
                 </div>
@@ -1191,7 +1191,7 @@ export default function CommandCentre() {
                           className={`px-4 py-2 rounded-xl border text-[10px] font-extrabold flex items-center gap-1.5 cursor-pointer uppercase tracking-wider transition-all ${
                             cargoType === type 
                               ? 'bg-blue-50 border-blue-200 text-blue-600 shadow-3xs'
-                              : 'bg-white border-slate-150 text-slate-500 hover:border-slate-300'
+                              : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
                           }`}
                         >
                           {type === 'Vehicle' ? '🚚' : type === 'Hazmat' ? '⚠' : '📦'} {type}
@@ -1206,7 +1206,7 @@ export default function CommandCentre() {
                           type="text"
                           value={vinChassis}
                           onChange={(e) => setVinChassis(e.target.value)}
-                          className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-850 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
+                          className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
                         />
                       </div>
                       <div>
@@ -1227,7 +1227,7 @@ export default function CommandCentre() {
                           type="text"
                           value={makeModel}
                           onChange={(e) => setMakeModel(e.target.value)}
-                          className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-850 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
+                          className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
                         />
                       </div>
                       <div>
@@ -1251,7 +1251,7 @@ export default function CommandCentre() {
             <div className="lg:col-span-4 space-y-6">
               
               {/* Routing Override Card */}
-              <div className="bg-[#0B0F17] text-white rounded-[24px] border border-slate-850 p-6 shadow-md space-y-4 text-left">
+              <div className="bg-[#0B0F17] text-white rounded-[24px] border border-slate-800 p-6 shadow-md space-y-4 text-left">
                 <h3 className="font-bold text-xs uppercase tracking-wider flex items-center gap-2">
                   <span className="text-[#FFD400]">⚡</span>
                   ROUTING OVERRIDE
@@ -1294,7 +1294,7 @@ export default function CommandCentre() {
                           className={`flex-1 py-2 text-[9px] font-black rounded-lg uppercase tracking-wider transition-all cursor-pointer ${
                             priorityStatus === status 
                               ? 'bg-[#FFA000] text-black font-black shadow-xs' 
-                              : 'bg-slate-800 hover:bg-slate-750 text-slate-400 font-bold border border-slate-700/50'
+                              : 'bg-slate-800 hover:bg-slate-700 text-slate-400 font-bold border border-slate-700/50'
                           }`}
                         >
                           {status}
@@ -1352,7 +1352,7 @@ export default function CommandCentre() {
               </div>
               <button 
                 onClick={() => setIsPodModalOpen(false)}
-                className="w-8 h-8 rounded-full border border-slate-100 text-slate-400 hover:border-slate-350 hover:bg-slate-50 flex items-center justify-center cursor-pointer transition-colors"
+                className="w-8 h-8 rounded-full border border-slate-100 text-slate-400 hover:border-slate-400 hover:bg-slate-50 flex items-center justify-center cursor-pointer transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1372,7 +1372,7 @@ export default function CommandCentre() {
             </div>
 
             {/* Divider line */}
-            <div className="w-full h-px bg-slate-150/40"></div>
+            <div className="w-full h-px bg-slate-200/40"></div>
 
             {/* Bottom action buttons */}
             <div className="flex items-center gap-3 pt-2">

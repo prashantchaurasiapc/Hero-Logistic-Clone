@@ -90,7 +90,7 @@ export default function SystemSettings() {
       
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-5 py-3.5 rounded-xl shadow-xl flex items-center gap-3 border border-slate-750 transition-all duration-300">
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-5 py-3.5 rounded-xl shadow-xl flex items-center gap-3 border border-slate-700 transition-all duration-300">
           <ShieldCheck className="w-4 h-4 text-[#FFA000] animate-pulse" />
           <span className="text-xs font-semibold">{toastMessage}</span>
         </div>
@@ -102,8 +102,12 @@ export default function SystemSettings() {
           <Sliders className="w-5 h-5 text-[#FFA000]" />
         </div>
         <div>
-          <h1 className="text-xl font-black text-slate-900 tracking-tight leading-none mb-1.5">System Settings</h1>
-          <p className="text-slate-400 text-xs font-semibold">Configure your operator profile and terminal preferences</p>
+          <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
+            Dispatcher Portal <span className="text-slate-400 text-xl mx-1">•</span> System Settings
+          </h1>
+          <p className="text-[13px] text-slate-500 mt-1 font-medium">
+            Configure your operator profile and terminal preferences
+          </p>
         </div>
       </div>
 
@@ -284,7 +288,7 @@ export default function SystemSettings() {
                   </div>
 
                   {/* Warning Info */}
-                  <div className="bg-slate-50 border border-slate-150 rounded-2xl p-4 text-[10px] text-slate-500 font-bold leading-relaxed">
+                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-[10px] text-slate-500 font-bold leading-relaxed">
                     Branch location is locked to your dispatcher license. For inter-Depot duty, please submit a transfer request.
                   </div>
                 </div>
@@ -445,7 +449,7 @@ export default function SystemSettings() {
                   {/* Preference Item 3 */}
                   <div className="flex items-center justify-between p-3.5 bg-slate-50/30 border border-slate-100 rounded-2xl hover:bg-slate-50 transition-colors">
                     <div className="flex items-center gap-3.5">
-                      <div className="w-9 h-9 bg-slate-100 text-slate-500 rounded-xl flex items-center justify-center shrink-0 border border-slate-150">
+                      <div className="w-9 h-9 bg-slate-100 text-slate-500 rounded-xl flex items-center justify-center shrink-0 border border-slate-200">
                         <MessageSquare size={14} className="stroke-[2.5px]" />
                       </div>
                       <span className="text-[11px] font-extrabold text-slate-800">New message desktop notifications</span>
@@ -461,7 +465,7 @@ export default function SystemSettings() {
                   {/* Preference Item 4 */}
                   <div className="flex items-center justify-between p-3.5 bg-slate-50/30 border border-slate-100 rounded-2xl hover:bg-slate-50 transition-colors">
                     <div className="flex items-center gap-3.5">
-                      <div className="w-9 h-9 bg-slate-100 text-slate-500 rounded-xl flex items-center justify-center shrink-0 border border-slate-150">
+                      <div className="w-9 h-9 bg-slate-100 text-slate-500 rounded-xl flex items-center justify-center shrink-0 border border-slate-200">
                         <Table size={14} className="stroke-[2.5px]" />
                       </div>
                       <span className="text-[11px] font-extrabold text-slate-800">Compact table layout</span>
@@ -477,7 +481,7 @@ export default function SystemSettings() {
                   {/* Preference Item 5 */}
                   <div className="flex items-center justify-between p-3.5 bg-slate-50/30 border border-slate-100 rounded-2xl hover:bg-slate-50 transition-colors">
                     <div className="flex items-center gap-3.5">
-                      <div className="w-9 h-9 bg-slate-100 text-slate-500 rounded-xl flex items-center justify-center shrink-0 border border-slate-150">
+                      <div className="w-9 h-9 bg-slate-100 text-slate-500 rounded-xl flex items-center justify-center shrink-0 border border-slate-200">
                         <FileText size={14} className="stroke-[2.5px]" />
                       </div>
                       <span className="text-[11px] font-extrabold text-slate-800">Daily summary PDF to email</span>

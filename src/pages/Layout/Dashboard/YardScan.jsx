@@ -159,17 +159,18 @@ export default function YardScan() {
   };
 
   return (
-    <div className="customer-dashboard" style={{ height: 'calc(100vh - 125px)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto', padding: 0, width: '100%', maxWidth: 'none', fontFamily: "'Outfit', 'Inter', sans-serif" }}>
+    <div className="customer-dashboard" style={{ height: 'calc(100vh - 125px)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto', padding: 0, width: '100%', maxWidth: 'none', fontFamily: 'Inter, Outfit, sans-serif' }}>
 
 
       {/* Header Panel */}
-      <div className="customer-header-container" style={{ flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', flexWrap: 'wrap', gap: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 24 }}>🚧</span>
-          <div style={{ textAlign: 'left' }}>
-            <h1 className="customer-title" style={{ fontSize: '20px', fontWeight: '800', margin: 0 }}>Yard Attendant &bull; Scan Btn</h1>
-            <p className="customer-subtitle" style={{ fontSize: '12.5px', marginTop: '2px', color: '#64748b' }}>Perform gate checks, inspect trailers, and log spotted containers.</p>
-          </div>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8" style={{ flexShrink: 0, padding: '16px 20px', gap: 16 }}>
+        <div>
+          <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
+            Yard Attendant <span className="text-slate-400 text-xl mx-1">•</span> Scan Button
+          </h1>
+          <p className="text-[13px] text-slate-500 mt-1 font-medium">
+            Perform gate checks, inspect trailers, and log spotted containers.
+          </p>
         </div>
       </div>
 

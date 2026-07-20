@@ -335,7 +335,7 @@ export default function SupportTickets() {
         <div className="overflow-x-auto custom-scrollbar">
           <table className="w-full min-w-[900px] text-left border-collapse whitespace-nowrap">
             <thead>
-              <tr className="border-b border-slate-150 text-[10px] font-black text-slate-400 uppercase tracking-wider">
+              <tr className="border-b border-slate-200 text-[10px] font-black text-slate-400 uppercase tracking-wider">
                 <th className="pb-4 font-black">TICKET ID</th>
                 <th className="pb-4 font-black">COMPANY</th>
                 <th className="pb-4 font-black">SUBJECT</th>
@@ -419,7 +419,7 @@ export default function SupportTickets() {
               <h3 className="text-lg font-black text-slate-900">Open Support Ticket</h3>
               <button
                 onClick={() => setShowNewTicketModal(false)}
-                className="text-slate-400 hover:text-slate-650 cursor-pointer transition-colors p-1"
+                className="text-slate-400 hover:text-slate-600 cursor-pointer transition-colors p-1"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -595,7 +595,7 @@ export default function SupportTickets() {
               <h3 className="text-[17px] font-black text-slate-900">Assign Support Ticket</h3>
               <button
                 onClick={() => setShowAssignModal(false)}
-                className="text-slate-400 hover:text-slate-650 cursor-pointer transition-colors p-1"
+                className="text-slate-400 hover:text-slate-600 cursor-pointer transition-colors p-1"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -659,7 +659,7 @@ export default function SupportTickets() {
               <h3 className="text-[17px] font-black text-slate-900">Resolve Support Ticket</h3>
               <button
                 onClick={() => setShowResolveModal(false)}
-                className="text-slate-400 hover:text-slate-650 cursor-pointer transition-colors p-1"
+                className="text-slate-400 hover:text-slate-600 cursor-pointer transition-colors p-1"
               >
                 <X className="w-5 h-5" />
               </button>

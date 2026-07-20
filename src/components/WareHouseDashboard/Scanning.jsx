@@ -71,7 +71,7 @@ export default function Scanning({
         {/* Title / Subtitle section */}
         <div>
           <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">Warehouse Scanning Terminal</h3>
-          <p className="text-xs text-slate-450 mt-1">Scan physical barcodes, register stock tags, and log movements.</p>
+          <p className="text-xs text-slate-400 mt-1">Scan physical barcodes, register stock tags, and log movements.</p>
         </div>
 
         {/* 2-Column Terminal Layout */}
@@ -83,7 +83,7 @@ export default function Scanning({
               <strong className="text-[10px] font-black text-slate-900 tracking-wider uppercase block">Scan Action Simulator</strong>
               
               <div className="space-y-2">
-                <label className="block text-[9px] font-extrabold text-slate-450 uppercase tracking-wide">
+                <label className="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wide">
                   Barcode Input Tag
                 </label>
                 <input
@@ -135,7 +135,7 @@ export default function Scanning({
           <div className="p-5 bg-slate-50/50 border border-slate-200 rounded-2xl flex flex-col justify-between items-center text-center">
             <div className="text-left w-full space-y-1">
               <strong className="text-[10px] font-black text-slate-900 tracking-wider uppercase block">Device Status</strong>
-              <span className="text-[10px] text-slate-450 font-semibold block">Zebra Scanner handheld connected.</span>
+              <span className="text-[10px] text-slate-400 font-semibold block">Zebra Scanner handheld connected.</span>
             </div>
 
             <div className="my-6 px-6 py-4 bg-emerald-50 border border-emerald-250/50 text-emerald-600 font-extrabold text-xs tracking-wider rounded-xl select-none">

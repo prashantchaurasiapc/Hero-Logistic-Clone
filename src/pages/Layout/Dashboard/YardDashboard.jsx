@@ -392,16 +392,17 @@ export default function YardDashboard() {
   };
 
   return (
-    <div style={{ height: 'calc(100vh - 85px)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto', padding: '16px 20px', width: '100%', maxWidth: 'none', fontFamily: "'Outfit', 'Inter', sans-serif", backgroundColor: '#f8fafc' }}>
+    <div style={{ height: 'calc(100vh - 85px)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflowY: 'auto', padding: '16px 20px', width: '100%', maxWidth: 'none', fontFamily: 'Inter, Outfit, sans-serif', backgroundColor: '#f8fafc' }}>
 
       {/* Header Panel */}
       <div style={{ flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 24 }}>🚧</span>
-          <div style={{ textAlign: 'left' }}>
-            <h1 style={{ fontSize: '20px', fontWeight: '800', margin: 0, color: '#0f172a' }}>Yard Attendant &bull; Overview</h1>
-            <p style={{ fontSize: '12.5px', marginTop: '2px', color: '#64748b', margin: 0 }}>Perform gate checks, inspect trailers, and log spotted containers.</p>
-          </div>
+        <div>
+          <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
+            Yard Attendant <span className="text-slate-400 text-xl mx-1">•</span> Overview
+          </h1>
+          <p className="text-[13px] text-slate-500 mt-1 font-medium">
+            Perform gate checks, inspect trailers, and log spotted containers.
+          </p>
         </div>
 
         {/* Top Right Header Controls */}
@@ -1461,7 +1462,7 @@ export default function YardDashboard() {
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
-            fontFamily: "'Outfit', 'Inter', sans-serif"
+            fontFamily: 'Inter, Outfit, sans-serif'
           }}>
             {/* Modal Header */}
             <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1616,7 +1617,7 @@ export default function YardDashboard() {
             display: 'flex',
             flexDirection: 'column',
             maxHeight: '90vh',
-            fontFamily: "'Outfit', 'Inter', sans-serif"
+            fontFamily: 'Inter, Outfit, sans-serif'
           }}>
             {/* Modal Header */}
             <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1832,7 +1833,7 @@ export default function YardDashboard() {
             display: 'flex',
             flexDirection: 'column',
             maxHeight: '90vh',
-            fontFamily: "'Outfit', 'Inter', sans-serif"
+            fontFamily: 'Inter, Outfit, sans-serif'
           }}>
             {/* Modal Header */}
             <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1987,7 +1988,7 @@ export default function YardDashboard() {
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
-            fontFamily: "'Outfit', 'Inter', sans-serif"
+            fontFamily: 'Inter, Outfit, sans-serif'
           }}>
             {/* Modal Header */}
             <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -2116,7 +2117,7 @@ export default function YardDashboard() {
             display: 'flex',
             flexDirection: 'column',
             maxHeight: '90vh',
-            fontFamily: "'Outfit', 'Inter', sans-serif"
+            fontFamily: 'Inter, Outfit, sans-serif'
           }}>
             {/* Modal Header */}
             <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -2276,7 +2277,7 @@ export default function YardDashboard() {
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
-            fontFamily: "'Outfit', 'Inter', sans-serif"
+            fontFamily: 'Inter, Outfit, sans-serif'
           }}>
             {/* Modal Header */}
             <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -2381,7 +2382,7 @@ export default function YardDashboard() {
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
-            fontFamily: "'Outfit', 'Inter', sans-serif"
+            fontFamily: 'Inter, Outfit, sans-serif'
           }}>
             {/* Modal Header */}
             <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -2486,7 +2487,7 @@ export default function YardDashboard() {
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
-            fontFamily: "'Outfit', 'Inter', sans-serif"
+            fontFamily: 'Inter, Outfit, sans-serif'
           }}>
             {/* Modal Header */}
             <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

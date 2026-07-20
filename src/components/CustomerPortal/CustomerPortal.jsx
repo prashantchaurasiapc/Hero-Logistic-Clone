@@ -109,7 +109,7 @@ export default function CustomerPortal() {
                 triggerToast('Signing out...');
                 setTimeout(() => window.close(), 1000);
               }}
-              className="text-[10px] font-black text-slate-450 uppercase hover:text-slate-850 flex items-center gap-1 cursor-pointer"
+              className="text-[10px] font-black text-slate-400 uppercase hover:text-slate-800 flex items-center gap-1 cursor-pointer"
             >
               [→ SIGN OUT
             </button>
@@ -124,7 +124,7 @@ export default function CustomerPortal() {
         {activeTab === 'Acme Distribution' && (
           <div className="space-y-8 animate-fade-in">
             {/* Top dark hero banner card */}
-            <div className="bg-[#0B0F17] text-white rounded-[24px] p-6 flex flex-col md:flex-row justify-between items-center gap-6 border border-slate-850 shadow-md relative overflow-hidden">
+            <div className="bg-[#0B0F17] text-white rounded-[24px] p-6 flex flex-col md:flex-row justify-between items-center gap-6 border border-slate-800 shadow-md relative overflow-hidden">
               <div className="flex items-center gap-4.5">
                 <div className="w-12 h-12 bg-amber-500 text-black flex items-center justify-center font-bold text-xl rounded-2xl shadow-xs">
                   🏆
@@ -144,7 +144,7 @@ export default function CustomerPortal() {
               <div className="flex items-center gap-6">
                 <div className="flex gap-4">
                   <div className="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-center min-w-[90px]">
-                    <span className="block text-[8px] font-extrabold text-slate-450 uppercase">ACTIVE LOADS</span>
+                    <span className="block text-[8px] font-extrabold text-slate-400 uppercase">ACTIVE LOADS</span>
                     <span className="block text-xl font-black text-[#FFD400]">03</span>
                   </div>
                   <div className="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-center min-w-[90px]">
@@ -312,7 +312,7 @@ export default function CustomerPortal() {
                     <span className="text-[#3B82F6] font-extrabold text-sm select-none">✓</span>
                     <div className="text-left leading-tight">
                       <span className="block text-[10px] font-black text-slate-800">LIVE ASSISTANCE</span>
-                      <span className="block text-[8px] text-slate-450 uppercase font-black tracking-wide mt-0.5">Average Response: 2m</span>
+                      <span className="block text-[8px] text-slate-400 uppercase font-black tracking-wide mt-0.5">Average Response: 2m</span>
                     </div>
                   </div>
                   <button 
@@ -402,9 +402,9 @@ export default function CustomerPortal() {
               <div className="lg:col-span-8 space-y-6">
                 
                 {/* Map Vector integration */}
-                <div className="bg-[#0B0F17] rounded-[24px] h-48 border border-slate-850 p-6 flex flex-col justify-between relative overflow-hidden text-white shadow-md">
+                <div className="bg-[#0B0F17] rounded-[24px] h-48 border border-slate-800 p-6 flex flex-col justify-between relative overflow-hidden text-white shadow-md">
                   <div className="flex justify-between items-center">
-                    <span className="text-[8px] font-black text-slate-450 tracking-wider uppercase">
+                    <span className="text-[8px] font-black text-slate-400 tracking-wider uppercase">
                       🗺️ REAL-TIME GEOLOCATION
                     </span>
                     <span className="px-2 py-0.5 bg-slate-900 border border-slate-800 text-emerald-400 font-black text-[8px] rounded uppercase tracking-wider flex items-center gap-1 select-none">
@@ -439,11 +439,11 @@ export default function CustomerPortal() {
                       <div className="w-7 h-7 bg-slate-800 rounded-full border-4 border-slate-900 flex items-center justify-center font-bold text-xs select-none text-slate-500">
                         3
                       </div>
-                      <span className="text-[9px] font-black text-slate-450 uppercase mt-0.5">MELBOURNE</span>
+                      <span className="text-[9px] font-black text-slate-400 uppercase mt-0.5">MELBOURNE</span>
                     </div>
                   </div>
 
-                  <div className="flex justify-between items-center text-[10px] text-slate-500 font-bold uppercase tracking-wider pt-2 border-t border-slate-850/60">
+                  <div className="flex justify-between items-center text-[10px] text-slate-500 font-bold uppercase tracking-wider pt-2 border-t border-slate-800/60">
                     <span>GPS LINK: ACTIVE OVERWAY</span>
                     <span>Updated 30s ago</span>
                   </div>
@@ -485,7 +485,7 @@ export default function CustomerPortal() {
                       <div className="flex justify-between items-start gap-2 pl-2">
                         <div className="space-y-0.5">
                           <span className="text-xs font-black text-slate-800 block">SYDNEY CBD</span>
-                          <span className="text-[9px] font-bold text-slate-450 block">Collected from Customer</span>
+                          <span className="text-[9px] font-bold text-slate-400 block">Collected from Customer</span>
                         </div>
                         <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 font-black text-[7px] border border-emerald-100 rounded uppercase tracking-wider">
                           SCANNING
@@ -501,7 +501,7 @@ export default function CustomerPortal() {
                       <div className="flex justify-between items-start gap-2 pl-2">
                         <div className="space-y-0.5">
                           <span className="text-xs font-black text-slate-800 block">SYDNEY DEPOT</span>
-                          <span className="text-[9px] font-bold text-slate-450 block">Processing at Depot</span>
+                          <span className="text-[9px] font-bold text-slate-400 block">Processing at Depot</span>
                         </div>
                         <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 font-black text-[7px] border border-emerald-100 rounded uppercase tracking-wider">
                           SCANNING
@@ -517,7 +517,7 @@ export default function CustomerPortal() {
                       <div className="flex justify-between items-start gap-2 pl-2">
                         <div className="space-y-0.5">
                           <span className="text-xs font-black text-slate-800 block">GOULBURN DEPOT</span>
-                          <span className="text-[9px] font-bold text-slate-450 block">Departed Central Depot</span>
+                          <span className="text-[9px] font-bold text-slate-400 block">Departed Central Depot</span>
                         </div>
                         <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 font-black text-[7px] border border-emerald-100 rounded uppercase tracking-wider">
                           SCANNING
@@ -598,7 +598,7 @@ export default function CustomerPortal() {
               </div>
               <div className="bg-white border border-slate-100 rounded-[24px] p-6 shadow-3xs text-left flex justify-between items-center h-28">
                 <div>
-                  <span className="block text-[9px] font-black text-slate-450 uppercase tracking-wider">PAID (ALL TIME)</span>
+                  <span className="block text-[9px] font-black text-slate-400 uppercase tracking-wider">PAID (ALL TIME)</span>
                   <span className="block text-3xl font-black text-emerald-500 leading-none mt-2">$3,740.00</span>
                 </div>
                 <span className="text-2xl opacity-15 select-none">✓</span>
@@ -695,7 +695,7 @@ export default function CustomerPortal() {
                     <span className="text-xs font-black text-slate-900">$980.50</span>
                     <button 
                       onClick={() => triggerToast('Downloading invoice PDF...')}
-                      className="text-slate-450 hover:text-slate-900 font-extrabold text-[10px] flex items-center gap-1 uppercase cursor-pointer"
+                      className="text-slate-400 hover:text-slate-900 font-extrabold text-[10px] flex items-center gap-1 uppercase cursor-pointer"
                     >
                       📥 PDF
                     </button>
@@ -725,7 +725,7 @@ export default function CustomerPortal() {
                     <span className="text-xs font-black text-slate-900">$2,037.20</span>
                     <button 
                       onClick={() => triggerToast('Downloading invoice PDF...')}
-                      className="text-slate-450 hover:text-slate-900 font-extrabold text-[10px] flex items-center gap-1 uppercase cursor-pointer"
+                      className="text-slate-400 hover:text-slate-900 font-extrabold text-[10px] flex items-center gap-1 uppercase cursor-pointer"
                     >
                       📥 PDF
                     </button>
@@ -755,7 +755,7 @@ export default function CustomerPortal() {
                     <span className="text-xs font-black text-slate-900">$3,120.00</span>
                     <button 
                       onClick={() => triggerToast('Downloading invoice PDF...')}
-                      className="text-slate-450 hover:text-slate-900 font-extrabold text-[10px] flex items-center gap-1 uppercase cursor-pointer"
+                      className="text-slate-400 hover:text-slate-900 font-extrabold text-[10px] flex items-center gap-1 uppercase cursor-pointer"
                     >
                       📥 PDF
                     </button>
@@ -807,7 +807,7 @@ export default function CustomerPortal() {
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">COMPANY DETAILS</span>
                 <button 
                   onClick={() => triggerToast('Opening company settings details editor...')}
-                  className="px-4 py-1.5 border border-slate-250 hover:bg-slate-50 text-slate-700 font-extrabold text-[10px] rounded-xl cursor-pointer transition-colors shadow-3xs uppercase tracking-wider"
+                  className="px-4 py-1.5 border border-slate-200 hover:bg-slate-50 text-slate-700 font-extrabold text-[10px] rounded-xl cursor-pointer transition-colors shadow-3xs uppercase tracking-wider"
                 >
                   EDIT DETAILS
                 </button>
@@ -816,7 +816,7 @@ export default function CustomerPortal() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Company Name */}
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-slate-50 text-slate-650 flex items-center justify-center text-sm border border-slate-150 shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-slate-50 text-slate-600 flex items-center justify-center text-sm border border-slate-200 shrink-0">
                     🏢
                   </div>
                   <div>
@@ -827,7 +827,7 @@ export default function CustomerPortal() {
 
                 {/* Email */}
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-slate-50 text-slate-655 flex items-center justify-center text-sm border border-slate-150 shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-slate-50 text-slate-655 flex items-center justify-center text-sm border border-slate-200 shrink-0">
                     ✉
                   </div>
                   <div>
@@ -838,7 +838,7 @@ export default function CustomerPortal() {
 
                 {/* Phone */}
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-slate-50 text-slate-655 flex items-center justify-center text-sm border border-slate-150 shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-slate-50 text-slate-655 flex items-center justify-center text-sm border border-slate-200 shrink-0">
                     📞
                   </div>
                   <div>
@@ -849,7 +849,7 @@ export default function CustomerPortal() {
 
                 {/* Address */}
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-slate-50 text-slate-655 flex items-center justify-center text-sm border border-slate-150 shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-slate-50 text-slate-655 flex items-center justify-center text-sm border border-slate-200 shrink-0">
                     📍
                   </div>
                   <div>

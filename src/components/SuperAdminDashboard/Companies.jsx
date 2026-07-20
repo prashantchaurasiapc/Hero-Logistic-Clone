@@ -302,7 +302,7 @@ export default function Companies() {
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pb-2">
         <div>
           <h1 className="text-xl sm:text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
-            Super Admin <span className="text-slate-350 font-black">•</span> Companies
+            Super Admin <span className="text-slate-400 font-black">•</span> Companies
           </h1>
           <p className="text-[11px] sm:text-xs text-slate-400 font-semibold mt-1">
             Configure global licensing rules, audit tenant margins, and resolve support tickets.
@@ -532,7 +532,7 @@ export default function Companies() {
                 </button>
 
                 {showColumnsMenu && (
-                  <div className="absolute right-0 mt-2 w-52 bg-white border border-slate-250 rounded-2xl shadow-xl p-3 z-45 space-y-1.5 text-left text-xs text-slate-750 font-black max-h-60 overflow-y-auto custom-scrollbar">
+                  <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-52 bg-white border border-slate-200 rounded-2xl shadow-xl p-3 z-50 space-y-1.5 text-left text-xs text-slate-700 font-black max-h-60 overflow-y-auto custom-scrollbar">
                     <span className="block text-[9px] font-black text-slate-400 uppercase tracking-wider pb-1 border-b border-slate-100 mb-1.5">COLUMN VISIBILITY</span>
 
                     {/* Master checklist checkboxes */}
@@ -694,7 +694,7 @@ export default function Companies() {
 
         {/* Advanced Filters Expandable Content */}
         {advancedSearchOpen && (
-          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-150 text-left grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-bold text-slate-700">
+          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-left grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-bold text-slate-700">
             <div className="space-y-1.5">
               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">Plan Level Filter</label>
               <select
@@ -741,7 +741,7 @@ export default function Companies() {
         <div className="overflow-x-auto custom-scrollbar">
           <table className="w-full text-left border-collapse text-xs font-bold text-slate-700 min-w-[1300px] whitespace-nowrap">
             <thead>
-              <tr className="bg-slate-50/50 text-[9px] font-black text-slate-450 uppercase tracking-wider border-b border-slate-100">
+              <tr className="bg-slate-50/50 text-[9px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100">
                 {visibleColumns.checkboxes && (
                   <>
                     <th className="py-4 px-3 text-center w-10">
@@ -769,7 +769,7 @@ export default function Companies() {
                 <th className="py-4 px-6 text-center">ACTIONS</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-xs font-bold text-slate-750 bg-white">
+            <tbody className="divide-y divide-slate-100 text-xs font-bold text-slate-700 bg-white">
               {filteredCompanies.length === 0 ? (
                 <tr>
                   <td colSpan="17" className="py-12 text-center text-slate-400 font-semibold bg-white w-full">

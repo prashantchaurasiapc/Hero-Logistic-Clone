@@ -90,7 +90,7 @@ export default function IncidentReporting() {
 
       {/* Connection status toggle */}
       <div className="flex flex-col items-center gap-2 w-full">
-        <div className="w-full flex justify-between items-center p-3 bg-white border border-gray-150 rounded-2xl shadow-sm">
+        <div className="w-full flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 p-3 bg-white border border-gray-150 rounded-2xl shadow-sm">
           <span className="text-sm font-bold text-gray-600 flex items-center gap-2">
             <svg className="w-4 h-4 text-amber-500 rotate-45" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <polygon points="3 11 22 2 13 21 11 13 3 11" />
@@ -102,7 +102,7 @@ export default function IncidentReporting() {
               setIsOnline(prev => !prev);
               triggerToast(isOnline ? 'Connection switched to Offline Mode.' : 'Connection restored to Online Mode.');
             }}
-            className={`px-4 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-bold border cursor-pointer transition-all ${
+            className={`px-4 py-1.5 rounded-full flex items-center gap-1.5 text-xs font-bold border cursor-pointer transition-all w-full sm:w-auto justify-center ${
               isOnline
                 ? 'bg-[#E6F4EA] border-[#CEEAD6] text-[#137333]'
                 : 'bg-[#FFFBEB] border-[#000000] border-2 text-[#D97706]'
@@ -144,31 +144,31 @@ export default function IncidentReporting() {
 
       <div className="w-full space-y-6">
         {/* Header */}
-        <div className="bg-white border border-gray-150 rounded-3xl p-6 flex justify-between items-center shadow-sm">
+        <div className="bg-white border border-gray-150 rounded-2xl sm:rounded-3xl p-4 sm:p-6 flex justify-between items-center shadow-sm gap-4">
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-black text-[#0F172A] tracking-tight leading-none">Driver Portal</h1>
-              <span className="text-xl font-bold text-[#0F172A]">•</span>
-              <span className="text-2xl font-black text-[#0F172A]">incidents</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-lg sm:text-2xl font-black text-[#0F172A] tracking-tight leading-none">Driver Portal</h1>
+              <span className="text-lg sm:text-xl font-bold text-[#0F172A]">•</span>
+              <span className="text-lg sm:text-2xl font-black text-[#0F172A]">incidents</span>
             </div>
-            <p className="text-[#64748B] text-sm font-medium mt-1">ELD &amp; logistics operations controls.</p>
+            <p className="text-[#64748B] text-xs sm:text-sm font-medium mt-1">ELD &amp; logistics operations controls.</p>
           </div>
-          <div className="w-12 h-12 rounded-full bg-[#FFFBEB] flex items-center justify-center text-[#D97706] shrink-0">
-            <Compass className="w-6 h-6" />
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#FFFBEB] flex items-center justify-center text-[#D97706] shrink-0">
+            <Compass className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
         </div>
 
         {/* Top Banner */}
-        <div className="bg-[#FFFBEB] border border-[#FEF08A] rounded-[2rem] p-6 shadow-sm">
+        <div className="bg-[#FFFBEB] border border-[#FEF08A] rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
             <Shield className="w-5 h-5 text-[#D97706]" strokeWidth={2.5} />
             <h2 className="text-base font-black text-[#0F172A]">Incident Logger</h2>
           </div>
-          <p className="text-sm font-medium text-[#64748B]">File digital accident reports and cargo/trailer defect logs.</p>
+          <p className="text-xs sm:text-sm font-medium text-[#64748B]">File digital accident reports and cargo/trailer defect logs.</p>
         </div>
 
         {/* Form Section */}
-        <div className="bg-white rounded-[2rem] p-6 md:p-8 shadow-sm border border-gray-100 flex flex-col space-y-6">
+        <div className="bg-white rounded-2xl sm:rounded-[2rem] p-4 sm:p-6 md:p-8 shadow-sm border border-gray-100 flex flex-col space-y-6">
           <h3 className="text-[11px] font-black text-[#64748B] uppercase tracking-widest">LOG NEW INCIDENT REPORT</h3>
           
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -221,7 +221,7 @@ export default function IncidentReporting() {
           <h3 className="text-[11px] font-black text-[#64748B] uppercase tracking-widest pl-2">INCIDENT LOG REGISTRY</h3>
           
           {selectedRows.length > 0 && (
-            <div className="bg-[#FFFBEB] border border-[#FEF08A] rounded-2xl p-2 px-4 flex items-center justify-between w-max gap-4 shadow-sm mb-2">
+            <div className="bg-[#FFFBEB] border border-[#FEF08A] rounded-2xl p-2 px-4 flex items-center justify-between w-full sm:w-max gap-4 shadow-sm mb-2">
               <span className="text-xs font-black text-[#D97706] tracking-widest uppercase">{selectedRows.length} SELECTED</span>
               <button 
                 onClick={() => triggerToast('Exporting to CSV...')}
@@ -232,15 +232,15 @@ export default function IncidentReporting() {
             </div>
           )}
           
-          <div className="flex justify-between items-center bg-white border border-gray-150 p-2 rounded-2xl shadow-sm w-fit gap-6">
-            <div className="flex bg-gray-50 rounded-xl p-1">
+          <div className="flex justify-between items-center gap-3 bg-white border border-gray-150 p-2 rounded-2xl shadow-sm">
+            <div className="flex bg-gray-50 rounded-xl p-0.5 overflow-x-auto">
               {['COMPACT', 'DEFAULT', 'RELAXED'].map(mode => (
                 <button
                   key={mode}
                   onClick={() => setViewMode(mode)}
-                  className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
+                  className={`px-2.5 py-1.5 text-[10px] sm:text-xs font-bold rounded-lg transition-colors cursor-pointer text-center ${
                     viewMode === mode 
-                      ? 'bg-[#FFD400] border-2 border-black text-black shadow-sm' 
+                      ? 'bg-[#FFD400] border border-black text-black shadow-sm' 
                       : 'text-[#64748B] hover:text-[#0F172A]'
                   }`}
                 >
@@ -249,12 +249,12 @@ export default function IncidentReporting() {
               ))}
             </div>
             
-            <div className="relative">
+            <div className="relative shrink-0">
               <button 
                 onClick={() => setColumnsOpen(!columnsOpen)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${columnsOpen ? 'border-[#0F172A] text-[#0F172A] bg-gray-50' : 'border-gray-200 text-[#64748B] hover:bg-gray-50'}`}
+                className={`flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[10px] font-bold border transition-colors cursor-pointer ${columnsOpen ? 'border-[#0F172A] text-[#0F172A] bg-gray-50' : 'border-gray-200 text-[#64748B] hover:bg-gray-50'}`}
               >
-                <Settings className="w-4 h-4" />
+                <Settings className="w-3 h-3" />
                 COLUMNS
               </button>
               
@@ -284,7 +284,83 @@ export default function IncidentReporting() {
             </div>
           </div>
 
-          <div className="bg-white border border-gray-150 rounded-2xl overflow-hidden shadow-sm mt-2">
+          {/* Mobile Card Layout (Visible only on mobile/small screens) */}
+          <div className="block sm:hidden space-y-4">
+            {mockData.map((row, index) => {
+              const isSelected = selectedRows.includes(row.id);
+              
+              let cardPadding = 'p-4';
+              let spaceBetween = 'space-y-3';
+              let textSize = 'text-sm';
+              let labelSize = 'text-[9px]';
+              let headerText = 'text-sm';
+              
+              if (viewMode === 'COMPACT') {
+                cardPadding = 'p-3';
+                spaceBetween = 'space-y-2';
+                textSize = 'text-xs';
+                labelSize = 'text-[8px]';
+                headerText = 'text-xs';
+              } else if (viewMode === 'RELAXED') {
+                cardPadding = 'p-6';
+                spaceBetween = 'space-y-4';
+                textSize = 'text-base';
+                labelSize = 'text-[10px]';
+                headerText = 'text-base';
+              }
+
+              return (
+                <div 
+                  key={index} 
+                  className={`bg-white border rounded-2xl shadow-sm transition-all duration-200 ${cardPadding} ${spaceBetween} ${
+                    isSelected ? 'bg-[#FFFDF4] border-[#FFD400] ring-1 ring-[#FFD400]' : 'border-gray-150'
+                  }`}
+                >
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="flex items-center gap-3">
+                      <button 
+                        onClick={() => toggleRow(row.id)}
+                        className="cursor-pointer shrink-0"
+                      >
+                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                          isSelected ? 'border-[#0F172A] bg-[#0F172A] text-white' : 'border-[#94A3B8]'
+                        }`}>
+                           {isSelected && <Check className="w-3 h-3" strokeWidth={4} />}
+                        </div>
+                      </button>
+                      
+                      {visibleColumns.category && (
+                        <div>
+                          <span className={`${labelSize} font-black text-gray-400 uppercase tracking-widest block`}>Incident Category</span>
+                          <span className={`font-black text-[#0F172A] leading-tight ${headerText}`}>
+                            {row.category.replace(/\n/g, ' ')}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {visibleColumns.status && (
+                      <span className={`px-2.5 py-1 rounded-full text-[9px] font-black tracking-wider uppercase shrink-0 ${row.statusColor}`}>
+                        {row.status.replace(/\n/g, ' ')}
+                      </span>
+                    )}
+                  </div>
+                  
+                  {visibleColumns.loggedDate && (
+                    <div className="pt-3 border-t border-gray-100">
+                      <span className={`${labelSize} font-black text-gray-400 uppercase tracking-widest block mb-0.5`}>Logged Date</span>
+                      <span className={`font-bold text-[#334155] ${textSize}`}>
+                        {row.loggedDate}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop Table Layout (Visible on tablet/desktop) */}
+          <div className="hidden sm:block border border-gray-150 rounded-2xl overflow-hidden shadow-sm mt-2">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-gray-100 bg-white">
@@ -321,8 +397,8 @@ export default function IncidentReporting() {
                       </button>
                     </td>
                     {visibleColumns.category && (
-                      <td className={`p-4 font-black text-[#0F172A] align-middle whitespace-pre-line ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
-                        {row.category}
+                      <td className={`p-4 font-black text-[#0F172A] align-middle whitespace-nowrap ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
+                        {row.category.replace(/\n/g, ' ')}
                       </td>
                     )}
                     {visibleColumns.loggedDate && (
@@ -332,8 +408,8 @@ export default function IncidentReporting() {
                     )}
                     {visibleColumns.status && (
                       <td className={`p-4 align-middle ${viewMode === 'COMPACT' ? 'py-2' : viewMode === 'RELAXED' ? 'py-8' : 'py-6'}`}>
-                        <span className={`inline-block px-3 py-1.5 rounded-xl text-[10px] font-black tracking-wider uppercase whitespace-pre-line ${row.statusColor}`}>
-                          {row.status}
+                        <span className={`inline-block px-3 py-1.5 rounded-xl text-[10px] font-black tracking-wider uppercase whitespace-nowrap ${row.statusColor}`}>
+                          {row.status.replace(/\n/g, ' ')}
                         </span>
                       </td>
                     )}
@@ -355,7 +431,7 @@ export default function IncidentReporting() {
         </button>
         <button
           onClick={() => setHotlineOpen(true)}
-          className="w-12 h-12 bg-[#FFD400] hover:bg-yellow-400 text-black rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all"
+          className="w-12 h-12 bg-[#FFD400] hover:bg-yellow-400 text-[#0F172A] rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all"
         >
           <MessageSquare className="w-5 h-5" />
         </button>
@@ -364,7 +440,7 @@ export default function IncidentReporting() {
       {/* SOS EMERGENCY PANEL MODAL */}
       {sosModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[110] p-4">
-          <div className="bg-white rounded-3xl border border-gray-100 max-w-md w-full p-6 shadow-xl text-left">
+          <div className="bg-white rounded-3xl border border-gray-100 max-w-md w-full p-4 sm:p-6 shadow-xl text-left">
             <div className="flex justify-between items-center mb-5 pb-2 border-b border-gray-50">
               <h2 className="text-base font-bold text-gray-900">Emergency Dispatch SOS Panel</h2>
               <button onClick={() => setSosModalOpen(false)} className="p-1.5 hover:bg-gray-100 rounded-full cursor-pointer"><X size={18} /></button>
@@ -372,7 +448,7 @@ export default function IncidentReporting() {
             <p className="text-xs text-gray-500 leading-relaxed mb-5">
               Triggering an emergency alerts the dispatch operations center immediately and logs active tracking.
             </p>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
               {[
                 { icon: <Shield className="w-5 h-5 text-red-500" />, label: 'Panic Button', color: 'bg-red-50/70 border-red-100 text-red-500', msg: 'Panic Alert dispatched!' },
                 { icon: <Truck className="w-5 h-5 text-amber-500" />, label: 'Breakdown', color: 'bg-[#FFFBEB] border-amber-200 text-[#D97706]', msg: 'Breakdown Alert dispatched!' },
@@ -386,7 +462,7 @@ export default function IncidentReporting() {
                     triggerToast(`SOS ACTIVE: ${msg}`);
                     setSosModalOpen(false);
                   }}
-                  className={`p-5 border rounded-2xl hover:opacity-90 transition-opacity flex flex-col items-center justify-center gap-2 cursor-pointer ${color}`}
+                  className={`p-3.5 sm:p-5 border rounded-2xl hover:opacity-90 transition-opacity flex flex-col items-center justify-center gap-2 cursor-pointer ${color}`}
                 >
                   {icon}
                   <span className="text-xs font-medium">{label}</span>
@@ -426,7 +502,7 @@ export default function IncidentReporting() {
                   <button
                     key={label}
                     onClick={() => { triggerToast(msg); setHotlineOpen(false); }}
-                    className="w-full text-left hover:text-black transition-colors flex items-center gap-3"
+                    className="w-full text-left hover:text-[#0F172A] transition-colors flex items-center gap-3"
                   >
                     {icon}
                     <span>{label}</span>
@@ -436,7 +512,7 @@ export default function IncidentReporting() {
             </div>
             <button
               onClick={() => setHotlineOpen(false)}
-              className="w-12 h-12 bg-[#FFD400] hover:bg-yellow-400 text-black rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all shrink-0"
+              className="w-12 h-12 bg-[#FFD400] hover:bg-yellow-400 text-[#0F172A] rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all shrink-0"
             >
               <X className="w-5 h-5" strokeWidth={2.5} />
             </button>

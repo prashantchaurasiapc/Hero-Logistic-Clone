@@ -112,26 +112,22 @@ export default function LoadInbox() {
       )}
       
       {/* PAGE HEADER */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-left">
-        <div>
-          <div className="flex items-center gap-3">
-            {/* Tray Icon */}
-            <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-150 flex items-center justify-center text-pink-500 shadow-3xs shrink-0">
-              <Inbox className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-3.5">
-                <h1 className="text-3xl font-black text-slate-900 tracking-tight leading-none">
-                  Load Inbox
-                </h1>
-                <span className="px-2.5 py-0.5 text-[10px] font-black rounded-lg bg-amber-50 text-amber-600 border border-amber-100/50 uppercase tracking-wide">
-                  {draftsData.length} PENDING
-                </span>
-              </div>
-              <p className="text-xs font-semibold text-slate-500 mt-2">
-                Field-submitted draft loads — Review & convert to active
-              </p>
-            </div>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 text-left">
+        <div className="flex items-center gap-3">
+          {/* Tray Icon */}
+          <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-pink-500 shadow-3xs shrink-0">
+            <Inbox className="w-6 h-6" />
+          </div>
+          <div>
+            <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
+              Dispatcher Portal <span className="text-slate-400 text-xl mx-1">•</span> Load Inbox
+              <span className="px-2.5 py-0.5 text-[10px] font-black rounded-lg bg-amber-50 text-amber-600 border border-amber-100/50 uppercase tracking-wide ml-2">
+                {draftsData.length} PENDING
+              </span>
+            </h1>
+            <p className="text-[13px] text-slate-500 mt-1 font-medium">
+              Field-submitted draft loads — Review & convert to active
+            </p>
           </div>
         </div>
 
@@ -255,7 +251,7 @@ export default function LoadInbox() {
             {/* Vin manifest footer trigger */}
             <div 
               onClick={() => handleToggleExpand(draft.id)}
-              className="px-5 py-3.5 border-t border-slate-50 flex justify-between items-center text-[10px] font-black text-slate-450 hover:text-slate-800 cursor-pointer select-none transition-colors"
+              className="px-5 py-3.5 border-t border-slate-50 flex justify-between items-center text-[10px] font-black text-slate-400 hover:text-slate-800 cursor-pointer select-none transition-colors"
             >
               <span>VIEW VIN MANIFEST ({draft.manifestCount})</span>
               {expandedDrafts[draft.id] ? (
