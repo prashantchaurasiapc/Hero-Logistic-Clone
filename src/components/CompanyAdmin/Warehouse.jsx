@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';// === ICONS ===
+import { useNavigate } from 'react-router-dom';
+import WarehouseInventoryStock from './WarehouseInventoryStock';
+import WarehouseStockMovements from './WarehouseStockMovements';
+import WarehousePickPackDispatch from './WarehousePickPackDispatch';
+import WarehouseLocationsBins from './WarehouseLocationsBins';
+import WarehouseStaffEquipment from './WarehouseStaffEquipment';
+import WarehouseReportsAnalytics from './WarehouseReportsAnalytics';
+
+// === ICONS ===
 const BoxIcon = ({ color }) => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line>
@@ -146,6 +154,36 @@ export default function Warehouse() {
     setView('details');
   };
 
+  if (view === 'inventory') {
+    const wh = selectedWh || whList[0];
+    return <WarehouseInventoryStock wh={wh} onBack={() => setView('details')} />;
+  }
+
+  if (view === 'movements') {
+    const wh = selectedWh || whList[0];
+    return <WarehouseStockMovements wh={wh} onBack={() => setView('inventory')} />;
+  }
+
+  if (view === 'pickpack') {
+    const wh = selectedWh || whList[0];
+    return <WarehousePickPackDispatch wh={wh} onBack={() => setView('details')} />;
+  }
+
+  if (view === 'locations') {
+    const wh = selectedWh || whList[0];
+    return <WarehouseLocationsBins wh={wh} onBack={() => setView('details')} />;
+  }
+
+  if (view === 'staffequipment') {
+    const wh = selectedWh || whList[0];
+    return <WarehouseStaffEquipment wh={wh} onBack={() => setView('details')} />;
+  }
+
+  if (view === 'reports') {
+    const wh = selectedWh || whList[0];
+    return <WarehouseReportsAnalytics wh={wh} onBack={() => setView('details')} />;
+  }
+
   if (view === 'details') {
     const wh = selectedWh || whList[0];
     return (
@@ -157,9 +195,9 @@ export default function Warehouse() {
             <div style={{ fontSize: 12, fontWeight: 600, color: '#64748B', marginBottom: 8, display: 'flex', gap: 6 }}>
               <span>Home</span> <span style={{ color: '#CBD5E1' }}>›</span> <span>Warehouse</span> <span style={{ color: '#CBD5E1' }}>›</span> <span>Warehouse List</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ color: '#0F172A' }}>Warehouse Details</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
               <h1 style={{ fontSize: 22, fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.5px' }}>9.2 Warehouse Details - {wh.name}</h1>
-              <div style={{ width: 18, height: 18, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: 18, height: 18, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 4 }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
               </div>
             </div>
@@ -167,14 +205,14 @@ export default function Warehouse() {
           </div>
 
           <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
-            <button onClick={() => setView('list')} style={{ padding: '6px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600, border: '1px solid #E2E8F0', background: '#fff', color: '#1E293B', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', letterSpacing: '-0.2px' }}>
+            <button onClick={() => setView('list')} style={{ padding: '6px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600, border: '1px solid #E2E8F0', background: '#fff', color: '#1E293B', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', letterSpacing: '-0.2px', whiteSpace: 'nowrap' }}>
               &lt; Back to Warehouse List
             </button>
-            <button style={{ padding: '6px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600, border: '1px solid #C7D2FE', background: '#EEF2FF', color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', letterSpacing: '-0.2px' }}>
+            <button style={{ padding: '6px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600, border: '1px solid #C7D2FE', background: '#EEF2FF', color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', letterSpacing: '-0.2px', whiteSpace: 'nowrap' }}>
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
               Edit Warehouse
             </button>
-            <button style={{ padding: '6px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600, border: '1px solid #E2E8F0', background: '#fff', color: '#1E293B', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', letterSpacing: '-0.2px' }}>
+            <button style={{ padding: '6px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600, border: '1px solid #E2E8F0', background: '#fff', color: '#1E293B', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', letterSpacing: '-0.2px', whiteSpace: 'nowrap' }}>
               More Actions <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </button>
           </div>
@@ -217,7 +255,7 @@ export default function Warehouse() {
                       <div>
                         <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A' }}>James Patel</div>
                         <div style={{ fontSize: 11, color: '#64748B' }}>+61 412 345 678</div>
-                        <div style={{ fontSize: 11, color: '#4F46E5', fontWeight: 500 }}>james.patel@hero.com.au</div>
+                        <div style={{ fontSize: 11, color: '#4F46E5', fontWeight: 500, wordBreak: 'break-all' }}>james.patel@hero.com.au</div>
                       </div>
                     </div>
                   </div>
@@ -226,7 +264,7 @@ export default function Warehouse() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   <div>
                     <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, marginBottom: 4 }}>Address</div>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', lineHeight: 1.4 }}>{wh.addr.split(',').map((line, i) => <span key={i}>{line}{i === 0 ? <br /> : ''}</span>)}</div>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', lineHeight: 1.4 }}>{wh.addr.split(',').map((line, i) => <span key={i}>{line.trim()}{i === 0 ? <br /> : ''}</span>)}</div>
                     <div style={{ fontSize: 11, color: '#4F46E5', fontWeight: 600, marginTop: 4, display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>View on map ↗</div>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16, marginTop: 'auto' }}>
@@ -236,7 +274,7 @@ export default function Warehouse() {
                     </div>
                     <div>
                       <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, marginBottom: 4 }}>Email</div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: '#4F46E5' }}>warehouse.sydney@hero.com.au</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#4F46E5', wordBreak: 'break-all' }}>warehouse.sydney@hero.com.au</div>
                     </div>
                   </div>
                 </div>
@@ -265,8 +303,19 @@ export default function Warehouse() {
 
           {/* Tabs */}
           <div style={{ display: 'flex', gap: 24, borderTop: '1px solid #E2E8F0', padding: '0 8px', overflowX: 'auto' }}>
-            {['Overview', 'Locations', 'Inventory Summary', 'Tasks', 'Shipments', 'Activity Log', 'Documents', 'Settings'].map((tab, idx) => (
-              <div key={idx} style={{ padding: '16px 0', fontSize: 13, fontWeight: idx === 0 ? 800 : 600, color: idx === 0 ? '#4F46E5' : '#64748B', borderBottom: idx === 0 ? '2px solid #4F46E5' : '2px solid transparent', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            {['Overview', 'Locations', 'Inventory and Stock', 'Stock Movements', 'Pick, Pack & Dispatch', 'Staff and Equipment', 'Warehouse Reports and Analytics'].map((tab, idx) => (
+              <div 
+                key={idx} 
+                onClick={() => {
+                  if (tab === 'Locations') setView('locations');
+                  if (tab === 'Inventory and Stock') setView('inventory');
+                  if (tab === 'Stock Movements') setView('movements');
+                  if (tab === 'Pick, Pack & Dispatch') setView('pickpack');
+                  if (tab === 'Staff and Equipment') setView('staffequipment');
+                  if (tab === 'Warehouse Reports and Analytics') setView('reports');
+                }}
+                style={{ padding: '16px 0', flexShrink: 0, fontSize: 13, fontWeight: idx === 0 ? 800 : 600, color: idx === 0 ? '#4F46E5' : '#64748B', borderBottom: idx === 0 ? '2px solid #4F46E5' : '2px solid transparent', cursor: 'pointer', whiteSpace: 'nowrap' }}
+              >
                 {tab}
               </div>
             ))}
@@ -369,7 +418,7 @@ export default function Warehouse() {
                   </div>
                   <div>
                     <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>Email</div>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: '#4F46E5' }}>james.patel@hero.com.au</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#4F46E5', wordBreak: 'break-all' }}>james.patel@hero.com.au</div>
                   </div>
                   <div>
                     <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>Auto Task Assignment</div>
@@ -377,7 +426,7 @@ export default function Warehouse() {
                   </div>
                   <div>
                     <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>Secondary Contact</div>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A', lineHeight: 1.4 }}>Lisa Chen<br />+61 400 987 654<br /><span style={{ color: '#4F46E5', fontWeight: 500 }}>lisa.chen@hero.com.au</span></div>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A', lineHeight: 1.4 }}>Lisa Chen<br />+61 400 987 654<br /><span style={{ color: '#4F46E5', fontWeight: 500, wordBreak: 'break-all' }}>lisa.chen@hero.com.au</span></div>
                   </div>
                   <div>
                     <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>Stock Counting Frequency</div>
