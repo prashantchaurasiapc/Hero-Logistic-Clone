@@ -288,11 +288,11 @@ export default function CommunicationDepot() {
   );
 
   return (
-    <div className="flex-grow bg-[#F8FAFC] min-h-screen p-6 w-full text-left font-sans custom-scrollbar overflow-y-auto relative">
+    <div className="flex-grow bg-[#F8FAFC] p-3 sm:p-6 w-full text-left font-sans flex flex-col">
       
       {/* Toast Notification */}
       {toastText && (
-        <div className="fixed top-6 right-6 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 border border-slate-750 transition-all duration-300">
+        <div className="fixed top-6 right-6 z-50 bg-slate-900 text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 border border-slate-700 transition-all duration-300">
           <Wifi className="w-4 h-4 text-[#FFA000] animate-pulse" />
           <span className="text-xs font-bold">{toastText}</span>
         </div>
@@ -305,8 +305,8 @@ export default function CommunicationDepot() {
             <MessageSquare className="w-5 h-5 text-[#FFA000]" />
           </div>
           <div>
-            <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
-              Dispatcher Portal <span className="text-slate-400 text-xl mx-1">•</span> Communication Depot
+            <h1 className="text-lg sm:text-2xl text-slate-900 leading-tight capitalize font-black flex flex-wrap items-center gap-1 sm:gap-2">
+              Dispatcher Portal <span className="text-slate-400 text-xl mx-0.5">•</span> Communication Depot
             </h1>
             <p className="text-[13px] text-slate-500 mt-1 font-medium">
               Real-time driver dispatch alerts and terminal broadcasts
@@ -342,7 +342,7 @@ export default function CommunicationDepot() {
       )}
 
       {/* MAIN CONTAINER LAYOUT */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-[620px] items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 flex-1 items-stretch">
         
         {/* LEFT SIDEBAR: Messages list */}
         <div className={`lg:col-span-4 bg-white border border-slate-100 rounded-[24px] shadow-sm p-4 flex-col justify-start ${mobileShowChat ? 'hidden lg:flex' : 'flex'}`}>
@@ -361,7 +361,7 @@ export default function CommunicationDepot() {
           </div>
 
           {/* List items */}
-          <div className="space-y-2.5 overflow-y-auto max-h-[500px] pr-1 custom-scrollbar">
+          <div className="space-y-2.5 overflow-y-auto flex-1 pr-1 custom-scrollbar">
             {filteredChats.map((c) => {
               const isSelected = c.id === selectedChatId;
               const lastMsg = c.messages[c.messages.length - 1];
@@ -417,7 +417,13 @@ export default function CommunicationDepot() {
         </div>
 
         {/* RIGHT SIDEBAR: Selected Chat Window */}
-        <div className={`lg:col-span-8 bg-white border border-slate-100 rounded-[24px] shadow-sm flex-col justify-between overflow-hidden ${mobileShowChat ? 'flex' : 'hidden lg:flex'}`}>
+        {/* On mobile: fixed full-screen overlay. On desktop: normal grid col */}
+        <div className={`bg-white border border-slate-100 shadow-sm flex-col justify-between overflow-hidden
+          ${
+            mobileShowChat
+              ? 'flex fixed inset-0 z-30 rounded-none lg:static lg:inset-auto lg:z-auto lg:rounded-[24px] lg:col-span-8'
+              : 'hidden lg:flex lg:col-span-8 lg:rounded-[24px]'
+          }`}>
           
           {/* Active Chat Header */}
           <div className="px-5 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
@@ -511,7 +517,7 @@ export default function CommunicationDepot() {
           </div>
 
           {/* Chat Messages Body */}
-          <div className="flex-grow p-6 overflow-y-auto space-y-4 max-h-[380px] min-h-[380px] bg-slate-50/20 custom-scrollbar">
+          <div className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-4 min-h-[280px] bg-slate-50/20 custom-scrollbar">
             
             {/* Time Divider */}
             <div className="flex justify-center my-3">
@@ -603,7 +609,7 @@ export default function CommunicationDepot() {
                   className={`font-black text-[10px] py-2.5 px-4.5 rounded-xl flex items-center gap-2 transition-all tracking-wider uppercase ${
                     messageInput.trim()
                       ? 'bg-slate-900 hover:bg-slate-800 text-white cursor-pointer transform active:scale-95 shadow-sm'
-                      : 'bg-slate-105 text-slate-350 cursor-not-allowed border border-slate-200/50'
+                      : 'bg-slate-105 text-slate-400 cursor-not-allowed border border-slate-200/50'
                   }`}
                 >
                   <Send size={11} className="stroke-[2.5px]" /> SEND
@@ -628,7 +634,7 @@ export default function CommunicationDepot() {
               </div>
               <button 
                 onClick={() => setShowProfileModal(false)}
-                className="p-1 hover:bg-slate-100 rounded-lg text-slate-450 transition-colors cursor-pointer"
+                className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 transition-colors cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -724,7 +730,7 @@ export default function CommunicationDepot() {
                 <button
                   type="button"
                   onClick={() => setShowBroadcastModal(false)}
-                  className="px-4 py-2 border border-slate-250 text-slate-500 rounded-xl text-xs font-extrabold hover:text-slate-800 transition-colors cursor-pointer"
+                  className="px-4 py-2 border border-slate-200 text-slate-500 rounded-xl text-xs font-extrabold hover:text-slate-800 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>

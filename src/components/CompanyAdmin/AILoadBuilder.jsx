@@ -15,27 +15,27 @@ const CONF_COLORS = {
 
 /* ─── Static Data ─────────────────────────────────────────────── */
 const STEPS = [
-  { num: 1, label: 'Choose Source',  desc: 'Select where to\nextract data from', active: true  },
-  { num: 2, label: 'AI Extraction',  desc: 'AI is reading and\nextracting data',   active: false },
-  { num: 3, label: 'Review & Edit',  desc: 'Review extracted\ninformation',        active: false },
+  { num: 1, label: 'Choose Source',  desc: 'Select where to extract data from', active: true  },
+  { num: 2, label: 'AI Extraction',  desc: 'AI is reading and extracting data',   active: false },
+  { num: 3, label: 'Review & Edit',  desc: 'Review extracted information',        active: false },
   { num: 4, label: 'Create Draft',   desc: 'Save as draft load',                   active: false },
 ];
 
 const SOURCES = [
-  { id: 'email',    Icon: Mail,    color: '#6366f1', bg: '#eef2ff', label: 'Email',              desc: 'Extract from...' },
-  { id: 'portal',   Icon: Globe,   color: '#8b5cf6', bg: '#f3f0ff', label: 'Customer Portal',    desc: 'Extract from...' },
-  { id: 'stock',    Icon: Package, color: '#f59e0b', bg: '#fffbeb', label: 'Warehouse Stock',     desc: 'Extract from...' },
-  { id: 'file',     Icon: FileText,color: '#ec4899', bg: '#fdf2f8', label: 'Upload File',         desc: 'PDF, Excel, I...' },
-  { id: 'template', Icon: Repeat,  color: '#3b82f6', bg: '#eff6ff', label: 'Recurring Template',  desc: 'Use a saved...' },
-  { id: 'api',      Icon: Link2,   color: '#10b981', bg: '#ecfdf5', label: 'API Integration',     desc: 'Connect ext...' },
+  { id: 'email',    Icon: Mail,    color: '#6366f1', bg: '#eef2ff', label: 'Email',              desc: 'Extract from email bookings' },
+  { id: 'portal',   Icon: Globe,   color: '#8b5cf6', bg: '#f3f0ff', label: 'Customer Portal',    desc: 'Extract from online portal' },
+  { id: 'stock',    Icon: Package, color: '#f59e0b', bg: '#fffbeb', label: 'Warehouse Stock',     desc: 'Extract from stock inventory' },
+  { id: 'file',     Icon: FileText,color: '#ec4899', bg: '#fdf2f8', label: 'Upload File',         desc: 'PDF, Excel, CSV, Images' },
+  { id: 'template', Icon: Repeat,  color: '#3b82f6', bg: '#eff6ff', label: 'Recurring Template',  desc: 'Use a saved load template' },
+  { id: 'api',      Icon: Link2,   color: '#10b981', bg: '#ecfdf5', label: 'API Integration',     desc: 'Connect external TMS / ERP' },
 ];
 
 const EMAILS = [
-  { id: 1, title: 'Car Transport...', fullTitle: 'Car Transport Booking – Sydney to Melbourne',    sender: 'bookings@abcmotors.com.au',    conf: 'High',   isNew: true,  time: 'Today, 9:15 AM'    },
-  { id: 2, title: 'Vehicle Transp...', fullTitle: 'Vehicle Transport Request – 3 Cars',           sender: 'transport@fastcars.com.au',    conf: 'Medium', isNew: false, time: 'Yesterday, 4:32 PM' },
-  { id: 3, title: 'Urgent Pickup – T...', fullTitle: 'Urgent Pickup – Toyota RAV4',              sender: 'sales@toyota.com.au',          conf: 'High',   isNew: false, time: 'Yesterday, 11:08 AM'},
-  { id: 4, title: 'Freight Request – Ma...', fullTitle: 'Freight Request – Machinery',           sender: 'logistics@industrial.com.au',  conf: 'Medium', isNew: false, time: '2 days ago'         },
-  { id: 5, title: 'Enquiry – Car Transport...', fullTitle: 'Enquiry – Car Transport Quote',       sender: 'info@customer.com.au',         conf: 'Low',    isNew: false, time: '3 days ago'         },
+  { id: 1, title: 'Car Transport Booking – Sydney to Melbourne', sender: 'bookings@abcmotors.com.au',    conf: 'High',   isNew: true,  time: 'Today, 9:15 AM'    },
+  { id: 2, title: 'Vehicle Transport Request – 3 Cars',          sender: 'transport@fastcars.com.au',    conf: 'Medium', isNew: false, time: 'Yesterday, 4:32 PM' },
+  { id: 3, title: 'Urgent Pickup – Toyota RAV4',                 sender: 'sales@toyota.com.au',          conf: 'High',   isNew: false, time: 'Yesterday, 11:08 AM'},
+  { id: 4, title: 'Freight Request – Machinery',                  sender: 'logistics@industrial.com.au',  conf: 'Medium', isNew: false, time: '2 days ago'         },
+  { id: 5, title: 'Enquiry – Car Transport Quote',              sender: 'info@customer.com.au',         conf: 'Low',    isNew: false, time: '3 days ago'         },
 ];
 
 const EXTRACTION_FIELDS = [
@@ -71,9 +71,6 @@ const HOW_IT_WORKS = [
   { Icon: Package,       text: 'Create draft load'        },
 ];
 
-/* ═══════════════════════════════════════════════════════════════
-   Main Component
-═══════════════════════════════════════════════════════════════ */
 export default function AILoadBuilder({ onBack }) {
   const [selectedSource, setSelectedSource] = useState('email');
   const [selectedEmail, setSelectedEmail]   = useState(1);
@@ -87,45 +84,51 @@ export default function AILoadBuilder({ onBack }) {
 
   const filteredEmails = EMAILS.filter(e =>
     !searchQuery ||
-    e.fullTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     e.sender.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
-    <div style={styles.root}>
+    <div className="bg-[#f8fafc] min-h-screen flex flex-col font-sans text-left overflow-y-auto">
 
       {/* ── TOP HEADER ─────────────────────────────────────── */}
-      <div style={styles.header}>
-        <div style={styles.headerInner}>
+      <div className="bg-white border-b border-slate-200 shrink-0">
+        <div className="max-w-[1200px] mx-auto px-4 sm:px-8 py-5">
           {/* Breadcrumb */}
-          <div style={styles.breadcrumb}>
-            <span style={styles.breadcrumbLink}>Home</span>
-            <ChevronRight size={12} color="#94a3b8" />
-            <span style={styles.breadcrumbLink}>Loads</span>
-            <ChevronRight size={12} color="#94a3b8" />
-            <span style={styles.breadcrumbCurrent}>AI Load Builder</span>
+          <div className="flex items-center gap-1.5 mb-3 text-xs font-semibold text-slate-500 flex-wrap">
+            <span className="cursor-pointer hover:text-slate-800 transition-colors" onClick={onBack}>Home</span>
+            <ChevronRight size={12} className="text-slate-400" />
+            <span className="cursor-pointer hover:text-slate-800 transition-colors" onClick={onBack}>Loads</span>
+            <ChevronRight size={12} className="text-slate-400" />
+            <span className="text-slate-900 font-bold">AI Load Builder</span>
           </div>
 
           {/* Title row */}
-          <div style={styles.titleRow}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={styles.sparkleIcon}>
-                <Sparkles size={18} color="#fff" />
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start sm:items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md shadow-indigo-200 shrink-0">
+                <Sparkles size={20} className="text-white" />
               </div>
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <h1 style={styles.h1}>AI Load Builder <span style={styles.version}>(2.2A)</span></h1>
-                  <span style={styles.betaBadge}>BETA</span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight leading-snug">
+                    AI Load Builder <span className="text-indigo-600 text-sm sm:text-lg font-bold">(2.2A)</span>
+                  </h1>
+                  <span className="px-2 py-0.5 bg-indigo-600 text-white text-[9px] font-black uppercase tracking-widest rounded-md">
+                    BETA
+                  </span>
                 </div>
-                <p style={styles.subtitle}>Extract load details from emails, portals, files or stock using AI.</p>
+                <p className="text-xs sm:text-sm text-slate-500 font-semibold mt-0.5">
+                  Extract load details from emails, portals, files or stock using AI.
+                </p>
               </div>
             </div>
 
-            <button style={styles.backBtn} onClick={onBack}
-              onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
-              onMouseLeave={e => e.currentTarget.style.background = '#fff'}
+            <button 
+              onClick={onBack}
+              className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl transition-colors shrink-0 shadow-xs"
             >
-              <ChevronLeft size={15} />
+              <ChevronLeft size={16} />
               Back to Create Load
             </button>
           </div>
@@ -133,95 +136,73 @@ export default function AILoadBuilder({ onBack }) {
       </div>
 
       {/* ── MAIN GRID ──────────────────────────────────────── */}
-      <div style={styles.grid}>
+      <div className="flex flex-col lg:flex-row gap-6 p-4 sm:p-8 max-w-[1200px] mx-auto w-full items-start">
 
         {/* ── LEFT SIDEBAR ─────────────────────────────────── */}
-        <div style={styles.leftSidebar}>
+        <div className="w-full lg:w-52 shrink-0 flex flex-col gap-4">
 
           {/* Step progress */}
-          <div style={styles.stepsCard}>
-            <div style={styles.stepsTrack}>
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
+            <div className="flex flex-row lg:flex-col justify-between lg:justify-start gap-4 overflow-x-auto pb-1 lg:pb-0 scrollbar-none">
               {STEPS.map((step, i) => (
-                <React.Fragment key={i}>
-                  <div style={styles.stepRow}>
-                    {/* Circle */}
-                    <div style={{
-                      ...styles.stepCircle,
-                      background: step.active ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : '#f1f5f9',
-                      color: step.active ? '#fff' : '#94a3b8',
-                      border: step.active ? 'none' : '2px solid #e2e8f0',
-                      boxShadow: step.active ? '0 4px 12px rgba(99,102,241,0.35)' : 'none',
-                    }}>
-                      {step.active ? <Sparkles size={13} /> : step.num}
+                <div key={i} className="flex flex-col lg:flex-col gap-1 shrink-0">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black shrink-0 transition-all ${
+                      step.active 
+                        ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-md shadow-indigo-200' 
+                        : 'bg-slate-100 text-slate-400 border border-slate-200'
+                    }`}>
+                      {step.active ? <Sparkles size={14} /> : step.num}
                     </div>
-
-                    {/* Labels */}
-                    <div style={{ paddingTop: 1 }}>
-                      <div style={{
-                        fontSize: 12,
-                        fontWeight: 700,
-                        color: step.active ? '#6366f1' : '#94a3b8',
-                        lineHeight: 1.2,
-                        marginBottom: 2,
-                      }}>
+                    <div className="min-w-0">
+                      <p className={`text-xs font-bold leading-tight ${step.active ? 'text-indigo-600' : 'text-slate-400'}`}>
                         {step.label}
-                      </div>
-                      <div style={{ fontSize: 10.5, color: '#b0bec5', lineHeight: 1.4, whiteSpace: 'pre-line' }}>
+                      </p>
+                      <p className="text-[10px] text-slate-400 font-medium leading-tight hidden lg:block mt-0.5">
                         {step.desc}
-                      </div>
+                      </p>
                     </div>
                   </div>
-
-                  {/* Connector line */}
                   {i < STEPS.length - 1 && (
-                    <div style={{
-                      width: 2,
-                      height: 28,
-                      marginLeft: 16,
-                      background: i === 0 ? 'linear-gradient(#6366f1, #e2e8f0)' : '#e2e8f0',
-                      borderRadius: 99,
-                    }} />
+                    <div className="w-0.5 h-6 bg-slate-200 ml-4 hidden lg:block my-0.5" />
                   )}
-                </React.Fragment>
+                </div>
               ))}
             </div>
           </div>
 
           {/* How it works */}
-          <div style={styles.card}>
-            <div style={styles.cardTitle}>How it works</div>
-            <div style={{ position: 'relative' }}>
-              <div style={styles.howItWorksLine} />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16, position: 'relative' }}>
-                {HOW_IT_WORKS.map(({ Icon, text }, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={styles.howIcon}>
-                      <Icon size={12} color="#6366f1" />
-                    </div>
-                    <span style={{ fontSize: 12, color: '#475569', fontWeight: 600 }}>{text}</span>
+          <div className="bg-white border border-slate-200 rounded-2xl p-4.5 shadow-xs">
+            <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider mb-3">How it works</h3>
+            <div className="space-y-3">
+              {HOW_IT_WORKS.map(({ Icon, text }, i) => (
+                <div key={i} className="flex items-center gap-2.5">
+                  <div className="w-6 h-6 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0">
+                    <Icon size={12} className="text-indigo-600" />
                   </div>
-                ))}
-              </div>
+                  <span className="text-xs font-semibold text-slate-700">{text}</span>
+                </div>
+              ))}
             </div>
-            <p style={{ fontSize: 11, color: '#b0bec5', fontStyle: 'italic', marginTop: 16 }}>
+            <p className="text-[10px] text-slate-400 font-semibold italic mt-4">
               You're always in control.
             </p>
           </div>
 
           {/* AI Confidence Guide */}
-          <div style={styles.card}>
-            <div style={styles.cardTitle}>AI Confidence Guide</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div className="bg-white border border-slate-200 rounded-2xl p-4.5 shadow-xs">
+            <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider mb-3">AI Confidence Guide</h3>
+            <div className="space-y-2.5">
               {[
-                { range: 'High (80–100%)',   sub: 'Very confident',      dot: '#10b981' },
-                { range: 'Medium (50–79%)',  sub: 'Review recommended',  dot: '#f59e0b' },
-                { range: 'Low (0–49%)',      sub: 'Needs attention',     dot: '#ef4444' },
+                { range: 'High (80–100%)',   sub: 'Very confident',      dot: 'bg-emerald-500' },
+                { range: 'Medium (50–79%)',  sub: 'Review recommended',  dot: 'bg-amber-500' },
+                { range: 'Low (0–49%)',      sub: 'Needs attention',     dot: 'bg-rose-500' },
               ].map((c, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                  <div style={{ width: 9, height: 9, borderRadius: '50%', background: c.dot, marginTop: 3, flexShrink: 0 }} />
+                <div key={i} className="flex items-start gap-2.5">
+                  <div className={`w-2 h-2 rounded-full ${c.dot} mt-1 shrink-0`} />
                   <div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#334155' }}>{c.range}</div>
-                    <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500 }}>{c.sub}</div>
+                    <p className="text-xs font-bold text-slate-800">{c.range}</p>
+                    <p className="text-[10px] text-slate-400 font-semibold">{c.sub}</p>
                   </div>
                 </div>
               ))}
@@ -230,52 +211,44 @@ export default function AILoadBuilder({ onBack }) {
         </div>
 
         {/* ── MAIN CONTENT ─────────────────────────────────── */}
-        <div style={styles.mainContent}>
+        <div className="flex-1 bg-white border border-slate-200 rounded-2xl p-4 sm:p-7 shadow-xs min-w-0 w-full">
 
           {/* Step header */}
-          <div style={styles.stepHeader}>
-            <div style={styles.stepNum}>1</div>
-            <h2 style={styles.stepTitle}>Choose Source</h2>
+          <div className="flex items-center gap-3 mb-1">
+            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-xs font-black flex items-center justify-center shadow-md shadow-indigo-200">
+              1
+            </div>
+            <h2 className="text-lg sm:text-xl font-black text-slate-900">Choose Source</h2>
           </div>
-          <p style={styles.stepDesc}>Select where you want AI to extract the load details from.</p>
+          <p className="text-xs sm:text-sm text-slate-500 font-medium mb-6">Select where you want AI to extract the load details from.</p>
 
           {/* Source grid */}
-          <div style={styles.sourceGrid}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-7">
             {SOURCES.map(({ id, Icon, color, bg, label, desc }) => {
               const active = selectedSource === id;
               return (
                 <button
                   key={id}
                   onClick={() => setSelectedSource(id)}
-                  style={{
-                    ...styles.sourceCard,
-                    border: active ? `2px solid ${color}` : '2px solid #e2e8f0',
-                    boxShadow: active ? `0 0 0 3px ${color}22` : 'none',
-                    background: active ? `${bg}` : '#fff',
-                  }}
-                  onMouseEnter={e => { if (!active) e.currentTarget.style.border = '2px solid #c7d2fe'; }}
-                  onMouseLeave={e => { if (!active) e.currentTarget.style.border = '2px solid #e2e8f0'; }}
+                  className={`relative flex items-center gap-3.5 p-4 rounded-xl transition-all text-left cursor-pointer border ${
+                    active 
+                      ? 'border-indigo-600 bg-indigo-50/40 shadow-xs' 
+                      : 'border-slate-200 bg-white hover:border-indigo-200 hover:bg-slate-50/50'
+                  }`}
                 >
-                  <div style={{
-                    width: 40, height: 40, borderRadius: 12,
-                    background: bg, border: `1px solid ${color}22`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0,
-                  }}>
-                    <Icon size={18} color={color} />
+                  <div 
+                    className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border"
+                    style={{ backgroundColor: bg, borderColor: `${color}33` }}
+                  >
+                    <Icon size={18} style={{ color }} />
                   </div>
-                  <div style={{ flex: 1, textAlign: 'left', minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b', marginBottom: 1 }}>{label}</div>
-                    <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500 }}>{desc}</div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-black text-slate-900 mb-0.5">{label}</p>
+                    <p className="text-[11px] font-semibold text-slate-400 truncate">{desc}</p>
                   </div>
                   {active && (
-                    <div style={{
-                      position: 'absolute', top: 10, right: 10,
-                      width: 18, height: 18, borderRadius: '50%',
-                      background: color,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      <Check size={11} color="#fff" strokeWidth={3} />
+                    <div className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-indigo-600 flex items-center justify-center">
+                      <Check size={10} className="text-white" strokeWidth={3} />
                     </div>
                   )}
                 </button>
@@ -284,36 +257,29 @@ export default function AILoadBuilder({ onBack }) {
           </div>
 
           {/* Select Email Source */}
-          <div style={styles.section}>
-            <div style={styles.sectionTitle}>Select Email Source</div>
-            <div style={styles.sectionSub}>Connect your email account to scan for bookings.</div>
-            <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
-              <div style={{ position: 'relative', flex: 1 }}>
-                <select style={styles.selectInput}>
+          <div className="mb-6">
+            <h4 className="text-xs font-black text-slate-900 mb-0.5">Select Email Source</h4>
+            <p className="text-xs text-slate-400 font-medium">Connect your email account to scan for bookings.</p>
+            <div className="flex flex-col sm:flex-row gap-2.5 mt-3">
+              <div className="relative flex-1">
+                <select className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500 appearance-none">
                   <option>Outlook – dispatch@abcmotors.com.au</option>
                   <option>Gmail – info@abcmotors.com.au</option>
                 </select>
-                <ChevronRight size={14} color="#94a3b8" style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%) rotate(90deg)', pointerEvents: 'none' }} />
               </div>
-              <button style={styles.outlineBtn}
-                onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
-                onMouseLeave={e => e.currentTarget.style.background = '#fff'}
-              >
+              <button className="px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl transition-colors">
                 Disconnect
               </button>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <CheckCircle2 size={14} color="#10b981" />
-                <span style={{ fontSize: 11, color: '#10b981', fontWeight: 600 }}>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mt-3">
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
+                <span className="text-xs font-bold text-emerald-600">
                   Connected successfully.
-                  <span style={{ color: '#94a3b8', fontWeight: 500, marginLeft: 4 }}>Last synced: Today, 9:15 AM</span>
+                  <span className="text-slate-400 font-semibold ml-1.5">Last synced: Today, 9:15 AM</span>
                 </span>
               </div>
-              <button style={{ ...styles.linkBtn, display: 'flex', alignItems: 'center', gap: 4 }}
-                onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
-                onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-              >
+              <button className="text-xs font-bold text-indigo-600 hover:underline flex items-center gap-1">
                 <RefreshCw size={12} />
                 Refresh
               </button>
@@ -321,24 +287,21 @@ export default function AILoadBuilder({ onBack }) {
           </div>
 
           {/* Search Emails */}
-          <div style={styles.section}>
-            <div style={styles.sectionTitle}>Search Emails</div>
-            <div style={styles.sectionSub}>Find the booking email you want to extract.</div>
-            <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
-              <div style={{ position: 'relative', flex: 1 }}>
-                <Search size={14} color="#94a3b8" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }} />
+          <div className="mb-6">
+            <h4 className="text-xs font-black text-slate-900 mb-0.5">Search Emails</h4>
+            <p className="text-xs text-slate-400 font-medium">Find the booking email you want to extract.</p>
+            <div className="flex flex-col sm:flex-row gap-2.5 mt-3">
+              <div className="relative flex-1">
+                <Search size={14} className="text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   placeholder="Search by subject, customer, reference..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  style={styles.searchInput}
+                  className="w-full pl-9 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:border-indigo-500"
                 />
               </div>
-              <button style={{ ...styles.outlineBtn, display: 'flex', alignItems: 'center', gap: 6 }}
-                onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
-                onMouseLeave={e => e.currentTarget.style.background = '#fff'}
-              >
+              <button className="px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl transition-colors flex items-center justify-center gap-1.5">
                 <Filter size={14} />
                 Filter
               </button>
@@ -346,13 +309,11 @@ export default function AILoadBuilder({ onBack }) {
           </div>
 
           {/* Recent Booking Emails */}
-          <div style={{ marginBottom: 8 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b', marginBottom: 12 }}>
-              Recent Booking Emails
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className="mb-6">
+            <h4 className="text-xs font-black text-slate-900 mb-3">Recent Booking Emails</h4>
+            <div className="space-y-2.5">
               {filteredEmails.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '24px 0', color: '#94a3b8', fontSize: 12 }}>
+                <div className="py-8 text-center text-slate-400 text-xs font-medium">
                   No emails match your search.
                 </div>
               ) : filteredEmails.map(email => {
@@ -362,61 +323,46 @@ export default function AILoadBuilder({ onBack }) {
                   <div
                     key={email.id}
                     onClick={() => setSelectedEmail(email.id)}
-                    style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      padding: '11px 14px',
-                      borderRadius: 14,
-                      border: isActive ? '1.5px solid #6366f1' : '1.5px solid #e2e8f0',
-                      background: isActive ? '#f5f3ff' : '#fff',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                      boxShadow: isActive ? '0 0 0 3px #6366f115' : 'none',
-                    }}
-                    onMouseEnter={e => { if (!isActive) { e.currentTarget.style.border = '1.5px solid #c7d2fe'; e.currentTarget.style.background = '#fafafe'; } }}
-                    onMouseLeave={e => { if (!isActive) { e.currentTarget.style.border = '1.5px solid #e2e8f0'; e.currentTarget.style.background = '#fff'; } }}
+                    className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-3.5 rounded-xl cursor-pointer transition-all border gap-3 ${
+                      isActive 
+                        ? 'border-indigo-600 bg-indigo-50/30 shadow-xs' 
+                        : 'border-slate-200 bg-white hover:border-indigo-200 hover:bg-slate-50/40'
+                    }`}
                   >
                     {/* Left: icon + info */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
-                      <div style={{
-                        width: 36, height: 36, borderRadius: 10,
-                        background: isActive ? '#ede9fe' : '#f1f5f9',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                      }}>
-                        <Mail size={15} color={isActive ? '#6366f1' : '#64748b'} />
+                    <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                        isActive ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-500'
+                      }`}>
+                        <Mail size={16} />
                       </div>
-                      <div style={{ minWidth: 0, flex: 1 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2, flexWrap: 'wrap' }}>
-                          <span style={{
-                            fontSize: 12.5, fontWeight: 700, color: '#1e293b',
-                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200,
-                          }}>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                          <span className="text-xs font-bold text-slate-900 truncate max-w-[220px]">
                             {email.title}
                           </span>
-                          <span style={{ ...styles.confBadge, background: `${conf.bg.replace('bg-', '')}`, ...getConfStyle(email.conf) }}>
+                          <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${conf.bg} ${conf.text}`}>
                             {email.conf}
                           </span>
                           {email.isNew && (
-                            <span style={styles.newBadge}>New</span>
+                            <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-blue-100 text-blue-700">
+                              New
+                            </span>
                           )}
                         </div>
-                        <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <span className="text-[11px] font-semibold text-slate-400 block truncate">
                           {email.sender}
                         </span>
                       </div>
                     </div>
 
                     {/* Right: time + radio */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-                      <span style={{ fontSize: 11, color: '#94a3b8', whiteSpace: 'nowrap' }}>{email.time}</span>
-                      <div style={{
-                        width: 20, height: 20, borderRadius: '50%',
-                        border: isActive ? 'none' : '2px solid #cbd5e1',
-                        background: isActive ? '#6366f1' : '#fff',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        transition: 'all 0.15s',
-                        flexShrink: 0,
-                      }}>
-                        {isActive && <Check size={11} color="#fff" strokeWidth={3} />}
+                    <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                      <span className="text-[11px] text-slate-400 font-semibold">{email.time}</span>
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-all border ${
+                        isActive ? 'bg-indigo-600 border-indigo-600' : 'bg-white border-slate-300'
+                      }`}>
+                        {isActive && <Check size={11} className="text-white" strokeWidth={3} />}
                       </div>
                     </div>
                   </div>
@@ -426,12 +372,9 @@ export default function AILoadBuilder({ onBack }) {
           </div>
 
           {/* Upload footer */}
-          <div style={styles.uploadFooter}>
-            <span style={{ fontSize: 12, color: '#64748b', fontWeight: 500 }}>Can't find the email? Upload the file instead</span>
-            <button style={{ ...styles.outlineBtn, display: 'flex', alignItems: 'center', gap: 7 }}
-              onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
-              onMouseLeave={e => e.currentTarget.style.background = '#fff'}
-            >
+          <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <span className="text-xs font-semibold text-slate-500">Can't find the email? Upload the file instead</span>
+            <button className="w-full sm:w-auto px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl transition-colors flex items-center justify-center gap-1.5">
               <Upload size={14} />
               Upload File
             </button>
@@ -439,72 +382,61 @@ export default function AILoadBuilder({ onBack }) {
         </div>
 
         {/* ── RIGHT SIDEBAR ────────────────────────────────── */}
-        <div style={styles.rightSidebar}>
+        <div className="w-full lg:w-60 shrink-0 flex flex-col gap-4">
 
           {/* Extraction Preview */}
-          <div style={styles.card}>
-            <div style={styles.cardTitle}>Extraction Preview</div>
-            <p style={{ fontSize: 11, color: '#94a3b8', marginBottom: 16, lineHeight: 1.5 }}>
+          <div className="bg-white border border-slate-200 rounded-2xl p-4.5 shadow-xs">
+            <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider mb-1">Extraction Preview</h3>
+            <p className="text-[11px] font-medium text-slate-400 mb-4">
               AI will extract the following information:
             </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
+            <div className="space-y-2.5">
               {EXTRACTION_FIELDS.map((field, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
-                    <div style={{ width: 16, flexShrink: 0 }}>
-                      {field.checked ? (
-                        <CheckCircle2 size={13} color="#94a3b8" />
-                      ) : null}
-                    </div>
-                    <span style={{ fontSize: 11.5, color: '#475569', fontWeight: 600 }}>{field.label}</span>
+                <div key={i} className="flex items-start justify-between gap-2 text-xs">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <CheckCircle2 size={13} className="text-slate-400 shrink-0" />
+                    <span className="font-semibold text-slate-600 truncate">{field.label}</span>
                   </div>
-                  <span style={{ fontSize: 11.5, fontWeight: 700, color: '#1e293b', textAlign: 'right', whiteSpace: 'pre-line', lineHeight: 1.3 }}>
+                  <span className="font-bold text-slate-900 text-right whitespace-pre-line leading-tight">
                     {field.value}
                   </span>
                 </div>
               ))}
             </div>
-            <div style={{
-              marginTop: 16, paddingTop: 12,
-              borderTop: '1px solid #f1f5f9',
-              fontSize: 10.5, color: '#b0bec5', textAlign: 'center', fontStyle: 'italic'
-            }}>
+            <div className="mt-4 pt-3 border-t border-slate-100 text-[10px] text-slate-400 font-semibold italic text-center">
               AI confidence will be shown in next step.
             </div>
           </div>
 
           {/* Supported Sources */}
-          <div style={styles.card}>
-            <div style={styles.cardTitle}>Supported Sources</div>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 9 }}>
+          <div className="bg-white border border-slate-200 rounded-2xl p-4.5 shadow-xs">
+            <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider mb-3">Supported Sources</h3>
+            <ul className="space-y-2">
               {SUPPORTED_SOURCES.map((src, i) => (
-                <li key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#475569', fontWeight: 500 }}>
-                  <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#6366f1', flexShrink: 0 }} />
+                <li key={i} className="flex items-center gap-2 text-xs font-semibold text-slate-600">
+                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-600 shrink-0" />
                   {src}
                 </li>
               ))}
             </ul>
-            <button style={{ ...styles.linkBtn, marginTop: 14, display: 'flex', alignItems: 'center', gap: 4, fontSize: 12 }}
-              onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
-              onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-            >
+            <button className="text-xs font-bold text-indigo-600 hover:underline mt-4 flex items-center gap-1">
               View all integrations <ChevronRight size={13} />
             </button>
           </div>
 
           {/* Tips */}
-          <div style={styles.tipsCard}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <div style={{ width: 28, height: 28, borderRadius: 8, background: '#d1fae5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Info size={14} color="#059669" />
+          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4.5">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-7 h-7 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
+                <Info size={14} className="text-emerald-700" />
               </div>
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#065f46' }}>Tips</span>
+              <span className="text-xs font-bold text-emerald-900">Tips</span>
             </div>
-            <ul style={{ padding: 0, margin: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <ul className="space-y-2">
               {TIPS.map((tip, i) => (
-                <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                  <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#34d399', flexShrink: 0, marginTop: 5 }} />
-                  <span style={{ fontSize: 12, color: '#065f46', fontWeight: 500, lineHeight: 1.5 }}>{tip}</span>
+                <li key={i} className="flex items-start gap-2 text-xs text-emerald-800 font-medium leading-relaxed">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 mt-1.5" />
+                  <span>{tip}</span>
                 </li>
               ))}
             </ul>
@@ -513,18 +445,12 @@ export default function AILoadBuilder({ onBack }) {
           {/* CTA Button */}
           <div>
             <button
-              style={{
-                ...styles.ctaBtn,
-                background: isExtracting ? '#4f46e5' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                opacity: isExtracting ? 0.85 : 1,
-              }}
               onClick={handleExtract}
-              onMouseEnter={e => { if (!isExtracting) e.currentTarget.style.background = 'linear-gradient(135deg, #4f46e5, #7c3aed)'; }}
-              onMouseLeave={e => { if (!isExtracting) e.currentTarget.style.background = 'linear-gradient(135deg, #6366f1, #8b5cf6)'; }}
+              className="w-full flex items-center justify-center gap-2 px-5 py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-md shadow-indigo-200"
             >
               {isExtracting ? (
                 <>
-                  <RefreshCw size={15} style={{ animation: 'spin 1s linear infinite' }} />
+                  <RefreshCw size={15} className="animate-spin" />
                   Extracting...
                 </>
               ) : (
@@ -535,289 +461,14 @@ export default function AILoadBuilder({ onBack }) {
               )}
             </button>
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, marginTop: 10 }}>
-              <Lock size={11} color="#b0bec5" />
-              <span style={{ fontSize: 10.5, color: '#b0bec5', textAlign: 'center' }}>
-                Your data is secure and will not be stored without permission.
-              </span>
+            <div className="flex items-center justify-center gap-1.5 mt-3 text-[10px] text-slate-400 font-semibold text-center">
+              <Lock size={11} className="shrink-0" />
+              <span>Your data is secure and will not be stored without permission.</span>
             </div>
           </div>
         </div>
-      </div>
 
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-        * { box-sizing: border-box; }
-        ::-webkit-scrollbar { width: 5px; height: 5px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 99px; }
-      `}</style>
+      </div>
     </div>
   );
 }
-
-/* ─── Badge helpers ──────────────────────────────────────────── */
-function getConfStyle(conf) {
-  if (conf === 'High')   return { background: '#d1fae5', color: '#065f46', fontWeight: 700, fontSize: 10, padding: '2px 8px', borderRadius: 6 };
-  if (conf === 'Medium') return { background: '#fef3c7', color: '#92400e', fontWeight: 700, fontSize: 10, padding: '2px 8px', borderRadius: 6 };
-  return { background: '#fee2e2', color: '#991b1b', fontWeight: 700, fontSize: 10, padding: '2px 8px', borderRadius: 6 };
-}
-
-/* ─── Styles ─────────────────────────────────────────────────── */
-const styles = {
-  root: {
-    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-    background: '#f8fafc',
-    minHeight: '100vh',
-    display: 'flex',
-    flexDirection: 'column',
-    overflowY: 'auto',
-  },
-
-  /* Header */
-  header: {
-    background: '#fff',
-    borderBottom: '1px solid #e2e8f0',
-    padding: '0 0',
-    flexShrink: 0,
-  },
-  headerInner: {
-    maxWidth: 1200,
-    margin: '0 auto',
-    padding: '20px 32px 20px',
-  },
-  breadcrumb: {
-    display: 'flex', alignItems: 'center', gap: 6,
-    marginBottom: 14,
-  },
-  breadcrumbLink: {
-    fontSize: 11.5, fontWeight: 600, color: '#64748b', cursor: 'pointer',
-    transition: 'color 0.15s',
-  },
-  breadcrumbCurrent: {
-    fontSize: 11.5, fontWeight: 600, color: '#1e293b',
-  },
-  titleRow: {
-    display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16,
-  },
-  sparkleIcon: {
-    width: 42, height: 42, borderRadius: 12,
-    background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    boxShadow: '0 4px 14px rgba(99,102,241,0.35)',
-    flexShrink: 0,
-  },
-  h1: {
-    fontSize: 22, fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.3px',
-  },
-  version: {
-    fontSize: 16, fontWeight: 600, color: '#6366f1',
-  },
-  betaBadge: {
-    padding: '3px 9px', background: '#6366f1', color: '#fff',
-    fontSize: 9.5, fontWeight: 800, letterSpacing: 1.5,
-    borderRadius: 6, textTransform: 'uppercase',
-  },
-  subtitle: {
-    fontSize: 13, color: '#64748b', margin: '4px 0 0', fontWeight: 500,
-  },
-  backBtn: {
-    display: 'flex', alignItems: 'center', gap: 6,
-    padding: '9px 16px',
-    background: '#fff',
-    border: '1.5px solid #e2e8f0',
-    borderRadius: 12,
-    fontSize: 12.5, fontWeight: 700, color: '#374151',
-    cursor: 'pointer', transition: 'background 0.15s',
-    whiteSpace: 'nowrap',
-    flexShrink: 0,
-  },
-
-  /* Grid */
-  grid: {
-    display: 'flex',
-    gap: 20,
-    padding: '28px 32px 40px',
-    maxWidth: 1200,
-    margin: '0 auto',
-    width: '100%',
-    alignItems: 'flex-start',
-  },
-
-  /* Left sidebar */
-  leftSidebar: {
-    width: 200,
-    flexShrink: 0,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 16,
-  },
-  stepsCard: {
-    background: '#fff',
-    border: '1px solid #e2e8f0',
-    borderRadius: 18,
-    padding: '20px 18px',
-    boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-  },
-  stepsTrack: {
-    display: 'flex', flexDirection: 'column',
-  },
-  stepRow: {
-    display: 'flex', alignItems: 'flex-start', gap: 12,
-  },
-  stepCircle: {
-    width: 34, height: 34, borderRadius: '50%',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontSize: 13, fontWeight: 800,
-    flexShrink: 0, transition: 'all 0.2s',
-  },
-
-  /* Shared card */
-  card: {
-    background: '#fff',
-    border: '1px solid #e2e8f0',
-    borderRadius: 18,
-    padding: '18px 16px',
-    boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-  },
-  cardTitle: {
-    fontSize: 13, fontWeight: 800, color: '#1e293b', marginBottom: 14,
-  },
-
-  /* How it works */
-  howItWorksLine: {
-    position: 'absolute', left: 11, top: 12, bottom: 12,
-    width: 1, background: 'linear-gradient(#e0e7ff, #ddd)',
-  },
-  howIcon: {
-    width: 24, height: 24, borderRadius: '50%',
-    background: '#eef2ff', border: '1px solid #c7d2fe',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    flexShrink: 0, position: 'relative', zIndex: 1,
-  },
-
-  /* Main content */
-  mainContent: {
-    flex: 1,
-    background: '#fff',
-    border: '1px solid #e2e8f0',
-    borderRadius: 20,
-    padding: '28px 28px',
-    boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
-    minWidth: 0,
-  },
-  stepHeader: {
-    display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8,
-  },
-  stepNum: {
-    width: 30, height: 30, borderRadius: '50%',
-    background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-    color: '#fff', fontSize: 13, fontWeight: 800,
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    boxShadow: '0 3px 8px rgba(99,102,241,0.3)',
-  },
-  stepTitle: {
-    fontSize: 20, fontWeight: 800, color: '#0f172a', margin: 0,
-  },
-  stepDesc: {
-    fontSize: 13, color: '#64748b', marginBottom: 24, fontWeight: 500,
-  },
-
-  /* Source grid */
-  sourceGrid: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: 12,
-    marginBottom: 28,
-  },
-  sourceCard: {
-    position: 'relative',
-    display: 'flex', alignItems: 'center', gap: 14,
-    padding: '14px 16px',
-    borderRadius: 14,
-    cursor: 'pointer',
-    transition: 'all 0.15s ease',
-    textAlign: 'left',
-  },
-
-  /* Section */
-  section: {
-    marginBottom: 22,
-  },
-  sectionTitle: {
-    fontSize: 13, fontWeight: 700, color: '#1e293b', marginBottom: 3,
-  },
-  sectionSub: {
-    fontSize: 12, color: '#94a3b8', fontWeight: 500,
-  },
-  selectInput: {
-    width: '100%', padding: '10px 36px 10px 14px',
-    background: '#fff', border: '1.5px solid #e2e8f0',
-    borderRadius: 12, fontSize: 13, fontWeight: 600,
-    color: '#374151', cursor: 'pointer',
-    appearance: 'none',
-    outline: 'none',
-    transition: 'border 0.15s',
-  },
-  outlineBtn: {
-    padding: '9px 16px',
-    background: '#fff', border: '1.5px solid #e2e8f0',
-    borderRadius: 12, fontSize: 12.5, fontWeight: 700,
-    color: '#374151', cursor: 'pointer',
-    transition: 'all 0.15s', whiteSpace: 'nowrap',
-  },
-  searchInput: {
-    width: '100%', padding: '10px 14px 10px 38px',
-    background: '#fff', border: '1.5px solid #e2e8f0',
-    borderRadius: 12, fontSize: 13, fontWeight: 500,
-    color: '#374151', outline: 'none',
-    transition: 'border 0.15s',
-  },
-  linkBtn: {
-    background: 'none', border: 'none', padding: 0,
-    fontSize: 11.5, fontWeight: 700, color: '#6366f1',
-    cursor: 'pointer', transition: 'opacity 0.15s',
-  },
-  confBadge: {
-    padding: '2px 8px', borderRadius: 6,
-    fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5,
-  },
-  newBadge: {
-    padding: '2px 8px', borderRadius: 6,
-    background: '#dbeafe', color: '#1d4ed8',
-    fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5,
-  },
-
-  /* Upload footer */
-  uploadFooter: {
-    marginTop: 20,
-    paddingTop: 18,
-    borderTop: '1px solid #f1f5f9',
-    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
-  },
-
-  /* Right sidebar */
-  rightSidebar: {
-    width: 248,
-    flexShrink: 0,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 16,
-  },
-  tipsCard: {
-    background: '#ecfdf5',
-    border: '1px solid #a7f3d0',
-    borderRadius: 18,
-    padding: '18px 16px',
-  },
-  ctaBtn: {
-    width: '100%',
-    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-    padding: '14px 20px',
-    borderRadius: 14, border: 'none',
-    color: '#fff', fontSize: 14, fontWeight: 800,
-    cursor: 'pointer', transition: 'all 0.2s',
-    boxShadow: '0 6px 20px rgba(99,102,241,0.3)',
-    letterSpacing: 0.3,
-  },
-};

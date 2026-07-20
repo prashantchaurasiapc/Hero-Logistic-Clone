@@ -381,7 +381,7 @@ export default function AIControls() {
           <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
             <span className="w-40 text-xs font-bold text-slate-600">Smart Dispatch</span>
             <div className="flex-grow bg-slate-100 h-2.5 rounded-full overflow-hidden">
-              <div className="bg-slate-850 h-full rounded-full" style={{ width: '3%' }}></div>
+              <div className="bg-slate-800 h-full rounded-full" style={{ width: '3%' }}></div>
             </div>
             <span className="w-20 text-right text-xs font-extrabold text-slate-800">0 req</span>
           </div>
@@ -399,7 +399,7 @@ export default function AIControls() {
           <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
             <span className="w-40 text-xs font-bold text-slate-600">Chat Assistant</span>
             <div className="flex-grow bg-slate-100 h-2.5 rounded-full overflow-hidden">
-              <div className="bg-slate-850 h-full rounded-full" style={{ width: '3%' }}></div>
+              <div className="bg-slate-800 h-full rounded-full" style={{ width: '3%' }}></div>
             </div>
             <span className="w-20 text-right text-xs font-extrabold text-slate-800">0 req</span>
           </div>

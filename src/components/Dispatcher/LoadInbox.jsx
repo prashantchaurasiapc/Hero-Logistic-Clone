@@ -115,7 +115,7 @@ export default function LoadInbox() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 text-left">
         <div className="flex items-center gap-3">
           {/* Tray Icon */}
-          <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-150 flex items-center justify-center text-pink-500 shadow-3xs shrink-0">
+          <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-pink-500 shadow-3xs shrink-0">
             <Inbox className="w-6 h-6" />
           </div>
           <div>
@@ -251,7 +251,7 @@ export default function LoadInbox() {
             {/* Vin manifest footer trigger */}
             <div 
               onClick={() => handleToggleExpand(draft.id)}
-              className="px-5 py-3.5 border-t border-slate-50 flex justify-between items-center text-[10px] font-black text-slate-450 hover:text-slate-800 cursor-pointer select-none transition-colors"
+              className="px-5 py-3.5 border-t border-slate-50 flex justify-between items-center text-[10px] font-black text-slate-400 hover:text-slate-800 cursor-pointer select-none transition-colors"
             >
               <span>VIEW VIN MANIFEST ({draft.manifestCount})</span>
               {expandedDrafts[draft.id] ? (

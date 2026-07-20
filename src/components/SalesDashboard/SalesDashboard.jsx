@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { 
   Bell, ChevronDown, Plus, Mail, Phone, Calendar, 
   Activity, ArrowRight, Check, X, User, Star, Clock,
@@ -588,15 +588,15 @@ export default function SalesDashboard() {
       {/* Interactive License Tier Recommendation Modal */}
       {showRecommendModal && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
-              <h2 className="text-[17px] font-black text-slate-900">Interactive License Tier Recommendation</h2>
-              <button onClick={() => setShowRecommendModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors p-1">
+          <div className="bg-white rounded-3xl w-full max-w-3xl shadow-2xl flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100 shrink-0">
+              <h2 className="text-[16px] font-black text-slate-900">Interactive License Tier Recommendation</h2>
+              <button onClick={() => setShowRecommendModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors p-1 shrink-0">
                 <X className="w-5 h-5" />
               </button>
             </div>
             
-            <div className="p-6">
+            <div className="p-6 overflow-y-auto">
               <div className="mb-6">
                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">LEAD DIAGNOSIS</p>
                 <h3 className="text-[17px] font-black text-slate-800 mb-1">{selectedLead.split(' ')[0]} Refrigeration</h3>
@@ -605,7 +605,7 @@ export default function SalesDashboard() {
 
               <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-4">AVAILABLE LICENSE PLAN TIERS</p>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 
                 {/* Starter Plan (Recommended) */}
                 <div className="border border-[#FFD400] bg-[#FFFBF0] rounded-2xl p-5 flex flex-col relative overflow-hidden">
@@ -614,7 +614,7 @@ export default function SalesDashboard() {
                       <h4 className="text-[15px] font-black text-slate-900">Starter</h4>
                       <span className="bg-[#FFD400] text-black text-[9px] font-black uppercase px-2 py-0.5 rounded shadow-sm">RECOMMENDED</span>
                     </div>
-                    <p className="text-[11px] font-semibold text-slate-500 h-8 leading-tight">For small operators &lt;<br/>35 trucks</p>
+                    <p className="text-[11px] font-semibold text-slate-500 leading-tight">For small operators &lt; 35 trucks</p>
                   </div>
                   <div className="mb-5">
                     <div className="flex items-end gap-0.5">
@@ -649,7 +649,7 @@ export default function SalesDashboard() {
                 <div className="border border-slate-200 rounded-2xl p-5 flex flex-col">
                   <div className="mb-4">
                     <h4 className="text-[15px] font-black text-slate-700 mb-1.5">Professional</h4>
-                    <p className="text-[11px] font-medium text-slate-400 h-8 leading-tight">For growing fleets 35 -<br/>100 trucks</p>
+                    <p className="text-[11px] font-medium text-slate-400 leading-tight">For growing fleets 35 - 100 trucks</p>
                   </div>
                   <div className="mb-5">
                     <div className="flex items-end gap-0.5">
@@ -684,7 +684,7 @@ export default function SalesDashboard() {
                 <div className="border border-slate-200 rounded-2xl p-5 flex flex-col">
                   <div className="mb-4">
                     <h4 className="text-[15px] font-black text-slate-700 mb-1.5">Enterprise</h4>
-                    <p className="text-[11px] font-medium text-slate-400 h-8 leading-tight">For logistics giants &gt;<br/>100 trucks</p>
+                    <p className="text-[11px] font-medium text-slate-400 leading-tight">For logistics giants &gt; 100 trucks</p>
                   </div>
                   <div className="mb-5">
                     <div className="flex items-end gap-0.5">

@@ -307,68 +307,68 @@ export default function Branches() {
       <div className="min-h-screen bg-[#f8f9fc] p-4 sm:p-6 lg:p-8 font-sans">
         
         {/* Header Breadcrumbs */}
-        <div className="flex items-center justify-between mb-4">
-           <div>
-              <div className="flex items-center gap-2 text-[12px] text-gray-500 mb-1 font-semibold tracking-wide">
-                 <span>Home</span>
-                 <ChevronRight size={12} />
-                 <span className="hover:text-purple-600 cursor-pointer" onClick={() => setSelectedBranch(null)}>Branches</span>
-                 <ChevronRight size={12} />
-                 <span className="hover:text-purple-600 cursor-pointer" onClick={() => setActiveTab('Overview')}>Depot List</span>
-                 <ChevronRight size={12} />
-                 <span className={activeTab === 'Overview' ? "text-gray-900" : "hover:text-purple-600 cursor-pointer"} onClick={() => setActiveTab('Overview')}>Branch Details</span>
-                 {activeTab !== 'Overview' && (
-                    <>
-                       <ChevronRight size={12} />
-                       <span className="text-gray-900">{isStaffTab ? 'Staff & Permissions' : isTimeTab ? 'Time Attendance & Wages' : isAssetsTab ? 'Branch Assets' : 'Branch Performance Dashboard'}</span>
-                    </>
-                 )}
-              </div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-black text-gray-900 tracking-tight">{pageTitle}</h1>
-                <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-blue-600"><CheckCircle2 size={12} /></div>
-              </div>
-              <p className="text-sm text-gray-500 font-medium mt-1">{pageSubtitle}</p>
-           </div>
-           <div className="flex items-center gap-3">
-              {activeTab !== 'Overview' ? (
-                 <>
-                    <button onClick={() => setActiveTab('Overview')} className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors cursor-pointer">
-                       <BackIcon size={16} /> Back to Branch Details
-                    </button>
-                    {isStaffTab ? (
-                       <button className="flex items-center gap-2 px-4 py-2 bg-white border border-purple-200 text-purple-700 rounded-lg text-sm font-bold shadow-sm hover:bg-purple-50 transition-colors cursor-pointer">
-                          <Plus size={14} /> Invite Staff
-                       </button>
-                    ) : isTimeTab ? (
-                       <button className="flex items-center gap-2 px-4 py-2 bg-white border border-blue-200 text-blue-700 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-50 transition-colors cursor-pointer">
-                          <Download size={14} /> Export Timesheets
-                       </button>
-                    ) : isAssetsTab ? (
-                       <button className="flex items-center gap-2 px-4 py-2 bg-white border border-purple-200 text-purple-700 rounded-lg text-sm font-bold shadow-sm hover:bg-purple-50 transition-colors cursor-pointer">
-                          <Plus size={14} /> Assign Asset / Vehicle
-                       </button>
-                    ) : isPerfTab ? (
-                       <button className="flex items-center gap-2 px-4 py-2 bg-white border border-blue-200 text-blue-700 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-50 transition-colors cursor-pointer">
-                          <Download size={14} /> Export Dashboard
-                       </button>
-                    ) : null}
-                 </>
-              ) : (
-                 <>
-                    <button onClick={() => setSelectedBranch(null)} className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors cursor-pointer">
-                       <BackIcon size={16} /> Back to Branch List
-                    </button>
-                    <button className="flex items-center gap-2 px-4 py-2 bg-white border border-purple-200 text-purple-700 rounded-lg text-sm font-bold shadow-sm hover:bg-purple-50 transition-colors cursor-pointer">
-                       <Edit size={14} /> Edit Branch
-                    </button>
-                 </>
-              )}
-              <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors cursor-pointer">
-                 More Actions <ChevronRight size={14} className="rotate-90" />
-              </button>
-           </div>
-        </div>
+         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 mb-6">
+            <div>
+               <div className="flex items-center gap-2 text-[12px] text-gray-500 mb-1 font-semibold tracking-wide flex-wrap">
+                  <span>Home</span>
+                  <ChevronRight size={12} className="shrink-0" />
+                  <span className="hover:text-purple-600 cursor-pointer whitespace-nowrap" onClick={() => setSelectedBranch(null)}>Branches</span>
+                  <ChevronRight size={12} className="shrink-0" />
+                  <span className="hover:text-purple-600 cursor-pointer whitespace-nowrap" onClick={() => setActiveTab('Overview')}>Depot List</span>
+                  <ChevronRight size={12} className="shrink-0" />
+                  <span className={activeTab === 'Overview' ? "text-gray-900 whitespace-nowrap" : "hover:text-purple-600 cursor-pointer whitespace-nowrap"} onClick={() => setActiveTab('Overview')}>Branch Details</span>
+                  {activeTab !== 'Overview' && (
+                     <>
+                        <ChevronRight size={12} className="shrink-0" />
+                        <span className="text-gray-900 whitespace-nowrap">{isStaffTab ? 'Staff & Permissions' : isTimeTab ? 'Time Attendance & Wages' : isAssetsTab ? 'Branch Assets' : 'Branch Performance Dashboard'}</span>
+                     </>
+                  )}
+               </div>
+               <div className="flex items-center gap-2">
+                 <h1 className="text-2xl font-black text-gray-900 tracking-tight">{pageTitle}</h1>
+                 <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0"><CheckCircle2 size={12} /></div>
+               </div>
+               <p className="text-sm text-gray-500 font-medium mt-1">{pageSubtitle}</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2.5 w-full xl:w-auto">
+               {activeTab !== 'Overview' ? (
+                  <>
+                     <button onClick={() => setActiveTab('Overview')} className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors cursor-pointer whitespace-nowrap">
+                        <BackIcon size={16} /> Back to Branch Details
+                     </button>
+                     {isStaffTab ? (
+                        <button className="flex items-center gap-2 px-4 py-2 bg-white border border-purple-200 text-purple-700 rounded-lg text-sm font-bold shadow-sm hover:bg-purple-50 transition-colors cursor-pointer whitespace-nowrap">
+                           <Plus size={14} /> Invite Staff
+                        </button>
+                     ) : isTimeTab ? (
+                        <button className="flex items-center gap-2 px-4 py-2 bg-white border border-blue-200 text-blue-700 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-50 transition-colors cursor-pointer whitespace-nowrap">
+                           <Download size={14} /> Export Timesheets
+                        </button>
+                     ) : isAssetsTab ? (
+                        <button className="flex items-center gap-2 px-4 py-2 bg-white border border-purple-200 text-purple-700 rounded-lg text-sm font-bold shadow-sm hover:bg-purple-50 transition-colors cursor-pointer whitespace-nowrap">
+                           <Plus size={14} /> Assign Asset / Vehicle
+                        </button>
+                     ) : isPerfTab ? (
+                        <button className="flex items-center gap-2 px-4 py-2 bg-white border border-blue-200 text-blue-700 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-50 transition-colors cursor-pointer whitespace-nowrap">
+                           <Download size={14} /> Export Dashboard
+                        </button>
+                     ) : null}
+                  </>
+               ) : (
+                  <>
+                     <button onClick={() => setSelectedBranch(null)} className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors cursor-pointer whitespace-nowrap">
+                        <BackIcon size={16} /> Back to Branch List
+                     </button>
+                     <button onClick={() => setIsAddingBranch(true)} className="flex items-center gap-2 px-4 py-2 bg-white border border-purple-200 text-purple-700 rounded-lg text-sm font-bold shadow-sm hover:bg-purple-50 transition-colors cursor-pointer whitespace-nowrap">
+                        <Edit size={14} /> Edit Branch
+                     </button>
+                  </>
+               )}
+               <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors cursor-pointer whitespace-nowrap">
+                  More Actions <ChevronRight size={14} className="rotate-90" />
+               </button>
+            </div>
+         </div>
 
         {/* Top Branch Profile Card for Overview */}
         {activeTab === 'Overview' && (

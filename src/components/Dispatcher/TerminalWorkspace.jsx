@@ -61,7 +61,7 @@ export default function TerminalWorkspace() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 text-left">
         <div className="flex items-center gap-3">
           {/* Cube/Crate Icon */}
-          <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-150 flex items-center justify-center text-slate-700 shadow-3xs shrink-0">
+          <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-700 shadow-3xs shrink-0">
             <Box className="w-6 h-6" />
           </div>
           <div>
@@ -207,7 +207,7 @@ export default function TerminalWorkspace() {
                     </span>
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-slate-450" />
+                <ChevronRight className="w-4 h-4 text-slate-400" />
               </div>
 
               {/* Item 2 */}
@@ -247,7 +247,7 @@ export default function TerminalWorkspace() {
               </span>
             </div>
             
-            <p className="text-[11px] text-slate-650 leading-relaxed font-semibold mt-2.5">
+            <p className="text-[11px] text-slate-600 leading-relaxed font-semibold mt-2.5">
               Ensure every scan is cross-referenced with the digital manifest (the master list of active network Loads). Unrecognized items must be quarantined immediately to Section X.
             </p>
           </div>
@@ -280,7 +280,7 @@ export default function TerminalWorkspace() {
             <div className="overflow-x-auto mt-6">
               <table className="w-full text-left border-collapse min-w-[700px]">
                 <thead>
-                  <tr className="border-b border-slate-100 text-[10px] font-bold text-slate-450 uppercase tracking-wider bg-slate-50/50">
+                  <tr className="border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50/50">
                     <th className="py-3 px-4 font-black">REFERENCE</th>
                     <th className="py-3 px-4 font-black">ROUTING</th>
                     <th className="py-3 px-4 font-black">WEIGHT</th>
@@ -352,7 +352,7 @@ export default function TerminalWorkspace() {
                     <td className="py-4 px-4">Marcus A.</td>
                     <td className="py-4 px-4 font-mono font-bold">NY-VAN023</td>
                     <td className="py-4 px-4">
-                      <span className="px-2 py-0.5 bg-slate-50 text-slate-500 border border-slate-150 rounded text-[9px] font-black uppercase">
+                      <span className="px-2 py-0.5 bg-slate-50 text-slate-500 border border-slate-200 rounded text-[9px] font-black uppercase">
                         DRAFT
                       </span>
                     </td>

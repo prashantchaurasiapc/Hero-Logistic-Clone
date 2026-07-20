@@ -63,7 +63,7 @@ export default function InterCompanyTransfers() {
   return (
     <div className="flex-grow bg-[#F8FAFC] p-6 w-full font-sans text-left">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
         <div>
           <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
             Super Admin • Transfers
@@ -72,13 +72,13 @@ export default function InterCompanyTransfers() {
             Configure global licensing rules, audit tenant margins, and resolve support tickets.
           </p>
         </div>
-        <button className="border border-slate-200 bg-white hover:bg-slate-50 text-yellow-500 font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors">
+        <button className="w-full sm:w-auto border border-slate-200 bg-white hover:bg-slate-50 text-yellow-500 font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors flex items-center justify-center">
           Export Report
         </button>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
         <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between h-32">
           <div>
             <span className="text-[10px] font-black text-slate-400 tracking-wider uppercase">TOTAL TRANSFERS</span>
@@ -143,8 +143,8 @@ export default function InterCompanyTransfers() {
             <p className="text-xs font-semibold text-slate-400">Full audit log of all platform asset and load transfers.</p>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="relative w-64">
+          <div className="flex flex-col sm:flex-row items-center gap-3 shrink-0 w-full md:w-auto">
+            <div className="relative w-full sm:w-64">
               <input
                 type="text"
                 placeholder="Search transfers..."
@@ -158,7 +158,7 @@ export default function InterCompanyTransfers() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 bg-white border border-slate-200 text-xs font-extrabold rounded-xl focus:outline-none text-slate-700 cursor-pointer"
+              className="w-full sm:w-auto px-4 py-2 bg-white border border-slate-200 text-xs font-extrabold rounded-xl focus:outline-none text-slate-700 cursor-pointer"
             >
               <option value="All">All Statuses</option>
               <option value="Completed">Completed</option>
@@ -172,7 +172,7 @@ export default function InterCompanyTransfers() {
         {/* Transfer Cards List */}
         <div className="space-y-4">
           {filteredTransfers.map((tr) => (
-            <div key={tr.id} className="border border-slate-150 rounded-2xl p-5 flex flex-col md:flex-row md:justify-between md:items-center gap-4 bg-white hover:shadow-xs transition-shadow">
+            <div key={tr.id} className="border border-slate-200 rounded-2xl p-5 flex flex-col md:flex-row md:justify-between md:items-center gap-4 bg-white hover:shadow-xs transition-shadow">
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-slate-400">{tr.id}</span>
@@ -192,28 +192,28 @@ export default function InterCompanyTransfers() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 self-end md:self-auto">
+              <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto mt-4 md:mt-0">
                 {tr.status === 'Pending' ? (
                   <>
                     <button
                       onClick={() => handleApprove(tr.id)}
-                      className="bg-[#0F9D58] hover:bg-[#0b8043] text-white px-5 py-2 rounded-xl text-xs font-extrabold shadow-sm transition-colors cursor-pointer"
+                      className="w-full sm:w-auto bg-[#0F9D58] hover:bg-[#0b8043] text-white px-5 py-2.5 rounded-xl text-xs font-extrabold shadow-sm transition-colors cursor-pointer flex justify-center items-center"
                     >
                       Approve
                     </button>
                     <button
                       onClick={() => handleReject(tr.id)}
-                      className="bg-[#DB4437] hover:bg-[#c53929] text-white px-5 py-2 rounded-xl text-xs font-extrabold shadow-sm transition-colors cursor-pointer"
+                      className="w-full sm:w-auto bg-[#DB4437] hover:bg-[#c53929] text-white px-5 py-2.5 rounded-xl text-xs font-extrabold shadow-sm transition-colors cursor-pointer flex justify-center items-center"
                     >
                       Reject
                     </button>
                   </>
                 ) : (
-                  <button className="border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-extrabold text-xs px-5 py-2 rounded-xl shadow-xs transition-colors">
+                  <button className="w-full sm:w-auto border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors flex justify-center items-center">
                     Audit Trail
                   </button>
                 )}
-                <ChevronDown className="w-5 h-5 text-slate-400 cursor-pointer" />
+                <ChevronDown className="hidden md:block w-5 h-5 text-slate-400 cursor-pointer" />
               </div>
             </div>
           ))}
@@ -223,43 +223,80 @@ export default function InterCompanyTransfers() {
       {/* Permissions Matrix */}
       <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-xs w-full">
         <h2 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-4">COMPANY TRANSFER PERMISSIONS MATRIX</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-slate-200 text-[10px] font-black text-slate-400 uppercase tracking-wider bg-slate-55/20">
-                <th className="p-4 pl-0">COMPANY</th>
-                <th className="p-4 text-center">CAN SEND</th>
-                <th className="p-4 text-center">CAN RECEIVE</th>
-                <th className="p-4 text-right pr-0">AUTO-APPROVE</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-xs font-bold text-slate-700">
-              {matrixData.map((row, idx) => (
-                <tr key={idx} className="hover:bg-slate-50/20">
-                  <td className="p-4 pl-0 font-extrabold text-slate-800">{row.name}</td>
-                  <td className="p-4 text-center">
-                    {row.canSend ? (
-                      <span className="text-emerald-500 inline-flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Yes</span>
-                    ) : (
-                      <span className="text-rose-500 inline-flex items-center gap-1"><CrossIcon className="w-3.5 h-3.5" /> No</span>
-                    )}
-                  </td>
-                  <td className="p-4 text-center">
-                    {row.canReceive ? (
-                      <span className="text-emerald-500 inline-flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Yes</span>
-                    ) : (
-                      <span className="text-rose-500 inline-flex items-center gap-1"><CrossIcon className="w-3.5 h-3.5" /> No</span>
-                    )}
-                  </td>
-                  <td className="p-4 text-right pr-0">
-                    <span className="text-xs font-bold text-slate-500 border border-slate-200 bg-slate-50/50 px-3 py-1 rounded-lg">
-                      {row.autoApprove}
-                    </span>
-                  </td>
+        <div className="w-full">
+          {/* Desktop View */}
+          <div className="hidden md:block w-full overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-slate-200 text-[10px] font-black text-slate-400 uppercase tracking-wider bg-slate-50/20">
+                  <th className="p-4 pl-0">COMPANY</th>
+                  <th className="p-4 text-center">CAN SEND</th>
+                  <th className="p-4 text-center">CAN RECEIVE</th>
+                  <th className="p-4 text-right pr-0">AUTO-APPROVE</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-xs font-bold text-slate-700">
+                {matrixData.map((row, idx) => (
+                  <tr key={idx} className="hover:bg-slate-50/20">
+                    <td className="p-4 pl-0 font-extrabold text-slate-800">{row.name}</td>
+                    <td className="p-4 text-center">
+                      {row.canSend ? (
+                        <span className="text-emerald-500 inline-flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Yes</span>
+                      ) : (
+                        <span className="text-rose-500 inline-flex items-center gap-1"><CrossIcon className="w-3.5 h-3.5" /> No</span>
+                      )}
+                    </td>
+                    <td className="p-4 text-center">
+                      {row.canReceive ? (
+                        <span className="text-emerald-500 inline-flex items-center gap-1"><Check className="w-3.5 h-3.5" /> Yes</span>
+                      ) : (
+                        <span className="text-rose-500 inline-flex items-center gap-1"><CrossIcon className="w-3.5 h-3.5" /> No</span>
+                      )}
+                    </td>
+                    <td className="p-4 text-right pr-0">
+                      <span className="text-xs font-bold text-slate-500 border border-slate-200 bg-slate-50/50 px-3 py-1 rounded-lg">
+                        {row.autoApprove}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile View */}
+          <div className="md:hidden space-y-4">
+            {matrixData.map((row, idx) => (
+              <div key={idx} className="bg-slate-50/50 border border-slate-100 p-4 rounded-xl space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Company</span>
+                  <span className="text-xs font-extrabold text-slate-800">{row.name}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Can Send</span>
+                  {row.canSend ? (
+                    <span className="text-emerald-500 inline-flex items-center gap-1 text-xs font-bold"><Check className="w-3.5 h-3.5" /> Yes</span>
+                  ) : (
+                    <span className="text-rose-500 inline-flex items-center gap-1 text-xs font-bold"><CrossIcon className="w-3.5 h-3.5" /> No</span>
+                  )}
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Can Receive</span>
+                  {row.canReceive ? (
+                    <span className="text-emerald-500 inline-flex items-center gap-1 text-xs font-bold"><Check className="w-3.5 h-3.5" /> Yes</span>
+                  ) : (
+                    <span className="text-rose-500 inline-flex items-center gap-1 text-xs font-bold"><CrossIcon className="w-3.5 h-3.5" /> No</span>
+                  )}
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Auto-Approve</span>
+                  <span className="text-xs font-bold text-slate-500 border border-slate-200 bg-white px-3 py-1 rounded-lg">
+                    {row.autoApprove}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

@@ -15,11 +15,11 @@ import {
 const Vehicles = () => {
   const [vehicles, setVehicles] = React.useState([
     { id: 'T101', reg: 'NSW - YXZ 123', branch: 'SYDNEY', driver: 'Mike Thompson', driverId: 'DR001', driverImg: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60', type: 'Prime Mover', make: 'Volvo FH540', year: '2021', status: 'ACTIVE', odometer: '125,450 km', compliance: 'Compliant', nextServiceDate: '15/08/2025', nextServiceDays: 'in 21 days', img: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60' },
-    { id: 'C201', reg: 'NSW - CAA 456', branch: 'SYDNEY', driver: 'James Carter', driverId: 'DR005', driverImg: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60', type: 'Car Carrier', make: 'Hino 700', year: '2019', status: 'ACTIVE', odometer: '318,900 km', compliance: 'Expiring Soon', nextServiceDate: '28/07/2025', nextServiceDays: 'in 3 days', img: 'https://images.unsplash.com/photo-1501700490410-184511d73a90?w=600&auto=format&fit=crop&q=60' },
+    { id: 'C201', reg: 'NSW - CAA 456', branch: 'SYDNEY', driver: 'James Carter', driverId: 'DR005', driverImg: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60', type: 'Car Carrier', make: 'Hino 700', year: '2019', status: 'ACTIVE', odometer: '318,900 km', compliance: 'Expiring Soon', nextServiceDate: '28/07/2025', nextServiceDays: 'in 3 days', img: 'https://images.unsplash.com/photo-1592838064575-70ed626d3a44?w=600&auto=format&fit=crop&q=60' },
     { id: 'G305', reg: 'NSW - BXZ 789', branch: 'SYDNEY', driver: 'Sarah Johnson', driverId: 'DR008', driverImg: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=60', type: 'General Freight', make: 'Isuzu FSR', year: '2020', status: 'ACTIVE', odometer: '189,230 km', compliance: 'Compliant', nextServiceDate: '05/08/2025', nextServiceDays: 'in 11 days', img: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=600&auto=format&fit=crop&q=60' },
     { id: 'T405', reg: 'VIC - 1AB 2CD', branch: 'MELBOURNE', driver: '–', driverId: '', driverImg: '', type: 'Prime Mover', make: 'Scania R500', year: '2022', status: 'MAINTENANCE', odometer: '98,120 km', compliance: 'Expiring Soon', nextServiceDate: '10/08/2025', nextServiceDays: 'in 16 days', img: 'https://images.unsplash.com/photo-1563720223185-11003d516935?w=600&auto=format&fit=crop&q=60' },
     { id: 'D501', reg: 'QLD - 777 XYZ', branch: 'BRISBANE', driver: '–', driverId: '', driverImg: '', type: 'Dangerous Goods', make: 'Volvo FMX', year: '2018', status: 'OUT OF SERVICE', odometer: '412,560 km', compliance: 'Overdue', nextServiceDate: 'Overdue', nextServiceDays: '12 days', img: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=600&auto=format&fit=crop&q=60' },
-    { id: 'C601', reg: 'NSW - MBZ 321', branch: 'SYDNEY', driver: 'Daniel Lee', driverId: 'DR003', driverImg: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=100&auto=format&fit=crop&q=60', type: 'Car Carrier', make: 'Mercedes Actros', year: '2021', status: 'ACTIVE', odometer: '156,870 km', compliance: 'Compliant', nextServiceDate: '22/08/2025', nextServiceDays: 'in 28 days', img: 'https://images.unsplash.com/photo-1501700490410-184511d73a90?w=600&auto=format&fit=crop&q=60' },
+    { id: 'C601', reg: 'NSW - MBZ 321', branch: 'SYDNEY', driver: 'Daniel Lee', driverId: 'DR003', driverImg: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=100&auto=format&fit=crop&q=60', type: 'Car Carrier', make: 'Mercedes Actros', year: '2021', status: 'ACTIVE', odometer: '156,870 km', compliance: 'Compliant', nextServiceDate: '22/08/2025', nextServiceDays: 'in 28 days', img: 'https://images.unsplash.com/photo-1592838064575-70ed626d3a44?w=600&auto=format&fit=crop&q=60' },
     { id: 'G701', reg: 'NSW - QUO 654', branch: 'SYDNEY', driver: '–', driverId: '', driverImg: '', type: 'General Freight', make: 'UD Quon', year: '2017', status: 'OUT OF SERVICE', odometer: '532,100 km', compliance: 'Overdue', nextServiceDate: 'Overdue', nextServiceDays: '35 days', img: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=600&auto=format&fit=crop&q=60' },
     { id: 'U801', reg: 'SA - SAH 987', branch: 'ADELAIDE', driver: 'Mark Wilson', driverId: 'DR010', driverImg: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60', type: 'Utilities', make: 'Hino 500', year: '2020', status: 'ACTIVE', odometer: '87,650 km', compliance: 'Compliant', nextServiceDate: '18/08/2025', nextServiceDays: 'in 24 days', img: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60' }
   ]);
@@ -2285,17 +2285,17 @@ const Vehicles = () => {
           </h1>
           <p className="text-gray-500 text-[13px] font-medium mt-1">View and manage all vehicles in your fleet.</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
           <button
             onClick={() => setShowAddModal(true)}
-            className="border border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100 text-[13px] font-semibold py-2 px-4 rounded-lg transition-colors flex items-center gap-2 shadow-sm cursor-pointer whitespace-nowrap"
+            className="border border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100 text-[13px] font-semibold py-2 px-4 rounded-lg transition-colors flex items-center gap-2 shadow-sm cursor-pointer whitespace-nowrap flex-grow sm:flex-grow-0 justify-center"
           >
             <Plus className="w-4 h-4" /> Add Vehicle
           </button>
-          <button className="border border-gray-200 text-gray-700 hover:bg-gray-50 text-[13px] font-semibold py-2 px-4 rounded-lg transition-colors flex items-center shadow-sm cursor-pointer whitespace-nowrap">
+          <button className="border border-gray-200 text-gray-700 hover:bg-gray-50 text-[13px] font-semibold py-2 px-4 rounded-lg transition-colors flex items-center shadow-sm cursor-pointer whitespace-nowrap flex-grow sm:flex-grow-0 justify-center">
             More Actions <ChevronDownIcon size={14} className="ml-1" />
           </button>
-          <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+          <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden shadow-sm bg-white shrink-0">
             <button className="px-2.5 py-2 bg-white hover:bg-gray-50 text-gray-600 border-r border-gray-200 cursor-pointer">
               <ChevronLeft size={16} />
             </button>
@@ -2307,7 +2307,7 @@ const Vehicles = () => {
       </div>
 
       {/* KPI Cards Row */}
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
          <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm flex items-center gap-4">
             <div className="w-12 h-12 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 flex-shrink-0">
                <Truck size={20} />
@@ -2348,60 +2348,77 @@ const Vehicles = () => {
                <p className="text-[10px] text-gray-400 mt-1">6.3% of total</p>
             </div>
          </div>
-         <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 flex-shrink-0">
-               <FileText size={20} />
-            </div>
-            <div>
-               <p className="text-[11px] text-gray-500 font-medium">Compliance Due</p>
-               <h3 className="text-2xl font-bold text-gray-900 mt-0.5 leading-none">6</h3>
-               <p className="text-[10px] text-gray-400 mt-1">18.8% of total</p>
-            </div>
-         </div>
-      </div>
+         <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm flex items-center gap-4 col-span-2 sm:col-span-1 lg:col-span-1">
+             <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 flex-shrink-0">
+                <FileText size={20} />
+             </div>
+             <div>
+                <p className="text-[11px] text-gray-500 font-medium">Compliance Due</p>
+                <h3 className="text-2xl font-bold text-gray-900 mt-0.5 leading-none">6</h3>
+                <p className="text-[10px] text-gray-400 mt-1">18.8% of total</p>
+             </div>
+          </div>
+       </div>
 
-      {/* Main Grid: Left Table (9 cols) + Right Sidebar (3 cols) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-         
-         {/* Left Side (Table) */}
-         <div className="lg:col-span-9 bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden flex flex-col">
-            {/* Table Header/Tabs */}
-            <div className="px-5 pt-3 border-b border-gray-100 flex flex-wrap justify-between items-center gap-4">
-               <div className="flex gap-6 overflow-x-auto min-w-0">
-                  {['All Vehicles', 'Active', 'In Maintenance', 'Out of Service', 'Sold / Inactive'].map(tab => (
-                     <button key={tab} className={`pb-3 text-[12px] font-semibold uppercase tracking-wider relative whitespace-nowrap ${tab === 'All Vehicles' ? 'text-purple-700 border-b-2 border-purple-700' : 'text-gray-500 hover:text-gray-700'}`}>
-                        {tab}
-                     </button>
-                  ))}
-               </div>
-               <div className="flex items-center gap-3 pb-2 flex-wrap">
-                  <button className="flex items-center gap-1.5 text-[12px] font-semibold text-gray-700 border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm hover:bg-gray-50">
-                     <Filter size={14} /> Filters
-                  </button>
-                  <div className="relative">
-                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                     <input type="text" placeholder="Search vehicles..." className="pl-8 pr-3 py-1.5 text-[12px] border border-gray-200 rounded-lg w-48 focus:outline-none focus:border-purple-400" />
-                  </div>
-                  <button className="p-1.5 border border-gray-200 text-gray-600 rounded-lg shadow-sm hover:bg-gray-50">
-                     <Download size={16} />
-                  </button>
-               </div>
-            </div>
+       {/* Main Grid: Left Table (9 cols) + Right Sidebar (3 cols) */}
+       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          
+          {/* Left Side (Table) */}
+          <div className="lg:col-span-9 bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden flex flex-col">
+             {/* Table Header/Tabs */}
+             <div className="px-5 pt-3 border-b border-gray-100 flex flex-wrap justify-between items-center gap-4">
+                <div className="flex gap-6 overflow-x-auto min-w-0">
+                   {[
+                      { label: 'All Vehicles', value: 'ALL' },
+                      { label: 'Active', value: 'ACTIVE' },
+                      { label: 'In Maintenance', value: 'MAINTENANCE' },
+                      { label: 'Out of Service', value: 'OUT OF SERVICE' },
+                      { label: 'Sold / Inactive', value: 'INACTIVE' }
+                   ].map(tab => {
+                      const isActive = statusFilter === tab.value;
+                      return (
+                         <button 
+                            key={tab.value} 
+                            onClick={() => setStatusFilter(tab.value)}
+                            className={`pb-3 text-[12px] font-bold uppercase tracking-wider relative whitespace-nowrap transition-all duration-200 cursor-pointer ${
+                               isActive 
+                                 ? 'text-purple-700 font-black border-b-2 border-purple-700' 
+                                 : 'text-gray-400 hover:text-gray-700 font-semibold'
+                            }`}
+                         >
+                            {tab.label}
+                         </button>
+                      );
+                   })}
+                </div>
+                <div className="flex items-center gap-3 pb-2 flex-wrap">
+                   <button className="flex items-center gap-1.5 text-[12px] font-semibold text-gray-700 border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm hover:bg-gray-50">
+                      <Filter size={14} /> Filters
+                   </button>
+                   <div className="relative">
+                      <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input type="text" placeholder="Search vehicles..." className="pl-8 pr-3 py-1.5 text-[12px] border border-gray-200 rounded-lg w-48 focus:outline-none focus:border-purple-400" />
+                   </div>
+                   <button className="p-1.5 border border-gray-200 text-gray-600 rounded-lg shadow-sm hover:bg-gray-50">
+                      <Download size={16} />
+                   </button>
+                </div>
+             </div>
 
             {/* Table */}
-            <div className="overflow-x-auto min-w-0">
-               <table className="w-full text-left">
+            <div className="overflow-x-auto custom-scrollbar">
+               <table className="w-full text-left whitespace-nowrap min-w-[1000px]">
                   <thead>
                      <tr className="border-b border-gray-100 text-[10px] font-bold text-gray-700">
                         <th className="py-3 px-4 whitespace-nowrap">Vehicle / Reg No.</th>
                         <th className="py-3 px-4 whitespace-nowrap">Type / Make / Model</th>
-                        <th className="py-3 px-2 text-center">Year</th>
-                        <th className="py-3 px-4 text-center">Status</th>
+                        <th className="py-3 px-2 text-center whitespace-nowrap">Year</th>
+                        <th className="py-3 px-4 text-center whitespace-nowrap">Status</th>
                         <th className="py-3 px-4 whitespace-nowrap">Current Driver</th>
-                        <th className="py-3 px-4 text-right">Odometer</th>
-                        <th className="py-3 px-4 text-center">Compliance</th>
+                        <th className="py-3 px-4 text-right whitespace-nowrap">Odometer</th>
+                        <th className="py-3 px-4 text-center whitespace-nowrap">Compliance</th>
                         <th className="py-3 px-4 whitespace-nowrap">Next Service</th>
-                        <th className="py-3 px-4 text-center">Actions</th>
+                        <th className="py-3 px-4 text-center whitespace-nowrap">Actions</th>
                      </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
@@ -2409,7 +2426,15 @@ const Vehicles = () => {
                         <tr key={i} onClick={() => setManagingVehicle(v)} className="hover:bg-gray-50/50 transition-colors cursor-pointer">
                            <td className="py-3 px-4">
                               <div className="flex items-center gap-3">
-                                 <img src={v.img} alt="Vehicle" className="w-10 h-8 rounded object-cover border border-gray-200 shadow-sm" />
+                                 <img 
+                                     src={v.img} 
+                                     alt="Vehicle" 
+                                     onError={(e) => {
+                                        e.target.onerror = null; 
+                                        e.target.src = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60";
+                                     }}
+                                     className="w-10 h-8 rounded object-cover border border-gray-200 shadow-sm" 
+                                  />
                                  <div>
                                     <div className="text-[12px] font-bold text-gray-900 whitespace-nowrap">{v.id} - {v.make}</div>
                                     <div className="text-[10px] text-gray-500 font-medium whitespace-nowrap">{v.reg}</div>

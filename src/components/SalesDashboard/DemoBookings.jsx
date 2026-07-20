@@ -521,7 +521,7 @@ export default function DemoBookings() {
                         className={`w-7 h-7 ${
                           star <= feedbackForm.rating 
                             ? 'fill-amber-400 stroke-amber-500' 
-                            : 'text-slate-250 stroke-slate-300'
+                            : 'text-slate-300 stroke-slate-300'
                         }`} 
                       />
                     </button>
@@ -540,7 +540,7 @@ export default function DemoBookings() {
                   onChange={(e) => setFeedbackForm({ ...feedbackForm, notes: e.target.value })}
                   placeholder="Notes from presentation feedback, queries, custom integrations requested..."
                   rows="4"
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-850 resize-none font-semibold"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-[#ffcc00] rounded-xl focus:outline-none text-slate-800 resize-none font-semibold"
                 />
               </div>
 
@@ -549,7 +549,7 @@ export default function DemoBookings() {
                 <button
                   type="button"
                   onClick={() => setShowFeedbackModal(null)}
-                  className="flex-1 bg-white hover:bg-slate-50 text-slate-700 font-extrabold text-xs py-3 rounded-xl border border-slate-250 transition-colors cursor-pointer text-center"
+                  className="flex-1 bg-white hover:bg-slate-50 text-slate-700 font-extrabold text-xs py-3 rounded-xl border border-slate-200 transition-colors cursor-pointer text-center"
                 >
                   Cancel
                 </button>

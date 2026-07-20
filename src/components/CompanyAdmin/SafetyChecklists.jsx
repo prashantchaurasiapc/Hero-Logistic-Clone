@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import {
   Shield, Clipboard, Zap, AlertCircle, Edit, Trash2, X, Plus, Users, Calendar, List, ShieldAlert, Check
 } from 'lucide-react';
@@ -162,8 +163,8 @@ const SafetyChecklistsDashboardView = () => {
       </div>
 
       {/* Create safety checklist modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+      {showModal && createPortal(
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-[9999] p-4">
           <div className="bg-white rounded-3xl border border-slate-100 max-w-md w-full p-6 shadow-xl text-left animate-in fade-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold text-slate-900">Create Safety Checklist</h2>
@@ -212,7 +213,8 @@ const SafetyChecklistsDashboardView = () => {
               </button>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
