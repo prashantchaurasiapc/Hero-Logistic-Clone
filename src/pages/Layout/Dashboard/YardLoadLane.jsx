@@ -308,16 +308,16 @@ export default function YardLoadLane() {
                 </button>
               </div>
             </div>
-
-            {/* Right Column: Yard Attendant Tasks List */}
+{/* Right Column: Yard Attendant Tasks List */}
             <div className="yard-card" style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
 
               <div className="yard-manifest-header">
                 <h2 style={{ fontSize: 14.5, fontWeight: '800', color: '#0f172a', margin: 0 }}>Yard Attendant Tasks List</h2>
 
-                {/* Density & columns visibility */}
-                <div className="yard-controls-row">
+                {/* Grid Density & Columns Control */}
+                <div className="yard-controls-row" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
 
+                  {/* Density tabs styled container */}
                   <div style={{
                     display: 'flex',
                     backgroundColor: '#f1f5f9',
@@ -346,6 +346,36 @@ export default function YardLoadLane() {
                       </button>
                     ))}
                   </div>
+
+                  {/* Selected CSV Action Box next to COLUMNS button */}
+                  {selectedCount > 0 && (
+                    <div
+                      onClick={handleCsvExport}
+                      style={{
+                        backgroundColor: '#fffdf5',
+                        border: '1.5px solid #fde047',
+                        borderRadius: 10,
+                        padding: '8px 12px',
+                        fontSize: 11,
+                        fontWeight: '800',
+                        color: '#b45309',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        cursor: 'pointer',
+                        outline: 'none',
+                        whiteSpace: 'nowrap',
+                        boxSizing: 'border-box'
+                      }}
+                    >
+                      <span style={{ fontSize: 10, fontWeight: '800', color: '#b45309', letterSpacing: '0.5px' }}>
+                        {selectedCount} SELECTED
+                      </span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#b45309' }}>
+                        <DownloadIcon /> CSV Export
+                      </span>
+                    </div>
+                  )}
 
                   <div style={{ position: 'relative' }}>
                     <button
@@ -399,34 +429,6 @@ export default function YardLoadLane() {
 
                 </div>
               </div>
-
-              {/* Selected Action Row */}
-              {selectedCount > 0 && (
-                <div className="yard-csv-action-row">
-                  <span style={{ fontSize: 10, fontWeight: '800', color: '#b45309', letterSpacing: '0.5px' }}>
-                    {selectedCount} SELECTED
-                  </span>
-                  <button
-                    onClick={handleCsvExport}
-                    style={{
-                      backgroundColor: '#ffffff',
-                      border: '1px solid #ffcc00',
-                      borderRadius: 8,
-                      padding: '4px 10px',
-                      fontSize: 10.5,
-                      fontWeight: '800',
-                      color: '#b45309',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 4,
-                      cursor: 'pointer',
-                      outline: 'none'
-                    }}
-                  >
-                    <DownloadIcon /> CSV Export
-                  </button>
-                </div>
-              )}
 
               {/* Table Container */}
               <div style={{
@@ -572,7 +574,7 @@ export default function YardLoadLane() {
 
       {/* Exclamation or Success Toast Alert */}
       {toast && (
-        <div className="yard-toast-popup" style={{
+        <div className="yard-toast-popup settings-toast" style={{
           backgroundColor: toastType === 'error' ? '#fef2f2' : '#eff6ff',
           border: toastType === 'error' ? '1px solid #fecaca' : '1px solid #bfdbfe'
         }}>

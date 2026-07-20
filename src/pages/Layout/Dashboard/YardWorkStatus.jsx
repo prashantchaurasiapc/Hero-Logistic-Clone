@@ -2045,7 +2045,7 @@ export default function YardWorkStatus() {
 
       {/* Custom Toast Notification Popup */}
       {toast && (
-        <div style={{
+        <div className="yard-toast-popup settings-toast" style={{
           position: 'fixed',
           bottom: 30,
           right: 32,
