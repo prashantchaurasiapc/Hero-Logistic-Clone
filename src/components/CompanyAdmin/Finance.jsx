@@ -22,6 +22,17 @@ export default function Finance() {
   const [selectedPeriod, setSelectedPeriod] = useState('This Quarter');
   const [isPeriodMenuOpen, setIsPeriodMenuOpen] = useState(false);
 
+  const handleDownloadInvoice = (invoiceId, client, amount) => {
+    const element = document.createElement("a");
+    const content = `----------------------------------------\nHERO LOGISTICS - INVOICE RECEIPT\n----------------------------------------\nInvoice ID: ${invoiceId}\nClient: ${client}\nAmount: ${amount}\nDate: ${new Date().toLocaleDateString()}\nStatus: PAID\n\nThank you for your business!\n----------------------------------------`;
+    const file = new Blob([content], {type: 'text/plain'});
+    element.href = URL.createObjectURL(file);
+    element.download = `${invoiceId}-receipt.txt`;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+  };
+
   const handleNewInvoice = () => {
     setShowInvoiceModal(true);
   };
@@ -312,86 +323,88 @@ export default function Finance() {
       )}
 
       {activeTab === 'invoices' && (
-        <div className="bg-white rounded-[20px] shadow-sm border border-gray-100 flex flex-col p-6 mt-2 overflow-x-auto">
+        <div className="bg-white rounded-[20px] shadow-sm border border-gray-100 flex flex-col p-6 mt-2">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-[13px] font-bold text-gray-900">All Invoices</h2>
             <span className="text-[11px] font-semibold text-gray-500">5 entries</span>
           </div>
 
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-gray-100">
-                <th className="pb-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-left w-[15%]">INVOICE ID</th>
-                <th className="pb-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-left w-[25%]">CLIENT</th>
-                <th className="pb-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-center w-[15%]">DATE</th>
-                <th className="pb-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-center w-[15%]">AMOUNT</th>
-                <th className="pb-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-center w-[15%]">STATUS</th>
-                <th className="pb-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right w-[15%]">ACTION</th>
-              </tr>
-            </thead>
-            <tbody className="text-[12px]">
-              <tr className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                <td className="py-4 font-bold text-gray-900 text-left">INV-1022</td>
-                <td className="py-4 font-medium text-gray-700 text-left">Tech Solutions</td>
-                <td className="py-4 font-medium text-gray-500 text-center">08/28/2026</td>
-                <td className="py-4 font-bold text-gray-900 text-center">$12,200</td>
-                <td className="py-4 text-center">
-                  <span className="bg-[#E6F9F1] text-[#00D47E] px-2.5 py-1 rounded-md text-[10px] font-bold">Paid</span>
-                </td>
-                <td className="py-4 text-right">
-                  <button className="text-[#3B82F6] font-bold hover:underline text-[11px]">Download</button>
-                </td>
-              </tr>
-              <tr className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                <td className="py-4 font-bold text-gray-900 text-left">INV-1020</td>
-                <td className="py-4 font-medium text-gray-700 text-left">Smith Motors</td>
-                <td className="py-4 font-medium text-gray-500 text-center">08/27/2026</td>
-                <td className="py-4 font-bold text-gray-900 text-center">$28,800</td>
-                <td className="py-4 text-center">
-                  <span className="bg-[#E6F9F1] text-[#00D47E] px-2.5 py-1 rounded-md text-[10px] font-bold">Paid</span>
-                </td>
-                <td className="py-4 text-right">
-                  <button className="text-[#3B82F6] font-bold hover:underline text-[11px]">Download</button>
-                </td>
-              </tr>
-              <tr className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                <td className="py-4 font-bold text-gray-900 text-left">INV-1019</td>
-                <td className="py-4 font-medium text-gray-700 text-left">EV Fleet Co</td>
-                <td className="py-4 font-medium text-gray-500 text-center">08/26/2026</td>
-                <td className="py-4 font-bold text-gray-900 text-center">$19,200</td>
-                <td className="py-4 text-center">
-                  <span className="bg-[#E6F9F1] text-[#00D47E] px-2.5 py-1 rounded-md text-[10px] font-bold">Paid</span>
-                </td>
-                <td className="py-4 text-right">
-                  <button className="text-[#3B82F6] font-bold hover:underline text-[11px]">Download</button>
-                </td>
-              </tr>
-              <tr className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                <td className="py-4 font-bold text-gray-900 text-left">INV-1025</td>
-                <td className="py-4 font-medium text-gray-700 text-left">Alpha Holdings</td>
-                <td className="py-4 font-medium text-gray-500 text-center">08/24/2026</td>
-                <td className="py-4 font-bold text-gray-900 text-center">$45,000</td>
-                <td className="py-4 text-center">
-                  <span className="bg-[#FFF4E5] text-[#FF9800] px-2.5 py-1 rounded-md text-[10px] font-bold">Pending</span>
-                </td>
-                <td className="py-4 text-right">
-                  <button className="text-[#3B82F6] font-bold hover:underline text-[11px]">Download</button>
-                </td>
-              </tr>
-              <tr className="hover:bg-gray-50 transition-colors">
-                <td className="py-4 font-bold text-gray-900 text-left">INV-1026</td>
-                <td className="py-4 font-medium text-gray-700 text-left">Logistics Group</td>
-                <td className="py-4 font-medium text-gray-500 text-center">08/23/2026</td>
-                <td className="py-4 font-bold text-gray-900 text-center">$147,000</td>
-                <td className="py-4 text-center">
-                  <span className="bg-[#FFEFEF] text-[#F44336] px-2.5 py-1 rounded-md text-[10px] font-bold">Overdue</span>
-                </td>
-                <td className="py-4 text-right">
-                  <button className="text-[#3B82F6] font-bold hover:underline text-[11px]">Download</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <div className="overflow-x-auto custom-scrollbar w-full">
+            <table className="w-full text-left border-collapse whitespace-nowrap min-w-[650px]">
+              <thead>
+                <tr className="border-b border-gray-100">
+                  <th className="pb-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-left w-[15%]">INVOICE ID</th>
+                  <th className="pb-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-left w-[25%]">CLIENT</th>
+                  <th className="pb-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-center w-[15%]">DATE</th>
+                  <th className="pb-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-center w-[15%]">AMOUNT</th>
+                  <th className="pb-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-center w-[15%]">STATUS</th>
+                  <th className="pb-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right w-[15%]">ACTION</th>
+                </tr>
+              </thead>
+              <tbody className="text-[12px]">
+                <tr className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                  <td className="py-4 font-bold text-gray-900 text-left">INV-1022</td>
+                  <td className="py-4 font-medium text-gray-700 text-left">Tech Solutions</td>
+                  <td className="py-4 font-medium text-gray-500 text-center">08/28/2026</td>
+                  <td className="py-4 font-bold text-gray-900 text-center">$12,200</td>
+                  <td className="py-4 text-center">
+                    <span className="bg-[#E6F9F1] text-[#00D47E] px-2.5 py-1 rounded-md text-[10px] font-bold">Paid</span>
+                  </td>
+                  <td className="py-4 text-right">
+                    <button onClick={() => handleDownloadInvoice('INV-1022', 'Tech Solutions', '$12,200')} className="text-[#3B82F6] font-bold hover:underline text-[11px] cursor-pointer">Download</button>
+                  </td>
+                </tr>
+                <tr className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                  <td className="py-4 font-bold text-gray-900 text-left">INV-1020</td>
+                  <td className="py-4 font-medium text-gray-700 text-left">Smith Motors</td>
+                  <td className="py-4 font-medium text-gray-500 text-center">08/27/2026</td>
+                  <td className="py-4 font-bold text-gray-900 text-center">$28,800</td>
+                  <td className="py-4 text-center">
+                    <span className="bg-[#E6F9F1] text-[#00D47E] px-2.5 py-1 rounded-md text-[10px] font-bold">Paid</span>
+                  </td>
+                  <td className="py-4 text-right">
+                    <button onClick={() => handleDownloadInvoice('INV-1020', 'Smith Motors', '$28,800')} className="text-[#3B82F6] font-bold hover:underline text-[11px] cursor-pointer">Download</button>
+                  </td>
+                </tr>
+                <tr className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                  <td className="py-4 font-bold text-gray-900 text-left">INV-1019</td>
+                  <td className="py-4 font-medium text-gray-700 text-left">EV Fleet Co</td>
+                  <td className="py-4 font-medium text-gray-500 text-center">08/26/2026</td>
+                  <td className="py-4 font-bold text-gray-900 text-center">$19,200</td>
+                  <td className="py-4 text-center">
+                    <span className="bg-[#E6F9F1] text-[#00D47E] px-2.5 py-1 rounded-md text-[10px] font-bold">Paid</span>
+                  </td>
+                  <td className="py-4 text-right">
+                    <button onClick={() => handleDownloadInvoice('INV-1019', 'EV Fleet Co', '$19,200')} className="text-[#3B82F6] font-bold hover:underline text-[11px] cursor-pointer">Download</button>
+                  </td>
+                </tr>
+                <tr className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                  <td className="py-4 font-bold text-gray-900 text-left">INV-1025</td>
+                  <td className="py-4 font-medium text-gray-700 text-left">Alpha Holdings</td>
+                  <td className="py-4 font-medium text-gray-500 text-center">08/24/2026</td>
+                  <td className="py-4 font-bold text-gray-900 text-center">$45,000</td>
+                  <td className="py-4 text-center">
+                    <span className="bg-[#FFF4E5] text-[#FF9800] px-2.5 py-1 rounded-md text-[10px] font-bold">Pending</span>
+                  </td>
+                  <td className="py-4 text-right">
+                    <button onClick={() => handleDownloadInvoice('INV-1025', 'Alpha Holdings', '$45,000')} className="text-[#3B82F6] font-bold hover:underline text-[11px] cursor-pointer">Download</button>
+                  </td>
+                </tr>
+                <tr className="hover:bg-gray-50 transition-colors">
+                  <td className="py-4 font-bold text-gray-900 text-left">INV-1026</td>
+                  <td className="py-4 font-medium text-gray-700 text-left">Logistics Group</td>
+                  <td className="py-4 font-medium text-gray-500 text-center">08/23/2026</td>
+                  <td className="py-4 font-bold text-gray-900 text-center">$147,000</td>
+                  <td className="py-4 text-center">
+                    <span className="bg-[#FFEFEF] text-[#F44336] px-2.5 py-1 rounded-md text-[10px] font-bold">Overdue</span>
+                  </td>
+                  <td className="py-4 text-right">
+                    <button onClick={() => handleDownloadInvoice('INV-1026', 'Logistics Group', '$147,000')} className="text-[#3B82F6] font-bold hover:underline text-[11px] cursor-pointer">Download</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

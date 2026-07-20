@@ -353,10 +353,10 @@ export default function LiveTracking() {
       </div>
 
       {/* ── Main Workspace: Map & Sidebar ─────────────────────── */}
-      <div className="grid grid-cols-12 gap-5 h-[calc(100vh-250px)] min-h-[500px]">
+      <div className="grid grid-cols-12 gap-5 min-h-[500px] lg:h-[calc(100vh-250px)]">
         
         {/* Left Side: Dark Telemetry Map Card */}
-        <div className="col-span-12 lg:col-span-8 bg-slate-950 border border-slate-800 rounded-2xl shadow-sm relative overflow-hidden flex flex-col">
+        <div className="col-span-12 lg:col-span-8 bg-slate-950 border border-slate-800 rounded-2xl shadow-sm relative overflow-hidden flex flex-col min-h-[360px] sm:min-h-[420px]">
           
           {/* Hero Telemetry HUD Label */}
           <div className="absolute top-4 left-4 z-[1000] bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-2.5 backdrop-blur-md flex items-center gap-3">

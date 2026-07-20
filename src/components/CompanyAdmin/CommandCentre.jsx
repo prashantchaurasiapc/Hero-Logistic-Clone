@@ -87,7 +87,7 @@ export default function CommandCentre() {
       </div>
 
       {/* KPI SUMMARY CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4 mb-6">
         {/* Loads */}
         <div className="bg-white rounded-2xl p-4 border border-blue-200 shadow-sm relative overflow-hidden group">
           <div className="flex justify-between items-start mb-2">
@@ -154,9 +154,9 @@ export default function CommandCentre() {
       </div>
 
       {/* QUICK ACTIONS */}
-      <div className="bg-white border border-emerald-300 rounded-2xl p-5 shadow-sm mb-6">
+      <div className="bg-white border border-emerald-300 rounded-2xl p-4 sm:p-5 shadow-sm mb-6">
         <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-4 divide-x divide-slate-100">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4 sm:divide-x divide-slate-100">
           
           <button 
             onClick={() => navigate('/company-admin/loads', { state: { openNewLoadModal: true } })}

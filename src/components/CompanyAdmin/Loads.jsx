@@ -178,31 +178,31 @@ function LoadDetail({ load, onBack }) {
     <div className="flex flex-col" style={{ background: '#f8fafc', minHeight: '100vh', fontFamily: 'sans-serif' }}>
       
       {/* ── Top Bar ────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-slate-100 shrink-0">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-4 bg-white border-b border-slate-100 shrink-0 gap-4">
         <div className="flex items-center gap-3">
-          <button onClick={onBack} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 transition-colors border border-slate-200">
+          <button onClick={onBack} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 transition-colors border border-slate-200 shrink-0">
             <ChevronLeft className="w-4 h-4 text-slate-600" />
           </button>
           <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl font-bold text-slate-900">Load {load.id}</h1>
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+              <h1 className="text-lg sm:text-xl font-bold text-slate-900">Load {load.id}</h1>
               <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black border uppercase tracking-wider ${getLoadStatusBadge(load.status)}`}>
                 ● {load.status === 'ACTIVE' ? 'IN PROGRESS' : load.statusSub?.toUpperCase()}
               </span>
             </div>
-            <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
-              <Truck className="w-3 h-3" /> {load.type} • Created by Sarah Mitchell • {load.date?.split('-').reverse().join('/')} 07:15 AM
+            <p className="text-xs text-slate-400 mt-1 flex items-center gap-1 flex-wrap">
+              <Truck className="w-3 h-3 shrink-0" /> {load.type} • Created by Sarah Mitchell • {load.date?.split('-').reverse().join('/')} 07:15 AM
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button className="flex items-center gap-1.5 px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <button className="flex-1 sm:flex-none justify-center flex items-center gap-1.5 px-3 sm:px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors">
             <Edit3 className="w-3.5 h-3.5" /> Edit Load
           </button>
-          <button className="flex items-center gap-1.5 px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors">
+          <button className="flex-1 sm:flex-none justify-center flex items-center gap-1.5 px-3 sm:px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors">
             <UserCheck className="w-3.5 h-3.5" /> Reassign
           </button>
-          <button className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-black transition-colors">
+          <button className="flex-1 sm:flex-none justify-center flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-black transition-colors">
             More Actions <ChevronDown className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -1242,16 +1242,16 @@ export default function Loads() {
     <div className="flex-grow bg-[#F8FAFC] w-full font-sans overflow-hidden flex flex-col min-h-0">
       
       {/* ════ HEADER (Full Width) ════════════════════════════ */}
-      <div className="flex justify-between items-center px-6 pt-6 pb-2 shrink-0">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center px-4 sm:px-6 pt-4 sm:pt-6 pb-2 shrink-0 gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight leading-none mb-2">Loads</h1>
-          <p className="text-[13px] font-medium text-slate-500">Manage and track all loads in your operation</p>
+          <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 tracking-tight leading-none mb-2">Loads</h1>
+          <p className="text-xs sm:text-[13px] font-medium text-slate-500">Manage and track all loads in your operation</p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <button className="flex items-center gap-1.5 px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          <button className="flex-1 sm:flex-none justify-center flex items-center gap-1.5 px-3 sm:px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
             <span className="text-slate-400 text-base leading-none">•</span> Import
           </button>
-          <button className="flex items-center gap-1.5 px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
+          <button className="flex-1 sm:flex-none justify-center flex items-center gap-1.5 px-3 sm:px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
             <span className="text-slate-400 text-base leading-none">•</span> Export
           </button>
           <div className="relative">
@@ -1272,22 +1272,22 @@ export default function Loads() {
           </div>
           <button 
             onClick={() => setShowAILoadBuilder(true)}
-            className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-xl text-[11px] font-bold text-white transition-colors shadow-sm"
+            className="flex-1 sm:flex-none justify-center flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-xl text-[11px] font-bold text-white transition-colors shadow-sm"
           >
             <Sparkles className="w-3.5 h-3.5" /> AI LOAD
           </button>
           <button
             onClick={() => setShowCreateForm(true)}
-            className="flex items-center gap-1.5 px-4 py-2 bg-[#FFCC00] hover:bg-[#FACC15] rounded-xl text-[11px] font-bold text-black transition-colors shadow-sm"
+            className="flex-1 sm:flex-none justify-center flex items-center gap-1.5 px-4 py-2 bg-[#FFCC00] hover:bg-[#FACC15] rounded-xl text-[11px] font-bold text-black transition-colors shadow-sm"
           >
             <Plus className="w-3.5 h-3.5 stroke-[3px]" /> New Load
           </button>
         </div>
       </div>
 
-      <div className="flex flex-1 min-h-0 overflow-hidden">
+      <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-y-auto lg:overflow-hidden">
         {/* ════ LEFT: Main ════════════════════════════════ */}
-        <div className="flex-1 flex flex-col min-w-0 overflow-y-auto p-6 pt-2 pb-0">
+        <div className="flex-1 flex flex-col min-w-0 p-4 sm:p-6 pt-2 pb-0">
 
           {/* Tabs */}
           <div className="flex items-center gap-2.5 mb-6 overflow-x-auto pb-1 scrollbar-none">
@@ -1314,21 +1314,21 @@ export default function Loads() {
           {/* Filter Container */}
           <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm mb-4">
             {/* Filter Row 1 */}
-            <div className="flex flex-nowrap overflow-x-auto scrollbar-none gap-2 mb-3 pb-1">
-              <div className="relative shrink-0">
+            <div className="flex flex-wrap items-center gap-2 mb-3">
+              <div className="relative flex-1 min-w-[140px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                 <input
                   type="text"
                   placeholder="Search loads..."
                   value={search}
                   onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
-                  className="pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:border-indigo-500 w-36"
+                  className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:border-indigo-500"
                 />
               </div>
-              <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setCurrentPage(1); }} className="shrink-0 px-2 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 w-[110px]" title="From Date"/>
-              <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setCurrentPage(1); }} className="shrink-0 px-2 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 w-[110px]" title="To Date"/>
+              <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setCurrentPage(1); }} className="flex-1 min-w-[110px] px-2 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500" title="From Date"/>
+              <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setCurrentPage(1); }} className="flex-1 min-w-[110px] px-2 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500" title="To Date"/>
               
-              <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setCurrentPage(1); }} className="shrink-0 px-2 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none bg-no-repeat bg-[right_8px_center] bg-[length:12px]" style={{backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%2394a3b8\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")'}}>
+              <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setCurrentPage(1); }} className="flex-1 min-w-[110px] px-2 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none bg-no-repeat bg-[right_8px_center] bg-[length:12px]" style={{backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%2394a3b8\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")'}}>
                 <option>All Status</option>
                 <option value="ACTIVE">Active</option>
                 <option value="PLANNED">Planned</option>
@@ -1337,37 +1337,37 @@ export default function Loads() {
                 <option value="CANCELLED">Cancelled</option>
               </select>
 
-              <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setCurrentPage(1); }} className="shrink-0 px-2 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none bg-no-repeat bg-[right_8px_center] bg-[length:12px]" style={{backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%2394a3b8\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")'}}>
+              <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setCurrentPage(1); }} className="flex-1 min-w-[110px] px-2 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none bg-no-repeat bg-[right_8px_center] bg-[length:12px]" style={{backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%2394a3b8\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")'}}>
                 <option>All Types</option>
                 <option value="General Freight">General Freight</option>
                 <option value="Car Carrying">Car Carrying</option>
                 <option value="Dangerous Goods">Dangerous Goods</option>
               </select>
 
-              <select value={customerFilter} onChange={e => { setCustomerFilter(e.target.value); setCurrentPage(1); }} className="shrink-0 px-2 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none bg-no-repeat bg-[right_8px_center] bg-[length:12px]" style={{backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%2394a3b8\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")'}}>
+              <select value={customerFilter} onChange={e => { setCustomerFilter(e.target.value); setCurrentPage(1); }} className="flex-1 min-w-[110px] px-2 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none bg-no-repeat bg-[right_8px_center] bg-[length:12px]" style={{backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%2394a3b8\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")'}}>
                 <option>All Customer</option>
                 {[...new Set(LOADS.map(l => l.customer).filter(Boolean))].map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
 
             {/* Filter Row 2 */}
-            <div className="flex flex-nowrap overflow-x-auto scrollbar-none gap-2 pb-1">
-              <select value={driverFilter} onChange={e => { setDriverFilter(e.target.value); setCurrentPage(1); }} className="shrink-0 px-2 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none bg-no-repeat bg-[right_8px_center] bg-[length:12px]" style={{backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%2394a3b8\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")'}}>
+            <div className="flex flex-wrap items-center gap-2">
+              <select value={driverFilter} onChange={e => { setDriverFilter(e.target.value); setCurrentPage(1); }} className="flex-1 min-w-[110px] px-2 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none bg-no-repeat bg-[right_8px_center] bg-[length:12px]" style={{backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%2394a3b8\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")'}}>
                 <option>All Drivers</option>
                 {[...new Set(LOADS.map(l => l.driver).filter(Boolean))].map(d => <option key={d} value={d}>{d}</option>)}
               </select>
               
-              <select value={vehicleFilter} onChange={e => { setVehicleFilter(e.target.value); setCurrentPage(1); }} className="shrink-0 px-2 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none bg-no-repeat bg-[right_8px_center] bg-[length:12px]" style={{backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%2394a3b8\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")'}}>
+              <select value={vehicleFilter} onChange={e => { setVehicleFilter(e.target.value); setCurrentPage(1); }} className="flex-1 min-w-[110px] px-2 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none bg-no-repeat bg-[right_8px_center] bg-[length:12px]" style={{backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%2394a3b8\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")'}}>
                 <option>All Vehicles</option>
                 {[...new Set(LOADS.map(l => l.truck).filter(Boolean).map(t => t.split(' | ')[0]))].map(v => <option key={v} value={v}>{v}</option>)}
               </select>
 
-              <select value={locationFilter} onChange={e => { setLocationFilter(e.target.value); setCurrentPage(1); }} className="shrink-0 px-2 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none bg-no-repeat bg-[right_8px_center] bg-[length:12px]" style={{backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%2394a3b8\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")'}}>
+              <select value={locationFilter} onChange={e => { setLocationFilter(e.target.value); setCurrentPage(1); }} className="flex-1 min-w-[110px] px-2 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none bg-no-repeat bg-[right_8px_center] bg-[length:12px]" style={{backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%2394a3b8\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")'}}>
                 <option>All Locations</option>
                 {[...new Set([...LOADS.map(l => l.from), ...LOADS.map(l => l.to)].filter(Boolean))].map(loc => <option key={loc} value={loc}>{loc}</option>)}
               </select>
 
-              <button className="shrink-0 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 hover:bg-slate-50 flex items-center gap-1.5 ml-auto whitespace-nowrap">
+              <button className="flex-1 sm:flex-none justify-center px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 hover:bg-slate-50 flex items-center gap-1.5 whitespace-nowrap">
                 <Filter className="w-3.5 h-3.5" /> More Filters
               </button>
             </div>
@@ -1376,16 +1376,16 @@ export default function Loads() {
 
 
           {/* Toolbar */}
-          <div className="flex justify-between items-center mb-2 mt-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 mt-4 gap-2">
             <p className="text-[11px] font-semibold text-slate-500">{filtered.length} loads found</p>
-            <div className="flex items-center gap-2">
-              <button className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-[10px] font-semibold text-slate-600 hover:bg-slate-50">
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+              <button className="flex-1 sm:flex-none justify-center flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-[10px] font-semibold text-slate-600 hover:bg-slate-50">
                 <MoreVertical className="w-3 h-3" /> Columns
               </button>
-              <button className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-[10px] font-semibold text-slate-600 hover:bg-slate-50">
+              <button className="flex-1 sm:flex-none justify-center flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-[10px] font-semibold text-slate-600 hover:bg-slate-50">
                 Group By
               </button>
-              <button className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-[10px] font-semibold text-slate-600 hover:bg-slate-50">
+              <button className="flex-1 sm:flex-none justify-center flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-[10px] font-semibold text-slate-600 hover:bg-slate-50">
                 Sort By: Created Date (Newest) <ChevronDown className="w-3 h-3" />
               </button>
             </div>
@@ -1583,23 +1583,23 @@ export default function Loads() {
           </div>
 
           {/* Bulk Action Bar */}
-          <div className="mt-2 mb-6 flex items-center gap-3 bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
+          <div className="mt-2 mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
             <span className="text-[12px] font-semibold text-slate-900 px-2">{selectedIds.length} selected</span>
-            <select className="px-4 py-2 bg-white border border-slate-200 rounded text-[12px] font-medium text-slate-700 focus:outline-none focus:border-indigo-500 w-48">
+            <select className="px-4 py-2 bg-white border border-slate-200 rounded text-[12px] font-medium text-slate-700 focus:outline-none focus:border-indigo-500 w-full sm:w-48">
               <option>Bulk Actions</option>
               <option>Assign Driver</option>
               <option>Mark Completed</option>
               <option>Cancel Loads</option>
               <option>Export Selected</option>
             </select>
-            <button className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-[12px] rounded transition-colors shadow-sm">
+            <button className="w-full sm:w-auto px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-[12px] rounded transition-colors shadow-sm">
               Apply
             </button>
           </div>
         </div>
 
         {/* ════ RIGHT: Sidebar ════════════════════════════ */}
-        <div className="w-[280px] shrink-0 p-6 pt-2 pl-0 flex flex-col overflow-y-auto gap-4">
+        <div className="w-full lg:w-[280px] shrink-0 p-4 sm:p-6 lg:pt-2 lg:pl-0 flex flex-col gap-4">
 
           {/* Load Overview Card */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">

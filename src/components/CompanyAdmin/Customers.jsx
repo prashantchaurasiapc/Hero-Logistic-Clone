@@ -522,7 +522,7 @@ Please sign in at security.`);
               <ChevronLeft size={16} />
             </button>
             <div>
-              <div className="flex items-center gap-3 mb-1">
+              <div className="flex flex-wrap items-center gap-2 mb-1">
                 <h2 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
                   {activeDetailsTab === 'Contacts' ? '6.3 - Customer Contacts' :
                     activeDetailsTab === 'Billing Rules' ? '6.4 - Customer Billing Rules' :
@@ -554,17 +554,17 @@ Please sign in at security.`);
               )}
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <button onClick={() => setShowCreateLoadModal(true)} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <button onClick={() => setShowCreateLoadModal(true)} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer flex-grow sm:flex-grow-0 justify-center">
               <Plus size={14} /> Create Load
             </button>
-            <button onClick={() => setShowSendMessageModal(true)} className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer">
+            <button onClick={() => setShowSendMessageModal(true)} className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer flex-grow sm:flex-grow-0 justify-center">
               <MessageSquare size={14} /> Message
             </button>
-            <button onClick={() => openEditCustomer(selectedCustomer)} className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer">
+            <button onClick={() => openEditCustomer(selectedCustomer)} className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer flex-grow sm:flex-grow-0 justify-center">
               <Edit size={14} /> Edit Customer
             </button>
-            <button className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer">
+            <button className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer flex-grow sm:flex-grow-0 justify-center">
               More Actions <MoreVertical size={14} />
             </button>
           </div>
@@ -579,7 +579,7 @@ Please sign in at security.`);
         )}
 
         {/* Stats / Title Bar */}
-        <div className="bg-white rounded-[20px] p-6 border border-slate-100 shadow-sm flex flex-row flex-nowrap items-center justify-start gap-8 mb-6 overflow-x-auto custom-scrollbar w-full">
+        <div className="bg-white rounded-[20px] p-6 border border-slate-100 shadow-sm flex flex-row flex-nowrap items-center justify-start gap-8 mb-6 overflow-x-auto custom-scrollbar w-full pb-4">
           <div className="flex items-center gap-5 shrink-0">
             {activeDetailsTab === 'Documents' ? (
               <div className="w-16 h-16 rounded-2xl bg-white border border-slate-100 flex items-center justify-center shrink-0 shadow-xs">
@@ -609,7 +609,7 @@ Please sign in at security.`);
             </div>
           </div>
 
-          <div className="h-10 w-px bg-slate-100 hidden sm:block shrink-0"></div>
+          <div className="h-10 w-px bg-slate-100 shrink-0"></div>
 
           <div className="flex flex-row flex-nowrap items-center gap-8 shrink-0">
             <div className="flex items-center gap-3 shrink-0">
@@ -619,25 +619,25 @@ Please sign in at security.`);
               <div className="shrink-0">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Account Manager</p>
                 <p className="text-sm font-bold text-slate-900">{selectedCustomer.manager}</p>
-                <p className="text-[10px] text-slate-500 font-semibold">{selectedCustomer.contactEmail || 'sarah.m@herologistics.com'}</p>
+                <p className="text-[10px] text-slate-550 font-semibold">{selectedCustomer.contactEmail || 'sarah.m@herologistics.com'}</p>
               </div>
             </div>
 
-            <div className="h-10 w-px bg-slate-100 hidden sm:block shrink-0"></div>
+            <div className="h-10 w-px bg-slate-100 shrink-0"></div>
 
             <div className="shrink-0">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Billing Terms</p>
               <p className="text-sm font-black text-slate-900">14 Days EOM</p>
             </div>
 
-            <div className="h-10 w-px bg-slate-100 hidden sm:block shrink-0"></div>
+            <div className="h-10 w-px bg-slate-100 shrink-0"></div>
 
             <div className="shrink-0">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Credit Limit</p>
               <p className="text-sm font-black text-slate-900">$250,000.00</p>
             </div>
 
-            <div className="h-10 w-px bg-slate-100 hidden sm:block shrink-0"></div>
+            <div className="h-10 w-px bg-slate-100 shrink-0"></div>
 
             <div className="shrink-0">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5 text-right">Outstanding</p>
@@ -648,21 +648,21 @@ Please sign in at security.`);
               </div>
             </div>
 
-            <div className="h-10 w-px bg-slate-100 hidden sm:block shrink-0"></div>
+            <div className="h-10 w-px bg-slate-100 shrink-0"></div>
 
             <div className="shrink-0">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Total Revenue (YTD)</p>
               <p className="text-sm font-black text-slate-900">$2,480,650.00</p>
             </div>
 
-            <div className="h-10 w-px bg-slate-100 hidden sm:block shrink-0"></div>
+            <div className="h-10 w-px bg-slate-100 shrink-0"></div>
 
             <div className="shrink-0">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Total Loads</p>
               <p className="text-sm font-black text-slate-900">42</p>
             </div>
 
-            <div className="h-10 w-px bg-slate-100 hidden sm:block shrink-0"></div>
+            <div className="h-10 w-px bg-slate-100 shrink-0"></div>
 
             <div className="shrink-0">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Last Load</p>
@@ -674,7 +674,7 @@ Please sign in at security.`);
 
         {/* Tabs */}
         <div className="flex items-center border-b border-slate-200 mb-6 overflow-x-auto pb-0" style={{ gap: '0' }}>
-          {['Overview', 'Contacts', 'Branches', 'Billing Rules', 'Pricing', 'Transport Modules', 'Instructions', 'Documents', 'Activity', 'Financials'].map(tab => (
+          {['Overview', 'Contacts', 'Billing Rules', 'Pricing', 'Transport Modules', 'Instructions', 'Documents', 'Activity', 'Financials'].map(tab => (
             <button
               key={tab}
               onClick={() => setActiveDetailsTab(tab)}
@@ -1125,8 +1125,8 @@ Please sign in at security.`);
                     View All Invoices <ArrowRight size={12} />
                   </button>
                 </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-[10px]">
+                <div className="overflow-x-auto custom-scrollbar">
+                  <table className="w-full text-left text-[10px] whitespace-nowrap min-w-[500px]">
                     <thead>
                       <tr className="bg-slate-50/50 border-b border-slate-100 font-black text-slate-400 uppercase tracking-widest">
                         <th className="py-3 px-4">INVOICE #</th>
@@ -1293,8 +1293,8 @@ Please sign in at security.`);
                 </button>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
+              <div className="overflow-x-auto custom-scrollbar">
+                <table className="w-full text-left text-xs whitespace-nowrap min-w-[900px]">
                   <thead>
                     <tr className="bg-slate-50/50 border-b border-slate-100 text-[9px] font-black text-slate-400 uppercase tracking-widest">
                       <th className="py-3 px-5">CONTACT</th>
@@ -1773,7 +1773,7 @@ Please sign in at security.`);
                             </button>
                           </div>
                           <div className="overflow-x-auto custom-scrollbar">
-                            <table className="w-full text-left text-xs whitespace-nowrap">
+                            <table className="w-full text-left text-xs whitespace-nowrap min-w-[450px]">
                               <thead>
                                 <tr className="border-b border-slate-100 text-[10px] font-bold text-slate-450 uppercase tracking-wider bg-slate-50/50">
                                   <th className="py-3 px-5 text-slate-400">LOAD</th>
@@ -2393,37 +2393,39 @@ Please sign in at security.`);
                       <FileText size={18} className="text-blue-600" />
                       <h3 className="text-sm font-black tracking-tight">1. Pricing & Rate Structure</h3>
                     </div>
-                    <table className="w-full text-left text-xs mb-4">
-                      <thead>
-                        <tr className="text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">
-                          <th className="py-2">DESCRIPTION</th>
-                          <th className="py-2 text-right">RATE (EX. GST)</th>
-                          <th className="py-2 pl-4">UNIT</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
-                        <tr>
-                          <td className="py-3">Base Rate - Car Carrying</td>
-                          <td className="py-3 text-right font-black">$2.20</td>
-                          <td className="py-3 pl-4 text-slate-500">Per KM</td>
-                        </tr>
-                        <tr>
-                          <td className="py-3">Per Car Rate</td>
-                          <td className="py-3 text-right font-black">$105.00</td>
-                          <td className="py-3 pl-4 text-slate-500">Per Car</td>
-                        </tr>
-                        <tr>
-                          <td className="py-3">Loading / Unloading</td>
-                          <td className="py-3 text-right font-black">$65.00</td>
-                          <td className="py-3 pl-4 text-slate-500">Per Stop</td>
-                        </tr>
-                        <tr>
-                          <td className="py-3">Wait Time</td>
-                          <td className="py-3 text-right font-black">$95.00</td>
-                          <td className="py-3 pl-4 text-slate-500">Per Hour</td>
-                        </tr>
-                      </tbody>
-                    </table>
+                    <div className="overflow-x-auto custom-scrollbar">
+                      <table className="w-full text-left text-xs mb-4 whitespace-nowrap min-w-[400px]">
+                        <thead>
+                          <tr className="text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">
+                            <th className="py-2">DESCRIPTION</th>
+                            <th className="py-2 text-right">RATE (EX. GST)</th>
+                            <th className="py-2 pl-4">UNIT</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
+                          <tr>
+                            <td className="py-3">Base Rate - Car Carrying</td>
+                            <td className="py-3 text-right font-black">$2.20</td>
+                            <td className="py-3 pl-4 text-slate-500">Per KM</td>
+                          </tr>
+                          <tr>
+                            <td className="py-3">Per Car Rate</td>
+                            <td className="py-3 text-right font-black">$105.00</td>
+                            <td className="py-3 pl-4 text-slate-500">Per Car</td>
+                          </tr>
+                          <tr>
+                            <td className="py-3">Loading / Unloading</td>
+                            <td className="py-3 text-right font-black">$65.00</td>
+                            <td className="py-3 pl-4 text-slate-500">Per Stop</td>
+                          </tr>
+                          <tr>
+                            <td className="py-3">Wait Time</td>
+                            <td className="py-3 text-right font-black">$95.00</td>
+                            <td className="py-3 pl-4 text-slate-500">Per Hour</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
                     <button className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer">
                       <Plus size={14} /> Add Pricing Rule
                     </button>
@@ -2435,37 +2437,39 @@ Please sign in at security.`);
                       <FileText size={18} className="text-blue-600" />
                       <h3 className="text-sm font-black tracking-tight">2. Fuel Levy & Surcharges</h3>
                     </div>
-                    <table className="w-full text-left text-xs mb-4">
-                      <thead>
-                        <tr className="text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">
-                          <th className="py-2">DESCRIPTION</th>
-                          <th className="py-2 text-center">CALCULATION</th>
-                          <th className="py-2 text-right">RATE / %</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
-                        <tr>
-                          <td className="py-3">Fuel Levy</td>
-                          <td className="py-3 text-center text-slate-500">% of Base Rate</td>
-                          <td className="py-3 text-right font-black">13.30%</td>
-                        </tr>
-                        <tr>
-                          <td className="py-3">Security Surcharge</td>
-                          <td className="py-3 text-center text-slate-500">Flat Rate</td>
-                          <td className="py-3 text-right font-black">$45.00</td>
-                        </tr>
-                        <tr>
-                          <td className="py-3">Weekend Surcharge</td>
-                          <td className="py-3 text-center text-slate-500">% of Base Rate</td>
-                          <td className="py-3 text-right font-black">15.00%</td>
-                        </tr>
-                        <tr>
-                          <td className="py-3">After Hours Surcharge</td>
-                          <td className="py-3 text-center text-slate-500">Flat Rate</td>
-                          <td className="py-3 text-right font-black">$85.00</td>
-                        </tr>
-                      </tbody>
-                    </table>
+                    <div className="overflow-x-auto custom-scrollbar">
+                      <table className="w-full text-left text-xs mb-4 whitespace-nowrap min-w-[400px]">
+                        <thead>
+                          <tr className="text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">
+                            <th className="py-2">DESCRIPTION</th>
+                            <th className="py-2 text-center">CALCULATION</th>
+                            <th className="py-2 text-right">RATE / %</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
+                          <tr>
+                            <td className="py-3">Fuel Levy</td>
+                            <td className="py-3 text-center text-slate-500">% of Base Rate</td>
+                            <td className="py-3 text-right font-black">13.30%</td>
+                          </tr>
+                          <tr>
+                            <td className="py-3">Security Surcharge</td>
+                            <td className="py-3 text-center text-slate-500">Flat Rate</td>
+                            <td className="py-3 text-right font-black">$45.00</td>
+                          </tr>
+                          <tr>
+                            <td className="py-3">Weekend Surcharge</td>
+                            <td className="py-3 text-center text-slate-500">% of Base Rate</td>
+                            <td className="py-3 text-right font-black">15.00%</td>
+                          </tr>
+                          <tr>
+                            <td className="py-3">After Hours Surcharge</td>
+                            <td className="py-3 text-center text-slate-500">Flat Rate</td>
+                            <td className="py-3 text-right font-black">$85.00</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
                     <button className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer">
                       <Plus size={14} /> Add Surcharge
                     </button>
@@ -2842,8 +2846,8 @@ Please sign in at security.`);
                       </div>
                     </div>
 
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-xs mb-4">
+                    <div className="overflow-x-auto custom-scrollbar">
+                      <table className="w-full text-left text-xs mb-4 whitespace-nowrap min-w-[850px]">
                         <thead>
                           <tr className="border-b border-slate-100 text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/50">
                             <th className="py-3 px-4">FROM</th>
@@ -2914,8 +2918,8 @@ Please sign in at security.`);
                         <Plus size={12} /> Add Vehicle Type
                       </button>
                     </div>
-                    <div className="overflow-x-auto flex-grow">
-                      <table className="w-full text-left text-xs mb-4">
+                    <div className="overflow-x-auto custom-scrollbar flex-grow">
+                      <table className="w-full text-left text-xs mb-4 whitespace-nowrap min-w-[400px]">
                         <thead>
                           <tr className="border-b border-slate-100 text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/50">
                             <th className="py-2 px-3">VEHICLE TYPE</th>
@@ -2968,8 +2972,8 @@ Please sign in at security.`);
                         <Plus size={12} /> Add Charge
                       </button>
                     </div>
-                    <div className="overflow-x-auto flex-grow">
-                      <table className="w-full text-left text-xs mb-4">
+                    <div className="overflow-x-auto custom-scrollbar flex-grow">
+                      <table className="w-full text-left text-xs mb-4 whitespace-nowrap min-w-[400px]">
                         <thead>
                           <tr className="border-b border-slate-100 text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/50">
                             <th className="py-2 px-3">CHARGE NAME</th>
@@ -5066,18 +5070,18 @@ Please sign in at security.`);
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">Customers</h1>
           <p className="text-sm text-slate-500 mt-0.5 font-medium">Manage your customers, contacts, billing rules and history.</p>
         </div>
-        <div className="flex items-center gap-3">
-          <button onClick={() => setShowAddModal(true)} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer">
+        <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+          <button onClick={() => setShowAddModal(true)} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer flex-grow sm:flex-grow-0 justify-center">
             <Plus size={14} /> Add Customer
           </button>
-          <button className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all shadow-sm cursor-pointer">
+          <button className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all shadow-sm cursor-pointer flex-grow sm:flex-grow-0 justify-center">
             Import
           </button>
-          <button className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all shadow-sm cursor-pointer">
+          <button className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all shadow-sm cursor-pointer flex-grow sm:flex-grow-0 justify-center">
             Export
           </button>
           
-          <div className="relative">
+          <div className="relative shrink-0">
             <button 
               onClick={() => setShowMainHeaderMenu(!showMainHeaderMenu)} 
               className="p-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg transition-all shadow-sm cursor-pointer"
@@ -5256,23 +5260,23 @@ Please sign in at security.`);
 
           {/* Data Table */}
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col overflow-hidden">
-            <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50/50">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 border-b border-slate-100 bg-slate-50/50 gap-3">
               <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">38 customers found</span>
-              <div className="flex items-center gap-2">
-                <button className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-xs hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer">
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                <button className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-xs hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer flex-grow sm:flex-grow-0 justify-center">
                   <Package size={12} /> Columns
                 </button>
-                <button className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-xs hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer">
+                <button className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-xs hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer flex-grow sm:flex-grow-0 justify-center">
                   <List size={12} /> Group By
                 </button>
-                <button className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-xs hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer">
+                <button className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-xs hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer flex-grow sm:flex-grow-0 justify-center">
                   <ChevronDown size={12} /> Sort By: Created Date
                 </button>
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
+            <div className="overflow-x-auto custom-scrollbar">
+              <table className="w-full text-left text-xs whitespace-nowrap min-w-[1000px]">
                 <thead>
                   <tr className="bg-white border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                     <th className="py-3 px-4 w-10"><input type="checkbox" className="rounded border-slate-300" /></th>

@@ -6,6 +6,7 @@ import {
   QrCode, MoreHorizontal, Eye
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import AssetDetails from './AssetDetails';
 
 // --- MOCK DATA ---
 const mockAssets = [
@@ -214,8 +215,42 @@ const AssetDonutChart = () => {
 };
 
 export default function Assets() {
+  const [selectedAsset, setSelectedAsset] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('All');
+  const [typeFilter, setTypeFilter] = useState('All');
+  const [branchFilter, setBranchFilter] = useState('All');
+  const [statusFilter, setStatusFilter] = useState('All');
   const navigate = useNavigate();
+
+  const handleResetFilters = () => {
+    setSearchQuery('');
+    setCategoryFilter('All');
+    setTypeFilter('All');
+    setBranchFilter('All');
+    setStatusFilter('All');
+  };
+
+  const filteredAssets = mockAssets.filter((asset) => {
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      if (!asset.id.toLowerCase().includes(q) &&
+          !asset.name.toLowerCase().includes(q) &&
+          !asset.model.toLowerCase().includes(q) &&
+          !asset.type.toLowerCase().includes(q)) {
+        return false;
+      }
+    }
+    if (categoryFilter !== 'All' && asset.category !== categoryFilter) return false;
+    if (typeFilter !== 'All' && asset.type !== typeFilter) return false;
+    if (branchFilter !== 'All' && asset.branch !== branchFilter) return false;
+    if (statusFilter !== 'All' && asset.status !== statusFilter) return false;
+    return true;
+  });
+
+  if (selectedAsset) {
+    return <AssetDetails assetData={selectedAsset} onBack={() => setSelectedAsset(null)} />;
+  }
 
   // Icon mapper helper
   const getAssetIcon = (iconStr, colorClass) => {
@@ -463,26 +498,59 @@ export default function Assets() {
               
               <div className="flex flex-wrap lg:flex-nowrap items-center gap-3 w-full">
                 <div className="relative flex-1 min-w-[120px]">
-                  <select className="w-full appearance-none pl-3 pr-8 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-purple-400 text-slate-700 bg-white cursor-pointer">
-                    <option>All Categories</option>
+                  <select 
+                    value={categoryFilter}
+                    onChange={(e) => setCategoryFilter(e.target.value)}
+                    className="w-full appearance-none pl-3 pr-8 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-purple-400 text-slate-700 bg-white cursor-pointer"
+                  >
+                    <option value="All">All Categories</option>
+                    <option value="Forklifts">Forklifts</option>
+                    <option value="Containers">Containers</option>
+                    <option value="Material Handling">Material Handling</option>
+                    <option value="Power Equipment">Power Equipment</option>
+                    <option value="Equipment">Equipment</option>
+                    <option value="IT & Devices">IT & Devices</option>
+                    <option value="Workshop Equipment">Workshop Equipment</option>
+                    <option value="PPE">PPE</option>
                   </select>
                   <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 </div>
                 <div className="relative flex-1 min-w-[120px]">
-                  <select className="w-full appearance-none pl-3 pr-8 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-purple-400 text-slate-700 bg-white cursor-pointer">
-                    <option>All Types</option>
+                  <select 
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value)}
+                    className="w-full appearance-none pl-3 pr-8 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-purple-400 text-slate-700 bg-white cursor-pointer"
+                  >
+                    <option value="All">All Types</option>
+                    <option value="Diesel Forklift">Diesel Forklift</option>
+                    <option value="Electric Reach Truck">Electric Reach Truck</option>
+                    <option value="20ft GP Container">20ft GP Container</option>
+                    <option value="Manual Pallet Jack">Manual Pallet Jack</option>
                   </select>
                   <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 </div>
                 <div className="relative flex-1 min-w-[120px]">
-                  <select className="w-full appearance-none pl-3 pr-8 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-purple-400 text-slate-700 bg-white cursor-pointer">
-                    <option>All Branches</option>
+                  <select 
+                    value={branchFilter}
+                    onChange={(e) => setBranchFilter(e.target.value)}
+                    className="w-full appearance-none pl-3 pr-8 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-purple-400 text-slate-700 bg-white cursor-pointer"
+                  >
+                    <option value="All">All Branches</option>
+                    <option value="Sydney Head Office">Sydney Head Office</option>
+                    <option value="Yard - Sydney HO">Yard - Sydney HO</option>
                   </select>
                   <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 </div>
                 <div className="relative flex-1 min-w-[120px]">
-                  <select className="w-full appearance-none pl-3 pr-8 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-purple-400 text-slate-700 bg-white cursor-pointer">
-                    <option>All Status</option>
+                  <select 
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="w-full appearance-none pl-3 pr-8 py-2 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-purple-400 text-slate-700 bg-white cursor-pointer"
+                  >
+                    <option value="All">All Status</option>
+                    <option value="Active">Active</option>
+                    <option value="Maintenance">Maintenance</option>
+                    <option value="Out of Service">Out of Service</option>
                   </select>
                   <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 </div>
@@ -491,7 +559,7 @@ export default function Assets() {
                   <button className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors">
                     <Filter size={14} /> Filters
                   </button>
-                  <button className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-purple-600 bg-purple-50 hover:bg-purple-100 transition-colors">
+                  <button onClick={handleResetFilters} className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-purple-600 bg-purple-50 hover:bg-purple-100 transition-colors">
                     <RotateCcw size={14} /> Reset
                   </button>
                 </div>
@@ -517,21 +585,21 @@ export default function Assets() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white">
-                  {mockAssets.map((asset) => (
+                  {filteredAssets.map((asset) => (
                     <tr key={asset.id} className="hover:bg-slate-50/50 transition-colors group">
                       <td className="p-4 text-center"><input type="checkbox" className="rounded border-slate-300 w-3.5 h-3.5 cursor-pointer" /></td>
                       
                       <td className="p-4">
-                        <div className="flex flex-col">
+                        <div className="flex flex-col cursor-pointer" onClick={() => setSelectedAsset(asset)}>
                           <div className="w-8 h-8 rounded-lg border border-slate-200 bg-white flex items-center justify-center mb-1.5 shrink-0 overflow-hidden shadow-sm">
                             <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${asset.id}`} alt="QR" className="w-5 h-5 object-contain opacity-80" />
                           </div>
-                          <span className="text-[10px] font-black text-blue-600 font-mono tracking-wider">{asset.id}</span>
+                          <span className="text-[10px] font-black text-blue-600 font-mono tracking-wider hover:underline">{asset.id}</span>
                         </div>
                       </td>
                       
                       <td className="p-4">
-                        <div className="text-xs font-black text-slate-900 group-hover:text-purple-700 transition-colors cursor-pointer">{asset.name}</div>
+                        <div onClick={() => setSelectedAsset(asset)} className="text-xs font-black text-slate-900 group-hover:text-purple-700 transition-colors cursor-pointer">{asset.name}</div>
                         <div className="text-[10px] font-semibold text-slate-400 mt-0.5">{asset.model}</div>
                       </td>
                       
@@ -575,8 +643,8 @@ export default function Assets() {
                       
                       <td className="p-4">
                         <div className="flex items-center justify-center gap-2">
-                          <button className="text-slate-400 hover:text-purple-600 transition-colors p-1"><Eye size={16} /></button>
-                          <button className="text-slate-400 hover:text-purple-600 transition-colors p-1"><MoreHorizontal size={16} /></button>
+                          <button onClick={() => setSelectedAsset(asset)} className="text-slate-400 hover:text-purple-600 transition-colors p-1 cursor-pointer"><Eye size={16} /></button>
+                          <button className="text-slate-400 hover:text-purple-600 transition-colors p-1 cursor-pointer"><MoreHorizontal size={16} /></button>
                         </div>
                       </td>
                     </tr>
@@ -610,7 +678,7 @@ export default function Assets() {
         </div>
 
         {/* RIGHT COLUMN (Summary sidebars) */}
-        <div className="w-full xl:w-[320px] shrink-0 space-y-6">
+        <div className="w-full xl:w-[250px] shrink-0 space-y-6">
           
           {/* Asset Summary Donut */}
           <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
