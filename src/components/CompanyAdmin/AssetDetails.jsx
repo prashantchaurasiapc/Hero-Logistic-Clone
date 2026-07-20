@@ -23,6 +23,25 @@ export default function AssetDetails({ assetData, onBack }) {
   // Filter state for assignment history table
   const [assignmentSearch, setAssignmentSearch] = useState('');
 
+  // Costs & Depreciation specific state
+  const [activeCostTab, setActiveCostTab] = useState('Cost Overview');
+  const [costSearch, setCostSearch] = useState('');
+
+  // Costs Mock Data
+  const costsData = [
+    { date: '24 May 2025', category: 'Maintenance', type: 'Service', desc: 'Service & Maintenance', ref: 'INV-2025-056', loc: 'Sydney Head Office', amount: '$450.00', tax: '$45.00', total: '$495.00', color: 'purple' },
+    { date: '24 May 2025', category: 'Maintenance', type: 'Parts', desc: 'Oil Filter & Lubricants', ref: 'INV-2025-057', loc: 'Sydney Head Office', amount: '$120.00', tax: '$12.00', total: '$132.00', color: 'purple' },
+    { date: '10 May 2025', category: 'Operating', type: 'Fuel', desc: 'Diesel Fuel', ref: 'FUEL-2025-1021', loc: 'Sydney Head Office', amount: '$200.00', tax: '$20.00', total: '$220.00', color: 'emerald' },
+    { date: '25 Apr 2025', category: 'Maintenance', type: 'Repair', desc: 'Hydraulic Pump Repair', ref: 'INV-2025-041', loc: 'Sydney Head Office', amount: '$780.00', tax: '$78.00', total: '$858.00', color: 'purple' },
+    { date: '15 Apr 2025', category: 'Operating', type: 'Fuel', desc: 'Diesel Fuel', ref: 'FUEL-2025-0985', loc: 'Sydney Head Office', amount: '$190.00', tax: '$19.00', total: '$209.00', color: 'emerald' },
+    { date: '01 Apr 2025', category: 'Insurance', type: 'Insurance', desc: 'Asset Insurance', ref: 'INS-2025-088', loc: 'Sydney Head Office', amount: '$250.00', tax: '$0.00', total: '$250.00', color: 'blue' },
+    { date: '31 Mar 2025', category: 'Registration', type: 'Registration', desc: 'Registration Fee', ref: 'REG-2025-033', loc: 'Sydney Head Office', amount: '$91.00', tax: '$9.10', total: '$100.10', color: 'orange' },
+    { date: '20 Mar 2025', category: 'Operating', type: 'Fuel', desc: 'Diesel Fuel', ref: 'FUEL-2025-0820', loc: 'Sydney Head Office', amount: '$180.00', tax: '$18.00', total: '$198.00', color: 'emerald' },
+    { date: '05 Mar 2025', category: 'Maintenance', type: 'Service', desc: 'Routine Service', ref: 'INV-2025-020', loc: 'Sydney Head Office', amount: '$320.00', tax: '$32.00', total: '$352.00', color: 'purple' },
+    { date: '15 Feb 2025', category: 'Operating', type: 'Fuel', desc: 'Diesel Fuel', ref: 'FUEL-2025-0615', loc: 'Sydney Head Office', amount: '$170.00', tax: '$17.00', total: '$187.00', color: 'emerald' },
+    { date: '11 Nov 2024', category: 'Other', type: 'Other', desc: 'Safety Equipment', ref: 'INV-2024-211', loc: 'Sydney Head Office', amount: '$50.00', tax: '$5.00', total: '$55.00', color: 'slate' },
+  ];
+
   // States for More Actions dropdown modals
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [isMaintenanceModalOpen, setIsMaintenanceModalOpen] = useState(false);
@@ -223,6 +242,12 @@ export default function AssetDetails({ assetData, onBack }) {
             <ChevronRight size={12} className="shrink-0" />
             <span className="text-slate-800 font-bold whitespace-nowrap">Assignments & History</span>
           </>
+        ) : activeTab === 'Costs & Depreciation' ? (
+          <>
+            <button onClick={() => setActiveTab('Overview')} className="hover:text-purple-600 transition-colors cursor-pointer whitespace-nowrap">Asset Details</button>
+            <ChevronRight size={12} className="shrink-0" />
+            <span className="text-slate-800 font-bold whitespace-nowrap">Costs & Depreciation</span>
+          </>
         ) : (
           <span className="text-slate-800 font-bold whitespace-nowrap">Asset Details</span>
         )}
@@ -234,16 +259,20 @@ export default function AssetDetails({ assetData, onBack }) {
           <h1 className="text-lg sm:text-xl md:text-2xl font-black text-slate-900 tracking-tight flex flex-wrap items-center gap-2">
             {activeTab === 'Assignments & History' ? (
               <>8.5 Asset Assignments & History – Forklift {asset.id}</>
+            ) : activeTab === 'Costs & Depreciation' ? (
+              <>8.6 Asset Costs & Depreciation – Forklift {asset.id}</>
             ) : (
               <>8.2 Asset Details – Forklift {asset.id}</>
             )}
             <span className="w-5 h-5 rounded-full bg-purple-600 text-white flex items-center justify-center text-[10px] font-black shrink-0">
-              ✓
+              <CheckCircle2 size={12} />
             </span>
           </h1>
           <p className="text-slate-500 text-xs font-semibold mt-1">
             {activeTab === 'Assignments & History'
               ? 'Track current assignment, past usage history and transfer records for this asset.'
+              : activeTab === 'Costs & Depreciation'
+              ? 'Track all costs, expenses and depreciation values for this asset.'
               : 'View, manage and track all details and activities for this asset.'}
           </p>
         </div>
@@ -1583,8 +1612,397 @@ export default function AssetDetails({ assetData, onBack }) {
         </div>
       )}
 
+      {/* MAIN SECTION BELOW TABS: COSTS & DEPRECIATION TAB */}
+      {activeTab === 'Costs & Depreciation' && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col mb-8 overflow-hidden">
+          
+
+
+          {/* Tab Content Area */}
+          <div className="flex flex-col xl:flex-row border-t border-slate-100">
+            
+            {/* Left Column (Table) */}
+            <div className="flex-1 border-r border-slate-200 p-0 flex flex-col min-w-0">
+              
+              {/* Filter Bar */}
+              <div className="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-white">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="relative">
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input 
+                      type="text" 
+                      placeholder="Search costs..." 
+                      className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-xs font-semibold w-[200px] outline-none focus:border-purple-500"
+                      value={costSearch}
+                      onChange={(e) => setCostSearch(e.target.value)}
+                    />
+                  </div>
+                  <select className="px-3 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 outline-none bg-white min-w-[150px]">
+                    <option>All Cost Categories</option>
+                    <option>Maintenance</option>
+                    <option>Operating</option>
+                  </select>
+                  <select className="px-3 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 outline-none bg-white min-w-[140px]">
+                    <option>All Cost Types</option>
+                    <option>Fuel</option>
+                    <option>Service</option>
+                  </select>
+                  <button className="flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 bg-white">
+                    01 Jul 2024 - 30 Jun 2025 <Calendar size={12} />
+                  </button>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <button className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 bg-white">
+                    <Filter size={14} /> Filters
+                  </button>
+                  <button className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 bg-white">
+                    <Download size={14} /> Export
+                  </button>
+                  <button className="p-2 border border-slate-200 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-50 bg-white">
+                    <RefreshCw size={14} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Table */}
+              <div className="px-4 py-3 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
+                <span className="text-[10px] font-black text-slate-800 uppercase tracking-widest">COST & EXPENSES (11)</span>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[1000px]">
+                  <thead>
+                    <tr className="bg-white border-b border-slate-200">
+                      <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Date</th>
+                      <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Category</th>
+                      <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Cost Type</th>
+                      <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest min-w-[160px]">Description</th>
+                      <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Reference / Invoice</th>
+                      <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Branch / Location</th>
+                      <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Amount (AUD)</th>
+                      <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Tax (AUD)</th>
+                      <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Total (AUD)</th>
+                      <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {costsData.map((row, idx) => (
+                      <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50 transition-colors group">
+                        <td className="px-4 py-3 text-[11px] font-semibold text-slate-700 whitespace-nowrap">{row.date}</td>
+                        <td className="px-4 py-3 text-[11px]">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${row.color === 'purple' ? 'bg-purple-50 text-purple-600' : row.color === 'emerald' ? 'bg-emerald-50 text-emerald-600' : row.color === 'blue' ? 'bg-blue-50 text-blue-600' : row.color === 'orange' ? 'bg-orange-50 text-orange-600' : 'bg-slate-100 text-slate-600'}`}>
+                            {row.category}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-[11px] font-semibold text-slate-700 whitespace-nowrap">{row.type}</td>
+                        <td className="px-4 py-3 text-[11px] font-semibold text-slate-800">{row.desc}</td>
+                        <td className="px-4 py-3 text-[11px] font-semibold text-slate-700 whitespace-nowrap">{row.ref}</td>
+                        <td className="px-4 py-3 text-[11px] font-semibold text-slate-600 whitespace-nowrap">{row.loc}</td>
+                        <td className="px-4 py-3 text-[11px] font-semibold text-slate-900 whitespace-nowrap">{row.amount}</td>
+                        <td className="px-4 py-3 text-[11px] font-semibold text-slate-500 whitespace-nowrap">{row.tax}</td>
+                        <td className="px-4 py-3 text-[11px] font-black text-slate-900 whitespace-nowrap">{row.total}</td>
+                        <td className="px-4 py-3 text-center">
+                          <button className="p-1 rounded text-slate-400 hover:text-purple-600 hover:bg-purple-50 transition-colors">
+                            <MoreHorizontal size={14} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              <div className="px-5 py-3 border-t border-slate-100 flex items-center justify-between text-[11px] font-semibold text-slate-500 mt-auto bg-white">
+                <div>Showing 1 to 11 of 11 costs</div>
+                <div className="flex items-center gap-1">
+                  <button className="w-6 h-6 rounded flex items-center justify-center border border-slate-200 hover:bg-slate-50">&lt;</button>
+                  <button className="w-6 h-6 rounded flex items-center justify-center border border-purple-200 bg-purple-50 text-purple-700 font-bold">1</button>
+                  <button className="w-6 h-6 rounded flex items-center justify-center border border-slate-200 hover:bg-slate-50">&gt;</button>
+                </div>
+                <select className="border border-slate-200 rounded px-2 py-1 outline-none text-slate-700 font-bold bg-white">
+                  <option>10 / page</option>
+                  <option>25 / page</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Right Column (Sidebar Summaries) */}
+            <div className="w-full xl:w-[320px] bg-white p-5 flex flex-col gap-6 shrink-0">
+              
+              {/* Cost Summary Section */}
+              <div>
+                <div className="flex justify-between items-center mb-3">
+                  <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">COST SUMMARY (FY 2024-2025)</h4>
+                  <span className="text-[9px] font-bold text-purple-600 cursor-pointer hover:underline">View Report →</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="border border-slate-100 rounded-xl p-3 bg-emerald-50/40 flex flex-col items-center justify-center text-center">
+                    <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-1.5">
+                      <CheckCircle2 size={16} />
+                    </div>
+                    <span className="text-xs font-black text-slate-900">$3,850.00</span>
+                    <span className="text-[9px] font-semibold text-slate-400 mt-0.5 uppercase">Total Cost (YTD)</span>
+                  </div>
+
+                  <div className="border border-slate-100 rounded-xl p-3 bg-blue-50/40 flex flex-col items-center justify-center text-center">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-1.5">
+                      <Activity size={16} />
+                    </div>
+                    <span className="text-xs font-black text-slate-900">$2,150.00</span>
+                    <span className="text-[9px] font-semibold text-slate-400 mt-0.5 uppercase">Operating Cost</span>
+                  </div>
+
+                  <div className="border border-slate-100 rounded-xl p-3 bg-amber-50/40 flex flex-col items-center justify-center text-center">
+                    <div className="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mb-1.5">
+                      <Wrench size={16} />
+                    </div>
+                    <span className="text-xs font-black text-slate-900">$1,250.00</span>
+                    <span className="text-[9px] font-semibold text-slate-400 mt-0.5 uppercase">Maintenance Cost</span>
+                  </div>
+
+                  <div className="border border-slate-100 rounded-xl p-3 bg-slate-50 flex flex-col items-center justify-center text-center">
+                    <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center mb-1.5">
+                      <Layers size={16} />
+                    </div>
+                    <span className="text-xs font-black text-slate-900">$450.00</span>
+                    <span className="text-[9px] font-semibold text-slate-400 mt-0.5 uppercase">Other Cost</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Depreciation Summary */}
+              <div>
+                <div className="flex justify-between items-center mb-3">
+                  <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">DEPRECIATION SUMMARY</h4>
+                  <span className="text-[9px] font-bold text-purple-600 cursor-pointer hover:underline">View Report →</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Card 1 */}
+                  <div className="bg-slate-50 rounded-xl border border-slate-100 p-3 flex flex-col justify-center">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-6 h-6 flex items-center justify-center bg-purple-100 text-purple-600 rounded">
+                        <DollarSign size={12} strokeWidth={3} />
+                      </div>
+                      <span className="text-xs font-black text-slate-900 leading-none tracking-tight">$38,500</span>
+                    </div>
+                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest pl-1">Purchase Price</span>
+                  </div>
+                  {/* Card 2 */}
+                  <div className="bg-slate-50 rounded-xl border border-slate-100 p-3 flex flex-col justify-center">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-6 h-6 flex items-center justify-center bg-blue-100 text-blue-600 rounded">
+                        <Calendar size={12} strokeWidth={3} />
+                      </div>
+                      <span className="text-xs font-black text-slate-900 leading-none tracking-tight">15 Mar 2022</span>
+                    </div>
+                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest pl-1">Start Date</span>
+                  </div>
+                  {/* Card 3 */}
+                  <div className="bg-slate-50 rounded-xl border border-slate-100 p-3 flex flex-col justify-center">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-6 h-6 flex items-center justify-center bg-amber-100 text-amber-600 rounded">
+                        <Activity size={12} strokeWidth={3} />
+                      </div>
+                      <span className="text-xs font-black text-slate-900 leading-none tracking-tight">$5,000</span>
+                    </div>
+                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest pl-1">Residual Value</span>
+                  </div>
+                  {/* Card 4 */}
+                  <div className="bg-slate-50 rounded-xl border border-slate-100 p-3 flex flex-col justify-center">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-6 h-6 flex items-center justify-center bg-rose-100 text-rose-600 rounded">
+                        <TrendingUp size={12} strokeWidth={3} className="transform rotate-180" />
+                      </div>
+                      <span className="text-xs font-black text-slate-900 leading-none tracking-tight">$18,460</span>
+                    </div>
+                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest pl-1">Accum. Deprec.</span>
+                  </div>
+                  {/* Card 5 */}
+                  <div className="bg-slate-50 rounded-xl border border-slate-100 p-3 flex flex-col justify-center">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-6 h-6 flex items-center justify-center bg-emerald-100 text-emerald-600 rounded">
+                        <Clock size={12} strokeWidth={3} />
+                      </div>
+                      <span className="text-xs font-black text-slate-900 leading-none tracking-tight">5 Years</span>
+                    </div>
+                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest pl-1">Useful Life</span>
+                  </div>
+                  {/* Card 6 */}
+                  <div className="bg-slate-50 rounded-xl border border-slate-100 p-3 flex flex-col justify-center">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-6 h-6 flex items-center justify-center bg-indigo-100 text-indigo-600 rounded">
+                        <DollarSign size={12} strokeWidth={3} />
+                      </div>
+                      <span className="text-xs font-black text-slate-900 leading-none tracking-tight">$20,040</span>
+                    </div>
+                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest pl-1">Book Value</span>
+                  </div>
+                  {/* Card 7 */}
+                  <div className="bg-slate-50 rounded-xl border border-slate-100 p-3 flex flex-col justify-center">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-6 h-6 flex items-center justify-center bg-slate-200 text-slate-600 rounded">
+                        <Layers size={12} strokeWidth={3} />
+                      </div>
+                      <span className="text-xs font-black text-slate-900 leading-none tracking-tight">Straight Line</span>
+                    </div>
+                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest pl-1">Method</span>
+                  </div>
+                  {/* Card 8 */}
+                  <div className="bg-slate-50 rounded-xl border border-slate-100 p-3 flex flex-col justify-center">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-6 h-6 flex items-center justify-center bg-emerald-100 text-emerald-600 rounded">
+                        <Activity size={12} strokeWidth={3} />
+                      </div>
+                      <span className="text-xs font-black text-slate-900 leading-none tracking-tight">$7,700</span>
+                    </div>
+                    <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest pl-1">Deprec. (YTD)</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Chart: Cost By Category */}
+              <div>
+                <div className="flex justify-between items-center mb-3">
+                  <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">COST BY CATEGORY (FY 2024-2025)</h4>
+                  <span className="text-[9px] font-bold text-purple-600 cursor-pointer hover:underline">View Chart →</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  {/* Custom Donut Chart matching screenshot */}
+                  <div className="relative flex items-center justify-center w-24 h-24 shrink-0">
+                    <svg width="96" height="96" className="transform -rotate-90">
+                      <circle cx="48" cy="48" r="38" fill="transparent" stroke="#E2E8F0" strokeWidth="12" />
+                      <circle cx="48" cy="48" r="38" fill="transparent" stroke="#10B981" strokeWidth="12" strokeDasharray="133 238" strokeDashoffset="0" />
+                      <circle cx="48" cy="48" r="38" fill="transparent" stroke="#F59E0B" strokeWidth="12" strokeDasharray="77 238" strokeDashoffset="-133" />
+                      <circle cx="48" cy="48" r="38" fill="transparent" stroke="#EF4444" strokeWidth="12" strokeDasharray="18 238" strokeDashoffset="-210" />
+                      <circle cx="48" cy="48" r="38" fill="transparent" stroke="#8B5CF6" strokeWidth="12" strokeDasharray="6 238" strokeDashoffset="-228" />
+                      <circle cx="48" cy="48" r="38" fill="transparent" stroke="#64748B" strokeWidth="12" strokeDasharray="4 238" strokeDashoffset="-234" />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-sm font-black text-slate-900 leading-tight">$3,850</span>
+                      <span className="text-[7px] font-bold text-slate-400 uppercase tracking-widest">Total Cost<br/>(YTD)</span>
+                    </div>
+                  </div>
+                  {/* Legend */}
+                  <div className="flex-1 space-y-1.5">
+                    <div className="flex justify-between items-center text-[9px]">
+                      <div className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span><span className="font-bold text-slate-600">Fuel / Operating</span></div>
+                      <span className="font-black text-slate-900">$2,150.00 <span className="text-slate-400 font-semibold">(55.8%)</span></span>
+                    </div>
+                    <div className="flex justify-between items-center text-[9px]">
+                      <div className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span><span className="font-bold text-slate-600">Maintenance & Repairs</span></div>
+                      <span className="font-black text-slate-900">$1,250.00 <span className="text-slate-400 font-semibold">(32.5%)</span></span>
+                    </div>
+                    <div className="flex justify-between items-center text-[9px]">
+                      <div className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-red-500"></span><span className="font-bold text-slate-600">Insurance</span></div>
+                      <span className="font-black text-slate-900">$300.00 <span className="text-slate-400 font-semibold">(7.8%)</span></span>
+                    </div>
+                    <div className="flex justify-between items-center text-[9px]">
+                      <div className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span><span className="font-bold text-slate-600">Registration</span></div>
+                      <span className="font-black text-slate-900">$100.00 <span className="text-slate-400 font-semibold">(2.6%)</span></span>
+                    </div>
+                    <div className="flex justify-between items-center text-[9px]">
+                      <div className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-slate-500"></span><span className="font-bold text-slate-600">Other</span></div>
+                      <span className="font-black text-slate-900">$50.00 <span className="text-slate-400 font-semibold">(1.3%)</span></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Chart: Monthly Cost Trend */}
+              <div>
+                <div className="flex justify-between items-center mb-3">
+                  <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">MONTHLY COST TREND (FY 2024-2025)</h4>
+                  <span className="text-[9px] font-bold text-purple-600 cursor-pointer hover:underline">View Chart →</span>
+                </div>
+                <div className="relative h-20 w-full mt-2">
+                  <div className="absolute left-0 top-0 bottom-4 w-6 flex flex-col justify-between text-[8px] font-bold text-slate-400 text-right pr-1">
+                    <span>$800</span>
+                    <span>$600</span>
+                    <span>$400</span>
+                    <span>$200</span>
+                    <span>$0</span>
+                  </div>
+                  <div className="absolute left-6 right-0 top-0 bottom-4 border-l border-b border-slate-200">
+                    {/* SVG Line Chart representing the purple trend line */}
+                    <svg width="100%" height="100%" preserveAspectRatio="none" viewBox="0 0 100 100" className="overflow-visible">
+                      <path d="M 0,80 L 10,70 L 20,85 L 30,50 L 40,65 L 50,45 L 60,60 L 70,55 L 80,48 L 90,52 L 100,55" fill="none" stroke="#8B5CF6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                      <circle cx="80" cy="48" r="3" fill="#fff" stroke="#8B5CF6" strokeWidth="2" />
+                    </svg>
+                    {/* Tooltip */}
+                    <div className="absolute bg-slate-800 text-white text-[8px] font-bold px-1.5 py-0.5 rounded left-[72%] top-[-2px] shadow-lg pointer-events-none whitespace-nowrap">
+                      Apr 2025<br/><span className="text-[9px]">$420.00</span>
+                    </div>
+                  </div>
+                  <div className="absolute left-6 right-0 bottom-0 flex justify-between text-[8px] font-bold text-slate-400 pt-1">
+                    <span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span><span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Actions & Recent Cost Alerts Row */}
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest mb-2">QUICK ACTIONS</h4>
+                  <div className="space-y-2">
+                    {[
+                      { icon: <Plus size={12} />, label: 'Add Cost / Expense' },
+                      { icon: <Download size={12} />, label: 'Upload Invoice / Receipt' },
+                      { icon: <Calendar size={12} />, label: 'Schedule Maintenance' },
+                      { icon: <FileText size={12} />, label: 'View Cost Report' },
+                      { icon: <FileText size={12} />, label: 'View Depreciation Report' },
+                      { icon: <FileSpreadsheet size={12} />, label: 'Export Cost Data' }
+                    ].map((act, i) => (
+                      <button key={i} className="w-full flex items-center gap-2 text-slate-600 hover:text-purple-600 transition-colors text-[10px] font-bold group cursor-pointer text-left">
+                        <span className="text-slate-400 group-hover:text-purple-600">{act.icon}</span>
+                        {act.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex-1">
+                  <div className="flex justify-between items-center mb-2">
+                    <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">RECENT COST ALERTS</h4>
+                    <span className="text-[9px] font-bold text-purple-600 cursor-pointer hover:underline">View All →</span>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="bg-orange-50 border border-orange-100 p-2 rounded-lg flex items-start gap-2">
+                      <AlertTriangle size={12} className="text-orange-500 shrink-0 mt-0.5" />
+                      <div>
+                        <div className="text-[10px] font-bold text-slate-800 leading-tight hover:text-purple-600 cursor-pointer hover:underline">Hydraulic Pump Repair</div>
+                        <div className="text-[9px] text-slate-500 font-semibold flex justify-between w-full pr-1">
+                          <span>$858.00</span><span>25 Apr 2025</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-orange-50 border border-orange-100 p-2 rounded-lg flex items-start gap-2">
+                      <AlertTriangle size={12} className="text-orange-500 shrink-0 mt-0.5" />
+                      <div>
+                        <div className="text-[10px] font-bold text-slate-800 leading-tight hover:text-purple-600 cursor-pointer hover:underline">Service Due Soon</div>
+                        <div className="text-[9px] text-slate-500 font-semibold mt-0.5">24 Jun 2025</div>
+                      </div>
+                    </div>
+                    <div className="bg-blue-50 border border-blue-100 p-2 rounded-lg flex items-start gap-2">
+                      <Info size={12} className="text-blue-500 shrink-0 mt-0.5" />
+                      <div>
+                        <div className="text-[10px] font-bold text-slate-800 leading-tight hover:text-purple-600 cursor-pointer hover:underline">Insurance Renewal</div>
+                        <div className="text-[9px] text-slate-500 font-semibold mt-0.5">01 Apr 2026</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+      )}
+
       {/* OTHER TABS PLACEHOLDERS */}
-      {activeTab !== 'Overview' && activeTab !== 'Specifications' && activeTab !== 'Assignments & History' && (
+      {activeTab !== 'Overview' && activeTab !== 'Specifications' && activeTab !== 'Assignments & History' && activeTab !== 'Costs & Depreciation' && (
         <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm text-center">
           <div className="w-12 h-12 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center mx-auto mb-3">
             <Layers size={24} />
@@ -1987,6 +2405,46 @@ export default function AssetDetails({ assetData, onBack }) {
                   Confirm Deactivation
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DEVELOPER NOTES (For Costs & Depreciation) */}
+      {activeTab === 'Costs & Depreciation' && (
+        <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-5 mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <Info size={16} className="text-blue-600" />
+            <h4 className="text-xs font-black text-blue-900 uppercase tracking-widest">Developer Notes: Costs & Depreciation Module</h4>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+            <div>
+              <ul className="space-y-2">
+                <li className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0"></div>
+                  <p className="text-[11px] text-blue-800 leading-relaxed font-medium"><strong>Purpose:</strong> This view provides a comprehensive breakdown of all costs associated with the asset (fuel, maintenance, insurance) alongside its current depreciation schedule and book value.</p>
+                </li>
+                <li className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0"></div>
+                  <p className="text-[11px] text-blue-800 leading-relaxed font-medium"><strong>Key Features:</strong> Sub-tabs for granular cost analysis, filterable cost expense table, interactive donut chart (Cost by Category), line chart (Monthly Trend), and actionable alerts.</p>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <ul className="space-y-2">
+                <li className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0"></div>
+                  <p className="text-[11px] text-blue-800 leading-relaxed font-medium"><strong>Automation & Alerts:</strong> "Recent Cost Alerts" pulls data from upcoming maintenance schedules and impending insurance/registration renewals.</p>
+                </li>
+                <li className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0"></div>
+                  <p className="text-[11px] text-blue-800 leading-relaxed font-medium"><strong>Permissions:</strong> Financial data (Purchase Price, Depreciation, Total Costs) is restricted to Finance/Admin roles. Standard drivers only see basic info.</p>
+                </li>
+                <li className="flex items-start gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 shrink-0"></div>
+                  <p className="text-[11px] text-blue-800 leading-relaxed font-medium"><strong>Data Sources:</strong> Costs pull from <code className="bg-blue-100 px-1 py-0.5 rounded text-[10px]">assets_costs</code> and <code className="bg-blue-100 px-1 py-0.5 rounded text-[10px]">asset_depreciation</code> tables.</p>
+                </li>
+              </ul>
             </div>
           </div>
         </div>

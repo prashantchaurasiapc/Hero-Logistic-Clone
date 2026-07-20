@@ -5076,11 +5076,7 @@ Please sign in at security.`);
           <button onClick={() => setShowAddModal(true)} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer flex-grow sm:flex-grow-0 justify-center">
             <Plus size={14} /> Add Customer
           </button>
-<<<<<<< HEAD
-          <button className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all shadow-sm cursor-pointer flex-grow sm:flex-grow-0 justify-center">
-=======
-          <button onClick={() => setShowImportModal(true)} className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all shadow-sm cursor-pointer">
->>>>>>> c414d6672fb04a1427859a1705e4c5e3a681aa6c
+          <button onClick={() => setShowImportModal(true)} className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all shadow-sm cursor-pointer flex-grow sm:flex-grow-0 justify-center">
             Import
           </button>
           <button className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all shadow-sm cursor-pointer flex-grow sm:flex-grow-0 justify-center">
