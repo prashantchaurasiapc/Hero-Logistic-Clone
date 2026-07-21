@@ -82,6 +82,42 @@ function MapComponent() {
 function LoadDetail({ load, onBack }) {
   const [activeTab, setActiveTab] = useState('Overview');
   const [selectedStop, setSelectedStop] = useState(null);
+  const [showStopModal, setShowStopModal] = useState(false);
+  const [editingStop, setEditingStop] = useState(null);
+  const [actionMenuId, setActionMenuId] = useState(null);
+  
+  const [showExpenseModal, setShowExpenseModal] = useState(false);
+  const [showDocumentModal, setShowDocumentModal] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [previewItem, setPreviewItem] = useState(null);
+
+  const handleDownload = (filename) => {
+    alert(`Downloading ${filename}...`);
+  };
+  
+  const [stopsList, setStopsList] = useState([
+    { id: 1, type: 'PICKUP', typeColor: 'bg-purple-100 text-purple-700', address: '123 Smith St,\nMelbourne VIC 3000', contactName: 'John Smith', contactPhone: '+61 412 345 678', date: '15/07/2025', time: '08:00 AM', completed: false },
+    { id: 2, type: 'PICKUP', typeColor: 'bg-green-100 text-green-700', address: '45 Industrial Rd,\nGeelong VIC 3220', contactName: 'Mark Davis', contactPhone: '+61 400 123 456', date: '15/07/2025', time: '10:30 AM', completed: false },
+    { id: 3, type: 'DROP-OFF', typeColor: 'bg-blue-100 text-blue-700', address: 'depot 12,\nSydney NSW 2000', contactName: 'David Wilson', contactPhone: '+61 422 987 654', date: '17/07/2025', time: '04:00 PM', completed: false },
+    { id: 4, type: 'DROP-OFF', typeColor: 'bg-blue-100 text-blue-700', address: 'Brisbane Yard,\nBrisbane QLD 4000', contactName: 'Sarah Mitchell', contactPhone: '+61 433 555 111', date: '18/07/2025', time: '09:00 AM', completed: false }
+  ]);
+
+  const handleEditStop = (stop) => {
+    setEditingStop(stop);
+    setShowStopModal(true);
+    setActionMenuId(null);
+  };
+  
+  const handleRemoveStop = (id) => {
+    setStopsList(stopsList.filter(s => s.id !== id));
+    setActionMenuId(null);
+  };
+  
+  const handleMarkCompleted = (id) => {
+    setStopsList(stopsList.map(s => s.id === id ? { ...s, completed: true } : s));
+    setActionMenuId(null);
+  };
+
   const tabs = ['Overview', 'Stops (4)', 'Items (1)', 'Driver & Vehicle', 'Expenses', 'Documents', 'Proof Photos', 'POD', 'Invoices', 'Activity'];
 
   const routeSteps = [
@@ -620,7 +656,10 @@ function LoadDetail({ load, onBack }) {
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">ADD ALL PICKUP AND DROP-OFF LOCATIONS</p>
                 </div>
               </div>
-              <button className="flex items-center gap-1.5 px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors uppercase tracking-wider">
+              <button 
+                onClick={() => { setEditingStop(null); setShowStopModal(true); }}
+                className="flex items-center gap-1.5 px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors uppercase tracking-wider"
+              >
                 <Plus className="w-3.5 h-3.5" /> Add Stop
               </button>
             </div>
@@ -639,12 +678,7 @@ function LoadDetail({ load, onBack }) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {[
-                    { id: 1, type: 'PICKUP', typeColor: 'bg-purple-100 text-purple-700', address: '123 Smith St,\nMelbourne VIC 3000', contactName: 'John Smith', contactPhone: '+61 412 345 678', date: '15/07/2025', time: '08:00 AM' },
-                    { id: 2, type: 'PICKUP', typeColor: 'bg-green-100 text-green-700', address: '45 Industrial Rd,\nGeelong VIC 3220', contactName: 'Mark Davis', contactPhone: '+61 400 123 456', date: '15/07/2025', time: '10:30 AM' },
-                    { id: 3, type: 'DROP-OFF', typeColor: 'bg-blue-100 text-blue-700', address: 'depot 12,\nSydney NSW 2000', contactName: 'David Wilson', contactPhone: '+61 422 987 654', date: '17/07/2025', time: '04:00 PM' },
-                    { id: 4, type: 'DROP-OFF', typeColor: 'bg-blue-100 text-blue-700', address: 'Brisbane Yard,\nBrisbane QLD 4000', contactName: 'Sarah Mitchell', contactPhone: '+61 433 555 111', date: '18/07/2025', time: '09:00 AM' }
-                  ].map((stop) => (
+                  {stopsList.map((stop) => (
                     <tr key={stop.id} className="hover:bg-slate-50/50">
                       <td className="px-4 py-4 text-xs font-bold text-slate-400">{stop.id}</td>
                       <td className="px-4 py-4">
@@ -664,7 +698,7 @@ function LoadDetail({ load, onBack }) {
                       <td className="px-4 py-4 text-xs font-bold text-slate-800 whitespace-pre-line leading-tight" style={{ minWidth: 160 }}>
                         <button 
                           onClick={() => setSelectedStop(stopsDetailData[stop.id])}
-                          className="text-left hover:text-indigo-600 hover:underline transition-colors focus:outline-none"
+                          className={`text-left hover:text-indigo-600 hover:underline transition-colors focus:outline-none ${stop.completed ? 'line-through text-slate-400' : ''}`}
                         >
                           {stop.address}
                         </button>
@@ -698,9 +732,43 @@ function LoadDetail({ load, onBack }) {
                           >
                             <Eye className="w-3.5 h-3.5" /> View
                           </button>
-                          <button className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors shrink-0">
-                            <MoreVertical className="w-3.5 h-3.5" />
-                          </button>
+                          <div className="relative">
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActionMenuId(actionMenuId === stop.id ? null : stop.id);
+                              }}
+                              className={`w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center transition-colors shrink-0 ${
+                                actionMenuId === stop.id ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                              }`}
+                            >
+                              <MoreVertical className="w-3.5 h-3.5" />
+                            </button>
+                            
+                            {actionMenuId === stop.id && (
+                              <div className="absolute right-0 mt-2 w-36 bg-white border border-slate-200 rounded-xl shadow-lg z-50 overflow-hidden py-1">
+                                <button 
+                                  onClick={() => handleEditStop(stop)}
+                                  className="w-full px-4 py-2 text-left text-[11px] font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 flex items-center gap-2"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5" /> Edit Stop
+                                </button>
+                                <button 
+                                  onClick={() => handleMarkCompleted(stop.id)}
+                                  className="w-full px-4 py-2 text-left text-[11px] font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 flex items-center gap-2"
+                                >
+                                  <CheckCircle className="w-3.5 h-3.5" /> Mark Completed
+                                </button>
+                                <hr className="border-slate-100 my-1" />
+                                <button 
+                                  onClick={() => handleRemoveStop(stop.id)}
+                                  className="w-full px-4 py-2 text-left text-[11px] font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" /> Remove Stop
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </td>
                     </tr>
@@ -836,11 +904,264 @@ function LoadDetail({ load, onBack }) {
           </div>
         )}
 
-        {!['Overview', 'Stops (4)', 'Items (1)', 'Driver & Vehicle'].includes(activeTab) && (
-          <div className="max-w-[1280px] mx-auto bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-sm">
-            <Package className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-            <h3 className="text-base font-bold text-slate-800 uppercase tracking-wider mb-2">{activeTab} Details</h3>
-            <p className="text-sm text-slate-400">Additional information and documents related to {activeTab.toLowerCase()} will display here.</p>
+        {activeTab === 'Expenses' && (
+          <div className="max-w-[1280px] mx-auto bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-6">
+              <h2 className="text-base font-bold text-slate-900">Load Expenses</h2>
+              <button 
+                onClick={() => setShowExpenseModal(true)}
+                className="flex items-center gap-1.5 px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors uppercase tracking-wider"
+              >
+                <Plus className="w-3.5 h-3.5" /> Add Expense
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-100">
+                    <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Date</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Type</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Description</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Amount</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {[
+                    { id: 'EXP-101', date: '15/07/2025', type: 'Fuel', desc: 'BP Service Station - Seymour', amount: '$125.50', status: 'Approved', color: 'bg-emerald-50 text-emerald-700' },
+                    { id: 'EXP-102', date: '15/07/2025', type: 'Toll', desc: 'CityLink Pass', amount: '$18.20', status: 'Pending', color: 'bg-amber-50 text-amber-700' },
+                    { id: 'EXP-103', date: '16/07/2025', type: 'Meals', desc: 'Driver Allowance', amount: '$35.00', status: 'Approved', color: 'bg-emerald-50 text-emerald-700' },
+                  ].map((exp) => (
+                    <tr key={exp.id} className="hover:bg-slate-50/50">
+                      <td className="px-4 py-4 text-xs font-bold text-slate-600">{exp.date}</td>
+                      <td className="px-4 py-4"><span className="px-2 py-1 rounded bg-slate-100 text-slate-700 text-[10px] font-black uppercase tracking-wider">{exp.type}</span></td>
+                      <td className="px-4 py-4 text-xs font-bold text-slate-800">{exp.desc}</td>
+                      <td className="px-4 py-4 text-xs font-black text-slate-900">{exp.amount}</td>
+                      <td className="px-4 py-4">
+                        <span className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider ${exp.color}`}>{exp.status}</span>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => setPreviewItem({ type: 'Expense Receipt', title: exp.type, desc: exp.desc, amount: exp.amount })}
+                            className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100"
+                          >
+                            <Eye size={13}/>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ── Documents Tab ── */}
+        {activeTab === 'Documents' && (
+          <div className="max-w-[1280px] mx-auto bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-6">
+              <h2 className="text-base font-bold text-slate-900">Load Documents</h2>
+              <button 
+                onClick={() => setShowDocumentModal(true)}
+                className="flex items-center gap-1.5 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold hover:bg-indigo-100 transition-colors uppercase tracking-wider"
+              >
+                <Upload className="w-3.5 h-3.5" /> Upload Document
+              </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {[
+                { name: 'Bill of Lading (BOL)', date: '14/07/2025', size: '1.2 MB' },
+                { name: 'Consignment Note', date: '14/07/2025', size: '845 KB' },
+                { name: 'Weighbridge Ticket', date: '15/07/2025', size: '420 KB' },
+              ].map((doc, i) => (
+                <div key={i} className="p-4 border border-slate-200 rounded-xl flex flex-col justify-between hover:shadow-md transition-shadow group">
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center text-red-500 shrink-0">
+                      <FileText size={20} />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900 line-clamp-1" title={doc.name}>{doc.name}.pdf</h4>
+                      <p className="text-[10px] text-slate-400 font-semibold mt-1">Uploaded: {doc.date} • {doc.size}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => setPreviewItem({ type: 'Document', title: doc.name })}
+                      className="flex-1 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-bold text-slate-600 hover:bg-slate-100 flex justify-center items-center gap-1"
+                    >
+                      <Eye size={12}/> View
+                    </button>
+                    <button 
+                      onClick={() => handleDownload(doc.name)}
+                      className="flex-1 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-bold text-slate-600 hover:bg-slate-100 flex justify-center items-center gap-1"
+                    >
+                      <Download size={12}/> Download
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Proof Photos Tab ── */}
+        {activeTab === 'Proof Photos' && (
+          <div className="max-w-[1280px] mx-auto bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-6">
+              <h2 className="text-base font-bold text-slate-900">Proof Photos</h2>
+              <button className="flex items-center gap-1.5 px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors uppercase tracking-wider">
+                <Filter className="w-3.5 h-3.5" /> Filter by Stop
+              </button>
+            </div>
+            <div className="space-y-8">
+              {[
+                { title: 'Stop 1 - Pickup (Melbourne Yard)', imgs: ['https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=400&q=80', 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=400&q=80'] },
+                { title: 'Stop 2 - Pickup (Geelong Depot)', imgs: ['https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=400&q=80', 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=400&q=80', 'https://images.unsplash.com/photo-1587293852726-59cb2a78d500?auto=format&fit=crop&w=400&q=80'] },
+              ].map((group, i) => (
+                <div key={i}>
+                  <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3 border-l-4 border-indigo-500 pl-2">{group.title}</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    {group.imgs.map((src, idx) => (
+                      <div key={idx} className="relative group rounded-xl overflow-hidden border border-slate-200 aspect-square">
+                        <img src={src} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="Proof" />
+                        <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <button 
+                            onClick={() => setPreviewItem({ type: 'Proof Photo', title: `${group.title} - Photo ${idx + 1}`, image: src })}
+                            className="w-8 h-8 rounded-full bg-white text-slate-900 flex items-center justify-center hover:scale-110 transition-transform"
+                          >
+                            <Eye size={16}/>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── POD Tab ── */}
+        {activeTab === 'POD' && (
+          <div className="max-w-[1280px] mx-auto bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col items-center py-12">
+            <Shield className="w-16 h-16 text-emerald-500 mb-4" />
+            <h2 className="text-xl font-black text-slate-900 mb-2">Proof of Delivery</h2>
+            <p className="text-sm text-slate-500 mb-8 text-center max-w-md">The load has not been fully delivered yet. The POD will be generated automatically once the final drop-off is completed and signed.</p>
+            
+            <div className="w-full max-w-md border border-slate-200 rounded-2xl p-6 bg-slate-50">
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Current Progress</h3>
+              <div className="space-y-4">
+                <div className="flex justify-between text-xs font-bold">
+                  <span className="text-slate-600">Stop 1 (Pickup)</span>
+                  <span className="text-emerald-600">Completed</span>
+                </div>
+                <div className="flex justify-between text-xs font-bold">
+                  <span className="text-slate-600">Stop 2 (Pickup)</span>
+                  <span className="text-emerald-600">Completed</span>
+                </div>
+                <div className="flex justify-between text-xs font-bold">
+                  <span className="text-slate-600">Stop 3 (Drop-off)</span>
+                  <span className="text-amber-500">Pending</span>
+                </div>
+                <div className="flex justify-between text-xs font-bold">
+                  <span className="text-slate-600">Stop 4 (Drop-off)</span>
+                  <span className="text-slate-400">Upcoming</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Invoices Tab ── */}
+        {activeTab === 'Invoices' && (
+          <div className="max-w-[1280px] mx-auto bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-6">
+              <h2 className="text-base font-bold text-slate-900">Invoices</h2>
+              <button 
+                onClick={() => setShowInvoiceModal(true)}
+                className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors uppercase tracking-wider"
+              >
+                <Plus className="w-3.5 h-3.5" /> Generate Invoice
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-100">
+                    <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Invoice #</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Date</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Customer</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Amount</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {[
+                    { id: 'INV-2025-089', date: '15/07/2025', customer: 'ABC Motors Pty Ltd', amount: '$2,450.00', status: 'Draft', color: 'bg-slate-100 text-slate-600' },
+                  ].map((inv) => (
+                    <tr key={inv.id} className="hover:bg-slate-50/50">
+                      <td className="px-4 py-4 text-xs font-bold text-indigo-600">{inv.id}</td>
+                      <td className="px-4 py-4 text-xs font-bold text-slate-600">{inv.date}</td>
+                      <td className="px-4 py-4 text-xs font-bold text-slate-800">{inv.customer}</td>
+                      <td className="px-4 py-4 text-xs font-black text-slate-900">{inv.amount}</td>
+                      <td className="px-4 py-4">
+                        <span className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider ${inv.color}`}>{inv.status}</span>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => setPreviewItem({ type: 'Invoice', title: inv.id, desc: inv.customer, amount: inv.amount })}
+                            className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100"
+                          >
+                            <Eye size={13}/>
+                          </button>
+                          <button 
+                            onClick={() => handleDownload(inv.id)}
+                            className="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center hover:bg-slate-200"
+                          >
+                            <Download size={13}/>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ── Activity Tab ── */}
+        {activeTab === 'Activity' && (
+          <div className="max-w-[1280px] mx-auto bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-6">
+              <h2 className="text-base font-bold text-slate-900">Load Activity & Audit Trail</h2>
+            </div>
+            <div className="pl-4 border-l-2 border-slate-100 space-y-6">
+              {[
+                { time: '15/07/2025 08:30 AM', title: 'Departed Pickup', desc: 'Driver marked Stop 1 as completed. Proof photos uploaded.', icon: <Truck size={14}/>, color: 'bg-blue-500' },
+                { time: '15/07/2025 08:00 AM', title: 'Arrived at Pickup', desc: 'Driver arrived at Melbourne Yard.', icon: <MapPin size={14}/>, color: 'bg-indigo-500' },
+                { time: '15/07/2025 07:15 AM', title: 'Dispatched', desc: 'Load dispatched to Mike Thompson.', icon: <Navigation size={14}/>, color: 'bg-emerald-500' },
+                { time: '14/07/2025 04:30 PM', title: 'Load Created', desc: 'Load PO-12546 created by Sarah Mitchell.', icon: <FileText size={14}/>, color: 'bg-slate-400' },
+              ].map((act, i) => (
+                <div key={i} className="relative">
+                  <div className={`absolute -left-[29px] w-7 h-7 rounded-full flex items-center justify-center text-white ring-4 ring-white ${act.color}`}>
+                    {act.icon}
+                  </div>
+                  <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 ml-4">
+                    <div className="flex justify-between items-start mb-1">
+                      <h4 className="text-xs font-bold text-slate-900">{act.title}</h4>
+                      <span className="text-[10px] font-bold text-slate-400">{act.time}</span>
+                    </div>
+                    <p className="text-xs text-slate-600">{act.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -971,6 +1292,245 @@ function LoadDetail({ load, onBack }) {
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* ── Add/Edit Stop Modal ────────────────────────────── */}
+      {showStopModal && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-[9999] animate-fadeIn">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-2xl w-full max-w-[500px] overflow-hidden flex flex-col" style={{ fontFamily: 'sans-serif' }}>
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="text-base font-black text-slate-950">{editingStop ? 'Edit Stop' : 'Add New Stop'}</h3>
+              <button 
+                onClick={() => setShowStopModal(false)}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Stop Type</label>
+                <select defaultValue={editingStop?.type || 'PICKUP'} className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500">
+                  <option>PICKUP</option>
+                  <option>DROP-OFF</option>
+                  <option>REST STOP</option>
+                  <option>WEIGH STATION</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Address / Location</label>
+                <input type="text" defaultValue={editingStop?.address?.replace('\n', ' ') || ''} placeholder="Enter full stop address or location name..." className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Scheduled Date</label>
+                  <input type="date" defaultValue={editingStop?.date?.split('/').reverse().join('-') || ''} className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Scheduled Time</label>
+                  <input type="time" defaultValue={editingStop?.time?.replace(' AM', '')?.replace(' PM', '') || ''} className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Primary Contact</label>
+                <div className="grid grid-cols-2 gap-4">
+                  <input type="text" defaultValue={editingStop?.contactName || ''} placeholder="Contact Name" className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500" />
+                  <input type="text" defaultValue={editingStop?.contactPhone || ''} placeholder="Phone Number" className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Special Instructions (Optional)</label>
+                <textarea rows="2" placeholder="e.g. Call 30 mins prior to arrival..." className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500 resize-none"></textarea>
+              </div>
+            </div>
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+              <button 
+                onClick={() => setShowStopModal(false)} 
+                className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => setShowStopModal(false)} 
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors shadow-sm"
+              >
+                {editingStop ? 'Save Changes' : 'Add Stop'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Add Expense Modal ────────────────────────────── */}
+      {showExpenseModal && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-[9999] animate-fadeIn">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-2xl w-full max-w-[400px] overflow-hidden flex flex-col" style={{ fontFamily: 'sans-serif' }}>
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="text-base font-black text-slate-950">Add Expense</h3>
+              <button onClick={() => setShowExpenseModal(false)} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Expense Type</label>
+                <select className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500">
+                  <option>Fuel</option>
+                  <option>Toll</option>
+                  <option>Meals</option>
+                  <option>Maintenance</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Description</label>
+                <input type="text" placeholder="e.g. BP Service Station" className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Amount ($)</label>
+                  <input type="number" placeholder="0.00" className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Date</label>
+                  <input type="date" className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Upload Receipt</label>
+                <div className="w-full border-2 border-dashed border-slate-200 rounded-xl p-6 flex flex-col items-center justify-center text-slate-400 hover:border-indigo-400 hover:bg-indigo-50 transition-colors cursor-pointer">
+                  <Upload className="w-6 h-6 mb-2 text-slate-300" />
+                  <span className="text-[10px] font-bold">Click to browse or drag file here</span>
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+              <button onClick={() => setShowExpenseModal(false)} className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors">Cancel</button>
+              <button onClick={() => setShowExpenseModal(false)} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors shadow-sm">Save Expense</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Upload Document Modal ────────────────────────────── */}
+      {showDocumentModal && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-[9999] animate-fadeIn">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-2xl w-full max-w-[400px] overflow-hidden flex flex-col" style={{ fontFamily: 'sans-serif' }}>
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="text-base font-black text-slate-950">Upload Document</h3>
+              <button onClick={() => setShowDocumentModal(false)} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Document Type</label>
+                <select className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500">
+                  <option>Bill of Lading (BOL)</option>
+                  <option>Consignment Note</option>
+                  <option>Weighbridge Ticket</option>
+                  <option>Customs Declaration</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">File</label>
+                <div className="w-full border-2 border-dashed border-slate-200 rounded-xl p-8 flex flex-col items-center justify-center text-slate-400 hover:border-indigo-400 hover:bg-indigo-50 transition-colors cursor-pointer">
+                  <Upload className="w-8 h-8 mb-3 text-slate-300" />
+                  <span className="text-xs font-bold text-slate-700 mb-1">Select a PDF or Image file</span>
+                  <span className="text-[10px] font-semibold">Max file size: 10MB</span>
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+              <button onClick={() => setShowDocumentModal(false)} className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors">Cancel</button>
+              <button onClick={() => setShowDocumentModal(false)} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors shadow-sm">Upload File</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Generate Invoice Modal ────────────────────────────── */}
+      {showInvoiceModal && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-[9999] animate-fadeIn">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-2xl w-full max-w-[450px] overflow-hidden flex flex-col" style={{ fontFamily: 'sans-serif' }}>
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="text-base font-black text-slate-950">Generate Invoice</h3>
+              <button onClick={() => setShowInvoiceModal(false)} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-xs text-slate-500 mb-2">Review details before generating the final invoice. Unbilled items and expenses will be included.</p>
+              <div>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Bill To Customer</label>
+                <input type="text" defaultValue="ABC Motors Pty Ltd" className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none" readOnly />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Load Subtotal</label>
+                  <input type="text" defaultValue="$2,200.00" className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none" readOnly />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Billable Expenses</label>
+                  <input type="text" defaultValue="$250.00" className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none" readOnly />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Invoice Due Date</label>
+                <select className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500">
+                  <option>Net 7 (7 days)</option>
+                  <option>Net 14 (14 days)</option>
+                  <option>Net 30 (30 days)</option>
+                </select>
+              </div>
+              <div className="p-4 bg-indigo-50 rounded-xl mt-2 flex items-center justify-between">
+                <span className="text-xs font-bold text-indigo-700">Total Invoice Amount</span>
+                <span className="text-base font-black text-indigo-700">$2,450.00</span>
+              </div>
+            </div>
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+              <button onClick={() => setShowInvoiceModal(false)} className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors">Cancel</button>
+              <button onClick={() => setShowInvoiceModal(false)} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors shadow-sm">Generate & Send</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Preview Modal ────────────────────────────── */}
+      {previewItem && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-[9999] animate-fadeIn">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-2xl w-full max-w-[600px] overflow-hidden flex flex-col" style={{ fontFamily: 'sans-serif' }}>
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-black text-slate-950">{previewItem.type} Preview</h3>
+                <p className="text-[10px] font-bold text-slate-400 mt-0.5">{previewItem.title}</p>
+              </div>
+              <button onClick={() => setPreviewItem(null)} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-8 flex flex-col items-center justify-center bg-slate-50 min-h-[300px]">
+              {previewItem.image ? (
+                <img src={previewItem.image} alt={previewItem.title} className="max-h-[400px] object-contain rounded-xl shadow-sm border border-slate-200" />
+              ) : (
+                <>
+                  <FileText className="w-16 h-16 text-slate-300 mb-4" />
+                  <p className="text-sm font-bold text-slate-700 mb-1">{previewItem.title}</p>
+                  {previewItem.desc && <p className="text-xs text-slate-500 mb-2">{previewItem.desc}</p>}
+                  {previewItem.amount && <p className="text-lg font-black text-indigo-600 mt-2">{previewItem.amount}</p>}
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-6 bg-white px-3 py-1 rounded-full border border-slate-200 shadow-sm">Document Viewer Placeholder</p>
+                </>
+              )}
+            </div>
+            <div className="px-6 py-4 bg-white border-t border-slate-100 flex justify-end gap-3">
+              <button onClick={() => setPreviewItem(null)} className="px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors">Close Preview</button>
+              <button onClick={() => { handleDownload(previewItem.title); setPreviewItem(null); }} className="px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-lg text-xs font-bold hover:bg-indigo-100 transition-colors flex items-center gap-2">
+                <Download size={14}/> Download File
+              </button>
+            </div>
           </div>
         </div>
       )}

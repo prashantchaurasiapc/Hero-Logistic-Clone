@@ -28,12 +28,20 @@ export default function Proposals() {
 
   // Toast
   const [toast, setToast] = useState(null);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [showRevisionModal, setShowRevisionModal] = useState(false);
+  const [revisionForm, setRevisionForm] = useState({
+    value: 4508,
+    discount: 5,
+    notes: 'Adjusted base license tier terms.'
+  });
 
   // Subscribe to crmStore
   useEffect(() => {
     const syncDb = () => {
       const db = crmRepository.getCrmDatabase();
-      setProposals(db.crmProposals || []);
+      const list = db.crmProposals || [];
+      setProposals(list);
       setLeads(crmRepository.getLeads());
     };
     syncDb();
@@ -41,22 +49,107 @@ export default function Proposals() {
     return () => unsubscribe();
   }, []);
 
-  // Sync selectedProposal on store updates
+  // Sync selectedProposal on store updates & auto select first proposal
   useEffect(() => {
-    if (selectedProposal) {
-      const updated = proposals.find(p => p.id === selectedProposal.id);
-      if (updated) setSelectedProposal(updated);
-      else setSelectedProposal(null);
+    if (proposals.length > 0) {
+      if (!selectedProposal) {
+        setSelectedProposal(proposals[0]);
+      } else {
+        const updated = proposals.find(p => p.id === selectedProposal.id);
+        if (updated) setSelectedProposal(updated);
+        else setSelectedProposal(proposals[0]);
+      }
     }
   }, [proposals]);
 
   // Toast auto-clear
   useEffect(() => {
     if (toast) {
-      const t = setTimeout(() => setToast(null), 3000);
+      const t = setTimeout(() => setToast(null), 3500);
       return () => clearTimeout(t);
     }
   }, [toast]);
+
+  // Actions
+  const handleAcceptContract = (p) => {
+    crmStore.updateDb((db) => {
+      const target = (db.crmProposals || []).find(x => x.id === p.id);
+      if (target) {
+        target.status = 'ACCEPTED';
+      }
+    });
+    setToast({ text: `Contract ACCEPTED! Client ${p.company} converted to active account successfully.` });
+  };
+
+  const handleRejectContract = (p) => {
+    crmStore.updateDb((db) => {
+      const target = (db.crmProposals || []).find(x => x.id === p.id);
+      if (target) {
+        target.status = 'REJECTED';
+      }
+    });
+    setToast({ text: `Proposal for ${p.company} marked as REJECTED.` });
+  };
+
+  const handleDownloadProposal = (p) => {
+    const content = `=====================================================
+HERO LOGISTICS - SAAS LICENSE CORE AGREEMENT
+Proposal ID: ${p.id}
+Company: ${p.company}
+Date Issued: ${p.createdDate}
+Version: ${p.version || 'V1'}
+Status: ${p.status}
+=====================================================
+
+PRICING SUMMARY:
+Base Platform License: $${Number(p.value).toLocaleString()} / mo
+Negotiated Discount: ${p.discount}% (-$${(p.value * (p.discount / 100)).toFixed(2)} / mo)
+Total Proposed MRR: $${Number(p.total).toLocaleString()} / mo
+
+INCLUDED SERVICE MODULES:
+${(p.features || []).map(f => ` - [x] ${f}`).join('\n')}
+
+TERMS & CONDITIONS:
+Proposal Validity: ${p.validity}
+Payment Terms: Net-30 Auto-Debit Billing
+
+Authorized Signature: _______________________
+`;
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `SaaS_Proposal_${p.company.replace(/\s+/g, '_')}_${p.id}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    setToast({ text: `SaaS Licensing Agreement for ${p.company} downloaded!` });
+  };
+
+  const handleSaveRevision = (e) => {
+    e.preventDefault();
+    if (!selectedProposal) return;
+
+    const newVal = Number(revisionForm.value);
+    const newDisc = Number(revisionForm.discount);
+    const newTotal = Math.round(newVal * (1 - newDisc / 100));
+    const nextVer = selectedProposal.version === 'V1' ? 'V2' : `V${parseInt((selectedProposal.version || 'V1').replace('V', '')) + 1}`;
+
+    crmStore.updateDb((db) => {
+      const target = (db.crmProposals || []).find(x => x.id === selectedProposal.id);
+      if (target) {
+        target.value = newVal;
+        target.discount = newDisc;
+        target.total = newTotal;
+        target.version = nextVer;
+        target.status = 'SENT';
+      }
+    });
+
+    setToast({ text: `Proposal revised to ${nextVer} ($${newTotal.toLocaleString()}/mo) for ${selectedProposal.company}!` });
+    setShowRevisionModal(false);
+  };
 
   const repsList = ['Alex Wright', 'Sarah K.', 'Michael Scott', 'Jan Levinson', 'Ryan Howard'];
 
@@ -179,7 +272,7 @@ export default function Proposals() {
           </div>
 
           {/* List */}
-          <div className="p-5 space-y-4 bg-slate-50">
+          <div className="p-5 space-y-4 bg-slate-50 max-h-[600px] overflow-y-auto custom-scrollbar">
             {filteredProposals.map((p) => (
               <button
                 key={p.id}
@@ -231,10 +324,18 @@ export default function Proposals() {
                     SAAS LICENSE PROPOSAL
                   </span>
                   <div className="flex items-center gap-2">
-                    <button className="p-1.5 border border-slate-200 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer">
+                    <button 
+                      onClick={() => setShowPreviewModal(true)}
+                      className="p-1.5 border border-slate-200 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-colors cursor-pointer"
+                      title="Preview Document"
+                    >
                       <Eye className="w-4 h-4" />
                     </button>
-                    <button className="p-1.5 border border-slate-200 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer">
+                    <button 
+                      onClick={() => handleDownloadProposal(selectedProposal)}
+                      className="p-1.5 border border-slate-200 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-colors cursor-pointer"
+                      title="Download PDF"
+                    >
                       <Download className="w-4 h-4" />
                     </button>
                   </div>
@@ -300,21 +401,158 @@ export default function Proposals() {
 
               {/* Bottom Actions */}
               <div className="px-7 py-5 flex items-center gap-2 shrink-0 border-t border-slate-100">
-                <button className="bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-[11px] px-4 py-2.5 rounded-lg cursor-pointer transition-colors shadow-xs whitespace-nowrap">
-                  Accept Contract & Convert
+                <button 
+                  onClick={() => handleAcceptContract(selectedProposal)}
+                  className="bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-[11px] px-4.5 py-2.5 rounded-xl cursor-pointer transition-all shadow-xs whitespace-nowrap active:scale-95 flex items-center gap-1.5"
+                >
+                  <Check className="w-3.5 h-3.5 stroke-[3px]" /> Accept Contract & Convert
                 </button>
-                <button className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-extrabold text-[11px] px-4 py-2.5 rounded-lg cursor-pointer transition-colors whitespace-nowrap">
+                <button 
+                  onClick={() => handleRejectContract(selectedProposal)}
+                  className="bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-600 border border-slate-200 hover:border-rose-200 font-extrabold text-[11px] px-4 py-2.5 rounded-xl cursor-pointer transition-colors whitespace-nowrap"
+                >
                   Reject Contract
                 </button>
-                <button className="bg-[#FEF3C7] hover:bg-[#FDE68A] text-[#B45309] border border-[#FDE68A] font-extrabold text-[11px] px-4 py-2.5 rounded-lg cursor-pointer transition-colors flex items-center gap-1.5 ml-auto shadow-xs whitespace-nowrap">
+                <button 
+                  onClick={() => {
+                    setRevisionForm({
+                      value: selectedProposal.value,
+                      discount: selectedProposal.discount,
+                      notes: ''
+                    });
+                    setShowRevisionModal(true);
+                  }}
+                  className="bg-[#FEF3C7] hover:bg-[#FDE68A] text-[#B45309] border border-[#FDE68A] font-extrabold text-[11px] px-4 py-2.5 rounded-xl cursor-pointer transition-all flex items-center gap-1.5 ml-auto shadow-xs whitespace-nowrap active:scale-95"
+                >
                   <RefreshCw className="w-3.5 h-3.5 shrink-0" />
-                  Revise Proposal [Draft V2]
+                  Revise Proposal [{selectedProposal.version === 'V1' ? 'Draft V2' : 'Draft Next'}]
                 </button>
               </div>
             </div>
           )}
         </div>
       </div>
+
+      {/* Contract Preview Modal */}
+      {showPreviewModal && selectedProposal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col text-left max-h-[90vh]">
+            <div className="px-6 py-5 bg-slate-900 text-white flex justify-between items-center border-b border-slate-800">
+              <div className="flex items-center gap-3">
+                <FileText className="w-5 h-5 text-amber-400" />
+                <h2 className="text-base font-black">SaaS Licensing Agreement Preview</h2>
+              </div>
+              <button onClick={() => setShowPreviewModal(false)} className="text-slate-400 hover:text-white p-1">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-8 overflow-y-auto space-y-6 text-xs font-semibold text-slate-700 font-serif">
+              <div className="border-b border-slate-200 pb-4 flex justify-between items-start font-sans">
+                <div>
+                  <h3 className="text-lg font-black text-slate-900">{selectedProposal.company}</h3>
+                  <p className="text-xs text-slate-500">Proposal ID: {selectedProposal.id} &bull; Version: {selectedProposal.version || 'V1'}</p>
+                </div>
+                <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 font-extrabold px-3 py-1 rounded-lg uppercase text-[10px]">
+                  {selectedProposal.status}
+                </span>
+              </div>
+
+              <p className="leading-relaxed">
+                This SaaS Core Platform License Agreement is issued on <strong>{selectedProposal.createdDate}</strong> by Hero Logistics Systems for <strong>{selectedProposal.company}</strong>.
+              </p>
+
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 font-sans space-y-2">
+                <h4 className="text-slate-900 font-black text-xs uppercase tracking-wider mb-2">Pricing Breakdown</h4>
+                <div className="flex justify-between"><span>Base Platform Core:</span> <strong>${Number(selectedProposal.value).toLocaleString()} / mo</strong></div>
+                <div className="flex justify-between text-emerald-600"><span>Negotiated Discount ({selectedProposal.discount}%):</span> <strong>-${(selectedProposal.value * (selectedProposal.discount / 100)).toFixed(2)} / mo</strong></div>
+                <div className="border-t border-slate-200 pt-2 flex justify-between text-sm font-black text-amber-600"><span>Total Proposed MRR:</span> <strong>${Number(selectedProposal.total).toLocaleString()} / mo</strong></div>
+              </div>
+
+              <div className="font-sans space-y-2">
+                <h4 className="text-slate-900 font-black text-xs uppercase tracking-wider mb-2">Included Modules</h4>
+                <div className="grid grid-cols-2 gap-2 text-[11px] font-bold text-slate-600">
+                  {(selectedProposal.features || []).map((f, i) => (
+                    <div key={i} className="flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-emerald-500" /> {f}</div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="border-t border-slate-200 pt-6 font-sans flex justify-between items-center text-[10px] font-bold text-slate-400">
+                <span>Authorized Signatory: Alex Wright (Sales Director)</span>
+                <button 
+                  onClick={() => handleDownloadProposal(selectedProposal)}
+                  className="bg-amber-400 hover:bg-amber-500 text-slate-900 font-black px-4 py-2 rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs"
+                >
+                  <Download className="w-3.5 h-3.5" /> Download Official Copy
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Revise Proposal Modal */}
+      {showRevisionModal && selectedProposal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col text-left">
+            <div className="px-6 py-5 bg-amber-500 text-slate-900 flex justify-between items-center border-b border-amber-600">
+              <div className="flex items-center gap-2.5 font-black text-base">
+                <RefreshCw className="w-5 h-5" /> Revise Proposal Agreement
+              </div>
+              <button onClick={() => setShowRevisionModal(false)} className="text-slate-800 hover:text-slate-950 p-1">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleSaveRevision} className="p-6 space-y-4 text-xs font-bold text-slate-700">
+              <p className="text-slate-500 text-xs font-medium">
+                Drafting Revision {selectedProposal.version === 'V1' ? 'V2' : 'Next'} for <strong>{selectedProposal.company}</strong>.
+              </p>
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">BASE PLATFORM VALUE ($/MO)</label>
+                <input 
+                  type="number"
+                  required
+                  value={revisionForm.value}
+                  onChange={e => setRevisionForm({ ...revisionForm, value: e.target.value })}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">NEGOTIATED DISCOUNT (%)</label>
+                <input 
+                  type="number"
+                  min="0"
+                  max="50"
+                  required
+                  value={revisionForm.discount}
+                  onChange={e => setRevisionForm({ ...revisionForm, discount: e.target.value })}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold focus:outline-none focus:border-amber-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">REVISION NOTES</label>
+                <textarea 
+                  rows="2"
+                  value={revisionForm.notes}
+                  onChange={e => setRevisionForm({ ...revisionForm, notes: e.target.value })}
+                  placeholder="Reason for pricing or feature revision..."
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-semibold focus:outline-none focus:border-amber-400 resize-none"
+                />
+              </div>
+
+              <button 
+                type="submit"
+                className="w-full bg-amber-400 hover:bg-amber-500 text-slate-900 font-black text-xs py-3.5 rounded-xl shadow-md transition-all cursor-pointer active:scale-95 uppercase tracking-wider mt-2"
+              >
+                SAVE & ISSUE REVISED PROPOSAL
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Draft Proposal Modal */}
       {showAddModal && (

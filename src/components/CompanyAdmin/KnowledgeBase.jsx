@@ -131,29 +131,29 @@ export default function KnowledgeBase() {
     const fullTitle = activeCategory ? `${activeCategory.title}: ${activeArticle}` : activeArticle;
     return (
       <div className="min-h-screen bg-[#F8FAFC] p-4 sm:p-6 lg:p-8 font-sans text-left">
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-[1200px] mx-auto">
           <button 
             onClick={activeCategory ? backToCategory : backToMain}
-            className="flex items-center gap-2 bg-none border-none text-[13.5px] font-bold text-gray-500 hover:text-gray-800 cursor-pointer mb-6 p-0"
+            className="flex items-center gap-2 bg-none border-none text-[13.5px] font-bold text-slate-500 hover:text-slate-800 cursor-pointer mb-5 p-0 transition-colors"
           >
             ← Back
           </button>
 
-          <div className="bg-white border border-gray-200 rounded-2xl p-6 sm:p-10 shadow-xs">
-            <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 mb-4.5 leading-snug">{fullTitle}</h1>
-            <p className="text-[13.5px] text-gray-600 leading-relaxed mb-2.5">
-              This is a detailed guide on <strong className="text-gray-700">{fullTitle}</strong>.
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-10 shadow-xs">
+            <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 mb-4.5 leading-snug">{fullTitle}</h1>
+            <p className="text-[13.5px] text-slate-600 leading-relaxed mb-2.5">
+              This is a detailed guide on <strong className="text-slate-800">{fullTitle}</strong>.
             </p>
-            <p className="text-[13.5px] text-gray-600 leading-relaxed mb-6">
+            <p className="text-[13.5px] text-slate-600 leading-relaxed mb-6">
               Here you would typically find step-by-step instructions, troubleshooting tips, and best practices related to the topic.
             </p>
 
-            <div className="bg-[#F8FAFC] border border-gray-200 rounded-xl p-5">
-              <h3 className="text-[13.5px] font-extrabold text-gray-900 mb-3.5">Key Takeaways</h3>
+            <div className="bg-[#F8FAFC] border border-slate-200 rounded-xl p-6">
+              <h3 className="text-[13.5px] font-extrabold text-slate-900 mb-3.5">Key Takeaways</h3>
               <ul className="m-0 pl-4.5 flex flex-col gap-2 list-disc">
-                <li className="text-[13px] text-gray-600 leading-relaxed">Ensure all system settings are configured correctly.</li>
-                <li className="text-[13px] text-gray-600 leading-relaxed">Review your entered data carefully before submitting.</li>
-                <li className="text-[13px] text-gray-600 leading-relaxed">Contact support via the ticketing system if the issue persists.</li>
+                <li className="text-[13px] text-slate-600 leading-relaxed">Ensure all system settings are configured correctly.</li>
+                <li className="text-[13px] text-slate-600 leading-relaxed">Review your entered data carefully before submitting.</li>
+                <li className="text-[13px] text-slate-600 leading-relaxed">Contact support via the ticketing system if the issue persists.</li>
               </ul>
             </div>
           </div>
@@ -167,42 +167,42 @@ export default function KnowledgeBase() {
     const cat = activeCategory;
     return (
       <div className="min-h-screen bg-[#F8FAFC] p-4 sm:p-6 lg:p-8 font-sans text-left">
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-[1200px] mx-auto">
           <button 
             onClick={backToMain}
-            className="flex items-center gap-2 bg-none border-none text-[13.5px] font-bold text-gray-500 hover:text-gray-800 cursor-pointer mb-6 p-0"
+            className="flex items-center gap-2 bg-none border-none text-[13.5px] font-bold text-slate-500 hover:text-slate-800 cursor-pointer mb-5 p-0 transition-colors"
           >
             ← Back to Knowledge Base
           </button>
 
-          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-xs">
+          <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
             {/* Category header */}
-            <div className="flex items-center gap-4.5 p-6 sm:p-8 border-b border-gray-100">
+            <div className="flex items-center gap-4.5 p-6 sm:p-8 border-b border-slate-100">
               <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0">
                 <cat.Icon color="#D97706" />
               </div>
               <div>
-                <h1 className="text-lg font-extrabold text-gray-900 mb-1 leading-tight">{cat.title}</h1>
-                <p className="text-[13px] text-gray-400 font-semibold">{cat.desc}</p>
+                <h1 className="text-lg font-extrabold text-slate-900 mb-1 leading-tight">{cat.title}</h1>
+                <p className="text-[13px] text-slate-400 font-semibold">{cat.desc}</p>
               </div>
             </div>
 
             {/* Articles list */}
             <div className="p-6 sm:p-8">
-              <h2 className="text-[10px] font-black text-gray-900 tracking-wider uppercase mb-5">Articles in this Category</h2>
+              <h2 className="text-[10px] font-black text-slate-900 tracking-wider uppercase mb-5">Articles in this Category</h2>
 
               <div className="flex flex-col">
                 {cat.articles.map((article, i) => (
                   <div key={i}>
                     <div
                       onClick={() => openArticle(article, cat)}
-                      className="flex items-center gap-3.5 py-4 px-1 cursor-pointer transition-opacity hover:opacity-75"
+                      className="flex items-center gap-3.5 py-4 px-2 cursor-pointer transition-colors hover:bg-slate-50/80 rounded-xl"
                     >
                       <span className="shrink-0"><DocIcon /></span>
-                      <span className="flex-grow text-[13.5px] font-semibold text-gray-700">{article}</span>
+                      <span className="flex-grow text-[13.5px] font-bold text-slate-700">{article}</span>
                       <span className="shrink-0"><ChevRight /></span>
                     </div>
-                    {i < cat.articles.length - 1 && <div className="h-px bg-gray-100" />}
+                    {i < cat.articles.length - 1 && <div className="h-px bg-slate-100 my-1" />}
                   </div>
                 ))}
               </div>
@@ -216,7 +216,7 @@ export default function KnowledgeBase() {
   // ── MAIN PAGE ───────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-[#F8FAFC] p-4 sm:p-6 lg:p-8 font-sans text-left">
-      <div className="max-w-[1100px] mx-auto">
+      <div className="max-w-[1200px] mx-auto">
 
         {/* Hero */}
         <div className="bg-slate-100 border border-slate-200 rounded-2xl py-12 px-6 sm:px-10 text-center mb-8 bg-[radial-gradient(circle,#CBD5E1_1px,transparent_1px)] bg-[size:20px_20px] relative">

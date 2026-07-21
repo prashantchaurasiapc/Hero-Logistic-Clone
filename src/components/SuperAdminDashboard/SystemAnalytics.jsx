@@ -1,7 +1,26 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import { 
+  Download, 
+  FileSpreadsheet, 
+  FileText, 
+  FileCode, 
+  Calendar, 
+  CheckCircle2, 
+  X,
+  ShieldCheck,
+  BarChart2
+} from 'lucide-react';
 
 export default function SystemAnalytics() {
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportFormat, setExportFormat] = useState('csv');
+  const [exportScope, setExportScope] = useState('Platform Financials & MRR');
+  const [exportTimeframe, setExportTimeframe] = useState('Last 30 Days');
+  const [toastMsg, setToastMsg] = useState('');
+  const [isExporting, setIsExporting] = useState(false);
+
   // KPI Metrics data
   const metrics = [
     { name: 'PLATFORM REVENUE', value: '$5,14,920', desc: 'Annual recurring revenue', change: '+12%', isPositive: true },
@@ -46,11 +65,11 @@ export default function SystemAnalytics() {
 
   // Storage usage table data
   const storageData = [
-    { company: 'Falcon Logistics LLC', storage: 'NaN TB', percentage: 'NaN%', limit: 100, color: 'bg-amber-400' },
-    { company: 'Swift Cargo Express', storage: '0.10 TB', percentage: '10%', limit: 10, color: 'bg-amber-400' },
+    { company: 'Falcon Logistics LLC', storage: '1.20 TB', percentage: '12%', limit: 12, color: 'bg-[#FFD400]' },
+    { company: 'Swift Cargo Express', storage: '0.10 TB', percentage: '10%', limit: 10, color: 'bg-[#FFD400]' },
     { company: 'Global Shipping Solutions', storage: '3.31 TB', percentage: '100%', limit: 100, color: 'bg-rose-500' },
-    { company: 'Texas Hotshot Carriers', storage: '0.11 TB', percentage: '11%', limit: 11, color: 'bg-amber-400' },
-    { company: 'Apex Logistics LLC', storage: '0.44 TB', percentage: '44%', limit: 44, color: 'bg-amber-400' }
+    { company: 'Texas Hotshot Carriers', storage: '0.11 TB', percentage: '11%', limit: 11, color: 'bg-[#FFD400]' },
+    { company: 'Apex Logistics LLC', storage: '0.44 TB', percentage: '44%', limit: 44, color: 'bg-[#FFD400]' }
   ];
 
   // Login analytics table data
@@ -62,10 +81,80 @@ export default function SystemAnalytics() {
     { company: 'Apex Logistics LLC', monthlyLogins: 232, activeUsers: 16, lastLogin: 'Today, 01:10 PM', score: 90 }
   ];
 
+  const triggerToast = (msg) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(''), 3000);
+  };
+
+  const handleRunExport = () => {
+    setIsExporting(true);
+    setTimeout(() => {
+      setIsExporting(false);
+      setShowExportModal(false);
+
+      if (exportFormat === 'csv') {
+        let csvContent = `========================================\nHERO LOGISTICS - SYSTEM ANALYTICS AUDIT REPORT\n========================================\nReport Scope: ${exportScope}\nTimeframe: ${exportTimeframe}\nGenerated At: ${new Date().toLocaleString()}\n\nKPI METRICS:\n`;
+        metrics.forEach(m => {
+          csvContent += `"${m.name}","${m.value}","${m.desc}","${m.change}"\n`;
+        });
+        csvContent += `\nTENANT LOGIN & STORAGE AUDIT:\n`;
+        loginAnalytics.forEach(l => {
+          csvContent += `"${l.company}","Logins: ${l.monthlyLogins}","Users: ${l.activeUsers}","Score: ${l.score}%"\n`;
+        });
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `System_Analytics_${exportTimeframe.replace(/ /g, '_')}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else if (exportFormat === 'json') {
+        const jsonContent = JSON.stringify({
+          system: 'Hero Logistics System Analytics',
+          scope: exportScope,
+          timeframe: exportTimeframe,
+          timestamp: new Date().toISOString(),
+          metrics,
+          storageData,
+          loginAnalytics
+        }, null, 2);
+        const blob = new Blob([jsonContent], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `System_Analytics_${exportTimeframe.replace(/ /g, '_')}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        const pdfContent = `Simulated PDF System Analytics Executive Report - Scope: ${exportScope} (${exportTimeframe})`;
+        const blob = new Blob([pdfContent], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `System_Analytics_${exportTimeframe.replace(/ /g, '_')}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+
+      triggerToast(`System Analytics Report (${exportFormat.toUpperCase()}) downloaded!`);
+    }, 1000);
+  };
+
   return (
-    <div className="flex-grow bg-[#F8FAFC] p-6 w-full font-sans text-left space-y-6">
+    <div className="flex-grow bg-[#F8FAFC] p-4 sm:p-6 lg:p-8 w-full font-sans text-left space-y-6 relative">
+      {/* Toast Notification */}
+      {toastMsg && (
+        <div className="fixed top-6 right-6 z-[9999] bg-slate-900 text-white px-5 py-3 rounded-xl shadow-xl flex items-center gap-2 text-xs font-bold animate-bounce">
+          <CheckCircle2 size={16} className="text-emerald-400" />
+          <span>{toastMsg}</span>
+        </div>
+      )}
+
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
           <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
             Super Admin • Analytics
@@ -74,8 +163,11 @@ export default function SystemAnalytics() {
             Configure global licensing rules, audit tenant margins, and resolve support tickets.
           </p>
         </div>
-        <button className="border border-slate-200 bg-white hover:bg-slate-50 text-yellow-500 font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors">
-          Export Report
+        <button 
+          onClick={() => setShowExportModal(true)}
+          className="border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 font-black text-xs px-5 py-2.5 rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95 shrink-0"
+        >
+          <Download size={14} className="text-amber-700" /> Export Report
         </button>
       </div>
 
@@ -211,11 +303,7 @@ export default function SystemAnalytics() {
                     <td className="py-3 text-center text-slate-500 font-bold">{row.storage}</td>
                     <td className="py-3 text-right pr-0 flex items-center justify-end gap-3">
                       <div className="w-24 bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                        {row.percentage !== 'NaN%' ? (
-                          <div className={`${row.color} h-full rounded-full`} style={{ width: `${row.limit}%` }}></div>
-                        ) : (
-                          <div className="bg-[#FFD400] h-full rounded-full" style={{ width: '100%' }}></div>
-                        )}
+                        <div className={`${row.color} h-full rounded-full`} style={{ width: `${row.limit}%` }}></div>
                       </div>
                       <span className="w-10 text-right text-xs font-extrabold text-slate-800">{row.percentage}</span>
                     </td>
@@ -246,11 +334,11 @@ export default function SystemAnalytics() {
                 <tr key={idx} className="hover:bg-slate-50/10">
                   <td className="py-4 font-extrabold text-slate-800">{row.company}</td>
                   <td className="py-4 text-center text-slate-500">{row.monthlyLogins}</td>
-                  <td className="py-4 text-center text-yellow-500 font-extrabold">{row.activeUsers}</td>
+                  <td className="py-4 text-center text-amber-600 font-extrabold">{row.activeUsers}</td>
                   <td className="py-4 text-center text-slate-400 font-semibold">{row.lastLogin}</td>
                   <td className="py-4 text-right pr-0 flex items-center justify-end gap-3">
                     <div className="w-20 bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                      <div className="bg-[#10B981] h-full rounded-full" style={{ width: `${row.score}%` }}></div>
+                      <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${row.score}%` }}></div>
                     </div>
                     <span className="w-10 text-right text-xs font-extrabold text-slate-800">{row.score}%</span>
                   </td>
@@ -260,6 +348,113 @@ export default function SystemAnalytics() {
           </table>
         </div>
       </div>
+
+      {/* ── EXPORT REPORT MODAL ── */}
+      {showExportModal && createPortal(
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 z-[9999]" onClick={() => setShowExportModal(false)}>
+          <div className="bg-white rounded-2xl max-w-md w-full border border-slate-200 shadow-2xl overflow-hidden text-left" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 flex items-center justify-center font-bold">
+                  <Download size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">Export System Analytics Report</h3>
+                  <p className="text-xs text-slate-400 font-semibold">Download platform metrics & tenant usage logs</p>
+                </div>
+              </div>
+              <button onClick={() => setShowExportModal(false)} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-50">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                  <BarChart2 size={13} /> Select Report Scope
+                </label>
+                <select 
+                  value={exportScope}
+                  onChange={e => setExportScope(e.target.value)}
+                  className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-amber-400 cursor-pointer"
+                >
+                  <option>Platform Financials & MRR</option>
+                  <option>Company Growth & Active Users</option>
+                  <option>Module Usage Analytics</option>
+                  <option>Storage & Login Audit Dump</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                  <Calendar size={13} /> Select Timeframe
+                </label>
+                <select 
+                  value={exportTimeframe}
+                  onChange={e => setExportTimeframe(e.target.value)}
+                  className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-amber-400 cursor-pointer"
+                >
+                  <option>Last 30 Days</option>
+                  <option>Last Quarter</option>
+                  <option>Year to Date</option>
+                  <option>All Time History</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+                  Choose Export Format
+                </label>
+                <div className="grid grid-cols-3 gap-2.5">
+                  {[
+                    { id: 'csv', name: 'CSV', Icon: FileSpreadsheet, sub: 'Excel Sheet' },
+                    { id: 'pdf', name: 'PDF', Icon: FileText, sub: 'Summary' },
+                    { id: 'json', name: 'JSON', Icon: FileCode, sub: 'Raw Data' },
+                  ].map(fmt => {
+                    const active = exportFormat === fmt.id;
+                    const Icon = fmt.Icon;
+                    return (
+                      <button
+                        key={fmt.id}
+                        type="button"
+                        onClick={() => setExportFormat(fmt.id)}
+                        className={`p-3 rounded-xl border flex flex-col items-center justify-center text-center cursor-pointer transition-all ${
+                          active ? 'border-amber-500 bg-amber-50/70 text-amber-900 shadow-xs' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                        }`}
+                      >
+                        <Icon size={18} className={active ? 'text-amber-600 mb-1' : 'text-slate-400 mb-1'} />
+                        <span className="text-xs font-black">{fmt.name}</span>
+                        <span className="text-[9px] text-slate-400 font-semibold mt-0.5">{fmt.sub}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex items-start gap-2.5">
+                <ShieldCheck size={16} className="text-indigo-600 shrink-0 mt-0.5" />
+                <p className="text-[11px] text-slate-600 font-medium">
+                  Report includes platform revenue figures, active user sessions, module usage breakdown, and SLA uptime metrics.
+                </p>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+              <button onClick={() => setShowExportModal(false)} className="px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl transition-colors">
+                Cancel
+              </button>
+              <button 
+                onClick={handleRunExport}
+                disabled={isExporting}
+                className="px-5 py-2 bg-[#FFD400] hover:bg-yellow-400 text-black text-xs font-black rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer active:scale-95 disabled:opacity-50"
+              >
+                {isExporting ? <span className="animate-pulse">Generating...</span> : <><Download size={14} /> Download {exportFormat.toUpperCase()}</>}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

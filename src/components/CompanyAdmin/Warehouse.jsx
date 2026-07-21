@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { 
+  ArrowLeft, Edit, Trash2, ChevronDown, Plus, Download, Upload, Search, Filter, RotateCcw, 
+  CheckCircle, Clock, Truck, Box, AlertTriangle, Info, Star, Building, MapPin, 
+  Users, Package, FileText, Printer, Check, X, Shield, Eye, MoreHorizontal, MoreVertical,
+  Settings, CheckCircle2, ChevronRight, Share2, Layers, RefreshCw
+} from 'lucide-react';
 import WarehouseInventoryStock from './WarehouseInventoryStock';
 import WarehouseStockMovements from './WarehouseStockMovements';
 import WarehousePickPackDispatch from './WarehousePickPackDispatch';
@@ -9,6 +15,7 @@ import WarehouseReportsAnalytics from './WarehouseReportsAnalytics';
 
 // ─── RESPONSIVE STYLES ────────────────────────────────────────────────────────
 const styles = `
+  .wh-page, .wh-detail-page, .wh-add-page { padding-bottom: 120px !important; }
   .wh-page { background:#F8FAFC; min-height:100vh; padding:16px; font-family:'Inter','Outfit',sans-serif; overflow-x:hidden; box-sizing:border-box; }
   @media(min-width:768px){ .wh-page { padding:24px 32px; } }
 
@@ -271,19 +278,22 @@ export default function Warehouse() {
   const [view, setView] = useState('list');
   const [selectedWh, setSelectedWh] = useState(null);
   const [showMoreActions, setShowMoreActions] = useState(false);
+  const [showDetailMoreActions, setShowDetailMoreActions] = useState(false);
   const [openRowAction, setOpenRowAction] = useState(null);
   const [whList, setWhList] = useState(initialWarehouses);
   const [editModal, setEditModal] = useState(null);
 
-  const handleExport = () => {
-    const csvContent = "data:text/csv;charset=utf-8,Warehouse Name,Code,Branch,Type,Status\nSydney Head Office Warehouse,WH-001,Sydney Head Office,General,Active";
+  const handleExport = (targetWh) => {
+    const w = targetWh || selectedWh || whList[0];
+    const csvContent = `data:text/csv;charset=utf-8,Warehouse Name,Code,Branch,Type,Status,Stock Items,Value,Utilisation\n"${w.name}","${w.code}","${w.branch}","${w.type}","${w.status}","${w.stock}","${w.value}","${w.util}%"`;
     const link = document.createElement("a");
     link.setAttribute("href", encodeURI(csvContent));
-    link.setAttribute("download", "warehouse_list.csv");
+    link.setAttribute("download", `warehouse_${w.code || 'export'}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     setShowMoreActions(false);
+    setShowDetailMoreActions(false);
   };
 
   const handleImport = () => {
@@ -298,6 +308,76 @@ export default function Warehouse() {
   };
 
   const handleWhClick = (w) => { setSelectedWh(w); setView('details'); };
+
+  const renderEditModal = () => {
+    if (!editModal) return null;
+    return (
+      <div className="wh-modal-backdrop" onClick={() => setEditModal(null)}>
+        <div className="wh-modal" onClick={e => e.stopPropagation()}>
+          <div className="wh-modal-head">
+            <h2 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Edit size={16} className="text-purple-600" /> Edit Warehouse
+            </h2>
+            <button onClick={() => setEditModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B', fontSize: 20 }}>&times;</button>
+          </div>
+          <div className="wh-modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 6 }}>Warehouse Name *</label>
+              <input type="text" value={editModal.name || ''} onChange={e => setEditModal({ ...editModal, name: e.target.value })} className="wh-input" />
+            </div>
+            <div className="wh-modal-grid">
+              <div>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 6 }}>Warehouse Code *</label>
+                <input type="text" value={editModal.code || ''} onChange={e => setEditModal({ ...editModal, code: e.target.value })} className="wh-input" />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 6 }}>Status</label>
+                <select value={editModal.status || 'Active'} onChange={e => setEditModal({ ...editModal, status: e.target.value })} className="wh-input">
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                  <option value="Maintenance">Maintenance</option>
+                </select>
+              </div>
+            </div>
+            <div className="wh-modal-grid">
+              <div>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 6 }}>Branch / Region</label>
+                <input type="text" value={editModal.branch || ''} onChange={e => setEditModal({ ...editModal, branch: e.target.value })} className="wh-input" />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 6 }}>Warehouse Type</label>
+                <select value={editModal.type || 'General'} onChange={e => setEditModal({ ...editModal, type: e.target.value })} className="wh-input">
+                  <option value="General">General</option>
+                  <option value="Cold Storage">Cold Storage</option>
+                  <option value="Distribution Centre">Distribution Centre</option>
+                  <option value="Bonded">Bonded</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 6 }}>Address</label>
+              <input type="text" value={editModal.addr || ''} onChange={e => setEditModal({ ...editModal, addr: e.target.value })} className="wh-input" />
+            </div>
+          </div>
+          <div className="wh-modal-foot">
+            <button onClick={() => setEditModal(null)} className="wh-btn">Cancel</button>
+            <button onClick={() => { 
+              const idx = editModal.index >= 0 ? editModal.index : whList.findIndex(w => w.code === editModal.code); 
+              if (idx >= 0) {
+                const nl = [...whList]; 
+                nl[idx] = { ...nl[idx], ...editModal }; 
+                setWhList(nl); 
+                if (selectedWh && (selectedWh.code === editModal.code || idx === whList.findIndex(w => w.code === selectedWh.code))) {
+                  setSelectedWh({ ...selectedWh, ...editModal });
+                }
+              }
+              setEditModal(null); 
+            }} className="wh-btn wh-btn-primary">Save Changes</button>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   // ── SUB VIEWS ──────────────────────────────────────────────────────────
   if (view === 'inventory') return <WarehouseInventoryStock wh={selectedWh || whList[0]} onBack={() => setView('details')} />;
@@ -318,16 +398,71 @@ export default function Warehouse() {
           {/* Header */}
           <div className="wh-detail-header">
             <div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 6, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                <span>Home</span><span style={{ color: '#CBD5E1' }}>›</span><span>Warehouse</span><span style={{ color: '#CBD5E1' }}>›</span><span style={{ color: '#0F172A' }}>Warehouse Details</span>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+                <span onClick={() => navigate('/company-admin/command-centre')} style={{ cursor: 'pointer' }} className="hover:text-purple-600">Home</span>
+                <span style={{ color: '#CBD5E1' }}>›</span>
+                <span onClick={() => setView('list')} style={{ cursor: 'pointer' }} className="hover:text-purple-600">Warehouse</span>
+                <span style={{ color: '#CBD5E1' }}>›</span>
+                <span style={{ color: '#0F172A', fontWeight: 800 }}>Warehouse Details</span>
               </div>
-              <h1 style={{ fontSize: 18, fontWeight: 900, color: '#0F172A', margin: '0 0 4px 0', letterSpacing: '-0.5px' }}>9.2 Warehouse Details</h1>
+              <h1 style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', margin: '0 0 4px 0', letterSpacing: '-0.5px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                9.2 Warehouse Details
+                <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 20, height: 20, borderRadius: '50%', background: '#EEF2FF', color: '#4F46E5' }}>
+                  <CheckCircle2 size={14} />
+                </span>
+              </h1>
               <p style={{ fontSize: 12, color: '#64748B', margin: 0, fontWeight: 500 }}>{wh.name}</p>
             </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <button onClick={() => setView('list')} className="wh-btn">← Back</button>
-              <button className="wh-btn" style={{ borderColor: '#C7D2FE', background: '#EEF2FF', color: '#4F46E5' }}>✏ Edit Warehouse</button>
-              <button className="wh-btn">More Actions ▾</button>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <button onClick={() => setView('list')} className="wh-btn">
+                <ArrowLeft size={14} /> Back
+              </button>
+              <button 
+                onClick={() => setEditModal({ ...wh, index: whList.findIndex(w => w.code === wh.code) })} 
+                className="wh-btn" 
+                style={{ borderColor: '#C7D2FE', background: '#EEF2FF', color: '#4F46E5' }}
+              >
+                <Edit size={14} /> Edit Warehouse
+              </button>
+              <div style={{ position: 'relative' }}>
+                <button onClick={() => setShowDetailMoreActions(!showDetailMoreActions)} className="wh-btn">
+                  More Actions <ChevronDown size={14} />
+                </button>
+                {showDetailMoreActions && (
+                  <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: 8, width: 210, background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', zIndex: 99, padding: 6 }}>
+                    <div onClick={() => { setEditModal({ ...wh, index: whList.findIndex(w => w.code === wh.code) }); setShowDetailMoreActions(false); }}
+                      style={{ padding: '8px 12px', fontSize: 12, fontWeight: 700, color: '#334155', cursor: 'pointer', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 8 }}
+                      onMouseOver={e => e.currentTarget.style.background = '#F8FAFC'}
+                      onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
+                      <Edit size={14} className="text-purple-600" /> Edit Warehouse
+                    </div>
+                    <div onClick={() => { handleExport(); setShowDetailMoreActions(false); }}
+                      style={{ padding: '8px 12px', fontSize: 12, fontWeight: 700, color: '#334155', cursor: 'pointer', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 8 }}
+                      onMouseOver={e => e.currentTarget.style.background = '#F8FAFC'}
+                      onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
+                      <Download size={14} className="text-emerald-600" /> Export Details (CSV)
+                    </div>
+                    <div onClick={() => { setView('inventory'); setShowDetailMoreActions(false); }}
+                      style={{ padding: '8px 12px', fontSize: 12, fontWeight: 700, color: '#334155', cursor: 'pointer', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 8 }}
+                      onMouseOver={e => e.currentTarget.style.background = '#F8FAFC'}
+                      onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
+                      <Package size={14} className="text-blue-600" /> Inventory & Stock
+                    </div>
+                    <div onClick={() => { setView('locations'); setShowDetailMoreActions(false); }}
+                      style={{ padding: '8px 12px', fontSize: 12, fontWeight: 700, color: '#334155', cursor: 'pointer', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 8 }}
+                      onMouseOver={e => e.currentTarget.style.background = '#F8FAFC'}
+                      onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
+                      <MapPin size={14} className="text-amber-600" /> Locations & Bins
+                    </div>
+                    <div onClick={() => { window.print(); setShowDetailMoreActions(false); }}
+                      style={{ padding: '8px 12px', fontSize: 12, fontWeight: 700, color: '#334155', cursor: 'pointer', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 8 }}
+                      onMouseOver={e => e.currentTarget.style.background = '#F8FAFC'}
+                      onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
+                      <Printer size={14} className="text-slate-600" /> Print Summary
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -474,8 +609,19 @@ export default function Warehouse() {
               <div className="wh-panel">
                 <span className="wh-panel-title">QUICK ACTIONS</span>
                 <div className="wh-qa-grid" style={{ marginTop: 14 }}>
-                  {['📦 Manage Stock', '+ Add Stock', '✓ Create Pick Task', '↓ Receive Shipment', '⇄ Stock Transfer', '📍 View Locations', '☰ View All Tasks', '🖨️ Print Label'].map((a, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: '#0F172A', cursor: 'pointer' }}>{a}</div>
+                  {[
+                    { label: '📦 Manage Stock', fn: () => setView('inventory') },
+                    { label: '+ Add Stock', fn: () => setView('inventory') },
+                    { label: '✓ Create Pick Task', fn: () => setView('pickpack') },
+                    { label: '↓ Receive Shipment', fn: () => setView('inventory') },
+                    { label: '⇄ Stock Transfer', fn: () => setView('movements') },
+                    { label: '📍 View Locations', fn: () => setView('locations') },
+                    { label: '☰ View All Tasks', fn: () => setView('pickpack') },
+                    { label: '🖨️ Print Label', fn: () => window.print() }
+                  ].map((a, i) => (
+                    <div key={i} onClick={a.fn} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: '#0F172A', cursor: 'pointer' }} className="hover:text-purple-600 transition-colors">
+                      {a.label}
+                    </div>
                   ))}
                 </div>
               </div>
@@ -543,6 +689,8 @@ export default function Warehouse() {
             { title: 'PERMISSIONS', items: ['Super Admin: Full access.', 'Admin/Manager: Full access.', 'Warehouse Staff: View assigned warehouse only.', 'Dispatcher: View warehouse info (read-only).'] },
             { title: 'DATA SOURCES', items: ['Warehouses module.', 'Inventory & Stock module.', 'Tasks module.', 'Shipments & Purchase Orders.'] },
           ]} />
+
+          {renderEditModal()}
         </div>
       </>
     );
@@ -797,26 +945,30 @@ export default function Warehouse() {
                           </div>
                         </div>
                       </td>
-                      <td style={{ position: 'relative' }}>
-                        <div onClick={() => setOpenRowAction(openRowAction === i ? null : i)} style={{ color: '#94A3B8', fontWeight: 800, fontSize: 16, cursor: 'pointer', userSelect: 'none', padding: '0 4px' }}>···</div>
-                        {openRowAction === i && (
-                          <div style={{ position: 'absolute', top: '100%', right: 16, marginTop: -8, width: 170, background: '#fff', border: '1px solid #E2E8F0', borderRadius: 8, boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', zIndex: 100, padding: 6 }}>
-                            {[
-                              { label: 'View Details', fn: () => { handleWhClick(w); setOpenRowAction(null); } },
-                              { label: 'Manage Inventory', fn: () => { navigate('/warehouse/current-stock'); setOpenRowAction(null); } },
-                              { label: 'Edit Warehouse', fn: () => { setEditModal({ ...w, index: i }); setOpenRowAction(null); } },
-                            ].map((a, ai) => (
-                              <div key={ai} onClick={a.fn} style={{ padding: '7px 10px', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', borderRadius: 5 }}
-                                onMouseOver={e => e.currentTarget.style.background = '#F1F5F9'}
-                                onMouseOut={e => e.currentTarget.style.background = 'transparent'}>{a.label}</div>
-                            ))}
-                            <div style={{ height: 1, background: '#E2E8F0', margin: '4px 0' }} />
-                            <div onClick={() => { if (window.confirm(`Delete ${w.name}?`)) { const nl = [...whList]; nl.splice(i, 1); setWhList(nl); } setOpenRowAction(null); }}
-                              style={{ padding: '7px 10px', fontSize: 12, fontWeight: 600, color: '#EF4444', cursor: 'pointer', borderRadius: 5 }}
-                              onMouseOver={e => e.currentTarget.style.background = '#FEF2F2'}
-                              onMouseOut={e => e.currentTarget.style.background = 'transparent'}>Delete</div>
-                          </div>
-                        )}
+                      <td style={{ padding: '12px 16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <button 
+                            onClick={() => handleWhClick(w)} 
+                            title="View Warehouse Details" 
+                            style={{ width: 26, height: 26, borderRadius: 6, background: '#EFF6FF', color: '#3B82F6', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          >
+                            <Eye size={13} />
+                          </button>
+                          <button 
+                            onClick={() => setEditModal({ ...w, index: i })} 
+                            title="Edit Warehouse" 
+                            style={{ width: 26, height: 26, borderRadius: 6, background: '#FEF3C7', color: '#D97706', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          >
+                            <Edit size={13} />
+                          </button>
+                          <button 
+                            onClick={() => { if (window.confirm(`Are you sure you want to delete warehouse ${w.name}?`)) { const nl = [...whList]; nl.splice(i, 1); setWhList(nl); } }} 
+                            title="Delete Warehouse" 
+                            style={{ width: 26, height: 26, borderRadius: 6, background: '#FEE2E2', color: '#DC2626', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -1052,46 +1204,9 @@ export default function Warehouse() {
           <div style={{ fontSize: 10, color: '#64748B' }}>All times shown in your local time (AEST)</div>
           <div style={{ fontSize: 10, color: '#64748B', display: 'flex', alignItems: 'center', gap: 6 }}><RefreshIcon /> Data auto-refreshes every 5 minutes</div>
         </div>
-      </div>
 
-      {/* Edit Modal */}
-      {editModal && (
-        <div className="wh-modal-backdrop" onClick={() => setEditModal(null)}>
-          <div className="wh-modal" onClick={e => e.stopPropagation()}>
-            <div className="wh-modal-head">
-              <h2 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#0F172A' }}>Edit Warehouse</h2>
-              <button onClick={() => setEditModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B', fontSize: 18 }}>&times;</button>
-            </div>
-            <div className="wh-modal-body">
-              <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 6 }}>Warehouse Name</label>
-                <input type="text" value={editModal.name} onChange={e => setEditModal({ ...editModal, name: e.target.value })} className="wh-input" />
-              </div>
-              <div className="wh-modal-grid">
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 6 }}>Warehouse Code</label>
-                  <input type="text" value={editModal.code} onChange={e => setEditModal({ ...editModal, code: e.target.value })} className="wh-input" />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 6 }}>Status</label>
-                  <select value={editModal.status} onChange={e => setEditModal({ ...editModal, status: e.target.value })} className="wh-input">
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 6 }}>Branch / Location</label>
-                <input type="text" value={editModal.branch} onChange={e => setEditModal({ ...editModal, branch: e.target.value })} className="wh-input" />
-              </div>
-            </div>
-            <div className="wh-modal-foot">
-              <button onClick={() => setEditModal(null)} className="wh-btn">Cancel</button>
-              <button onClick={() => { const nl = [...whList]; nl[editModal.index] = { ...nl[editModal.index], ...editModal }; setWhList(nl); setEditModal(null); }} className="wh-btn wh-btn-primary">Save Changes</button>
-            </div>
-          </div>
-        </div>
-      )}
+        {renderEditModal()}
+      </div>
     </>
   );
 }

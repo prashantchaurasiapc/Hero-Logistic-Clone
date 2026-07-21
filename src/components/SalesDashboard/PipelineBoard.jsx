@@ -25,6 +25,16 @@ export default function PipelineBoard() {
   const [showProposalModal, setShowProposalModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showRecommendModal, setShowRecommendModal] = useState(false);
+  const [showConvertModal, setShowConvertModal] = useState(false);
+  const [convertStep, setConvertStep] = useState(1);
+  const [convertForm, setConvertForm] = useState({
+    companyName: '',
+    adminName: '',
+    adminEmail: '',
+    planTier: 'Enterprise ($1,500/mo)',
+    billingCycle: 'Monthly Auto-Bill',
+    fleetLimit: '50 Trucks'
+  });
   const [isMarkedWon, setIsMarkedWon] = useState(false);
   const [modalForm, setModalForm] = useState({
     company: '',
@@ -405,15 +415,15 @@ export default function PipelineBoard() {
 
             {/* Scrollable Tabs */}
             <div className="px-6 border-b border-slate-100 mb-6 shrink-0">
-              <div className="flex items-center gap-5 overflow-x-auto scrollbar-none pb-3">
+              <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar pb-3 pt-1">
                 {['Overview', 'Timeline', 'Contacts', 'Meetings', 'Calls', 'Emails', 'Tasks', 'Notes', 'Documents', 'Demo', 'Trial', 'Proposals'].map(tab => (
                   <button
                     key={tab}
                     onClick={() => setInspectorTab(tab)}
-                    className={`whitespace-nowrap text-[11px] font-black transition-all cursor-pointer ${
+                    className={`whitespace-nowrap text-[11px] font-extrabold transition-all cursor-pointer shrink-0 rounded-xl ${
                       inspectorTab === tab 
-                        ? 'bg-[#FACC15] text-black px-4 py-2 rounded-xl shadow-xs' 
-                        : 'text-slate-500 hover:text-slate-900 py-2'
+                        ? 'bg-[#FACC15] text-black px-3.5 py-1.5 shadow-xs' 
+                        : 'text-slate-500 hover:text-slate-900 px-3.5 py-1.5 hover:bg-slate-100'
                     }`}
                   >
                     {tab}
@@ -530,19 +540,182 @@ export default function PipelineBoard() {
 
           {/* Footer */}
           <div className="px-6 py-5 bg-white border-t border-slate-200 shrink-0 flex gap-3">
-            {isMarkedWon && (
-              <button 
-                className="flex-1 bg-[#10b981] text-white text-[13px] font-bold rounded-xl py-3.5 hover:bg-[#059669] transition-colors shadow-sm cursor-pointer"
-              >
-                Convert to Company Account
-              </button>
-            )}
+            <button 
+              onClick={() => {
+                setConvertStep(1);
+                setConvertForm({
+                  companyName: selectedLead.company,
+                  adminName: selectedLead.name,
+                  adminEmail: selectedLead.email,
+                  planTier: 'Enterprise ($1,500/mo)',
+                  billingCycle: 'Monthly Auto-Bill',
+                  fleetLimit: `${selectedLead.fleetSize || 20} Trucks`
+                });
+                setShowConvertModal(true);
+              }}
+              className="flex-1 bg-[#10b981] hover:bg-[#059669] text-white text-[13px] font-extrabold rounded-xl py-3.5 shadow-sm transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-2"
+            >
+              <Check className="w-4 h-4 stroke-[3px]" /> Convert to Company Account
+            </button>
             <button 
               onClick={() => { setSelectedLead(null); setIsMarkedWon(false); }}
-              className="px-6 py-3.5 bg-white border border-slate-200 text-slate-800 text-[13px] font-bold rounded-xl hover:bg-slate-50 transition-colors shadow-sm cursor-pointer"
+              className="px-5 py-3.5 bg-white border border-slate-200 text-slate-800 text-[13px] font-bold rounded-xl hover:bg-slate-50 transition-colors shadow-sm cursor-pointer"
             >
               Close
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Convert to Company Account Provisioning Modal */}
+      {showConvertModal && selectedLead && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden flex flex-col text-left">
+            {/* Modal Header */}
+            <div className="px-6 py-5 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-950 text-white flex justify-between items-center border-b border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-400 font-extrabold">
+                  <Building className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-base font-black tracking-tight text-white">Convert to Company Account</h2>
+                  <p className="text-[11px] font-medium text-emerald-300">Step {convertStep} of 3: Provision Tenant Workspace</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowConvertModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-xl hover:bg-white/10 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Stepper Progress */}
+            <div className="grid grid-cols-3 bg-slate-100 border-b border-slate-200 text-[10px] font-black uppercase tracking-wider text-center py-2.5 px-6 gap-2">
+              <div className={`py-1 rounded-lg ${convertStep === 1 ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-500'}`}>1. Tenant Setup</div>
+              <div className={`py-1 rounded-lg ${convertStep === 2 ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-500'}`}>2. Admin Account</div>
+              <div className={`py-1 rounded-lg ${convertStep === 3 ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-500'}`}>3. Final Handover</div>
+            </div>
+
+            {/* Step Content */}
+            <div className="p-6 space-y-5 text-xs font-bold text-slate-700">
+              {convertStep === 1 && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">COMPANY LEGAL NAME</label>
+                    <input 
+                      type="text" 
+                      value={convertForm.companyName}
+                      onChange={e => setConvertForm({ ...convertForm, companyName: e.target.value })}
+                      className="w-full border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold text-slate-900 focus:outline-none focus:border-emerald-500 bg-slate-50"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">ASSIGNED LICENSE TIER</label>
+                      <select 
+                        value={convertForm.planTier}
+                        onChange={e => setConvertForm({ ...convertForm, planTier: e.target.value })}
+                        className="w-full border border-slate-200 rounded-xl px-3 py-3 text-xs font-bold text-slate-900 focus:outline-none focus:border-emerald-500 bg-white cursor-pointer"
+                      >
+                        <option>Starter ($199/mo)</option>
+                        <option>Professional ($499/mo)</option>
+                        <option>Enterprise ($1,500/mo)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">FLEET LIMIT</label>
+                      <input 
+                        type="text" 
+                        value={convertForm.fleetLimit}
+                        onChange={e => setConvertForm({ ...convertForm, fleetLimit: e.target.value })}
+                        className="w-full border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold text-slate-900 focus:outline-none focus:border-emerald-500 bg-slate-50"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {convertStep === 2 && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">SUPER ADMIN FULL NAME</label>
+                    <input 
+                      type="text" 
+                      value={convertForm.adminName}
+                      onChange={e => setConvertForm({ ...convertForm, adminName: e.target.value })}
+                      className="w-full border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold text-slate-900 focus:outline-none focus:border-emerald-500 bg-slate-50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">SUPER ADMIN EMAIL ADDRESS</label>
+                    <input 
+                      type="email" 
+                      value={convertForm.adminEmail}
+                      onChange={e => setConvertForm({ ...convertForm, adminEmail: e.target.value })}
+                      className="w-full border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold text-slate-900 focus:outline-none focus:border-emerald-500 bg-slate-50"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {convertStep === 3 && (
+                <div className="space-y-4">
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 space-y-2">
+                    <div className="flex items-center gap-2 text-emerald-800 font-extrabold text-xs">
+                      <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                      Ready to Provision Tenant Workspace
+                    </div>
+                    <p className="text-[11px] font-medium text-emerald-700 leading-relaxed">
+                      Converting <strong className="text-slate-900">{convertForm.companyName}</strong> into an active Company Tenant on Hero-Logistics. An automated onboarding welcome package will be dispatched to <strong>{convertForm.adminEmail}</strong>.
+                    </p>
+                  </div>
+                  
+                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs font-bold text-slate-700 space-y-1.5">
+                    <p className="flex justify-between"><span>Tenant Company:</span> <strong className="text-slate-900">{convertForm.companyName}</strong></p>
+                    <p className="flex justify-between"><span>License Tier:</span> <strong className="text-emerald-700">{convertForm.planTier}</strong></p>
+                    <p className="flex justify-between"><span>Super Admin:</span> <strong className="text-slate-900">{convertForm.adminName} ({convertForm.adminEmail})</strong></p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Actions */}
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-between items-center">
+              {convertStep > 1 ? (
+                <button 
+                  onClick={() => setConvertStep(prev => prev - 1)}
+                  className="px-4 py-2.5 border border-slate-200 bg-white rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  Back
+                </button>
+              ) : <div></div>}
+
+              {convertStep < 3 ? (
+                <button 
+                  onClick={() => setConvertStep(prev => prev + 1)}
+                  className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold transition-all cursor-pointer shadow-xs active:scale-95"
+                >
+                  Next Step &rarr;
+                </button>
+              ) : (
+                <button 
+                  onClick={() => {
+                    crmWorkflowEngine.handleStageChange(selectedLead.id, 'Won', 'Converted to Company Tenant');
+                    setShowConvertModal(false);
+                    setSelectedLead(null);
+                    setToast({
+                      type: 'success',
+                      text: convertForm.companyName,
+                      actionText: 'successfully converted to active Company Tenant!'
+                    });
+                  }}
+                  className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold transition-all cursor-pointer shadow-md active:scale-95 flex items-center gap-2"
+                >
+                  <Check className="w-4 h-4 stroke-[3px]" /> Complete Conversion & Provision Account
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}

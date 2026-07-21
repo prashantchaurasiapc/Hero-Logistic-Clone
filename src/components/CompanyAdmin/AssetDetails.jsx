@@ -238,7 +238,7 @@ export default function AssetDetails({ assetData, onBack }) {
   };
 
   return (
-    <div className="flex-grow bg-[#F8FAFC] p-4 sm:p-6 w-full text-left font-sans custom-scrollbar overflow-y-auto min-h-screen relative" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
+    <div className="flex-grow bg-[#F8FAFC] p-4 sm:p-6 pb-32 sm:pb-10 w-full text-left font-sans custom-scrollbar overflow-y-auto min-h-screen relative" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
 
       {/* TOAST NOTIFICATION */}
       {showToast && (
@@ -710,9 +710,10 @@ export default function AssetDetails({ assetData, onBack }) {
 
       {/* MAIN SECTION BELOW TABS: TAB 1 - OVERVIEW */}
       {activeTab === 'Overview' && (
-        <div className="flex flex-col xl:flex-row gap-6">
+        <div className="space-y-6">
+          <div className="flex flex-col xl:flex-row gap-6">
 
-          {/* LEFT MAIN COLUMN */}
+            {/* LEFT MAIN COLUMN */}
           <div className="flex-1 space-y-6">
 
             {/* 1. ASSET OVERVIEW CARD */}
@@ -1041,73 +1042,6 @@ export default function AssetDetails({ assetData, onBack }) {
 
             </div>
 
-            {/* DEVELOPER NOTES - ASSET DETAILS */}
-            <div className="bg-purple-50/50 rounded-2xl border border-purple-100 p-6">
-              <h4 className="text-xs font-black text-purple-900 flex items-center gap-2 mb-4 uppercase tracking-widest">
-                <Info size={14} className="text-purple-600" /> DEVELOPER NOTES - ASSET DETAILS
-              </h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
-                <div>
-                  <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
-                    1. PURPOSE
-                  </div>
-                  <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
-                    <li>Detailed view of a single asset.</li>
-                    <li>Manage all asset related data.</li>
-                    <li>Track status, usage, compliance and costs.</li>
-                  </ul>
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
-                    2. KEY FEATURES
-                  </div>
-                  <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
-                    <li>Overview with key details.</li>
-                    <li>Tabs for complete asset lifecycle management.</li>
-                    <li>Quick access to maintenance and compliance.</li>
-                    <li>Activity log for audit trail.</li>
-                  </ul>
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
-                    3. AUTOMATION & ALERTS
-                  </div>
-                  <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
-                    <li>Auto-calculate next service due.</li>
-                    <li>AI alerts for expiry, maintenance and cost anomalies.</li>
-                    <li>Predict downtime based on usage patterns.</li>
-                    <li>AI scanning of uploaded documents.</li>
-                  </ul>
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
-                    4. PERMISSIONS
-                  </div>
-                  <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
-                    <li>Super Admin: Full access.</li>
-                    <li>Admin/Manager: Full access.</li>
-                    <li>Staff/Warehouse: View relevant assets only.</li>
-                    <li>Driver: View assets assigned (if allowed).</li>
-                  </ul>
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
-                    5. DATA SOURCES
-                  </div>
-                  <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
-                    <li>Assets module.</li>
-                    <li>Maintenance module.</li>
-                    <li>Compliance module.</li>
-                    <li>Usage from device / manual entry.</li>
-                  </ul>
-                </div>
-              </div>
-              <div className="mt-4 pt-3 border-t border-purple-100 flex justify-between items-center text-[9px] font-semibold text-slate-500">
-                <span>All times shown in your local time (AEST)</span>
-                <span className="flex items-center gap-1"><RefreshCw size={10} /> Data auto-refreshes every 5 minutes</span>
-              </div>
-            </div>
-
           </div>
 
           {/* RIGHT SIDEBAR COLUMN (BELOW TABS) */}
@@ -1261,15 +1195,83 @@ export default function AssetDetails({ assetData, onBack }) {
             </div>
 
           </div>
+          </div>
 
+          {/* DEVELOPER NOTES - ASSET DETAILS */}
+          <div className="bg-purple-50/50 rounded-2xl border border-purple-100 p-4 sm:p-6 shadow-sm">
+            <h4 className="text-xs font-black text-purple-900 flex items-center gap-2 mb-4 uppercase tracking-widest">
+              <Info size={14} className="text-purple-600 shrink-0" /> DEVELOPER NOTES - ASSET DETAILS
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
+              <div className="bg-white/60 sm:bg-transparent p-3.5 sm:p-0 rounded-xl border border-purple-100/60 sm:border-0">
+                <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
+                  1. PURPOSE
+                </div>
+                <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
+                  <li>Detailed view of a single asset.</li>
+                  <li>Manage all asset related data.</li>
+                  <li>Track status, usage, compliance and costs.</li>
+                </ul>
+              </div>
+              <div className="bg-white/60 sm:bg-transparent p-3.5 sm:p-0 rounded-xl border border-purple-100/60 sm:border-0">
+                <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
+                  2. KEY FEATURES
+                </div>
+                <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
+                  <li>Overview with key details.</li>
+                  <li>Tabs for complete asset lifecycle management.</li>
+                  <li>Quick access to maintenance and compliance.</li>
+                  <li>Activity log for audit trail.</li>
+                </ul>
+              </div>
+              <div className="bg-white/60 sm:bg-transparent p-3.5 sm:p-0 rounded-xl border border-purple-100/60 sm:border-0">
+                <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
+                  3. AUTOMATION & ALERTS
+                </div>
+                <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
+                  <li>Auto-calculate next service due.</li>
+                  <li>AI alerts for expiry, maintenance and cost anomalies.</li>
+                  <li>Predict downtime based on usage patterns.</li>
+                  <li>AI scanning of uploaded documents.</li>
+                </ul>
+              </div>
+              <div className="bg-white/60 sm:bg-transparent p-3.5 sm:p-0 rounded-xl border border-purple-100/60 sm:border-0">
+                <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
+                  4. PERMISSIONS
+                </div>
+                <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
+                  <li>Super Admin: Full access.</li>
+                  <li>Admin/Manager: Full access.</li>
+                  <li>Staff/Warehouse: View relevant assets only.</li>
+                  <li>Driver: View assets assigned (if allowed).</li>
+                </ul>
+              </div>
+              <div className="bg-white/60 sm:bg-transparent p-3.5 sm:p-0 rounded-xl border border-purple-100/60 sm:border-0">
+                <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
+                  5. DATA SOURCES
+                </div>
+                <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
+                  <li>Assets module.</li>
+                  <li>Maintenance module.</li>
+                  <li>Compliance module.</li>
+                  <li>Usage from device / manual entry.</li>
+                </ul>
+              </div>
+            </div>
+            <div className="mt-4 pt-3 border-t border-purple-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-[9px] font-semibold text-slate-500">
+              <span>All times shown in your local time (AEST)</span>
+              <span className="flex items-center gap-1"><RefreshCw size={10} /> Data auto-refreshes every 5 minutes</span>
+            </div>
+          </div>
         </div>
       )}
 
       {/* MAIN SECTION BELOW TABS: TAB 2 - ASSIGNMENTS & HISTORY (SCREENSHOT 2 & 3 MATCH) */}
       {activeTab === 'Assignments & History' && (
-        <div className="flex flex-col xl:flex-row gap-6">
+        <div className="space-y-6">
+          <div className="flex flex-col xl:flex-row gap-6">
 
-          {/* LEFT MAIN COLUMN */}
+            {/* LEFT MAIN COLUMN */}
           <div className="flex-1 space-y-6">
 
             {/* INNER SUB-TABS HEADER */}
@@ -1301,7 +1303,7 @@ export default function AssetDetails({ assetData, onBack }) {
                   CURRENT ASSIGNMENT
                 </h3>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 bg-slate-50/60 p-4 rounded-xl border border-slate-100 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 bg-slate-50/60 p-4 rounded-xl border border-slate-100 text-xs">
                   <div>
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Assigned To</span>
                     <span className="font-bold text-slate-900 block">{asset.assignedTo}</span>
@@ -1372,45 +1374,45 @@ export default function AssetDetails({ assetData, onBack }) {
 
                 {/* TABLE */}
                 <div className="overflow-x-auto border border-slate-200 rounded-xl">
-                  <table className="w-full text-left text-xs border-collapse">
+                  <table className="w-full text-left text-xs border-collapse min-w-[950px]">
                     <thead>
                       <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-black text-slate-500 uppercase tracking-wider">
-                        <th className="p-3">Assignment ID</th>
-                        <th className="p-3">Assigned To</th>
-                        <th className="p-3">Branch / Location</th>
-                        <th className="p-3">Purpose</th>
-                        <th className="p-3">Assigned By</th>
-                        <th className="p-3">From Date / Time</th>
-                        <th className="p-3">To Date / Time</th>
-                        <th className="p-3">Duration</th>
-                        <th className="p-3">Status</th>
-                        <th className="p-3 text-center">Actions</th>
+                        <th className="p-3 whitespace-nowrap">Assignment ID</th>
+                        <th className="p-3 whitespace-nowrap">Assigned To</th>
+                        <th className="p-3 whitespace-nowrap">Branch / Location</th>
+                        <th className="p-3 whitespace-nowrap">Purpose</th>
+                        <th className="p-3 whitespace-nowrap">Assigned By</th>
+                        <th className="p-3 whitespace-nowrap">From Date / Time</th>
+                        <th className="p-3 whitespace-nowrap">To Date / Time</th>
+                        <th className="p-3 whitespace-nowrap">Duration</th>
+                        <th className="p-3 whitespace-nowrap">Status</th>
+                        <th className="p-3 text-center whitespace-nowrap">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {filteredAssignments.map((asg) => (
                         <tr key={asg.id} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="p-3 font-bold text-purple-700">{asg.id}</td>
-                          <td className="p-3 font-bold text-slate-900">{asg.assignedTo}</td>
-                          <td className="p-3 font-semibold text-slate-700 whitespace-pre-line leading-tight">{asg.branchLocation}</td>
-                          <td className="p-3 font-semibold text-slate-700 whitespace-pre-line leading-tight">{asg.purpose}</td>
-                          <td className="p-3">
+                          <td className="p-3 font-bold text-purple-700 whitespace-nowrap">{asg.id}</td>
+                          <td className="p-3 font-bold text-slate-900 whitespace-nowrap">{asg.assignedTo}</td>
+                          <td className="p-3 font-semibold text-slate-700 whitespace-nowrap leading-tight">{asg.branchLocation}</td>
+                          <td className="p-3 font-semibold text-slate-700 whitespace-nowrap leading-tight">{asg.purpose}</td>
+                          <td className="p-3 whitespace-nowrap">
                             <div className="flex items-center gap-1.5">
                               <span className="w-5 h-5 rounded-full bg-slate-200 text-[9px] font-black text-slate-700 flex items-center justify-center shrink-0">{asg.assignedByAvatar}</span>
-                              <span className="font-bold text-slate-900">{asg.assignedBy}</span>
+                              <span className="font-bold text-slate-900 whitespace-nowrap">{asg.assignedBy}</span>
                             </div>
                           </td>
-                          <td className="p-3 font-medium text-slate-700 whitespace-pre-line leading-tight">{asg.fromDate}</td>
-                          <td className="p-3 font-medium text-slate-700 whitespace-pre-line leading-tight">{asg.toDate}</td>
-                          <td className="p-3 font-medium text-slate-700 whitespace-pre-line leading-tight">{asg.duration}</td>
-                          <td className="p-3">
+                          <td className="p-3 font-medium text-slate-700 whitespace-nowrap leading-tight">{asg.fromDate}</td>
+                          <td className="p-3 font-medium text-slate-700 whitespace-nowrap leading-tight">{asg.toDate}</td>
+                          <td className="p-3 font-medium text-slate-700 whitespace-nowrap leading-tight">{asg.duration}</td>
+                          <td className="p-3 whitespace-nowrap">
                             {asg.status === 'Current' ? (
                               <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded text-[9px] font-black uppercase tracking-wider">Current</span>
                             ) : (
                               <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[9px] font-black uppercase tracking-wider">Completed</span>
                             )}
                           </td>
-                          <td className="p-3">
+                          <td className="p-3 whitespace-nowrap">
                             <div className="flex items-center justify-center gap-1.5">
                               <button className="text-slate-400 hover:text-purple-600 p-1 cursor-pointer"><Eye size={14} /></button>
                               <button className="text-slate-400 hover:text-purple-600 p-1 cursor-pointer"><MoreHorizontal size={14} /></button>
@@ -1437,73 +1439,6 @@ export default function AssetDetails({ assetData, onBack }) {
                   </div>
                 </div>
 
-              </div>
-            </div>
-
-            {/* DEVELOPER NOTES - ASSET ASSIGNMENTS & HISTORY CARD */}
-            <div className="bg-purple-50/50 rounded-2xl border border-purple-100 p-6">
-              <h4 className="text-xs font-black text-purple-900 flex items-center gap-2 mb-4 uppercase tracking-widest">
-                <Info size={14} className="text-purple-600" /> DEVELOPER NOTES - ASSET ASSIGNMENTS & HISTORY
-              </h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
-                <div>
-                  <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
-                    1. PURPOSE
-                  </div>
-                  <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
-                    <li>Track current and past assignments.</li>
-                    <li>Monitor usage, transfer and return history.</li>
-                    <li>Ensure full asset accountability.</li>
-                  </ul>
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
-                    2. KEY FEATURES
-                  </div>
-                  <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
-                    <li>Current assignment with expected return.</li>
-                    <li>Complete assignment and transfer history.</li>
-                    <li>Utilisation and usage summary.</li>
-                    <li>Upcoming assignments and calendar view.</li>
-                  </ul>
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
-                    3. AUTOMATION & ALERTS
-                  </div>
-                  <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
-                    <li>Notify on overdue returns.</li>
-                    <li>Reminder before scheduled assignments.</li>
-                    <li>Auto-update usage hours from telematics.</li>
-                    <li>AI insights for idle or underutilised assets.</li>
-                  </ul>
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
-                    4. PERMISSIONS
-                  </div>
-                  <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
-                    <li>Super Admin: Full access.</li>
-                    <li>Admin/Manager: Create, edit, assign.</li>
-                    <li>Dispatch: Assign & view assignments.</li>
-                    <li>Staff: View assigned assets only.</li>
-                  </ul>
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
-                    5. DATA SOURCES
-                  </div>
-                  <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
-                    <li>Assets module.</li>
-                    <li>Assignments & Transfers.</li>
-                    <li>Live Tracking / Telematics.</li>
-                    <li>Maintenance module.</li>
-                  </ul>
-                </div>
-              </div>
-              <div className="mt-4 pt-3 border-t border-purple-100 flex justify-between items-center text-[9px] font-semibold text-slate-500">
-                <span>All times shown in your local time (AEST)</span>
-                <span className="flex items-center gap-1"><RefreshCw size={10} /> Data auto-refreshes every 5 minutes</span>
               </div>
             </div>
 
@@ -1596,7 +1531,74 @@ export default function AssetDetails({ assetData, onBack }) {
             </div>
 
           </div>
+          </div>
 
+          {/* DEVELOPER NOTES - ASSET ASSIGNMENTS & HISTORY CARD */}
+          <div className="bg-purple-50/50 rounded-2xl border border-purple-100 p-4 sm:p-6 shadow-sm">
+            <h4 className="text-xs font-black text-purple-900 flex items-center gap-2 mb-4 uppercase tracking-widest">
+              <Info size={14} className="text-purple-600 shrink-0" /> DEVELOPER NOTES - ASSET ASSIGNMENTS & HISTORY
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
+              <div className="bg-white/60 sm:bg-transparent p-3.5 sm:p-0 rounded-xl border border-purple-100/60 sm:border-0">
+                <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
+                  1. PURPOSE
+                </div>
+                <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
+                  <li>Track current and past assignments.</li>
+                  <li>Monitor usage, transfer and return history.</li>
+                  <li>Ensure full asset accountability.</li>
+                </ul>
+              </div>
+              <div className="bg-white/60 sm:bg-transparent p-3.5 sm:p-0 rounded-xl border border-purple-100/60 sm:border-0">
+                <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
+                  2. KEY FEATURES
+                </div>
+                <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
+                  <li>Current assignment with expected return.</li>
+                  <li>Complete assignment and transfer history.</li>
+                  <li>Utilisation and usage summary.</li>
+                  <li>Upcoming assignments and calendar view.</li>
+                </ul>
+              </div>
+              <div className="bg-white/60 sm:bg-transparent p-3.5 sm:p-0 rounded-xl border border-purple-100/60 sm:border-0">
+                <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
+                  3. AUTOMATION & ALERTS
+                </div>
+                <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
+                  <li>Notify on overdue returns.</li>
+                  <li>Reminder before scheduled assignments.</li>
+                  <li>Auto-update usage hours from telematics.</li>
+                  <li>AI insights for idle or underutilised assets.</li>
+                </ul>
+              </div>
+              <div className="bg-white/60 sm:bg-transparent p-3.5 sm:p-0 rounded-xl border border-purple-100/60 sm:border-0">
+                <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
+                  4. PERMISSIONS
+                </div>
+                <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
+                  <li>Super Admin: Full access.</li>
+                  <li>Admin/Manager: Create, edit, assign.</li>
+                  <li>Dispatch: Assign & view assignments.</li>
+                  <li>Staff: View assigned assets only.</li>
+                </ul>
+              </div>
+              <div className="bg-white/60 sm:bg-transparent p-3.5 sm:p-0 rounded-xl border border-purple-100/60 sm:border-0">
+                <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
+                  5. DATA SOURCES
+                </div>
+                <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
+                  <li>Assets module.</li>
+                  <li>Assignments & Transfers.</li>
+                  <li>Live Tracking / Telematics.</li>
+                  <li>Maintenance module.</li>
+                </ul>
+              </div>
+            </div>
+            <div className="mt-4 pt-3 border-t border-purple-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-[9px] font-semibold text-slate-500">
+              <span>All times shown in your local time (AEST)</span>
+              <span className="flex items-center gap-1"><RefreshCw size={10} /> Data auto-refreshes every 5 minutes</span>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1661,59 +1663,59 @@ export default function AssetDetails({ assetData, onBack }) {
                   <table className="w-full text-left border-collapse min-w-[1000px]">
                     <thead>
                       <tr className="border-b border-slate-100 bg-slate-50/50">
-                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider">Task / Maintenance</th>
-                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider">Type</th>
-                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider">Priority</th>
-                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider">Frequency / Interval</th>
-                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider">Last Performed</th>
-                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider">Next Due</th>
-                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider">Status</th>
-                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider">Days Remaining</th>
-                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider">Assigned To</th>
-                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider text-center">Actions</th>
+                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Task / Maintenance</th>
+                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Type</th>
+                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Priority</th>
+                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Frequency / Interval</th>
+                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Last Performed</th>
+                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Next Due</th>
+                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Status</th>
+                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Days Remaining</th>
+                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Assigned To</th>
+                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider text-center whitespace-nowrap">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {mockMaintenanceTasks.map((task, idx) => (
                         <tr key={idx} className="border-b border-slate-50 hover:bg-slate-50/80 transition-colors">
-                          <td className="px-5 py-3.5">
+                          <td className="px-5 py-3.5 whitespace-nowrap">
                             <h4 className="text-[11px] font-bold text-slate-800">{task.task}</h4>
                             <p className="text-[10px] font-medium text-slate-500 mt-0.5">{task.desc}</p>
                           </td>
-                          <td className="px-5 py-3.5">
+                          <td className="px-5 py-3.5 whitespace-nowrap">
                             <span className={`text-[11px] font-bold ${task.type === 'Service' ? 'text-purple-600' : 'text-amber-500'}`}>
                               {task.type}
                             </span>
                           </td>
-                          <td className="px-5 py-3.5">
+                          <td className="px-5 py-3.5 whitespace-nowrap">
                             <span className={`text-[11px] font-bold ${task.priority === 'High' ? 'text-rose-500' : task.priority === 'Medium' ? 'text-amber-500' : 'text-emerald-500'}`}>
                               {task.priority}
                             </span>
                           </td>
-                          <td className="px-5 py-3.5 text-[11px] font-semibold text-slate-700">{task.freq}</td>
-                          <td className="px-5 py-3.5">
+                          <td className="px-5 py-3.5 text-[11px] font-semibold text-slate-700 whitespace-nowrap">{task.freq}</td>
+                          <td className="px-5 py-3.5 whitespace-nowrap">
                             <span className="text-[11px] font-semibold text-slate-700 block">{task.lastDate}</span>
                             {task.lastHrs && <span className="text-[10px] font-semibold text-slate-500 block">@ {task.lastHrs}</span>}
                           </td>
-                          <td className="px-5 py-3.5">
+                          <td className="px-5 py-3.5 whitespace-nowrap">
                             <span className="text-[11px] font-semibold text-slate-700 block">{task.nextDate}</span>
                             {task.nextHrs && <span className="text-[10px] font-semibold text-slate-500 block">@ {task.nextHrs}</span>}
                           </td>
-                          <td className="px-5 py-3.5">
+                          <td className="px-5 py-3.5 whitespace-nowrap">
                             <span className={`text-[10px] font-bold ${task.status === 'Due Soon' ? 'text-amber-500' : task.status === 'Scheduled' ? 'text-blue-500' : 'text-emerald-500'}`}>
                               {task.status}
                             </span>
                           </td>
-                          <td className="px-5 py-3.5">
+                          <td className="px-5 py-3.5 whitespace-nowrap">
                             <span className={`text-[10px] font-bold ${task.daysRemaining === 'Completed' ? 'text-emerald-500' : task.daysRemaining.includes('18') ? 'text-amber-500' : 'text-blue-500'}`}>
                               {task.daysRemaining}
                             </span>
                           </td>
-                          <td className="px-5 py-3.5">
+                          <td className="px-5 py-3.5 whitespace-nowrap">
                             <h4 className="text-[11px] font-bold text-slate-800">{task.assigned}</h4>
                             {task.role && <p className="text-[10px] font-medium text-slate-500 mt-0.5">{task.role}</p>}
                           </td>
-                          <td className="px-5 py-3.5">
+                          <td className="px-5 py-3.5 whitespace-nowrap">
                             <div className="flex items-center justify-center gap-2">
                               <button className="text-slate-400 hover:text-slate-600 transition-colors p-1"><Eye size={14} /></button>
                               <button className="text-slate-400 hover:text-slate-600 transition-colors p-1"><MoreHorizontal size={14} /></button>
@@ -1901,7 +1903,7 @@ export default function AssetDetails({ assetData, onBack }) {
               <h3 className="text-[11px] font-black text-purple-700 uppercase tracking-widest">DEVELOPER NOTES - ASSET MAINTENANCE & SERVICE</h3>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-6 p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 p-4 sm:p-6">
               {/* Col 1 */}
               <div>
                 <h4 className="text-[11px] font-black text-slate-800 mb-3 flex items-center gap-2">
@@ -2042,21 +2044,21 @@ export default function AssetDetails({ assetData, onBack }) {
                   <table className="w-full text-left border-collapse min-w-[1000px]">
                     <thead>
                       <tr className="border-b border-slate-100 bg-slate-50/50">
-                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider">Document Name</th>
-                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider">Category</th>
-                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider">Document Type</th>
-                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider">Issue Date</th>
-                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider">Expiry Date</th>
-                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider">Status</th>
-                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider">Expiry Status</th>
-                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider">Uploaded By</th>
-                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider text-center">Actions</th>
+                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Document Name</th>
+                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Category</th>
+                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Document Type</th>
+                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Issue Date</th>
+                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Expiry Date</th>
+                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Status</th>
+                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Expiry Status</th>
+                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider whitespace-nowrap">Uploaded By</th>
+                        <th className="px-5 py-4 text-[10px] font-black text-slate-800 uppercase tracking-wider text-center whitespace-nowrap">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {assetDocuments.map((doc, idx) => (
                         <tr key={idx} className="border-b border-slate-50 hover:bg-slate-50/80 transition-colors">
-                          <td className="px-5 py-3.5">
+                          <td className="px-5 py-3.5 whitespace-nowrap">
                             <div className="flex items-start gap-3">
                               <div className="mt-0.5 text-purple-600 bg-purple-50 p-1.5 rounded"><FileIcon size={14} /></div>
                               <div>
@@ -2065,29 +2067,29 @@ export default function AssetDetails({ assetData, onBack }) {
                               </div>
                             </div>
                           </td>
-                          <td className="px-5 py-3.5">
+                          <td className="px-5 py-3.5 whitespace-nowrap">
                             <span className={`text-[11px] font-bold ${doc.category === 'Registration' ? 'text-blue-600' : doc.category === 'Maintenance' ? 'text-indigo-600' : doc.category === 'Inspection' ? 'text-teal-600' : doc.category === 'Licence' ? 'text-emerald-600' : doc.category === 'Insurance' ? 'text-cyan-600' : doc.category === 'Compliance' ? 'text-purple-600' : doc.category === 'Warranty' ? 'text-rose-600' : 'text-slate-600'}`}>
                               {doc.category}
                             </span>
                           </td>
-                          <td className="px-5 py-3.5 text-[11px] font-semibold text-slate-700">{doc.type}</td>
-                          <td className="px-5 py-3.5 text-[11px] font-semibold text-slate-700">{doc.issueDate}</td>
-                          <td className="px-5 py-3.5 text-[11px] font-semibold text-slate-700">{doc.expiryDate}</td>
-                          <td className="px-5 py-3.5">
+                          <td className="px-5 py-3.5 text-[11px] font-semibold text-slate-700 whitespace-nowrap">{doc.type}</td>
+                          <td className="px-5 py-3.5 text-[11px] font-semibold text-slate-700 whitespace-nowrap">{doc.issueDate}</td>
+                          <td className="px-5 py-3.5 text-[11px] font-semibold text-slate-700 whitespace-nowrap">{doc.expiryDate}</td>
+                          <td className="px-5 py-3.5 whitespace-nowrap">
                             <span className={`inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold tracking-widest uppercase border ${doc.status === 'Active' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-rose-50 text-rose-600 border-rose-200'}`}>
                               {doc.status}
                             </span>
                           </td>
-                          <td className="px-5 py-3.5">
+                          <td className="px-5 py-3.5 whitespace-nowrap">
                             <span className={`text-[10px] font-bold ${doc.expiryStatus === 'Compliant' ? 'text-emerald-500' : doc.expiryStatus === 'Expiring Soon' ? 'text-amber-500' : doc.expiryStatus === 'Expired' ? 'text-rose-500' : 'text-slate-400'}`}>
                               {doc.expiryStatus}
                             </span>
                           </td>
-                          <td className="px-5 py-3.5">
+                          <td className="px-5 py-3.5 whitespace-nowrap">
                             <h4 className="text-[11px] font-bold text-slate-800">{doc.uploader}</h4>
                             <p className="text-[10px] font-medium text-slate-500 mt-0.5">{doc.uploadDate}</p>
                           </td>
-                          <td className="px-5 py-3.5">
+                          <td className="px-5 py-3.5 whitespace-nowrap">
                             <div className="flex items-center justify-center gap-2">
                               <button className="text-slate-400 hover:text-slate-600 transition-colors p-1"><Eye size={14} /></button>
                               <button className="text-slate-400 hover:text-slate-600 transition-colors p-1"><Download size={14} /></button>
@@ -2295,7 +2297,7 @@ export default function AssetDetails({ assetData, onBack }) {
               <h3 className="text-[11px] font-black text-purple-700 uppercase tracking-widest">DEVELOPER NOTES - ASSET DOCUMENTS & COMPLIANCE</h3>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-6 p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 p-4 sm:p-6">
               {/* Col 1 */}
               <div>
                 <h4 className="text-[11px] font-black text-slate-800 mb-3 flex items-center gap-2">
@@ -2486,32 +2488,32 @@ export default function AssetDetails({ assetData, onBack }) {
                       <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Date</th>
                       <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Category</th>
                       <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Cost Type</th>
-                      <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest min-w-[160px]">Description</th>
+                      <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap min-w-[160px]">Description</th>
                       <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Reference / Invoice</th>
                       <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Branch / Location</th>
                       <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Amount (AUD)</th>
                       <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Tax (AUD)</th>
                       <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Total (AUD)</th>
-                      <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Actions</th>
+                      <th className="px-4 py-3 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center whitespace-nowrap">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {costsData.map((row, idx) => (
                       <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50 transition-colors group">
                         <td className="px-4 py-3 text-[11px] font-semibold text-slate-700 whitespace-nowrap">{row.date}</td>
-                        <td className="px-4 py-3 text-[11px]">
+                        <td className="px-4 py-3 text-[11px] whitespace-nowrap">
                           <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${row.color === 'purple' ? 'bg-purple-50 text-purple-600' : row.color === 'emerald' ? 'bg-emerald-50 text-emerald-600' : row.color === 'blue' ? 'bg-blue-50 text-blue-600' : row.color === 'orange' ? 'bg-orange-50 text-orange-600' : 'bg-slate-100 text-slate-600'}`}>
                             {row.category}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-[11px] font-semibold text-slate-700 whitespace-nowrap">{row.type}</td>
-                        <td className="px-4 py-3 text-[11px] font-semibold text-slate-800">{row.desc}</td>
+                        <td className="px-4 py-3 text-[11px] font-semibold text-slate-800 whitespace-nowrap">{row.desc}</td>
                         <td className="px-4 py-3 text-[11px] font-semibold text-slate-700 whitespace-nowrap">{row.ref}</td>
                         <td className="px-4 py-3 text-[11px] font-semibold text-slate-600 whitespace-nowrap">{row.loc}</td>
                         <td className="px-4 py-3 text-[11px] font-semibold text-slate-900 whitespace-nowrap">{row.amount}</td>
                         <td className="px-4 py-3 text-[11px] font-semibold text-slate-500 whitespace-nowrap">{row.tax}</td>
                         <td className="px-4 py-3 text-[11px] font-black text-slate-900 whitespace-nowrap">{row.total}</td>
-                        <td className="px-4 py-3 text-center">
+                        <td className="px-4 py-3 text-center whitespace-nowrap">
                           <button className="p-1 rounded text-slate-400 hover:text-purple-600 hover:bg-purple-50 transition-colors">
                             <MoreHorizontal size={14} />
                           </button>
@@ -2816,7 +2818,7 @@ export default function AssetDetails({ assetData, onBack }) {
               <h3 className="text-[11px] font-black text-purple-700 uppercase tracking-widest">DEVELOPER NOTES - ASSET COSTS & DEPRECIATION</h3>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-6 p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 p-4 sm:p-6">
               {/* Col 1 */}
               <div>
                 <h4 className="text-[11px] font-black text-slate-800 mb-3 flex items-center gap-2">

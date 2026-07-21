@@ -28,6 +28,7 @@ const Vehicles = () => {
   const [statusFilter, setStatusFilter] = React.useState('ALL');
   const [sortBy, setSortBy] = React.useState('id');
   const [viewMode, setViewMode] = React.useState('list'); // 'list' | 'grid'
+  const [editVehicleModal, setEditVehicleModal] = React.useState(null);
 
   // Add/Edit Modals state
   const [showAddModal, setShowAddModal] = React.useState(false);
@@ -2422,7 +2423,7 @@ const Vehicles = () => {
                      </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                     {vehicles.map((v, i) => (
+                     {filteredVehicles.map((v, i) => (
                         <tr key={i} onClick={() => setManagingVehicle(v)} className="hover:bg-gray-50/50 transition-colors cursor-pointer">
                            <td className="py-3 px-4">
                               <div className="flex items-center gap-3">
@@ -2469,10 +2470,11 @@ const Vehicles = () => {
                               <div className={`text-[12px] font-bold whitespace-nowrap ${v.compliance === 'Overdue' ? 'text-red-600' : 'text-gray-900'}`}>{v.nextServiceDate}</div>
                               <div className={`text-[10px] font-medium whitespace-nowrap ${v.compliance === 'Overdue' ? 'text-red-500' : v.compliance === 'Expiring Soon' ? 'text-orange-500' : 'text-green-500'}`}>{v.nextServiceDays}</div>
                            </td>
-                           <td className="py-3 px-4">
-                              <div className="flex items-center justify-center gap-2 text-purple-700">
-                                 <button onClick={() => setManagingVehicle(v)} className="p-1 hover:bg-purple-50 rounded cursor-pointer"><Eye size={16} /></button>
-                                 <button className="p-1 hover:bg-purple-50 rounded cursor-pointer"><MoreVertical size={16} /></button>
+                           <td className="py-3 px-4 text-center" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex items-center justify-center gap-1.5">
+                                 <button onClick={() => setManagingVehicle(v)} title="View Vehicle Details" className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"><Eye size={13} /></button>
+                                 <button onClick={() => setEditVehicleModal(v)} title="Edit Vehicle" className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"><Edit size={13} /></button>
+                                 <button onClick={() => { if (window.confirm(`Delete vehicle ${v.id}?`)) deleteVehicle(v.id); }} title="Delete Vehicle" className="w-7 h-7 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"><Trash2 size={13} /></button>
                               </div>
                            </td>
                         </tr>
@@ -2641,6 +2643,73 @@ const Vehicles = () => {
             <span>Data auto-refreshes every 5 minutes</span>
          </div>
       </div>
+
+      {/* EDIT VEHICLE MODAL */}
+      {editVehicleModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4" onClick={() => setEditVehicleModal(null)}>
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-150" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-2">
+                <Edit size={16} className="text-purple-600" /> Edit Vehicle ({editVehicleModal.id})
+              </h3>
+              <button onClick={() => setEditVehicleModal(null)} className="text-slate-400 hover:text-slate-600 text-lg font-bold cursor-pointer">&times;</button>
+            </div>
+            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Make / Model *</label>
+                  <input type="text" value={editVehicleModal.make || ''} onChange={e => setEditVehicleModal({...editVehicleModal, make: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Registration *</label>
+                  <input type="text" value={editVehicleModal.reg || ''} onChange={e => setEditVehicleModal({...editVehicleModal, reg: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Vehicle Type</label>
+                  <input type="text" value={editVehicleModal.type || ''} onChange={e => setEditVehicleModal({...editVehicleModal, type: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Year</label>
+                  <input type="text" value={editVehicleModal.year || ''} onChange={e => setEditVehicleModal({...editVehicleModal, year: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Status</label>
+                  <select value={editVehicleModal.status || 'ACTIVE'} onChange={e => setEditVehicleModal({...editVehicleModal, status: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold bg-white cursor-pointer">
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="MAINTENANCE">MAINTENANCE</option>
+                    <option value="OUT OF SERVICE">OUT OF SERVICE</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Branch / Depot</label>
+                  <input type="text" value={editVehicleModal.branch || ''} onChange={e => setEditVehicleModal({...editVehicleModal, branch: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Current Driver</label>
+                  <input type="text" value={editVehicleModal.driver || ''} onChange={e => setEditVehicleModal({...editVehicleModal, driver: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Odometer</label>
+                  <input type="text" value={editVehicleModal.odometer || ''} onChange={e => setEditVehicleModal({...editVehicleModal, odometer: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-2">
+              <button onClick={() => setEditVehicleModal(null)} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 font-bold hover:bg-white text-xs cursor-pointer">Cancel</button>
+              <button onClick={() => {
+                setVehicles(prev => prev.map(v => v.id === editVehicleModal.id ? editVehicleModal : v));
+                setEditVehicleModal(null);
+              }} className="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 text-xs shadow-sm cursor-pointer">Save Changes</button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

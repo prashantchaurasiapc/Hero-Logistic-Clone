@@ -321,12 +321,6 @@ export default function Leads() {
             )}
           </div>
 
-          {/* Notifications Indicator Bell */}
-          <button className="bg-white hover:bg-slate-50 border border-slate-200 rounded-xl p-2 text-slate-500 hover:text-slate-800 cursor-pointer relative shadow-xs shrink-0">
-            <Bell className="w-4 h-4" />
-            <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-rose-500 border-2 border-white"></span>
-          </button>
-
           {/* Add New Lead button */}
           <button 
             onClick={openAddModal}

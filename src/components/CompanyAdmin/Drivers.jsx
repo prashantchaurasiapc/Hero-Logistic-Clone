@@ -8,7 +8,7 @@ import {
   Settings, User, MapPin, Briefcase, ChevronUp, Target, CheckSquare, Shield, UploadCloud,
   Edit2, MessageSquare, ShieldCheck, Activity, XCircle, Plus, ArrowRight,
   TrendingUp, Award, Zap, FileText as FileIcon, FileCheck, Star, ThumbsUp, CheckCircle, BarChart2,
-  Eye, Trash2, Printer, Search as SearchIcon
+  Eye, Trash2, Printer, Search as SearchIcon, Edit
 } from 'lucide-react';
 
 const mockDrivers = [
@@ -38,6 +38,8 @@ const mockDocuments = [
 ];
 
 export default function Drivers() {
+  const [driverList, setDriverList] = useState(mockDrivers);
+  const [editDriverModal, setEditDriverModal] = useState(null);
   const [selectedDriver, setSelectedDriver] = useState(null);
   const [showAddDriver, setShowAddDriver] = useState(false);
   const [activeTab, setActiveTab] = useState('Overview');
@@ -92,7 +94,7 @@ export default function Drivers() {
     setBranchFilter('All');
   };
 
-  const filteredDrivers = mockDrivers.filter(driver => {
+  const filteredDrivers = driverList.filter(driver => {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       if (!driver.name.toLowerCase().includes(query) && 
@@ -422,7 +424,7 @@ export default function Drivers() {
   }
 
   if (selectedDriver) {
-    const currentDriverIndex = mockDrivers.findIndex(d => d.id === selectedDriver.id);
+    const currentDriverIndex = driverList.findIndex(d => d.id === selectedDriver.id);
     return (
       <div className="flex-grow bg-[#F8FAFC] w-full text-left font-sans custom-scrollbar overflow-y-auto">
         <div className="p-4 sm:p-6 max-w-[1400px] mx-auto pb-20">
@@ -1040,12 +1042,24 @@ export default function Drivers() {
                               </span>
                             </td>
                             <td className="px-4 py-3.5 text-center">
-                              <div className="flex items-center justify-center gap-2">
-                                <button className="text-purple-600 hover:text-purple-800 transition-colors p-1 rounded hover:bg-purple-50 cursor-pointer">
-                                  <Download size={14} />
+                              <div className="flex items-center justify-center gap-1.5">
+                                <button 
+                                  title="View Document"
+                                  className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"
+                                >
+                                  <Eye size={13} />
                                 </button>
-                                <button className="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded hover:bg-slate-50 cursor-pointer">
-                                  <MoreVertical size={14} />
+                                <button 
+                                  title="Edit Document"
+                                  className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"
+                                >
+                                  <Edit2 size={13} />
+                                </button>
+                                <button 
+                                  title="Delete Document"
+                                  className="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"
+                                >
+                                  <Trash2 size={13} />
                                 </button>
                               </div>
                             </td>
@@ -1631,9 +1645,9 @@ export default function Drivers() {
                           </td>
                           <td className="px-4 py-3 text-center">
                             <div className="flex items-center justify-center gap-1.5">
-                              <button className="text-slate-400 hover:text-slate-700 p-1"><Eye size={12} /></button>
-                              <button className="text-slate-400 hover:text-purple-600 p-1"><Edit2 size={12} /></button>
-                              <button className="text-slate-400 hover:text-rose-600 p-1"><XCircle size={12} /></button>
+                              <button title="View Assignment" className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"><Eye size={13} /></button>
+                              <button title="Edit Assignment" className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"><Edit2 size={13} /></button>
+                              <button title="Delete Assignment" className="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"><Trash2 size={13} /></button>
                             </div>
                           </td>
                         </tr>
@@ -1652,9 +1666,9 @@ export default function Drivers() {
                           </td>
                           <td className="px-4 py-3 text-center">
                             <div className="flex items-center justify-center gap-1.5">
-                              <button className="text-slate-400 hover:text-slate-700 p-1"><Eye size={12} /></button>
-                              <button className="text-slate-400 hover:text-purple-600 p-1"><Edit2 size={12} /></button>
-                              <button className="text-slate-400 hover:text-rose-600 p-1"><XCircle size={12} /></button>
+                              <button title="View Assignment" className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"><Eye size={13} /></button>
+                              <button title="Edit Assignment" className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"><Edit2 size={13} /></button>
+                              <button title="Delete Assignment" className="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"><Trash2 size={13} /></button>
                             </div>
                           </td>
                         </tr>
@@ -1702,9 +1716,9 @@ export default function Drivers() {
                           </td>
                           <td className="px-4 py-3 text-center">
                             <div className="flex items-center justify-center gap-1.5">
-                              <button className="text-slate-400 hover:text-slate-700 p-1"><Eye size={12} /></button>
-                              <button className="text-slate-400 hover:text-purple-600 p-1"><Edit2 size={12} /></button>
-                              <button className="text-slate-400 hover:text-rose-600 p-1"><Trash2 size={12} /></button>
+                              <button title="View Assignment" className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"><Eye size={13} /></button>
+                              <button title="Edit Assignment" className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"><Edit2 size={13} /></button>
+                              <button title="Delete Assignment" className="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"><Trash2 size={13} /></button>
                             </div>
                           </td>
                         </tr>
@@ -1723,9 +1737,9 @@ export default function Drivers() {
                           </td>
                           <td className="px-4 py-3 text-center">
                             <div className="flex items-center justify-center gap-1.5">
-                              <button className="text-slate-400 hover:text-slate-700 p-1"><Eye size={12} /></button>
-                              <button className="text-slate-400 hover:text-purple-600 p-1"><Edit2 size={12} /></button>
-                              <button className="text-slate-400 hover:text-rose-600 p-1"><Trash2 size={12} /></button>
+                              <button title="View Assignment" className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"><Eye size={13} /></button>
+                              <button title="Edit Assignment" className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"><Edit2 size={13} /></button>
+                              <button title="Delete Assignment" className="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"><Trash2 size={13} /></button>
                             </div>
                           </td>
                         </tr>
@@ -2663,12 +2677,82 @@ export default function Drivers() {
                   </ul>
                </div>
             </div>
+            <div className="flex justify-between items-center mt-4 text-[10px] font-semibold text-slate-400">
+              <span>All times shown in your local time (AEST)</span>
+              <span>Data auto-refreshes every 5 minutes ↺</span>
+            </div>
+         </div>
+
+      {/* EDIT DRIVER MODAL */}
+      {editDriverModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4" onClick={() => setEditDriverModal(null)}>
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-150" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-2">
+                <Edit size={16} className="text-purple-600" /> Edit Driver Profile ({editDriverModal.id})
+              </h3>
+              <button onClick={() => setEditDriverModal(null)} className="text-slate-400 hover:text-slate-600 text-lg font-bold cursor-pointer">&times;</button>
+            </div>
+            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Full Name *</label>
+                  <input type="text" value={editDriverModal.name || ''} onChange={e => setEditDriverModal({...editDriverModal, name: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Phone Number *</label>
+                  <input type="text" value={editDriverModal.phone || ''} onChange={e => setEditDriverModal({...editDriverModal, phone: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Licence Type</label>
+                  <input type="text" value={editDriverModal.licence || ''} onChange={e => setEditDriverModal({...editDriverModal, licence: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Licence Number</label>
+                  <input type="text" value={editDriverModal.licenceNo || ''} onChange={e => setEditDriverModal({...editDriverModal, licenceNo: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Status</label>
+                  <select value={editDriverModal.status || 'On Duty'} onChange={e => setEditDriverModal({...editDriverModal, status: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold bg-white cursor-pointer">
+                    <option value="On Duty">On Duty</option>
+                    <option value="Off Duty">Off Duty</option>
+                    <option value="On Leave">On Leave</option>
+                    <option value="Unavailable">Unavailable</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Branch</label>
+                  <input type="text" value={editDriverModal.branch || ''} onChange={e => setEditDriverModal({...editDriverModal, branch: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Assignment ID</label>
+                  <input type="text" value={editDriverModal.assignmentId || ''} onChange={e => setEditDriverModal({...editDriverModal, assignmentId: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Assignment Type</label>
+                  <input type="text" value={editDriverModal.assignmentType || ''} onChange={e => setEditDriverModal({...editDriverModal, assignmentType: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-2">
+              <button onClick={() => setEditDriverModal(null)} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 font-bold hover:bg-white text-xs cursor-pointer">Cancel</button>
+              <button onClick={() => {
+                setDriverList(prev => prev.map(d => d.id === editDriverModal.id ? editDriverModal : d));
+                if (selectedDriver && selectedDriver.id === editDriverModal.id) {
+                  setSelectedDriver(editDriverModal);
+                }
+                setEditDriverModal(null);
+              }} className="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 text-xs shadow-sm cursor-pointer">Save Changes</button>
+            </div>
           </div>
-          
-          <div className="flex justify-between items-center mt-4 text-[10px] font-semibold text-slate-400">
-             <span>All times shown in your local time (AEST)</span>
-             <span>Data auto-refreshes every 5 minutes &orarr;</span>
-          </div>
+        </div>
+      )}
 
         </div>
       </div>
@@ -2944,9 +3028,34 @@ export default function Drivers() {
                         </div>
                       </td>
                       <td className="px-3 py-3 text-center" onClick={(e) => e.stopPropagation()}>
-                        <button className="text-slate-400 hover:text-purple-600 transition-colors p-1 rounded-md hover:bg-purple-50 cursor-pointer">
-                          <MoreVertical size={14} />
-                        </button>
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); setSelectedDriver(driver); }} 
+                            title="View Driver Profile"
+                            className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"
+                          >
+                            <Eye size={13} />
+                          </button>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); setEditDriverModal(driver); }} 
+                            title="Edit Driver Profile"
+                            className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"
+                          >
+                            <Edit size={13} />
+                          </button>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (window.confirm(`Are you sure you want to delete driver ${driver.name} (${driver.id})?`)) {
+                                setDriverList(prev => prev.filter(d => d.id !== driver.id));
+                              }
+                            }} 
+                            title="Delete Driver"
+                            className="w-7 h-7 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   )) : (
@@ -2962,7 +3071,7 @@ export default function Drivers() {
 
             {/* Pagination */}
             <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-medium">
-              <span>Showing 1 to {filteredDrivers.length} of {mockDrivers.length} drivers</span>
+              <span>Showing 1 to {filteredDrivers.length} of {driverList.length} drivers</span>
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1">
                    <button className="w-6 h-6 flex items-center justify-center rounded text-slate-400 hover:bg-slate-100 cursor-pointer"><ChevronLeft size={14} /></button>
@@ -3138,8 +3247,79 @@ export default function Drivers() {
 
         <div className="flex justify-between items-center mt-4 text-[10px] font-semibold text-slate-400">
            <span>All times shown in your local time (AEST)</span>
-           <span>Data auto-refreshes every 5 minutes &orarr;</span>
+           <span>Data auto-refreshes every 5 minutes ↺</span>
         </div>
+
+        {/* EDIT DRIVER MODAL */}
+        {editDriverModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4" onClick={() => setEditDriverModal(null)}>
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-150" onClick={e => e.stopPropagation()}>
+              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-2">
+                  <Edit size={16} className="text-purple-600" /> Edit Driver Profile ({editDriverModal.id})
+                </h3>
+                <button onClick={() => setEditDriverModal(null)} className="text-slate-400 hover:text-slate-600 text-lg font-bold cursor-pointer">&times;</button>
+              </div>
+              <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto text-xs">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1">Full Name *</label>
+                    <input type="text" value={editDriverModal.name || ''} onChange={e => setEditDriverModal({...editDriverModal, name: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1">Phone Number *</label>
+                    <input type="text" value={editDriverModal.phone || ''} onChange={e => setEditDriverModal({...editDriverModal, phone: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1">Licence Type</label>
+                    <input type="text" value={editDriverModal.licence || ''} onChange={e => setEditDriverModal({...editDriverModal, licence: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1">Licence Number</label>
+                    <input type="text" value={editDriverModal.licenceNo || ''} onChange={e => setEditDriverModal({...editDriverModal, licenceNo: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1">Status</label>
+                    <select value={editDriverModal.status || 'On Duty'} onChange={e => setEditDriverModal({...editDriverModal, status: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold bg-white cursor-pointer">
+                      <option value="On Duty">On Duty</option>
+                      <option value="Off Duty">Off Duty</option>
+                      <option value="On Leave">On Leave</option>
+                      <option value="Unavailable">Unavailable</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1">Branch</label>
+                    <input type="text" value={editDriverModal.branch || ''} onChange={e => setEditDriverModal({...editDriverModal, branch: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1">Assignment ID</label>
+                    <input type="text" value={editDriverModal.assignmentId || ''} onChange={e => setEditDriverModal({...editDriverModal, assignmentId: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1">Assignment Type</label>
+                    <input type="text" value={editDriverModal.assignmentType || ''} onChange={e => setEditDriverModal({...editDriverModal, assignmentType: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                  </div>
+                </div>
+              </div>
+              <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-2">
+                <button onClick={() => setEditDriverModal(null)} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 font-bold hover:bg-white text-xs cursor-pointer">Cancel</button>
+                <button onClick={() => {
+                  setDriverList(prev => prev.map(d => d.id === editDriverModal.id ? editDriverModal : d));
+                  if (selectedDriver && selectedDriver.id === editDriverModal.id) {
+                    setSelectedDriver(editDriverModal);
+                  }
+                  setEditDriverModal(null);
+                }} className="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 text-xs shadow-sm cursor-pointer">Save Changes</button>
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

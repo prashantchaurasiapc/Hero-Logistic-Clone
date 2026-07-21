@@ -248,7 +248,7 @@ export default function WarehouseStockMovements({ wh, onBack }) {
       </div>
 
       {/* MAIN CONTAINER */}
-      <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '24px', marginBottom: 24 }}>
+      <div style={{ marginBottom: 24 }}>
         
         {/* Filters Row */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 16 }}>
@@ -290,7 +290,7 @@ export default function WarehouseStockMovements({ wh, onBack }) {
         <div className="wh-movements-split" style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 24 }}>
           
           {/* LEFT: TABLE */}
-          <div>
+          <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: 20 }}>
             <h3 style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: '0 0 12px 0' }}>STOCK MOVEMENTS (1,286)</h3>
             <div style={{ border: '1px solid #E2E8F0', borderRadius: 8, overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
@@ -366,15 +366,15 @@ export default function WarehouseStockMovements({ wh, onBack }) {
           </div>
 
           {/* RIGHT SIDEBAR */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             
             {/* MOVEMENT SUMMARY */}
-            <div>
+            <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '18px 20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                 <h3 style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>MOVEMENT SUMMARY (THIS MONTH)</h3>
                 <span style={{ fontSize: 10, color: '#4F46E5', fontWeight: 700, cursor: 'pointer' }}>View Report →</span>
               </div>
-              <div style={{ border: '1px solid #E2E8F0', borderRadius: 8, background: '#fff', padding: '16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ border: '1px solid #F1F5F9', borderRadius: 8, background: '#F8FAFC', padding: '12px', display: 'flex', flexDirection: 'column', gap: 12 }}>
                 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -430,12 +430,12 @@ export default function WarehouseStockMovements({ wh, onBack }) {
             </div>
 
             {/* MOVEMENTS BY DAY CHART */}
-            <div>
+            <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '18px 20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                 <h3 style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>MOVEMENTS BY DAY (THIS MONTH)</h3>
                 <span style={{ fontSize: 10, color: '#4F46E5', fontWeight: 700, cursor: 'pointer' }}>View Chart →</span>
               </div>
-              <div style={{ border: '1px solid #E2E8F0', borderRadius: 8, background: '#fff', padding: '16px', position: 'relative' }}>
+              <div style={{ border: '1px solid #F1F5F9', borderRadius: 8, background: '#fff', padding: '12px', position: 'relative' }}>
                 <div style={{ display: 'flex', height: 100, alignItems: 'flex-end', position: 'relative', borderLeft: '1px solid #E2E8F0', borderBottom: '1px solid #E2E8F0', paddingBottom: 4, marginLeft: 20 }}>
                   
                   {/* Y Axis labels */}
@@ -449,8 +449,6 @@ export default function WarehouseStockMovements({ wh, onBack }) {
                   {/* Chart Line Mock */}
                   <svg width="100%" height="100%" preserveAspectRatio="none" style={{ position: 'absolute', left: 0, bottom: 0, overflow: 'visible' }}>
                     <path d="M10,80 L40,60 L70,85 L100,50 L130,75 L160,20 L190,55 L220,40" fill="none" stroke="#8B5CF6" strokeWidth="2" strokeLinejoin="round" />
-                    
-                    {/* Data Points */}
                     <circle cx="10" cy="80" r="3" fill="#fff" stroke="#8B5CF6" strokeWidth="2" />
                     <circle cx="40" cy="60" r="3" fill="#fff" stroke="#8B5CF6" strokeWidth="2" />
                     <circle cx="70" cy="85" r="3" fill="#fff" stroke="#8B5CF6" strokeWidth="2" />
@@ -481,12 +479,12 @@ export default function WarehouseStockMovements({ wh, onBack }) {
             </div>
 
             {/* TOP MOVED ITEMS */}
-            <div>
+            <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '18px 20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                 <h3 style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>TOP MOVED ITEMS</h3>
                 <span style={{ fontSize: 10, color: '#4F46E5', fontWeight: 700, cursor: 'pointer' }}>View Report →</span>
               </div>
-              <div style={{ border: '1px solid #E2E8F0', borderRadius: 8, background: '#fff', padding: '16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ border: '1px solid #F1F5F9', borderRadius: 8, background: '#F8FAFC', padding: '12px', display: 'flex', flexDirection: 'column', gap: 12 }}>
                 
                 {[
                   { id: 1, name: 'Engine Oil 10W-40 (SL)', count: 186 },
@@ -508,7 +506,7 @@ export default function WarehouseStockMovements({ wh, onBack }) {
             </div>
 
             {/* RECENT ALERTS */}
-            <div>
+            <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '18px 20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                 <h3 style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>RECENT ALERTS</h3>
                 <span style={{ fontSize: 10, color: '#4F46E5', fontWeight: 700, cursor: 'pointer' }}>View All →</span>

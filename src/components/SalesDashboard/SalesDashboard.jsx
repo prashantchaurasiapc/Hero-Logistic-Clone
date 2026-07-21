@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { 
   Bell, ChevronDown, Plus, Mail, Phone, Calendar, 
   Activity, ArrowRight, Check, X, User, Star, Clock,
@@ -12,10 +12,15 @@ import {
 export default function SalesDashboard() {
   const [salesRep, setSalesRep] = useState('Alex Wright');
   const [selectedLead, setSelectedLead] = useState('Vance Refrigeration (Robert Vance)');
+  const [leadsStatus, setLeadsStatus] = useState({
+    'Vance Refrigeration (Robert Vance)': 'NEW LEAD',
+    'Hudson Logistics Corp (Jane Doe)': 'NEW LEAD'
+  });
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [showProposalModal, setShowProposalModal] = useState(false);
   const [showRecommendModal, setShowRecommendModal] = useState(false);
+  const [showTrialModal, setShowTrialModal] = useState(false);
   const [showMailModal, setShowMailModal] = useState(false);
   const [showCallModal, setShowCallModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
@@ -24,6 +29,53 @@ export default function SalesDashboard() {
   const [wizardStep, setWizardStep] = useState(1);
   const [isProvisioning, setIsProvisioning] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState('Professional');
+  const [estimatedValue, setEstimatedValue] = useState('$2,004/mo');
+  const [toastMessage, setToastMessage] = useState('');
+
+  const triggerToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(''), 3000);
+  };
+
+  const [activities, setActivities] = useState([
+    { title: 'Vance Refrigeration', date: '2026-07-14 02:15 PM', desc: 'Lead Created: Inbound workspace registration processed.', user: 'SYSTEM HUB', dotColor: 'bg-amber-400' },
+    { title: 'Hudson Logistics Corp', date: '2026-07-12 11:40 AM', desc: 'Demo Scheduled: Zoom product walkthrough booked.', user: 'ALEX WRIGHT', dotColor: 'bg-indigo-500' },
+    { title: 'Apex Freight Systems', date: '2026-07-09 04:30 PM', desc: 'Proposal Sent: SaaS License Proposal sent via email.', user: 'ALEX WRIGHT', dotColor: 'bg-emerald-500' },
+    { title: 'Swift Cargo Express', date: '2026-07-07 10:15 AM', desc: 'Trial Started: 14-day Professional Trial activated.', user: 'SARAH CONNOR', dotColor: 'bg-[#00A3FF]' }
+  ]);
+
+  const [tasks, setTasks] = useState([
+    { id: 1, company: 'Freight-A-Way', due: '2026-07-16 at 03:30 PM', task: 'Task + Touchpoint checklist regarding pain points: Fuel tax calculation mistakes.', status: 'OVERDUE', completed: false },
+    { id: 2, company: 'QuickLoad Logistics', due: '2026-07-17 at 10:00 AM', task: 'Call + Touchpoint checklist regarding pain points: Driver dispatch automation.', status: 'OVERDUE', completed: false },
+    { id: 3, company: 'Vance Refrigeration', due: '2026-07-19 at 02:00 PM', task: 'Demo Follow-up: Send customized pricing deck for 12 trucks.', status: 'UPCOMING', completed: false }
+  ]);
+
+  const [newTaskForm, setNewTaskForm] = useState({
+    title: '',
+    type: 'Phone Call',
+    date: '2026-07-22',
+    time: '11:00 AM',
+    priority: 'High'
+  });
+
+  const handleCreateTask = (e) => {
+    e.preventDefault();
+    const createdObj = {
+      id: Date.now(),
+      company: newTaskForm.title || 'General Follow-up Task',
+      due: `${newTaskForm.date} at ${newTaskForm.time}`,
+      task: `${newTaskForm.type} (${newTaskForm.priority} Priority): Follow-up regarding software onboarding.`,
+      status: 'UPCOMING',
+      completed: false
+    };
+    setTasks([createdObj, ...tasks]);
+    setShowAddTaskModal(false);
+    setNewTaskForm({ title: '', type: 'Phone Call', date: '2026-07-22', time: '11:00 AM', priority: 'High' });
+  };
+
+  const toggleTaskCompleted = (id) => {
+    setTasks(tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
+  };
 
   // Analytics Data
   const monthlyData = [
@@ -65,8 +117,16 @@ export default function SalesDashboard() {
   ];
 
   return (
-    <div className="flex-grow bg-[#F8FAFC] p-6 space-y-6 w-full text-left font-sans custom-scrollbar overflow-y-auto">
+    <div className="flex-grow bg-[#F8FAFC] p-6 space-y-6 w-full text-left font-sans custom-scrollbar overflow-y-auto relative">
       
+      {/* Toast Notification Banner */}
+      {toastMessage && (
+        <div className="fixed top-6 right-6 z-[9999] bg-slate-900 text-white px-5 py-3 rounded-xl shadow-xl flex items-center gap-2 text-xs font-bold animate-bounce">
+          <Check className="text-emerald-400 w-4 h-4" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex justify-between items-center mb-2">
         <div>
@@ -80,30 +140,30 @@ export default function SalesDashboard() {
       </div>
 
       {/* KPI Row Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4 pb-2">
-        {kpis.map((kpi, idx) => (
-          <div key={idx} className="bg-white border border-slate-100 rounded-[20px] p-5 shadow-sm flex flex-col justify-between">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-7 gap-3 pb-1">
+        {[
+          { label: 'NEW LEADS', value: '6', sub: '6 Pending', subColor: 'text-amber-600 bg-amber-50' },
+          { label: 'DEMOS BOOKED', value: '12', sub: 'Slots Ready', subColor: 'text-indigo-600 bg-indigo-50' },
+          { label: 'TRIALS ACTIVE', value: '21', sub: 'Active Usage', subColor: 'text-emerald-600 bg-emerald-50' },
+          { label: 'PROPOSALS SENT', value: '10', sub: 'Negotiating', subColor: 'text-slate-600 bg-slate-100' },
+          { label: 'DEALS WON', value: '5', sub: 'Closed & Synced', subColor: 'text-emerald-600 bg-emerald-50' },
+          { label: 'DEALS LOST', value: '5', sub: 'Needs Re-engage', subColor: 'text-rose-600 bg-rose-50' },
+          { label: 'PIPELINE VALUE', value: '$306,960', sub: 'Potential MRR', subColor: 'text-emerald-600 bg-emerald-50' }
+        ].map((kpi, idx) => (
+          <div key={idx} className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-3xs hover:shadow-2xs transition-all flex flex-col justify-between h-[96px]">
             <div>
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">{kpi.label}</p>
-              <h3 className="text-2xl font-black text-slate-900 mt-1">{kpi.value}</h3>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate" title={kpi.label}>
+                {kpi.label}
+              </p>
+              <h3 className="text-xl font-extrabold text-slate-900 mt-0.5 tracking-tight">{kpi.value}</h3>
             </div>
-            <div className="mt-3 flex items-start justify-between gap-2 text-[9px] font-bold">
-              <span className="text-slate-400 whitespace-nowrap">{kpi.sub1}</span>
-              <span className={`text-right leading-tight ${kpi.subColor || 'text-slate-700'}`}>{kpi.sub2}</span>
+            <div className="flex items-center justify-between gap-1 mt-1">
+              <span className={`px-2 py-0.5 rounded-md text-[9px] font-bold truncate ${kpi.subColor}`}>
+                {kpi.sub}
+              </span>
             </div>
           </div>
         ))}
-        {/* Total Pipeline Value */}
-        <div className="bg-white border border-slate-100 rounded-[20px] p-5 shadow-sm flex flex-col justify-between">
-          <div>
-            <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">TOTAL PIPELINE VALUE</p>
-            <h3 className="text-2xl font-black text-slate-900 mt-1">$306,960</h3>
-          </div>
-          <div className="mt-3 flex items-start justify-between gap-2 text-[9px] font-bold">
-            <span className="text-slate-400 whitespace-nowrap">Value of...</span>
-            <span className="text-emerald-500 text-right leading-tight">Potential<br/>monthly<br/>MRR</span>
-          </div>
-        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -144,9 +204,18 @@ export default function SalesDashboard() {
                   <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-2 pointer-events-none" />
                 </div>
               </div>
-              <button className="text-[10px] font-extrabold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-md border border-amber-200 uppercase">
-                NEW LEAD
-              </button>
+              {(() => {
+                const status = leadsStatus[selectedLead] || 'NEW LEAD';
+                let style = 'text-amber-600 bg-amber-50 border-amber-200';
+                if (status === 'DEAL WON') style = 'text-emerald-700 bg-emerald-50 border-emerald-300';
+                if (status === 'DEAL LOST') style = 'text-rose-700 bg-rose-50 border-rose-300';
+                if (status === 'CONVERTED TO COMPANY') style = 'text-amber-800 bg-amber-100 border-amber-300';
+                return (
+                  <span className={`text-[10px] font-black px-3.5 py-1.5 rounded-lg border uppercase transition-all shadow-3xs ${style}`}>
+                    {status}
+                  </span>
+                );
+              })()}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -206,40 +275,47 @@ export default function SalesDashboard() {
                     <option>Sarah Connor</option>
                   </select>
                 </div>
-                <button onClick={() => setShowRecommendModal(true)} className="bg-[#4B0082] text-white text-[10px] font-bold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-1.5 hover:bg-purple-900 transition-colors">
+                <button onClick={() => setShowRecommendModal(true)} className="bg-[#4B0082] text-white text-[10px] font-bold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-1.5 hover:bg-purple-900 transition-all cursor-pointer active:scale-95">
                   <Star className="w-3.5 h-3.5" /> Recommend Plan
                 </button>
-                <button onClick={() => setShowDemoModal(true)} className="bg-[#ffcc00] text-black text-[10px] font-bold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-1.5 hover:bg-[#e6b800] transition-colors">
+                <button onClick={() => setShowDemoModal(true)} className="bg-[#ffcc00] text-black text-[10px] font-bold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-1.5 hover:bg-[#e6b800] transition-all cursor-pointer active:scale-95">
                   <Calendar className="w-3.5 h-3.5" /> Book Demo
                 </button>
-                <button className="bg-slate-800 text-white text-[10px] font-bold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-1.5 hover:bg-slate-900 transition-colors">
+                <button onClick={() => setShowTrialModal(true)} className="bg-slate-800 text-white text-[10px] font-bold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-1.5 hover:bg-slate-900 transition-all cursor-pointer active:scale-95">
                   <Play className="w-3.5 h-3.5" fill="currentColor" /> Start Trial
                 </button>
-                <button onClick={() => setShowProposalModal(true)} className="bg-white border border-slate-200 text-slate-700 text-[10px] font-bold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-1.5 hover:bg-slate-50 transition-colors">
+                <button onClick={() => setShowProposalModal(true)} className="bg-white border border-slate-200 text-slate-700 text-[10px] font-bold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-1.5 hover:bg-slate-50 transition-all cursor-pointer active:scale-95">
                   <Send className="w-3.5 h-3.5" /> Send Proposal
                 </button>
               </div>
               
               <div className="flex flex-wrap items-center gap-2 mb-4">
                 <button 
-                  onClick={() => setShowConvertButton(true)}
-                  className="bg-[#0F9D58] text-white text-[10px] font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5 hover:bg-[#0b8043] shadow-sm transition-colors"
+                  onClick={() => {
+                    setLeadsStatus(prev => ({ ...prev, [selectedLead]: 'DEAL WON' }));
+                    setShowConvertButton(true);
+                  }}
+                  className="bg-[#0F9D58] text-white text-[10px] font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5 hover:bg-[#0b8043] shadow-sm transition-all cursor-pointer active:scale-95"
                 >
                   <Check className="w-3.5 h-3.5" /> Mark Won
                 </button>
                 <button 
-                  onClick={() => setShowConvertButton(false)}
-                  className="bg-[#990000] text-white text-[10px] font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5 hover:bg-[#800000] shadow-sm transition-colors"
+                  onClick={() => {
+                    setLeadsStatus(prev => ({ ...prev, [selectedLead]: 'DEAL LOST' }));
+                    setShowConvertButton(false);
+                  }}
+                  className="bg-[#990000] text-white text-[10px] font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5 hover:bg-[#800000] shadow-sm transition-all cursor-pointer active:scale-95"
                 >
                   <X className="w-3.5 h-3.5" /> Mark Lost
                 </button>
                 {showConvertButton && (
                   <button 
                     onClick={() => {
+                      setLeadsStatus(prev => ({ ...prev, [selectedLead]: 'CONVERTED TO COMPANY' }));
                       setWizardStep(1);
                       setShowConversionWizard(true);
                     }}
-                    className="bg-[#E68A00] text-white text-[10px] font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5 hover:bg-[#cc7a00] shadow-sm transition-colors"
+                    className="bg-[#E68A00] text-white text-[10px] font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5 hover:bg-[#cc7a00] shadow-sm transition-all cursor-pointer active:scale-95"
                   >
                     <UserPlus className="w-3.5 h-3.5" /> Convert to Company
                   </button>
@@ -281,71 +357,121 @@ export default function SalesDashboard() {
         {/* Right Column - Tasks & Timeline */}
         <div className="space-y-6">
           <div className="bg-white rounded-[24px] border border-slate-100 p-6 shadow-sm">
-            <div className="flex justify-between items-center mb-5">
-              <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-widest">UPCOMING FOLLOW-UP TASKS</h3>
-              <button onClick={() => setShowAddTaskModal(true)} className="text-[9px] font-black border border-amber-500 bg-amber-50 rounded px-2 py-0.5 text-amber-600 uppercase hover:bg-amber-100 transition-colors">+ ADD TASK</button>
+            <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
+              <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-widest">UPCOMING FOLLOW-UP TASKS ({tasks.length})</h3>
+              <button 
+                onClick={() => setShowAddTaskModal(true)} 
+                className="text-[9px] font-black border border-amber-500 bg-amber-50 rounded-lg px-2.5 py-1 text-amber-600 uppercase hover:bg-amber-100 transition-all cursor-pointer shadow-3xs active:scale-95"
+              >
+                + ADD TASK
+              </button>
             </div>
             
-            <div className="space-y-3">
-              <div className="border border-slate-100 rounded-2xl p-4 relative group hover:border-amber-200 transition-colors bg-slate-50/30">
-                <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                  <button className="w-6 h-6 rounded-full border border-emerald-400 flex items-center justify-center text-emerald-500 bg-emerald-50">
-                    <Check className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-                <h4 className="text-xs font-black text-slate-900 mb-1">Freight-A-Way</h4>
-                <p className="text-[10px] font-bold text-slate-500 mb-1">Due: 2026-07-16 at 03:30 PM</p>
-                <p className="text-[10px] font-bold text-amber-600">Task: Task + Touchpoint checklist regarding pain points:<br/>Fuel tax calculation mistakes.</p>
-              </div>
-              <div className="border border-slate-100 rounded-2xl p-4 relative group hover:border-amber-200 transition-colors bg-slate-50/30">
-                <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                  <button className="w-6 h-6 rounded-full border border-emerald-400 flex items-center justify-center text-emerald-500 bg-emerald-50">
-                    <Check className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-                <h4 className="text-xs font-black text-slate-900 mb-1">QuickLoad Logistics</h4>
-                <p className="text-[10px] font-bold text-slate-500 mb-1">Due: 2026-07-17 at 10:00 AM</p>
-                <p className="text-[10px] font-bold text-amber-600">Task: Call + Touchpoint checklist regarding pain points:</p>
-              </div>
+            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
+              {tasks.length === 0 ? (
+                <p className="text-xs text-slate-400 font-medium py-4 text-center">No upcoming tasks.</p>
+              ) : (
+                tasks.map((t) => (
+                  <div 
+                    key={t.id} 
+                    className={`border rounded-2xl p-4 relative group transition-all bg-white hover:border-amber-300 shadow-3xs ${
+                      t.completed ? 'border-emerald-200 bg-emerald-50/20 opacity-70' : 'border-slate-200'
+                    }`}
+                  >
+                    <div className="absolute right-4 top-4">
+                      <button 
+                        onClick={() => toggleTaskCompleted(t.id)}
+                        className={`w-6 h-6 rounded-full border flex items-center justify-center transition-all cursor-pointer ${
+                          t.completed 
+                            ? 'bg-emerald-500 border-emerald-500 text-white' 
+                            : 'border-slate-300 text-slate-300 hover:border-emerald-400 hover:text-emerald-500'
+                        }`}
+                        title={t.completed ? "Mark Incomplete" : "Mark Completed"}
+                      >
+                        <Check className="w-3.5 h-3.5 stroke-[3]" />
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className={`text-xs font-black text-slate-900 ${t.completed ? 'line-through text-slate-400' : ''}`}>{t.company}</h4>
+                      {t.status === 'OVERDUE' && !t.completed && (
+                        <span className="text-[9px] font-black text-rose-600 bg-rose-50 border border-rose-200 px-1.5 py-0.2 rounded uppercase">Overdue</span>
+                      )}
+                    </div>
+                    <p className="text-[10px] font-bold text-slate-400 mb-1.5">Due: {t.due}</p>
+                    <p className={`text-[11px] font-semibold text-amber-700 leading-snug ${t.completed ? 'line-through text-slate-400' : ''}`}>{t.task}</p>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
+          {/* Recent Activity Timeline Card */}
           <div className="bg-white rounded-[24px] border border-slate-100 p-6 shadow-sm">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
               <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-widest">RECENT ACTIVITY TIMELINE</h3>
               <Activity className="w-4 h-4 text-amber-500" />
             </div>
-            <div className="relative border-l-2 border-slate-100 ml-2 space-y-6 pb-2">
-              
-              <div className="relative pl-6">
-                <div className="absolute w-2 h-2 bg-amber-400 rounded-full -left-[5px] top-1.5 border-2 border-white"></div>
-                <div className="flex gap-2 items-center mb-1">
-                  <h4 className="text-[11px] font-black text-slate-900">Vance Refrigeration</h4>
-                  <span className="text-[9px] font-bold text-slate-400">2026-07-14</span>
-                </div>
-                <p className="text-[10px] font-semibold text-slate-500 mb-1 leading-snug">Lead Created: Inbound workspace registration processed.</p>
-                <p className="text-[8px] font-bold text-slate-400 uppercase">User: System Hub</p>
-              </div>
-              
-              <div className="relative pl-6">
-                <div className="absolute w-2 h-2 bg-amber-400 rounded-full -left-[5px] top-1.5 border-2 border-white"></div>
-                <div className="flex gap-2 items-center mb-1">
-                  <h4 className="text-[11px] font-black text-slate-900">Hudson Logistics Corp</h4>
-                  <span className="text-[9px] font-bold text-slate-400">2026-07-12</span>
-                </div>
-                <p className="text-[10px] font-semibold text-slate-500 mb-1 leading-snug">Lead Created: Inbound workspace registration processed.</p>
-                <p className="text-[8px] font-bold text-slate-400 uppercase">User: System Hub</p>
-              </div>
-              
-              <div className="relative pl-6">
-                <div className="absolute w-2 h-2 bg-amber-400 rounded-full -left-[5px] top-1.5 border-2 border-white"></div>
-                <div className="flex gap-2 items-center mb-1">
-                  <h4 className="text-[11px] font-black text-slate-900">Apex Freight Systems</h4>
-                  <span className="text-[9px] font-bold text-slate-400">2026-07-09</span>
-                </div>
-                <p className="text-[10px] font-semibold text-slate-500 leading-snug">Lead Created: Inbound workspace registration</p>
-              </div>
 
+            <div className="max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+              <div className="relative border-l-2 border-slate-200 ml-2 space-y-5 py-1">
+                {[
+                  {
+                    title: 'Vance Refrigeration',
+                    date: '2026-07-14 02:15 PM',
+                    desc: 'Lead Created: Inbound workspace registration processed.',
+                    user: 'SYSTEM HUB',
+                    dotColor: 'bg-amber-400'
+                  },
+                  {
+                    title: 'Hudson Logistics Corp',
+                    date: '2026-07-12 11:40 AM',
+                    desc: 'Demo Scheduled: Zoom product walkthrough booked with Robert Vance.',
+                    user: 'ALEX WRIGHT',
+                    dotColor: 'bg-indigo-500'
+                  },
+                  {
+                    title: 'Apex Freight Systems',
+                    date: '2026-07-09 04:30 PM',
+                    desc: 'Proposal Sent: SaaS License Proposal sent via email.',
+                    user: 'ALEX WRIGHT',
+                    dotColor: 'bg-emerald-500'
+                  },
+                  {
+                    title: 'Swift Cargo Express',
+                    date: '2026-07-07 10:15 AM',
+                    desc: 'Trial Started: 14-day Professional Trial activated.',
+                    user: 'SARAH CONNOR',
+                    dotColor: 'bg-[#00A3FF]'
+                  },
+                  {
+                    title: 'Global Shipping Co.',
+                    date: '2026-07-05 03:00 PM',
+                    desc: 'Deal Won: Enterprise License tier finalized & onboarded.',
+                    user: 'ALEX WRIGHT',
+                    dotColor: 'bg-emerald-600'
+                  },
+                  {
+                    title: 'FastTrack Networks',
+                    date: '2026-07-02 09:20 AM',
+                    desc: 'Phone Call Logged: Follow-up call completed regarding fleet pricing.',
+                    user: 'SARAH CONNOR',
+                    dotColor: 'bg-purple-500'
+                  }
+                ].map((act, idx) => (
+                  <div key={idx} className="relative pl-5 group">
+                    <div className={`absolute w-2.5 h-2.5 ${act.dotColor} rounded-full -left-[6px] top-1 border-2 border-white group-hover:scale-125 transition-transform`}></div>
+                    <div className="flex items-center justify-between gap-2 mb-0.5">
+                      <h4 className="text-[11px] font-black text-slate-900">{act.title}</h4>
+                      <span className="text-[9px] font-bold text-slate-400 shrink-0">{act.date}</span>
+                    </div>
+                    <p className="text-[10px] font-semibold text-slate-600 mb-1 leading-snug">{act.desc}</p>
+                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider bg-slate-100 px-1.5 py-0.5 rounded">
+                      USER: {act.user}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -424,65 +550,79 @@ export default function SalesDashboard() {
               <h2 className="text-lg font-bold text-slate-900">Create New Task</h2>
               <button 
                 onClick={() => setShowAddTaskModal(false)}
-                className="text-slate-400 hover:text-slate-600 transition-colors p-1"
+                className="text-slate-400 hover:text-slate-600 transition-colors p-1 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
             
             {/* Modal Body */}
-            <div className="p-6 space-y-6">
+            <form onSubmit={handleCreateTask} className="p-6 space-y-5">
               <div>
-                <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2.5">
-                  Task Title
+                <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">
+                  Task Title / Lead Company
                 </label>
                 <input 
                   type="text" 
-                  placeholder="General followup Call"
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-sm font-medium text-slate-700 focus:outline-none focus:border-amber-400 transition-colors placeholder:text-slate-900"
+                  required
+                  placeholder="e.g. Vance Refrigeration Follow-up"
+                  value={newTaskForm.title}
+                  onChange={e => setNewTaskForm({ ...newTaskForm, title: e.target.value })}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 focus:outline-none focus:border-amber-400 transition-colors placeholder:text-slate-400"
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-5">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2.5">
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">
                     Task Type
                   </label>
-                  <select className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-sm font-medium text-slate-700 focus:outline-none focus:border-amber-400 transition-colors appearance-none bg-white relative">
+                  <select 
+                    value={newTaskForm.type}
+                    onChange={e => setNewTaskForm({ ...newTaskForm, type: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-3 text-xs font-bold text-slate-900 focus:outline-none focus:border-amber-400 transition-colors bg-white cursor-pointer"
+                  >
                     <option>Phone Call</option>
-                    <option>Email</option>
+                    <option>Email Touchpoint</option>
+                    <option>Product Demo</option>
                     <option>Meeting</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2.5">
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">
                     Due Date
                   </label>
                   <input 
                     type="date" 
-                    defaultValue="2026-07-14"
-                    className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-sm font-medium text-slate-700 focus:outline-none focus:border-amber-400 transition-colors"
+                    required
+                    value={newTaskForm.date}
+                    onChange={e => setNewTaskForm({ ...newTaskForm, date: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-3 text-xs font-bold text-slate-900 focus:outline-none focus:border-amber-400 transition-colors cursor-pointer"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2.5">
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">
                     Priority
                   </label>
-                  <select className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-sm font-medium text-slate-700 focus:outline-none focus:border-amber-400 transition-colors appearance-none bg-white">
-                    <option>Medium</option>
+                  <select 
+                    value={newTaskForm.priority}
+                    onChange={e => setNewTaskForm({ ...newTaskForm, priority: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-3 text-xs font-bold text-slate-900 focus:outline-none focus:border-amber-400 transition-colors bg-white cursor-pointer"
+                  >
                     <option>High</option>
+                    <option>Medium</option>
                     <option>Low</option>
                   </select>
                 </div>
               </div>
 
               <button 
-                onClick={() => setShowAddTaskModal(false)}
-                className="w-full bg-[#ffcc00] hover:bg-[#e6b800] text-black font-extrabold text-sm py-4 rounded-xl shadow-[0_4px_15px_rgba(255,204,0,0.4)] transition-colors mt-2"
+                type="submit"
+                className="w-full bg-[#ffcc00] hover:bg-[#e6b800] text-black font-extrabold text-xs py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,204,0,0.4)] transition-all mt-2 cursor-pointer active:scale-95"
               >
-                Create Task checklist
+                CREATE & ADD TO TASKS LIST
               </button>
-            </div>
+            </form>
           </div>
         </div>
       )}
@@ -521,10 +661,75 @@ export default function SalesDashboard() {
               </div>
 
               <div className="pt-2">
-                <button onClick={() => setShowDemoModal(false)} className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[13px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all">
+                <button 
+                  onClick={() => {
+                    setShowDemoModal(false);
+                    triggerToast(`Zoom Demo scheduled for ${selectedLead.split(' ')[0]}!`);
+                    setActivities([
+                      { title: selectedLead.split(' ')[0], date: 'Just now', desc: 'Demo Booked: Zoom product walkthrough confirmed.', user: salesRep.toUpperCase(), dotColor: 'bg-indigo-500' },
+                      ...activities
+                    ]);
+                  }} 
+                  className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[13px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all cursor-pointer active:scale-95"
+                >
                   Confirm Zoom Schedule
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Start 14-Day Free Trial Modal */}
+      {showTrialModal && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 text-left">
+            <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold">
+                  <Play size={16} fill="currentColor" />
+                </div>
+                <h2 className="text-base font-black text-slate-900">Start Platform Trial</h2>
+              </div>
+              <button onClick={() => setShowTrialModal(false)} className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-5">
+              <p className="text-xs font-semibold text-slate-500">
+                Activating free trial access for <strong className="text-slate-900">{selectedLead.split(' ')[0]} Refrigeration</strong>.
+              </p>
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">TRIAL DURATION</label>
+                <select className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-amber-400 bg-white cursor-pointer">
+                  <option>14 Days Free Trial</option>
+                  <option>30 Days Extended Trial</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">FEATURE MODULE ACCESS</label>
+                <div className="space-y-2 text-xs font-bold text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                  <p className="flex items-center gap-2"><Check size={14} className="text-emerald-500" /> Full Suite (Dispatch, Tracking, Accounts)</p>
+                  <p className="flex items-center gap-2"><Check size={14} className="text-emerald-500" /> Up to 15 Driver App Licenses</p>
+                </div>
+              </div>
+
+              <button 
+                onClick={() => {
+                  setShowTrialModal(false);
+                  setLeadsStatus(prev => ({ ...prev, [selectedLead]: 'TRIAL ACTIVE' }));
+                  triggerToast(`14-Day Free Trial activated for ${selectedLead.split(' ')[0]}!`);
+                  setActivities([
+                    { title: selectedLead.split(' ')[0], date: 'Just now', desc: 'Trial Started: 14-day Free Trial activated on platform.', user: salesRep.toUpperCase(), dotColor: 'bg-[#00A3FF]' },
+                    ...activities
+                  ]);
+                }} 
+                className="w-full bg-slate-900 hover:bg-black text-white font-extrabold text-xs py-3.5 rounded-xl shadow-sm transition-all cursor-pointer active:scale-95"
+              >
+                ACTIVATE FREE TRIAL NOW
+              </button>
             </div>
           </div>
         </div>

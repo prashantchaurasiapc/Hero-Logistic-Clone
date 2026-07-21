@@ -47,8 +47,22 @@ const StarIcon = ({ color }) => (
   </svg>
 );
 const EyeIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>
+  </svg>
+);
+const PencilEditIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+  </svg>
+);
+const TrashDeleteIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="3 6 5 6 21 6"></polyline>
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+    <line x1="10" y1="11" x2="10" y2="17"></line>
+    <line x1="14" y1="11" x2="14" y2="17"></line>
   </svg>
 );
 const MoreHorizontalIcon = () => (
@@ -76,12 +90,16 @@ const DUMMY_STOCK_ITEMS = [
 ];
 
 export default function WarehouseInventoryStock({ wh, onBack }) {
+  const [stockItems, setStockItems] = useState(DUMMY_STOCK_ITEMS);
   const [activeTab, setActiveTab] = useState('Stock List');
   const [showAddStockModal, setShowAddStockModal] = useState(false);
+  const [viewStockItemModal, setViewStockItemModal] = useState(null);
+  const [editStockItemModal, setEditStockItemModal] = useState(null);
 
   return (
     <div className="wh-inventory-container" style={{ background: '#F8FAFC', minHeight: '100vh', padding: '24px 32px', fontFamily: "'Inter','Outfit',sans-serif", overflowX: 'hidden' }}>
       <style>{`
+        .wh-panel { background: #fff; border: 1px solid #E2E8F0; border-radius: 12px; padding: 18px 20px; }
         @media (max-width: 900px) {
           .wh-inventory-container { padding: 16px !important; }
           .wh-inventory-split { grid-template-columns: 1fr !important; gap: 20px !important; }
@@ -196,7 +214,7 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
       </div>
 
       {/* MAIN CONTAINER */}
-      <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '24px 24px 0 24px', marginBottom: 24 }}>
+      <div style={{ marginBottom: 24 }}>
         
 
 
@@ -235,7 +253,7 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
             <div className="wh-inventory-split" style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 24, paddingBottom: 24 }}>
               
               {/* LEFT: TABLE */}
-              <div>
+              <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: 20 }}>
                 <h3 style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: '0 0 12px 0' }}>STOCK ITEMS (4,125)</h3>
                 <div style={{ border: '1px solid #E2E8F0', borderRadius: 8, overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
@@ -256,7 +274,7 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
                       </tr>
                     </thead>
                     <tbody>
-                      {DUMMY_STOCK_ITEMS.map((item, i) => (
+                      {stockItems.map((item, i) => (
                         <tr key={i} style={{ borderBottom: '1px solid #E2E8F0', background: '#fff' }}>
                           <td style={{ padding: '12px 16px', fontSize: 11, fontWeight: 800, color: '#4F46E5', whiteSpace: 'nowrap' }}>{item.code}</td>
                           <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap' }}>{item.name}</td>
@@ -273,12 +291,31 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
                           <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
                             <span style={{ fontSize: 10, fontWeight: 700, color: item.statColor, background: item.statBg, padding: '2px 8px', borderRadius: 4 }}>{item.status}</span>
                           </td>
-                          <td style={{ padding: '12px 16px', display: 'flex', gap: 6, justifyContent: 'center' }}>
-                            <button style={{ width: 24, height: 24, borderRadius: 4, background: '#F1F5F9', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                          <td style={{ padding: '12px 16px', display: 'flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
+                            <button 
+                              onClick={() => setViewStockItemModal(item)} 
+                              title="View Item Details"
+                              style={{ width: 26, height: 26, borderRadius: 6, background: '#EFF6FF', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                            >
                               <EyeIcon />
                             </button>
-                            <button style={{ width: 24, height: 24, borderRadius: 4, background: '#F1F5F9', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                              <MoreHorizontalIcon />
+                            <button 
+                              onClick={() => setEditStockItemModal(item)} 
+                              title="Edit Item"
+                              style={{ width: 26, height: 26, borderRadius: 6, background: '#FEF3C7', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                            >
+                              <PencilEditIcon />
+                            </button>
+                            <button 
+                              onClick={() => {
+                                if (window.confirm(`Are you sure you want to delete stock item ${item.name} (${item.code})?`)) {
+                                  setStockItems(prev => prev.filter(s => s.code !== item.code));
+                                }
+                              }} 
+                              title="Delete Item"
+                              style={{ width: 26, height: 26, borderRadius: 6, background: '#FEE2E2', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                            >
+                              <TrashDeleteIcon />
                             </button>
                           </td>
                         </tr>
@@ -308,10 +345,10 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
               </div>
 
               {/* RIGHT: SUMMARY PANELS */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 
                 {/* STOCK SUMMARY */}
-                <div>
+                <div className="wh-panel">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                     <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>STOCK SUMMARY</h3>
                     <div style={{ fontSize: 10, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }}>View Report →</div>
@@ -349,7 +386,7 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
                 </div>
 
                 {/* STOCK BY CATEGORY */}
-                <div>
+                <div className="wh-panel">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                     <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>STOCK BY CATEGORY</h3>
                     <div style={{ fontSize: 10, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }}>View Chart →</div>
@@ -386,7 +423,7 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
                 </div>
 
                 {/* STOCK STATUS */}
-                <div>
+                <div className="wh-panel">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                     <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>STOCK STATUS</h3>
                     <div style={{ fontSize: 10, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }}>View Chart →</div>
@@ -413,7 +450,7 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
                 </div>
 
                 {/* RECENT STOCK MOVEMENTS */}
-                <div>
+                <div className="wh-panel">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                     <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>RECENT STOCK MOVEMENTS</h3>
                     <div style={{ fontSize: 10, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }}>View All →</div>
@@ -578,6 +615,120 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 32 }}>
               <button onClick={() => setShowAddStockModal(false)} style={{ padding: '10px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, border: '1px solid #E2E8F0', background: '#fff', color: '#475569', cursor: 'pointer' }}>Cancel</button>
               <button onClick={() => setShowAddStockModal(false)} style={{ padding: '10px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, border: 'none', background: '#4F46E5', color: '#fff', cursor: 'pointer' }}>Add to Inventory</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* VIEW ITEM MODAL */}
+      {viewStockItemModal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.4)' }} onClick={() => setViewStockItemModal(null)}></div>
+          <div style={{ background: '#fff', width: '480px', borderRadius: 16, padding: '24px', position: 'relative', zIndex: 1, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #E2E8F0', paddingBottom: 12, marginBottom: 16 }}>
+              <h2 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <EyeIcon /> Item Details – {viewStockItemModal.code}
+              </h2>
+              <button onClick={() => setViewStockItemModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#64748B' }}>&times;</button>
+            </div>
+            <div style={{ display: 'grid', gap: 12, fontSize: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: '#F8FAFC', borderRadius: 6 }}>
+                <span style={{ fontWeight: 600, color: '#64748B' }}>Item Name:</span>
+                <span style={{ fontWeight: 800, color: '#0F172A' }}>{viewStockItemModal.name}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: '#F8FAFC', borderRadius: 6 }}>
+                <span style={{ fontWeight: 600, color: '#64748B' }}>Category:</span>
+                <span style={{ fontWeight: 700, color: viewStockItemModal.catColor }}>{viewStockItemModal.cat}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: '#F8FAFC', borderRadius: 6 }}>
+                <span style={{ fontWeight: 600, color: '#64748B' }}>Location:</span>
+                <span style={{ fontWeight: 700, color: '#0F172A' }}>{viewStockItemModal.loc}</span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                <div style={{ textAlign: 'center', padding: 8, background: '#EFF6FF', borderRadius: 6 }}>
+                  <div style={{ fontSize: 10, color: '#3B82F6', fontWeight: 700 }}>On Hand</div>
+                  <div style={{ fontSize: 16, fontWeight: 900, color: '#1E40AF' }}>{viewStockItemModal.onHand}</div>
+                </div>
+                <div style={{ textAlign: 'center', padding: 8, background: '#FEF3C7', borderRadius: 6 }}>
+                  <div style={{ fontSize: 10, color: '#D97706', fontWeight: 700 }}>Reserved</div>
+                  <div style={{ fontSize: 16, fontWeight: 900, color: '#92400E' }}>{viewStockItemModal.reserved}</div>
+                </div>
+                <div style={{ textAlign: 'center', padding: 8, background: '#D1FAE5', borderRadius: 6 }}>
+                  <div style={{ fontSize: 10, color: '#059669', fontWeight: 700 }}>Available</div>
+                  <div style={{ fontSize: 16, fontWeight: 900, color: '#065F46' }}>{viewStockItemModal.available}</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: '#F8FAFC', borderRadius: 6 }}>
+                <span style={{ fontWeight: 600, color: '#64748B' }}>Unit Cost / Total Value:</span>
+                <span style={{ fontWeight: 800, color: '#0F172A' }}>{viewStockItemModal.unitCost} / {viewStockItemModal.totalValue}</span>
+              </div>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20 }}>
+              <button onClick={() => setViewStockItemModal(null)} style={{ padding: '8px 16px', borderRadius: 6, background: '#4F46E5', color: '#fff', border: 'none', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT ITEM MODAL */}
+      {editStockItemModal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.4)' }} onClick={() => setEditStockItemModal(null)}></div>
+          <div style={{ background: '#fff', width: '480px', borderRadius: 16, padding: '24px', position: 'relative', zIndex: 1, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #E2E8F0', paddingBottom: 12, marginBottom: 16 }}>
+              <h2 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <PencilEditIcon /> Edit Stock Item ({editStockItemModal.code})
+              </h2>
+              <button onClick={() => setEditStockItemModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#64748B' }}>&times;</button>
+            </div>
+            <div style={{ display: 'grid', gap: 12, fontSize: 12 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 4 }}>Item Name *</label>
+                <input type="text" value={editStockItemModal.name || ''} onChange={e => setEditStockItemModal({ ...editStockItemModal, name: e.target.value })} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12, outline: 'none', boxSizing: 'border-box' }} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 4 }}>Category</label>
+                  <input type="text" value={editStockItemModal.cat || ''} onChange={e => setEditStockItemModal({ ...editStockItemModal, cat: e.target.value })} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12, outline: 'none', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 4 }}>Status</label>
+                  <select value={editStockItemModal.status || 'In Stock'} onChange={e => setEditStockItemModal({ ...editStockItemModal, status: e.target.value })} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12, outline: 'none', background: '#fff', boxSizing: 'border-box' }}>
+                    <option value="In Stock">In Stock</option>
+                    <option value="Low Stock">Low Stock</option>
+                    <option value="Out of Stock">Out of Stock</option>
+                  </select>
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 4 }}>On Hand</label>
+                  <input type="number" value={editStockItemModal.onHand || 0} onChange={e => {
+                    const oh = parseInt(e.target.value) || 0;
+                    const res = editStockItemModal.reserved || 0;
+                    setEditStockItemModal({ ...editStockItemModal, onHand: oh, available: oh - res });
+                  }} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12, outline: 'none', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 4 }}>Reserved</label>
+                  <input type="number" value={editStockItemModal.reserved || 0} onChange={e => {
+                    const res = parseInt(e.target.value) || 0;
+                    const oh = editStockItemModal.onHand || 0;
+                    setEditStockItemModal({ ...editStockItemModal, reserved: res, available: oh - res });
+                  }} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12, outline: 'none', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 4 }}>Unit</label>
+                  <input type="text" value={editStockItemModal.unit || ''} onChange={e => setEditStockItemModal({ ...editStockItemModal, unit: e.target.value })} style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12, outline: 'none', boxSizing: 'border-box' }} />
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20 }}>
+              <button onClick={() => setEditStockItemModal(null)} style={{ padding: '8px 16px', borderRadius: 6, background: '#fff', color: '#64748B', border: '1px solid #CBD5E1', fontWeight: 600, fontSize: 12, cursor: 'pointer' }}>Cancel</button>
+              <button onClick={() => {
+                setStockItems(prev => prev.map(s => s.code === editStockItemModal.code ? editStockItemModal : s));
+                setEditStockItemModal(null);
+              }} style={{ padding: '8px 16px', borderRadius: 6, background: '#4F46E5', color: '#fff', border: 'none', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>Save Changes</button>
             </div>
           </div>
         </div>

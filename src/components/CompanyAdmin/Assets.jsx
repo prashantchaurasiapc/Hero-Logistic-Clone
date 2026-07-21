@@ -3,7 +3,7 @@ import {
   Plus, Download, ChevronDown, Search, Filter, RotateCcw, 
   MapPin, Building, Clock, Phone, AlertCircle, CheckCircle2,
   AlertTriangle, XCircle, FileText, Database, Shield, Zap, Info, Key, CheckCircle, Package, Battery, Settings, Laptop, Wrench, Truck,
-  QrCode, MoreHorizontal, Eye
+  QrCode, MoreHorizontal, Eye, Edit, Trash2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AssetDetails from './AssetDetails';
@@ -215,7 +215,9 @@ const AssetDonutChart = () => {
 };
 
 export default function Assets() {
+  const [assetList, setAssetList] = useState(mockAssets);
   const [selectedAsset, setSelectedAsset] = useState(null);
+  const [editAssetModal, setEditAssetModal] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [typeFilter, setTypeFilter] = useState('All');
@@ -231,7 +233,7 @@ export default function Assets() {
     setStatusFilter('All');
   };
 
-  const filteredAssets = mockAssets.filter((asset) => {
+  const filteredAssets = assetList.filter((asset) => {
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       if (!asset.id.toLowerCase().includes(q) &&
@@ -305,7 +307,7 @@ export default function Assets() {
   };
 
   return (
-    <div className="flex-grow bg-[#F8FAFC] p-4 sm:p-6 w-full text-left font-sans custom-scrollbar overflow-y-auto min-h-screen" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
+    <div className="flex-grow bg-[#F8FAFC] p-4 sm:p-6 pb-28 sm:pb-10 w-full text-left font-sans custom-scrollbar overflow-y-auto min-h-screen" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
       
       {/* HEADER SECTION */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
@@ -641,10 +643,33 @@ export default function Assets() {
                         <div className="text-[10px] font-semibold text-slate-500 mt-0.5">{asset.dueIn}</div>
                       </td>
                       
-                      <td className="p-4">
-                        <div className="flex items-center justify-center gap-2">
-                          <button onClick={() => setSelectedAsset(asset)} className="text-slate-400 hover:text-purple-600 transition-colors p-1 cursor-pointer"><Eye size={16} /></button>
-                          <button className="text-slate-400 hover:text-purple-600 transition-colors p-1 cursor-pointer"><MoreHorizontal size={16} /></button>
+                      <td className="p-4 text-center">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button 
+                            onClick={() => setSelectedAsset(asset)} 
+                            title="View Asset Details"
+                            className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"
+                          >
+                            <Eye size={13} />
+                          </button>
+                          <button 
+                            onClick={() => setEditAssetModal(asset)} 
+                            title="Edit Asset"
+                            className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"
+                          >
+                            <Edit size={13} />
+                          </button>
+                          <button 
+                            onClick={() => {
+                              if (window.confirm(`Are you sure you want to delete asset ${asset.name} (${asset.id})?`)) {
+                                setAssetList(prev => prev.filter(a => a.id !== asset.id));
+                              }
+                            }} 
+                            title="Delete Asset"
+                            className="w-7 h-7 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"
+                          >
+                            <Trash2 size={13} />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -811,14 +836,14 @@ export default function Assets() {
       </div>
 
       {/* DEVELOPER NOTES */}
-      <div className="mt-8 bg-purple-50/50 rounded-2xl border border-purple-100 p-6">
+      <div className="mt-8 bg-purple-50/50 rounded-2xl border border-purple-100 p-4 sm:p-6 shadow-sm mb-6 sm:mb-8">
         <h4 className="text-xs font-black text-purple-900 flex items-center gap-2 mb-4 uppercase tracking-widest">
-          <Info size={14} className="text-purple-600" /> Developer Notes - Assets List
+          <Info size={14} className="text-purple-600 shrink-0" /> Developer Notes - Assets List
         </h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-          <div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
+          <div className="bg-white/60 sm:bg-transparent p-3.5 sm:p-0 rounded-xl border border-purple-100/60 sm:border-0">
             <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
-              <Key size={12} /> 1. Purpose
+              <Key size={12} className="shrink-0" /> 1. Purpose
             </div>
             <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
               <li>Central list of all non-vehicle assets.</li>
@@ -826,9 +851,9 @@ export default function Assets() {
               <li>Provides quick filtering and reporting.</li>
             </ul>
           </div>
-          <div>
+          <div className="bg-white/60 sm:bg-transparent p-3.5 sm:p-0 rounded-xl border border-purple-100/60 sm:border-0">
             <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
-              <Settings size={12} /> 2. Key Features
+              <Settings size={12} className="shrink-0" /> 2. Key Features
             </div>
             <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
               <li>Search, filters, and sorting.</li>
@@ -837,9 +862,9 @@ export default function Assets() {
               <li>Bulk actions via More Actions menu.</li>
             </ul>
           </div>
-          <div>
+          <div className="bg-white/60 sm:bg-transparent p-3.5 sm:p-0 rounded-xl border border-purple-100/60 sm:border-0">
             <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
-              <Zap size={12} /> 3. Automation & Alerts
+              <Zap size={12} className="shrink-0" /> 3. Automation & Alerts
             </div>
             <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
               <li>AI detects due dates from documents (AI add-on).</li>
@@ -847,9 +872,9 @@ export default function Assets() {
               <li>Status auto-updates based on maintenance or compliance expiry.</li>
             </ul>
           </div>
-          <div>
+          <div className="bg-white/60 sm:bg-transparent p-3.5 sm:p-0 rounded-xl border border-purple-100/60 sm:border-0">
             <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
-              <Shield size={12} /> 4. Permissions
+              <Shield size={12} className="shrink-0" /> 4. Permissions
             </div>
             <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
               <li>Super Admin: Full access.</li>
@@ -858,9 +883,9 @@ export default function Assets() {
               <li>Dispatch: View assets relevant to operations.</li>
             </ul>
           </div>
-          <div>
+          <div className="bg-white/60 sm:bg-transparent p-3.5 sm:p-0 rounded-xl border border-purple-100/60 sm:border-0">
             <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
-              <Database size={12} /> 5. Data Sources
+              <Database size={12} className="shrink-0" /> 5. Data Sources
             </div>
             <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
               <li>Assets module.</li>
@@ -870,12 +895,66 @@ export default function Assets() {
             </ul>
           </div>
         </div>
-        <div className="mt-4 pt-4 border-t border-purple-100 flex justify-between items-center text-[9px] font-bold text-slate-400">
+        <div className="mt-4 pt-4 border-t border-purple-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-[9px] font-bold text-slate-400">
           <span>All times shown in your local time (AEST)</span>
           <span className="flex items-center gap-1"><RotateCcw size={10} /> Data auto-refreshes every 5 minutes</span>
         </div>
       </div>
       
+      {/* Edit Asset Modal */}
+      {editAssetModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-150">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-2">
+                <Edit size={16} className="text-purple-600" /> Edit Asset ({editAssetModal.id})
+              </h3>
+              <button onClick={() => setEditAssetModal(null)} className="text-slate-400 hover:text-slate-600 text-lg font-bold cursor-pointer">&times;</button>
+            </div>
+            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto text-xs">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 mb-1">Asset Name *</label>
+                <input type="text" value={editAssetModal.name || ''} onChange={e => setEditAssetModal({...editAssetModal, name: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Category</label>
+                  <input type="text" value={editAssetModal.category || ''} onChange={e => setEditAssetModal({...editAssetModal, category: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Status</label>
+                  <select value={editAssetModal.status || 'Active'} onChange={e => setEditAssetModal({...editAssetModal, status: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold bg-white cursor-pointer">
+                    <option value="Active">Active</option>
+                    <option value="Maintenance">Maintenance</option>
+                    <option value="Out of Service">Out of Service</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Branch</label>
+                  <input type="text" value={editAssetModal.branch || ''} onChange={e => setEditAssetModal({...editAssetModal, branch: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Location</label>
+                  <input type="text" value={editAssetModal.location || ''} onChange={e => setEditAssetModal({...editAssetModal, location: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 mb-1">Assigned To</label>
+                <input type="text" value={editAssetModal.assignedTo || ''} onChange={e => setEditAssetModal({...editAssetModal, assignedTo: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+              </div>
+            </div>
+            <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-2">
+              <button onClick={() => setEditAssetModal(null)} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 font-bold hover:bg-white text-xs cursor-pointer">Cancel</button>
+              <button onClick={() => {
+                setAssetList(prev => prev.map(a => a.id === editAssetModal.id ? editAssetModal : a));
+                setEditAssetModal(null);
+              }} className="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 text-xs shadow-sm cursor-pointer">Save Changes</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

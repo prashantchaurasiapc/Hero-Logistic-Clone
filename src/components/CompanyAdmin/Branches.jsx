@@ -6,7 +6,7 @@ import {
   Settings, Bell, Users, Database, ChevronLeft as BackIcon,
   MapPin, Edit, Edit3, Truck, Phone, Mail, User, ShieldCheck, Check, 
   Briefcase, Lock, Coffee, XCircle, DollarSign, Calendar, ChevronDown,
-  TrendingUp, TrendingDown, Star, Activity, BarChart2, Lightbulb
+  TrendingUp, TrendingDown, Star, Activity, BarChart2, Lightbulb, Trash2
 } from 'lucide-react';
 
 const branchesData = [
@@ -69,6 +69,8 @@ function Monitor({size}) { return <svg width={size} height={size} viewBox="0 0 2
 function Car({size}) { return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"></path><circle cx="7" cy="17" r="2"></circle><path d="M9 17h6"></path><circle cx="17" cy="17" r="2"></circle></svg>; }
 
 export default function Branches() {
+  const [branchList, setBranchList] = useState(branchesData);
+  const [editBranchModal, setEditBranchModal] = useState(null);
   const [search, setSearch] = useState('');
   const [selectedBranch, setSelectedBranch] = useState(null);
   const [activeTab, setActiveTab] = useState('Overview');
@@ -2643,7 +2645,7 @@ export default function Branches() {
                         </tr>
                      </thead>
                      <tbody className="divide-y divide-gray-50 text-gray-700 font-medium">
-                        {branchesData.map(branch => (
+                        {branchList.filter(b => !search || b.branchName.toLowerCase().includes(search.toLowerCase()) || b.branchCode.toLowerCase().includes(search.toLowerCase()) || b.manager.toLowerCase().includes(search.toLowerCase())).map(branch => (
                            <tr key={branch.id} className="hover:bg-gray-50/50 transition-colors">
                               <td className="py-3.5 px-6 font-bold text-gray-900 whitespace-nowrap">
                                 <span onClick={() => setSelectedBranch(branch)} className="hover:text-purple-700 cursor-pointer">{branch.branchName}</span>
@@ -2657,11 +2659,33 @@ export default function Branches() {
                               <td className="py-3.5 px-4 whitespace-nowrap font-bold text-gray-900">{branch.manager}</td>
                               <td className="py-3.5 px-4 whitespace-nowrap">{getStatusBadge(branch.status)}</td>
                               <td className="py-3.5 px-4 font-black text-gray-900 text-center">{branch.loads}</td>
-                              <td className="py-3.5 px-6">
-                                 <div className="flex justify-center gap-3 text-gray-400">
-                                    <Eye size={14} className="hover:text-purple-600 cursor-pointer" onClick={() => setSelectedBranch(branch)} />
-                                    <Link2 size={14} className="hover:text-purple-600 cursor-pointer" />
-                                    <MoreVertical size={14} className="hover:text-gray-900 cursor-pointer" />
+                              <td className="py-3.5 px-6 text-center">
+                                 <div className="flex justify-center items-center gap-1.5">
+                                    <button 
+                                      onClick={() => setSelectedBranch(branch)} 
+                                      title="View Branch Details"
+                                      className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"
+                                    >
+                                      <Eye size={13} />
+                                    </button>
+                                    <button 
+                                      onClick={() => setEditBranchModal(branch)} 
+                                      title="Edit Branch"
+                                      className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"
+                                    >
+                                      <Edit size={13} />
+                                    </button>
+                                    <button 
+                                      onClick={() => {
+                                        if (window.confirm(`Are you sure you want to delete branch ${branch.branchName} (${branch.branchCode})?`)) {
+                                          setBranchList(prev => prev.filter(b => b.id !== branch.id));
+                                        }
+                                      }} 
+                                      title="Delete Branch"
+                                      className="w-7 h-7 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"
+                                    >
+                                      <Trash2 size={13} />
+                                    </button>
                                  </div>
                               </td>
                            </tr>
@@ -2672,7 +2696,7 @@ export default function Branches() {
                
                {/* Pagination */}
                <div className="px-6 py-4 border-t border-gray-100 flex flex-wrap justify-between items-center bg-gray-50/50 mt-auto rounded-b-2xl gap-4">
-                  <span className="text-[12px] font-medium text-gray-500">Showing 1 to 10 of 18 branches</span>
+                  <span className="text-[12px] font-medium text-gray-500">Showing 1 to 10 of {branchList.length} branches</span>
                   <div className="flex items-center gap-3">
                      <div className="flex bg-white border border-gray-200 rounded-md overflow-hidden shadow-sm">
                         <button className="px-2.5 py-1 text-gray-400 border-r border-gray-200 cursor-not-allowed bg-gray-50"><ChevronLeft size={14} /></button>
@@ -2703,9 +2727,9 @@ export default function Branches() {
                   <div className="absolute top-[25%] left-[15%] w-2 h-2 rounded-full bg-green-500"></div>
                </div>
                <div className="flex justify-between items-center text-[9px] font-bold text-gray-500 px-2">
-                  <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-green-500"></div> Active (12)</div>
-                  <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-orange-500"></div> Pending Setup (2)</div>
-                  <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-gray-400"></div> Inactive / Closed (4)</div>
+                  <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-green-500"></div> Active ({branchList.filter(b => b.status === 'Active').length})</div>
+                  <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-orange-500"></div> Pending Setup ({branchList.filter(b => b.status === 'Pending Setup').length})</div>
+                  <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-gray-400"></div> Inactive / Closed ({branchList.filter(b => b.status === 'Inactive' || b.status === 'Closed').length})</div>
                </div>
             </div>
 
@@ -2718,23 +2742,23 @@ export default function Branches() {
                <div className="flex flex-col gap-3 text-[12px] font-medium text-gray-600">
                   <div className="flex justify-between items-center">
                      <span>Active Branches</span>
-                     <span className="font-bold text-gray-900">12</span>
+                     <span className="font-bold text-gray-900">{branchList.filter(b => b.status === 'Active').length}</span>
                   </div>
                   <div className="flex justify-between items-center">
                      <span>Inactive Branches</span>
-                     <span className="font-bold text-gray-900">2</span>
+                     <span className="font-bold text-gray-900">{branchList.filter(b => b.status === 'Inactive').length}</span>
                   </div>
                   <div className="flex justify-between items-center">
                      <span>Pending Setup</span>
-                     <span className="font-bold text-gray-900">2</span>
+                     <span className="font-bold text-gray-900">{branchList.filter(b => b.status === 'Pending Setup').length}</span>
                   </div>
                   <div className="flex justify-between items-center">
                      <span>Closed Branches</span>
-                     <span className="font-bold text-gray-900">2</span>
+                     <span className="font-bold text-gray-900">{branchList.filter(b => b.status === 'Closed').length}</span>
                   </div>
                   <div className="flex justify-between items-center pt-2 mt-1 border-t border-gray-50">
                      <span className="font-bold text-blue-600">Total Branches</span>
-                     <span className="font-bold text-blue-600">18</span>
+                     <span className="font-bold text-blue-600">{branchList.length}</span>
                   </div>
                </div>
             </div>
@@ -2746,41 +2770,15 @@ export default function Branches() {
                   <span className="text-[10px] font-bold text-purple-700 hover:underline cursor-pointer flex items-center gap-1 shrink-0">View All <ArrowRight size={10}/></span>
                </div>
                <div className="flex flex-col gap-3 text-[12px] font-bold">
-                  <div className="flex justify-between items-center">
-                     <div className="flex items-center gap-2.5">
-                        <div className="w-5 h-5 rounded flex items-center justify-center bg-green-50 text-green-600 text-[10px] shrink-0 border border-green-100">1</div>
-                        <span className="text-gray-900 truncate">Sydney Head Office</span>
-                     </div>
-                     <span className="text-gray-600">245</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                     <div className="flex items-center gap-2.5">
-                        <div className="w-5 h-5 rounded flex items-center justify-center bg-green-50 text-green-600 text-[10px] shrink-0 border border-green-100">2</div>
-                        <span className="text-gray-900 truncate">Melbourne Branch</span>
-                     </div>
-                     <span className="text-gray-600">189</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                     <div className="flex items-center gap-2.5">
-                        <div className="w-5 h-5 rounded flex items-center justify-center bg-green-50 text-green-600 text-[10px] shrink-0 border border-green-100">3</div>
-                        <span className="text-gray-900 truncate">Brisbane Branch</span>
-                     </div>
-                     <span className="text-gray-600">156</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                     <div className="flex items-center gap-2.5">
-                        <div className="w-5 h-5 rounded flex items-center justify-center bg-green-50 text-green-600 text-[10px] shrink-0 border border-green-100">4</div>
-                        <span className="text-gray-900 truncate">Auckland Branch</span>
-                     </div>
-                     <span className="text-gray-600">142</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                     <div className="flex items-center gap-2.5">
-                        <div className="w-5 h-5 rounded flex items-center justify-center bg-green-50 text-green-600 text-[10px] shrink-0 border border-green-100">5</div>
-                        <span className="text-gray-900 truncate">Perth Branch</span>
-                     </div>
-                     <span className="text-gray-600">98</span>
-                  </div>
+                  {[...branchList].sort((a, b) => b.loads - a.loads).slice(0, 5).map((branch, index) => (
+                    <div key={branch.id} className="flex justify-between items-center">
+                       <div className="flex items-center gap-2.5">
+                          <div className="w-5 h-5 rounded flex items-center justify-center bg-green-50 text-green-600 text-[10px] shrink-0 border border-green-100">{index + 1}</div>
+                          <span className="text-gray-900 truncate">{branch.branchName}</span>
+                       </div>
+                       <span className="text-gray-600">{branch.loads}</span>
+                    </div>
+                  ))}
                </div>
             </div>
 
@@ -2858,6 +2856,64 @@ export default function Branches() {
             </div>
          </div>
       </div>
+
+      {/* EDIT BRANCH MODAL */}
+      {editBranchModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-150">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-2">
+                <Edit size={16} className="text-purple-600" /> Edit Branch Details ({editBranchModal.branchCode})
+              </h3>
+              <button onClick={() => setEditBranchModal(null)} className="text-slate-400 hover:text-slate-600 text-lg font-bold cursor-pointer">&times;</button>
+            </div>
+            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto text-xs">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 mb-1">Branch Name *</label>
+                <input type="text" value={editBranchModal.branchName || ''} onChange={e => setEditBranchModal({...editBranchModal, branchName: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Branch Code *</label>
+                  <input type="text" value={editBranchModal.branchCode || ''} onChange={e => setEditBranchModal({...editBranchModal, branchCode: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Status</label>
+                  <select value={editBranchModal.status || 'Active'} onChange={e => setEditBranchModal({...editBranchModal, status: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold bg-white cursor-pointer">
+                    <option value="Active">Active</option>
+                    <option value="Pending Setup">Pending Setup</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Manager Name</label>
+                  <input type="text" value={editBranchModal.manager || ''} onChange={e => setEditBranchModal({...editBranchModal, manager: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">State / Region</label>
+                  <input type="text" value={editBranchModal.state || ''} onChange={e => setEditBranchModal({...editBranchModal, state: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 mb-1">Company Entity</label>
+                <input type="text" value={editBranchModal.company || ''} onChange={e => setEditBranchModal({...editBranchModal, company: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+              </div>
+            </div>
+            <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-2">
+              <button onClick={() => setEditBranchModal(null)} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 font-bold hover:bg-white text-xs cursor-pointer">Cancel</button>
+              <button onClick={() => {
+                setBranchList(prev => prev.map(b => b.id === editBranchModal.id ? editBranchModal : b));
+                if (selectedBranch && selectedBranch.id === editBranchModal.id) {
+                  setSelectedBranch(editBranchModal);
+                }
+                setEditBranchModal(null);
+              }} className="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 text-xs shadow-sm cursor-pointer">Save Changes</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
