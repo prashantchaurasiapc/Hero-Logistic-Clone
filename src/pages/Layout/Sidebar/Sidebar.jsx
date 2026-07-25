@@ -4,7 +4,7 @@ import './Sidebar.css';
 import {
   FiGrid, FiUsers, FiKey, FiLayers, FiShield,
   FiTag, FiHelpCircle, FiDollarSign, FiBarChart2,
-  FiActivity, FiCpu, FiSettings, FiLogOut,
+  FiActivity, FiCpu, FiSettings, FiLogOut, FiUser,
   FiBox, FiNavigation, FiTruck, FiMapPin,
   FiHome, FiMessageSquare, FiAlertTriangle,
   FiChevronDown, FiChevronUp, FiClipboard,
@@ -90,18 +90,9 @@ const roleConfigs = {
           { label: 'Knowledge Base', path: '/company-admin/knowledge-base' },
         ],
       },
-      {
-        key: 'settings',
-        icon: <FiSettings />,
-        label: 'Settings',
-        items: [
-          { label: 'Company Settings', path: '/company-admin/company-settings' },
-          { label: 'Subscription & Billing', path: '/company-admin/subscription-billing' },
-          { label: 'My Profile', path: '/company-admin/my-profile' },
-        ],
-      },
     ],
     extraItems: [
+      { icon: <FiSettings />, label: 'Settings', path: '/company-admin/company-settings' },
       { icon: <FiShield />, label: 'Safety Checklists', path: '/company-admin/safety-checklists' },
       { icon: <FiAlertTriangle />, label: 'Delivery Issues', path: '/company-admin/delivery-issues' },
     ],
@@ -242,6 +233,8 @@ const Sidebar = ({ role, isOpen, onClose }) => {
   if (!config) return null;
 
   const handleLogout = () => {
+    // Clear session on logout
+    localStorage.removeItem('hero_session');
     navigate('/login');
   };
 
@@ -252,7 +245,28 @@ const Sidebar = ({ role, isOpen, onClose }) => {
     }));
   };
 
-  const avatarLetter = config.avatarLetter || config.userName?.charAt(0) || 'A';
+  // Get dynamic session values if they exist
+  let userName = config.userName;
+  let portalName = config.portalName;
+  let avatarLetter = config.avatarLetter || config.userName?.charAt(0) || 'A';
+
+  if (role === 'company-admin') {
+    const sessionStr = localStorage.getItem('hero_session');
+    if (sessionStr) {
+      try {
+        const session = JSON.parse(sessionStr);
+        if (session.name) {
+          userName = session.name;
+          avatarLetter = session.name.charAt(0).toUpperCase();
+        }
+        if (session.company) {
+          portalName = session.company.toUpperCase() + ' PORTAL';
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }
 
   return (
     <aside className="sidebar">
@@ -271,14 +285,14 @@ const Sidebar = ({ role, isOpen, onClose }) => {
         </div>
         <div className="portal-badge">
           <FiShield className="portal-icon" />
-          {config.portalName.includes('\n') ? (
+          {portalName.includes('\n') ? (
             <span style={{ display: 'flex', flexDirection: 'column', lineHeight: '1.2' }}>
-              {config.portalName.split('\n').map((line, i) => (
+              {portalName.split('\n').map((line, i) => (
                 <span key={i}>{line}</span>
               ))}
             </span>
           ) : (
-            <span>{config.portalName}</span>
+            <span>{portalName}</span>
           )}
         </div>
       </div>
@@ -348,7 +362,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
         <div className="user-profile">
           <div className="avatar-placeholder">{avatarLetter}</div>
           <div className="user-info">
-            <span className="role-text">{config.userName}</span>
+            <span className="role-text">{userName}</span>
             <span className="platform-owner">{config.userRole}</span>
           </div>
           <button className="logout-btn" onClick={handleLogout}>

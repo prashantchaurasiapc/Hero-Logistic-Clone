@@ -176,7 +176,16 @@ const mockTasks = [
 ];
 
 export default function WarehousePickPackDispatch({ wh, onBack }) {
+  const [tasks, setTasks] = React.useState(mockTasks);
   const [showCreatePickTaskModal, setShowCreatePickTaskModal] = React.useState(false);
+  const [viewTaskModal, setViewTaskModal] = React.useState(null);
+  const [actionMenuIndex, setActionMenuIndex] = React.useState(null);
+  const [toastMessage, setToastMessage] = React.useState('');
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(''), 3000);
+  };
   return (
     <div className="wh-dispatch-container" style={{ background: '#F8FAFC', minHeight: '100vh', padding: '24px 32px', fontFamily: "'Inter','Outfit',sans-serif", overflowX: 'hidden' }}>
       <style>{`
@@ -190,7 +199,7 @@ export default function WarehousePickPackDispatch({ wh, onBack }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
         <div>
           <div style={{ fontSize: 12, fontWeight: 600, color: '#64748B', marginBottom: 8, display: 'flex', gap: 6 }}>
-            <span>Home</span> <span style={{ color: '#CBD5E1' }}>›</span> <span>Warehouse</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ color: '#0F172A' }}>Pick, Pack & Dispatch</span>
+            <span>Home</span> <span style={{ color: '#CBD5E1' }}>›</span> <span>Warehouse</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ cursor: 'pointer' }} onClick={onBack}>Warehouse Details</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ color: '#0F172A' }}>Pick, Pack & Dispatch</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
             <h1 style={{ fontSize: 22, fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.5px' }}>9.5 Pick, Pack & Dispatch – {wh?.name || 'Sydney Head Office Warehouse'}</h1>
@@ -203,7 +212,7 @@ export default function WarehousePickPackDispatch({ wh, onBack }) {
 
         <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
           <button onClick={onBack} style={{ padding: '6px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600, border: '1px solid #E2E8F0', background: '#fff', color: '#1E293B', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', letterSpacing: '-0.2px', whiteSpace: 'nowrap' }}>
-            &lt; Back to Warehouse
+            &lt; Back to Warehouse Details
           </button>
           <button onClick={() => setShowCreatePickTaskModal(true)} style={{ padding: '6px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600, border: '1px solid #C7D2FE', background: '#EEF2FF', color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', letterSpacing: '-0.2px', whiteSpace: 'nowrap' }}>
             <span style={{ fontSize: 14, fontWeight: 400, marginTop: -2 }}>+</span> Create Pick Task
@@ -302,7 +311,7 @@ export default function WarehousePickPackDispatch({ wh, onBack }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {mockTasks.map((t, idx) => (
+                  {tasks.map((t, idx) => (
                     <tr key={idx} style={{ borderBottom: '1px solid #E2E8F0' }}>
                       <td style={{ padding: '10px 16px', fontSize: 12, fontWeight: 600, color: '#0F172A', whiteSpace: 'nowrap' }}>{t.id}</td>
                       <td style={{ padding: '10px 16px' }}>
@@ -328,10 +337,96 @@ export default function WarehousePickPackDispatch({ wh, onBack }) {
                           </div>
                         </div>
                       </td>
-                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>
-                        <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
-                          <button style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#64748B' }}><EyeIcon /></button>
-                          <button style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#64748B' }}><MoreHorizontalIcon /></button>
+                      <td style={{ padding: '10px 16px', textAlign: 'center', position: 'relative' }}>
+                        <div style={{ display: 'flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
+                          <button
+                            title="View Task Details"
+                            onClick={() => setViewTaskModal(t)}
+                            style={{ background: '#F1F5F9', border: 'none', borderRadius: 6, cursor: 'pointer', padding: '6px 8px', color: '#475569', transition: 'all 0.15s ease', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = '#EEF2FF'; e.currentTarget.style.color = '#4F46E5'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = '#F1F5F9'; e.currentTarget.style.color = '#475569'; }}
+                          >
+                            <EyeIcon />
+                          </button>
+
+                          <div style={{ position: 'relative' }}>
+                            <button
+                              title="More Actions"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActionMenuIndex(actionMenuIndex === idx ? null : idx);
+                              }}
+                              style={{ background: actionMenuIndex === idx ? '#EEF2FF' : '#F1F5F9', border: 'none', borderRadius: 6, cursor: 'pointer', padding: '6px 8px', color: actionMenuIndex === idx ? '#4F46E5' : '#475569', transition: 'all 0.15s ease', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                              onMouseEnter={(e) => { e.currentTarget.style.background = '#EEF2FF'; e.currentTarget.style.color = '#4F46E5'; }}
+                              onMouseLeave={(e) => { if (actionMenuIndex !== idx) { e.currentTarget.style.background = '#F1F5F9'; e.currentTarget.style.color = '#475569'; } }}
+                            >
+                              <MoreHorizontalIcon />
+                            </button>
+
+                            {/* Action Menu Dropdown */}
+                            {actionMenuIndex === idx && (
+                              <>
+                                <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setActionMenuIndex(null)} />
+                                <div style={{ position: 'absolute', right: 0, top: '110%', width: 175, background: '#fff', borderRadius: 10, border: '1px solid #E2E8F0', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)', padding: '6px', zIndex: 100, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                  <button
+                                    onClick={() => { setViewTaskModal(t); setActionMenuIndex(null); }}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                  >
+                                    👁️ View Details
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setTasks(prev => prev.map((item, i) => i === idx ? { ...item, status: 'In Progress', statusColor: '#3B82F6', statusBg: '#EFF6FF', progress: '50%' } : item));
+                                      showToast(`Task ${t.id} marked as In Progress`);
+                                      setActionMenuIndex(null);
+                                    }}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                  >
+                                    ▶️ Start Picking
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setTasks(prev => prev.map((item, i) => i === idx ? { ...item, status: 'Completed', statusColor: '#22C55E', statusBg: '#F0FDF4', progress: '100%' } : item));
+                                      showToast(`Task ${t.id} moved to Staging & Dispatched`);
+                                      setActionMenuIndex(null);
+                                    }}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                  >
+                                    📦 Move to Staging
+                                  </button>
+                                  <button
+                                    onClick={() => { showToast(`Pick List printed for ${t.id}`); setActionMenuIndex(null); }}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                  >
+                                    📄 Print Pick List
+                                  </button>
+                                  <div style={{ height: 1, background: '#E2E8F0', margin: '4px 0' }} />
+                                  <button
+                                    disabled={t.status === 'Cancelled'}
+                                    onClick={() => {
+                                      if (t.status === 'Cancelled') return;
+                                      setTasks(prev => prev.map((item, i) => i === idx ? { ...item, status: 'Cancelled', statusColor: '#EF4444', statusBg: '#FEF2F2' } : item));
+                                      showToast(`Pick Task ${t.id} cancelled`);
+                                      setActionMenuIndex(null);
+                                    }}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: t.status === 'Cancelled' ? '#94A3B8' : '#EF4444', background: 'none', border: 'none', borderRadius: 6, cursor: t.status === 'Cancelled' ? 'not-allowed' : 'pointer', textAlign: 'left', width: '100%', opacity: t.status === 'Cancelled' ? 0.6 : 1 }}
+                                    onMouseEnter={(e) => { if (t.status !== 'Cancelled') e.currentTarget.style.background = '#FEF2F2'; }}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                  >
+                                    ❌ Cancel Task
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </td>
                     </tr>
@@ -657,6 +752,89 @@ export default function WarehousePickPackDispatch({ wh, onBack }) {
               <button onClick={() => setShowCreatePickTaskModal(false)} style={{ padding: '10px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, border: 'none', background: '#4F46E5', color: '#fff', cursor: 'pointer' }}>Generate Task</button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* VIEW PICK TASK DETAILS MODAL */}
+      {viewTaskModal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(3px)' }} onClick={() => setViewTaskModal(null)} />
+          <div style={{ background: '#fff', width: '560px', borderRadius: 20, padding: '28px', position: 'relative', zIndex: 1, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', border: '1px solid #E2E8F0' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid #F1F5F9' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ background: viewTaskModal.typeBg, color: viewTaskModal.typeColor, fontSize: 12, fontWeight: 800, padding: '4px 10px', borderRadius: 8, letterSpacing: '0.5px' }}>{viewTaskModal.type}</span>
+                  <h2 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: '#0F172A' }}>{viewTaskModal.id}</h2>
+                </div>
+                <div style={{ fontSize: 12, color: '#64748B', marginTop: 4, fontWeight: 500 }}>
+                  Customer: <strong style={{ color: '#1E293B' }}>{viewTaskModal.customer}</strong> • Reference: <strong style={{ color: '#1E293B' }}>{viewTaskModal.ref}</strong>
+                </div>
+              </div>
+              <button onClick={() => setViewTaskModal(null)} style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '6px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: '#64748B' }}>✕</button>
+            </div>
+
+            {/* Metrics Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
+              <div style={{ background: '#F8FAFC', padding: '12px', borderRadius: 12, border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Items Count</div>
+                <div style={{ fontSize: 18, fontWeight: 900, color: '#0F172A', marginTop: 2 }}>{viewTaskModal.items} Units</div>
+              </div>
+              <div style={{ background: '#F8FAFC', padding: '12px', borderRadius: 12, border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Priority</div>
+                <div style={{ fontSize: 14, fontWeight: 900, color: viewTaskModal.priorityColor, marginTop: 4 }}>{viewTaskModal.priority}</div>
+              </div>
+              <div style={{ background: '#F8FAFC', padding: '12px', borderRadius: 12, border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Status</div>
+                <div style={{ fontSize: 14, fontWeight: 900, color: viewTaskModal.statusColor, marginTop: 4 }}>{viewTaskModal.status}</div>
+              </div>
+            </div>
+
+            {/* Task Flow Details */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
+              <div style={{ background: '#FFF', padding: '14px', borderRadius: 12, border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginBottom: 4 }}>From Location</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A', whiteSpace: 'pre-line' }}>{viewTaskModal.loc}</div>
+              </div>
+              <div style={{ background: '#FFF', padding: '14px', borderRadius: 12, border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginBottom: 4 }}>Assignee & Due Time</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A' }}>{viewTaskModal.assignee}</div>
+                <div style={{ fontSize: 11, color: '#64748B', marginTop: 2, whiteSpace: 'pre-line' }}>{viewTaskModal.due}</div>
+              </div>
+            </div>
+
+            {/* Progress Bar */}
+            <div style={{ background: '#F8FAFC', padding: '14px', borderRadius: 12, border: '1px solid #E2E8F0', marginBottom: 20 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 700, color: '#475569', marginBottom: 6 }}>
+                <span>Completion Progress</span>
+                <span>{viewTaskModal.progress}</span>
+              </div>
+              <div style={{ width: '100%', height: 8, background: '#E2E8F0', borderRadius: 4, overflow: 'hidden' }}>
+                <div style={{ width: viewTaskModal.progress, height: '100%', background: '#4F46E5', borderRadius: 4 }}></div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 16, borderTop: '1px solid #F1F5F9' }}>
+              <button
+                onClick={() => { showToast(`Printing pick list for ${viewTaskModal.id}`); setViewTaskModal(null); }}
+                style={{ padding: '8px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, border: '1px solid #C7D2FE', background: '#EEF2FF', color: '#4F46E5', cursor: 'pointer' }}
+              >
+                📄 Print Pick List
+              </button>
+              <button
+                onClick={() => setViewTaskModal(null)}
+                style={{ padding: '8px 18px', borderRadius: 8, fontSize: 12, fontWeight: 700, border: 'none', background: '#0F172A', color: '#fff', cursor: 'pointer' }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TOAST NOTIFICATION BANNER */}
+      {toastMessage && (
+        <div style={{ position: 'fixed', bottom: 28, right: 28, zIndex: 10000, background: '#0F172A', color: '#fff', padding: '12px 20px', borderRadius: 12, fontSize: 13, fontWeight: 700, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3)', display: 'flex', alignItems: 'center', gap: 10, border: '1px solid #334155' }}>
+          <span style={{ color: '#22C55E' }}>✓</span> {toastMessage}
         </div>
       )}
 

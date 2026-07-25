@@ -37,7 +37,7 @@ export default function CreateAsset() {
           >
             Cancel
           </button>
-          <button className="bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold py-2.5 px-6 rounded-xl transition-colors flex items-center gap-2 shadow-sm">
+          <button onClick={() => navigate('/company-admin/assets')} className="bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold py-2.5 px-6 rounded-xl transition-colors flex items-center gap-2 shadow-sm">
             <CheckCircle2 size={16} /> Save Asset
           </button>
         </div>
@@ -303,7 +303,7 @@ export default function CreateAsset() {
         >
           Cancel
         </button>
-        <button className="bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold py-2.5 px-6 rounded-xl transition-colors flex items-center gap-2 shadow-sm">
+        <button onClick={() => navigate('/company-admin/assets')} className="bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold py-2.5 px-6 rounded-xl transition-colors flex items-center gap-2 shadow-sm">
           Save Asset <ArrowLeft size={16} className="rotate-180" />
         </button>
       </div>

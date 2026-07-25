@@ -5108,67 +5108,69 @@ Please sign in at security.`);
         </div>
       </div>
 
-      {/* KPI Cards & Sidebar Container */}
-      <div className="flex flex-col xl:flex-row gap-6 mb-6">
-        {/* Left Side: KPI Cards */}
-        <div className="flex-grow grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col justify-between">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center"><Users size={16} /></div>
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-tight">Total<br />Customers</p>
+      {/* KPI Cards Container */}
+      <div className="mb-5">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          {/* Card 1 */}
+          <div className="bg-white rounded-xl p-3.5 border border-slate-200/80 shadow-2xs hover:shadow-md transition-all flex items-start gap-3">
+            <div className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+              <Users size={18} />
             </div>
-            <div>
-              <h3 className="text-2xl font-black text-slate-900">156</h3>
-              <p className="text-xs font-bold text-slate-400 mt-1">40 New</p>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col justify-between">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center"><UserCheck size={16} /></div>
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-tight">Active<br />Customers</p>
-            </div>
-            <div>
-              <h3 className="text-2xl font-black text-slate-900">128</h3>
-              <p className="text-xs font-bold text-slate-400 mt-1">81.5% of total</p>
+            <div className="flex-1 min-w-0">
+              <div className="text-xl font-black text-slate-900 leading-tight">156</div>
+              <div className="text-[11px] font-bold text-slate-700 mt-0.5 truncate">Total Customers</div>
+              <div className="text-[10px] font-semibold text-slate-400 mt-0.5 truncate">40 New</div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col justify-between">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center"><UserPlus size={16} /></div>
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-tight">Customers<br />(This Month)</p>
+          {/* Card 2 */}
+          <div className="bg-white rounded-xl p-3.5 border border-slate-200/80 shadow-2xs hover:shadow-md transition-all flex items-start gap-3">
+            <div className="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+              <UserCheck size={18} />
             </div>
-            <div>
-              <h3 className="text-2xl font-black text-slate-900">12</h3>
-              <p className="text-xs font-bold text-slate-400 mt-1">Newly added</p>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col justify-between">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center"><UserMinus size={16} /></div>
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-tight">Inactive<br />Customers</p>
-            </div>
-            <div>
-              <h3 className="text-2xl font-black text-slate-900">28</h3>
-              <p className="text-xs font-bold text-slate-400 mt-1">17.5% of total</p>
+            <div className="flex-1 min-w-0">
+              <div className="text-xl font-black text-slate-900 leading-tight">128</div>
+              <div className="text-[11px] font-bold text-slate-700 mt-0.5 truncate">Active Customers</div>
+              <div className="text-[10px] font-semibold text-slate-400 mt-0.5 truncate">81.5% of total</div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col justify-between">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center"><Star size={16} /></div>
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-tight">Top<br />Customer (YTD)</p>
+          {/* Card 3 */}
+          <div className="bg-white rounded-xl p-3.5 border border-slate-200/80 shadow-2xs hover:shadow-md transition-all flex items-start gap-3">
+            <div className="w-10 h-10 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
+              <UserPlus size={18} />
             </div>
-            <div>
-              <h3 className="text-sm font-black text-slate-900 truncate">ABC Motors ...</h3>
-              <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-wider">LTV: $2.4M (12 Mo)</p>
+            <div className="flex-1 min-w-0">
+              <div className="text-xl font-black text-slate-900 leading-tight">12</div>
+              <div className="text-[11px] font-bold text-slate-700 mt-0.5 truncate">Customers (This Month)</div>
+              <div className="text-[10px] font-semibold text-slate-400 mt-0.5 truncate">Newly added</div>
+            </div>
+          </div>
+
+          {/* Card 4 */}
+          <div className="bg-white rounded-xl p-3.5 border border-slate-200/80 shadow-2xs hover:shadow-md transition-all flex items-start gap-3">
+            <div className="w-10 h-10 rounded-lg bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 shrink-0">
+              <UserMinus size={18} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-xl font-black text-slate-900 leading-tight">28</div>
+              <div className="text-[11px] font-bold text-slate-700 mt-0.5 truncate">Inactive Customers</div>
+              <div className="text-[10px] font-semibold text-slate-400 mt-0.5 truncate">17.5% of total</div>
+            </div>
+          </div>
+
+          {/* Card 5 */}
+          <div className="bg-white rounded-xl p-3.5 border border-slate-200/80 shadow-2xs hover:shadow-md transition-all flex items-start gap-3">
+            <div className="w-10 h-10 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+              <Star size={18} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-black text-slate-900 leading-tight truncate">ABC Motors ...</div>
+              <div className="text-[11px] font-bold text-slate-700 mt-0.5 truncate">Top Customer (YTD)</div>
+              <div className="text-[10px] font-semibold text-slate-400 mt-0.5 uppercase tracking-wider truncate">LTV: $2.4M (12 MO)</div>
             </div>
           </div>
         </div>
-
-        {/* Right Side: Quick Stats (Hidden on smaller screens, shown inline here) */}
       </div>
 
       {/* Main Content Area (Filters + Table + Sidebar) */}

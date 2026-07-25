@@ -1,14 +1,14 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { User, Save, Lock, Upload, Camera, Trash2, CheckCircle2 } from 'lucide-react';
 
 export default function MyProfile() {
   const [profilePhoto, setProfilePhoto] = useState(
-    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80'
+    localStorage.getItem('hero_profilePhoto') || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80'
   );
   const [savedSuccess, setSavedSuccess] = useState('');
-  const [fullName, setFullName] = useState('Rajiv Mehta');
-  const [contactNumber, setContactNumber] = useState('+61 412 345 678');
-  const [email, setEmail] = useState('rajiv.m@herologistics.com');
+  const [fullName, setFullName] = useState(localStorage.getItem('hero_fullName') || 'Rajiv Mehta');
+  const [contactNumber, setContactNumber] = useState(localStorage.getItem('hero_contactNumber') || '+61 412 345 678');
+  const [email, setEmail] = useState(localStorage.getItem('hero_email') || 'rajiv.m@herologistics.com');
 
   const fileInputRef = useRef(null);
 
@@ -40,6 +40,11 @@ export default function MyProfile() {
 
   const handleSaveProfile = (e) => {
     e.preventDefault();
+    localStorage.setItem('hero_fullName', fullName);
+    localStorage.setItem('hero_contactNumber', contactNumber);
+    localStorage.setItem('hero_email', email);
+    if (profilePhoto) localStorage.setItem('hero_profilePhoto', profilePhoto);
+    else localStorage.removeItem('hero_profilePhoto');
     triggerToast('Profile information saved successfully!');
   };
 

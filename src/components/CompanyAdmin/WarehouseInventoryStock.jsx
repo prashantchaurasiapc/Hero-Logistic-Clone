@@ -47,7 +47,7 @@ const StarIcon = ({ color }) => (
   </svg>
 );
 const EyeIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>
   </svg>
 );
@@ -66,7 +66,7 @@ const TrashDeleteIcon = () => (
   </svg>
 );
 const MoreHorizontalIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle>
   </svg>
 );
@@ -95,6 +95,13 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
   const [showAddStockModal, setShowAddStockModal] = useState(false);
   const [viewStockItemModal, setViewStockItemModal] = useState(null);
   const [editStockItemModal, setEditStockItemModal] = useState(null);
+  const [actionMenuIndex, setActionMenuIndex] = useState(null);
+  const [toastMessage, setToastMessage] = useState('');
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(''), 3000);
+  };
 
   return (
     <div className="wh-inventory-container" style={{ background: '#F8FAFC', minHeight: '100vh', padding: '24px 32px', fontFamily: "'Inter','Outfit',sans-serif", overflowX: 'hidden' }}>
@@ -111,7 +118,7 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
         <div>
           <div style={{ fontSize: 12, fontWeight: 600, color: '#64748B', marginBottom: 8, display: 'flex', gap: 6 }}>
-            <span>Home</span> <span style={{ color: '#CBD5E1' }}>›</span> <span>Warehouse</span> <span style={{ color: '#CBD5E1' }}>›</span> <span>Warehouse Details</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ color: '#0F172A' }}>Inventory & Stock</span>
+            <span>Home</span> <span style={{ color: '#CBD5E1' }}>›</span> <span>Warehouse</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ cursor: 'pointer' }} onClick={onBack}>Warehouse Details</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ color: '#0F172A' }}>Inventory & Stock</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
             <h1 style={{ fontSize: 22, fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.5px' }}>9.3 Inventory & Stock - {wh.name}</h1>
@@ -291,32 +298,89 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
                           <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
                             <span style={{ fontSize: 10, fontWeight: 700, color: item.statColor, background: item.statBg, padding: '2px 8px', borderRadius: 4 }}>{item.status}</span>
                           </td>
-                          <td style={{ padding: '12px 16px', display: 'flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
-                            <button 
-                              onClick={() => setViewStockItemModal(item)} 
-                              title="View Item Details"
-                              style={{ width: 26, height: 26, borderRadius: 6, background: '#EFF6FF', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                            >
-                              <EyeIcon />
-                            </button>
-                            <button 
-                              onClick={() => setEditStockItemModal(item)} 
-                              title="Edit Item"
-                              style={{ width: 26, height: 26, borderRadius: 6, background: '#FEF3C7', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                            >
-                              <PencilEditIcon />
-                            </button>
-                            <button 
-                              onClick={() => {
-                                if (window.confirm(`Are you sure you want to delete stock item ${item.name} (${item.code})?`)) {
-                                  setStockItems(prev => prev.filter(s => s.code !== item.code));
-                                }
-                              }} 
-                              title="Delete Item"
-                              style={{ width: 26, height: 26, borderRadius: 6, background: '#FEE2E2', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                            >
-                              <TrashDeleteIcon />
-                            </button>
+                          <td style={{ padding: '12px 16px', textAlign: 'center', position: 'relative' }}>
+                            <div style={{ display: 'flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
+                              <button
+                                title="View Item Details"
+                                onClick={() => setViewStockItemModal(item)}
+                                style={{ background: '#F1F5F9', border: 'none', borderRadius: 6, cursor: 'pointer', padding: '6px 8px', color: '#475569', transition: 'all 0.15s ease', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                onMouseEnter={(e) => { e.currentTarget.style.background = '#EEF2FF'; e.currentTarget.style.color = '#4F46E5'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.background = '#F1F5F9'; e.currentTarget.style.color = '#475569'; }}
+                              >
+                                <EyeIcon />
+                              </button>
+
+                              <div style={{ position: 'relative' }}>
+                                <button
+                                  title="More Actions"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActionMenuIndex(actionMenuIndex === i ? null : i);
+                                  }}
+                                  style={{ background: actionMenuIndex === i ? '#EEF2FF' : '#F1F5F9', border: 'none', borderRadius: 6, cursor: 'pointer', padding: '6px 8px', color: actionMenuIndex === i ? '#4F46E5' : '#475569', transition: 'all 0.15s ease', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                  onMouseEnter={(e) => { e.currentTarget.style.background = '#EEF2FF'; e.currentTarget.style.color = '#4F46E5'; }}
+                                  onMouseLeave={(e) => { if (actionMenuIndex !== i) { e.currentTarget.style.background = '#F1F5F9'; e.currentTarget.style.color = '#475569'; } }}
+                                >
+                                  <MoreHorizontalIcon />
+                                </button>
+
+                                {/* Action Menu Dropdown */}
+                                {actionMenuIndex === i && (
+                                  <>
+                                    <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setActionMenuIndex(null)} />
+                                    <div style={{ position: 'absolute', right: 0, top: '110%', width: 175, background: '#fff', borderRadius: 10, border: '1px solid #E2E8F0', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)', padding: '6px', zIndex: 100, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                      <button
+                                        onClick={() => { setViewStockItemModal(item); setActionMenuIndex(null); }}
+                                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                                        onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
+                                        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                      >
+                                        👁️ View Details
+                                      </button>
+                                      <button
+                                        onClick={() => { setEditStockItemModal(item); setActionMenuIndex(null); }}
+                                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                                        onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
+                                        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                      >
+                                        ✏️ Edit Item
+                                      </button>
+                                      <button
+                                        onClick={() => { showToast(`Barcode & SKU label printed for ${item.code}`); setActionMenuIndex(null); }}
+                                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                                        onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
+                                        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                      >
+                                        🏷️ Print SKU Label
+                                      </button>
+                                      <button
+                                        onClick={() => { showToast(`Stock level adjusted for ${item.name}`); setActionMenuIndex(null); }}
+                                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                                        onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
+                                        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                      >
+                                        📦 Adjust Stock
+                                      </button>
+                                      <div style={{ height: 1, background: '#E2E8F0', margin: '4px 0' }} />
+                                      <button
+                                        onClick={() => {
+                                          if (window.confirm(`Are you sure you want to delete stock item ${item.name} (${item.code})?`)) {
+                                            setStockItems(prev => prev.filter(s => s.code !== item.code));
+                                            showToast(`Stock item ${item.code} deleted`);
+                                          }
+                                          setActionMenuIndex(null);
+                                        }}
+                                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#EF4444', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                                        onMouseEnter={(e) => e.currentTarget.style.background = '#FEF2F2'}
+                                        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                      >
+                                        🗑️ Delete Item
+                                      </button>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -731,6 +795,13 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
               }} style={{ padding: '8px 16px', borderRadius: 6, background: '#4F46E5', color: '#fff', border: 'none', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>Save Changes</button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* TOAST NOTIFICATION BANNER */}
+      {toastMessage && (
+        <div style={{ position: 'fixed', bottom: 28, right: 28, zIndex: 10000, background: '#0F172A', color: '#fff', padding: '12px 20px', borderRadius: 12, fontSize: 13, fontWeight: 700, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3)', display: 'flex', alignItems: 'center', gap: 10, border: '1px solid #334155' }}>
+          <span style={{ color: '#22C55E' }}>✓</span> {toastMessage}
         </div>
       )}
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Plus, Mail, Phone, ChevronRight, X, Sparkles, 
   Edit3, Trash2, Bell, ShieldCheck, ChevronDown, Check, 
@@ -10,6 +11,7 @@ import { crmStore } from '../../services/crmStore';
 import { crmWorkflowEngine } from '../../services/crmEngines';
 
 export default function PipelineBoard() {
+  const navigate = useNavigate();
   // Database States loaded from localStorage crmStore
   const [leads, setLeads] = useState([]);
   
@@ -701,6 +703,17 @@ export default function PipelineBoard() {
               ) : (
                 <button 
                   onClick={() => {
+                    const mockSession = {
+                      token: `mock-jwt-token-${Date.now()}`,
+                      email: convertForm.adminEmail || 'admin@company.com',
+                      role: 'Company Admin',
+                      name: convertForm.adminName || 'Admin',
+                      company: convertForm.companyName || selectedLead.company,
+                      plan: convertForm.planTier || 'Professional',
+                      joinedAt: new Date().toLocaleDateString('en-US')
+                    };
+                    localStorage.setItem('hero_session', JSON.stringify(mockSession));
+                    window.dispatchEvent(new Event('storage'));
                     crmWorkflowEngine.handleStageChange(selectedLead.id, 'Won', 'Converted to Company Tenant');
                     setShowConvertModal(false);
                     setSelectedLead(null);
@@ -709,6 +722,7 @@ export default function PipelineBoard() {
                       text: convertForm.companyName,
                       actionText: 'successfully converted to active Company Tenant!'
                     });
+                    navigate('/company-admin/command-centre');
                   }}
                   className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold transition-all cursor-pointer shadow-md active:scale-95 flex items-center gap-2"
                 >

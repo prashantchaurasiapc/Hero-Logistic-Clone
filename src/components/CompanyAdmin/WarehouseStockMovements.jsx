@@ -133,7 +133,18 @@ const DUMMY_MOVEMENTS = [
 ];
 
 export default function WarehouseStockMovements({ wh, onBack }) {
+  const [movements, setMovements] = React.useState(DUMMY_MOVEMENTS);
   const [showNewMovementModal, setShowNewMovementModal] = React.useState(false);
+  const [viewMovementModal, setViewMovementModal] = React.useState(null);
+  const [cancelMovementModal, setCancelMovementModal] = React.useState(null);
+  const [cancelReason, setCancelReason] = React.useState('');
+  const [actionMenuIndex, setActionMenuIndex] = React.useState(null);
+  const [toastMessage, setToastMessage] = React.useState('');
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(''), 3000);
+  };
 
   return (
     <div className="wh-movements-container" style={{ background: '#F8FAFC', minHeight: '100vh', padding: '24px 32px', fontFamily: "'Inter','Outfit',sans-serif", overflowX: 'hidden' }}>
@@ -153,7 +164,7 @@ export default function WarehouseStockMovements({ wh, onBack }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
         <div>
           <div style={{ fontSize: 12, fontWeight: 600, color: '#64748B', marginBottom: 8, display: 'flex', gap: 6 }}>
-            <span>Home</span> <span style={{ color: '#CBD5E1' }}>›</span> <span>Warehouse</span> <span style={{ color: '#CBD5E1' }}>›</span> <span>Inventory & Stock</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ color: '#0F172A' }}>Stock Movements</span>
+            <span>Home</span> <span style={{ color: '#CBD5E1' }}>›</span> <span>Warehouse</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ cursor: 'pointer' }} onClick={onBack}>Warehouse Details</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ color: '#0F172A' }}>Stock Movements</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
             <h1 style={{ fontSize: 22, fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.5px' }}>9.4 Stock Movements – {wh.name}</h1>
@@ -166,7 +177,7 @@ export default function WarehouseStockMovements({ wh, onBack }) {
 
         <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
           <button onClick={onBack} style={{ padding: '6px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600, border: '1px solid #E2E8F0', background: '#fff', color: '#1E293B', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', letterSpacing: '-0.2px', whiteSpace: 'nowrap' }}>
-            <span style={{ fontSize: 14, fontWeight: 700, marginTop: -2 }}>‹</span> Back to Inventory & Stock
+            <span style={{ fontSize: 14, fontWeight: 700, marginTop: -2 }}>‹</span> Back to Warehouse Details
           </button>
           <button onClick={() => setShowNewMovementModal(true)} style={{ padding: '8px 16px', borderRadius: 6, fontSize: 12, fontWeight: 700, border: '1px solid #E2E8F0', background: '#fff', color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', letterSpacing: '-0.2px', whiteSpace: 'nowrap' }}>
             <span style={{ fontSize: 14, fontWeight: 500 }}>+</span> New Stock Movement
@@ -312,7 +323,7 @@ export default function WarehouseStockMovements({ wh, onBack }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {DUMMY_MOVEMENTS.map((item, i) => (
+                  {movements.map((item, i) => (
                     <tr key={i} style={{ borderBottom: '1px solid #E2E8F0', background: '#fff' }}>
                       <td style={{ padding: '12px 16px', fontSize: 11, fontWeight: 700, color: '#0F172A', whiteSpace: 'pre-wrap', lineHeight: 1.4 }}>{item.dateTime}</td>
                       <td style={{ padding: '12px 16px', fontSize: 11, fontWeight: 800, color: '#4F46E5', whiteSpace: 'nowrap' }}>{item.id}</td>
@@ -330,13 +341,81 @@ export default function WarehouseStockMovements({ wh, onBack }) {
                       <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
                         <span style={{ fontSize: 10, fontWeight: 700, color: item.statColor, background: item.statBg, padding: '2px 8px', borderRadius: 4 }}>{item.status}</span>
                       </td>
-                      <td style={{ padding: '12px 16px', display: 'flex', gap: 6, justifyContent: 'center' }}>
-                        <button style={{ width: 24, height: 24, borderRadius: 4, background: '#F1F5F9', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                          <EyeIcon />
-                        </button>
-                        <button style={{ width: 24, height: 24, borderRadius: 4, background: '#F1F5F9', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                          <MoreHorizontalIcon />
-                        </button>
+                      <td style={{ padding: '12px 16px', textAlign: 'center', position: 'relative' }}>
+                        <div style={{ display: 'flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
+                          <button
+                            title="View Movement Details"
+                            onClick={() => setViewMovementModal(item)}
+                            style={{ background: '#F1F5F9', border: 'none', borderRadius: 6, cursor: 'pointer', padding: '6px 8px', color: '#475569', transition: 'all 0.15s ease', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = '#EEF2FF'; e.currentTarget.style.color = '#4F46E5'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = '#F1F5F9'; e.currentTarget.style.color = '#475569'; }}
+                          >
+                            <EyeIcon />
+                          </button>
+
+                          <div style={{ position: 'relative' }}>
+                            <button
+                              title="More Actions"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActionMenuIndex(actionMenuIndex === i ? null : i);
+                              }}
+                              style={{ background: actionMenuIndex === i ? '#EEF2FF' : '#F1F5F9', border: 'none', borderRadius: 6, cursor: 'pointer', padding: '6px 8px', color: actionMenuIndex === i ? '#4F46E5' : '#475569', transition: 'all 0.15s ease', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                              onMouseEnter={(e) => { e.currentTarget.style.background = '#EEF2FF'; e.currentTarget.style.color = '#4F46E5'; }}
+                              onMouseLeave={(e) => { if (actionMenuIndex !== i) { e.currentTarget.style.background = '#F1F5F9'; e.currentTarget.style.color = '#475569'; } }}
+                            >
+                              <MoreHorizontalIcon />
+                            </button>
+
+                            {/* Action Menu Dropdown */}
+                            {actionMenuIndex === i && (
+                              <>
+                                <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setActionMenuIndex(null)} />
+                                <div style={{ position: 'absolute', right: 0, top: '110%', width: 175, background: '#fff', borderRadius: 10, border: '1px solid #E2E8F0', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)', padding: '6px', zIndex: 100, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                  <button
+                                    onClick={() => { setViewMovementModal(item); setActionMenuIndex(null); }}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                  >
+                                    👁️ View Details
+                                  </button>
+                                  <button
+                                    onClick={() => { showToast(`Movement slip printed for ${item.id}`); setActionMenuIndex(null); }}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                  >
+                                    📄 Print Movement Slip
+                                  </button>
+                                  <button
+                                    onClick={() => { showToast(`Receipt PDF downloaded for ${item.id}`); setActionMenuIndex(null); }}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                  >
+                                    📥 Download Receipt
+                                  </button>
+                                  <div style={{ height: 1, background: '#E2E8F0', margin: '4px 0' }} />
+                                  <button
+                                    disabled={item.status === 'Cancelled'}
+                                    onClick={() => {
+                                      if (item.status === 'Cancelled') return;
+                                      setCancelMovementModal(item);
+                                      setCancelReason('');
+                                      setActionMenuIndex(null);
+                                    }}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: item.status === 'Cancelled' ? '#94A3B8' : '#EF4444', background: 'none', border: 'none', borderRadius: 6, cursor: item.status === 'Cancelled' ? 'not-allowed' : 'pointer', textAlign: 'left', width: '100%', opacity: item.status === 'Cancelled' ? 0.6 : 1 }}
+                                    onMouseEnter={(e) => { if (item.status !== 'Cancelled') e.currentTarget.style.background = '#FEF2F2'; }}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                  >
+                                    ❌ Cancel Movement
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -678,6 +757,151 @@ export default function WarehouseStockMovements({ wh, onBack }) {
               <button onClick={() => setShowNewMovementModal(false)} style={{ padding: '10px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, border: 'none', background: '#4F46E5', color: '#fff', cursor: 'pointer' }}>Create Task</button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* VIEW MOVEMENT DETAILS MODAL */}
+      {viewMovementModal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(3px)' }} onClick={() => setViewMovementModal(null)} />
+          <div style={{ background: '#fff', width: '560px', borderRadius: 20, padding: '28px', position: 'relative', zIndex: 1, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', border: '1px solid #E2E8F0' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid #F1F5F9' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ background: viewMovementModal.typeBg, color: viewMovementModal.typeColor, fontSize: 12, fontWeight: 800, padding: '4px 10px', borderRadius: 8, letterSpacing: '0.5px' }}>{viewMovementModal.type}</span>
+                  <h2 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: '#0F172A' }}>{viewMovementModal.id}</h2>
+                </div>
+                <div style={{ fontSize: 12, color: '#64748B', marginTop: 4, fontWeight: 500 }}>
+                  Reference: <strong style={{ color: '#1E293B' }}>{viewMovementModal.ref}</strong> • Created By: <strong style={{ color: '#1E293B' }}>{viewMovementModal.createdBy}</strong>
+                </div>
+              </div>
+              <button onClick={() => setViewMovementModal(null)} style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '6px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: '#64748B' }}>✕</button>
+            </div>
+
+            {/* Main Item info */}
+            <div style={{ background: '#F8FAFC', padding: '16px', borderRadius: 12, border: '1px solid #E2E8F0', marginBottom: 20 }}>
+              <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginBottom: 4 }}>Item / Description</div>
+              <div style={{ fontSize: 14, fontWeight: 900, color: '#0F172A', whiteSpace: 'pre-wrap' }}>{viewMovementModal.item}</div>
+            </div>
+
+            {/* Metrics Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
+              <div style={{ background: '#F8FAFC', padding: '12px', borderRadius: 12, border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Quantity</div>
+                <div style={{ fontSize: 18, fontWeight: 900, color: viewMovementModal.qtyColor || '#0F172A', marginTop: 2 }}>{viewMovementModal.qty} {viewMovementModal.unit}</div>
+              </div>
+              <div style={{ background: '#F8FAFC', padding: '12px', borderRadius: 12, border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Status</div>
+                <div style={{ fontSize: 14, fontWeight: 900, color: viewMovementModal.statColor, marginTop: 4 }}>{viewMovementModal.status}</div>
+              </div>
+              <div style={{ background: '#F8FAFC', padding: '12px', borderRadius: 12, border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Date & Time</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#0F172A', marginTop: 4, whiteSpace: 'pre-wrap' }}>{viewMovementModal.dateTime}</div>
+              </div>
+            </div>
+
+            {/* Locations flow */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
+              <div style={{ background: '#FFF', padding: '14px', borderRadius: 12, border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginBottom: 4 }}>From Location</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A', whiteSpace: 'pre-wrap' }}>{viewMovementModal.fromLoc}</div>
+              </div>
+              <div style={{ background: '#FFF', padding: '14px', borderRadius: 12, border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginBottom: 4 }}>To Location</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A', whiteSpace: 'pre-wrap' }}>{viewMovementModal.toLoc}</div>
+              </div>
+            </div>
+
+            {/* Reason */}
+            <div style={{ background: '#F8FAFC', padding: '14px', borderRadius: 12, border: '1px solid #E2E8F0', marginBottom: 20 }}>
+              <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginBottom: 4 }}>Reason / Notes</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#1E293B', whiteSpace: 'pre-wrap' }}>{viewMovementModal.reason}</div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 16, borderTop: '1px solid #F1F5F9' }}>
+              <button
+                onClick={() => { showToast(`Printing movement slip for ${viewMovementModal.id}`); setViewMovementModal(null); }}
+                style={{ padding: '8px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, border: '1px solid #C7D2FE', background: '#EEF2FF', color: '#4F46E5', cursor: 'pointer' }}
+              >
+                📄 Print Slip
+              </button>
+              <button
+                onClick={() => setViewMovementModal(null)}
+                style={{ padding: '8px 18px', borderRadius: 8, fontSize: 12, fontWeight: 700, border: 'none', background: '#0F172A', color: '#fff', cursor: 'pointer' }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CANCEL MOVEMENT CONFIRMATION MODAL */}
+      {cancelMovementModal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(3px)' }} onClick={() => setCancelMovementModal(null)} />
+          <div style={{ background: '#fff', width: '480px', borderRadius: 20, padding: '28px', position: 'relative', zIndex: 1, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', border: '1px solid #E2E8F0' }}>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+              <div style={{ width: 42, height: 42, borderRadius: 12, background: '#FEE2E2', color: '#EF4444', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>
+                ⚠️
+              </div>
+              <div>
+                <h3 style={{ margin: '0', fontSize: 16, fontWeight: 900, color: '#0F172A' }}>Cancel Movement – {cancelMovementModal.id}</h3>
+                <div style={{ fontSize: 12, color: '#64748B', fontWeight: 500 }}>Confirm cancellation of stock movement</div>
+              </div>
+            </div>
+
+            {/* Warning Box */}
+            <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 12, padding: '14px', marginBottom: 20 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#991B1B', marginBottom: 4 }}>Are you sure you want to cancel this movement?</div>
+              <div style={{ fontSize: 11, color: '#B91C1C', fontWeight: 500, lineHeight: 1.4 }}>
+                Item: <strong>{cancelMovementModal.item.split('\n')[0]}</strong> ({cancelMovementModal.qty} {cancelMovementModal.unit})<br />
+                This will revert allocated stock and mark movement status as <strong>Cancelled</strong>.
+              </div>
+            </div>
+
+            {/* Reason Textarea */}
+            <div style={{ marginBottom: 24 }}>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>
+                Cancellation Reason (Optional)
+              </label>
+              <textarea
+                rows="3"
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="e.g. Order cancelled by client, incorrect items selected..."
+                style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 12, outline: 'none', resize: 'none', fontFamily: 'inherit' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+              <button
+                onClick={() => setCancelMovementModal(null)}
+                style={{ padding: '9px 18px', borderRadius: 8, fontSize: 12, fontWeight: 700, border: '1px solid #E2E8F0', background: '#fff', color: '#475569', cursor: 'pointer' }}
+              >
+                Keep Active
+              </button>
+              <button
+                onClick={() => {
+                  setMovements(prev => prev.map(m => m.id === cancelMovementModal.id ? { ...m, status: 'Cancelled', statColor: '#EF4444', statBg: '#FEE2E2' } : m));
+                  showToast(`✓ Stock movement ${cancelMovementModal.id} cancelled successfully.`);
+                  setCancelMovementModal(null);
+                }}
+                style={{ padding: '9px 18px', borderRadius: 8, fontSize: 12, fontWeight: 800, border: 'none', background: '#DC2626', color: '#fff', cursor: 'pointer', boxShadow: '0 2px 8px rgba(220, 38, 38, 0.3)' }}
+              >
+                Yes, Cancel Movement
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* TOAST NOTIFICATION BANNER */}
+      {toastMessage && (
+        <div style={{ position: 'fixed', bottom: 28, right: 28, zIndex: 10000, background: '#0F172A', color: '#fff', padding: '12px 20px', borderRadius: 12, fontSize: 13, fontWeight: 700, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3)', display: 'flex', alignItems: 'center', gap: 10, border: '1px solid #334155' }}>
+          <span style={{ color: '#22C55E' }}>✓</span> {toastMessage}
         </div>
       )}
 

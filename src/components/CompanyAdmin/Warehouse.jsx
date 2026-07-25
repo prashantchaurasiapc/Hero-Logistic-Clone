@@ -29,13 +29,13 @@ const styles = `
   @media(min-width:480px){ .wh-metrics { grid-template-columns:repeat(2,1fr); } }
   @media(min-width:640px){ .wh-metrics { grid-template-columns:repeat(3,1fr); } }
   @media(min-width:1024px){ .wh-metrics { grid-template-columns:repeat(6,1fr); gap:12px; margin-bottom:24px; } }
-  .wh-metric-card { background:#fff; border:1px solid #E2E8F0; border-radius:12px; padding:14px; display:flex; flex-direction:column; }
-  .wh-metric-icon { width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  .wh-metric-top { display:flex; gap:8px; margin-bottom:12px; }
+  .wh-metric-card { background:#fff; border:1px solid #E2E8F0; border-radius:12px; padding:10px 12px; display:flex; flex-direction:column; }
+  .wh-metric-icon { width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .wh-metric-top { display:flex; gap:8px; margin-bottom:6px; }
   .wh-metric-label { font-size:9px; font-weight:800; color:#64748B; letter-spacing:0.2px; text-transform:uppercase; margin-bottom:2px; }
-  .wh-metric-value { font-size:18px; font-weight:900; color:#0F172A; line-height:1; }
-  .wh-metric-sub { font-size:10px; color:#94A3B8; margin-top:4px; }
-  .wh-metric-link { margin-top:auto; font-size:11px; font-weight:700; color:#4F46E5; display:flex; align-items:center; gap:4px; cursor:pointer; padding-top:8px; }
+  .wh-metric-value { font-size:17px; font-weight:900; color:#0F172A; line-height:1; }
+  .wh-metric-sub { font-size:9.5px; color:#94A3B8; margin-top:2px; }
+  .wh-metric-link { margin-top:auto; font-size:10px; font-weight:700; color:#4F46E5; display:flex; align-items:center; gap:3px; cursor:pointer; padding-top:4px; }
 
   /* Middle Section */
   .wh-middle { display:flex; flex-direction:column; gap:20px; margin-bottom:20px; }
@@ -283,6 +283,38 @@ export default function Warehouse() {
   const [whList, setWhList] = useState(initialWarehouses);
   const [editModal, setEditModal] = useState(null);
 
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All Status');
+  const [branchFilter, setBranchFilter] = useState('All Branches');
+  const [typeFilter, setTypeFilter] = useState('All Types');
+
+  const branchOptions = ['All Branches', ...Array.from(new Set(whList.map(w => w.branch).filter(Boolean)))];
+  const typeOptions = ['All Types', ...Array.from(new Set(whList.map(w => w.type).filter(Boolean)))];
+  const statusOptions = ['All Status', 'Active', 'Inactive', 'Maintenance'];
+
+  const filteredWarehouses = whList.filter(w => {
+    const q = searchQuery.toLowerCase().trim();
+    const matchesSearch = !q || 
+      (w.name && w.name.toLowerCase().includes(q)) ||
+      (w.code && w.code.toLowerCase().includes(q)) ||
+      (w.addr && w.addr.toLowerCase().includes(q)) ||
+      (w.branch && w.branch.toLowerCase().includes(q)) ||
+      (w.type && w.type.toLowerCase().includes(q));
+
+    const matchesStatus = statusFilter === 'All Status' || w.status === statusFilter;
+    const matchesBranch = branchFilter === 'All Branches' || w.branch === branchFilter;
+    const matchesType = typeFilter === 'All Types' || w.type === typeFilter;
+
+    return matchesSearch && matchesStatus && matchesBranch && matchesType;
+  });
+
+  const resetFilters = () => {
+    setSearchQuery('');
+    setStatusFilter('All Status');
+    setBranchFilter('All Branches');
+    setTypeFilter('All Types');
+  };
+
   const handleExport = (targetWh) => {
     const w = targetWh || selectedWh || whList[0];
     const csvContent = `data:text/csv;charset=utf-8,Warehouse Name,Code,Branch,Type,Status,Stock Items,Value,Utilisation\n"${w.name}","${w.code}","${w.branch}","${w.type}","${w.status}","${w.stock}","${w.value}","${w.util}%"`;
@@ -381,7 +413,7 @@ export default function Warehouse() {
 
   // ── SUB VIEWS ──────────────────────────────────────────────────────────
   if (view === 'inventory') return <WarehouseInventoryStock wh={selectedWh || whList[0]} onBack={() => setView('details')} />;
-  if (view === 'movements') return <WarehouseStockMovements wh={selectedWh || whList[0]} onBack={() => setView('inventory')} />;
+  if (view === 'movements') return <WarehouseStockMovements wh={selectedWh || whList[0]} onBack={() => setView('details')} />;
   if (view === 'pickpack') return <WarehousePickPackDispatch wh={selectedWh || whList[0]} onBack={() => setView('details')} />;
   if (view === 'locations') return <WarehouseLocationsBins wh={selectedWh || whList[0]} onBack={() => setView('details')} />;
   if (view === 'staffequipment') return <WarehouseStaffEquipment wh={selectedWh || whList[0]} onBack={() => setView('details')} />;
@@ -697,11 +729,30 @@ export default function Warehouse() {
   }
 
   // ── ADD WAREHOUSE VIEW ────────────────────────────────────────────────
+  const handleAddWarehouse = (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const newWh = {
+      name: fd.get('name') || 'New Warehouse',
+      code: fd.get('code') || 'WH-NEW',
+      branch: fd.get('branch') || 'Main Branch',
+      addr: fd.get('addr') || '123 Logistics Way',
+      type: 'General',
+      status: 'Active',
+      stock: '0',
+      value: '$0.00',
+      util: 0,
+      isStar: false
+    };
+    setWhList(prev => [newWh, ...prev]);
+    setView('list');
+  };
+
   if (view === 'add') {
     return (
       <>
         <style>{styles}</style>
-        <div className="wh-add-page">
+        <form onSubmit={handleAddWarehouse} className="wh-add-page">
           <div className="wh-add-header">
             <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
               <button onClick={() => setView('list')} className="wh-btn" style={{ width: 38, height: 38, borderRadius: '50%', padding: 0, justifyContent: 'center' }}>←</button>
@@ -714,8 +765,8 @@ export default function Warehouse() {
               </div>
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setView('list')} className="wh-btn">Cancel</button>
-              <button onClick={() => setView('list')} className="wh-btn wh-btn-accent">Save Warehouse →</button>
+              <button type="button" onClick={() => setView('list')} className="wh-btn">Cancel</button>
+              <button type="submit" className="wh-btn wh-btn-accent">Save Warehouse →</button>
             </div>
           </div>
 
@@ -729,15 +780,15 @@ export default function Warehouse() {
               <div className="wh-form-grid-2">
                 <div>
                   <label className="wh-label">Warehouse Name *</label>
-                  <div className="wh-input-icon"><span className="icon">🏢</span><input className="wh-input" placeholder="e.g. Sydney Main Depot" /></div>
+                  <div className="wh-input-icon"><span className="icon">🏢</span><input name="name" className="wh-input" placeholder="e.g. Sydney Main Depot" /></div>
                 </div>
                 <div>
                   <label className="wh-label">Warehouse Code *</label>
-                  <div className="wh-input-icon"><span className="icon">📦</span><input className="wh-input" placeholder="e.g. SYD-01" /></div>
+                  <div className="wh-input-icon"><span className="icon">📦</span><input name="code" className="wh-input" placeholder="e.g. SYD-01" /></div>
                 </div>
                 <div>
                   <label className="wh-label">Branch / Region</label>
-                  <input className="wh-input" placeholder="Sydney Main" />
+                  <input name="branch" className="wh-input" placeholder="Sydney Main" />
                 </div>
                 <div>
                   <label className="wh-label">Status</label>
@@ -769,7 +820,7 @@ export default function Warehouse() {
                 <div><h2 style={{ fontSize: 13, fontWeight: 800, color: '#1E293B', margin: '0 0 2px 0' }}>3. LOCATION DETAILS</h2><div style={{ fontSize: 10, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Geographic Address</div></div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <div><label className="wh-label">Street Address</label><input className="wh-input" placeholder="e.g. 123 Logistics Way" /></div>
+                <div><label className="wh-label">Street Address</label><input name="addr" className="wh-input" placeholder="e.g. 123 Logistics Way" /></div>
                 <div className="wh-form-grid-3">
                   <div><label className="wh-label">Suburb / City</label><input className="wh-input" placeholder="e.g. Wetherill Park" /></div>
                   <div><label className="wh-label">State</label><input className="wh-input" placeholder="e.g. NSW" /></div>
@@ -822,7 +873,7 @@ export default function Warehouse() {
             <button onClick={() => setView('list')} className="wh-btn">Cancel</button>
             <button onClick={() => setView('list')} className="wh-btn wh-btn-accent">Save Warehouse →</button>
           </div>
-        </div>
+        </form>
       </>
     );
   }
@@ -886,24 +937,47 @@ export default function Warehouse() {
           {/* Warehouse List */}
           <div className="wh-list-card" id="warehouse-list">
             <div style={{ padding: '16px 20px', borderBottom: '1px solid #F1F5F9' }}>
-              <h2 style={{ fontSize: 12, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>WAREHOUSE LIST ({whList.length})</h2>
+              <h2 style={{ fontSize: 12, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>WAREHOUSE LIST ({filteredWarehouses.length})</h2>
             </div>
 
             {/* Filters */}
             <div className="wh-list-filters">
               <div className="wh-search-box">
                 <span className="wh-search-icon"><SearchIcon /></span>
-                <input placeholder="Search warehouses..." />
+                <input 
+                  placeholder="Search warehouses..." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {['All Status', 'All Branches', 'All Types'].map(label => (
-                  <select key={label} style={{ padding: '8px 10px', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#334155', background: '#fff', outline: 'none' }}>
-                    <option>{label}</option>
-                  </select>
-                ))}
-                <button className="wh-btn" style={{ padding: '8px 10px' }}><FilterIcon /></button>
-                <button className="wh-btn" style={{ padding: '8px 10px' }}><ExportIcon /><span>Export</span></button>
-                <button className="wh-btn" style={{ padding: '8px 10px' }}><RefreshIcon /></button>
+                <select 
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  style={{ padding: '8px 10px', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#334155', background: '#fff', outline: 'none', cursor: 'pointer' }}
+                >
+                  {statusOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                </select>
+
+                <select 
+                  value={branchFilter}
+                  onChange={(e) => setBranchFilter(e.target.value)}
+                  style={{ padding: '8px 10px', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#334155', background: '#fff', outline: 'none', cursor: 'pointer' }}
+                >
+                  {branchOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                </select>
+
+                <select 
+                  value={typeFilter}
+                  onChange={(e) => setTypeFilter(e.target.value)}
+                  style={{ padding: '8px 10px', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: 12, fontWeight: 600, color: '#334155', background: '#fff', outline: 'none', cursor: 'pointer' }}
+                >
+                  {typeOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                </select>
+
+                <button onClick={resetFilters} title="Clear/Reset Filters" className="wh-btn" style={{ padding: '8px 10px' }}><FilterIcon /></button>
+                <button onClick={() => handleExport()} className="wh-btn" style={{ padding: '8px 10px' }}><ExportIcon /><span>Export</span></button>
+                <button onClick={resetFilters} title="Reset Filters" className="wh-btn" style={{ padding: '8px 10px' }}><RefreshIcon /></button>
               </div>
             </div>
 
@@ -918,67 +992,82 @@ export default function Warehouse() {
                   </tr>
                 </thead>
                 <tbody>
-                  {whList.map((w, i) => (
-                    <tr key={i} style={{ borderBottom: '1px solid #F8FAFC' }}
-                      onMouseOver={e => e.currentTarget.style.background = '#FAFAFA'}
-                      onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
-                      <td>
-                        <div style={{ display: 'flex', gap: 8 }}>
-                          <div style={{ marginTop: 2 }}><StarIcon fill={w.isStar ? '#4F46E5' : 'none'} color={w.isStar ? '#4F46E5' : '#CBD5E1'} /></div>
-                          <div>
-                            <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', marginBottom: 2, maxWidth: 160 }}>{w.name}</div>
-                            <div style={{ fontSize: 10, color: '#64748B', maxWidth: 160, lineHeight: 1.4 }}>{w.addr}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td><span onClick={() => handleWhClick(w)} style={{ fontSize: 13, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }}>{w.code}</span></td>
-                      <td><div style={{ fontSize: 12, color: '#475569', maxWidth: 100 }}>{w.branch}</div></td>
-                      <td><div style={{ fontSize: 12, color: '#475569' }}>{w.type}</div></td>
-                      <td><span className={`wh-badge ${w.status === 'Active' ? 'wh-badge-green' : 'wh-badge-gray'}`}>{w.status}</span></td>
-                      <td><div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>{w.stock}</div></td>
-                      <td><div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A' }}>{w.value}</div></td>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <div style={{ fontSize: 12, color: '#0F172A', fontWeight: 600 }}>{w.util}%</div>
-                          <div style={{ width: 50, height: 5, background: '#EEF2FF', borderRadius: 4, overflow: 'hidden' }}>
-                            <div style={{ width: `${w.util}%`, height: '100%', background: '#4F46E5', borderRadius: 4 }} />
-                          </div>
-                        </div>
-                      </td>
-                      <td style={{ padding: '12px 16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <button 
-                            onClick={() => handleWhClick(w)} 
-                            title="View Warehouse Details" 
-                            style={{ width: 26, height: 26, borderRadius: 6, background: '#EFF6FF', color: '#3B82F6', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                          >
-                            <Eye size={13} />
-                          </button>
-                          <button 
-                            onClick={() => setEditModal({ ...w, index: i })} 
-                            title="Edit Warehouse" 
-                            style={{ width: 26, height: 26, borderRadius: 6, background: '#FEF3C7', color: '#D97706', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                          >
-                            <Edit size={13} />
-                          </button>
-                          <button 
-                            onClick={() => { if (window.confirm(`Are you sure you want to delete warehouse ${w.name}?`)) { const nl = [...whList]; nl.splice(i, 1); setWhList(nl); } }} 
-                            title="Delete Warehouse" 
-                            style={{ width: 26, height: 26, borderRadius: 6, background: '#FEE2E2', color: '#DC2626', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                          >
-                            <Trash2 size={13} />
-                          </button>
-                        </div>
+                  {filteredWarehouses.length === 0 ? (
+                    <tr>
+                      <td colSpan="9" style={{ padding: '24px', textAlign: 'center', color: '#64748B', fontSize: 12, fontWeight: 600 }}>
+                        No warehouses found matching your filters.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    filteredWarehouses.map((w, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid #F8FAFC' }}
+                        onMouseOver={e => e.currentTarget.style.background = '#FAFAFA'}
+                        onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
+                        <td>
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <div style={{ marginTop: 2 }}><StarIcon fill={w.isStar ? '#4F46E5' : 'none'} color={w.isStar ? '#4F46E5' : '#CBD5E1'} /></div>
+                            <div>
+                              <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', marginBottom: 2, maxWidth: 160 }}>{w.name}</div>
+                              <div style={{ fontSize: 10, color: '#64748B', maxWidth: 160, lineHeight: 1.4 }}>{w.addr}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td><span onClick={() => handleWhClick(w)} style={{ fontSize: 13, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }}>{w.code}</span></td>
+                        <td><div style={{ fontSize: 12, color: '#475569', maxWidth: 100 }}>{w.branch}</div></td>
+                        <td><div style={{ fontSize: 12, color: '#475569' }}>{w.type}</div></td>
+                        <td><span className={`wh-badge ${w.status === 'Active' ? 'wh-badge-green' : 'wh-badge-gray'}`}>{w.status}</span></td>
+                        <td><div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>{w.stock}</div></td>
+                        <td><div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A' }}>{w.value}</div></td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ fontSize: 12, color: '#0F172A', fontWeight: 600 }}>{w.util}%</div>
+                            <div style={{ width: 50, height: 5, background: '#EEF2FF', borderRadius: 4, overflow: 'hidden' }}>
+                              <div style={{ width: `${w.util}%`, height: '100%', background: '#4F46E5', borderRadius: 4 }} />
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{ padding: '12px 16px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <button 
+                              onClick={() => handleWhClick(w)} 
+                              title="View Warehouse Details" 
+                              style={{ width: 26, height: 26, borderRadius: 6, background: '#EFF6FF', color: '#3B82F6', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            >
+                              <Eye size={13} />
+                            </button>
+                            <button 
+                              onClick={() => setEditModal({ ...w, index: i })} 
+                              title="Edit Warehouse" 
+                              style={{ width: 26, height: 26, borderRadius: 6, background: '#FEF3C7', color: '#D97706', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            >
+                              <Edit size={13} />
+                            </button>
+                            <button 
+                              onClick={() => { 
+                                if (window.confirm(`Are you sure you want to delete warehouse ${w.name}?`)) { 
+                                  const nl = [...whList]; 
+                                  const origIdx = whList.findIndex(item => item.code === w.code);
+                                  if (origIdx !== -1) nl.splice(origIdx, 1); 
+                                  setWhList(nl); 
+                                } 
+                              }} 
+                              title="Delete Warehouse" 
+                              style={{ width: 26, height: 26, borderRadius: 6, background: '#FEE2E2', color: '#DC2626', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
 
             {/* ── MOBILE CARD LIST ── */}
             <div className="wh-cards-list">
-              {whList.map((w, i) => (
+              {filteredWarehouses.map((w, i) => (
                 <div key={i} className="wh-wh-card">
                   <div className="wh-wh-card-header">
                     <div style={{ display: 'flex', gap: 8, flex: 1, minWidth: 0 }}>
@@ -1023,7 +1112,7 @@ export default function Warehouse() {
                   <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                     <button onClick={() => handleWhClick(w)} className="wh-btn" style={{ flex: 1, justifyContent: 'center', fontSize: 11 }}>View Details</button>
                     <button onClick={() => setEditModal({ ...w, index: i })} className="wh-btn" style={{ flex: 1, justifyContent: 'center', fontSize: 11 }}>Edit</button>
-                    <button onClick={() => { if (window.confirm(`Delete ${w.name}?`)) { const nl = [...whList]; nl.splice(i, 1); setWhList(nl); } }}
+                    <button onClick={() => { if (window.confirm(`Delete ${w.name}?`)) { const nl = [...whList]; const origIdx = whList.findIndex(item => item.code === w.code); if (origIdx !== -1) nl.splice(origIdx, 1); setWhList(nl); } }}
                       className="wh-btn" style={{ flex: 1, justifyContent: 'center', fontSize: 11, color: '#EF4444', borderColor: '#FCA5A5' }}>Delete</button>
                   </div>
                 </div>
@@ -1032,7 +1121,9 @@ export default function Warehouse() {
 
             {/* Pagination */}
             <div style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #F1F5F9', flexWrap: 'wrap', gap: 10 }}>
-              <div style={{ fontSize: 12, color: '#64748B', fontWeight: 500 }}>Showing 1 to {whList.length} of {whList.length} warehouses</div>
+              <div style={{ fontSize: 12, color: '#64748B', fontWeight: 500 }}>
+                Showing {filteredWarehouses.length > 0 ? 1 : 0} to {filteredWarehouses.length} of {whList.length} warehouses
+              </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{ display: 'flex', gap: 4 }}>
                   {['‹', '1', '›'].map((l, i) => (

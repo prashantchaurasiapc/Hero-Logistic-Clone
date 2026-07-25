@@ -23,6 +23,45 @@ const Header = ({ onMenuClick }) => {
     return 'Admin';
   };
 
+  // Profile details states synced with localStorage session
+  const [userName, setUserName] = useState('Admin');
+  const [userEmail, setUserEmail] = useState('admin@hero.com');
+  const [avatar, setAvatar] = useState('AM');
+
+  useEffect(() => {
+    const syncSession = () => {
+      const sessionStr = localStorage.getItem('hero_session');
+      if (sessionStr) {
+        try {
+          const session = JSON.parse(sessionStr);
+          if (session.name) {
+            setUserName(session.name);
+            const initials = session.name.split(' ').map(n => n[0]).join('').toUpperCase();
+            setAvatar(initials);
+          } else {
+            setUserName('Admin');
+            setAvatar('AM');
+          }
+          if (session.email) {
+            setUserEmail(session.email);
+          } else {
+            setUserEmail('admin@hero.com');
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      } else {
+        setUserName('Admin');
+        setUserEmail('admin@hero.com');
+        setAvatar('AM');
+      }
+    };
+
+    syncSession();
+    window.addEventListener('storage', syncSession);
+    return () => window.removeEventListener('storage', syncSession);
+  }, [location.pathname]);
+
   // Notification lists state
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(12);
@@ -129,6 +168,12 @@ const Header = ({ onMenuClick }) => {
     item.category.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const handleSignOut = () => {
+    localStorage.removeItem('hero_session');
+    setShowDropdown(false);
+    navigate('/login');
+  };
+
   return (
     <>
       <header className="header">
@@ -210,15 +255,15 @@ const Header = ({ onMenuClick }) => {
           
           {/* User Profile Controller */}
           <div className="user-profile-trigger" ref={dropdownRef} onClick={() => setShowDropdown(!showDropdown)}>
-            <div className="avatar-circle-sm">SM</div>
+            <div className="avatar-circle-sm">{avatar}</div>
             <ChevronDown className={`dropdown-icon w-4 h-4 transition-transform duration-250 ${showDropdown ? 'rotate-180' : ''}`} />
             
             {/* Dropdown Menu */}
             {showDropdown && (
               <div className="header-profile-dropdown animate-fade-in z-[999] top-[50px]">
                 <div className="dropdown-header-info">
-                  <span className="dropdown-info-name">Admin</span>
-                  <span className="dropdown-info-role">{getRoleLabel()} • admin@hero.com</span>
+                  <span className="dropdown-info-name">{userName}</span>
+                  <span className="dropdown-info-role">{getRoleLabel()} • {userEmail}</span>
                 </div>
                 
                 <div className="dropdown-menu-divider"></div>
@@ -231,8 +276,7 @@ const Header = ({ onMenuClick }) => {
                 <button 
                   onClick={(e) => {
                     e.stopPropagation();
-                    setShowDropdown(false);
-                    navigate('/login');
+                    handleSignOut();
                   }}
                   className="dropdown-menu-item signout-btn"
                 >

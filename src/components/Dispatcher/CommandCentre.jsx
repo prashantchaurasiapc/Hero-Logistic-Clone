@@ -581,16 +581,15 @@ export default function CommandCentre() {
                           <div>
                             <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1.5">REQUIRED TIME</label>
                             <div className="relative">
-                              <Calendar className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-455" />
+                              <Calendar className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                               <input 
-                                type="text"
-                                placeholder="dd-mm-yyyy --:--"
-                                value={stop.time}
+                                type="datetime-local"
+                                value={stop.time || ''}
                                 onChange={(e) => {
                                   const val = e.target.value;
                                   setStops(prev => prev.map(s => s.id === stop.id ? { ...s, time: val } : s));
                                 }}
-                                className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none"
+                                className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none bg-white cursor-pointer"
                               />
                             </div>
                           </div>
@@ -770,13 +769,12 @@ export default function CommandCentre() {
                 <div>
                   <label className="block text-[9px] font-bold text-slate-400 tracking-wider uppercase mb-1.5">GLOBAL DEADLINE</label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs shrink-0 select-none">⏰</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs shrink-0 select-none pointer-events-none">⏰</span>
                     <input 
-                      type="text"
-                      placeholder="dd-mm-yyyy --:--"
-                      value={shippingDeadline}
+                      type="datetime-local"
+                      value={shippingDeadline || ''}
                       onChange={(e) => setShippingDeadline(e.target.value)}
-                      className="w-full pl-9 pr-4 py-2 bg-white text-slate-900 rounded-xl text-xs font-bold focus:outline-none border-none"
+                      className="w-full pl-9 pr-4 py-2 bg-white text-slate-900 rounded-xl text-xs font-bold focus:outline-none border-none cursor-pointer"
                     />
                   </div>
                 </div>

@@ -4,7 +4,7 @@ import {
   Building, AlertTriangle, Filter, Download, RefreshCw, Eye,
   Check, X, CreditCard, ChevronLeft, ChevronRight, ArrowLeft,
   ArrowUpRight, ArrowDownRight, Code2, MoreHorizontal, Mail, Printer, FilePlus, Edit, User, MapPin, Phone, ExternalLink, Clock,
-  HelpCircle, Shield, ShieldCheck, Bell, MoreVertical, TrendingUp, CheckCircle2, Code, Percent, BarChart2, PieChart, Cloud, History, Share2
+  HelpCircle, Shield, ShieldCheck, Bell, MoreVertical, TrendingUp, CheckCircle2, Code, Percent, BarChart2, PieChart, Cloud, History, Share2, Send
 } from 'lucide-react';
 
 export default function Finance() {
@@ -26,24 +26,83 @@ export default function Finance() {
   const [prSelectedBranch, setPrSelectedBranch] = useState('All Branches');
   const [prSelectedType, setPrSelectedType] = useState('All Payment Types');
   const [prSelectedStatus, setPrSelectedStatus] = useState('All Status');
+  const [payMenuIndex, setPayMenuIndex] = useState(null);
+  const [viewPaymentModal, setViewPaymentModal] = useState(null);
+  const [editPaymentModal, setEditPaymentModal] = useState(null);
+  const [paymentsList, setPaymentsList] = useState([
+    { date: '24 May 2025', ref: 'PAY-2025-0567', customer: 'All Star Motors', invoice: 'INV-2025-0187', method: 'Bank Transfer', amount: '$9,625.00', status: 'Completed', branch: 'Sydney Head Office' },
+    { date: '23 May 2025', ref: 'PAY-2025-0566', customer: 'Sydney Car Sales', invoice: 'INV-2025-0182', method: 'EFTPOS', amount: '$2,860.00', status: 'Completed', branch: 'Sydney Head Office' },
+    { date: '22 May 2025', ref: 'PAY-2025-0565', customer: 'Fast Freight Pty Ltd', invoice: 'INV-2025-0180', method: 'Bank Transfer', amount: '$5,280.00', status: 'Completed', branch: 'Melbourne Depot' },
+    { date: '22 May 2025', ref: 'PAY-2025-0564', customer: 'Metro Group Sydney', invoice: 'INV-2025-0176', method: 'Credit Card', amount: '$1,650.00', status: 'Completed', branch: 'Sydney Head Office' },
+    { date: '21 May 2025', ref: 'PAY-2025-0563', customer: 'Blue Line Logistics', invoice: 'INV-2025-0173', method: 'Bank Transfer', amount: '$3,960.00', status: 'Completed', branch: 'Brisbane Hub' }
+  ]);
+  const [receiptsList, setReceiptsList] = useState([
+    { date: '24 May 2025', ref: 'REC-2025-0125', customer: 'ABC Wholesalers', for: 'Overpayment Refund', method: 'Bank Transfer', amount: '$1,250.00', status: 'Issued', branch: 'Sydney Head Office' },
+    { date: '20 May 2025', ref: 'REC-2025-0124', customer: 'All Star Motors', for: 'Security Deposit Refund', method: 'Bank Transfer', amount: '$500.00', status: 'Issued', branch: 'Sydney Head Office' },
+    { date: '18 May 2025', ref: 'REC-2025-0123', customer: 'Quick Move Transport', for: 'Job Cancellation Refund', method: 'EFTPOS', amount: '$275.00', status: 'Issued', branch: 'Melbourne Depot' },
+    { date: '16 May 2025', ref: 'REC-2025-0122', customer: 'Prime Car Carriers', for: 'Overpayment Refund', method: 'Bank Transfer', amount: '$820.00', status: 'Issued', branch: 'Sydney Head Office' },
+    { date: '12 May 2025', ref: 'REC-2025-0121', customer: 'City Link Logistics', for: 'Overpayment Refund', method: 'Bank Transfer', amount: '$430.00', status: 'Issued', branch: 'Brisbane Hub' }
+  ]);
+  const [recMenuIndex, setRecMenuIndex] = useState(null);
+  const [viewReceiptModal, setViewReceiptModal] = useState(null);
+  const [editReceiptModal, setEditReceiptModal] = useState(null);
 
   // States for 10.5 Expenses page
   const [expSearchQuery, setExpSearchQuery] = useState('');
   const [expSelectedBranch, setExpSelectedBranch] = useState('All Branches');
   const [expSelectedCategory, setExpSelectedCategory] = useState('All Categories');
   const [expSelectedType, setExpSelectedType] = useState('All Payment Types');
+  const [expMenuIndex, setExpMenuIndex] = useState(null);
+  const [viewExpenseModal, setViewExpenseModal] = useState(null);
+  const [editExpenseModal, setEditExpenseModal] = useState(null);
+  const [expensesList, setExpensesList] = useState([
+    { date: '24 May 2025', ref: 'EXP-2025-0567', desc: 'Diesel - Port Macquarie Run', category: 'Fuel', amount: '$1,245.60', type: 'Company Card', status: 'Approved', user: 'John Driver', branch: 'Sydney Head Office' },
+    { date: '24 May 2025', ref: 'EXP-2025-0566', desc: 'Truck Service & Oil Change', category: 'Maintenance', amount: '$620.00', type: 'Bank Transfer', status: 'Pending', user: 'John Driver', branch: 'Sydney Head Office' },
+    { date: '23 May 2025', ref: 'EXP-2025-0565', desc: 'Tyre Repair - Rear Left', category: 'Repairs', amount: '$180.00', type: 'Company Card', status: 'Approved', user: 'John Driver', branch: 'Melbourne Depot' },
+    { date: '22 May 2025', ref: 'EXP-2025-0564', desc: 'Toll Fees - Sydney', category: 'Tolls', amount: '$82.40', type: 'EFTPOS', status: 'Approved', user: 'John Driver', branch: 'Sydney Head Office' },
+    { date: '22 May 2025', ref: 'EXP-2025-0563', desc: 'Truck Wash', category: 'Maintenance', amount: '$45.00', type: 'Company Card', status: 'Approved', user: 'John Driver', branch: 'Sydney Head Office' },
+    { date: '21 May 2025', ref: 'EXP-2025-0562', desc: 'Accommodation - Tamworth', category: 'Accommodation', amount: '$210.00', type: 'Personal (Reimb.)', status: 'Pending', user: 'John Driver', branch: 'Brisbane Hub' },
+    { date: '21 May 2025', ref: 'EXP-2025-0561', desc: 'Meals - Tamworth', category: 'Meals', amount: '$78.50', type: 'Personal (Reimb.)', status: 'Approved', user: 'John Driver', branch: 'Sydney Head Office' },
+    { date: '20 May 2025', ref: 'EXP-2025-0560', desc: 'Parking - Sydney CBD', category: 'Parking', amount: '$32.00', type: 'EFTPOS', status: 'Approved', user: 'John Driver', branch: 'Melbourne Depot' }
+  ]);
 
   // States for 10.6 Payroll Runs page
   const [paySearchQuery, setPaySearchQuery] = useState('');
   const [paySelectedBranch, setPaySelectedBranch] = useState('All Branches');
   const [paySelectedType, setPaySelectedType] = useState('All Pay Types');
   const [paySelectedStatus, setPaySelectedStatus] = useState('All Status');
+  const [payRunMenuIndex, setPayRunMenuIndex] = useState(null);
+  const [viewPayrollModal, setViewPayrollModal] = useState(null);
+  const [editPayrollModal, setEditPayrollModal] = useState(null);
+  const [payrollList, setPayrollList] = useState([
+    { name: 'Weekly Run - 26 May 2025', period: '19 May - 25 May 2025', branch: 'Sydney Head Office', employees: 28, type: 'Weekly', total: '$58,420.00', status: 'Paid', user: 'Sarah Mitchell', date: '26 May 2025' },
+    { name: 'Weekly Run - 19 May 2025', period: '12 May - 18 May 2025', branch: 'Sydney Head Office', employees: 27, type: 'Weekly', total: '$55,680.00', status: 'Paid', user: 'Sarah Mitchell', date: '19 May 2025' },
+    { name: 'Fortnightly Run - 18 May 2025', period: '05 May - 18 May 2025', branch: 'Brisbane Branch', employees: 15, type: 'Fortnightly', total: '$31,240.00', status: 'Approved', user: 'James Driver', date: '18 May 2025' },
+    { name: 'Weekly Run - 12 May 2025', period: '05 May - 11 May 2025', branch: 'Sydney Head Office', employees: 26, type: 'Weekly', total: '$53,960.00', status: 'Paid', user: 'Sarah Mitchell', date: '12 May 2025' },
+    { name: 'Weekly Run - 05 May 2025', period: '28 Apr - 04 May 2025', branch: 'Sydney Head Office', employees: 26, type: 'Weekly', total: '$52,730.00', status: 'Paid', user: 'Sarah Mitchell', date: '05 May 2025' },
+    { name: 'Salary Run - May 2025', period: '01 May - 31 May 2025', branch: 'Sydney Head Office', employees: 8, type: 'Salary', total: '$64,500.00', status: 'Draft', user: 'Sarah Mitchell', date: '01 May 2025' },
+    { name: 'Fortnightly Run - 04 May 2025', period: '21 Apr - 04 May 2025', branch: 'Melbourne Branch', employees: 12, type: 'Fortnightly', total: '$24,870.00', status: 'Paid', user: 'James Driver', date: '04 May 2025' },
+    { name: 'Weekly Run - 28 Apr 2025', period: '21 Apr - 27 Apr 2025', branch: 'Sydney Head Office', employees: 25, type: 'Weekly', total: '$51,280.00', status: 'Paid', user: 'Sarah Mitchell', date: '28 Apr 2025' }
+  ]);
 
   // States for 10.7 Accounts Receivable & Overdue Invoices page
   const [recSearchQuery, setRecSearchQuery] = useState('');
   const [recSelectedBranch, setRecSelectedBranch] = useState('All Branches');
   const [recSelectedCustomer, setRecSelectedCustomer] = useState('All Customers');
   const [recSelectedStatus, setRecSelectedStatus] = useState('All Status');
+  const [ovdMenuIndex, setOvdMenuIndex] = useState(null);
+  const [viewOverdueModal, setViewOverdueModal] = useState(null);
+  const [editOverdueModal, setEditOverdueModal] = useState(null);
+  const [overdueList, setOverdueList] = useState([
+    { id: 'INV-2025-0180', customer: 'Fast Freight Pty Ltd', issueDate: '05 May 2025', dueDate: '19 May 2025', daysOverdue: 13, amount: '$5,280.00', status: 'Overdue' },
+    { id: 'INV-2025-0176', customer: 'Metro Group Sydney', issueDate: '05 May 2025', dueDate: '19 May 2025', daysOverdue: 13, amount: '$1,650.00', status: 'Overdue' },
+    { id: 'INV-2025-0168', customer: 'ABC Wholesalers', issueDate: '30 Apr 2025', dueDate: '15 May 2025', daysOverdue: 17, amount: '$6,820.00', status: 'Overdue' },
+    { id: 'INV-2025-0162', customer: 'Prime Car Carriers', issueDate: '28 Apr 2025', dueDate: '12 May 2025', daysOverdue: 20, amount: '$3,950.00', status: 'Overdue' },
+    { id: 'INV-2025-0159', customer: 'Quick Move Transport', issueDate: '25 Apr 2025', dueDate: '09 May 2025', daysOverdue: 23, amount: '$2,480.00', status: 'Overdue' },
+    { id: 'INV-2025-0151', customer: 'Blue Line Logistics', issueDate: '21 Apr 2025', dueDate: '05 May 2025', daysOverdue: 27, amount: '$4,230.00', status: 'Overdue' },
+    { id: 'INV-2025-0148', customer: 'City Link Logistics', issueDate: '18 Apr 2025', dueDate: '02 May 2025', daysOverdue: 30, amount: '$2,350.00', status: 'Overdue' },
+    { id: 'INV-2025-0136', customer: 'Sydney Car Sales', issueDate: '10 Apr 2025', dueDate: '24 Apr 2025', daysOverdue: 38, amount: '$2,860.00', status: 'Overdue' },
+  ]);
 
   // States for 10.8 Profit & Loss / Financial Reports page
   const [repSearchQuery, setRepSearchQuery] = useState('');
@@ -56,12 +115,53 @@ export default function Finance() {
   const [accSelectedType, setAccSelectedType] = useState('All Export Types');
   const [accSelectedFormat, setAccSelectedFormat] = useState('All Formats');
   const [accSelectedStatus, setAccSelectedStatus] = useState('All Status');
+  const [accMenuIndex, setAccMenuIndex] = useState(null);
+  const [viewExportModal, setViewExportModal] = useState(null);
+  const [editExportModal, setEditExportModal] = useState(null);
+  const [accExportList, setAccExportList] = useState([
+    { name: 'May 2025 - Profit & Loss', type: 'P&L Statement', fmt: 'PDF', period: 'May 2025', date: '24 May 2025 10:32 AM', by: 'Sarah Mitchell', status: 'Completed' },
+    { name: 'May 2025 - Balance Sheet', type: 'Balance Sheet', fmt: 'PDF', period: 'May 2025', date: '24 May 2025 10:32 AM', by: 'Sarah Mitchell', status: 'Completed' },
+    { name: 'May 2025 - General Ledger', type: 'General Ledger', fmt: 'CSV', period: 'May 2025', date: '24 May 2025 10:32 AM', by: 'Sarah Mitchell', status: 'Completed' },
+    { name: 'May 2025 - Accounts Receivable', type: 'Receivables', fmt: 'CSV', period: 'May 2025', date: '23 May 2025 04:15 PM', by: 'James Driver', status: 'Completed' },
+    { name: 'May 2025 - Accounts Payable', type: 'Payables', fmt: 'CSV', period: 'May 2025', date: '23 May 2025 04:14 PM', by: 'James Driver', status: 'Completed' },
+    { name: 'Apr - May 2025 - Bank Reconciliation', type: 'Bank Reconciliation', fmt: 'CSV', period: 'Apr - May 2025', date: '22 May 2025 09:20 AM', by: 'Sarah Mitchell', status: 'Completed' },
+    { name: 'May 2025 - Tax Summary', type: 'Tax Summary', fmt: 'PDF', period: 'May 2025', date: '20 May 2025 11:05 AM', by: 'Sarah Mitchell', status: 'Failed' },
+    { name: 'May 2025 - Cash Flow', type: 'Cash Flow', fmt: 'PDF', period: 'May 2025', date: '19 May 2025 03:40 PM', by: 'James Driver', status: 'Completed' },
+  ]);
 
   // Modals & Active Invoice Details
   const [showAddTransactionModal, setShowAddTransactionModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showScheduleReportModal, setShowScheduleReportModal] = useState(false);
+  const [showExportHistoryModal, setShowExportHistoryModal] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
+  const [showNotificationsModal, setShowNotificationsModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showRowActionsModal, setShowRowActionsModal] = useState(false);
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
+  const [showRecordPaymentModal, setShowRecordPaymentModal] = useState(false);
+  const [showSendEmailModal, setShowSendEmailModal] = useState(false);
+  const [showCreditNoteModal, setShowCreditNoteModal] = useState(false);
+  const [showSendRemindersModal, setShowSendRemindersModal] = useState(false);
+  
+  const [dateRange, setDateRange] = useState({ startDate: '2025-05-01', endDate: '2025-05-31', preset: 'This Month (May 2025)' });
+  const [selectedRowItem, setSelectedRowItem] = useState(null);
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(11);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [showMoreActions, setShowMoreActions] = useState(false);
+
+  const [paymentForm, setPaymentForm] = useState({ amount: '', method: 'Direct Bank Transfer (EFT)', date: '2025-05-24', reference: 'PAY-2025-0912' });
+  const [emailForm, setEmailForm] = useState({ to: 'accounts@customer.com.au', subject: 'Tax Invoice INV-2025-0187 - Hero Logistics', message: 'Please find attached your official tax invoice for recent freight services. Thank you for your business!' });
+  const [creditForm, setCreditForm] = useState({ amount: '$250.00', reason: 'Overcharge / Freight Calculation Adjustment', notes: '' });
+
+  // Form state for Schedule Report Modal
+  const [scheduleForm, setScheduleForm] = useState({
+    reportName: '10.8 Profit & Loss / Financial Reports',
+    frequency: 'Monthly (1st of month)',
+    recipientEmail: 'finance-admin@herologistics.com.au',
+    format: 'PDF Document',
+    deliveryTime: '08:00 AM AEST'
+  });
 
   // Active Detailed Invoice for Page 10.3
   const [activeInvoiceDetail, setActiveInvoiceDetail] = useState(null);
@@ -97,42 +197,93 @@ export default function Finance() {
 
   // Open Full Invoice Details Page 10.3
   const handleOpenInvoiceDetail = (inv) => {
+    const isPaid = inv ? inv.status === 'Paid' : true;
+    const rawAmt = inv && inv.rawAmount ? Math.abs(inv.rawAmount) : 9625;
+
+    // Calculate Subtotal and GST from rawAmt
+    const calcSubtotal = rawAmt / 1.1;
+    const calcGst = rawAmt - calcSubtotal;
+
+    const fmtTotal = inv ? inv.amount : '$9,625.00';
+    const fmtSubtotal = `$${calcSubtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const fmtGst = `$${calcGst.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
     const detailObj = {
       id: inv ? inv.id : 'INV-2025-0187',
       customer: inv ? inv.customer : 'All Star Motors',
       abn: '12 345 678 901',
-      email: 'accounts@allstarmotors.com.au',
+      email: inv && inv.customer ? `accounts@${inv.customer.toLowerCase().replace(/[^a-z0-9]/g, '')}.com.au` : 'accounts@allstarmotors.com.au',
       phone: '+61 2 9876 5432',
       address: '321 Parramatta Rd, Sydney NSW 2150',
       issueDate: inv ? inv.issueDate : '10 May 2025',
       dueDate: inv ? inv.dueDate : '24 May 2025',
-      paidDate: '16 May 2025',
+      paidDate: isPaid ? (inv ? inv.issueDate : '16 May 2025') : '-',
       terms: '14 Days',
       status: inv ? inv.status : 'Paid',
-      subtotal: '$8,750.00',
-      gst: '$875.00',
-      total: inv ? inv.amount : '$9,625.00',
-      amountPaid: inv && inv.status === 'Paid' ? inv.amount : (inv && inv.status === 'Outstanding' ? '$0.00' : '$9,625.00'),
-      balanceDue: inv && inv.status === 'Paid' ? '$0.00' : (inv ? inv.amount : '$0.00'),
+      subtotal: fmtSubtotal,
+      gst: fmtGst,
+      total: fmtTotal,
+      amountPaid: isPaid ? fmtTotal : '$0.00',
+      balanceDue: isPaid ? '$0.00' : fmtTotal,
       paymentMethod: 'Bank Transfer',
-      paymentRef: 'EFT-56789',
-      paymentDate: '16 May 2025',
+      paymentRef: `EFT-${Math.floor(50000 + Math.random() * 40000)}`,
+      paymentDate: isPaid ? '16 May 2025' : '-',
       loadId: inv && inv.ref ? inv.ref : 'LD-2025-0421',
       jobDate: '06 May 2025',
       createdBy: 'Admin User',
-      createdOn: '10 May 2025 09:14 AM',
+      createdOn: `${inv ? inv.issueDate : '10 May 2025'} 09:14 AM`,
       lastUpdated: '16 May 2025 11:23 AM',
       lineItems: [
-        { id: 1, desc: 'Car Transport - Sydney to Brisbane', sub: 'Load: LD-2025-0421 | Service: Car Carrier', qty: '1.00', unitPrice: '$6,500.00', gst: '$650.00', total: '$7,150.00' },
-        { id: 2, desc: 'Toll & Road Charges', sub: 'As per receipts attached', qty: '1.00', unitPrice: '$450.00', gst: '$45.00', total: '$495.00' },
-        { id: 3, desc: 'Fuel Surcharge', sub: 'Surcharge applied', qty: '1.00', unitPrice: '$500.00', gst: '$50.00', total: '$550.00' },
-        { id: 4, desc: 'Waiting Time', sub: '2.5 hours @ $220/hr', qty: '2.50', unitPrice: '$220.00', gst: '$55.00', total: '$605.00' },
-        { id: 5, desc: 'Admin Fee', sub: 'Documentation & processing', qty: '1.00', unitPrice: '$300.00', gst: '$30.00', total: '$330.00' }
+        { 
+          id: 1, 
+          desc: `Car Transport - ${inv ? inv.customer : 'Sydney to Brisbane'}`, 
+          sub: `Load: ${inv && inv.ref ? inv.ref : 'LD-2025-0421'} | Service: Car Carrier`, 
+          qty: '1.00', 
+          unitPrice: `$${(calcSubtotal * 0.7428).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 
+          gst: `$${(calcGst * 0.7428).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 
+          total: `$${(rawAmt * 0.7428).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
+        },
+        { 
+          id: 2, 
+          desc: 'Toll & Road Charges', 
+          sub: 'As per receipts attached', 
+          qty: '1.00', 
+          unitPrice: `$${(calcSubtotal * 0.0514).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 
+          gst: `$${(calcGst * 0.0514).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 
+          total: `$${(rawAmt * 0.0514).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
+        },
+        { 
+          id: 3, 
+          desc: 'Fuel Surcharge', 
+          sub: 'Surcharge applied', 
+          qty: '1.00', 
+          unitPrice: `$${(calcSubtotal * 0.0571).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 
+          gst: `$${(calcGst * 0.0571).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 
+          total: `$${(rawAmt * 0.0571).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
+        },
+        { 
+          id: 4, 
+          desc: 'Waiting Time', 
+          sub: '2.5 hours @ $220/hr', 
+          qty: '2.50', 
+          unitPrice: `$${(calcSubtotal * 0.0628).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 
+          gst: `$${(calcGst * 0.0628).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 
+          total: `$${(rawAmt * 0.0628).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
+        },
+        { 
+          id: 5, 
+          desc: 'Admin Fee', 
+          sub: 'Documentation & processing', 
+          qty: '1.00', 
+          unitPrice: `$${(calcSubtotal * 0.0859).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 
+          gst: `$${(calcGst * 0.0859).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 
+          total: `$${(rawAmt * 0.0859).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
+        }
       ],
       attachments: [
-        { name: 'Fuel_Receipt_001.pdf', size: '102 KB', date: '06 May 2025' },
-        { name: 'Toll_Receipt_001.pdf', size: '98 KB', date: '06 May 2025' },
-        { name: 'POD_LD-2025-0421.pdf', size: '245 KB', date: '06 May 2025' }
+        { name: 'Fuel_Receipt_001.pdf', size: '102 KB', date: inv ? inv.issueDate : '06 May 2025' },
+        { name: 'Toll_Receipt_001.pdf', size: '98 KB', date: inv ? inv.issueDate : '06 May 2025' },
+        { name: `POD_${inv && inv.ref ? inv.ref : 'LD-2025-0421'}.pdf`, size: '245 KB', date: inv ? inv.issueDate : '06 May 2025' }
       ]
     };
 
@@ -205,6 +356,50 @@ Thank you for doing business with Hero Logistics Systems.
     triggerToast(`Receipt for ${target.id} downloaded!`);
   };
 
+  // Handle Export File Download
+  const handleExportDownload = (format = 'pdf') => {
+    const formatUpper = format.toUpperCase();
+    const content = `=====================================================
+HERO LOGISTICS - FINANCIAL REPORT EXPORT (${formatUpper})
+Module State: ${viewMode.toUpperCase()}
+Export Date: ${new Date().toLocaleString()}
+Generated By: Company Admin (Sarah Mitchell)
+=====================================================
+
+1. EXECUTIVE SUMMARY
+-----------------------------------------------------
+Total Transactions Exported: ${invoices.length}
+Timeframe: May 2025
+Status: Fully Verified & Audited
+
+2. TRANSACTION RECORDS
+-----------------------------------------------------
+${invoices.map(i => `${i.id} | ${i.customer} | ${i.issueDate} | ${i.dueDate} | ${i.amount} | ${i.status}`).join('\n')}
+
+=====================================================
+Hero Logistics Pty Ltd - Management System (c) 2025
+`;
+    const blob = new Blob([content], { type: format === 'csv' ? 'text/csv' : 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Financial_Export_${viewMode}_${Date.now()}.${format === 'csv' ? 'csv' : (format === 'excel' ? 'xlsx' : 'pdf')}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    setShowExportModal(false);
+    triggerToast(`Financial Report downloaded successfully as ${formatUpper}!`);
+  };
+
+  // Handle Schedule Report Submit
+  const handleScheduleReportSubmit = (e) => {
+    e.preventDefault();
+    setShowScheduleReportModal(false);
+    triggerToast(`Automated ${scheduleForm.frequency} report for '${scheduleForm.reportName}' scheduled to ${scheduleForm.recipientEmail}!`);
+  };
+
   const getStatusBadge = (status) => {
     if (status === 'Paid') {
       return <span className="bg-emerald-50 text-emerald-600 border border-emerald-200 px-2.5 py-0.5 rounded text-[10px] font-bold">Paid</span>;
@@ -248,10 +443,10 @@ Thank you for doing business with Hero Logistics Systems.
               <span className="text-slate-800 font-extrabold">Finance Dashboard</span>
             </div>
 
-            <div className="flex flex-row items-center justify-between gap-4 pb-2 border-b border-slate-100 md:border-b-0">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-100 md:border-b-0">
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <h1 className="text-xs sm:text-sm md:text-xl lg:text-2xl font-black text-slate-900 tracking-tight leading-none truncate whitespace-nowrap">
+                  <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-black text-slate-900 tracking-tight leading-snug">
                     10.1 Finance Dashboard
                   </h1>
                   <span className="w-3.5 h-3.5 rounded-full bg-blue-500 text-white flex items-center justify-center text-[9px] font-black shrink-0" title="Verified Branch">✓</span>
@@ -261,23 +456,23 @@ Thank you for doing business with Hero Logistics Systems.
                 </p>
               </div>
 
-              <div className="flex items-center gap-2.5 overflow-x-auto whitespace-nowrap flex-nowrap pb-1.5 scrollbar-none max-w-[50%] sm:max-w-none" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
                 <button 
                   onClick={() => setViewMode('invoices')}
-                  className="flex items-center gap-1.5 bg-white border border-slate-200 text-purple-700 hover:text-purple-900 border-purple-200 px-3.5 py-2 rounded-xl text-xs font-extrabold hover:bg-purple-50 transition-colors shadow-2xs cursor-pointer"
+                  className="flex items-center gap-1.5 bg-white border border-purple-200 text-purple-700 hover:text-purple-900 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-[11px] sm:text-xs font-extrabold hover:bg-purple-50 transition-colors shadow-2xs cursor-pointer"
                 >
                   <FileText className="w-3.5 h-3.5" /> Invoices List Page &rarr;
                 </button>
                 <button 
                   onClick={() => setShowAddTransactionModal(true)}
-                  className="flex items-center gap-1.5 bg-[#4B0082] hover:bg-[#3b0066] text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer active:scale-95"
+                  className="flex items-center gap-1.5 bg-[#4B0082] hover:bg-[#3b0066] text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all shadow-sm cursor-pointer active:scale-95"
                 >
                   <Plus className="w-4 h-4 stroke-[3px]" /> Add Transaction
                 </button>
                 <div className="relative">
                   <button 
                     onClick={() => setShowMoreActions(!showMoreActions)}
-                    className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
+                    className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
                   >
                     More Actions <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
                   </button>
@@ -321,111 +516,99 @@ Thank you for doing business with Hero Logistics Systems.
           </div>
 
           {/* Top 6 KPI Cards Row */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            <div onClick={() => setViewMode('payments_receipts')} className="bg-white rounded-2xl p-4 border border-slate-100 shadow-2xs flex flex-col justify-between hover:border-slate-300 transition-colors cursor-pointer group">
-              <div className="flex justify-between items-center mb-3">
-                <div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600">
-                  <Calendar className="w-4 h-4" />
-                </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2.5">
+            {/* Card 1: TOTAL REVENUE (MTD) */}
+            <div onClick={() => setViewMode('payments_receipts')} className="bg-white rounded-2xl p-3 border border-slate-200/80 shadow-2xs flex items-start gap-2.5 hover:shadow-md transition-shadow cursor-pointer group">
+              <div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600 shrink-0 mt-0.5">
+                <Calendar className="w-4 h-4" />
               </div>
-              <div>
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">TOTAL REVENUE (MTD)</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$842,650</div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5">▲ 12.4% <span className="text-slate-400 font-normal">vs Last Month</span></span>
-                </div>
-                <button onClick={(e) => { e.stopPropagation(); setViewMode('payments_receipts'); }} className="text-[10px] font-bold text-purple-600 group-hover:text-purple-800 mt-2 block cursor-pointer">
-                  View report &rarr;
+              <div className="flex-1 min-w-0">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block truncate">TOTAL REVENUE (MTD)</span>
+                <div className="text-xl font-black text-slate-900 tracking-tight leading-tight mt-1 whitespace-nowrap">$842,650</div>
+                <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 12.4% vs Last Month</div>
+                <button onClick={(e) => { e.stopPropagation(); setViewMode('payments_receipts'); }} className="text-[9.5px] font-bold text-purple-600 group-hover:text-purple-800 flex items-center gap-1 mt-2 cursor-pointer">
+                  <span>View report</span>
+                  <span>&rarr;</span>
                 </button>
               </div>
             </div>
 
-            <div onClick={() => setViewMode('expenses')} className="bg-white rounded-2xl p-4 border border-slate-100 shadow-2xs flex flex-col justify-between hover:border-slate-300 transition-colors cursor-pointer group">
-              <div className="flex justify-between items-center mb-3">
-                <div className="w-8 h-8 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600">
-                  <FileText className="w-4 h-4" />
-                </div>
+            {/* Card 2: TOTAL EXPENSES (MTD) */}
+            <div onClick={() => setViewMode('expenses')} className="bg-white rounded-2xl p-3 border border-slate-200/80 shadow-2xs flex items-start gap-2.5 hover:shadow-md transition-shadow cursor-pointer group">
+              <div className="w-8 h-8 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600 shrink-0 mt-0.5">
+                <FileText className="w-4 h-4" />
               </div>
-              <div>
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">TOTAL EXPENSES (MTD)</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$256,430</div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5">▲ 5.6% <span className="text-slate-400 font-normal">vs Last Month</span></span>
-                </div>
-                <button onClick={(e) => { e.stopPropagation(); setViewMode('expenses'); }} className="text-[10px] font-bold text-purple-600 group-hover:text-purple-800 mt-2 block cursor-pointer">
-                  View report &rarr;
+              <div className="flex-1 min-w-0">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block truncate">TOTAL EXPENSES (MTD)</span>
+                <div className="text-xl font-black text-slate-900 tracking-tight leading-tight mt-1 whitespace-nowrap">$256,430</div>
+                <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 5.6% vs Last Month</div>
+                <button onClick={(e) => { e.stopPropagation(); setViewMode('expenses'); }} className="text-[9.5px] font-bold text-purple-600 group-hover:text-purple-800 flex items-center gap-1 mt-2 cursor-pointer">
+                  <span>View report</span>
+                  <span>&rarr;</span>
                 </button>
               </div>
             </div>
 
-            <div onClick={() => setViewMode('reports')} className="bg-white rounded-2xl p-4 border border-slate-100 shadow-2xs flex flex-col justify-between hover:border-slate-300 transition-colors cursor-pointer group">
-              <div className="flex justify-between items-center mb-3">
-                <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
-                  <DollarSign className="w-4 h-4" />
-                </div>
+            {/* Card 3: NET PROFIT (MTD) */}
+            <div onClick={() => setViewMode('reports')} className="bg-white rounded-2xl p-3 border border-slate-200/80 shadow-2xs flex items-start gap-2.5 hover:shadow-md transition-shadow cursor-pointer group">
+              <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0 mt-0.5">
+                <DollarSign className="w-4 h-4" />
               </div>
-              <div>
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">NET PROFIT (MTD)</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$586,220</div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5">▲ 18.7% <span className="text-slate-400 font-normal">vs Last Month</span></span>
-                </div>
-                <button onClick={(e) => { e.stopPropagation(); setViewMode('reports'); }} className="text-[10px] font-bold text-purple-600 group-hover:text-purple-800 mt-2 block cursor-pointer">
-                  View report &rarr;
+              <div className="flex-1 min-w-0">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block truncate">NET PROFIT (MTD)</span>
+                <div className="text-xl font-black text-slate-900 tracking-tight leading-tight mt-1 whitespace-nowrap">$586,220</div>
+                <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 18.7% vs Last Month</div>
+                <button onClick={(e) => { e.stopPropagation(); setViewMode('reports'); }} className="text-[9.5px] font-bold text-purple-600 group-hover:text-purple-800 flex items-center gap-1 mt-2 cursor-pointer">
+                  <span>View report</span>
+                  <span>&rarr;</span>
                 </button>
               </div>
             </div>
 
-            <div onClick={() => setViewMode('payroll')} className="bg-white rounded-2xl p-4 border border-slate-100 shadow-2xs flex flex-col justify-between hover:border-slate-300 transition-colors cursor-pointer group">
-              <div className="flex justify-between items-center mb-3">
-                <div className="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
-                  <FileText className="w-4 h-4" />
-                </div>
+            {/* Card 4: OUTSTANDING INVOICES */}
+            <div onClick={() => setViewMode('payroll')} className="bg-white rounded-2xl p-3 border border-slate-200/80 shadow-2xs flex items-start gap-2.5 hover:shadow-md transition-shadow cursor-pointer group">
+              <div className="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 shrink-0 mt-0.5">
+                <FileText className="w-4 h-4" />
               </div>
-              <div>
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">OUTSTANDING INVOICES</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$147,890</div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-rose-500 flex items-center gap-0.5">▼ 6.3% <span className="text-slate-400 font-normal">vs Last Month</span></span>
-                </div>
-                <button onClick={(e) => { e.stopPropagation(); setViewMode('payroll'); }} className="text-[10px] font-bold text-purple-600 group-hover:text-purple-800 mt-2 block cursor-pointer">
-                  View report &rarr;
+              <div className="flex-1 min-w-0">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block truncate">OUTSTANDING INVOICES</span>
+                <div className="text-xl font-black text-slate-900 tracking-tight leading-tight mt-1 whitespace-nowrap">$147,890</div>
+                <div className="text-[9.5px] font-bold text-rose-500 mt-1 whitespace-nowrap">▼ 6.3% vs Last Month</div>
+                <button onClick={(e) => { e.stopPropagation(); setViewMode('payroll'); }} className="text-[9.5px] font-bold text-purple-600 group-hover:text-purple-800 flex items-center gap-1 mt-2 cursor-pointer">
+                  <span>View report</span>
+                  <span>&rarr;</span>
                 </button>
               </div>
             </div>
 
-            <div onClick={() => setViewMode('accountant')} className="bg-white rounded-2xl p-4 border border-slate-100 shadow-2xs flex flex-col justify-between hover:border-slate-300 transition-colors cursor-pointer group">
-              <div className="flex justify-between items-center mb-3">
-                <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
-                  <Building className="w-4 h-4" />
-                </div>
+            {/* Card 5: CASH IN BANK */}
+            <div onClick={() => setViewMode('accountant')} className="bg-white rounded-2xl p-3 border border-slate-200/80 shadow-2xs flex items-start gap-2.5 hover:shadow-md transition-shadow cursor-pointer group">
+              <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0 mt-0.5">
+                <Building className="w-4 h-4" />
               </div>
-              <div>
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">CASH IN BANK</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$1,245,600</div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5">▲ 9.1% <span className="text-slate-400 font-normal">vs Last Month</span></span>
-                </div>
-                <button onClick={(e) => { e.stopPropagation(); setViewMode('accountant'); }} className="text-[10px] font-bold text-purple-600 group-hover:text-purple-800 mt-2 block cursor-pointer">
-                  View report &rarr;
+              <div className="flex-1 min-w-0">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block truncate">CASH IN BANK</span>
+                <div className="text-xl font-black text-slate-900 tracking-tight leading-tight mt-1 whitespace-nowrap">$1,245,600</div>
+                <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 9.1% vs Last Month</div>
+                <button onClick={(e) => { e.stopPropagation(); setViewMode('accountant'); }} className="text-[9.5px] font-bold text-purple-600 group-hover:text-purple-800 flex items-center gap-1 mt-2 cursor-pointer">
+                  <span>View report</span>
+                  <span>&rarr;</span>
                 </button>
               </div>
             </div>
 
-            <div onClick={() => setViewMode('receivables')} className="bg-white rounded-2xl p-4 border border-slate-100 shadow-2xs flex flex-col justify-between hover:border-slate-300 transition-colors cursor-pointer group">
-              <div className="flex justify-between items-center mb-3">
-                <div className="w-8 h-8 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600">
-                  <AlertTriangle className="w-4 h-4" />
-                </div>
+            {/* Card 6: OVERDUE INVOICES */}
+            <div onClick={() => setViewMode('receivables')} className="bg-white rounded-2xl p-3 border border-slate-200/80 shadow-2xs flex items-start gap-2.5 hover:shadow-md transition-shadow cursor-pointer group">
+              <div className="w-8 h-8 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600 shrink-0 mt-0.5">
+                <AlertTriangle className="w-4 h-4" />
               </div>
-              <div>
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">OVERDUE INVOICES</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$42,750</div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-rose-500 flex items-center gap-0.5">▼ 14.2% <span className="text-slate-400 font-normal">vs Last Month</span></span>
-                </div>
-                <button onClick={(e) => { e.stopPropagation(); setViewMode('receivables'); }} className="text-[10px] font-bold text-purple-600 group-hover:text-purple-800 mt-2 block cursor-pointer">
-                  View report &rarr;
+              <div className="flex-1 min-w-0">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block truncate">OVERDUE INVOICES</span>
+                <div className="text-xl font-black text-slate-900 tracking-tight leading-tight mt-1 whitespace-nowrap">$42,750</div>
+                <div className="text-[9.5px] font-bold text-rose-500 mt-1 whitespace-nowrap">▼ 14.2% vs Last Month</div>
+                <button onClick={(e) => { e.stopPropagation(); setViewMode('receivables'); }} className="text-[9.5px] font-bold text-purple-600 group-hover:text-purple-800 flex items-center gap-1 mt-2 cursor-pointer">
+                  <span>View report</span>
+                  <span>&rarr;</span>
                 </button>
               </div>
             </div>
@@ -433,7 +616,7 @@ Thank you for doing business with Hero Logistics Systems.
 
           {/* Filter Toolbar Bar */}
           <div className="bg-white p-3 border border-slate-200/80 rounded-2xl shadow-2xs flex flex-wrap items-center justify-between gap-3 text-xs font-bold">
-            <div className="relative flex-1 min-w-[240px]">
+            <div className="relative flex-1 min-w-[200px] sm:min-w-[240px] w-full sm:w-auto">
               <input
                 type="text"
                 value={searchQuery}
@@ -444,7 +627,7 @@ Thank you for doing business with Hero Logistics Systems.
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap flex-nowrap pb-1 sm:pb-0 scrollbar-none w-full sm:w-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
               <select 
                 value={selectedBranch}
                 onChange={e => setSelectedBranch(e.target.value)}
@@ -478,10 +661,52 @@ Thank you for doing business with Hero Logistics Systems.
                 <option>This Year</option>
               </select>
 
-              <button className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer">
-                <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                <span>01 May 2025 - 31 May 2025</span>
-              </button>
+              <div className="relative inline-flex items-center shrink-0">
+                <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-100 transition-colors cursor-pointer whitespace-nowrap">
+                  <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <span className="text-slate-800 font-extrabold">{dateRange.startDate}</span>
+                  <span className="text-slate-400 font-normal mx-0.5">&ndash;</span>
+                  <span className="text-slate-800 font-extrabold">{dateRange.endDate}</span>
+                </div>
+
+                {/* Start Date Click Overlay */}
+                <input 
+                  type="date" 
+                  value={dateRange.startDate} 
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setDateRange({ ...dateRange, startDate: e.target.value });
+                      triggerToast(`Start Date updated to ${e.target.value}`);
+                    }
+                  }}
+                  onClick={(e) => {
+                    if (typeof e.target.showPicker === 'function') {
+                      try { e.target.showPicker(); } catch (err) {}
+                    }
+                  }}
+                  className="absolute left-0 top-0 bottom-0 w-[48%] opacity-0 cursor-pointer z-10"
+                  title="Click to select Start Date"
+                />
+
+                {/* End Date Click Overlay */}
+                <input 
+                  type="date" 
+                  value={dateRange.endDate} 
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setDateRange({ ...dateRange, endDate: e.target.value });
+                      triggerToast(`End Date updated to ${e.target.value}`);
+                    }
+                  }}
+                  onClick={(e) => {
+                    if (typeof e.target.showPicker === 'function') {
+                      try { e.target.showPicker(); } catch (err) {}
+                    }
+                  }}
+                  className="absolute right-0 top-0 bottom-0 w-[48%] opacity-0 cursor-pointer z-10"
+                  title="Click to select End Date"
+                />
+              </div>
 
               <button 
                 onClick={() => triggerToast('Filters Applied!')}
@@ -995,10 +1220,10 @@ Thank you for doing business with Hero Logistics Systems.
               <span className="text-slate-800 font-extrabold">Invoices</span>
             </div>
 
-            <div className="flex flex-row items-center justify-between gap-4 pb-2 border-b border-slate-100 md:border-b-0">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-100 md:border-b-0">
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <h1 className="text-xs sm:text-sm md:text-xl lg:text-2xl font-black text-slate-900 tracking-tight leading-none truncate whitespace-nowrap">
+                  <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-black text-slate-900 tracking-tight leading-snug">
                     10.2 Invoices List
                   </h1>
                   <span className="w-3.5 h-3.5 rounded-full bg-blue-500 text-white flex items-center justify-center text-[9px] font-black shrink-0" title="Verified Branch">✓</span>
@@ -1008,23 +1233,23 @@ Thank you for doing business with Hero Logistics Systems.
                 </p>
               </div>
 
-              <div className="flex items-center gap-2.5 overflow-x-auto whitespace-nowrap flex-nowrap pb-1.5 scrollbar-none max-w-[50%] sm:max-w-none" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
                 <button 
                   onClick={() => setViewMode('dashboard')}
-                  className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
+                  className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
                 >
                   <ArrowLeft className="w-3.5 h-3.5 text-slate-400" /> Back to Finance
                 </button>
                 <button 
                   onClick={() => setShowAddTransactionModal(true)}
-                  className="flex items-center gap-1.5 bg-[#4B0082] hover:bg-[#3b0066] text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer active:scale-95"
+                  className="flex items-center gap-1.5 bg-[#4B0082] hover:bg-[#3b0066] text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all shadow-sm cursor-pointer active:scale-95"
                 >
                   <Plus className="w-4 h-4 stroke-[3px]" /> Create Invoice
                 </button>
                 <div className="relative">
                   <button 
                     onClick={() => setShowMoreActions(!showMoreActions)}
-                    className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
+                    className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
                   >
                     More Actions <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
                   </button>
@@ -1205,10 +1430,52 @@ Thank you for doing business with Hero Logistics Systems.
                 <option>This Year</option>
               </select>
 
-              <button className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer">
-                <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                <span>01 May 2025 - 31 May 2025</span>
-              </button>
+              <div className="relative inline-flex items-center shrink-0">
+                <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-100 transition-colors cursor-pointer whitespace-nowrap">
+                  <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <span className="text-slate-800 font-extrabold">{dateRange.startDate}</span>
+                  <span className="text-slate-400 font-normal mx-0.5">&ndash;</span>
+                  <span className="text-slate-800 font-extrabold">{dateRange.endDate}</span>
+                </div>
+
+                {/* Start Date Click Overlay */}
+                <input 
+                  type="date" 
+                  value={dateRange.startDate} 
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setDateRange({ ...dateRange, startDate: e.target.value });
+                      triggerToast(`Start Date updated to ${e.target.value}`);
+                    }
+                  }}
+                  onClick={(e) => {
+                    if (typeof e.target.showPicker === 'function') {
+                      try { e.target.showPicker(); } catch (err) {}
+                    }
+                  }}
+                  className="absolute left-0 top-0 bottom-0 w-[48%] opacity-0 cursor-pointer z-10"
+                  title="Click to select Start Date"
+                />
+
+                {/* End Date Click Overlay */}
+                <input 
+                  type="date" 
+                  value={dateRange.endDate} 
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setDateRange({ ...dateRange, endDate: e.target.value });
+                      triggerToast(`End Date updated to ${e.target.value}`);
+                    }
+                  }}
+                  onClick={(e) => {
+                    if (typeof e.target.showPicker === 'function') {
+                      try { e.target.showPicker(); } catch (err) {}
+                    }
+                  }}
+                  className="absolute right-0 top-0 bottom-0 w-[48%] opacity-0 cursor-pointer z-10"
+                  title="Click to select End Date"
+                />
+              </div>
 
               <button 
                 onClick={() => triggerToast('Filters Applied!')}
@@ -1562,7 +1829,7 @@ Thank you for doing business with Hero Logistics Systems.
               </div>
 
               {/* Right Side: Actions Block */}
-              <div className="flex flex-col items-end gap-2 shrink-0 max-w-full">
+              <div className="flex flex-col items-start md:items-end gap-2 w-full md:w-auto">
                 {/* Desktop-only: More Actions Button on top right */}
                 <div className="relative max-md:hidden">
                   <button 
@@ -1591,28 +1858,34 @@ Thank you for doing business with Hero Logistics Systems.
                 </div>
 
                 {/* Buttons row */}
-                <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap flex-nowrap pb-1.5 md:pb-0 scrollbar-none max-w-full" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                <div className="flex flex-wrap md:flex-nowrap items-center gap-2 w-full md:w-auto">
                   <button 
                     onClick={() => handleDownloadInvoice(activeInvoiceDetail)}
-                    className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
+                    className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 px-3 py-1.5 md:px-3.5 md:py-2 rounded-xl text-[11px] md:text-xs font-bold hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer active:scale-95"
                   >
-                    <Download className="w-3.5 h-3.5 text-slate-400" /> Download PDF
+                    <Download className="w-3.5 h-3.5 text-indigo-600" /> Download PDF
                   </button>
                   <button 
-                    onClick={() => triggerToast(`Invoice sent to ${activeInvoiceDetail.email}`)}
-                    className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
+                    onClick={() => {
+                      setEmailForm({ ...emailForm, to: activeInvoiceDetail.email || 'accounts@customer.com.au', subject: `Tax Invoice ${activeInvoiceDetail.id} - Hero Logistics` });
+                      setShowSendEmailModal(true);
+                    }}
+                    className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 px-3 py-1.5 md:px-3.5 md:py-2 rounded-xl text-[11px] md:text-xs font-bold hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer active:scale-95"
                   >
-                    <Mail className="w-3.5 h-3.5 text-slate-400" /> Send to Customer
+                    <Mail className="w-3.5 h-3.5 text-indigo-600" /> Send to Customer
                   </button>
                   <button 
-                    onClick={() => triggerToast('Credit Note created for ' + activeInvoiceDetail.id)}
-                    className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
+                    onClick={() => setShowCreditNoteModal(true)}
+                    className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer active:scale-95"
                   >
-                    <FileText className="w-3.5 h-3.5 text-slate-400" /> Credit Note
+                    <FileText className="w-3.5 h-3.5 text-amber-600" /> Credit Note
                   </button>
                   <button 
-                    onClick={() => triggerToast('Payment recorded successfully!')}
-                    className="flex items-center gap-1.5 bg-[#2563eb] hover:bg-[#1d4ed8] text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer active:scale-95"
+                    onClick={() => {
+                      setPaymentForm({ ...paymentForm, amount: activeInvoiceDetail.amount });
+                      setShowRecordPaymentModal(true);
+                    }}
+                    className="flex items-center gap-1.5 bg-[#2563eb] hover:bg-[#1d4ed8] text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer active:scale-95"
                   >
                     <span className="w-4 h-4 rounded-full border border-white/40 flex items-center justify-center text-[9px] font-black leading-none">$</span> Record Payment
                   </button>
@@ -1647,198 +1920,198 @@ Thank you for doing business with Hero Logistics Systems.
               </div>
             </div>
           </div>
+          {/* Top Row Grid: Left 8 Cols (Header Details) & Right 4 Cols (Invoice Summary) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+            {/* Left: Main Top Invoice Card Header (ID & Customer Details) */}
+            <div className="lg:col-span-8 bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs flex flex-col md:flex-row justify-between items-start gap-5">
+              {/* Left: Invoice Title & Dates */}
+              <div className="space-y-3 flex-1">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-xl font-black text-slate-900 tracking-tight">{activeInvoiceDetail.id}</h2>
+                  {getStatusBadge(activeInvoiceDetail.status)}
+                </div>
 
-          {/* Main Top Invoice Card Header (ID & Customer Details) */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-2xs flex flex-col md:flex-row justify-between gap-6">
-            {/* Left: Invoice Title & Dates */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">{activeInvoiceDetail.id}</h2>
-                {getStatusBadge(activeInvoiceDetail.status)}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-1">
+                  <div>
+                    <span className="text-slate-400 flex items-center gap-1 mb-0.5 font-semibold text-[11px]"><Calendar className="w-3 h-3 text-indigo-500" /> Issue Date</span>
+                    <span className="text-slate-900 font-extrabold text-[11px]">{activeInvoiceDetail.issueDate}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 flex items-center gap-1 mb-0.5 font-semibold text-[11px]"><Calendar className="w-3 h-3 text-amber-500" /> Due Date</span>
+                    <span className="text-slate-900 font-extrabold text-[11px]">{activeInvoiceDetail.dueDate}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 flex items-center gap-1 mb-0.5 font-semibold text-[11px]"><Check className="w-3 h-3 text-emerald-500 stroke-[3]" /> Paid Date</span>
+                    <span className="text-slate-900 font-extrabold text-[11px]">{activeInvoiceDetail.paidDate}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 flex items-center gap-1 mb-0.5 font-semibold text-[11px]"><Clock className="w-3 h-3 text-blue-500" /> Payment Terms</span>
+                    <span className="text-slate-900 font-extrabold text-[11px]">{activeInvoiceDetail.terms}</span>
+                  </div>
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 text-xs font-bold">
-                <div>
-                  <span className="text-slate-400 flex items-center gap-1 mb-1 font-semibold"><Calendar className="w-3.5 h-3.5" /> Issue Date</span>
-                  <span className="text-slate-900">{activeInvoiceDetail.issueDate}</span>
+              {/* Right: Customer Info block inside same card - separated by border */}
+              <div className="md:border-l md:border-slate-100 md:pl-5 min-w-[200px] space-y-0.5">
+                <div className="flex items-center gap-1.5 text-slate-900 text-sm font-black mb-1.5">
+                  <User className="w-4 h-4 text-indigo-600 shrink-0" /> {activeInvoiceDetail.customer}
                 </div>
-                <div>
-                  <span className="text-slate-400 flex items-center gap-1 mb-1 font-semibold"><Calendar className="w-3.5 h-3.5" /> Due Date</span>
-                  <span className="text-slate-900">{activeInvoiceDetail.dueDate}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 flex items-center gap-1 mb-1 font-semibold"><Check className="w-3.5 h-3.5 text-emerald-500" /> Paid Date</span>
-                  <span className="text-slate-900">{activeInvoiceDetail.paidDate}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 flex items-center gap-1 mb-1 font-semibold"><Clock className="w-3.5 h-3.5" /> Payment Terms</span>
-                  <span className="text-slate-900">{activeInvoiceDetail.terms}</span>
-                </div>
+                <p className="text-slate-400 font-semibold text-[11px]">ABN: {activeInvoiceDetail.abn}</p>
+                <p className="text-indigo-600 font-extrabold hover:underline cursor-pointer text-[11px]">{activeInvoiceDetail.email}</p>
+                <p className="text-slate-700 font-bold text-[11px]">{activeInvoiceDetail.phone}</p>
+                <p className="text-slate-500 font-medium text-[11px] leading-snug">{activeInvoiceDetail.address}</p>
               </div>
             </div>
 
-            {/* Right: Customer Card */}
-            <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-4 text-xs font-bold text-slate-700 min-w-[280px] space-y-1.5">
-              <div className="flex items-center gap-2 text-slate-900 text-sm font-black mb-1">
-                <User className="w-4 h-4 text-purple-600" /> {activeInvoiceDetail.customer}
+            {/* Right: Invoice Summary Card (4 Cols) - matching screenshot */}
+            <div className="lg:col-span-4 bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs flex flex-col">
+              <h3 className="text-xs font-black text-slate-800 mb-3 pb-2 border-b border-slate-100">Invoice Summary</h3>
+              <div className="space-y-2 text-xs text-slate-700">
+                <div className="flex justify-between items-center"><span className="text-slate-500">Subtotal (Ex GST)</span> <span className="font-mono font-bold text-slate-900">{activeInvoiceDetail.subtotal}</span></div>
+                <div className="flex justify-between items-center text-slate-400"><span className="text-slate-500">GST (10%)</span> <span className="font-mono">{activeInvoiceDetail.gst}</span></div>
+                <div className="border-t border-slate-100 pt-2 mt-1 flex justify-between items-center font-black text-slate-900">
+                  <span className="text-sm font-black">Total (Inc GST)</span>
+                  <span className="font-mono font-black text-lg text-slate-950">{activeInvoiceDetail.total}</span>
+                </div>
+                <div className="flex justify-between items-center font-bold text-emerald-600"><span>Amount Paid</span> <span className="font-mono">{activeInvoiceDetail.amountPaid}</span></div>
+                <div className="flex justify-between items-center font-bold text-slate-900"><span>Balance Due</span> <span className="font-mono">{activeInvoiceDetail.balanceDue}</span></div>
               </div>
-              <p className="text-slate-400 font-medium">ABN: {activeInvoiceDetail.abn}</p>
-              <p className="text-purple-600 font-semibold cursor-pointer hover:underline">{activeInvoiceDetail.email}</p>
-              <p className="text-slate-600 font-semibold">{activeInvoiceDetail.phone}</p>
-              <p className="text-slate-500 font-normal leading-tight">{activeInvoiceDetail.address}</p>
             </div>
           </div>
 
-          {/* Main 2-Column Split Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Main 2-Column Split Grid: Line Items + Right Cards */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
             
-            {/* LEFT: Line Items, Notes, Attachments (8 Cols) */}
-            <div className="lg:col-span-8 space-y-6">
+            {/* LEFT: Line Items + Notes + Attachments (8 Cols) */}
+            <div className="lg:col-span-8 space-y-4">
               
               {/* Invoice Line Items Table */}
               <div className="bg-white border border-slate-200/80 rounded-2xl shadow-2xs overflow-hidden">
-                <div className="px-5 py-4 border-b border-slate-100">
-                  <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">Invoice Line Items</h3>
+                <div className="px-5 py-3 border-b border-slate-100">
+                  <h3 className="text-xs font-black text-slate-800">Invoice Line Items</h3>
                 </div>
 
-                <div className="overflow-x-auto custom-scrollbar">
-                  <table className="w-full text-left border-collapse whitespace-nowrap text-xs font-bold">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse whitespace-nowrap text-xs">
                     <thead>
-                      <tr className="bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100">
-                        <th className="py-3 px-4">#</th>
-                        <th className="py-3 px-4">Description</th>
-                        <th className="py-3 px-4 text-right">Qty</th>
-                        <th className="py-3 px-4 text-right">Unit Price (Ex GST)</th>
-                        <th className="py-3 px-4 text-right">GST</th>
-                        <th className="py-3 px-4 text-right">Total (Inc GST)</th>
+                      <tr className="bg-slate-50/80 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                        <th className="py-2.5 px-4">#</th>
+                        <th className="py-2.5 px-4">Description</th>
+                        <th className="py-2.5 px-4 text-right">Qty</th>
+                        <th className="py-2.5 px-4 text-right">Unit Price (Ex GST)</th>
+                        <th className="py-2.5 px-4 text-right">GST</th>
+                        <th className="py-2.5 px-4 text-right">Total (Inc GST)</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-slate-800">
                       {activeInvoiceDetail.lineItems.map(item => (
                         <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
-                          <td className="py-3.5 px-4 text-slate-400">{item.id}</td>
-                          <td className="py-3.5 px-4">
-                            <div className="font-extrabold text-slate-900">{item.desc}</div>
-                            <div className="text-[10px] text-slate-400 font-medium">{item.sub}</div>
+                          <td className="py-2.5 px-4 text-slate-400 text-[11px]">{item.id}</td>
+                          <td className="py-2.5 px-4">
+                            <div className="font-bold text-slate-900 text-[11px]">{item.desc}</div>
+                            <div className="text-[10px] text-slate-400 font-normal">{item.sub}</div>
                           </td>
-                          <td className="py-3.5 px-4 text-right font-mono">{item.qty}</td>
-                          <td className="py-3.5 px-4 text-right font-mono text-slate-700">{item.unitPrice}</td>
-                          <td className="py-3.5 px-4 text-right font-mono text-slate-500">{item.gst}</td>
-                          <td className="py-3.5 px-4 text-right font-mono font-black text-slate-900">{item.total}</td>
+                          <td className="py-2.5 px-4 text-right font-mono text-[11px]">{item.qty}</td>
+                          <td className="py-2.5 px-4 text-right font-mono text-slate-700 text-[11px]">{item.unitPrice}</td>
+                          <td className="py-2.5 px-4 text-right font-mono text-slate-500 text-[11px]">{item.gst}</td>
+                          <td className="py-2.5 px-4 text-right font-mono font-bold text-slate-900 text-[11px]">{item.total}</td>
                         </tr>
                       ))}
                     </tbody>
                     <tfoot>
-                      <tr className="bg-slate-50/80 font-black text-slate-900 border-t border-slate-200 text-xs">
-                        <td colSpan="3" className="py-3.5 px-4 uppercase tracking-wider text-slate-500">Totals</td>
-                        <td className="py-3.5 px-4 text-right font-mono">{activeInvoiceDetail.subtotal}</td>
-                        <td className="py-3.5 px-4 text-right font-mono text-slate-500">{activeInvoiceDetail.gst}</td>
-                        <td className="py-3.5 px-4 text-right font-mono text-purple-700 text-sm">{activeInvoiceDetail.total}</td>
+                      <tr className="bg-slate-50 font-bold border-t border-slate-200 text-[11px]">
+                        <td colSpan="3" className="py-3 px-4 text-slate-500 font-bold text-[10px] uppercase tracking-wider">Totals</td>
+                        <td className="py-3 px-4 text-right font-mono text-slate-900">{activeInvoiceDetail.subtotal}</td>
+                        <td className="py-3 px-4 text-right font-mono text-slate-500">{activeInvoiceDetail.gst}</td>
+                        <td className="py-3 px-4 text-right font-mono font-black text-indigo-700 text-sm">{activeInvoiceDetail.total}</td>
                       </tr>
                     </tfoot>
                   </table>
                 </div>
               </div>
 
-              {/* Bottom split (Notes on Left 6 Cols, Attachments on Right 6 Cols) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Notes + Attachments side by side */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 
                 {/* Notes Card */}
-                <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs flex flex-col justify-between space-y-4">
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs flex flex-col justify-between">
                   <div>
-                    <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest border-b border-slate-100 pb-3 mb-3">Notes</h3>
-                    <div className="space-y-1 text-xs text-slate-600 font-medium leading-relaxed">
+                    <h3 className="text-xs font-black text-slate-800 border-b border-slate-100 pb-2 mb-2.5">Notes</h3>
+                    <div className="space-y-1 text-[11px] text-slate-600 font-medium leading-relaxed">
                       <p>Thank you for your business.</p>
                       <p>Payment terms are 14 days from invoice date.</p>
                       <p>Please use invoice number as payment reference.</p>
                     </div>
                   </div>
-                  <button onClick={() => triggerToast('Notes editor opened')} className="self-start text-xs font-bold text-purple-600 hover:text-purple-800 flex items-center gap-1.5 cursor-pointer">
+                  <button onClick={() => triggerToast('Notes editor opened')} className="self-start mt-3 text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1.5 cursor-pointer">
                     <Edit className="w-3.5 h-3.5" /> Edit Notes
                   </button>
                 </div>
 
                 {/* Attachments (3) Card */}
-                <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs flex flex-col justify-between space-y-4">
-                  <div>
-                    <div className="flex justify-between items-center border-b border-slate-100 pb-3 mb-3">
-                      <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">Attachments (3)</h3>
-                      <button onClick={() => triggerToast('Downloading all 3 attachments')} className="text-[10px] font-bold text-slate-600 border border-slate-200 hover:bg-slate-50 px-2.5 py-1 rounded-lg flex items-center gap-1">
-                        <Download className="w-3 h-3" /> Download All
-                      </button>
-                    </div>
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs">
+                  <div className="flex justify-between items-center border-b border-slate-100 pb-2 mb-2.5">
+                    <h3 className="text-xs font-black text-slate-800">Attachments (3)</h3>
+                    <button onClick={() => triggerToast('Downloading all 3 attachments')} className="text-[10px] font-bold text-slate-600 border border-slate-200 hover:bg-slate-50 px-2 py-1 rounded-lg flex items-center gap-1 cursor-pointer">
+                      <Download className="w-3 h-3" /> Download All
+                    </button>
+                  </div>
 
-                    <div className="space-y-2 text-xs font-bold text-slate-700">
-                      {activeInvoiceDetail.attachments.map((file, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-100 rounded-xl">
-                          <div className="flex items-center gap-2">
-                            <FileText className="w-4 h-4 text-rose-500 shrink-0" />
-                            <div>
-                              <div className="font-extrabold text-slate-800 text-[11px]">{file.name}</div>
-                              <div className="text-[9px] text-slate-400 font-normal">{file.size} &bull; {file.date}</div>
-                            </div>
+                  <div className="space-y-1.5">
+                    {activeInvoiceDetail.attachments.map((file, idx) => (
+                      <div key={idx} className="flex items-center justify-between py-1.5 px-2.5 bg-slate-50 border border-slate-100 rounded-xl">
+                        <div className="flex items-center gap-2">
+                          <FileText className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                          <div>
+                            <div className="font-bold text-slate-800 text-[11px]">{file.name}</div>
+                            <div className="text-[9px] text-slate-400 font-normal">{file.size} &bull; {file.date}</div>
                           </div>
-                          <button onClick={() => triggerToast(`Downloaded ${file.name}`)} className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer">
-                            <Download className="w-3.5 h-3.5" />
-                          </button>
                         </div>
-                      ))}
-                    </div>
+                        <button onClick={() => triggerToast(`Downloaded ${file.name}`)} className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer">
+                          <Download className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* RIGHT: Invoice Summary, Payment Status, Related Info Cards (4 Cols) */}
+            {/* RIGHT: Payment Status + Related Information (4 Cols) */}
             <div className="lg:col-span-4 space-y-4">
               
-              {/* Card 1: Invoice Summary */}
-              <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs space-y-3">
-                <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-100 pb-3">Invoice Summary</h3>
-                <div className="space-y-2 text-xs font-bold text-slate-700">
-                  <div className="flex justify-between"><span>Subtotal (Ex GST)</span> <span className="font-mono text-slate-900">{activeInvoiceDetail.subtotal}</span></div>
-                  <div className="flex justify-between text-slate-500"><span>GST (10%)</span> <span className="font-mono">{activeInvoiceDetail.gst}</span></div>
-                  <div className="border-t border-slate-100 my-2 pt-2 flex justify-between text-sm font-black text-slate-900">
-                    <span>Total (Inc GST)</span>
-                    <span className="font-mono text-slate-900">{activeInvoiceDetail.total}</span>
-                  </div>
-                  <div className="flex justify-between text-emerald-600"><span>Amount Paid</span> <span className="font-mono font-black">{activeInvoiceDetail.amountPaid}</span></div>
-                  <div className="flex justify-between text-slate-900 font-black"><span>Balance Due</span> <span className="font-mono">{activeInvoiceDetail.balanceDue}</span></div>
-                </div>
-              </div>
-
-              {/* Card 2: Payment Status */}
-              <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs space-y-3">
-                <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-                  <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Payment Status</h3>
-                  <span className="bg-emerald-50 text-emerald-600 border border-emerald-200 px-2.5 py-0.5 rounded text-[10px] font-bold">Paid in Full</span>
+              {/* Payment Status Card */}
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs">
+                <div className="flex justify-between items-center border-b border-slate-100 pb-2 mb-3">
+                  <h3 className="text-xs font-black text-slate-800">Payment Status</h3>
+                  <span className="bg-emerald-50 text-emerald-600 border border-emerald-200 px-2.5 py-0.5 rounded-full text-[10px] font-bold">Paid in Full</span>
                 </div>
 
-                <div className="space-y-2 text-xs font-bold text-slate-700">
+                <div className="space-y-1.5 text-[11px] font-bold text-slate-700">
                   <div className="flex justify-between"><span className="text-slate-500 font-medium">Paid via</span> <span>{activeInvoiceDetail.paymentMethod}</span></div>
-                  <div className="flex justify-between"><span className="text-slate-500 font-medium">Reference</span> <span className="font-mono">{activeInvoiceDetail.paymentRef}</span></div>
+                  <div className="flex justify-between"><span className="text-slate-500 font-medium">Reference</span> <span className="font-mono text-slate-800">{activeInvoiceDetail.paymentRef}</span></div>
                   <div className="flex justify-between"><span className="text-slate-500 font-medium">Payment Date</span> <span>{activeInvoiceDetail.paymentDate}</span></div>
                   <div className="flex justify-between"><span className="text-slate-500 font-medium">Payment Amount</span> <span className="font-mono text-emerald-600 font-black">{activeInvoiceDetail.total}</span></div>
-                  
-                  <div className="border-t border-slate-100 pt-3 mt-2 text-center">
-                    <button onClick={() => triggerToast('Viewing payment history audit log')} className="text-[11px] font-bold text-purple-600 hover:underline flex items-center justify-center gap-1 cursor-pointer">
-                      <Clock className="w-3.5 h-3.5" /> View Payment History
-                    </button>
-                  </div>
+                </div>
+                
+                <div className="border-t border-slate-100 pt-2.5 mt-3">
+                  <button onClick={() => triggerToast('Viewing payment history audit log')} className="text-[11px] font-bold text-indigo-600 hover:underline flex items-center gap-1 cursor-pointer w-full justify-center">
+                    <Clock className="w-3.5 h-3.5" /> View Payment History
+                  </button>
                 </div>
               </div>
 
-              {/* Card 3: Related Information */}
-              <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs space-y-3">
-                <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-100 pb-3">Related Information</h3>
+              {/* Related Information Card */}
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs">
+                <h3 className="text-xs font-black text-slate-800 border-b border-slate-100 pb-2 mb-3">Related Information</h3>
                 
-                <div className="space-y-2.5 text-xs font-bold text-slate-700">
-                  <div className="flex justify-between items-center"><span className="text-slate-500 flex items-center gap-1.5 font-medium"><FileText className="w-3.5 h-3.5" /> Load</span> <span className="text-purple-600 font-mono hover:underline cursor-pointer">{activeInvoiceDetail.loadId}</span></div>
-                  <div className="flex justify-between items-center"><span className="text-slate-500 flex items-center gap-1.5 font-medium"><User className="w-3.5 h-3.5" /> Customer</span> <span className="text-purple-600 hover:underline cursor-pointer">{activeInvoiceDetail.customer}</span></div>
+                <div className="space-y-1.5 text-[11px] font-bold text-slate-700">
+                  <div className="flex justify-between items-center"><span className="text-slate-500 flex items-center gap-1.5 font-medium"><FileText className="w-3.5 h-3.5" /> Load</span> <span className="text-indigo-600 font-mono hover:underline cursor-pointer">{activeInvoiceDetail.loadId}</span></div>
+                  <div className="flex justify-between items-center"><span className="text-slate-500 flex items-center gap-1.5 font-medium"><User className="w-3.5 h-3.5" /> Customer</span> <span className="text-indigo-600 hover:underline cursor-pointer">{activeInvoiceDetail.customer}</span></div>
                   <div className="flex justify-between items-center"><span className="text-slate-500 flex items-center gap-1.5 font-medium"><Calendar className="w-3.5 h-3.5" /> Job Date</span> <span>{activeInvoiceDetail.jobDate}</span></div>
                   <div className="flex justify-between items-center"><span className="text-slate-500 flex items-center gap-1.5 font-medium"><User className="w-3.5 h-3.5" /> Created By</span> <span>{activeInvoiceDetail.createdBy}</span></div>
-                  <div className="flex justify-between items-center"><span className="text-slate-500 flex items-center gap-1.5 font-medium"><Clock className="w-3.5 h-3.5" /> Created On</span> <span className="text-[11px] text-slate-600">{activeInvoiceDetail.createdOn}</span></div>
-                  <div className="flex justify-between items-center"><span className="text-slate-500 flex items-center gap-1.5 font-medium"><Clock className="w-3.5 h-3.5" /> Last Updated</span> <span className="text-[11px] text-slate-600">{activeInvoiceDetail.lastUpdated}</span></div>
+                  <div className="flex justify-between items-center"><span className="text-slate-500 flex items-center gap-1.5 font-medium"><Clock className="w-3.5 h-3.5" /> Created On</span> <span className="text-slate-600">{activeInvoiceDetail.createdOn}</span></div>
+                  <div className="flex justify-between items-center"><span className="text-slate-500 flex items-center gap-1.5 font-medium"><Clock className="w-3.5 h-3.5" /> Last Updated</span> <span className="text-slate-600">{activeInvoiceDetail.lastUpdated}</span></div>
                 </div>
               </div>
             </div>
@@ -1953,7 +2226,7 @@ Thank you for doing business with Hero Logistics Systems.
               </div>
 
               {/* Right Side: Actions Block */}
-              <div className="flex flex-col items-end gap-2 shrink-0 max-w-full">
+              <div className="flex flex-col items-start md:items-end gap-2 w-full md:w-auto">
                 {/* Desktop-only: More Actions Button on top right */}
                 <div className="relative max-md:hidden">
                   <button 
@@ -1995,22 +2268,22 @@ Thank you for doing business with Hero Logistics Systems.
                 </div>
 
                 {/* Buttons row */}
-                <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap flex-nowrap pb-1.5 md:pb-0 scrollbar-none max-w-full" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                <div className="flex flex-wrap md:flex-nowrap items-center gap-2 w-full md:w-auto">
                   <button 
                     onClick={() => { setTransactionForm({ type: 'Payment', status: 'Completed' }); setShowAddTransactionModal(true); }}
-                    className="flex items-center gap-1.5 bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-50 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95"
+                    className="flex items-center gap-1.5 bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-50 px-3 py-1.5 md:px-3.5 md:py-2 rounded-xl text-[11px] md:text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95"
                   >
                     <Plus className="w-3.5 h-3.5" /> Record Payment
                   </button>
                   <button 
                     onClick={() => { setTransactionForm({ type: 'Receipt', status: 'Completed' }); setShowAddTransactionModal(true); }}
-                    className="flex items-center gap-1.5 bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-50 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
+                    className="flex items-center gap-1.5 bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-50 px-3 py-1.5 md:px-3.5 md:py-2 rounded-xl text-[11px] md:text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
                   >
                     <Plus className="w-3.5 h-3.5" /> Record Receipt
                   </button>
                   <button 
                     onClick={() => setShowExportModal(true)}
-                    className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
+                    className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 px-3 py-1.5 md:px-3.5 md:py-2 rounded-xl text-[11px] md:text-xs font-bold hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
                   >
                     <Download className="w-3.5 h-3.5 text-slate-400" /> Export
                   </button>
@@ -2200,10 +2473,52 @@ Thank you for doing business with Hero Logistics Systems.
                 <option>Issued</option>
               </select>
 
-              <button className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer">
-                <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                <span>01 May 2025 - 31 May 2025</span>
-              </button>
+              <div className="relative inline-flex items-center shrink-0">
+                <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-100 transition-colors cursor-pointer whitespace-nowrap">
+                  <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <span className="text-slate-800 font-extrabold">{dateRange.startDate}</span>
+                  <span className="text-slate-400 font-normal mx-0.5">&ndash;</span>
+                  <span className="text-slate-800 font-extrabold">{dateRange.endDate}</span>
+                </div>
+
+                {/* Start Date Click Overlay */}
+                <input 
+                  type="date" 
+                  value={dateRange.startDate} 
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setDateRange({ ...dateRange, startDate: e.target.value });
+                      triggerToast(`Start Date updated to ${e.target.value}`);
+                    }
+                  }}
+                  onClick={(e) => {
+                    if (typeof e.target.showPicker === 'function') {
+                      try { e.target.showPicker(); } catch (err) {}
+                    }
+                  }}
+                  className="absolute left-0 top-0 bottom-0 w-[48%] opacity-0 cursor-pointer z-10"
+                  title="Click to select Start Date"
+                />
+
+                {/* End Date Click Overlay */}
+                <input 
+                  type="date" 
+                  value={dateRange.endDate} 
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setDateRange({ ...dateRange, endDate: e.target.value });
+                      triggerToast(`End Date updated to ${e.target.value}`);
+                    }
+                  }}
+                  onClick={(e) => {
+                    if (typeof e.target.showPicker === 'function') {
+                      try { e.target.showPicker(); } catch (err) {}
+                    }
+                  }}
+                  className="absolute right-0 top-0 bottom-0 w-[48%] opacity-0 cursor-pointer z-10"
+                  title="Click to select End Date"
+                />
+              </div>
 
               <button 
                 onClick={() => triggerToast('Filters Applied!')}
@@ -2261,29 +2576,15 @@ Thank you for doing business with Hero Logistics Systems.
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-slate-800">
-                      {((prSearchQuery || prSelectedBranch !== 'All Branches' || prSelectedType !== 'All Payment Types' || prSelectedStatus !== 'All Status') ? (
-                        [
-                          { date: '24 May 2025', ref: 'PAY-2025-0567', customer: 'All Star Motors', invoice: 'INV-2025-0187', method: 'Bank Transfer', amount: '$9,625.00', status: 'Completed', branch: 'Sydney Head Office' },
-                          { date: '23 May 2025', ref: 'PAY-2025-0566', customer: 'Sydney Car Sales', invoice: 'INV-2025-0182', method: 'EFTPOS', amount: '$2,860.00', status: 'Completed', branch: 'Sydney Head Office' },
-                          { date: '22 May 2025', ref: 'PAY-2025-0565', customer: 'Fast Freight Pty Ltd', invoice: 'INV-2025-0180', method: 'Bank Transfer', amount: '$5,280.00', status: 'Completed', branch: 'Melbourne Depot' },
-                          { date: '22 May 2025', ref: 'PAY-2025-0564', customer: 'Metro Group Sydney', invoice: 'INV-2025-0176', method: 'Credit Card', amount: '$1,650.00', status: 'Completed', branch: 'Sydney Head Office' },
-                          { date: '21 May 2025', ref: 'PAY-2025-0563', customer: 'Blue Line Logistics', invoice: 'INV-2025-0173', method: 'Bank Transfer', amount: '$3,960.00', status: 'Completed', branch: 'Brisbane Hub' }
-                        ].filter(item => {
-                          const matchSearch = item.ref.toLowerCase().includes(prSearchQuery.toLowerCase()) || 
-                                              item.customer.toLowerCase().includes(prSearchQuery.toLowerCase()) ||
-                                              item.invoice.toLowerCase().includes(prSearchQuery.toLowerCase());
-                          const matchBranch = prSelectedBranch === 'All Branches' || item.branch === prSelectedBranch;
-                          const matchType = prSelectedType === 'All Payment Types' || item.method === prSelectedType;
-                          const matchStatus = prSelectedStatus === 'All Status' || item.status === prSelectedStatus;
-                          return matchSearch && matchBranch && matchType && matchStatus;
-                        })
-                      ) : [
-                        { date: '24 May 2025', ref: 'PAY-2025-0567', customer: 'All Star Motors', invoice: 'INV-2025-0187', method: 'Bank Transfer', amount: '$9,625.00', status: 'Completed', branch: 'Sydney Head Office' },
-                        { date: '23 May 2025', ref: 'PAY-2025-0566', customer: 'Sydney Car Sales', invoice: 'INV-2025-0182', method: 'EFTPOS', amount: '$2,860.00', status: 'Completed', branch: 'Sydney Head Office' },
-                        { date: '22 May 2025', ref: 'PAY-2025-0565', customer: 'Fast Freight Pty Ltd', invoice: 'INV-2025-0180', method: 'Bank Transfer', amount: '$5,280.00', status: 'Completed', branch: 'Melbourne Depot' },
-                        { date: '22 May 2025', ref: 'PAY-2025-0564', customer: 'Metro Group Sydney', invoice: 'INV-2025-0176', method: 'Credit Card', amount: '$1,650.00', status: 'Completed', branch: 'Sydney Head Office' },
-                        { date: '21 May 2025', ref: 'PAY-2025-0563', customer: 'Blue Line Logistics', invoice: 'INV-2025-0173', method: 'Bank Transfer', amount: '$3,960.00', status: 'Completed', branch: 'Brisbane Hub' }
-                      ]).map((pay, idx) => (
+                      {paymentsList.filter(item => {
+                        const matchSearch = item.ref.toLowerCase().includes(prSearchQuery.toLowerCase()) || 
+                                            item.customer.toLowerCase().includes(prSearchQuery.toLowerCase()) ||
+                                            item.invoice.toLowerCase().includes(prSearchQuery.toLowerCase());
+                        const matchBranch = prSelectedBranch === 'All Branches' || item.branch === prSelectedBranch;
+                        const matchType = prSelectedType === 'All Payment Types' || item.method === prSelectedType;
+                        const matchStatus = prSelectedStatus === 'All Status' || item.status === prSelectedStatus;
+                        return matchSearch && matchBranch && matchType && matchStatus;
+                      }).map((pay, idx) => (
                         <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
                           <td className="py-3 px-4 text-slate-500 font-semibold">{pay.date}</td>
                           <td className="py-3 px-4 text-slate-900 font-extrabold font-mono">{pay.ref}</td>
@@ -2319,10 +2620,47 @@ Thank you for doing business with Hero Logistics Systems.
                               {pay.status}
                             </span>
                           </td>
-                          <td className="py-3 px-4 text-right">
-                            <button onClick={() => triggerToast(`Actions for ${pay.ref}`)} className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer">
+                          <td className="py-3 px-4 text-right relative">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPayMenuIndex(payMenuIndex === idx ? null : idx);
+                              }}
+                              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${payMenuIndex === idx ? 'bg-indigo-100 text-indigo-700' : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50'}`}
+                            >
                               <MoreVertical className="w-4 h-4" />
                             </button>
+
+                            {payMenuIndex === idx && (
+                              <>
+                                <div className="fixed inset-0 z-40" onClick={() => setPayMenuIndex(null)} />
+                                <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-xl border border-slate-200 p-1.5 z-50 flex flex-col gap-0.5 text-xs font-semibold text-slate-700 text-left">
+                                  <button
+                                    onClick={() => { setViewPaymentModal(pay); setPayMenuIndex(null); }}
+                                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
+                                  >
+                                    👁️ View Details
+                                  </button>
+                                  <button
+                                    onClick={() => { setEditPaymentModal({ ...pay, index: idx }); setPayMenuIndex(null); }}
+                                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
+                                  >
+                                    ✏️ Edit Record
+                                  </button>
+                                  <div className="h-px bg-slate-100 my-1" />
+                                  <button
+                                    onClick={() => {
+                                      setPaymentsList(prev => prev.filter((_, i) => i !== idx));
+                                      triggerToast(`Payment record ${pay.ref} removed`);
+                                      setPayMenuIndex(null);
+                                    }}
+                                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-rose-50 text-rose-600 text-left w-full cursor-pointer"
+                                  >
+                                    ❌ Delete Record
+                                  </button>
+                                </div>
+                              </>
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -2372,29 +2710,15 @@ Thank you for doing business with Hero Logistics Systems.
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-slate-800">
-                      {((prSearchQuery || prSelectedBranch !== 'All Branches' || prSelectedType !== 'All Payment Types' || prSelectedStatus !== 'All Status') ? (
-                        [
-                          { date: '24 May 2025', ref: 'REC-2025-0125', customer: 'ABC Wholesalers', for: 'Overpayment Refund', method: 'Bank Transfer', amount: '$1,250.00', status: 'Issued', branch: 'Sydney Head Office' },
-                          { date: '20 May 2025', ref: 'REC-2025-0124', customer: 'All Star Motors', for: 'Security Deposit Refund', method: 'Bank Transfer', amount: '$500.00', status: 'Issued', branch: 'Sydney Head Office' },
-                          { date: '18 May 2025', ref: 'REC-2025-0123', customer: 'Quick Move Transport', for: 'Job Cancellation Refund', method: 'EFTPOS', amount: '$275.00', status: 'Issued', branch: 'Melbourne Depot' },
-                          { date: '16 May 2025', ref: 'REC-2025-0122', customer: 'Prime Car Carriers', for: 'Overpayment Refund', method: 'Bank Transfer', amount: '$820.00', status: 'Issued', branch: 'Sydney Head Office' },
-                          { date: '12 May 2025', ref: 'REC-2025-0121', customer: 'City Link Logistics', for: 'Overpayment Refund', method: 'Bank Transfer', amount: '$430.00', status: 'Issued', branch: 'Brisbane Hub' }
-                        ].filter(item => {
-                          const matchSearch = item.ref.toLowerCase().includes(prSearchQuery.toLowerCase()) || 
-                                              item.customer.toLowerCase().includes(prSearchQuery.toLowerCase()) ||
-                                              item.for.toLowerCase().includes(prSearchQuery.toLowerCase());
-                          const matchBranch = prSelectedBranch === 'All Branches' || item.branch === prSelectedBranch;
-                          const matchType = prSelectedType === 'All Payment Types' || item.method === prSelectedType;
-                          const matchStatus = prSelectedStatus === 'All Status' || item.status === prSelectedStatus;
-                          return matchSearch && matchBranch && matchType && matchStatus;
-                        })
-                      ) : [
-                        { date: '24 May 2025', ref: 'REC-2025-0125', customer: 'ABC Wholesalers', for: 'Overpayment Refund', method: 'Bank Transfer', amount: '$1,250.00', status: 'Issued', branch: 'Sydney Head Office' },
-                        { date: '20 May 2025', ref: 'REC-2025-0124', customer: 'All Star Motors', for: 'Security Deposit Refund', method: 'Bank Transfer', amount: '$500.00', status: 'Issued', branch: 'Sydney Head Office' },
-                        { date: '18 May 2025', ref: 'REC-2025-0123', customer: 'Quick Move Transport', for: 'Job Cancellation Refund', method: 'EFTPOS', amount: '$275.00', status: 'Issued', branch: 'Melbourne Depot' },
-                        { date: '16 May 2025', ref: 'REC-2025-0122', customer: 'Prime Car Carriers', for: 'Overpayment Refund', method: 'Bank Transfer', amount: '$820.00', status: 'Issued', branch: 'Sydney Head Office' },
-                        { date: '12 May 2025', ref: 'REC-2025-0121', customer: 'City Link Logistics', for: 'Overpayment Refund', method: 'Bank Transfer', amount: '$430.00', status: 'Issued', branch: 'Brisbane Hub' }
-                      ]).map((rec, idx) => (
+                      {receiptsList.filter(item => {
+                        const matchSearch = item.ref.toLowerCase().includes(prSearchQuery.toLowerCase()) || 
+                                            item.customer.toLowerCase().includes(prSearchQuery.toLowerCase()) ||
+                                            item.for.toLowerCase().includes(prSearchQuery.toLowerCase());
+                        const matchBranch = prSelectedBranch === 'All Branches' || item.branch === prSelectedBranch;
+                        const matchType = prSelectedType === 'All Payment Types' || item.method === prSelectedType;
+                        const matchStatus = prSelectedStatus === 'All Status' || item.status === prSelectedStatus;
+                        return matchSearch && matchBranch && matchType && matchStatus;
+                      }).map((rec, idx) => (
                         <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
                           <td className="py-3 px-4 text-slate-500 font-semibold">{rec.date}</td>
                           <td className="py-3 px-4 text-slate-900 font-extrabold font-mono">{rec.ref}</td>
@@ -2407,10 +2731,47 @@ Thank you for doing business with Hero Logistics Systems.
                               {rec.status}
                             </span>
                           </td>
-                          <td className="py-3 px-4 text-right">
-                            <button onClick={() => triggerToast(`Actions for ${rec.ref}`)} className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer">
+                          <td className="py-3 px-4 text-right relative">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setRecMenuIndex(recMenuIndex === idx ? null : idx);
+                              }}
+                              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${recMenuIndex === idx ? 'bg-indigo-100 text-indigo-700' : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50'}`}
+                            >
                               <MoreVertical className="w-4 h-4" />
                             </button>
+
+                            {recMenuIndex === idx && (
+                              <>
+                                <div className="fixed inset-0 z-40" onClick={() => setRecMenuIndex(null)} />
+                                <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-xl border border-slate-200 p-1.5 z-50 flex flex-col gap-0.5 text-xs font-semibold text-slate-700 text-left">
+                                  <button
+                                    onClick={() => { setViewReceiptModal(rec); setRecMenuIndex(null); }}
+                                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
+                                  >
+                                    👁️ View Details
+                                  </button>
+                                  <button
+                                    onClick={() => { setEditReceiptModal({ ...rec, index: idx }); setRecMenuIndex(null); }}
+                                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
+                                  >
+                                    ✏️ Edit Record
+                                  </button>
+                                  <div className="h-px bg-slate-100 my-1" />
+                                  <button
+                                    onClick={() => {
+                                      setReceiptsList(prev => prev.filter((_, i) => i !== idx));
+                                      triggerToast(`Receipt record ${rec.ref} removed`);
+                                      setRecMenuIndex(null);
+                                    }}
+                                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-rose-50 text-rose-600 text-left w-full cursor-pointer"
+                                  >
+                                    ❌ Delete Record
+                                  </button>
+                                </div>
+                              </>
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -2442,9 +2803,9 @@ Thank you for doing business with Hero Logistics Systems.
                   <button onClick={() => triggerToast('Opening Payment Methods detailed report')} className="text-[10px] font-bold text-indigo-600 hover:underline">View Report &rarr;</button>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-center gap-6 py-2">
+                <div className="flex flex-row items-center gap-4 py-2">
                   {/* SVG Donut Chart */}
-                  <div className="relative w-32 h-32 shrink-0">
+                  <div className="relative w-28 h-28 shrink-0">
                     <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
                       <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f1f5f9" strokeWidth="4" />
                       {/* Bank Transfer (55.3%) -> Dasharray 55.3 44.7 */}
@@ -2459,47 +2820,47 @@ Thank you for doing business with Hero Logistics Systems.
                       <circle cx="18" cy="18" r="15.915" fill="none" stroke="#ec4899" strokeWidth="4.2" strokeDasharray="3 97" strokeDashoffset="-71.9" />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                      <span className="text-[12px] font-black text-slate-800 leading-tight">$586,220</span>
+                      <span className="text-[11px] font-black text-slate-800 leading-tight">$586,220</span>
                       <span className="text-[7px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Total</span>
                     </div>
                   </div>
 
                   {/* Legend list */}
-                  <div className="space-y-2 text-xs font-bold text-slate-700 w-full">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#4f46e5] shrink-0" />
-                        <span>Bank Transfer</span>
+                  <div className="flex-1 min-w-0 space-y-1.5 text-xs font-bold text-slate-700">
+                    <div className="flex items-center justify-between gap-1">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="w-2 h-2 rounded-full bg-[#4f46e5] shrink-0" />
+                        <span className="truncate text-[11px]">Bank Transfer</span>
                       </div>
-                      <span className="font-mono text-slate-600 text-[11px]">$324,560 (55.3%)</span>
+                      <span className="font-mono text-slate-600 text-[10px] whitespace-nowrap shrink-0 ml-1">$324,560 (55.3%)</span>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#06b6d4] shrink-0" />
-                        <span>EFTPOS</span>
+                    <div className="flex items-center justify-between gap-1">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="w-2 h-2 rounded-full bg-[#06b6d4] shrink-0" />
+                        <span className="truncate text-[11px]">EFTPOS</span>
                       </div>
-                      <span className="font-mono text-slate-600 text-[11px]">$128,750 (21.9%)</span>
+                      <span className="font-mono text-slate-600 text-[10px] whitespace-nowrap shrink-0 ml-1">$128,750 (21.9%)</span>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#3b82f6] shrink-0" />
-                        <span>Credit Card</span>
+                    <div className="flex items-center justify-between gap-1">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="w-2 h-2 rounded-full bg-[#3b82f6] shrink-0" />
+                        <span className="truncate text-[11px]">Credit Card</span>
                       </div>
-                      <span className="font-mono text-slate-600 text-[11px]">$82,430 (14.1%)</span>
+                      <span className="font-mono text-slate-600 text-[10px] whitespace-nowrap shrink-0 ml-1">$82,430 (14.1%)</span>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b] shrink-0" />
-                        <span>Cash</span>
+                    <div className="flex items-center justify-between gap-1">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="w-2 h-2 rounded-full bg-[#f59e0b] shrink-0" />
+                        <span className="truncate text-[11px]">Cash</span>
                       </div>
-                      <span className="font-mono text-slate-600 text-[11px]">$32,980 (5.6%)</span>
+                      <span className="font-mono text-slate-600 text-[10px] whitespace-nowrap shrink-0 ml-1">$32,980 (5.6%)</span>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#ec4899] shrink-0" />
-                        <span>Other</span>
+                    <div className="flex items-center justify-between gap-1">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="w-2 h-2 rounded-full bg-[#ec4899] shrink-0" />
+                        <span className="truncate text-[11px]">Other</span>
                       </div>
-                      <span className="font-mono text-slate-600 text-[11px]">$17,500 (3.0%)</span>
+                      <span className="font-mono text-slate-600 text-[10px] whitespace-nowrap shrink-0 ml-1">$17,500 (3.0%)</span>
                     </div>
                   </div>
                 </div>
@@ -2744,7 +3105,7 @@ Thank you for doing business with Hero Logistics Systems.
               </div>
 
               {/* Right Side: Actions Block */}
-              <div className="flex flex-col items-end gap-2 shrink-0 max-w-full">
+              <div className="flex flex-col items-start md:items-end gap-2 w-full md:w-auto">
                 {/* Desktop-only: More Actions Button on top right */}
                 <div className="relative max-md:hidden">
                   <button 
@@ -2786,22 +3147,22 @@ Thank you for doing business with Hero Logistics Systems.
                 </div>
 
                 {/* Buttons row */}
-                <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap flex-nowrap pb-1.5 md:pb-0 scrollbar-none max-w-full" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                <div className="flex flex-wrap md:flex-nowrap items-center gap-2 w-full md:w-auto">
                   <button 
                     onClick={() => { setTransactionForm({ type: 'Expense', status: 'Pending' }); setShowAddTransactionModal(true); }}
-                    className="flex items-center gap-1.5 bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-50 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95"
+                    className="flex items-center gap-1.5 bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-50 px-3 py-1.5 md:px-3.5 md:py-2 rounded-xl text-[11px] md:text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95"
                   >
                     <Plus className="w-3.5 h-3.5" /> Add Expense
                   </button>
                   <button 
                     onClick={() => { setTransactionForm({ type: 'Expense', status: 'Completed' }); setShowAddTransactionModal(true); }}
-                    className="flex items-center gap-1.5 bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-50 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
+                    className="flex items-center gap-1.5 bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-50 px-3 py-1.5 md:px-3.5 md:py-2 rounded-xl text-[11px] md:text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
                   >
                     <Plus className="w-3.5 h-3.5" /> Upload Receipt
                   </button>
                   <button 
                     onClick={() => setShowExportModal(true)}
-                    className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
+                    className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 px-3 py-1.5 md:px-3.5 md:py-2 rounded-xl text-[11px] md:text-xs font-bold hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
                   >
                     <Download className="w-3.5 h-3.5 text-slate-400" /> Export
                   </button>
@@ -2997,10 +3358,52 @@ Thank you for doing business with Hero Logistics Systems.
                 <option>Personal (Reimb.)</option>
               </select>
 
-              <button className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer">
-                <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                <span>01 May 2025 - 31 May 2025</span>
-              </button>
+              <div className="relative inline-flex items-center shrink-0">
+                <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-100 transition-colors cursor-pointer whitespace-nowrap">
+                  <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <span className="text-slate-800 font-extrabold">{dateRange.startDate}</span>
+                  <span className="text-slate-400 font-normal mx-0.5">&ndash;</span>
+                  <span className="text-slate-800 font-extrabold">{dateRange.endDate}</span>
+                </div>
+
+                {/* Start Date Click Overlay */}
+                <input 
+                  type="date" 
+                  value={dateRange.startDate} 
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setDateRange({ ...dateRange, startDate: e.target.value });
+                      triggerToast(`Start Date updated to ${e.target.value}`);
+                    }
+                  }}
+                  onClick={(e) => {
+                    if (typeof e.target.showPicker === 'function') {
+                      try { e.target.showPicker(); } catch (err) {}
+                    }
+                  }}
+                  className="absolute left-0 top-0 bottom-0 w-[48%] opacity-0 cursor-pointer z-10"
+                  title="Click to select Start Date"
+                />
+
+                {/* End Date Click Overlay */}
+                <input 
+                  type="date" 
+                  value={dateRange.endDate} 
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setDateRange({ ...dateRange, endDate: e.target.value });
+                      triggerToast(`End Date updated to ${e.target.value}`);
+                    }
+                  }}
+                  onClick={(e) => {
+                    if (typeof e.target.showPicker === 'function') {
+                      try { e.target.showPicker(); } catch (err) {}
+                    }
+                  }}
+                  className="absolute right-0 top-0 bottom-0 w-[48%] opacity-0 cursor-pointer z-10"
+                  title="Click to select End Date"
+                />
+              </div>
 
               <button 
                 onClick={() => triggerToast('Filters Applied!')}
@@ -3059,59 +3462,74 @@ Thank you for doing business with Hero Logistics Systems.
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-slate-800">
-                      {((expSearchQuery || expSelectedBranch !== 'All Branches' || expSelectedCategory !== 'All Categories' || expSelectedType !== 'All Payment Types') ? (
-                        [
-                          { date: '24 May 2025', ref: 'EXP-2025-0567', desc: 'Diesel - Port Macquarie Run', category: 'Fuel', amount: '$1,245.60', type: 'Company Card', status: 'Approved', user: 'John Driver', branch: 'Sydney Head Office' },
-                          { date: '24 May 2025', ref: 'EXP-2025-0566', desc: 'Truck Service & Oil Change', category: 'Maintenance', amount: '$620.00', type: 'Bank Transfer', status: 'Pending', user: 'John Driver', branch: 'Sydney Head Office' },
-                          { date: '23 May 2025', ref: 'EXP-2025-0565', desc: 'Tyre Repair - Rear Left', category: 'Repairs', amount: '$180.00', type: 'Company Card', status: 'Approved', user: 'John Driver', branch: 'Melbourne Depot' },
-                          { date: '22 May 2025', ref: 'EXP-2025-0564', desc: 'Toll Fees - Sydney', category: 'Tolls', amount: '$82.40', type: 'EFTPOS', status: 'Approved', user: 'John Driver', branch: 'Sydney Head Office' },
-                          { date: '22 May 2025', ref: 'EXP-2025-0563', desc: 'Truck Wash', category: 'Maintenance', amount: '$45.00', type: 'Company Card', status: 'Approved', user: 'John Driver', branch: 'Sydney Head Office' },
-                          { date: '21 May 2025', ref: 'EXP-2025-0562', desc: 'Accommodation - Tamworth', category: 'Accommodation', amount: '$210.00', type: 'Personal (Reimb.)', status: 'Pending', user: 'John Driver', branch: 'Brisbane Hub' },
-                          { date: '21 May 2025', ref: 'EXP-2025-0561', desc: 'Meals - Tamworth', category: 'Meals', amount: '$78.50', type: 'Personal (Reimb.)', status: 'Approved', user: 'John Driver', branch: 'Sydney Head Office' },
-                          { date: '20 May 2025', ref: 'EXP-2025-0560', desc: 'Parking - Sydney CBD', category: 'Parking', amount: '$32.00', type: 'EFTPOS', status: 'Approved', user: 'John Driver', branch: 'Melbourne Depot' }
-                        ].filter(item => {
-                          const matchSearch = item.desc.toLowerCase().includes(expSearchQuery.toLowerCase()) || 
+                      {(expensesList.filter(item => {
+                          const matchSearch = !expSearchQuery || item.desc.toLowerCase().includes(expSearchQuery.toLowerCase()) ||
                                               item.ref.toLowerCase().includes(expSearchQuery.toLowerCase()) ||
                                               item.user.toLowerCase().includes(expSearchQuery.toLowerCase());
                           const matchBranch = expSelectedBranch === 'All Branches' || item.branch === expSelectedBranch;
                           const matchCategory = expSelectedCategory === 'All Categories' || item.category === expSelectedCategory;
                           const matchType = expSelectedType === 'All Payment Types' || item.type === expSelectedType;
                           return matchSearch && matchBranch && matchCategory && matchType;
-                        })
-                      ) : [
-                        { date: '24 May 2025', ref: 'EXP-2025-0567', desc: 'Diesel - Port Macquarie Run', category: 'Fuel', amount: '$1,245.60', type: 'Company Card', status: 'Approved', user: 'John Driver', branch: 'Sydney Head Office' },
-                        { date: '24 May 2025', ref: 'EXP-2025-0566', desc: 'Truck Service & Oil Change', category: 'Maintenance', amount: '$620.00', type: 'Bank Transfer', status: 'Pending', user: 'John Driver', branch: 'Sydney Head Office' },
-                        { date: '23 May 2025', ref: 'EXP-2025-0565', desc: 'Tyre Repair - Rear Left', category: 'Repairs', amount: '$180.00', type: 'Company Card', status: 'Approved', user: 'John Driver', branch: 'Melbourne Depot' },
-                        { date: '22 May 2025', ref: 'EXP-2025-0564', desc: 'Toll Fees - Sydney', category: 'Tolls', amount: '$82.40', type: 'EFTPOS', status: 'Approved', user: 'John Driver', branch: 'Sydney Head Office' },
-                        { date: '22 May 2025', ref: 'EXP-2025-0563', desc: 'Truck Wash', category: 'Maintenance', amount: '$45.00', type: 'Company Card', status: 'Approved', user: 'John Driver', branch: 'Sydney Head Office' },
-                        { date: '21 May 2025', ref: 'EXP-2025-0562', desc: 'Accommodation - Tamworth', category: 'Accommodation', amount: '$210.00', type: 'Personal (Reimb.)', status: 'Pending', user: 'John Driver', branch: 'Brisbane Hub' },
-                        { date: '21 May 2025', ref: 'EXP-2025-0561', desc: 'Meals - Tamworth', category: 'Meals', amount: '$78.50', type: 'Personal (Reimb.)', status: 'Approved', user: 'John Driver', branch: 'Sydney Head Office' },
-                        { date: '20 May 2025', ref: 'EXP-2025-0560', desc: 'Parking - Sydney CBD', category: 'Parking', amount: '$32.00', type: 'EFTPOS', status: 'Approved', user: 'John Driver', branch: 'Melbourne Depot' }
-                      ]).map((exp, idx) => (
-                        <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="py-3 px-4 text-slate-500 font-semibold">{exp.date}</td>
-                          <td className="py-3 px-4 text-slate-900 font-extrabold font-mono">{exp.ref}</td>
-                          <td className="py-3 px-4 font-extrabold text-slate-800">{exp.desc}</td>
-                          <td className="py-3 px-4 text-slate-600">{exp.category}</td>
-                          <td className="py-3 px-4 text-right font-mono text-slate-900 font-extrabold">{exp.amount}</td>
-                          <td className="py-3 px-4 text-slate-500 font-semibold">{exp.type}</td>
-                          <td className="py-3 px-4">
-                            <span className={`px-2.5 py-0.5 rounded text-[10px] font-black ${
-                              exp.status === 'Approved' 
-                                ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
-                                : 'bg-amber-50 text-amber-600 border border-amber-100'
-                            }`}>
-                              {exp.status}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-slate-600">{exp.user}</td>
-                          <td className="py-3 px-4 text-right">
-                            <button onClick={() => triggerToast(`Actions for ${exp.ref}`)} className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer">
-                              <MoreVertical className="w-4 h-4" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
+                        })).map((exp, idx) => (
+                         <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                           <td className="py-3 px-4 text-slate-500 font-semibold">{exp.date}</td>
+                           <td className="py-3 px-4 text-slate-900 font-extrabold font-mono">{exp.ref}</td>
+                           <td className="py-3 px-4 font-extrabold text-slate-800">{exp.desc}</td>
+                           <td className="py-3 px-4 text-slate-600">{exp.category}</td>
+                           <td className="py-3 px-4 text-right font-mono text-slate-900 font-extrabold">{exp.amount}</td>
+                           <td className="py-3 px-4 text-slate-500 font-semibold">{exp.type}</td>
+                           <td className="py-3 px-4">
+                             <span className={`px-2.5 py-0.5 rounded text-[10px] font-black ${
+                               exp.status === 'Approved'
+                                 ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                                 : 'bg-amber-50 text-amber-600 border border-amber-100'
+                             }`}>
+                               {exp.status}
+                             </span>
+                           </td>
+                           <td className="py-3 px-4 text-slate-600">{exp.user}</td>
+                           <td className="py-3 px-4 text-right relative">
+                             <button
+                               onClick={(e) => { e.stopPropagation(); setExpMenuIndex(expMenuIndex === idx ? null : idx); }}
+                               className={`p-1.5 rounded-lg transition-colors cursor-pointer ${expMenuIndex === idx ? 'bg-indigo-100 text-indigo-700' : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50'}`}
+                             >
+                               <MoreVertical className="w-4 h-4" />
+                             </button>
+
+                             {expMenuIndex === idx && (
+                               <>
+                                 <div className="fixed inset-0 z-40" onClick={() => setExpMenuIndex(null)} />
+                                 <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-xl border border-slate-200 p-1.5 z-50 flex flex-col gap-0.5 text-xs font-semibold text-slate-700 text-left">
+                                   <button
+                                     onClick={() => { setViewExpenseModal(exp); setExpMenuIndex(null); }}
+                                     className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
+                                   >
+                                     👁️ View Details
+                                   </button>
+                                   <button
+                                     onClick={() => { setEditExpenseModal({ ...exp, index: idx }); setExpMenuIndex(null); }}
+                                     className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
+                                   >
+                                     ✏️ Edit Record
+                                   </button>
+                                   <div className="h-px bg-slate-100 my-1" />
+                                   <button
+                                     onClick={() => {
+                                       const realIdx = expensesList.indexOf(exp);
+                                       setExpensesList(prev => prev.filter((_, i) => i !== realIdx));
+                                       triggerToast(`Expense record ${exp.ref} removed`);
+                                       setExpMenuIndex(null);
+                                     }}
+                                     className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-rose-50 text-rose-600 text-left w-full cursor-pointer"
+                                   >
+                                     ❌ Delete Record
+                                   </button>
+                                 </div>
+                               </>
+                             )}
+                           </td>
+                         </tr>
+                       ))}
                     </tbody>
                   </table>
                 </div>
@@ -3237,9 +3655,9 @@ Thank you for doing business with Hero Logistics Systems.
                   <button onClick={() => triggerToast('Opening category breakdown detailed report')} className="text-[10px] font-bold text-indigo-600 hover:underline">View Report &rarr;</button>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-center gap-6 py-2">
+                <div className="flex flex-row items-center gap-4 py-2">
                   {/* SVG Donut Chart */}
-                  <div className="relative w-32 h-32 shrink-0">
+                  <div className="relative w-28 h-28 shrink-0">
                     <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
                       <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f1f5f9" strokeWidth="4" />
                       {/* Fuel (38.4%) -> Dasharray 38.4 61.6 */}
@@ -3256,54 +3674,54 @@ Thank you for doing business with Hero Logistics Systems.
                       <circle cx="18" cy="18" r="15.915" fill="none" stroke="#94a3b8" strokeWidth="4.2" strokeDasharray="7.2 92.8" strokeDashoffset="-67.6" />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                      <span className="text-[12px] font-black text-slate-800 leading-tight">$256,430</span>
+                      <span className="text-[11px] font-black text-slate-800 leading-tight">$256,430</span>
                       <span className="text-[7px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Total</span>
                     </div>
                   </div>
 
                   {/* Legend list */}
-                  <div className="space-y-2 text-xs font-bold text-slate-700 w-full">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#8b5cf6] shrink-0" />
-                        <span>Fuel</span>
+                  <div className="flex-1 min-w-0 space-y-1.5 text-xs font-bold text-slate-700">
+                    <div className="flex items-center justify-between gap-1">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="w-2 h-2 rounded-full bg-[#8b5cf6] shrink-0" />
+                        <span className="truncate text-[11px]">Fuel</span>
                       </div>
-                      <span className="font-mono text-slate-600 text-[11px]">$98,560 (38.4%)</span>
+                      <span className="font-mono text-slate-600 text-[10px] whitespace-nowrap shrink-0 ml-1">$98,560 (38.4%)</span>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#06b6d4] shrink-0" />
-                        <span>Maintenance</span>
+                    <div className="flex items-center justify-between gap-1">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="w-2 h-2 rounded-full bg-[#06b6d4] shrink-0" />
+                        <span className="truncate text-[11px]">Maintenance</span>
                       </div>
-                      <span className="font-mono text-slate-600 text-[11px]">$56,420 (22.0%)</span>
+                      <span className="font-mono text-slate-600 text-[10px] whitespace-nowrap shrink-0 ml-1">$56,420 (22.0%)</span>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#3b82f6] shrink-0" />
-                        <span>Repairs</span>
+                    <div className="flex items-center justify-between gap-1">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="w-2 h-2 rounded-full bg-[#3b82f6] shrink-0" />
+                        <span className="truncate text-[11px]">Repairs</span>
                       </div>
-                      <span className="font-mono text-slate-600 text-[11px]">$42,670 (16.6%)</span>
+                      <span className="font-mono text-slate-600 text-[10px] whitespace-nowrap shrink-0 ml-1">$42,670 (16.6%)</span>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b] shrink-0" />
-                        <span>Tolls</span>
+                    <div className="flex items-center justify-between gap-1">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="w-2 h-2 rounded-full bg-[#f59e0b] shrink-0" />
+                        <span className="truncate text-[11px]">Tolls</span>
                       </div>
-                      <span className="font-mono text-slate-600 text-[11px]">$21,850 (8.5%)</span>
+                      <span className="font-mono text-slate-600 text-[10px] whitespace-nowrap shrink-0 ml-1">$21,850 (8.5%)</span>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#ec4899] shrink-0" />
-                        <span>Accommodation</span>
+                    <div className="flex items-center justify-between gap-1">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="w-2 h-2 rounded-full bg-[#ec4899] shrink-0" />
+                        <span className="truncate text-[11px]">Accommodation</span>
                       </div>
-                      <span className="font-mono text-slate-600 text-[11px]">$18,320 (7.1%)</span>
+                      <span className="font-mono text-slate-600 text-[10px] whitespace-nowrap shrink-0 ml-1">$18,320 (7.1%)</span>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#94a3b8] shrink-0" />
-                        <span>Other</span>
+                    <div className="flex items-center justify-between gap-1">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="w-2 h-2 rounded-full bg-[#94a3b8] shrink-0" />
+                        <span className="truncate text-[11px]">Other</span>
                       </div>
-                      <span className="font-mono text-slate-600 text-[11px]">$18,610 (7.2%)</span>
+                      <span className="font-mono text-slate-600 text-[10px] whitespace-nowrap shrink-0 ml-1">$18,610 (7.2%)</span>
                     </div>
                   </div>
                 </div>
@@ -3609,14 +4027,22 @@ Thank you for doing business with Hero Logistics Systems.
 
               {/* Right: Help, Notification, User Avatar */}
               <div className="flex items-center gap-3.5 text-xs font-bold text-slate-700">
-                <button onClick={() => triggerToast('Help center opened')} className="flex items-center gap-1 text-slate-500 hover:text-slate-800 cursor-pointer text-[11px]">
-                  <HelpCircle className="w-3.5 h-3.5 text-slate-400" /> Need help?
+                <button onClick={() => setShowHelpModal(true)} className="flex items-center gap-1 text-slate-500 hover:text-indigo-600 cursor-pointer text-[11px] transition-colors">
+                  <HelpCircle className="w-3.5 h-3.5 text-indigo-500" /> Need help?
                 </button>
-                <div className="relative cursor-pointer text-slate-600 hover:text-slate-800" onClick={() => triggerToast('Notifications opened')}>
+                <div className="relative cursor-pointer text-slate-600 hover:text-indigo-600 transition-colors" onClick={() => setShowNotificationsModal(true)} title="View Notifications">
                   <Bell className="w-4 h-4" />
-                  <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full bg-rose-500 text-white flex items-center justify-center text-[8px] font-black leading-none">11</span>
+                  {unreadNotificationsCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full bg-rose-500 text-white flex items-center justify-center text-[8px] font-black leading-none">
+                      {unreadNotificationsCount}
+                    </span>
+                  )}
                 </div>
-                <div className="w-6 h-6 rounded-full bg-slate-950 text-white flex items-center justify-center text-[10px] font-black shadow-xs shrink-0" title="User Profile">
+                <div 
+                  onClick={() => setShowProfileModal(true)}
+                  className="w-6 h-6 rounded-full bg-slate-950 text-white flex items-center justify-center text-[10px] font-black shadow-xs shrink-0 cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all" 
+                  title="User Profile - Sarah Mitchell"
+                >
                   SM
                 </div>
               </div>
@@ -3638,7 +4064,7 @@ Thank you for doing business with Hero Logistics Systems.
               </div>
 
               {/* Right Side: Actions Block */}
-              <div className="flex flex-col items-end gap-2 shrink-0 max-w-full">
+              <div className="flex flex-col items-start md:items-end gap-2 w-full md:w-auto">
                 {/* Desktop-only: More Actions Button on top right */}
                 <div className="relative max-md:hidden">
                   <button 
@@ -3689,22 +4115,22 @@ Thank you for doing business with Hero Logistics Systems.
                 </div>
 
                 {/* Buttons row */}
-                <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap flex-nowrap pb-1.5 md:pb-0 scrollbar-none max-w-full" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                <div className="flex flex-wrap md:flex-nowrap items-center gap-2 w-full md:w-auto">
                   <button 
                     onClick={() => { setTransactionForm({ type: 'Payroll', status: 'Pending' }); setShowAddTransactionModal(true); }}
-                    className="flex items-center gap-1.5 bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-50 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95"
+                    className="flex items-center gap-1.5 bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-50 px-3 py-1.5 md:px-3.5 md:py-2 rounded-xl text-[11px] md:text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95"
                   >
                     <Plus className="w-3.5 h-3.5" /> Create Payroll Run
                   </button>
                   <button 
                     onClick={() => { setTransactionForm({ type: 'Payroll', status: 'Completed' }); setShowAddTransactionModal(true); }}
-                    className="flex items-center gap-1.5 bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-50 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
+                    className="flex items-center gap-1.5 bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-50 px-3 py-1.5 md:px-3.5 md:py-2 rounded-xl text-[11px] md:text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
                   >
                     <Plus className="w-3.5 h-3.5" /> Import Timesheets
                   </button>
                   <button 
                     onClick={() => setShowExportModal(true)}
-                    className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
+                    className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 px-3 py-1.5 md:px-3.5 md:py-2 rounded-xl text-[11px] md:text-xs font-bold hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
                   >
                     <Download className="w-3.5 h-3.5 text-slate-400" /> Export
                   </button>
@@ -3895,10 +4321,52 @@ Thank you for doing business with Hero Logistics Systems.
                 <option>Draft</option>
               </select>
 
-              <button className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer">
-                <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                <span>01 May 2025 - 31 May 2025</span>
-              </button>
+              <div className="relative inline-flex items-center shrink-0">
+                <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-100 transition-colors cursor-pointer whitespace-nowrap">
+                  <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <span className="text-slate-800 font-extrabold">{dateRange.startDate}</span>
+                  <span className="text-slate-400 font-normal mx-0.5">&ndash;</span>
+                  <span className="text-slate-800 font-extrabold">{dateRange.endDate}</span>
+                </div>
+
+                {/* Start Date Click Overlay */}
+                <input 
+                  type="date" 
+                  value={dateRange.startDate} 
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setDateRange({ ...dateRange, startDate: e.target.value });
+                      triggerToast(`Start Date updated to ${e.target.value}`);
+                    }
+                  }}
+                  onClick={(e) => {
+                    if (typeof e.target.showPicker === 'function') {
+                      try { e.target.showPicker(); } catch (err) {}
+                    }
+                  }}
+                  className="absolute left-0 top-0 bottom-0 w-[48%] opacity-0 cursor-pointer z-10"
+                  title="Click to select Start Date"
+                />
+
+                {/* End Date Click Overlay */}
+                <input 
+                  type="date" 
+                  value={dateRange.endDate} 
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setDateRange({ ...dateRange, endDate: e.target.value });
+                      triggerToast(`End Date updated to ${e.target.value}`);
+                    }
+                  }}
+                  onClick={(e) => {
+                    if (typeof e.target.showPicker === 'function') {
+                      try { e.target.showPicker(); } catch (err) {}
+                    }
+                  }}
+                  className="absolute right-0 top-0 bottom-0 w-[48%] opacity-0 cursor-pointer z-10"
+                  title="Click to select End Date"
+                />
+              </div>
 
               <button 
                 onClick={() => triggerToast('Filters Applied!')}
@@ -3958,62 +4426,77 @@ Thank you for doing business with Hero Logistics Systems.
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-slate-800">
-                      {((paySearchQuery || paySelectedBranch !== 'All Branches' || paySelectedType !== 'All Pay Types' || paySelectedStatus !== 'All Status') ? (
-                        [
-                          { name: 'Weekly Run - 26 May 2025', period: '19 May - 25 May 2025', branch: 'Sydney Head Office', employees: 28, type: 'Weekly', total: '$58,420.00', status: 'Paid', user: 'Sarah Mitchell', date: '26 May 2025' },
-                          { name: 'Weekly Run - 19 May 2025', period: '12 May - 18 May 2025', branch: 'Sydney Head Office', employees: 27, type: 'Weekly', total: '$55,680.00', status: 'Paid', user: 'Sarah Mitchell', date: '19 May 2025' },
-                          { name: 'Fortnightly Run - 18 May 2025', period: '05 May - 18 May 2025', branch: 'Brisbane Branch', employees: 15, type: 'Fortnightly', total: '$31,240.00', status: 'Approved', user: 'James Driver', date: '18 May 2025' },
-                          { name: 'Weekly Run - 12 May 2025', period: '05 May - 11 May 2025', branch: 'Sydney Head Office', employees: 26, type: 'Weekly', total: '$53,960.00', status: 'Paid', user: 'Sarah Mitchell', date: '12 May 2025' },
-                          { name: 'Weekly Run - 05 May 2025', period: '28 Apr - 04 May 2025', branch: 'Sydney Head Office', employees: 26, type: 'Weekly', total: '$52,730.00', status: 'Paid', user: 'Sarah Mitchell', date: '05 May 2025' },
-                          { name: 'Salary Run - May 2025', period: '01 May - 31 May 2025', branch: 'Sydney Head Office', employees: 8, type: 'Salary', total: '$64,500.00', status: 'Draft', user: 'Sarah Mitchell', date: '01 May 2025' },
-                          { name: 'Fortnightly Run - 04 May 2025', period: '21 Apr - 04 May 2025', branch: 'Melbourne Branch', employees: 12, type: 'Fortnightly', total: '$24,870.00', status: 'Paid', user: 'James Driver', date: '04 May 2025' },
-                          { name: 'Weekly Run - 28 Apr 2025', period: '21 Apr - 27 Apr 2025', branch: 'Sydney Head Office', employees: 25, type: 'Weekly', total: '$51,280.00', status: 'Paid', user: 'Sarah Mitchell', date: '28 Apr 2025' }
-                        ].filter(item => {
-                          const matchSearch = item.name.toLowerCase().includes(paySearchQuery.toLowerCase()) || 
+                      {(payrollList.filter(item => {
+                          const matchSearch = !paySearchQuery || item.name.toLowerCase().includes(paySearchQuery.toLowerCase()) ||
                                               item.branch.toLowerCase().includes(paySearchQuery.toLowerCase()) ||
                                               item.user.toLowerCase().includes(paySearchQuery.toLowerCase());
                           const matchBranch = paySelectedBranch === 'All Branches' || item.branch === paySelectedBranch;
                           const matchType = paySelectedType === 'All Pay Types' || item.type === paySelectedType;
                           const matchStatus = paySelectedStatus === 'All Status' || item.status === paySelectedStatus;
                           return matchSearch && matchBranch && matchType && matchStatus;
-                        })
-                      ) : [
-                        { name: 'Weekly Run - 26 May 2025', period: '19 May - 25 May 2025', branch: 'Sydney Head Office', employees: 28, type: 'Weekly', total: '$58,420.00', status: 'Paid', user: 'Sarah Mitchell', date: '26 May 2025' },
-                        { name: 'Weekly Run - 19 May 2025', period: '12 May - 18 May 2025', branch: 'Sydney Head Office', employees: 27, type: 'Weekly', total: '$55,680.00', status: 'Paid', user: 'Sarah Mitchell', date: '19 May 2025' },
-                        { name: 'Fortnightly Run - 18 May 2025', period: '05 May - 18 May 2025', branch: 'Brisbane Branch', employees: 15, type: 'Fortnightly', total: '$31,240.00', status: 'Approved', user: 'James Driver', date: '18 May 2025' },
-                        { name: 'Weekly Run - 12 May 2025', period: '05 May - 11 May 2025', branch: 'Sydney Head Office', employees: 26, type: 'Weekly', total: '$53,960.00', status: 'Paid', user: 'Sarah Mitchell', date: '12 May 2025' },
-                        { name: 'Weekly Run - 05 May 2025', period: '28 Apr - 04 May 2025', branch: 'Sydney Head Office', employees: 26, type: 'Weekly', total: '$52,730.00', status: 'Paid', user: 'Sarah Mitchell', date: '05 May 2025' },
-                        { name: 'Salary Run - May 2025', period: '01 May - 31 May 2025', branch: 'Sydney Head Office', employees: 8, type: 'Salary', total: '$64,500.00', status: 'Draft', user: 'Sarah Mitchell', date: '01 May 2025' },
-                        { name: 'Fortnightly Run - 04 May 2025', period: '21 Apr - 04 May 2025', branch: 'Melbourne Branch', employees: 12, type: 'Fortnightly', total: '$24,870.00', status: 'Paid', user: 'James Driver', date: '04 May 2025' },
-                        { name: 'Weekly Run - 28 Apr 2025', period: '21 Apr - 27 Apr 2025', branch: 'Sydney Head Office', employees: 25, type: 'Weekly', total: '$51,280.00', status: 'Paid', user: 'Sarah Mitchell', date: '28 Apr 2025' }
-                      ]).map((pay, idx) => (
-                        <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="py-3 px-4 text-slate-900 font-extrabold">{pay.name}</td>
-                          <td className="py-3 px-4 text-slate-500 font-semibold">{pay.period}</td>
-                          <td className="py-3 px-4 font-semibold text-slate-700">{pay.branch}</td>
-                          <td className="py-3 px-4 text-center text-slate-900 font-extrabold">{pay.employees}</td>
-                          <td className="py-3 px-4 text-slate-600">{pay.type}</td>
-                          <td className="py-3 px-4 text-right font-mono text-slate-900 font-extrabold">{pay.total}</td>
-                          <td className="py-3 px-4">
-                            <span className={`px-2.5 py-0.5 rounded text-[10px] font-black ${
-                              pay.status === 'Paid' 
-                                ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                                : pay.status === 'Approved'
-                                ? 'bg-green-50 text-green-600 border border-green-100'
-                                : 'bg-blue-50 text-blue-600 border border-blue-100'
-                            }`}>
-                              {pay.status}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-slate-600">{pay.user}</td>
-                          <td className="py-3 px-4 text-slate-400 font-semibold">{pay.date}</td>
-                          <td className="py-3 px-4 text-right">
-                            <button onClick={() => triggerToast(`Actions for ${pay.name}`)} className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer">
-                              <MoreVertical className="w-4 h-4" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
+                        })).map((pay, idx) => (
+                         <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                           <td className="py-3 px-4 text-slate-900 font-extrabold">{pay.name}</td>
+                           <td className="py-3 px-4 text-slate-500 font-semibold">{pay.period}</td>
+                           <td className="py-3 px-4 font-semibold text-slate-700">{pay.branch}</td>
+                           <td className="py-3 px-4 text-center text-slate-900 font-extrabold">{pay.employees}</td>
+                           <td className="py-3 px-4 text-slate-600">{pay.type}</td>
+                           <td className="py-3 px-4 text-right font-mono text-slate-900 font-extrabold">{pay.total}</td>
+                           <td className="py-3 px-4">
+                             <span className={`px-2.5 py-0.5 rounded text-[10px] font-black ${
+                               pay.status === 'Paid'
+                                 ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                                 : pay.status === 'Approved'
+                                 ? 'bg-green-50 text-green-600 border border-green-100'
+                                 : 'bg-blue-50 text-blue-600 border border-blue-100'
+                             }`}>
+                               {pay.status}
+                             </span>
+                           </td>
+                           <td className="py-3 px-4 text-slate-600">{pay.user}</td>
+                           <td className="py-3 px-4 text-slate-400 font-semibold">{pay.date}</td>
+                           <td className="py-3 px-4 text-right relative">
+                             <button
+                               onClick={(e) => { e.stopPropagation(); setPayRunMenuIndex(payRunMenuIndex === idx ? null : idx); }}
+                               className={`p-1.5 rounded-lg transition-colors cursor-pointer ${payRunMenuIndex === idx ? 'bg-indigo-100 text-indigo-700' : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50'}`}
+                             >
+                               <MoreVertical className="w-4 h-4" />
+                             </button>
+
+                             {payRunMenuIndex === idx && (
+                               <>
+                                 <div className="fixed inset-0 z-40" onClick={() => setPayRunMenuIndex(null)} />
+                                 <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-xl border border-slate-200 p-1.5 z-50 flex flex-col gap-0.5 text-xs font-semibold text-slate-700 text-left">
+                                   <button
+                                     onClick={() => { setViewPayrollModal(pay); setPayRunMenuIndex(null); }}
+                                     className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
+                                   >
+                                     👁️ View Details
+                                   </button>
+                                   <button
+                                     onClick={() => { setEditPayrollModal({ ...pay, index: idx }); setPayRunMenuIndex(null); }}
+                                     className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
+                                   >
+                                     ✏️ Edit Record
+                                   </button>
+                                   <div className="h-px bg-slate-100 my-1" />
+                                   <button
+                                     onClick={() => {
+                                       const realIdx = payrollList.indexOf(pay);
+                                       setPayrollList(prev => prev.filter((_, i) => i !== realIdx));
+                                       triggerToast(`Payroll run "${pay.name}" removed`);
+                                       setPayRunMenuIndex(null);
+                                     }}
+                                     className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-rose-50 text-rose-600 text-left w-full cursor-pointer"
+                                   >
+                                     ❌ Delete Record
+                                   </button>
+                                 </div>
+                               </>
+                             )}
+                           </td>
+                         </tr>
+                       ))}
                     </tbody>
                   </table>
                 </div>
@@ -4151,74 +4634,50 @@ Thank you for doing business with Hero Logistics Systems.
                   <button onClick={() => triggerToast('Opening summary detailed report')} className="text-[10px] font-bold text-indigo-600 hover:underline">View Report &rarr;</button>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-center gap-6 py-2">
-                  {/* SVG Donut Chart */}
+                {/* Donut Chart - centered */}
+                <div className="flex justify-center pt-1">
                   <div className="relative w-32 h-32 shrink-0">
                     <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
                       <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f1f5f9" strokeWidth="4" />
-                      {/* Driver Wages (62.3%) -> Dasharray 62.3 37.7 */}
+                      {/* Driver Wages (62.3%) */}
                       <circle cx="18" cy="18" r="15.915" fill="none" stroke="#8b5cf6" strokeWidth="4.2" strokeDasharray="62.3 37.7" strokeDashoffset="25" />
-                      {/* Staff Salaries (27.1%) -> Dasharray 27.1 72.9 */}
+                      {/* Staff Salaries (27.1%) */}
                       <circle cx="18" cy="18" r="15.915" fill="none" stroke="#3b82f6" strokeWidth="4.2" strokeDasharray="27.1 72.9" strokeDashoffset="-37.3" />
-                      {/* Allowances (5.2%) -> Dasharray 5.2 94.8 */}
+                      {/* Allowances (5.2%) */}
                       <circle cx="18" cy="18" r="15.915" fill="none" stroke="#10b981" strokeWidth="4.2" strokeDasharray="5.2 94.8" strokeDashoffset="-64.4" />
-                      {/* Superannuation (3.8%) -> Dasharray 3.8 96.2 */}
+                      {/* Superannuation (3.8%) */}
                       <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f59e0b" strokeWidth="4.2" strokeDasharray="3.8 96.2" strokeDashoffset="-69.6" />
-                      {/* Other Deductions (1.5%) -> Dasharray 1.5 98.5 */}
+                      {/* Other Deductions (1.5%) */}
                       <circle cx="18" cy="18" r="15.915" fill="none" stroke="#ef4444" strokeWidth="4.2" strokeDasharray="1.5 98.5" strokeDashoffset="-73.4" />
-                      {/* Tax Payable (0%) */}
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                      <span className="text-[12px] font-black text-slate-800 leading-tight">$237,680</span>
+                      <span className="text-[11px] font-black text-slate-800 leading-tight">$237,680</span>
                       <span className="text-[7px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Total</span>
                     </div>
                   </div>
+                </div>
 
-                  {/* Legend list */}
-                  <div className="space-y-2 text-xs font-bold text-slate-700 w-full">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#8b5cf6] shrink-0" />
-                        <span>Driver Wages</span>
+                {/* Legend - clean rows */}
+                <div className="space-y-2">
+                  {[
+                    { color: 'bg-[#8b5cf6]', name: 'Driver Wages',     amount: '$148,200', pct: '62.3%' },
+                    { color: 'bg-[#3b82f6]', name: 'Staff Salaries',   amount: '$64,500',  pct: '27.1%' },
+                    { color: 'bg-[#10b981]', name: 'Allowances',       amount: '$12,340',  pct: '5.2%'  },
+                    { color: 'bg-[#f59e0b]', name: 'Superannuation',   amount: '$9,120',   pct: '3.8%'  },
+                    { color: 'bg-[#ef4444]', name: 'Other Deductions', amount: '$3,520',   pct: '1.5%'  },
+                    { color: 'bg-slate-400', name: 'Tax Payable',      amount: '$0.00',    pct: '0%'    },
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className={`w-2 h-2 rounded-full ${item.color} shrink-0`} />
+                        <span className="text-[11px] font-bold text-slate-700 truncate">{item.name}</span>
                       </div>
-                      <span className="font-mono text-slate-600 text-[11px]">$148,200 (62.3%)</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#3b82f6] shrink-0" />
-                        <span>Staff Salaries</span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="text-[11px] font-black font-mono text-slate-900">{item.amount}</span>
+                        <span className="text-[10px] font-bold text-slate-400 bg-slate-50 border border-slate-100 rounded-md px-1.5 py-0.5 whitespace-nowrap">{item.pct}</span>
                       </div>
-                      <span className="font-mono text-slate-600 text-[11px]">$64,500 (27.1%)</span>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#10b981] shrink-0" />
-                        <span>Allowances</span>
-                      </div>
-                      <span className="font-mono text-slate-600 text-[11px]">$12,340 (5.2%)</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b] shrink-0" />
-                        <span>Superannuation</span>
-                      </div>
-                      <span className="font-mono text-slate-600 text-[11px]">$9,120 (3.8%)</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444] shrink-0" />
-                        <span>Other Deductions</span>
-                      </div>
-                      <span className="font-mono text-slate-600 text-[11px]">$3,520 (1.5%)</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-slate-400 shrink-0" />
-                        <span>Tax Payable</span>
-                      </div>
-                      <span className="font-mono text-slate-600 text-[11px]">$0.00 (0%)</span>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
 
@@ -4390,14 +4849,22 @@ Thank you for doing business with Hero Logistics Systems.
 
               {/* Right: Help, Notification, User Avatar */}
               <div className="flex items-center gap-3.5 text-xs font-bold text-slate-700">
-                <button onClick={() => triggerToast('Help center opened')} className="flex items-center gap-1 text-slate-500 hover:text-slate-800 cursor-pointer text-[11px]">
-                  <HelpCircle className="w-3.5 h-3.5 text-slate-400" /> Need help?
+                <button onClick={() => setShowHelpModal(true)} className="flex items-center gap-1 text-slate-500 hover:text-indigo-600 cursor-pointer text-[11px] transition-colors">
+                  <HelpCircle className="w-3.5 h-3.5 text-indigo-500" /> Need help?
                 </button>
-                <div className="relative cursor-pointer text-slate-600 hover:text-slate-800" onClick={() => triggerToast('Notifications opened')}>
+                <div className="relative cursor-pointer text-slate-600 hover:text-indigo-600 transition-colors" onClick={() => setShowNotificationsModal(true)} title="View Notifications">
                   <Bell className="w-4 h-4" />
-                  <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full bg-rose-500 text-white flex items-center justify-center text-[8px] font-black leading-none">11</span>
+                  {unreadNotificationsCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full bg-rose-500 text-white flex items-center justify-center text-[8px] font-black leading-none">
+                      {unreadNotificationsCount}
+                    </span>
+                  )}
                 </div>
-                <div className="w-6 h-6 rounded-full bg-slate-950 text-white flex items-center justify-center text-[10px] font-black shadow-xs shrink-0" title="User Profile">
+                <div 
+                  onClick={() => setShowProfileModal(true)}
+                  className="w-6 h-6 rounded-full bg-slate-950 text-white flex items-center justify-center text-[10px] font-black shadow-xs shrink-0 cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all" 
+                  title="User Profile - Sarah Mitchell"
+                >
                   SM
                 </div>
               </div>
@@ -4419,7 +4886,7 @@ Thank you for doing business with Hero Logistics Systems.
               </div>
 
               {/* Right Side: Actions Block */}
-              <div className="flex flex-col items-end gap-2 shrink-0 max-w-full">
+              <div className="flex flex-col items-start md:items-end gap-2 w-full md:w-auto">
                 {/* Desktop-only: More Actions Button on top right */}
                 <div className="relative max-md:hidden">
                   <button 
@@ -4464,16 +4931,16 @@ Thank you for doing business with Hero Logistics Systems.
                 </div>
 
                 {/* Buttons row */}
-                <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap flex-nowrap pb-1.5 md:pb-0 scrollbar-none max-w-full" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                <div className="flex flex-wrap md:flex-nowrap items-center gap-2 w-full md:w-auto">
                   <button 
                     onClick={() => setShowExportModal(true)}
-                    className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
+                    className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 px-3 py-1.5 md:px-3.5 md:py-2 rounded-xl text-[11px] md:text-xs font-bold hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
                   >
                     <Download className="w-3.5 h-3.5 text-slate-400" /> Export
                   </button>
                   <button 
-                    onClick={() => triggerToast('Payment reminders sent to overdue clients!')}
-                    className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer active:scale-95"
+                    onClick={() => setShowSendRemindersModal(true)}
+                    className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-[11px] md:text-xs font-bold transition-all shadow-sm cursor-pointer active:scale-95"
                   >
                     <Mail className="w-3.5 h-3.5" /> Send Reminders
                   </button>
@@ -4635,9 +5102,51 @@ Thank you for doing business with Hero Logistics Systems.
                 <option>Current</option>
               </select>
 
-              <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-slate-700 font-semibold cursor-pointer">
-                <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                <span>01 May 2025 - 31 May 2025</span>
+              {/* Dual Start & End Date Picker */}
+              <div className="relative inline-flex items-center shrink-0">
+                <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 shadow-2xs">
+                  <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+
+                  {/* Start Date */}
+                  <div className="relative">
+                    <span
+                      className="cursor-pointer hover:text-indigo-600 transition-colors"
+                      onClick={() => document.getElementById('rec-start-date').showPicker?.()}
+                    >
+                      {new Date(dateRange.startDate + 'T00:00:00').toLocaleDateString('en-AU', { day:'2-digit', month:'short', year:'numeric' })}
+                    </span>
+                    <input
+                      id="rec-start-date"
+                      type="date"
+                      value={dateRange.startDate}
+                      max={dateRange.endDate}
+                      onChange={e => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+                      className="absolute inset-0 opacity-0 w-full cursor-pointer"
+                      style={{ colorScheme: 'light' }}
+                    />
+                  </div>
+
+                  <span className="text-slate-300 mx-0.5">–</span>
+
+                  {/* End Date */}
+                  <div className="relative">
+                    <span
+                      className="cursor-pointer hover:text-indigo-600 transition-colors"
+                      onClick={() => document.getElementById('rec-end-date').showPicker?.()}
+                    >
+                      {new Date(dateRange.endDate + 'T00:00:00').toLocaleDateString('en-AU', { day:'2-digit', month:'short', year:'numeric' })}
+                    </span>
+                    <input
+                      id="rec-end-date"
+                      type="date"
+                      value={dateRange.endDate}
+                      min={dateRange.startDate}
+                      onChange={e => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+                      className="absolute inset-0 opacity-0 w-full cursor-pointer"
+                      style={{ colorScheme: 'light' }}
+                    />
+                  </div>
+                </div>
               </div>
 
               <button 
@@ -4800,61 +5309,83 @@ Thank you for doing business with Hero Logistics Systems.
                   </button>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
+                <div className="overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-slate-200">
+                  <table className="w-full text-left border-collapse min-w-[700px] whitespace-nowrap">
                     <thead>
                       <tr className="border-b border-slate-200 bg-slate-50/50 text-[10px] font-black text-slate-400 uppercase tracking-wider">
-                        <th className="py-2.5 px-3">Invoice No.</th>
-                        <th className="py-2.5 px-3">Customer</th>
-                        <th className="py-2.5 px-3">Invoice Date</th>
-                        <th className="py-2.5 px-3">Due Date</th>
-                        <th className="py-2.5 px-3 text-center">Days Overdue</th>
-                        <th className="py-2.5 px-3">Amount (Inc GST)</th>
-                        <th className="py-2.5 px-3">Status</th>
-                        <th className="py-2.5 px-3 text-right">Actions</th>
+                        <th className="py-2.5 px-3 whitespace-nowrap">Invoice No.</th>
+                        <th className="py-2.5 px-3 whitespace-nowrap">Customer</th>
+                        <th className="py-2.5 px-3 whitespace-nowrap">Invoice Date</th>
+                        <th className="py-2.5 px-3 whitespace-nowrap">Due Date</th>
+                        <th className="py-2.5 px-3 text-center whitespace-nowrap">Days Overdue</th>
+                        <th className="py-2.5 px-3 whitespace-nowrap">Amount (Inc GST)</th>
+                        <th className="py-2.5 px-3 whitespace-nowrap">Status</th>
+                        <th className="py-2.5 px-3 text-right whitespace-nowrap">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-xs font-semibold text-slate-700">
-                      {[
-                        { id: 'INV-2025-0180', customer: 'Fast Freight Pty Ltd', issueDate: '05 May 2025', dueDate: '19 May 2025', daysOverdue: 13, amount: '$5,280.00', status: 'Overdue' },
-                        { id: 'INV-2025-0176', customer: 'Metro Group Sydney', issueDate: '05 May 2025', dueDate: '19 May 2025', daysOverdue: 13, amount: '$1,650.00', status: 'Overdue' },
-                        { id: 'INV-2025-0168', customer: 'ABC Wholesalers', issueDate: '30 Apr 2025', dueDate: '15 May 2025', daysOverdue: 17, amount: '$6,820.00', status: 'Overdue' },
-                        { id: 'INV-2025-0162', customer: 'Prime Car Carriers', issueDate: '28 Apr 2025', dueDate: '12 May 2025', daysOverdue: 20, amount: '$3,950.00', status: 'Overdue' },
-                        { id: 'INV-2025-0159', customer: 'Quick Move Transport', issueDate: '25 Apr 2025', dueDate: '09 May 2025', daysOverdue: 23, amount: '$2,480.00', status: 'Overdue' },
-                        { id: 'INV-2025-0151', customer: 'Blue Line Logistics', issueDate: '21 Apr 2025', dueDate: '05 May 2025', daysOverdue: 27, amount: '$4,230.00', status: 'Overdue' },
-                        { id: 'INV-2025-0148', customer: 'City Link Logistics', issueDate: '18 Apr 2025', dueDate: '02 May 2025', daysOverdue: 30, amount: '$2,350.00', status: 'Overdue' },
-                        { id: 'INV-2025-0136', customer: 'Sydney Car Sales', issueDate: '10 Apr 2025', dueDate: '24 Apr 2025', daysOverdue: 38, amount: '$2,860.00', status: 'Overdue' },
-                      ]
-                      .filter(inv => {
-                        const matchesSearch = inv.id.toLowerCase().includes(recSearchQuery.toLowerCase()) || inv.customer.toLowerCase().includes(recSearchQuery.toLowerCase());
-                        const matchesCustomer = recSelectedCustomer === 'All Customers' || inv.customer === recSelectedCustomer;
-                        return matchesSearch && matchesCustomer;
-                      })
-                      .map((inv, idx) => (
-                        <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="py-3 px-3 font-bold text-slate-900 font-mono text-[11px]">{inv.id}</td>
-                          <td className="py-3 px-3 font-bold text-slate-800">{inv.customer}</td>
-                          <td className="py-3 px-3 text-slate-500 text-[11px]">{inv.issueDate}</td>
-                          <td className="py-3 px-3 text-slate-500 text-[11px]">{inv.dueDate}</td>
-                          <td className="py-3 px-3 text-center font-bold text-rose-600">{inv.daysOverdue}</td>
-                          <td className="py-3 px-3 font-mono font-black text-slate-900">{inv.amount}</td>
-                          <td className="py-3 px-3">
-                            <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-50 text-rose-600 border border-rose-200">
-                              {inv.status}
-                            </span>
-                          </td>
-                          <td className="py-3 px-3 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              <button onClick={() => triggerToast(`Viewing details for ${inv.id}`)} className="text-indigo-600 hover:text-indigo-800 text-[11px] font-extrabold cursor-pointer">
-                                View
-                              </button>
-                              <button onClick={() => triggerToast(`Actions menu for ${inv.id}`)} className="text-slate-400 hover:text-slate-600 p-1">
-                                <MoreVertical className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                      {(overdueList
+                       .filter(inv => {
+                         const matchesSearch = inv.id.toLowerCase().includes(recSearchQuery.toLowerCase()) || inv.customer.toLowerCase().includes(recSearchQuery.toLowerCase());
+                         const matchesCustomer = recSelectedCustomer === 'All Customers' || inv.customer === recSelectedCustomer;
+                         return matchesSearch && matchesCustomer;
+                       })
+                       .map((inv, idx) => (
+                         <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
+                           <td className="py-3 px-3 font-bold text-slate-900 font-mono text-[11px]">{inv.id}</td>
+                           <td className="py-3 px-3 font-bold text-slate-800">{inv.customer}</td>
+                           <td className="py-3 px-3 text-slate-500 text-[11px]">{inv.issueDate}</td>
+                           <td className="py-3 px-3 text-slate-500 text-[11px]">{inv.dueDate}</td>
+                           <td className="py-3 px-3 text-center font-bold text-rose-600">{inv.daysOverdue}</td>
+                           <td className="py-3 px-3 font-mono font-black text-slate-900">{inv.amount}</td>
+                           <td className="py-3 px-3">
+                             <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-50 text-rose-600 border border-rose-200">
+                               {inv.status}
+                             </span>
+                           </td>
+                           <td className="py-3 px-3 text-right relative">
+                             <button
+                               onClick={(e) => { e.stopPropagation(); setOvdMenuIndex(ovdMenuIndex === idx ? null : idx); }}
+                               className={`p-1.5 rounded-lg transition-colors cursor-pointer ${ovdMenuIndex === idx ? 'bg-indigo-100 text-indigo-700' : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50'}`}
+                             >
+                               <MoreVertical className="w-4 h-4" />
+                             </button>
+
+                             {ovdMenuIndex === idx && (
+                               <>
+                                 <div className="fixed inset-0 z-40" onClick={() => setOvdMenuIndex(null)} />
+                                 <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-xl border border-slate-200 p-1.5 z-50 flex flex-col gap-0.5 text-xs font-semibold text-slate-700 text-left">
+                                   <button
+                                     onClick={() => { setViewOverdueModal(inv); setOvdMenuIndex(null); }}
+                                     className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
+                                   >
+                                     👁️ View Details
+                                   </button>
+                                   <button
+                                     onClick={() => { setEditOverdueModal({ ...inv, index: idx }); setOvdMenuIndex(null); }}
+                                     className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
+                                   >
+                                     ✏️ Edit Record
+                                   </button>
+                                   <div className="h-px bg-slate-100 my-1" />
+                                   <button
+                                     onClick={() => {
+                                       const realIdx = overdueList.indexOf(inv);
+                                       setOverdueList(prev => prev.filter((_, i) => i !== realIdx));
+                                       triggerToast(`Invoice ${inv.id} removed`);
+                                       setOvdMenuIndex(null);
+                                     }}
+                                     className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-rose-50 text-rose-600 text-left w-full cursor-pointer"
+                                   >
+                                     ❌ Delete Record
+                                   </button>
+                                 </div>
+                               </>
+                             )}
+                           </td>
+                         </tr>
+                       )))
+                      }
                     </tbody>
                   </table>
                 </div>
@@ -5084,14 +5615,22 @@ Thank you for doing business with Hero Logistics Systems.
 
               {/* Right: Help, Notification, User Avatar */}
               <div className="flex items-center gap-3.5 text-xs font-bold text-slate-700">
-                <button onClick={() => triggerToast('Help center opened')} className="flex items-center gap-1 text-slate-500 hover:text-slate-800 cursor-pointer text-[11px]">
-                  <HelpCircle className="w-3.5 h-3.5 text-slate-400" /> Need help?
+                <button onClick={() => setShowHelpModal(true)} className="flex items-center gap-1 text-slate-500 hover:text-indigo-600 cursor-pointer text-[11px] transition-colors">
+                  <HelpCircle className="w-3.5 h-3.5 text-indigo-500" /> Need help?
                 </button>
-                <div className="relative cursor-pointer text-slate-600 hover:text-slate-800" onClick={() => triggerToast('Notifications opened')}>
+                <div className="relative cursor-pointer text-slate-600 hover:text-indigo-600 transition-colors" onClick={() => setShowNotificationsModal(true)} title="View Notifications">
                   <Bell className="w-4 h-4" />
-                  <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full bg-rose-500 text-white flex items-center justify-center text-[8px] font-black leading-none">11</span>
+                  {unreadNotificationsCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full bg-rose-500 text-white flex items-center justify-center text-[8px] font-black leading-none">
+                      {unreadNotificationsCount}
+                    </span>
+                  )}
                 </div>
-                <div className="w-6 h-6 rounded-full bg-slate-950 text-white flex items-center justify-center text-[10px] font-black shadow-xs shrink-0" title="User Profile">
+                <div 
+                  onClick={() => setShowProfileModal(true)}
+                  className="w-6 h-6 rounded-full bg-slate-950 text-white flex items-center justify-center text-[10px] font-black shadow-xs shrink-0 cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all" 
+                  title="User Profile - Sarah Mitchell"
+                >
                   SM
                 </div>
               </div>
@@ -5113,7 +5652,7 @@ Thank you for doing business with Hero Logistics Systems.
               </div>
 
               {/* Right Side: Actions Block */}
-              <div className="flex flex-col items-end gap-2 shrink-0 max-w-full">
+              <div className="flex flex-col items-start md:items-end gap-2 w-full md:w-auto">
                 {/* Desktop-only: More Actions Button on top right */}
                 <div className="relative max-md:hidden">
                   <button 
@@ -5161,16 +5700,16 @@ Thank you for doing business with Hero Logistics Systems.
                 </div>
 
                 {/* Buttons row */}
-                <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap flex-nowrap pb-1.5 md:pb-0 scrollbar-none max-w-full" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                <div className="flex flex-wrap md:flex-nowrap items-center gap-2 w-full md:w-auto">
                   <button 
                     onClick={() => setShowExportModal(true)}
-                    className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
+                    className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 px-3 py-1.5 md:px-3.5 md:py-2 rounded-xl text-[11px] md:text-xs font-bold hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
                   >
                     <Download className="w-3.5 h-3.5 text-slate-400" /> Export
                   </button>
                   <button 
-                    onClick={() => triggerToast('Schedule report modal opened!')}
-                    className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer active:scale-95"
+                    onClick={() => setShowScheduleReportModal(true)}
+                    className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-[11px] md:text-xs font-bold transition-all shadow-sm cursor-pointer active:scale-95"
                   >
                     <Calendar className="w-3.5 h-3.5" /> Schedule Report
                   </button>
@@ -5330,9 +5869,51 @@ Thank you for doing business with Hero Logistics Systems.
                 <option>Financial Year 2025</option>
               </select>
 
-              <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-slate-700 font-semibold cursor-pointer">
-                <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                <span>01 May 2025 - 31 May 2025</span>
+              <div className="relative inline-flex items-center shrink-0">
+                <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-100 transition-colors cursor-pointer whitespace-nowrap">
+                  <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <span className="text-slate-800 font-extrabold">{dateRange.startDate}</span>
+                  <span className="text-slate-400 font-normal mx-0.5">&ndash;</span>
+                  <span className="text-slate-800 font-extrabold">{dateRange.endDate}</span>
+                </div>
+
+                {/* Start Date Click Overlay */}
+                <input 
+                  type="date" 
+                  value={dateRange.startDate} 
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setDateRange({ ...dateRange, startDate: e.target.value });
+                      triggerToast(`Start Date updated to ${e.target.value}`);
+                    }
+                  }}
+                  onClick={(e) => {
+                    if (typeof e.target.showPicker === 'function') {
+                      try { e.target.showPicker(); } catch (err) {}
+                    }
+                  }}
+                  className="absolute left-0 top-0 bottom-0 w-[48%] opacity-0 cursor-pointer z-10"
+                  title="Click to select Start Date"
+                />
+
+                {/* End Date Click Overlay */}
+                <input 
+                  type="date" 
+                  value={dateRange.endDate} 
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setDateRange({ ...dateRange, endDate: e.target.value });
+                      triggerToast(`End Date updated to ${e.target.value}`);
+                    }
+                  }}
+                  onClick={(e) => {
+                    if (typeof e.target.showPicker === 'function') {
+                      try { e.target.showPicker(); } catch (err) {}
+                    }
+                  }}
+                  className="absolute right-0 top-0 bottom-0 w-[48%] opacity-0 cursor-pointer z-10"
+                  title="Click to select End Date"
+                />
               </div>
 
               <button 
@@ -5536,17 +6117,17 @@ Thank you for doing business with Hero Logistics Systems.
                 </button>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs font-bold text-slate-700">
+              <div className="overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-slate-200">
+                <table className="w-full text-left text-xs font-bold text-slate-700 min-w-[560px]">
                   <thead>
-                    <tr className="border-b border-slate-100 text-[9px] font-black text-slate-400 uppercase tracking-wider">
-                      <th className="pb-2">Category</th>
-                      <th className="pb-2">Revenue</th>
-                      <th className="pb-2 text-right">%</th>
-                      <th className="pb-2">Expenses</th>
-                      <th className="pb-2 text-right">%</th>
-                      <th className="pb-2">Net Profit</th>
-                      <th className="pb-2 text-right">Margin</th>
+                    <tr className="border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                      <th className="pb-2.5 pr-3 whitespace-nowrap">Category</th>
+                      <th className="pb-2.5 px-2 text-right whitespace-nowrap">Revenue</th>
+                      <th className="pb-2.5 px-2 text-right whitespace-nowrap">%</th>
+                      <th className="pb-2.5 px-2 text-right whitespace-nowrap">Expenses</th>
+                      <th className="pb-2.5 px-2 text-right whitespace-nowrap">%</th>
+                      <th className="pb-2.5 px-2 text-right whitespace-nowrap">Net Profit</th>
+                      <th className="pb-2.5 pl-2 text-right whitespace-nowrap">Margin</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -5556,24 +6137,24 @@ Thank you for doing business with Hero Logistics Systems.
                       { cat: 'Storage Income', rev: '$42,560', revP: '5.1%', exp: '$8,320', expP: '3.2%', net: '$34,240', margin: '80.5%' },
                       { cat: 'Other Income', rev: '$101,000', revP: '12.0%', exp: '$29,050', expP: '11.3%', net: '$71,950', margin: '71.2%' },
                     ].map((row, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50/50">
-                        <td className="py-2.5 text-slate-900 font-extrabold text-[11px]">{row.cat}</td>
-                        <td className="py-2.5 font-mono text-[11px]">{row.rev}</td>
-                        <td className="py-2.5 text-right font-mono text-slate-400 text-[10px]">{row.revP}</td>
-                        <td className="py-2.5 font-mono text-[11px]">{row.exp}</td>
-                        <td className="py-2.5 text-right font-mono text-slate-400 text-[10px]">{row.expP}</td>
-                        <td className="py-2.5 font-mono font-black text-slate-900 text-[11px]">{row.net}</td>
-                        <td className="py-2.5 text-right font-mono text-emerald-600 text-[11px]">{row.margin}</td>
+                      <tr key={idx} className="hover:bg-slate-50/60 transition-colors">
+                        <td className="py-3 pr-3 text-slate-900 font-extrabold text-xs whitespace-nowrap">{row.cat}</td>
+                        <td className="py-3 px-2 text-right font-mono text-slate-800 text-[11px] whitespace-nowrap">{row.rev}</td>
+                        <td className="py-3 px-2 text-right font-mono text-slate-400 text-[10px] whitespace-nowrap">{row.revP}</td>
+                        <td className="py-3 px-2 text-right font-mono text-slate-800 text-[11px] whitespace-nowrap">{row.exp}</td>
+                        <td className="py-3 px-2 text-right font-mono text-slate-400 text-[10px] whitespace-nowrap">{row.expP}</td>
+                        <td className="py-3 px-2 text-right font-mono font-black text-slate-900 text-[11px] whitespace-nowrap">{row.net}</td>
+                        <td className="py-3 pl-2 text-right font-mono font-extrabold text-emerald-600 text-[11px] whitespace-nowrap">{row.margin}</td>
                       </tr>
                     ))}
-                    <tr className="bg-slate-50/80 font-black text-slate-900 border-t-2 border-slate-200 text-[11px]">
-                      <td className="py-2.5">Total</td>
-                      <td className="py-2.5 font-mono">$842,650</td>
-                      <td className="py-2.5 text-right font-mono">100%</td>
-                      <td className="py-2.5 font-mono">$195,440</td>
-                      <td className="py-2.5 text-right font-mono">100%</td>
-                      <td className="py-2.5 font-mono">$647,210</td>
-                      <td className="py-2.5 text-right font-mono text-emerald-600">76.7%</td>
+                    <tr className="bg-slate-50/90 font-black text-slate-900 border-t-2 border-slate-200 text-xs">
+                      <td className="py-3 pr-3 whitespace-nowrap">Total</td>
+                      <td className="py-3 px-2 text-right font-mono whitespace-nowrap">$842,650</td>
+                      <td className="py-3 px-2 text-right font-mono text-slate-500 text-[10px] whitespace-nowrap">100%</td>
+                      <td className="py-3 px-2 text-right font-mono whitespace-nowrap">$195,440</td>
+                      <td className="py-3 px-2 text-right font-mono text-slate-500 text-[10px] whitespace-nowrap">100%</td>
+                      <td className="py-3 px-2 text-right font-mono font-black text-indigo-700 whitespace-nowrap">$647,210</td>
+                      <td className="py-3 pl-2 text-right font-mono font-black text-emerald-600 whitespace-nowrap">76.7%</td>
                     </tr>
                   </tbody>
                 </table>
@@ -5584,12 +6165,13 @@ Thank you for doing business with Hero Logistics Systems.
             <div className="lg:col-span-4 bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs space-y-3">
               <div className="flex justify-between items-center border-b border-slate-100 pb-3">
                 <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">EXPENSES BREAKDOWN (MTD)</h3>
-                <button onClick={() => triggerToast('Opening Expenses breakdown report')} className="text-indigo-600 hover:text-indigo-800 text-xs font-extrabold flex items-center gap-1 cursor-pointer">
-                  View Report &amp;rarr;
+                <button onClick={() => triggerToast('Opening Expenses breakdown report')} className="text-indigo-600 hover:text-indigo-800 text-[10px] font-extrabold flex items-center gap-1 cursor-pointer">
+                  View Report &rarr;
                 </button>
               </div>
 
-              <div className="flex flex-col sm:flex-row items-center gap-4 pt-1">
+              {/* Donut Chart - centered */}
+              <div className="flex justify-center pt-1">
                 <div className="relative w-36 h-36 shrink-0 flex items-center justify-center">
                   <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
                     <path
@@ -5642,31 +6224,31 @@ Thank you for doing business with Hero Logistics Systems.
                     <span className="text-[9px] font-bold text-slate-400">Total</span>
                   </div>
                 </div>
+              </div>
 
-                <div className="space-y-1.5 text-xs font-bold w-full">
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1.5 text-slate-600"><span className="w-2.5 h-2.5 rounded-full bg-indigo-600" /> Driver Wages</span>
-                    <span className="font-mono text-slate-900 text-[11px]">$108,650 (42.3%)</span>
+              {/* Legend - clean rows */}
+              <div className="space-y-2 pt-1">
+                {[
+                  { color: 'bg-indigo-600', name: 'Driver Wages', amount: '$108,650', pct: '42.3%' },
+                  { color: 'bg-blue-500',   name: 'Fuel',         amount: '$56,420',  pct: '22.0%' },
+                  { color: 'bg-emerald-500',name: 'Maintenance',  amount: '$32,670',  pct: '12.7%' },
+                  { color: 'bg-amber-500',  name: 'Repairs',      amount: '$21,850',  pct: '8.5%'  },
+                  { color: 'bg-rose-500',   name: 'Other Expenses',amount: '$36,840', pct: '14.5%' },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className={`w-2.5 h-2.5 rounded-full ${item.color} shrink-0`} />
+                      <span className="text-[11px] font-bold text-slate-700 truncate">{item.name}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="text-[11px] font-black font-mono text-slate-900">{item.amount}</span>
+                      <span className="text-[10px] font-bold text-slate-400 bg-slate-50 border border-slate-100 rounded-md px-1.5 py-0.5 whitespace-nowrap">{item.pct}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1.5 text-slate-600"><span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> Fuel</span>
-                    <span className="font-mono text-slate-900 text-[11px]">$56,420 (22.0%)</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1.5 text-slate-600"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Maintenance</span>
-                    <span className="font-mono text-slate-900 text-[11px]">$32,670 (12.7%)</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1.5 text-slate-600"><span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> Repairs</span>
-                    <span className="font-mono text-slate-900 text-[11px]">$21,850 (8.5%)</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1.5 text-slate-600"><span className="w-2.5 h-2.5 rounded-full bg-rose-500" /> Other Expenses</span>
-                    <span className="font-mono text-slate-900 text-[11px]">$36,840 (14.5%)</span>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
+
 
             {/* Right 3 Cols: FINANCIAL REPORTS LIST */}
             <div className="lg:col-span-3 bg-white border border-slate-200/80 rounded-2xl p-5 shadow-2xs space-y-3 flex flex-col justify-between">
@@ -5789,14 +6371,22 @@ Thank you for doing business with Hero Logistics Systems.
 
               {/* Right: Help, Notification, User Avatar */}
               <div className="flex items-center gap-3.5 text-xs font-bold text-slate-700">
-                <button onClick={() => triggerToast('Help center opened')} className="flex items-center gap-1 text-slate-500 hover:text-slate-800 cursor-pointer text-[11px]">
-                  <HelpCircle className="w-3.5 h-3.5 text-slate-400" /> Need help?
+                <button onClick={() => setShowHelpModal(true)} className="flex items-center gap-1 text-slate-500 hover:text-indigo-600 cursor-pointer text-[11px] transition-colors">
+                  <HelpCircle className="w-3.5 h-3.5 text-indigo-500" /> Need help?
                 </button>
-                <div className="relative cursor-pointer text-slate-600 hover:text-slate-800" onClick={() => triggerToast('Notifications opened')}>
+                <div className="relative cursor-pointer text-slate-600 hover:text-indigo-600 transition-colors" onClick={() => setShowNotificationsModal(true)} title="View Notifications">
                   <Bell className="w-4 h-4" />
-                  <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full bg-rose-500 text-white flex items-center justify-center text-[8px] font-black leading-none">11</span>
+                  {unreadNotificationsCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full bg-rose-500 text-white flex items-center justify-center text-[8px] font-black leading-none">
+                      {unreadNotificationsCount}
+                    </span>
+                  )}
                 </div>
-                <div className="w-6 h-6 rounded-full bg-slate-950 text-white flex items-center justify-center text-[10px] font-black shadow-xs shrink-0" title="User Profile">
+                <div 
+                  onClick={() => setShowProfileModal(true)}
+                  className="w-6 h-6 rounded-full bg-slate-950 text-white flex items-center justify-center text-[10px] font-black shadow-xs shrink-0 cursor-pointer hover:ring-2 hover:ring-indigo-500 transition-all" 
+                  title="User Profile - Sarah Mitchell"
+                >
                   SM
                 </div>
               </div>
@@ -5818,7 +6408,7 @@ Thank you for doing business with Hero Logistics Systems.
               </div>
 
               {/* Right Side: Actions Block */}
-              <div className="flex flex-col items-end gap-2 shrink-0 max-w-full">
+              <div className="flex flex-col items-start md:items-end gap-2 w-full md:w-auto">
                 {/* Desktop-only: More Actions Button on top right */}
                 <div className="relative max-md:hidden">
                   <button 
@@ -5869,22 +6459,22 @@ Thank you for doing business with Hero Logistics Systems.
                 </div>
 
                 {/* Buttons row */}
-                <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap flex-nowrap pb-1.5 md:pb-0 scrollbar-none max-w-full" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                <div className="flex flex-wrap md:flex-nowrap items-center gap-2 w-full md:w-auto">
                   <button 
-                    onClick={() => triggerToast('Opening Export History...')}
-                    className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
+                    onClick={() => setShowExportHistoryModal(true)}
+                    className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 px-3 py-1.5 md:px-3.5 md:py-2 rounded-xl text-[11px] md:text-xs font-bold hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer active:scale-95"
                   >
-                    <History className="w-3.5 h-3.5 text-slate-400" /> View Export History
+                    <History className="w-3.5 h-3.5 text-indigo-600" /> View Export History
                   </button>
                   <button 
                     onClick={() => { setTransactionForm({ type: 'Invoice', status: 'Completed' }); setShowAddTransactionModal(true); }}
-                    className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
+                    className="flex items-center gap-1.5 bg-white border border-slate-200 text-slate-700 px-3 py-1.5 md:px-3.5 md:py-2 rounded-xl text-[11px] md:text-xs font-bold hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5 text-slate-400" /> Create Custom Export
                   </button>
                   <button 
                     onClick={() => setShowExportModal(true)}
-                    className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer active:scale-95"
+                    className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-[11px] md:text-xs font-bold transition-all shadow-sm cursor-pointer active:scale-95"
                   >
                     <Download className="w-3.5 h-3.5" /> Export All Data
                   </button>
@@ -5918,7 +6508,7 @@ Thank you for doing business with Hero Logistics Systems.
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-slate-500">10:32 AM AEST</span>
                 </div>
-                <button onClick={() => triggerToast('Viewing export history')} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 mt-2 block cursor-pointer">
+                <button onClick={() => setShowExportHistoryModal(true)} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 mt-2 block cursor-pointer">
                   View history &rarr;
                 </button>
               </div>
@@ -6047,9 +6637,51 @@ Thank you for doing business with Hero Logistics Systems.
                 <option>Processing</option>
               </select>
 
-              <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-slate-700 font-semibold cursor-pointer">
-                <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                <span>01 May 2025 - 31 May 2025</span>
+              <div className="relative inline-flex items-center shrink-0">
+                <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-100 transition-colors cursor-pointer whitespace-nowrap">
+                  <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <span className="text-slate-800 font-extrabold">{dateRange.startDate}</span>
+                  <span className="text-slate-400 font-normal mx-0.5">&ndash;</span>
+                  <span className="text-slate-800 font-extrabold">{dateRange.endDate}</span>
+                </div>
+
+                {/* Start Date Click Overlay */}
+                <input 
+                  type="date" 
+                  value={dateRange.startDate} 
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setDateRange({ ...dateRange, startDate: e.target.value });
+                      triggerToast(`Start Date updated to ${e.target.value}`);
+                    }
+                  }}
+                  onClick={(e) => {
+                    if (typeof e.target.showPicker === 'function') {
+                      try { e.target.showPicker(); } catch (err) {}
+                    }
+                  }}
+                  className="absolute left-0 top-0 bottom-0 w-[48%] opacity-0 cursor-pointer z-10"
+                  title="Click to select Start Date"
+                />
+
+                {/* End Date Click Overlay */}
+                <input 
+                  type="date" 
+                  value={dateRange.endDate} 
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setDateRange({ ...dateRange, endDate: e.target.value });
+                      triggerToast(`End Date updated to ${e.target.value}`);
+                    }
+                  }}
+                  onClick={(e) => {
+                    if (typeof e.target.showPicker === 'function') {
+                      try { e.target.showPicker(); } catch (err) {}
+                    }
+                  }}
+                  className="absolute right-0 top-0 bottom-0 w-[48%] opacity-0 cursor-pointer z-10"
+                  title="Click to select End Date"
+                />
               </div>
 
               <button 
@@ -6082,64 +6714,85 @@ Thank you for doing business with Hero Logistics Systems.
                     <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">ACCOUNTANT EXPORTS</h3>
                     <span className="bg-purple-100 text-purple-700 text-[10px] font-black px-2 py-0.5 rounded-full">8</span>
                   </div>
-                  <button onClick={() => triggerToast('Viewing all exports')} className="text-indigo-600 hover:text-indigo-800 text-xs font-extrabold flex items-center gap-1 cursor-pointer">
+                  <button onClick={() => setShowExportHistoryModal(true)} className="text-indigo-600 hover:text-indigo-800 text-xs font-extrabold flex items-center gap-1 cursor-pointer">
                     View All &rarr;
                   </button>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs font-bold text-slate-700">
+                <div className="overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-slate-200">
+                  <table className="w-full text-left text-xs font-bold text-slate-700 min-w-[750px] whitespace-nowrap">
                     <thead>
                       <tr className="border-b border-slate-100 text-[9px] font-black text-slate-400 uppercase tracking-wider">
-                        <th className="pb-2">Export Name</th>
-                        <th className="pb-2">Type</th>
-                        <th className="pb-2">Format</th>
-                        <th className="pb-2">Period</th>
-                        <th className="pb-2">Created On</th>
-                        <th className="pb-2">Created By</th>
-                        <th className="pb-2">Status</th>
-                        <th className="pb-2 text-right">Actions</th>
+                        <th className="pb-2 pr-3 whitespace-nowrap">Export Name</th>
+                        <th className="pb-2 px-3 whitespace-nowrap">Type</th>
+                        <th className="pb-2 px-3 whitespace-nowrap">Format</th>
+                        <th className="pb-2 px-3 whitespace-nowrap">Period</th>
+                        <th className="pb-2 px-3 whitespace-nowrap">Created On</th>
+                        <th className="pb-2 px-3 whitespace-nowrap">Created By</th>
+                        <th className="pb-2 px-3 whitespace-nowrap">Status</th>
+                        <th className="pb-2 pl-3 text-right whitespace-nowrap">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {[
-                        { name: 'May 2025 - Profit & Loss', type: 'P&L Statement', fmt: 'PDF', period: 'May 2025', date: '24 May 2025 10:32 AM', by: 'Sarah Mitchell', status: 'Completed' },
-                        { name: 'May 2025 - Balance Sheet', type: 'Balance Sheet', fmt: 'PDF', period: 'May 2025', date: '24 May 2025 10:32 AM', by: 'Sarah Mitchell', status: 'Completed' },
-                        { name: 'May 2025 - General Ledger', type: 'General Ledger', fmt: 'CSV', period: 'May 2025', date: '24 May 2025 10:32 AM', by: 'Sarah Mitchell', status: 'Completed' },
-                        { name: 'May 2025 - Accounts Receivable', type: 'Receivables', fmt: 'CSV', period: 'May 2025', date: '23 May 2025 04:15 PM', by: 'James Driver', status: 'Completed' },
-                        { name: 'May 2025 - Accounts Payable', type: 'Payables', fmt: 'CSV', period: 'May 2025', date: '23 May 2025 04:14 PM', by: 'James Driver', status: 'Completed' },
-                        { name: 'Apr - May 2025 - Bank Reconciliation', type: 'Bank Reconciliation', fmt: 'CSV', period: 'Apr - May 2025', date: '22 May 2025 09:20 AM', by: 'Sarah Mitchell', status: 'Completed' },
-                        { name: 'May 2025 - Tax Summary', type: 'Tax Summary', fmt: 'PDF', period: 'May 2025', date: '20 May 2025 11:05 AM', by: 'Sarah Mitchell', status: 'Failed' },
-                        { name: 'May 2025 - Cash Flow', type: 'Cash Flow', fmt: 'PDF', period: 'May 2025', date: '19 May 2025 03:40 PM', by: 'James Driver', status: 'Completed' },
-                      ].map((row, idx) => (
+                      {(accExportList.map((row, idx) => (
                         <tr key={idx} className="hover:bg-slate-50/50">
-                          <td className="py-2.5 text-slate-900 font-extrabold text-[11px]">{row.name}</td>
-                          <td className="py-2.5 text-slate-600 text-[10px]">{row.type}</td>
-                          <td className="py-2.5">
+                          <td className="py-2.5 pr-3 text-slate-900 font-extrabold text-[11px] whitespace-nowrap">{row.name}</td>
+                          <td className="py-2.5 px-3 text-slate-600 text-[10px] whitespace-nowrap">{row.type}</td>
+                          <td className="py-2.5 px-3 whitespace-nowrap">
                             <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-xs ${row.fmt === 'PDF' ? 'bg-indigo-50 text-indigo-700' : 'bg-emerald-50 text-emerald-700'}`}>
                               {row.fmt}
                             </span>
                           </td>
-                          <td className="py-2.5 text-slate-500 text-[10px]">{row.period}</td>
-                          <td className="py-2.5 text-slate-500 text-[10px] whitespace-nowrap">{row.date}</td>
-                          <td className="py-2.5 text-slate-700 text-[10px]">{row.by}</td>
-                          <td className="py-2.5">
+                          <td className="py-2.5 px-3 text-slate-500 text-[10px] whitespace-nowrap">{row.period}</td>
+                          <td className="py-2.5 px-3 text-slate-500 text-[10px] whitespace-nowrap">{row.date}</td>
+                          <td className="py-2.5 px-3 text-slate-700 text-[10px] whitespace-nowrap">{row.by}</td>
+                          <td className="py-2.5 px-3 whitespace-nowrap">
                             <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${row.status === 'Completed' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' : 'bg-rose-50 text-rose-700 border border-rose-200/60'}`}>
                               {row.status}
                             </span>
                           </td>
-                          <td className="py-2.5 text-right whitespace-nowrap">
-                            <div className="flex items-center justify-end gap-1.5 text-slate-400">
-                              <button onClick={() => triggerToast(`Downloading ${row.name}...`)} className="hover:text-indigo-600 p-1">
-                                <Download className="w-3.5 h-3.5" />
-                              </button>
-                              <button onClick={() => triggerToast(`More actions for ${row.name}`)} className="hover:text-slate-700 p-1">
-                                <MoreVertical className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
+                          <td className="py-2.5 pl-3 text-right whitespace-nowrap relative">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setAccMenuIndex(accMenuIndex === idx ? null : idx); }}
+                              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${accMenuIndex === idx ? 'bg-indigo-100 text-indigo-700' : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50'}`}
+                            >
+                              <MoreVertical className="w-4 h-4" />
+                            </button>
+
+                            {accMenuIndex === idx && (
+                              <>
+                                <div className="fixed inset-0 z-40" onClick={() => setAccMenuIndex(null)} />
+                                <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-xl border border-slate-200 p-1.5 z-50 flex flex-col gap-0.5 text-xs font-semibold text-slate-700 text-left">
+                                  <button
+                                    onClick={() => { setViewExportModal(row); setAccMenuIndex(null); }}
+                                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
+                                  >
+                                    👁️ View Details
+                                  </button>
+                                  <button
+                                    onClick={() => { setEditExportModal({ ...row, index: idx }); setAccMenuIndex(null); }}
+                                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
+                                  >
+                                    ✏️ Edit Record
+                                  </button>
+                                  <div className="h-px bg-slate-100 my-1" />
+                                  <button
+                                    onClick={() => {
+                                      const realIdx = accExportList.indexOf(row);
+                                      setAccExportList(prev => prev.filter((_, i) => i !== realIdx));
+                                      triggerToast(`Export "${row.name}" removed`);
+                                      setAccMenuIndex(null);
+                                    }}
+                                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-rose-50 text-rose-600 text-left w-full cursor-pointer"
+                                  >
+                                    ❌ Delete Record
+                                  </button>
+                                </div>
+                              </>
+                            )}
                           </td>
                         </tr>
-                      ))}
+                      )))}
                     </tbody>
                   </table>
                 </div>
@@ -6445,8 +7098,28 @@ Thank you for doing business with Hero Logistics Systems.
             <form 
               onSubmit={(e) => {
                 e.preventDefault();
+                const newId = `INV-2025-0${Math.floor(600 + Math.random() * 300)}`;
+                const numAmount = parseFloat(transactionForm.amount) || 2500;
+                const formattedAmount = `$${numAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                const mappedStatus = (transactionForm.status === 'Completed' || transactionForm.status === 'Paid') ? 'Paid' : (transactionForm.status === 'Pending' ? 'Outstanding' : 'Outstanding');
+
+                const newInvoiceItem = {
+                  id: newId,
+                  customer: transactionForm.customer || 'New Customer Ltd',
+                  ref: `LOAD-0${Math.floor(2550 + Math.random() * 100)}`,
+                  issueDate: '24 May 2025',
+                  dueDate: '07 Jun 2025',
+                  type: transactionForm.type === 'Invoice' ? 'Tax Invoice' : (transactionForm.type || 'Tax Invoice'),
+                  amount: formattedAmount,
+                  rawAmount: numAmount,
+                  status: mappedStatus,
+                  dueIn: mappedStatus === 'Paid' ? '-' : '14 days'
+                };
+
+                setInvoices([newInvoiceItem, ...invoices]);
                 setShowAddTransactionModal(false);
-                triggerToast('New financial record saved successfully!');
+                setTransactionForm({ customer: '', amount: '', type: 'Invoice', method: 'Bank Transfer', status: 'Completed' });
+                triggerToast(`New Invoice ${newId} for ${newInvoiceItem.customer} (${formattedAmount}) created & added to list!`);
               }} 
               className="p-6 space-y-4 text-xs font-bold text-slate-700"
             >
@@ -6553,7 +7226,7 @@ Thank you for doing business with Hero Logistics Systems.
           <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col text-left my-auto border border-slate-200">
             <div className="px-6 py-5 bg-slate-900 text-white flex justify-between items-center">
               <h3 className="text-base font-black flex items-center gap-2">
-                <Download className="w-4 h-4 text-emerald-400" /> Export Invoices Report
+                <Download className="w-4 h-4 text-emerald-400" /> Export Financial Report
               </h3>
               <button onClick={() => setShowExportModal(false)} className="text-slate-400 hover:text-white p-1 cursor-pointer">
                 <X className="w-5 h-5" />
@@ -6561,25 +7234,1567 @@ Thank you for doing business with Hero Logistics Systems.
             </div>
 
             <div className="p-6 space-y-4 text-xs font-bold text-slate-700">
-              <p className="text-slate-500 font-medium">Select file format to download the complete Invoices List for Sydney Head Office:</p>
+              <p className="text-slate-500 font-medium">Select file format to download the complete report data for Sydney Head Office:</p>
 
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 <button 
-                  onClick={() => { setShowExportModal(false); triggerToast('Invoices downloaded as CSV Excel format!'); }}
-                  className="w-full p-3.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-between font-bold text-slate-800 transition-colors cursor-pointer"
+                  onClick={() => handleExportDownload('csv')}
+                  className="w-full p-3.5 bg-slate-50 hover:bg-emerald-50/60 border border-slate-200 hover:border-emerald-300 rounded-xl flex items-center justify-between font-bold text-slate-800 transition-all cursor-pointer"
                 >
-                  <span>📊 Export as CSV / Excel (.csv)</span>
-                  <span className="text-slate-400 text-[10px] uppercase">Spreadsheet</span>
+                  <span className="flex items-center gap-2">📊 Export as CSV / Excel (.csv)</span>
+                  <span className="bg-emerald-100 text-emerald-700 text-[9px] font-black px-2 py-0.5 rounded-full uppercase">Spreadsheet</span>
                 </button>
                 <button 
-                  onClick={() => { setShowExportModal(false); triggerToast('Official PDF Invoices Audit Document generated!'); }}
-                  className="w-full p-3.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-between font-bold text-slate-800 transition-colors cursor-pointer"
+                  onClick={() => handleExportDownload('pdf')}
+                  className="w-full p-3.5 bg-slate-50 hover:bg-indigo-50/60 border border-slate-200 hover:border-indigo-300 rounded-xl flex items-center justify-between font-bold text-slate-800 transition-all cursor-pointer"
                 >
-                  <span>📄 Export as PDF Document (.pdf)</span>
-                  <span className="text-slate-400 text-[10px] uppercase">PDF Document</span>
+                  <span className="flex items-center gap-2">📄 Export as PDF Document (.pdf)</span>
+                  <span className="bg-indigo-100 text-indigo-700 text-[9px] font-black px-2 py-0.5 rounded-full uppercase">PDF Document</span>
+                </button>
+                <button 
+                  onClick={() => handleExportDownload('excel')}
+                  className="w-full p-3.5 bg-slate-50 hover:bg-purple-50/60 border border-slate-200 hover:border-purple-300 rounded-xl flex items-center justify-between font-bold text-slate-800 transition-all cursor-pointer"
+                >
+                  <span className="flex items-center gap-2">📈 Export as XLSX Workbook (.xlsx)</span>
+                  <span className="bg-purple-100 text-purple-700 text-[9px] font-black px-2 py-0.5 rounded-full uppercase">Excel File</span>
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Schedule Report Modal */}
+      {showScheduleReportModal && (
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowScheduleReportModal(false);
+            }
+          }}
+          className="fixed inset-0 bg-slate-950/75 backdrop-blur-md z-[99999] flex items-center justify-center p-4 animate-fade-in overflow-y-auto"
+        >
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col text-left my-auto border border-slate-200">
+            <div className="px-6 py-5 bg-[#4B0082] text-white flex justify-between items-center">
+              <h3 className="text-base font-black flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-purple-300" /> Schedule Automated Report
+              </h3>
+              <button onClick={() => setShowScheduleReportModal(false)} className="text-white/70 hover:text-white p-1 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleScheduleReportSubmit} className="p-6 space-y-4 text-xs font-bold text-slate-700">
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">REPORT TYPE *</label>
+                <select 
+                  value={scheduleForm.reportName}
+                  onChange={e => setScheduleForm({ ...scheduleForm, reportName: e.target.value })}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold focus:outline-none focus:border-indigo-600 bg-slate-50 cursor-pointer"
+                >
+                  <option value="10.8 Profit & Loss / Financial Reports">10.8 Profit & Loss Statement</option>
+                  <option value="Accounts Receivable Ageing Summary">Accounts Receivable Ageing Summary</option>
+                  <option value="Cash Flow Statement & Summary">Cash Flow Statement & Summary</option>
+                  <option value="General Ledger Audit Report">General Ledger Audit Report</option>
+                  <option value="Payroll Summary & Payslips Batch">Payroll Summary & Payslips Batch</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">FREQUENCY *</label>
+                  <select 
+                    value={scheduleForm.frequency}
+                    onChange={e => setScheduleForm({ ...scheduleForm, frequency: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-3 text-slate-900 font-bold focus:outline-none focus:border-indigo-600 bg-slate-50 cursor-pointer"
+                  >
+                    <option value="Daily (End of Day)">Daily (End of Day)</option>
+                    <option value="Weekly (Every Monday)">Weekly (Every Monday)</option>
+                    <option value="Monthly (1st of month)">Monthly (1st of month)</option>
+                    <option value="Quarterly">Quarterly</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">FILE FORMAT</label>
+                  <select 
+                    value={scheduleForm.format}
+                    onChange={e => setScheduleForm({ ...scheduleForm, format: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-3 text-slate-900 font-bold focus:outline-none focus:border-indigo-600 bg-slate-50 cursor-pointer"
+                  >
+                    <option value="PDF Document">PDF Document</option>
+                    <option value="CSV Excel">CSV Excel</option>
+                    <option value="XLSX Workbook">XLSX Workbook</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">RECIPIENT EMAIL *</label>
+                <input 
+                  type="email" 
+                  required
+                  value={scheduleForm.recipientEmail}
+                  onChange={e => setScheduleForm({ ...scheduleForm, recipientEmail: e.target.value })}
+                  placeholder="finance@herologistics.com.au"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold focus:outline-none focus:border-indigo-600 bg-slate-50"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">DELIVERY TIME</label>
+                <input 
+                  type="text" 
+                  value={scheduleForm.deliveryTime}
+                  onChange={e => setScheduleForm({ ...scheduleForm, deliveryTime: e.target.value })}
+                  placeholder="08:00 AM AEST"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold focus:outline-none focus:border-indigo-600 bg-slate-50"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
+                <button 
+                  type="button" 
+                  onClick={() => setShowScheduleReportModal(false)}
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer flex items-center gap-1.5"
+                >
+                  <Calendar className="w-3.5 h-3.5" /> Save Schedule
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Export Audit History Modal */}
+      {showExportHistoryModal && (
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowExportHistoryModal(false);
+            }
+          }}
+          className="fixed inset-0 bg-slate-950/75 backdrop-blur-md z-[99999] flex items-center justify-center p-4 animate-fade-in overflow-y-auto"
+        >
+          <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col text-left my-auto border border-slate-200">
+            <div className="px-6 py-5 bg-slate-900 text-white flex justify-between items-center">
+              <h3 className="text-base font-black flex items-center gap-2">
+                <History className="w-5 h-5 text-indigo-400" /> Financial Export Audit History
+              </h3>
+              <button onClick={() => setShowExportHistoryModal(false)} className="text-slate-400 hover:text-white p-1 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 text-xs font-bold text-slate-700 max-h-[70vh] overflow-y-auto">
+              <div className="flex justify-between items-center">
+                <p className="text-slate-500 font-medium">Recent exported financial statements and data packages:</p>
+                <span className="bg-indigo-50 text-indigo-700 text-[10px] font-black px-2.5 py-1 rounded-full border border-indigo-100">8 Files Recorded</span>
+              </div>
+
+              <div className="space-y-2.5">
+                {[
+                  { name: 'May 2025 - Profit & Loss Statement', format: 'PDF', period: 'May 2025', date: '24 May 2025 10:32 AM', by: 'Sarah Mitchell', size: '1.4 MB', status: 'Completed' },
+                  { name: 'May 2025 - Balance Sheet Statement', format: 'PDF', period: 'May 2025', date: '24 May 2025 10:32 AM', by: 'Sarah Mitchell', size: '980 KB', status: 'Completed' },
+                  { name: 'May 2025 - General Ledger Export', format: 'CSV', period: 'May 2025', date: '24 May 2025 10:32 AM', by: 'Sarah Mitchell', size: '4.2 MB', status: 'Completed' },
+                  { name: 'May 2025 - Accounts Receivable Ageing', format: 'CSV', period: 'May 2025', date: '23 May 2025 04:15 PM', by: 'James Driver', size: '850 KB', status: 'Completed' },
+                  { name: 'May 2025 - Accounts Payable Ledger', format: 'CSV', period: 'May 2025', date: '23 May 2025 04:14 PM', by: 'James Driver', size: '720 KB', status: 'Completed' },
+                  { name: 'Apr-May 2025 - Bank Reconciliation File', format: 'XLSX', period: 'Apr-May 2025', date: '22 May 2025 09:20 AM', by: 'Sarah Mitchell', size: '2.1 MB', status: 'Completed' },
+                  { name: 'May 2025 - BAS Tax Summary Package', format: 'PDF', period: 'May 2025', date: '20 May 2025 11:05 AM', by: 'Sarah Mitchell', size: '1.1 MB', status: 'Failed' },
+                  { name: 'May 2025 - Cash Flow Statement', format: 'PDF', period: 'May 2025', date: '19 May 2025 03:40 PM', by: 'James Driver', size: '640 KB', status: 'Completed' },
+                ].map((item, idx) => (
+                  <div key={idx} className="p-3.5 bg-slate-50 hover:bg-slate-100/80 border border-slate-200/80 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-colors">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[9px] font-black px-2 py-0.5 rounded-md ${item.format === 'PDF' ? 'bg-rose-100 text-rose-700' : (item.format === 'CSV' ? 'bg-emerald-100 text-emerald-700' : 'bg-purple-100 text-purple-700')}`}>
+                          {item.format}
+                        </span>
+                        <span className="font-extrabold text-slate-900 text-xs">{item.name}</span>
+                      </div>
+                      <div className="text-[10px] text-slate-400 font-medium flex items-center gap-3">
+                        <span>📅 {item.date}</span>
+                        <span>👤 {item.by}</span>
+                        <span>📦 {item.size}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                      <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${item.status === 'Completed' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'}`}>
+                        {item.status}
+                      </span>
+                      <button 
+                        onClick={() => handleExportDownload(item.format.toLowerCase())}
+                        className="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 hover:text-indigo-600 hover:border-indigo-300 rounded-xl text-[11px] font-bold transition-all shadow-2xs flex items-center gap-1 cursor-pointer"
+                      >
+                        <Download className="w-3.5 h-3.5" /> Download
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-between items-center text-xs font-bold">
+              <span className="text-slate-400 text-[10px]">Showing 8 audit records</span>
+              <button 
+                onClick={() => setShowExportHistoryModal(false)}
+                className="px-5 py-2 bg-slate-900 text-white rounded-xl hover:bg-slate-800 cursor-pointer"
+              >
+                Close History
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Need Help Modal */}
+      {showHelpModal && (
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowHelpModal(false);
+            }
+          }}
+          className="fixed inset-0 bg-slate-950/75 backdrop-blur-md z-[99999] flex items-center justify-center p-4 animate-fade-in overflow-y-auto"
+        >
+          <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col text-left my-auto border border-slate-200">
+            <div className="px-6 py-5 bg-[#4B0082] text-white flex justify-between items-center">
+              <h3 className="text-base font-black flex items-center gap-2">
+                <HelpCircle className="w-5 h-5 text-purple-300" /> Finance Help &amp; Knowledge Support
+              </h3>
+              <button onClick={() => setShowHelpModal(false)} className="text-white/70 hover:text-white p-1 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 text-xs font-bold text-slate-700 max-h-[70vh] overflow-y-auto">
+              <div className="relative">
+                <input 
+                  type="text" 
+                  placeholder="Search FAQs, how-to guides, invoice help..."
+                  className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-indigo-600"
+                />
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">FREQUENTLY ASKED QUESTIONS</h4>
+
+                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1">
+                  <p className="font-extrabold text-slate-900 text-xs">How do I create and send a tax invoice?</p>
+                  <p className="text-[11px] text-slate-500 font-normal leading-relaxed">Navigate to 10.2 Invoices List and click "+ Add Invoice". Fill in customer, load reference, and amount. Click "Create Transaction" to send automatically.</p>
+                </div>
+
+                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1">
+                  <p className="font-extrabold text-slate-900 text-xs">How to schedule automated financial reports?</p>
+                  <p className="text-[11px] text-slate-500 font-normal leading-relaxed">Go to 10.8 Financial Reports and click "Schedule Report". Choose daily, weekly, or monthly delivery to your accountant's email.</p>
+                </div>
+
+                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1">
+                  <p className="font-extrabold text-slate-900 text-xs">How to export data for Xero / MYOB integration?</p>
+                  <p className="text-[11px] text-slate-500 font-normal leading-relaxed">Go to 10.9 Accountant Export &amp; Integration. You can download CSV/Excel general ledgers or click "Sync Bank Feed" for live sync.</p>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                <div>
+                  <span className="block text-slate-900 font-extrabold text-xs">Still need assistance?</span>
+                  <span className="text-[10px] text-slate-400 font-normal">Our dedicated finance desk is online AEST.</span>
+                </div>
+                <button 
+                  onClick={() => { setShowHelpModal(false); triggerToast('Connected to live support desk agent!'); }}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-extrabold transition-all cursor-pointer shadow-sm"
+                >
+                  Chat Support Live &rarr;
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notifications Drawer Modal */}
+      {showNotificationsModal && (
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowNotificationsModal(false);
+            }
+          }}
+          className="fixed inset-0 bg-slate-950/75 backdrop-blur-md z-[99999] flex items-center justify-center p-4 animate-fade-in overflow-y-auto"
+        >
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col text-left my-auto border border-slate-200">
+            <div className="px-6 py-5 bg-slate-900 text-white flex justify-between items-center border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <Bell className="w-5 h-5 text-amber-400" />
+                <h3 className="text-base font-black">Finance Alerts &amp; Notifications</h3>
+              </div>
+              <button onClick={() => setShowNotificationsModal(false)} className="text-slate-400 hover:text-white p-1 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-3 text-xs font-bold text-slate-700 max-h-[65vh] overflow-y-auto">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">UNREAD ALERTS ({unreadNotificationsCount})</span>
+                {unreadNotificationsCount > 0 && (
+                  <button 
+                    onClick={() => { setUnreadNotificationsCount(0); triggerToast('All notifications marked as read!'); }}
+                    className="text-[10px] text-indigo-600 font-extrabold hover:underline cursor-pointer"
+                  >
+                    Mark all as read
+                  </button>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                {[
+                  { title: 'Overdue Invoices Alert', desc: '3 Invoices totaling $28,450 are 7+ days overdue.', time: '10m ago', icon: '🚨' },
+                  { title: 'Payroll Run Due', desc: 'Weekly Driver Payroll Run due in 2 days.', time: '1h ago', icon: '👥' },
+                  { title: 'Bank Feed Synced', desc: 'Xero bank feeds reconciled with 14 new transactions.', time: '2h ago', icon: '🔄' },
+                  { title: 'Financial Report Generated', desc: 'May 2025 P&L Statement export is ready.', time: '4h ago', icon: '📊' },
+                  { title: 'Large Payment Received', desc: '$18,200 payment received from Toyota Fortitude Valley.', time: '1d ago', icon: '💳' },
+                ].map((notif, idx) => (
+                  <div key={idx} className="p-3 bg-slate-50 hover:bg-slate-100/80 rounded-2xl border border-slate-200/80 flex items-start gap-3 transition-colors">
+                    <span className="text-base shrink-0">{notif.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-center mb-0.5">
+                        <h5 className="font-extrabold text-slate-900 text-xs">{notif.title}</h5>
+                        <span className="text-[9px] text-slate-400 font-medium">{notif.time}</span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 font-normal leading-tight">{notif.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-between items-center text-xs font-bold">
+              <span className="text-slate-400 text-[10px]">Real-time system notification stream</span>
+              <button 
+                onClick={() => setShowNotificationsModal(false)}
+                className="px-4 py-2 bg-slate-900 text-white rounded-xl hover:bg-slate-800 cursor-pointer"
+              >
+                Close Alerts
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* User Profile Modal */}
+      {showProfileModal && (
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowProfileModal(false);
+            }
+          }}
+          className="fixed inset-0 bg-slate-950/75 backdrop-blur-md z-[99999] flex items-center justify-center p-4 animate-fade-in overflow-y-auto"
+        >
+          <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden flex flex-col text-left my-auto border border-slate-200">
+            <div className="p-6 bg-slate-900 text-white text-center relative">
+              <button onClick={() => setShowProfileModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+              <div className="w-16 h-16 rounded-full bg-indigo-600 text-white text-xl font-black flex items-center justify-center mx-auto mb-3 shadow-lg ring-4 ring-white/10">
+                SM
+              </div>
+              <h3 className="text-base font-black leading-tight">Sarah Mitchell</h3>
+              <p className="text-indigo-300 text-xs font-bold">Chief Financial Officer (CFO)</p>
+              <span className="inline-block bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase mt-2">
+                Company Admin Access
+              </span>
+            </div>
+
+            <div className="p-5 space-y-3 text-xs font-bold text-slate-700">
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400 font-medium">Branch Location:</span>
+                  <span className="text-slate-900 font-bold">Sydney Head Office</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400 font-medium">Email Address:</span>
+                  <span className="text-slate-900 font-bold">sarah.m@herologistics.com.au</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400 font-medium">Active Session:</span>
+                  <span className="text-emerald-600 font-bold">Authenticated (AEST)</span>
+                </div>
+              </div>
+
+              <div className="space-y-1.5 pt-1">
+                <button 
+                  onClick={() => { setShowProfileModal(false); triggerToast('Account Settings opened!'); }}
+                  className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-left font-bold text-slate-800 flex items-center justify-between transition-colors cursor-pointer"
+                >
+                  <span>⚙️ Account Settings &amp; Security</span>
+                  <span>&rarr;</span>
+                </button>
+                <button 
+                  onClick={() => { setShowProfileModal(false); triggerToast('Role switched to Auditor Mode'); }}
+                  className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-left font-bold text-slate-800 flex items-center justify-between transition-colors cursor-pointer"
+                >
+                  <span>🔐 Switch Role / View Mode</span>
+                  <span>&rarr;</span>
+                </button>
+              </div>
+
+              <button 
+                onClick={() => { setShowProfileModal(false); triggerToast('Logged out of Company Admin profile'); }}
+                className="w-full py-3 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 rounded-xl font-extrabold text-xs transition-colors cursor-pointer text-center mt-2"
+              >
+                Sign Out of Account
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Row Actions Menu Modal (For 3-dots ⋮ click) */}
+      {showRowActionsModal && selectedRowItem && (
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowRowActionsModal(false);
+            }
+          }}
+          className="fixed inset-0 bg-slate-950/75 backdrop-blur-md z-[99999] flex items-center justify-center p-4 animate-fade-in overflow-y-auto"
+        >
+          <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden flex flex-col text-left my-auto border border-slate-200">
+            <div className="px-6 py-5 bg-slate-900 text-white flex justify-between items-center border-b border-slate-800">
+              <div>
+                <h3 className="text-base font-black">{selectedRowItem.id || selectedRowItem.name}</h3>
+                <p className="text-slate-400 text-xs font-semibold">{selectedRowItem.customer || selectedRowItem.type || 'Item Action Options'}</p>
+              </div>
+              <button onClick={() => setShowRowActionsModal(false)} className="text-slate-400 hover:text-white p-1 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-2 text-xs font-bold text-slate-700">
+              <button 
+                onClick={() => { 
+                  setShowRowActionsModal(false); 
+                  handleOpenInvoiceDetail(selectedRowItem);
+                }}
+                className="w-full p-3 bg-slate-50 hover:bg-slate-100 rounded-xl text-left font-bold text-slate-800 flex items-center gap-3 transition-colors cursor-pointer"
+              >
+                <Eye className="w-4 h-4 text-indigo-600" />
+                <div>
+                  <span className="block text-slate-900 font-extrabold">Open Full Details Page</span>
+                  <span className="text-[10px] text-slate-400 font-normal">View breakdown &amp; line items</span>
+                </div>
+              </button>
+
+              <button 
+                onClick={() => { 
+                  setShowRowActionsModal(false); 
+                  setSelectedInvoice(selectedRowItem); 
+                }}
+                className="w-full p-3 bg-slate-50 hover:bg-slate-100 rounded-xl text-left font-bold text-slate-800 flex items-center gap-3 transition-colors cursor-pointer"
+              >
+                <FileText className="w-4 h-4 text-purple-600" />
+                <div>
+                  <span className="block text-slate-900 font-extrabold">Quick Preview Pop-up</span>
+                  <span className="text-[10px] text-slate-400 font-normal">Fast modal summary</span>
+                </div>
+              </button>
+
+              <button 
+                onClick={() => { 
+                  setShowRowActionsModal(false); 
+                  handleExportDownload('pdf'); 
+                }}
+                className="w-full p-3 bg-slate-50 hover:bg-slate-100 rounded-xl text-left font-bold text-slate-800 flex items-center gap-3 transition-colors cursor-pointer"
+              >
+                <Download className="w-4 h-4 text-emerald-600" />
+                <div>
+                  <span className="block text-slate-900 font-extrabold">Download PDF Document</span>
+                  <span className="text-[10px] text-slate-400 font-normal">Save copy to computer</span>
+                </div>
+              </button>
+
+              <button 
+                onClick={() => { 
+                  setShowRowActionsModal(false); 
+                  triggerToast(`Payment reminder email sent to ${selectedRowItem.customer || 'client'}!`); 
+                }}
+                className="w-full p-3 bg-slate-50 hover:bg-slate-100 rounded-xl text-left font-bold text-slate-800 flex items-center gap-3 transition-colors cursor-pointer"
+              >
+                <Mail className="w-4 h-4 text-amber-500" />
+                <div>
+                  <span className="block text-slate-900 font-extrabold">Send Email Reminder</span>
+                  <span className="text-[10px] text-slate-400 font-normal">Remind client of overdue balance</span>
+                </div>
+              </button>
+
+              <button 
+                onClick={() => { 
+                  setShowRowActionsModal(false); 
+                  triggerToast(`Status for ${selectedRowItem.id || selectedRowItem.name} updated to PAID!`); 
+                }}
+                className="w-full p-3 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl text-left font-bold text-emerald-900 flex items-center gap-3 transition-colors cursor-pointer"
+              >
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <div>
+                  <span className="block text-emerald-950 font-extrabold">Record Payment / Mark Paid</span>
+                  <span className="text-[10px] text-emerald-700 font-medium">Clear from Accounts Receivable</span>
+                </div>
+              </button>
+            </div>
+
+            <div className="p-4 bg-slate-50 border-t border-slate-100 text-right">
+              <button 
+                onClick={() => setShowRowActionsModal(false)}
+                className="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-300 cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Record Payment Modal */}
+      {showRecordPaymentModal && activeInvoiceDetail && (
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowRecordPaymentModal(false);
+            }
+          }}
+          className="fixed inset-0 bg-slate-950/75 backdrop-blur-md z-[99999] flex items-center justify-center p-4 animate-fade-in overflow-y-auto"
+        >
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col text-left my-auto border border-slate-200">
+            <div className="px-6 py-5 bg-[#2563eb] text-white flex justify-between items-center">
+              <h3 className="text-base font-black flex items-center gap-2">
+                <DollarSign className="w-5 h-5 text-blue-200" /> Record Payment &ndash; {activeInvoiceDetail.id}
+              </h3>
+              <button onClick={() => setShowRecordPaymentModal(false)} className="text-white/70 hover:text-white p-1 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                activeInvoiceDetail.status = 'Paid';
+                setShowRecordPaymentModal(false);
+                triggerToast(`Payment of ${paymentForm.amount} for ${activeInvoiceDetail.id} recorded successfully! Status updated to PAID.`);
+              }}
+              className="p-6 space-y-4 text-xs font-bold text-slate-700"
+            >
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 flex justify-between items-center">
+                <div>
+                  <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider block">CUSTOMER &amp; TOTAL</span>
+                  <span className="font-extrabold text-slate-900 text-xs">{activeInvoiceDetail.customer}</span>
+                </div>
+                <span className="text-sm font-black font-mono text-emerald-600">{activeInvoiceDetail.amount}</span>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">PAYMENT AMOUNT ($) *</label>
+                <input 
+                  type="text"
+                  required
+                  value={paymentForm.amount || activeInvoiceDetail.amount}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-extrabold text-sm focus:outline-none focus:border-blue-600"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">PAYMENT METHOD *</label>
+                  <select 
+                    value={paymentForm.method}
+                    onChange={(e) => setPaymentForm({ ...paymentForm, method: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-slate-900 font-bold focus:outline-none focus:border-blue-600 cursor-pointer"
+                  >
+                    <option value="Direct Bank Transfer (EFT)">Bank Transfer (EFT)</option>
+                    <option value="EFTPOS / Credit Card">EFTPOS / Card</option>
+                    <option value="Cheque Deposit">Cheque Deposit</option>
+                    <option value="Cash Payment">Cash Payment</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">PAYMENT DATE</label>
+                  <input 
+                    type="date"
+                    value={paymentForm.date}
+                    onChange={(e) => setPaymentForm({ ...paymentForm, date: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-900 font-bold focus:outline-none focus:border-blue-600 cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">REFERENCE / TRANS #</label>
+                <input 
+                  type="text"
+                  value={paymentForm.reference}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, reference: e.target.value })}
+                  placeholder="PAY-2025-0891"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold focus:outline-none focus:border-blue-600"
+                />
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex justify-end gap-2">
+                <button 
+                  type="button" 
+                  onClick={() => setShowRecordPaymentModal(false)}
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="px-5 py-2.5 bg-[#2563eb] hover:bg-[#1d4ed8] text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer flex items-center gap-1.5"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Save &amp; Record Payment
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Send Invoice Email Modal */}
+      {showSendEmailModal && activeInvoiceDetail && (
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowSendEmailModal(false);
+            }
+          }}
+          className="fixed inset-0 bg-slate-950/75 backdrop-blur-md z-[99999] flex items-center justify-center p-4 animate-fade-in overflow-y-auto"
+        >
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col text-left my-auto border border-slate-200">
+            <div className="px-6 py-5 bg-slate-900 text-white flex justify-between items-center">
+              <h3 className="text-base font-black flex items-center gap-2">
+                <Mail className="w-5 h-5 text-indigo-400" /> Send Tax Invoice to Customer
+              </h3>
+              <button onClick={() => setShowSendEmailModal(false)} className="text-slate-400 hover:text-white p-1 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                setShowSendEmailModal(false);
+                triggerToast(`Tax invoice PDF sent to ${emailForm.to}!`);
+              }}
+              className="p-6 space-y-4 text-xs font-bold text-slate-700"
+            >
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">RECIPIENT EMAIL ADDRESS *</label>
+                <input 
+                  type="email"
+                  required
+                  value={emailForm.to}
+                  onChange={(e) => setEmailForm({ ...emailForm, to: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold focus:outline-none focus:border-indigo-600"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">SUBJECT LINE</label>
+                <input 
+                  type="text"
+                  value={emailForm.subject}
+                  onChange={(e) => setEmailForm({ ...emailForm, subject: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold focus:outline-none focus:border-indigo-600"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">MESSAGE BODY</label>
+                <textarea 
+                  rows="3"
+                  value={emailForm.message}
+                  onChange={(e) => setEmailForm({ ...emailForm, message: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-medium focus:outline-none focus:border-indigo-600 resize-none"
+                />
+              </div>
+
+              <div className="p-3 bg-indigo-50/60 border border-indigo-100 rounded-2xl flex items-center gap-3 text-indigo-900">
+                <FileText className="w-5 h-5 text-indigo-600 shrink-0" />
+                <div className="min-w-0">
+                  <span className="font-extrabold text-xs block truncate">{activeInvoiceDetail.id}.pdf</span>
+                  <span className="text-[10px] text-indigo-500 font-medium">Attached PDF document (1.2 MB)</span>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex justify-end gap-2">
+                <button 
+                  type="button" 
+                  onClick={() => setShowSendEmailModal(false)}
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer flex items-center gap-1.5"
+                >
+                  <Send className="w-3.5 h-3.5" /> Send Invoice Email
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Credit Note Modal */}
+      {showCreditNoteModal && activeInvoiceDetail && (
+        <div 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowCreditNoteModal(false);
+            }
+          }}
+          className="fixed inset-0 bg-slate-950/75 backdrop-blur-md z-[99999] flex items-center justify-center p-4 animate-fade-in overflow-y-auto"
+        >
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col text-left my-auto border border-slate-200">
+            <div className="px-6 py-5 bg-amber-600 text-white flex justify-between items-center">
+              <h3 className="text-base font-black flex items-center gap-2">
+                <FileText className="w-5 h-5 text-amber-200" /> Create Credit Note &ndash; {activeInvoiceDetail.id}
+              </h3>
+              <button onClick={() => setShowCreditNoteModal(false)} className="text-white/70 hover:text-white p-1 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                setShowCreditNoteModal(false);
+                triggerToast(`Credit Note for ${creditForm.amount} issued against ${activeInvoiceDetail.id}!`);
+              }}
+              className="p-6 space-y-4 text-xs font-bold text-slate-700"
+            >
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">CREDIT AMOUNT ($) *</label>
+                <input 
+                  type="text"
+                  required
+                  value={creditForm.amount}
+                  onChange={(e) => setCreditForm({ ...creditForm, amount: e.target.value })}
+                  placeholder="$500.00"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-extrabold text-sm focus:outline-none focus:border-amber-600"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">REASON FOR CREDIT *</label>
+                <select 
+                  value={creditForm.reason}
+                  onChange={(e) => setCreditForm({ ...creditForm, reason: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-3 text-slate-900 font-bold focus:outline-none focus:border-amber-600 cursor-pointer"
+                >
+                  <option value="Overcharge / Freight Calculation Adjustment">Overcharge / Freight Adjustment</option>
+                  <option value="Damaged Goods / Transit Claim">Damaged Goods / Transit Claim</option>
+                  <option value="Goodwill Credit / Customer Loyalty">Goodwill Credit / Customer Loyalty</option>
+                  <option value="Full Invoice Cancellation">Full Invoice Cancellation</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">INTERNAL NOTES</label>
+                <textarea 
+                  rows="2"
+                  value={creditForm.notes}
+                  onChange={(e) => setCreditForm({ ...creditForm, notes: e.target.value })}
+                  placeholder="Approved by Finance Controller..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-medium focus:outline-none focus:border-amber-600 resize-none"
+                />
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex justify-end gap-2">
+                <button 
+                  type="button" 
+                  onClick={() => setShowCreditNoteModal(false)}
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer flex items-center gap-1.5"
+                >
+                  <FileText className="w-3.5 h-3.5" /> Issue Credit Note
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── SEND REMINDERS MODAL ─────────────────────────────────────────────── */}
+      {showSendRemindersModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden" style={{ maxHeight: 'min(92vh, 680px)' }}>
+
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
+                  <Mail className="w-4 h-4 text-indigo-600" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-black text-slate-900 leading-tight">Send Payment Reminders</h2>
+                  <p className="text-[10px] text-slate-400 font-medium">Email overdue clients about outstanding invoices</p>
+                </div>
+              </div>
+              <button onClick={() => setShowSendRemindersModal(false)} className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 cursor-pointer transition-colors shrink-0">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Body — scrollable */}
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3.5">
+
+              {/* Summary Banner */}
+              <div className="bg-amber-50 border border-amber-200 rounded-xl px-3.5 py-2.5 flex items-center gap-2.5">
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                <div className="text-[11px] text-amber-700 font-medium leading-tight">
+                  <span className="font-black text-amber-800">5 Overdue Clients Found</span> — Total: <span className="font-black">$42,750.00</span>. Reminders will be sent via email to selected clients.
+                </div>
+              </div>
+
+              {/* Recipients label */}
+              <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Select Recipients</div>
+
+              {/* Client list */}
+              <div className="space-y-1.5">
+                {[
+                  { name: 'Fast Freight Pty Ltd',   invoice: 'INV-2025-0178', amount: '$12,480.00', days: '18 days', email: 'accounts@fastfreight.com.au' },
+                  { name: 'Metro Group Sydney',      invoice: 'INV-2025-0174', amount: '$9,240.00',  days: '24 days', email: 'finance@metrogroup.com.au' },
+                  { name: 'ABC Wholesalers',         invoice: 'INV-2025-0168', amount: '$7,350.00',  days: '31 days', email: 'accounts@abcwholesalers.com.au' },
+                  { name: 'Prime Car Carriers',      invoice: 'INV-2025-0155', amount: '$8,890.00',  days: '45 days', email: 'billing@primecarriers.com.au' },
+                  { name: 'Coastal Transport Co.',   invoice: 'INV-2025-0149', amount: '$4,790.00',  days: '52 days', email: 'accounts@coastaltransport.com.au' },
+                ].map((client, i) => (
+                  <label key={i} className="flex items-center gap-3 px-3 py-2.5 bg-slate-50 border border-slate-100 rounded-xl cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/30 transition-all">
+                    <input type="checkbox" defaultChecked className="accent-indigo-600 w-3.5 h-3.5 shrink-0 cursor-pointer" />
+                    <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="font-extrabold text-slate-900 text-[11px] leading-tight">{client.name}</div>
+                        <div className="text-[9px] text-slate-400 font-medium leading-tight mt-0.5">
+                          {client.invoice} · <span className="text-amber-600 font-bold">{client.days} overdue</span> · {client.email}
+                        </div>
+                      </div>
+                      <div className="font-black text-rose-600 text-[11px] shrink-0">{client.amount}</div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+
+              {/* Reminder Template */}
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Reminder Template</label>
+                <select className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500 cursor-pointer">
+                  <option>Friendly Reminder (1st Notice)</option>
+                  <option>Second Notice – Action Required</option>
+                  <option>Final Notice – Legal Action Pending</option>
+                  <option>Custom Message</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-5 py-3.5 border-t border-slate-100 flex justify-between items-center gap-3 bg-slate-50/70 shrink-0">
+              <span className="text-[10px] text-slate-400 font-medium">5 recipients · Friendly Reminder</span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowSendRemindersModal(false)}
+                  className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => { setShowSendRemindersModal(false); triggerToast('✉️ Payment reminders sent to 5 overdue clients!'); }}
+                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black transition-all shadow-sm cursor-pointer flex items-center gap-1.5 active:scale-95"
+                >
+                  <Mail className="w-3.5 h-3.5" /> Send Reminders
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── VIEW PAYMENT DETAILS MODAL ───────────────────────────────────── */}
+      {viewPaymentModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 relative border border-slate-200">
+            <div className="flex justify-between items-start pb-4 border-b border-slate-100 mb-5">
+              <div>
+                <span className="text-[10px] font-black text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-md uppercase tracking-wider">{viewPaymentModal.ref}</span>
+                <h3 className="text-lg font-black text-slate-900 mt-2">Payment Details</h3>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">Received from {viewPaymentModal.customer}</p>
+              </div>
+              <button onClick={() => setViewPaymentModal(null)} className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold text-sm cursor-pointer">✕</button>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3 mb-5">
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Amount</span>
+                <span className="text-xs font-black text-emerald-600">{viewPaymentModal.amount}</span>
+              </div>
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Status</span>
+                <span className="text-xs font-bold text-emerald-600">{viewPaymentModal.status}</span>
+              </div>
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Method</span>
+                <span className="text-xs font-bold text-slate-900">{viewPaymentModal.method}</span>
+              </div>
+            </div>
+
+            <div className="space-y-3 bg-white p-4 rounded-xl border border-slate-200 text-xs mb-5">
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500 font-semibold">Payment Reference:</span>
+                <span className="font-bold text-slate-900 font-mono">{viewPaymentModal.ref}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500 font-semibold">Customer / Sender:</span>
+                <span className="font-bold text-slate-900">{viewPaymentModal.customer}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500 font-semibold">Invoice Reference:</span>
+                <span className="font-bold text-indigo-600 font-mono">{viewPaymentModal.invoice}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500 font-semibold">Payment Date:</span>
+                <span className="font-bold text-slate-900">{viewPaymentModal.date}</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-slate-500 font-semibold">Branch / Location:</span>
+                <span className="font-bold text-slate-900">{viewPaymentModal.branch}</span>
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center pt-3 border-t border-slate-100">
+              <button
+                onClick={() => { triggerToast(`Receipt PDF for ${viewPaymentModal.ref} downloaded`); setViewPaymentModal(null); }}
+                className="px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2"
+              >
+                📥 Download Receipt PDF
+              </button>
+              <button onClick={() => setViewPaymentModal(null)} className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all cursor-pointer">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── EDIT PAYMENT DETAILS MODAL ───────────────────────────────────── */}
+      {editPaymentModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 relative border border-slate-200">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-5">
+              <div>
+                <h3 className="text-lg font-black text-slate-900">Edit Payment Record</h3>
+                <p className="text-xs text-slate-500 font-semibold mt-0.5">Ref: {editPaymentModal.ref}</p>
+              </div>
+              <button onClick={() => setEditPaymentModal(null)} className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold text-sm cursor-pointer">✕</button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                setPaymentsList(prev => prev.map((item, i) => i === editPaymentModal.index ? editPaymentModal : item));
+                triggerToast('Payment Record Updated', `Saved changes for ${editPaymentModal.ref}`);
+                setEditPaymentModal(null);
+              }}
+              className="space-y-4 text-xs font-semibold text-slate-700 text-left"
+            >
+              <div>
+                <label className="block text-slate-500 font-bold mb-1">Customer / Sender</label>
+                <input
+                  type="text"
+                  value={editPaymentModal.customer}
+                  onChange={(e) => setEditPaymentModal({ ...editPaymentModal, customer: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 font-bold text-slate-900"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Payment Reference</label>
+                  <input
+                    type="text"
+                    value={editPaymentModal.ref}
+                    onChange={(e) => setEditPaymentModal({ ...editPaymentModal, ref: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 font-bold text-slate-900 font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Invoice Number</label>
+                  <input
+                    type="text"
+                    value={editPaymentModal.invoice}
+                    onChange={(e) => setEditPaymentModal({ ...editPaymentModal, invoice: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 font-bold text-slate-900 font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Amount (Inc GST)</label>
+                  <input
+                    type="text"
+                    value={editPaymentModal.amount}
+                    onChange={(e) => setEditPaymentModal({ ...editPaymentModal, amount: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 font-bold text-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Payment Method</label>
+                  <select
+                    value={editPaymentModal.method}
+                    onChange={(e) => setEditPaymentModal({ ...editPaymentModal, method: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 font-bold text-slate-900 bg-white"
+                  >
+                    <option>Bank Transfer</option>
+                    <option>EFTPOS</option>
+                    <option>Credit Card</option>
+                    <option>Cheque</option>
+                    <option>Cash</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Payment Date</label>
+                  <input
+                    type="text"
+                    value={editPaymentModal.date}
+                    onChange={(e) => setEditPaymentModal({ ...editPaymentModal, date: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 font-bold text-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Branch / Location</label>
+                  <select
+                    value={editPaymentModal.branch}
+                    onChange={(e) => setEditPaymentModal({ ...editPaymentModal, branch: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 font-bold text-slate-900 bg-white"
+                  >
+                    <option>Sydney Head Office</option>
+                    <option>Melbourne Depot</option>
+                    <option>Brisbane Hub</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setEditPaymentModal(null)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md shadow-indigo-600/20"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── VIEW RECEIPT DETAILS MODAL ───────────────────────────────────── */}
+      {viewReceiptModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 relative border border-slate-200">
+            <div className="flex justify-between items-start pb-4 border-b border-slate-100 mb-5">
+              <div>
+                <span className="text-[10px] font-black text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-md uppercase tracking-wider">{viewReceiptModal.ref}</span>
+                <h3 className="text-lg font-black text-slate-900 mt-2">Receipt Details</h3>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">Issued to {viewReceiptModal.customer}</p>
+              </div>
+              <button onClick={() => setViewReceiptModal(null)} className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold text-sm cursor-pointer">✕</button>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3 mb-5">
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Amount</span>
+                <span className="text-xs font-black text-blue-600">{viewReceiptModal.amount}</span>
+              </div>
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Status</span>
+                <span className="text-xs font-bold text-blue-600">{viewReceiptModal.status}</span>
+              </div>
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Method</span>
+                <span className="text-xs font-bold text-slate-900">{viewReceiptModal.method}</span>
+              </div>
+            </div>
+
+            <div className="space-y-3 bg-white p-4 rounded-xl border border-slate-200 text-xs mb-5">
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500 font-semibold">Receipt Number:</span>
+                <span className="font-bold text-slate-900 font-mono">{viewReceiptModal.ref}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500 font-semibold">Customer / Recipient:</span>
+                <span className="font-bold text-slate-900">{viewReceiptModal.customer}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500 font-semibold">For / Purpose:</span>
+                <span className="font-bold text-slate-800">{viewReceiptModal.for}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500 font-semibold">Date Issued:</span>
+                <span className="font-bold text-slate-900">{viewReceiptModal.date}</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-slate-500 font-semibold">Branch / Location:</span>
+                <span className="font-bold text-slate-900">{viewReceiptModal.branch}</span>
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center pt-3 border-t border-slate-100">
+              <button
+                onClick={() => { triggerToast(`Receipt PDF for ${viewReceiptModal.ref} downloaded`); setViewReceiptModal(null); }}
+                className="px-4 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2"
+              >
+                📥 Download Receipt PDF
+              </button>
+              <button onClick={() => setViewReceiptModal(null)} className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all cursor-pointer">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── EDIT RECEIPT DETAILS MODAL ───────────────────────────────────── */}
+      {editReceiptModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 relative border border-slate-200">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-5">
+              <div>
+                <h3 className="text-lg font-black text-slate-900">Edit Receipt Record</h3>
+                <p className="text-xs text-slate-500 font-semibold mt-0.5">Receipt No: {editReceiptModal.ref}</p>
+              </div>
+              <button onClick={() => setEditReceiptModal(null)} className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold text-sm cursor-pointer">✕</button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                setReceiptsList(prev => prev.map((item, i) => i === editReceiptModal.index ? editReceiptModal : item));
+                triggerToast('Receipt Record Updated', `Saved changes for ${editReceiptModal.ref}`);
+                setEditReceiptModal(null);
+              }}
+              className="space-y-4 text-xs font-semibold text-slate-700 text-left"
+            >
+              <div>
+                <label className="block text-slate-500 font-bold mb-1">Customer / Recipient</label>
+                <input
+                  type="text"
+                  value={editReceiptModal.customer}
+                  onChange={(e) => setEditReceiptModal({ ...editReceiptModal, customer: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-900"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Receipt Number</label>
+                  <input
+                    type="text"
+                    value={editReceiptModal.ref}
+                    onChange={(e) => setEditReceiptModal({ ...editReceiptModal, ref: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-900 font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Purpose / For</label>
+                  <input
+                    type="text"
+                    value={editReceiptModal.for}
+                    onChange={(e) => setEditReceiptModal({ ...editReceiptModal, for: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-900"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Amount (Inc GST)</label>
+                  <input
+                    type="text"
+                    value={editReceiptModal.amount}
+                    onChange={(e) => setEditReceiptModal({ ...editReceiptModal, amount: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Payment Method</label>
+                  <select
+                    value={editReceiptModal.method}
+                    onChange={(e) => setEditReceiptModal({ ...editReceiptModal, method: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-900 bg-white"
+                  >
+                    <option>Bank Transfer</option>
+                    <option>EFTPOS</option>
+                    <option>Credit Card</option>
+                    <option>Cheque</option>
+                    <option>Cash</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Issue Date</label>
+                  <input
+                    type="text"
+                    value={editReceiptModal.date}
+                    onChange={(e) => setEditReceiptModal({ ...editReceiptModal, date: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Branch / Location</label>
+                  <select
+                    value={editReceiptModal.branch}
+                    onChange={(e) => setEditReceiptModal({ ...editReceiptModal, branch: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-900 bg-white"
+                  >
+                    <option>Sydney Head Office</option>
+                    <option>Melbourne Depot</option>
+                    <option>Brisbane Hub</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setEditReceiptModal(null)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md shadow-blue-600/20"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── VIEW EXPENSE DETAILS MODAL ────────────────────────────────────────── */}
+      {viewExpenseModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-purple-50 to-white">
+              <div>
+                <p className="text-[10px] font-black text-purple-500 uppercase tracking-widest mb-0.5">Expense Record</p>
+                <h2 className="text-base font-black text-slate-900">{viewExpenseModal.ref}</h2>
+              </div>
+              <button onClick={() => setViewExpenseModal(null)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 text-lg cursor-pointer">✕</button>
+            </div>
+            <div className="px-6 py-5 space-y-4 text-xs">
+              <div className="grid grid-cols-2 gap-4">
+                <div><p className="text-slate-400 font-bold mb-0.5">Reference</p><p className="font-extrabold text-slate-900 font-mono">{viewExpenseModal.ref}</p></div>
+                <div><p className="text-slate-400 font-bold mb-0.5">Date</p><p className="font-extrabold text-slate-900">{viewExpenseModal.date}</p></div>
+                <div><p className="text-slate-400 font-bold mb-0.5">Description</p><p className="font-extrabold text-slate-900">{viewExpenseModal.desc}</p></div>
+                <div><p className="text-slate-400 font-bold mb-0.5">Category</p><p className="font-extrabold text-slate-900">{viewExpenseModal.category}</p></div>
+                <div><p className="text-slate-400 font-bold mb-0.5">Amount (Inc GST)</p><p className="font-extrabold text-slate-900 font-mono text-sm">{viewExpenseModal.amount}</p></div>
+                <div><p className="text-slate-400 font-bold mb-0.5">Payment Type</p><p className="font-extrabold text-slate-900">{viewExpenseModal.type}</p></div>
+                <div>
+                  <p className="text-slate-400 font-bold mb-0.5">Status</p>
+                  <span className={`px-2.5 py-0.5 rounded text-[10px] font-black ${viewExpenseModal.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}>{viewExpenseModal.status}</span>
+                </div>
+                <div><p className="text-slate-400 font-bold mb-0.5">Uploaded By</p><p className="font-extrabold text-slate-900">{viewExpenseModal.user}</p></div>
+                <div className="col-span-2"><p className="text-slate-400 font-bold mb-0.5">Branch / Location</p><p className="font-extrabold text-slate-900">{viewExpenseModal.branch}</p></div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-100 bg-slate-50/50">
+              <button onClick={() => setViewExpenseModal(null)} className="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer">Close</button>
+              <button onClick={() => { setEditExpenseModal({ ...viewExpenseModal }); setViewExpenseModal(null); }} className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold cursor-pointer shadow-md shadow-indigo-600/20">✏️ Edit Record</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── EDIT EXPENSE RECORD MODAL ──────────────────────────────────────────── */}
+      {editExpenseModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-indigo-50 to-white">
+              <div>
+                <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-0.5">Edit Expense</p>
+                <h2 className="text-base font-black text-slate-900">{editExpenseModal.ref}</h2>
+              </div>
+              <button onClick={() => setEditExpenseModal(null)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 text-lg cursor-pointer">✕</button>
+            </div>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              setExpensesList(prev => prev.map((item, i) => i === editExpenseModal.index ? { ...editExpenseModal } : item));
+              triggerToast(`Expense ${editExpenseModal.ref} updated successfully`);
+              setEditExpenseModal(null);
+            }} className="px-6 py-5 space-y-4 text-xs">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Description</label>
+                  <input type="text" value={editExpenseModal.desc} onChange={(e) => setEditExpenseModal({ ...editExpenseModal, desc: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-400 font-bold text-slate-900" />
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Category</label>
+                  <select value={editExpenseModal.category} onChange={(e) => setEditExpenseModal({ ...editExpenseModal, category: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-400 font-bold text-slate-900 bg-white">
+                    <option>Fuel</option><option>Maintenance</option><option>Repairs</option><option>Tolls</option>
+                    <option>Accommodation</option><option>Meals</option><option>Parking</option><option>Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Amount (Inc GST)</label>
+                  <input type="text" value={editExpenseModal.amount} onChange={(e) => setEditExpenseModal({ ...editExpenseModal, amount: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-400 font-bold text-slate-900 font-mono" />
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Payment Type</label>
+                  <select value={editExpenseModal.type} onChange={(e) => setEditExpenseModal({ ...editExpenseModal, type: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-400 font-bold text-slate-900 bg-white">
+                    <option>Company Card</option><option>Bank Transfer</option><option>EFTPOS</option><option>Personal (Reimb.)</option><option>Cash</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Status</label>
+                  <select value={editExpenseModal.status} onChange={(e) => setEditExpenseModal({ ...editExpenseModal, status: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-400 font-bold text-slate-900 bg-white">
+                    <option>Approved</option><option>Pending</option><option>Rejected</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Date</label>
+                  <input type="text" value={editExpenseModal.date} onChange={(e) => setEditExpenseModal({ ...editExpenseModal, date: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-400 font-bold text-slate-900" />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-slate-500 font-bold mb-1">Branch / Location</label>
+                  <select value={editExpenseModal.branch} onChange={(e) => setEditExpenseModal({ ...editExpenseModal, branch: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-400 font-bold text-slate-900 bg-white">
+                    <option>Sydney Head Office</option><option>Melbourne Depot</option><option>Brisbane Hub</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+                <button type="button" onClick={() => setEditExpenseModal(null)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer">Cancel</button>
+                <button type="submit" className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md shadow-indigo-600/20">Save Changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── VIEW PAYROLL RUN DETAILS MODAL ─────────────────────────────────── */}
+      {viewPayrollModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-purple-50 to-white">
+              <div>
+                <p className="text-[10px] font-black text-purple-500 uppercase tracking-widest mb-0.5">Payroll Run Details</p>
+                <h2 className="text-base font-black text-slate-900">{viewPayrollModal.name}</h2>
+              </div>
+              <button onClick={() => setViewPayrollModal(null)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 text-lg cursor-pointer">✕</button>
+            </div>
+            <div className="px-6 py-5 text-xs">
+              <div className="grid grid-cols-2 gap-4">
+                <div><p className="text-slate-400 font-bold mb-0.5">Run Name</p><p className="font-extrabold text-slate-900">{viewPayrollModal.name}</p></div>
+                <div><p className="text-slate-400 font-bold mb-0.5">Pay Period</p><p className="font-extrabold text-slate-900">{viewPayrollModal.period}</p></div>
+                <div><p className="text-slate-400 font-bold mb-0.5">Branch</p><p className="font-extrabold text-slate-900">{viewPayrollModal.branch}</p></div>
+                <div><p className="text-slate-400 font-bold mb-0.5">Employees</p><p className="font-extrabold text-slate-900">{viewPayrollModal.employees}</p></div>
+                <div><p className="text-slate-400 font-bold mb-0.5">Pay Type</p><p className="font-extrabold text-slate-900">{viewPayrollModal.type}</p></div>
+                <div><p className="text-slate-400 font-bold mb-0.5">Total (Inc GST)</p><p className="font-extrabold text-slate-900 font-mono text-sm">{viewPayrollModal.total}</p></div>
+                <div><p className="text-slate-400 font-bold mb-0.5">Status</p>
+                  <span className={`px-2.5 py-0.5 rounded text-[10px] font-black ${ viewPayrollModal.status === 'Paid' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : viewPayrollModal.status === 'Approved' ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-blue-50 text-blue-600 border border-blue-100'}`}>{viewPayrollModal.status}</span>
+                </div>
+                <div><p className="text-slate-400 font-bold mb-0.5">Created By</p><p className="font-extrabold text-slate-900">{viewPayrollModal.user}</p></div>
+                <div className="col-span-2"><p className="text-slate-400 font-bold mb-0.5">Created On</p><p className="font-extrabold text-slate-900">{viewPayrollModal.date}</p></div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-100 bg-slate-50/50">
+              <button onClick={() => setViewPayrollModal(null)} className="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer">Close</button>
+              <button onClick={() => { setEditPayrollModal({ ...viewPayrollModal }); setViewPayrollModal(null); }} className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold cursor-pointer shadow-md shadow-indigo-600/20">✏️ Edit Record</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── EDIT PAYROLL RUN RECORD MODAL ───────────────────────────────── */}
+      {editPayrollModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-indigo-50 to-white">
+              <div>
+                <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-0.5">Edit Payroll Run</p>
+                <h2 className="text-base font-black text-slate-900">{editPayrollModal.name}</h2>
+              </div>
+              <button onClick={() => setEditPayrollModal(null)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 text-lg cursor-pointer">✕</button>
+            </div>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              setPayrollList(prev => prev.map((item, i) => i === editPayrollModal.index ? { ...editPayrollModal } : item));
+              triggerToast(`Payroll run "${editPayrollModal.name}" updated successfully`);
+              setEditPayrollModal(null);
+            }} className="px-6 py-5 space-y-4 text-xs">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <label className="block text-slate-500 font-bold mb-1">Run Name</label>
+                  <input type="text" value={editPayrollModal.name} onChange={(e) => setEditPayrollModal({ ...editPayrollModal, name: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-400 font-bold text-slate-900" />
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Pay Period</label>
+                  <input type="text" value={editPayrollModal.period} onChange={(e) => setEditPayrollModal({ ...editPayrollModal, period: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-400 font-bold text-slate-900" />
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Pay Type</label>
+                  <select value={editPayrollModal.type} onChange={(e) => setEditPayrollModal({ ...editPayrollModal, type: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-400 font-bold text-slate-900 bg-white">
+                    <option>Weekly</option><option>Fortnightly</option><option>Monthly</option><option>Salary</option><option>Casual</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Total (Inc GST)</label>
+                  <input type="text" value={editPayrollModal.total} onChange={(e) => setEditPayrollModal({ ...editPayrollModal, total: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-400 font-bold text-slate-900 font-mono" />
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Status</label>
+                  <select value={editPayrollModal.status} onChange={(e) => setEditPayrollModal({ ...editPayrollModal, status: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-400 font-bold text-slate-900 bg-white">
+                    <option>Paid</option><option>Approved</option><option>Draft</option><option>Pending</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Employees</label>
+                  <input type="number" value={editPayrollModal.employees} onChange={(e) => setEditPayrollModal({ ...editPayrollModal, employees: Number(e.target.value) })} className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-400 font-bold text-slate-900" />
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Created On</label>
+                  <input type="text" value={editPayrollModal.date} onChange={(e) => setEditPayrollModal({ ...editPayrollModal, date: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-400 font-bold text-slate-900" />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-slate-500 font-bold mb-1">Branch</label>
+                  <select value={editPayrollModal.branch} onChange={(e) => setEditPayrollModal({ ...editPayrollModal, branch: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-400 font-bold text-slate-900 bg-white">
+                    <option>Sydney Head Office</option><option>Melbourne Branch</option><option>Brisbane Branch</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+                <button type="button" onClick={() => setEditPayrollModal(null)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer">Cancel</button>
+                <button type="submit" className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md shadow-indigo-600/20">Save Changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── VIEW EXPORT DETAILS MODAL ───────────────────────────────────────────── */}
+      {viewExportModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-purple-50 to-white">
+              <div>
+                <p className="text-[10px] font-black text-purple-500 uppercase tracking-widest mb-0.5">Export Record</p>
+                <h2 className="text-base font-black text-slate-900">{viewExportModal.name}</h2>
+              </div>
+              <button onClick={() => setViewExportModal(null)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 text-lg cursor-pointer">✕</button>
+            </div>
+            <div className="px-6 py-5 text-xs">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2"><p className="text-slate-400 font-bold mb-0.5">Export Name</p><p className="font-extrabold text-slate-900">{viewExportModal.name}</p></div>
+                <div><p className="text-slate-400 font-bold mb-0.5">Export Type</p><p className="font-extrabold text-slate-900">{viewExportModal.type}</p></div>
+                <div><p className="text-slate-400 font-bold mb-0.5">Format</p>
+                  <span className={`text-[9px] font-black px-2 py-0.5 rounded ${viewExportModal.fmt === 'PDF' ? 'bg-indigo-50 text-indigo-700' : 'bg-emerald-50 text-emerald-700'}`}>{viewExportModal.fmt}</span>
+                </div>
+                <div><p className="text-slate-400 font-bold mb-0.5">Period</p><p className="font-extrabold text-slate-900">{viewExportModal.period}</p></div>
+                <div><p className="text-slate-400 font-bold mb-0.5">Created On</p><p className="font-extrabold text-slate-900">{viewExportModal.date}</p></div>
+                <div><p className="text-slate-400 font-bold mb-0.5">Created By</p><p className="font-extrabold text-slate-900">{viewExportModal.by}</p></div>
+                <div><p className="text-slate-400 font-bold mb-0.5">Status</p>
+                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${viewExportModal.status === 'Completed' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' : 'bg-rose-50 text-rose-700 border border-rose-200/60'}`}>{viewExportModal.status}</span>
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-100 bg-slate-50/50">
+              <button onClick={() => setViewExportModal(null)} className="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer">Close</button>
+              <button onClick={() => { setEditExportModal({ ...viewExportModal }); setViewExportModal(null); }} className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold cursor-pointer shadow-md shadow-indigo-600/20">✏️ Edit Record</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── EDIT EXPORT RECORD MODAL ────────────────────────────────────────────── */}
+      {editExportModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-indigo-50 to-white">
+              <div>
+                <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-0.5">Edit Export Record</p>
+                <h2 className="text-base font-black text-slate-900">{editExportModal.name}</h2>
+              </div>
+              <button onClick={() => setEditExportModal(null)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 text-lg cursor-pointer">✕</button>
+            </div>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              setAccExportList(prev => prev.map((item, i) => i === editExportModal.index ? { ...editExportModal } : item));
+              triggerToast(`Export "${editExportModal.name}" updated successfully`);
+              setEditExportModal(null);
+            }} className="px-6 py-5 space-y-4 text-xs">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <label className="block text-slate-500 font-bold mb-1">Export Name</label>
+                  <input type="text" value={editExportModal.name} onChange={(e) => setEditExportModal({ ...editExportModal, name: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-400 font-bold text-slate-900" />
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Export Type</label>
+                  <select value={editExportModal.type} onChange={(e) => setEditExportModal({ ...editExportModal, type: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-400 font-bold text-slate-900 bg-white">
+                    <option>P&L Statement</option><option>Balance Sheet</option><option>General Ledger</option>
+                    <option>Receivables</option><option>Payables</option><option>Bank Reconciliation</option>
+                    <option>Tax Summary</option><option>Cash Flow</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Format</label>
+                  <select value={editExportModal.fmt} onChange={(e) => setEditExportModal({ ...editExportModal, fmt: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-400 font-bold text-slate-900 bg-white">
+                    <option>PDF</option><option>CSV</option><option>XLSX</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Period</label>
+                  <input type="text" value={editExportModal.period} onChange={(e) => setEditExportModal({ ...editExportModal, period: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-400 font-bold text-slate-900" />
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Status</label>
+                  <select value={editExportModal.status} onChange={(e) => setEditExportModal({ ...editExportModal, status: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-400 font-bold text-slate-900 bg-white">
+                    <option>Completed</option><option>Failed</option><option>Pending</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Created By</label>
+                  <input type="text" value={editExportModal.by} onChange={(e) => setEditExportModal({ ...editExportModal, by: e.target.value })} className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-indigo-400 font-bold text-slate-900" />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+                <button type="button" onClick={() => setEditExportModal(null)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer">Cancel</button>
+                <button type="submit" className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md shadow-indigo-600/20">Save Changes</button>
+              </div>
+            </form>
           </div>
         </div>
       )}

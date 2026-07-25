@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Bell, ChevronDown, Plus, Mail, Phone, Calendar, 
   Activity, ArrowRight, Check, X, User, Star, Clock,
@@ -10,6 +11,7 @@ import {
 } from 'recharts';
 
 export default function SalesDashboard() {
+  const navigate = useNavigate();
   const [salesRep, setSalesRep] = useState('Alex Wright');
   const [selectedLead, setSelectedLead] = useState('Vance Refrigeration (Robert Vance)');
   const [leadsStatus, setLeadsStatus] = useState({
@@ -1407,7 +1409,23 @@ export default function SalesDashboard() {
                   </div>
 
                   <button
-                    onClick={() => setShowConversionWizard(false)}
+                    onClick={() => {
+                      const companyName = selectedLead.split(' (')[0] || 'Vance Refrigeration';
+                      const adminName = selectedLead.includes('(') ? selectedLead.split('(')[1].replace(')', '') : 'Robert Vance';
+                      const mockSession = {
+                        token: `mock-jwt-token-${Date.now()}`,
+                        email: `${adminName.toLowerCase().replace(/\s/g, '')}@${companyName.toLowerCase().replace(/[^a-z]/g, '')}.com`,
+                        role: 'Company Admin',
+                        name: adminName,
+                        company: companyName,
+                        plan: selectedPlan || 'Professional',
+                        joinedAt: new Date().toLocaleDateString('en-US')
+                      };
+                      localStorage.setItem('hero_session', JSON.stringify(mockSession));
+                      window.dispatchEvent(new Event('storage'));
+                      setShowConversionWizard(false);
+                      navigate('/company-admin/command-centre');
+                    }}
                     className="bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] px-8 py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all flex items-center justify-center gap-2 mx-auto"
                   >
                     <User className="w-4 h-4" />

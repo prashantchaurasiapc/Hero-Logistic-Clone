@@ -45,6 +45,26 @@ export default function AssetDetails({ assetData, onBack }) {
   const [copiedTag, setCopiedTag] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState({ title: 'Asset Updated', desc: 'Changes saved live.' });
+  const [viewAssignmentModal, setViewAssignmentModal] = useState(null);
+  const [asgMenuIndex, setAsgMenuIndex] = useState(null);
+  const [viewMaintTaskModal, setViewMaintTaskModal] = useState(null);
+  const [maintMenuIndex, setMaintMenuIndex] = useState(null);
+  const [maintTasksList, setMaintTasksList] = useState(mockMaintenanceTasks);
+  const [viewDocModal, setViewDocModal] = useState(null);
+  const [editDocModal, setEditDocModal] = useState(null);
+  const [docMenuIndex, setDocMenuIndex] = useState(null);
+  const [documentsList, setDocumentsList] = useState(assetDocuments);
+  const [viewCostModal, setViewCostModal] = useState(null);
+  const [editCostModal, setEditCostModal] = useState(null);
+  const [costMenuIndex, setCostMenuIndex] = useState(null);
+  const [editAssignmentModal, setEditAssignmentModal] = useState(null);
+  const [editMaintTaskModal, setEditMaintTaskModal] = useState(null);
+
+  const triggerToast = (title, desc) => {
+    setToastMessage({ title, desc });
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 4000);
+  };
 
   // Filter state for assignment history table
   const [assignmentSearch, setAssignmentSearch] = useState('');
@@ -52,9 +72,11 @@ export default function AssetDetails({ assetData, onBack }) {
   // Costs & Depreciation specific state
   const [activeCostTab, setActiveCostTab] = useState('Cost Overview');
   const [costSearch, setCostSearch] = useState('');
+  const [costDateRange, setCostDateRange] = useState('01 Jul 2024 - 30 Jun 2025');
+  const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
 
   // Costs Mock Data
-  const costsData = [
+  const [costsList, setCostsList] = useState([
     { date: '24 May 2025', category: 'Maintenance', type: 'Service', desc: 'Service & Maintenance', ref: 'INV-2025-056', loc: 'Sydney Head Office', amount: '$450.00', tax: '$45.00', total: '$495.00', color: 'purple' },
     { date: '24 May 2025', category: 'Maintenance', type: 'Parts', desc: 'Oil Filter & Lubricants', ref: 'INV-2025-057', loc: 'Sydney Head Office', amount: '$120.00', tax: '$12.00', total: '$132.00', color: 'purple' },
     { date: '10 May 2025', category: 'Operating', type: 'Fuel', desc: 'Diesel Fuel', ref: 'FUEL-2025-1021', loc: 'Sydney Head Office', amount: '$200.00', tax: '$20.00', total: '$220.00', color: 'emerald' },
@@ -66,7 +88,7 @@ export default function AssetDetails({ assetData, onBack }) {
     { date: '05 Mar 2025', category: 'Maintenance', type: 'Service', desc: 'Routine Service', ref: 'INV-2025-020', loc: 'Sydney Head Office', amount: '$320.00', tax: '$32.00', total: '$352.00', color: 'purple' },
     { date: '15 Feb 2025', category: 'Operating', type: 'Fuel', desc: 'Diesel Fuel', ref: 'FUEL-2025-0615', loc: 'Sydney Head Office', amount: '$170.00', tax: '$17.00', total: '$187.00', color: 'emerald' },
     { date: '11 Nov 2024', category: 'Other', type: 'Other', desc: 'Safety Equipment', ref: 'INV-2024-211', loc: 'Sydney Head Office', amount: '$50.00', tax: '$5.00', total: '$55.00', color: 'slate' },
-  ];
+  ]);
 
   // States for More Actions dropdown modals
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
@@ -152,27 +174,21 @@ export default function AssetDetails({ assetData, onBack }) {
   const [deactivateReason, setDeactivateReason] = useState('Scheduled Retirement / End of Life');
 
   // Mock Assignment History Table Data matching Screenshot 2 & 3
-  const assignmentHistoryData = [
+  const [assignmentsList, setAssignmentsList] = useState([
     { id: 'ASG-0006', assignedTo: 'Warehouse 1', branchLocation: 'Sydney Head Office\nWarehouse 1', purpose: 'Daily Operations\nGeneral Use', assignedBy: 'Sarah Mitchell', assignedByAvatar: 'SM', fromDate: '24 May 2025\n09:15 AM', toDate: '-\nOngoing', duration: '-', status: 'Current' },
     { id: 'ASG-0005', assignedTo: 'Dispatch Team', branchLocation: 'Sydney Head Office\nDispatch Yard', purpose: 'Loading / Dispatch\nSupport', assignedBy: 'Sarah Mitchell', assignedByAvatar: 'SM', fromDate: '10 May 2025\n07:30 AM', toDate: '23 May 2025\n04:45 PM', duration: '13 days\n9.2 Hrs/Day', status: 'Completed' },
     { id: 'ASG-0004', assignedTo: 'Warehouse 2', branchLocation: 'Sydney Head Office\nWarehouse 2', purpose: 'Stock Movement\nInternal Transfer', assignedBy: 'James Patel', assignedByAvatar: 'JP', fromDate: '25 Apr 2025\n08:00 AM', toDate: '09 May 2025\n05:00 PM', duration: '15 days\n8.1 Hrs/Day', status: 'Completed' },
     { id: 'ASG-0003', assignedTo: 'Maintenance Team', branchLocation: 'Sydney Head Office\nWorkshop', purpose: 'Maintenance Use\nTesting', assignedBy: 'James Patel', assignedByAvatar: 'JP', fromDate: '20 Apr 2025\n02:00 PM', toDate: '24 Apr 2025\n11:00 AM', duration: '4 days\n2.2 Hrs/Day', status: 'Completed' },
     { id: 'ASG-0002', assignedTo: 'Warehouse 1', branchLocation: 'Sydney Head Office\nWarehouse 1', purpose: 'Daily Operations\nGeneral Use', assignedBy: 'Sarah Mitchell', assignedByAvatar: 'SM', fromDate: '05 Apr 2025\n07:45 AM', toDate: '19 Apr 2025\n04:30 PM', duration: '15 days\n8.3 Hrs/Day', status: 'Completed' },
     { id: 'ASG-0001', assignedTo: 'Dispatch Team', branchLocation: 'Sydney Head Office\nDispatch Yard', purpose: 'Loading / Dispatch\nSupport', assignedBy: 'Sarah Mitchell', assignedByAvatar: 'SM', fromDate: '15 Mar 2025\n08:10 AM', toDate: '04 Apr 2025\n05:15 PM', duration: '21 days\n7.6 Hrs/Day', status: 'Completed' },
-  ];
+  ]);
 
-  const filteredAssignments = assignmentHistoryData.filter(item =>
+  const filteredAssignments = assignmentsList.filter(item =>
     item.id.toLowerCase().includes(assignmentSearch.toLowerCase()) ||
     item.assignedTo.toLowerCase().includes(assignmentSearch.toLowerCase()) ||
     item.purpose.toLowerCase().includes(assignmentSearch.toLowerCase()) ||
     item.assignedBy.toLowerCase().includes(assignmentSearch.toLowerCase())
   );
-
-  const triggerToast = (title, desc) => {
-    setToastMessage({ title, desc });
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 4000);
-  };
 
   const handleOpenEditModal = () => {
     setEditFormData({ ...asset });
@@ -1390,7 +1406,7 @@ export default function AssetDetails({ assetData, onBack }) {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {filteredAssignments.map((asg) => (
+                      {filteredAssignments.map((asg, idx) => (
                         <tr key={asg.id} className="hover:bg-slate-50/80 transition-colors">
                           <td className="p-3 font-bold text-purple-700 whitespace-nowrap">{asg.id}</td>
                           <td className="p-3 font-bold text-slate-900 whitespace-nowrap">{asg.assignedTo}</td>
@@ -1412,10 +1428,67 @@ export default function AssetDetails({ assetData, onBack }) {
                               <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[9px] font-black uppercase tracking-wider">Completed</span>
                             )}
                           </td>
-                          <td className="p-3 whitespace-nowrap">
+                          <td className="p-3 whitespace-nowrap relative">
                             <div className="flex items-center justify-center gap-1.5">
-                              <button className="text-slate-400 hover:text-purple-600 p-1 cursor-pointer"><Eye size={14} /></button>
-                              <button className="text-slate-400 hover:text-purple-600 p-1 cursor-pointer"><MoreHorizontal size={14} /></button>
+                              <button
+                                title="View Assignment Details"
+                                onClick={() => setViewAssignmentModal(asg)}
+                                className="w-7 h-7 rounded-md bg-slate-100 text-slate-600 hover:bg-purple-100 hover:text-purple-700 flex items-center justify-center transition-colors cursor-pointer"
+                              >
+                                <Eye size={14} />
+                              </button>
+
+                              <div className="relative">
+                                <button
+                                  title="More Actions"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setAsgMenuIndex(asgMenuIndex === idx ? null : idx);
+                                  }}
+                                  className={`w-7 h-7 rounded-md ${asgMenuIndex === idx ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600 hover:bg-purple-100 hover:text-purple-700'} flex items-center justify-center transition-colors cursor-pointer`}
+                                >
+                                  <MoreHorizontal size={14} />
+                                </button>
+
+                                {asgMenuIndex === idx && (
+                                  <>
+                                    <div className="fixed inset-0 z-40" onClick={() => setAsgMenuIndex(null)} />
+                                    <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-xl border border-slate-200 p-1.5 z-50 flex flex-col gap-0.5 text-xs font-semibold text-slate-700">
+                                      <button
+                                        onClick={() => { setViewAssignmentModal(asg); setAsgMenuIndex(null); }}
+                                        className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
+                                      >
+                                        👁️ View Details
+                                      </button>
+                                      <button
+                                        onClick={() => { setEditAssignmentModal({ ...asg, index: idx }); setAsgMenuIndex(null); }}
+                                        className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
+                                      >
+                                        ✏️ Edit Assignment
+                                      </button>
+                                      <button
+                                        onClick={() => { triggerToast('Assignment Exported', `Exported details for ${asg.id}`); setAsgMenuIndex(null); }}
+                                        className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
+                                      >
+                                        📄 Export Details
+                                      </button>
+                                      <div className="h-px bg-slate-100 my-1" />
+                                      <button
+                                        disabled={asg.status === 'Completed'}
+                                        onClick={() => {
+                                          if (asg.status === 'Completed') return;
+                                          setAssignmentsList(prev => prev.map((item, i) => i === idx ? { ...item, status: 'Completed', toDate: '24 May 2025\n12:00 PM' } : item));
+                                          triggerToast('Assignment Ended', `Assignment ${asg.id} completed.`);
+                                          setAsgMenuIndex(null);
+                                        }}
+                                        className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left w-full cursor-pointer ${asg.status === 'Completed' ? 'text-slate-400 opacity-60 cursor-not-allowed' : 'text-rose-600 hover:bg-rose-50'}`}
+                                      >
+                                        ⏹️ End Assignment
+                                      </button>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
                             </div>
                           </td>
                         </tr>
@@ -1631,30 +1704,30 @@ export default function AssetDetails({ assetData, onBack }) {
 
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full">
                 {/* Table Header Controls */}
-                <div className="p-4 border-b border-slate-100 flex flex-wrap gap-3 items-center justify-between">
-                  <div className="flex items-center gap-3 flex-wrap">
+                <div className="p-3.5 border-b border-slate-100 flex items-center justify-between gap-2.5 overflow-x-auto custom-scrollbar">
+                  <div className="flex items-center gap-2 flex-nowrap shrink-0">
                     <div className="relative">
                       <Search size={14} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
-                      <input type="text" placeholder="Search maintenance..." className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-[11px] font-semibold text-slate-700 outline-none focus:border-purple-500 w-48" />
+                      <input type="text" placeholder="Search maintenance..." className="pl-9 pr-3 py-1.5 border border-slate-200 rounded-lg text-[11px] font-semibold text-slate-700 outline-none focus:border-purple-500 w-44" />
                     </div>
                     
-                    <button className="flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-lg text-[11px] font-bold text-slate-700 hover:bg-slate-50 transition-colors bg-white">
-                      All Maintenance Types <ChevronDown size={14} className="text-slate-400" />
+                    <button className="flex items-center gap-1.5 px-2.5 py-1.5 border border-slate-200 rounded-lg text-[11px] font-bold text-slate-700 hover:bg-slate-50 transition-colors bg-white whitespace-nowrap cursor-pointer">
+                      All Maintenance Types <ChevronDown size={12} className="text-slate-400" />
                     </button>
-                    <button className="flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-lg text-[11px] font-bold text-slate-700 hover:bg-slate-50 transition-colors bg-white">
-                      All Status <ChevronDown size={14} className="text-slate-400" />
+                    <button className="flex items-center gap-1.5 px-2.5 py-1.5 border border-slate-200 rounded-lg text-[11px] font-bold text-slate-700 hover:bg-slate-50 transition-colors bg-white whitespace-nowrap cursor-pointer">
+                      All Status <ChevronDown size={12} className="text-slate-400" />
                     </button>
-                    <button className="flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-lg text-[11px] font-bold text-slate-700 hover:bg-slate-50 transition-colors bg-white">
-                      All Priority <ChevronDown size={14} className="text-slate-400" />
+                    <button className="flex items-center gap-1.5 px-2.5 py-1.5 border border-slate-200 rounded-lg text-[11px] font-bold text-slate-700 hover:bg-slate-50 transition-colors bg-white whitespace-nowrap cursor-pointer">
+                      All Priority <ChevronDown size={12} className="text-slate-400" />
                     </button>
                     
-                    <button className="flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-lg text-[11px] font-bold text-slate-700 hover:bg-slate-50 transition-colors bg-white">
-                      <Filter size={14} /> Filters
+                    <button className="flex items-center gap-1.5 px-2.5 py-1.5 border border-slate-200 rounded-lg text-[11px] font-bold text-slate-700 hover:bg-slate-50 transition-colors bg-white whitespace-nowrap cursor-pointer">
+                      <Filter size={12} /> Filters
                     </button>
                   </div>
                   
-                  <button className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-lg text-[11px] font-bold text-slate-700 hover:bg-slate-50 transition-colors bg-white">
-                    <Download size={14} /> Export
+                  <button className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 rounded-lg text-[11px] font-bold text-slate-700 hover:bg-slate-50 transition-colors bg-white whitespace-nowrap cursor-pointer shrink-0">
+                    <Download size={12} /> Export
                   </button>
                 </div>
 
@@ -1676,7 +1749,7 @@ export default function AssetDetails({ assetData, onBack }) {
                       </tr>
                     </thead>
                     <tbody>
-                      {mockMaintenanceTasks.map((task, idx) => (
+                      {maintTasksList.map((task, idx) => (
                         <tr key={idx} className="border-b border-slate-50 hover:bg-slate-50/80 transition-colors">
                           <td className="px-5 py-3.5 whitespace-nowrap">
                             <h4 className="text-[11px] font-bold text-slate-800">{task.task}</h4>
@@ -1715,10 +1788,73 @@ export default function AssetDetails({ assetData, onBack }) {
                             <h4 className="text-[11px] font-bold text-slate-800">{task.assigned}</h4>
                             {task.role && <p className="text-[10px] font-medium text-slate-500 mt-0.5">{task.role}</p>}
                           </td>
-                          <td className="px-5 py-3.5 whitespace-nowrap">
-                            <div className="flex items-center justify-center gap-2">
-                              <button className="text-slate-400 hover:text-slate-600 transition-colors p-1"><Eye size={14} /></button>
-                              <button className="text-slate-400 hover:text-slate-600 transition-colors p-1"><MoreHorizontal size={14} /></button>
+                          <td className="px-5 py-3.5 whitespace-nowrap relative">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                title="View Maintenance Task Details"
+                                onClick={() => setViewMaintTaskModal(task)}
+                                className="w-7 h-7 rounded-md bg-slate-100 text-slate-600 hover:bg-purple-100 hover:text-purple-700 flex items-center justify-center transition-colors cursor-pointer"
+                              >
+                                <Eye size={14} />
+                              </button>
+
+                              <div className="relative">
+                                <button
+                                  title="More Actions"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setMaintMenuIndex(maintMenuIndex === idx ? null : idx);
+                                  }}
+                                  className={`w-7 h-7 rounded-md ${maintMenuIndex === idx ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600 hover:bg-purple-100 hover:text-purple-700'} flex items-center justify-center transition-colors cursor-pointer`}
+                                >
+                                  <MoreHorizontal size={14} />
+                                </button>
+
+                                {maintMenuIndex === idx && (
+                                  <>
+                                    <div className="fixed inset-0 z-40" onClick={() => setMaintMenuIndex(null)} />
+                                    <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-xl border border-slate-200 p-1.5 z-50 flex flex-col gap-0.5 text-xs font-semibold text-slate-700">
+                                      <button
+                                        onClick={() => { setViewMaintTaskModal(task); setMaintMenuIndex(null); }}
+                                        className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
+                                      >
+                                        👁️ View Details
+                                      </button>
+                                      <button
+                                        disabled={task.status === 'Completed'}
+                                        onClick={() => {
+                                          if (task.status === 'Completed') return;
+                                          setMaintTasksList(prev => prev.map((item, i) => i === idx ? { ...item, status: 'Completed', daysRemaining: 'Completed' } : item));
+                                          triggerToast('Maintenance Completed', `Task "${task.task}" marked as completed.`);
+                                          setMaintMenuIndex(null);
+                                        }}
+                                        className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left w-full cursor-pointer ${task.status === 'Completed' ? 'text-slate-400 opacity-60 cursor-not-allowed' : 'text-emerald-600 hover:bg-emerald-50'}`}
+                                      >
+                                        ✅ Mark as Completed
+                                      </button>
+                                      <button
+                                        onClick={() => { triggerToast('Service Rescheduled', `Reschedule requested for "${task.task}"`); setMaintMenuIndex(null); }}
+                                        className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
+                                      >
+                                        📅 Reschedule Service
+                                      </button>
+                                      <div className="h-px bg-slate-100 my-1" />
+                                      <button
+                                        disabled={task.status === 'Completed'}
+                                        onClick={() => {
+                                          if (task.status === 'Completed') return;
+                                          setMaintTasksList(prev => prev.filter((_, i) => i !== idx));
+                                          triggerToast('Task Cancelled', `Maintenance task "${task.task}" cancelled.`);
+                                          setMaintMenuIndex(null);
+                                        }}
+                                        className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left w-full cursor-pointer ${task.status === 'Completed' ? 'text-slate-400 opacity-60 cursor-not-allowed' : 'text-rose-600 hover:bg-rose-50'}`}
+                                      >
+                                        ❌ Cancel Task
+                                      </button>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
                             </div>
                           </td>
                         </tr>
@@ -2056,7 +2192,7 @@ export default function AssetDetails({ assetData, onBack }) {
                       </tr>
                     </thead>
                     <tbody>
-                      {assetDocuments.map((doc, idx) => (
+                      {documentsList.map((doc, idx) => (
                         <tr key={idx} className="border-b border-slate-50 hover:bg-slate-50/80 transition-colors">
                           <td className="px-5 py-3.5 whitespace-nowrap">
                             <div className="flex items-start gap-3">
@@ -2089,11 +2225,73 @@ export default function AssetDetails({ assetData, onBack }) {
                             <h4 className="text-[11px] font-bold text-slate-800">{doc.uploader}</h4>
                             <p className="text-[10px] font-medium text-slate-500 mt-0.5">{doc.uploadDate}</p>
                           </td>
-                          <td className="px-5 py-3.5 whitespace-nowrap">
-                            <div className="flex items-center justify-center gap-2">
-                              <button className="text-slate-400 hover:text-slate-600 transition-colors p-1"><Eye size={14} /></button>
-                              <button className="text-slate-400 hover:text-slate-600 transition-colors p-1"><Download size={14} /></button>
-                              <button className="text-slate-400 hover:text-slate-600 transition-colors p-1"><MoreHorizontal size={14} /></button>
+                          <td className="px-5 py-3.5 whitespace-nowrap relative">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                title="View Document Details"
+                                onClick={() => setViewDocModal(doc)}
+                                className="w-7 h-7 rounded-md bg-slate-100 text-slate-600 hover:bg-purple-100 hover:text-purple-700 flex items-center justify-center transition-colors cursor-pointer"
+                              >
+                                <Eye size={14} />
+                              </button>
+
+                              <button
+                                title="Download Document"
+                                onClick={() => triggerToast('Document Downloaded', `Downloading file ${doc.file}`)}
+                                className="w-7 h-7 rounded-md bg-slate-100 text-slate-600 hover:bg-purple-100 hover:text-purple-700 flex items-center justify-center transition-colors cursor-pointer"
+                              >
+                                <Download size={14} />
+                              </button>
+
+                              <div className="relative">
+                                <button
+                                  title="More Actions"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setDocMenuIndex(docMenuIndex === idx ? null : idx);
+                                  }}
+                                  className={`w-7 h-7 rounded-md ${docMenuIndex === idx ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600 hover:bg-purple-100 hover:text-purple-700'} flex items-center justify-center transition-colors cursor-pointer`}
+                                >
+                                  <MoreHorizontal size={14} />
+                                </button>
+
+                                {docMenuIndex === idx && (
+                                  <>
+                                    <div className="fixed inset-0 z-40" onClick={() => setDocMenuIndex(null)} />
+                                    <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-xl border border-slate-200 p-1.5 z-50 flex flex-col gap-0.5 text-xs font-semibold text-slate-700">
+                                      <button
+                                        onClick={() => { setViewDocModal(doc); setDocMenuIndex(null); }}
+                                        className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
+                                      >
+                                        👁️ View Details
+                                      </button>
+                                      <button
+                                        onClick={() => { triggerToast('Document Downloaded', `Downloading ${doc.file}`); setDocMenuIndex(null); }}
+                                        className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
+                                      >
+                                        📥 Download File
+                                      </button>
+                                      <button
+                                        onClick={() => { setEditDocModal({ ...doc, index: idx }); setDocMenuIndex(null); }}
+                                        className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
+                                      >
+                                        ✏️ Edit Details
+                                      </button>
+                                      <div className="h-px bg-slate-100 my-1" />
+                                      <button
+                                        onClick={() => {
+                                          setDocumentsList(prev => prev.filter((_, i) => i !== idx));
+                                          triggerToast('Document Deleted', `Document "${doc.name}" removed.`);
+                                          setDocMenuIndex(null);
+                                        }}
+                                        className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-rose-50 text-rose-600 text-left w-full cursor-pointer"
+                                      >
+                                        ❌ Delete Document
+                                      </button>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
                             </div>
                           </td>
                         </tr>
@@ -2436,49 +2634,111 @@ export default function AssetDetails({ assetData, onBack }) {
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full">
               
               {/* Filter Bar */}
-              <div className="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-white">
-                <div className="flex flex-wrap items-center gap-3">
+              <div className="p-3.5 border-b border-slate-100 flex items-center justify-between gap-2 bg-white overflow-x-auto custom-scrollbar">
+                <div className="flex items-center gap-2 flex-nowrap shrink-0">
                   <div className="relative">
                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input 
                       type="text" 
                       placeholder="Search costs..." 
-                      className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-xs font-semibold w-[200px] outline-none focus:border-purple-500"
+                      className="pl-9 pr-3 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold w-[160px] outline-none focus:border-purple-500"
                       value={costSearch}
                       onChange={(e) => setCostSearch(e.target.value)}
                     />
                   </div>
-                  <select className="px-3 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 outline-none bg-white min-w-[150px]">
+                  <select className="px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 outline-none bg-white min-w-[140px] whitespace-nowrap">
                     <option>All Cost Categories</option>
                     <option>Maintenance</option>
                     <option>Operating</option>
                   </select>
-                  <select className="px-3 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 outline-none bg-white min-w-[140px]">
+                  <select className="px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 outline-none bg-white min-w-[125px] whitespace-nowrap">
                     <option>All Cost Types</option>
                     <option>Fuel</option>
                     <option>Service</option>
                   </select>
-                  <button className="flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 bg-white">
-                    01 Jul 2024 - 30 Jun 2025 <Calendar size={12} />
+                  <div className="relative">
+                    <button
+                      onClick={() => setIsDatePopoverOpen(!isDatePopoverOpen)}
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 border rounded-lg text-xs font-bold transition-colors bg-white whitespace-nowrap cursor-pointer ${isDatePopoverOpen ? 'border-purple-600 text-purple-700 bg-purple-50' : 'border-slate-200 text-slate-700 hover:bg-slate-50'}`}
+                    >
+                      {costDateRange} <Calendar size={12} className="text-purple-600" />
+                    </button>
+
+                    {isDatePopoverOpen && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setIsDatePopoverOpen(false)} />
+                        <div className="absolute left-0 top-full mt-1 w-64 bg-white rounded-2xl shadow-2xl border border-slate-200 p-3 z-50 flex flex-col gap-2 text-xs font-semibold text-slate-700">
+                          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">SELECT DATE RANGE</div>
+                          <div className="flex flex-col gap-1">
+                            {[
+                              '01 Jul 2024 - 30 Jun 2025 (FY 24-25)',
+                              '01 Jul 2023 - 30 Jun 2024 (FY 23-24)',
+                              'Last 30 Days (22 Jun - 22 Jul 2026)',
+                              'Last 90 Days (22 Apr - 22 Jul 2026)',
+                              'Year to Date (YTD 2026)',
+                              'All Time'
+                            ].map((range) => {
+                              const cleanRange = range.split(' (')[0];
+                              const isSelected = costDateRange === cleanRange || costDateRange === range;
+                              return (
+                                <button
+                                  key={range}
+                                  onClick={() => {
+                                    setCostDateRange(cleanRange);
+                                    triggerToast('Date Range Filtered', `Displaying records for ${cleanRange}`);
+                                    setIsDatePopoverOpen(false);
+                                  }}
+                                  className={`flex items-center justify-between px-2.5 py-2 rounded-xl text-left font-bold transition-colors cursor-pointer ${isSelected ? 'bg-purple-100 text-purple-700' : 'hover:bg-slate-100 text-slate-700'}`}
+                                >
+                                  <span className="text-[11px]">{range}</span>
+                                  {isSelected && <span className="text-purple-600 font-bold">✓</span>}
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          <div className="h-px bg-slate-100 my-1" />
+                          
+                          {/* Custom date range input */}
+                          <div className="space-y-2 p-1">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">CUSTOM RANGE</span>
+                            <div className="grid grid-cols-2 gap-1.5">
+                              <input type="date" defaultValue="2024-07-01" className="px-2 py-1 border border-slate-200 rounded-lg text-[10px] outline-none font-semibold text-slate-700" />
+                              <input type="date" defaultValue="2025-06-30" className="px-2 py-1 border border-slate-200 rounded-lg text-[10px] outline-none font-semibold text-slate-700" />
+                            </div>
+                            <button
+                              onClick={() => {
+                                setCostDateRange('01 Jul 2024 - 30 Jun 2025');
+                                triggerToast('Custom Date Applied', 'Filtered by custom date range');
+                                setIsDatePopoverOpen(false);
+                              }}
+                              className="w-full py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-[11px] font-bold transition-all cursor-pointer text-center"
+                            >
+                              Apply Custom Range
+                            </button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <button className="flex items-center gap-1.5 px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 bg-white whitespace-nowrap cursor-pointer">
+                    <Filter size={12} /> Filters
                   </button>
                 </div>
                 
-                <div className="flex items-center gap-2">
-                  <button className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 bg-white">
-                    <Filter size={14} /> Filters
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button className="flex items-center gap-1.5 px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 bg-white whitespace-nowrap cursor-pointer">
+                    <Download size={12} /> Export
                   </button>
-                  <button className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 bg-white">
-                    <Download size={14} /> Export
-                  </button>
-                  <button className="p-2 border border-slate-200 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-50 bg-white">
-                    <RefreshCw size={14} />
+                  <button className="p-1.5 border border-slate-200 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-50 bg-white cursor-pointer">
+                    <RefreshCw size={12} />
                   </button>
                 </div>
               </div>
 
               {/* Table */}
               <div className="px-4 py-3 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
-                <span className="text-[10px] font-black text-slate-800 uppercase tracking-widest">COST & EXPENSES (11)</span>
+                <span className="text-[10px] font-black text-slate-800 uppercase tracking-widest">COST & EXPENSES ({costsList.length})</span>
               </div>
 
               <div className="overflow-x-auto">
@@ -2498,7 +2758,7 @@ export default function AssetDetails({ assetData, onBack }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {costsData.map((row, idx) => (
+                    {costsList.map((row, idx) => (
                       <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50 transition-colors group">
                         <td className="px-4 py-3 text-[11px] font-semibold text-slate-700 whitespace-nowrap">{row.date}</td>
                         <td className="px-4 py-3 text-[11px] whitespace-nowrap">
@@ -2513,10 +2773,66 @@ export default function AssetDetails({ assetData, onBack }) {
                         <td className="px-4 py-3 text-[11px] font-semibold text-slate-900 whitespace-nowrap">{row.amount}</td>
                         <td className="px-4 py-3 text-[11px] font-semibold text-slate-500 whitespace-nowrap">{row.tax}</td>
                         <td className="px-4 py-3 text-[11px] font-black text-slate-900 whitespace-nowrap">{row.total}</td>
-                        <td className="px-4 py-3 text-center whitespace-nowrap">
-                          <button className="p-1 rounded text-slate-400 hover:text-purple-600 hover:bg-purple-50 transition-colors">
-                            <MoreHorizontal size={14} />
-                          </button>
+                        <td className="px-4 py-3 text-center whitespace-nowrap relative">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              title="View Cost Details"
+                              onClick={() => setViewCostModal(row)}
+                              className="w-7 h-7 rounded-md bg-slate-100 text-slate-600 hover:bg-purple-100 hover:text-purple-700 flex items-center justify-center transition-colors cursor-pointer"
+                            >
+                              <Eye size={14} />
+                            </button>
+
+                            <div className="relative">
+                              <button
+                                title="More Actions"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setCostMenuIndex(costMenuIndex === idx ? null : idx);
+                                }}
+                                className={`w-7 h-7 rounded-md ${costMenuIndex === idx ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600 hover:bg-purple-100 hover:text-purple-700'} flex items-center justify-center transition-colors cursor-pointer`}
+                              >
+                                <MoreHorizontal size={14} />
+                              </button>
+
+                              {costMenuIndex === idx && (
+                                <>
+                                  <div className="fixed inset-0 z-40" onClick={() => setCostMenuIndex(null)} />
+                                  <div className="absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-xl border border-slate-200 p-1.5 z-50 flex flex-col gap-0.5 text-xs font-semibold text-slate-700">
+                                    <button
+                                      onClick={() => { setViewCostModal(row); setCostMenuIndex(null); }}
+                                      className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
+                                    >
+                                      👁️ View Details
+                                    </button>
+                                    <button
+                                      onClick={() => { triggerToast('Invoice Downloaded', `Downloading invoice ${row.ref}`); setCostMenuIndex(null); }}
+                                      className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
+                                    >
+                                      📄 Download Invoice
+                                    </button>
+                                    <button
+                                      onClick={() => { setEditCostModal({ ...row, index: idx }); setCostMenuIndex(null); }}
+                                      className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 text-left w-full cursor-pointer"
+                                    >
+                                      ✏️ Edit Record
+                                    </button>
+                                    <div className="h-px bg-slate-100 my-1" />
+                                    <button
+                                      onClick={() => {
+                                        setCostsList(prev => prev.filter((_, i) => i !== idx));
+                                        triggerToast('Cost Deleted', `Deleted cost record ${row.ref}`);
+                                        setCostMenuIndex(null);
+                                      }}
+                                      className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-rose-50 text-rose-600 text-left w-full cursor-pointer"
+                                    >
+                                      ❌ Delete Record
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -3310,6 +3626,728 @@ export default function AssetDetails({ assetData, onBack }) {
       )}
 
 
+
+      {/* VIEW ASSIGNMENT DETAILS MODAL */}
+      {viewAssignmentModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setViewAssignmentModal(null)} />
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative z-10 border border-slate-200">
+            <div className="flex justify-between items-start pb-4 border-b border-slate-100 mb-5">
+              <div>
+                <span className="text-[10px] font-black text-purple-700 bg-purple-50 border border-purple-200 px-2.5 py-1 rounded-md uppercase tracking-wider">{viewAssignmentModal.id}</span>
+                <h3 className="text-lg font-black text-slate-900 mt-2">Assignment Details</h3>
+              </div>
+              <button onClick={() => setViewAssignmentModal(null)} className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold text-sm cursor-pointer">✕</button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 mb-5">
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Assigned To</span>
+                <span className="text-xs font-bold text-slate-900">{viewAssignmentModal.assignedTo}</span>
+              </div>
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Status</span>
+                <span className={`text-xs font-bold ${viewAssignmentModal.status === 'Current' ? 'text-emerald-600' : 'text-blue-600'}`}>{viewAssignmentModal.status}</span>
+              </div>
+            </div>
+
+            <div className="space-y-3 bg-white p-4 rounded-xl border border-slate-200 text-xs mb-5">
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500 font-semibold">Branch & Location:</span>
+                <span className="font-bold text-slate-900 text-right whitespace-pre-line">{viewAssignmentModal.branchLocation}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500 font-semibold">Purpose:</span>
+                <span className="font-bold text-slate-900 text-right whitespace-pre-line">{viewAssignmentModal.purpose}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500 font-semibold">Assigned By:</span>
+                <span className="font-bold text-slate-900">{viewAssignmentModal.assignedBy}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500 font-semibold">From Date:</span>
+                <span className="font-bold text-slate-900 text-right whitespace-pre-line">{viewAssignmentModal.fromDate}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500 font-semibold">To Date:</span>
+                <span className="font-bold text-slate-900 text-right whitespace-pre-line">{viewAssignmentModal.toDate}</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-slate-500 font-semibold">Duration:</span>
+                <span className="font-bold text-slate-900 text-right whitespace-pre-line">{viewAssignmentModal.duration}</span>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-3 border-t border-slate-100">
+              <button onClick={() => setViewAssignmentModal(null)} className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all cursor-pointer">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* VIEW COST DETAILS MODAL */}
+      {viewCostModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setViewCostModal(null)} />
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative z-10 border border-slate-200">
+            <div className="flex justify-between items-start pb-4 border-b border-slate-100 mb-5">
+              <div>
+                <span className={`text-[10px] font-black px-2.5 py-1 rounded-md uppercase tracking-wider ${viewCostModal.color === 'purple' ? 'bg-purple-50 text-purple-700 border border-purple-200' : viewCostModal.color === 'emerald' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : viewCostModal.color === 'blue' ? 'bg-blue-50 text-blue-700 border border-blue-200' : viewCostModal.color === 'orange' ? 'bg-orange-50 text-orange-700 border border-orange-200' : 'bg-slate-100 text-slate-700 border border-slate-200'}`}>
+                  {viewCostModal.category}
+                </span>
+                <h3 className="text-lg font-black text-slate-900 mt-2">{viewCostModal.desc}</h3>
+                <p className="text-xs text-slate-500 font-semibold mt-0.5">Ref: {viewCostModal.ref}</p>
+              </div>
+              <button onClick={() => setViewCostModal(null)} className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold text-sm cursor-pointer">✕</button>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3 mb-5">
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Amount</span>
+                <span className="text-xs font-bold text-slate-900">{viewCostModal.amount}</span>
+              </div>
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Tax</span>
+                <span className="text-xs font-bold text-slate-500">{viewCostModal.tax}</span>
+              </div>
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Total</span>
+                <span className="text-xs font-black text-purple-700">{viewCostModal.total}</span>
+              </div>
+            </div>
+
+            <div className="space-y-3 bg-white p-4 rounded-xl border border-slate-200 text-xs mb-5">
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500 font-semibold">Date:</span>
+                <span className="font-bold text-slate-900">{viewCostModal.date}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500 font-semibold">Cost Type:</span>
+                <span className="font-bold text-slate-900">{viewCostModal.type}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500 font-semibold">Location / Branch:</span>
+                <span className="font-bold text-slate-900">{viewCostModal.loc}</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-slate-500 font-semibold">Invoice Ref:</span>
+                <span className="font-bold text-slate-900">{viewCostModal.ref}</span>
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center pt-3 border-t border-slate-100">
+              <button
+                onClick={() => { triggerToast('Invoice Downloaded', `Downloading invoice ${viewCostModal.ref}`); setViewCostModal(null); }}
+                className="px-4 py-2 bg-purple-50 text-purple-700 hover:bg-purple-100 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2"
+              >
+                📄 Download Invoice
+              </button>
+              <button onClick={() => setViewCostModal(null)} className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all cursor-pointer">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT ASSIGNMENT MODAL */}
+      {editAssignmentModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setEditAssignmentModal(null)} />
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative z-10 border border-slate-200">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-5">
+              <div>
+                <h3 className="text-lg font-black text-slate-900">Edit Assignment Details</h3>
+                <p className="text-xs text-slate-500 font-semibold mt-0.5">Ref: {editAssignmentModal.id}</p>
+              </div>
+              <button onClick={() => setEditAssignmentModal(null)} className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold text-sm cursor-pointer">✕</button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                setAssignmentsList(prev => prev.map((item, i) => i === editAssignmentModal.index ? editAssignmentModal : item));
+                triggerToast('Assignment Updated', `Saved changes for ${editAssignmentModal.id}`);
+                setEditAssignmentModal(null);
+              }}
+              className="space-y-4 text-xs font-semibold text-slate-700"
+            >
+              <div>
+                <label className="block text-slate-500 font-bold mb-1">Assigned To</label>
+                <input
+                  type="text"
+                  value={editAssignmentModal.assignedTo}
+                  onChange={(e) => setEditAssignmentModal({ ...editAssignmentModal, assignedTo: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Branch / Location</label>
+                  <input
+                    type="text"
+                    value={editAssignmentModal.branchLocation}
+                    onChange={(e) => setEditAssignmentModal({ ...editAssignmentModal, branchLocation: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Status</label>
+                  <select
+                    value={editAssignmentModal.status}
+                    onChange={(e) => setEditAssignmentModal({ ...editAssignmentModal, status: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900 bg-white"
+                  >
+                    <option>Current</option>
+                    <option>Completed</option>
+                    <option>Pending</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-500 font-bold mb-1">Purpose</label>
+                <input
+                  type="text"
+                  value={editAssignmentModal.purpose}
+                  onChange={(e) => setEditAssignmentModal({ ...editAssignmentModal, purpose: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setEditAssignmentModal(null)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md shadow-purple-600/20"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT MAINTENANCE TASK MODAL */}
+      {editMaintTaskModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setEditMaintTaskModal(null)} />
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative z-10 border border-slate-200">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-5">
+              <div>
+                <h3 className="text-lg font-black text-slate-900">Edit Maintenance Task</h3>
+                <p className="text-xs text-slate-500 font-semibold mt-0.5">{editMaintTaskModal.task}</p>
+              </div>
+              <button onClick={() => setEditMaintTaskModal(null)} className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold text-sm cursor-pointer">✕</button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                setMaintTasksList(prev => prev.map((item, i) => i === editMaintTaskModal.index ? editMaintTaskModal : item));
+                triggerToast('Task Updated', `Updated maintenance task "${editMaintTaskModal.task}"`);
+                setEditMaintTaskModal(null);
+              }}
+              className="space-y-4 text-xs font-semibold text-slate-700"
+            >
+              <div>
+                <label className="block text-slate-500 font-bold mb-1">Task Title</label>
+                <input
+                  type="text"
+                  value={editMaintTaskModal.task}
+                  onChange={(e) => setEditMaintTaskModal({ ...editMaintTaskModal, task: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Type</label>
+                  <select
+                    value={editMaintTaskModal.type}
+                    onChange={(e) => setEditMaintTaskModal({ ...editMaintTaskModal, type: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900 bg-white"
+                  >
+                    <option>Service</option>
+                    <option>Inspection</option>
+                    <option>Repair</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Priority</label>
+                  <select
+                    value={editMaintTaskModal.priority}
+                    onChange={(e) => setEditMaintTaskModal({ ...editMaintTaskModal, priority: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900 bg-white"
+                  >
+                    <option>High</option>
+                    <option>Medium</option>
+                    <option>Low</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Frequency</label>
+                  <input
+                    type="text"
+                    value={editMaintTaskModal.freq}
+                    onChange={(e) => setEditMaintTaskModal({ ...editMaintTaskModal, freq: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Assigned To</label>
+                  <input
+                    type="text"
+                    value={editMaintTaskModal.assigned}
+                    onChange={(e) => setEditMaintTaskModal({ ...editMaintTaskModal, assigned: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-500 font-bold mb-1">Status</label>
+                <select
+                  value={editMaintTaskModal.status}
+                  onChange={(e) => setEditMaintTaskModal({ ...editMaintTaskModal, status: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900 bg-white"
+                >
+                  <option>Due Soon</option>
+                  <option>Scheduled</option>
+                  <option>Completed</option>
+                  <option>Overdue</option>
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setEditMaintTaskModal(null)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md shadow-purple-600/20"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT COST RECORD MODAL */}
+      {editCostModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setEditCostModal(null)} />
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative z-10 border border-slate-200">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-5">
+              <div>
+                <h3 className="text-lg font-black text-slate-900">Edit Cost / Expense Record</h3>
+                <p className="text-xs text-slate-500 font-semibold mt-0.5">Invoice Ref: {editCostModal.ref}</p>
+              </div>
+              <button onClick={() => setEditCostModal(null)} className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold text-sm cursor-pointer">✕</button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                setCostsList(prev => prev.map((item, i) => i === editCostModal.index ? editCostModal : item));
+                triggerToast('Expense Updated', `Updated cost record ${editCostModal.ref}`);
+                setEditCostModal(null);
+              }}
+              className="space-y-4 text-xs font-semibold text-slate-700"
+            >
+              <div>
+                <label className="block text-slate-500 font-bold mb-1">Description</label>
+                <input
+                  type="text"
+                  value={editCostModal.desc}
+                  onChange={(e) => setEditCostModal({ ...editCostModal, desc: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Category</label>
+                  <select
+                    value={editCostModal.category}
+                    onChange={(e) => setEditCostModal({ ...editCostModal, category: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900 bg-white"
+                  >
+                    <option>Maintenance</option>
+                    <option>Operating</option>
+                    <option>Insurance</option>
+                    <option>Registration</option>
+                    <option>Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Cost Type</label>
+                  <input
+                    type="text"
+                    value={editCostModal.type}
+                    onChange={(e) => setEditCostModal({ ...editCostModal, type: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Amount (AUD)</label>
+                  <input
+                    type="text"
+                    value={editCostModal.amount}
+                    onChange={(e) => setEditCostModal({ ...editCostModal, amount: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Total (AUD)</label>
+                  <input
+                    type="text"
+                    value={editCostModal.total}
+                    onChange={(e) => setEditCostModal({ ...editCostModal, total: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Invoice Ref</label>
+                  <input
+                    type="text"
+                    value={editCostModal.ref}
+                    onChange={(e) => setEditCostModal({ ...editCostModal, ref: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Branch / Location</label>
+                  <input
+                    type="text"
+                    value={editCostModal.loc}
+                    onChange={(e) => setEditCostModal({ ...editCostModal, loc: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setEditCostModal(null)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md shadow-purple-600/20"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT DOCUMENT DETAILS MODAL */}
+      {editDocModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setEditDocModal(null)} />
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative z-10 border border-slate-200">
+            <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-5">
+              <div>
+                <h3 className="text-lg font-black text-slate-900">Edit Document Details</h3>
+                <p className="text-xs text-slate-500 font-semibold mt-0.5">Update metadata for {editDocModal.file}</p>
+              </div>
+              <button onClick={() => setEditDocModal(null)} className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold text-sm cursor-pointer">✕</button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                setDocumentsList(prev => prev.map((item, i) => i === editDocModal.index ? editDocModal : item));
+                triggerToast('Document Updated', `Saved changes for "${editDocModal.name}"`);
+                setEditDocModal(null);
+              }}
+              className="space-y-4 text-xs font-semibold text-slate-700"
+            >
+              <div>
+                <label className="block text-slate-500 font-bold mb-1">Document Name</label>
+                <input
+                  type="text"
+                  value={editDocModal.name}
+                  onChange={(e) => setEditDocModal({ ...editDocModal, name: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Category</label>
+                  <select
+                    value={editDocModal.category}
+                    onChange={(e) => setEditDocModal({ ...editDocModal, category: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900 bg-white"
+                  >
+                    <option>Registration</option>
+                    <option>Maintenance</option>
+                    <option>Inspection</option>
+                    <option>Licence</option>
+                    <option>Insurance</option>
+                    <option>Compliance</option>
+                    <option>Warranty</option>
+                    <option>Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Document Type</label>
+                  <input
+                    type="text"
+                    value={editDocModal.type}
+                    onChange={(e) => setEditDocModal({ ...editDocModal, type: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Issue Date</label>
+                  <input
+                    type="text"
+                    value={editDocModal.issueDate}
+                    onChange={(e) => setEditDocModal({ ...editDocModal, issueDate: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Expiry Date</label>
+                  <input
+                    type="text"
+                    value={editDocModal.expiryDate}
+                    onChange={(e) => setEditDocModal({ ...editDocModal, expiryDate: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Status</label>
+                  <select
+                    value={editDocModal.status}
+                    onChange={(e) => setEditDocModal({ ...editDocModal, status: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900 bg-white"
+                  >
+                    <option>Active</option>
+                    <option>Expired</option>
+                    <option>Inactive</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Expiry Status</label>
+                  <select
+                    value={editDocModal.expiryStatus}
+                    onChange={(e) => setEditDocModal({ ...editDocModal, expiryStatus: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900 bg-white"
+                  >
+                    <option>Compliant</option>
+                    <option>Expiring Soon</option>
+                    <option>Expired</option>
+                    <option>Not Required</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-500 font-bold mb-1">Uploaded By</label>
+                <input
+                  type="text"
+                  value={editDocModal.uploader}
+                  onChange={(e) => setEditDocModal({ ...editDocModal, uploader: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setEditDocModal(null)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md shadow-purple-600/20"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* VIEW DOCUMENT DETAILS MODAL */}
+      {viewDocModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setViewDocModal(null)} />
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative z-10 border border-slate-200">
+            <div className="flex justify-between items-start pb-4 border-b border-slate-100 mb-5">
+              <div>
+                <span className="text-[10px] font-black text-purple-700 bg-purple-50 border border-purple-200 px-2.5 py-1 rounded-md uppercase tracking-wider">{viewDocModal.category}</span>
+                <h3 className="text-lg font-black text-slate-900 mt-2">{viewDocModal.name}</h3>
+                <p className="text-xs text-slate-500 font-semibold mt-0.5">📄 {viewDocModal.file}</p>
+              </div>
+              <button onClick={() => setViewDocModal(null)} className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold text-sm cursor-pointer">✕</button>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3 mb-5">
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Status</span>
+                <span className={`text-xs font-bold ${viewDocModal.status === 'Active' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                  {viewDocModal.status}
+                </span>
+              </div>
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Expiry Status</span>
+                <span className={`text-xs font-bold ${viewDocModal.expiryStatus === 'Compliant' ? 'text-emerald-600' : viewDocModal.expiryStatus === 'Expiring Soon' ? 'text-amber-600' : 'text-rose-600'}`}>
+                  {viewDocModal.expiryStatus}
+                </span>
+              </div>
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Doc Type</span>
+                <span className="text-xs font-bold text-slate-900">{viewDocModal.type}</span>
+              </div>
+            </div>
+
+            <div className="space-y-3 bg-white p-4 rounded-xl border border-slate-200 text-xs mb-5">
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500 font-semibold">Issue Date:</span>
+                <span className="font-bold text-slate-900">{viewDocModal.issueDate}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500 font-semibold">Expiry Date:</span>
+                <span className="font-bold text-slate-900">{viewDocModal.expiryDate}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500 font-semibold">Uploaded By:</span>
+                <span className="font-bold text-slate-900">{viewDocModal.uploader}</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-slate-500 font-semibold">Upload Date:</span>
+                <span className="font-bold text-slate-900">{viewDocModal.uploadDate}</span>
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center pt-3 border-t border-slate-100">
+              <button
+                onClick={() => { triggerToast('Document Downloaded', `Downloading file ${viewDocModal.file}`); setViewDocModal(null); }}
+                className="px-4 py-2 bg-purple-50 text-purple-700 hover:bg-purple-100 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2"
+              >
+                📥 Download File
+              </button>
+              <button onClick={() => setViewDocModal(null)} className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all cursor-pointer">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* VIEW MAINTENANCE TASK DETAILS MODAL */}
+      {viewMaintTaskModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setViewMaintTaskModal(null)} />
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative z-10 border border-slate-200">
+            <div className="flex justify-between items-start pb-4 border-b border-slate-100 mb-5">
+              <div>
+                <span className={`text-[10px] font-black px-2.5 py-1 rounded-md uppercase tracking-wider ${viewMaintTaskModal.type === 'Service' ? 'bg-purple-50 text-purple-700 border border-purple-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
+                  {viewMaintTaskModal.type}
+                </span>
+                <h3 className="text-lg font-black text-slate-900 mt-2">{viewMaintTaskModal.task}</h3>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">{viewMaintTaskModal.desc}</p>
+              </div>
+              <button onClick={() => setViewMaintTaskModal(null)} className="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold text-sm cursor-pointer">✕</button>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3 mb-5">
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Priority</span>
+                <span className={`text-xs font-bold ${viewMaintTaskModal.priority === 'High' ? 'text-rose-600' : viewMaintTaskModal.priority === 'Medium' ? 'text-amber-600' : 'text-emerald-600'}`}>
+                  {viewMaintTaskModal.priority}
+                </span>
+              </div>
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Status</span>
+                <span className={`text-xs font-bold ${viewMaintTaskModal.status === 'Due Soon' ? 'text-amber-600' : viewMaintTaskModal.status === 'Scheduled' ? 'text-blue-600' : 'text-emerald-600'}`}>
+                  {viewMaintTaskModal.status}
+                </span>
+              </div>
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Frequency</span>
+                <span className="text-xs font-bold text-slate-900">{viewMaintTaskModal.freq}</span>
+              </div>
+            </div>
+
+            <div className="space-y-3 bg-white p-4 rounded-xl border border-slate-200 text-xs mb-5">
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500 font-semibold">Last Performed:</span>
+                <span className="font-bold text-slate-900">{viewMaintTaskModal.lastDate} {viewMaintTaskModal.lastHrs ? `(@ ${viewMaintTaskModal.lastHrs})` : ''}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500 font-semibold">Next Due Date:</span>
+                <span className="font-bold text-slate-900">{viewMaintTaskModal.nextDate} {viewMaintTaskModal.nextHrs ? `(@ ${viewMaintTaskModal.nextHrs})` : ''}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500 font-semibold">Days Remaining:</span>
+                <span className="font-bold text-amber-600">{viewMaintTaskModal.daysRemaining}</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-slate-500 font-semibold">Assigned To:</span>
+                <span className="font-bold text-slate-900">{viewMaintTaskModal.assigned} {viewMaintTaskModal.role ? `(${viewMaintTaskModal.role})` : ''}</span>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-3 border-t border-slate-100">
+              <button onClick={() => setViewMaintTaskModal(null)} className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all cursor-pointer">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TOAST BANNER */}
+      {showToast && (
+        <div className="fixed bottom-6 right-6 z-[10000] bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-3 animate-bounce">
+          <div className="w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm">✓</div>
+          <div>
+            <div className="text-xs font-black text-white">{toastMessage.title}</div>
+            <div className="text-[11px] font-semibold text-slate-300">{toastMessage.desc}</div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

@@ -86,31 +86,32 @@ export default function FollowUps() {
   // Handle add task form submit
   const handleAddSubmit = (e) => {
     e.preventDefault();
-    if (!modalForm.leadId) return;
+    if (!modalForm.notes || !modalForm.notes.trim()) return;
 
     const lead = leads.find(l => l.id === modalForm.leadId);
-    if (!lead) return;
+    const companyName = lead ? lead.company : 'General Task';
+    const contactName = lead ? lead.name : 'Sales Team';
 
     crmStore.updateDb((db) => {
       if (!db.crmFollowups) db.crmFollowups = [];
       db.crmFollowups.unshift({
         id: `followup_manual_${Date.now()}`,
-        leadId: modalForm.leadId,
-        company: lead.company,
-        contact: lead.name,
-        type: modalForm.type,
-        priority: modalForm.priority,
-        dueDate: modalForm.dueDate,
-        dueTime: modalForm.dueTime,
+        leadId: modalForm.leadId || (lead ? lead.id : 'GENERAL'),
+        company: companyName,
+        contact: contactName,
+        type: modalForm.type || 'Call',
+        priority: modalForm.priority || 'Medium',
+        dueDate: modalForm.dueDate || new Date().toISOString().split('T')[0],
+        dueTime: modalForm.dueTime || '10:00 AM',
         status: 'Pending',
-        notes: modalForm.notes || `Touchpoint checklist regarding pain points: ${lead.painPoints || 'N/A'}.`
+        notes: modalForm.notes.trim()
       });
     });
 
-    setToast({ text: `Follow-up task logged for ${lead.company}.` });
+    setToast({ text: `Follow-up task logged successfully.` });
     setShowAddModal(false);
     setModalForm({
-      leadId: leads[0]?.id || '',
+      leadId: '',
       type: 'Call',
       priority: 'Medium',
       dueDate: new Date().toISOString().split('T')[0],
@@ -180,22 +181,42 @@ export default function FollowUps() {
               Track pending calls, touchpoint emails, and administrative check-ins.
             </p>
           </div>
-          <button
-            onClick={() => {
-              setModalForm({
-                leadId: leads[0]?.id || '',
-                type: 'Call',
-                priority: 'Medium',
-                dueDate: new Date().toISOString().split('T')[0],
-                dueTime: '10:00 AM',
-                notes: ''
-              });
-              setShowAddModal(true);
-            }}
-            className="flex items-center gap-1.5 text-[#D97706] hover:text-[#B45309] font-extrabold text-[10px] bg-white border border-[#FDE68A] hover:bg-[#FFFBEB] px-3.5 py-2 rounded-xl transition-colors shrink-0 whitespace-nowrap shadow-xs"
-          >
-            <Plus className="w-3.5 h-3.5 shrink-0 stroke-[3px]" /> Log Touchpoint Task
-          </button>
+
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Filter Tabs */}
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+              {filters.map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setActiveFilter(f)}
+                  className={`px-3 py-1 rounded-lg text-[10px] font-extrabold uppercase transition-all cursor-pointer ${
+                    activeFilter === f
+                      ? 'bg-white text-slate-900 shadow-xs'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => {
+                setModalForm({
+                  leadId: '',
+                  type: 'Call',
+                  priority: 'Medium',
+                  dueDate: new Date().toISOString().split('T')[0],
+                  dueTime: '10:00 AM',
+                  notes: ''
+                });
+                setShowAddModal(true);
+              }}
+              className="flex items-center gap-1.5 text-[#D97706] hover:text-[#B45309] font-extrabold text-[10px] bg-white border border-[#FDE68A] hover:bg-[#FFFBEB] px-3.5 py-2 rounded-xl transition-colors shrink-0 whitespace-nowrap shadow-xs cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5 shrink-0 stroke-[3px]" /> Log Touchpoint Task
+            </button>
+          </div>
         </div>
 
         {/* Follow-Up Items List */}
@@ -222,6 +243,15 @@ export default function FollowUps() {
                     <span className="text-[9px] text-slate-600 bg-slate-50 border border-slate-100 px-2.5 py-0.5 rounded font-mono font-bold tracking-wide">
                       {f.dueDate} • {f.dueTime}
                     </span>
+                    {f.priority && (
+                      <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border ${
+                        f.priority === 'High' ? 'bg-rose-50 text-rose-600 border-rose-200' :
+                        f.priority === 'Low' ? 'bg-slate-50 text-slate-600 border-slate-200' :
+                        'bg-amber-50 text-amber-700 border-amber-200'
+                      }`}>
+                        {f.priority}
+                      </span>
+                    )}
                   </div>
                   <p className="text-[11px] text-slate-500 font-semibold leading-normal">
                     Contact: <span className="text-slate-700">{f.contact}</span> • Task: {f.notes}
@@ -230,9 +260,35 @@ export default function FollowUps() {
 
                 {/* Status Badge + Action */}
                 <div className="flex flex-col items-end gap-2 shrink-0">
-                  <span className="px-2.5 py-1 rounded-md text-[8px] font-black uppercase tracking-widest text-emerald-500 bg-emerald-50 border border-emerald-100/50 leading-none">
-                    COMPLETED
-                  </span>
+                  {f.status === 'Completed' ? (
+                    <span className="px-2.5 py-1 rounded-md text-[8px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 border border-emerald-200 leading-none">
+                      COMPLETED
+                    </span>
+                  ) : f.status === 'Missed' ? (
+                    <div className="flex flex-col items-end gap-1.5">
+                      <span className="px-2.5 py-1 rounded-md text-[8px] font-black uppercase tracking-widest text-rose-600 bg-rose-50 border border-rose-200 leading-none">
+                        MISSED
+                      </span>
+                      <button
+                        onClick={() => handleMarkCompleted(f.id)}
+                        className="flex items-center gap-1 text-[9px] font-extrabold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2 py-1 rounded-lg transition-colors cursor-pointer"
+                      >
+                        <Check className="w-3 h-3 stroke-[3px]" /> Mark Done
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-end gap-1.5">
+                      <span className="px-2.5 py-1 rounded-md text-[8px] font-black uppercase tracking-widest text-amber-700 bg-amber-50 border border-amber-200 leading-none">
+                        PENDING
+                      </span>
+                      <button
+                        onClick={() => handleMarkCompleted(f.id)}
+                        className="flex items-center gap-1 text-[9px] font-extrabold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded-lg transition-colors cursor-pointer shadow-3xs active:scale-95"
+                      >
+                        <Check className="w-3 h-3 stroke-[3px]" /> Mark Done
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -253,7 +309,7 @@ export default function FollowUps() {
             {/* Header */}
             <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
               <h2 className="text-[17px] font-bold text-slate-900">Create New Task</h2>
-              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -274,6 +330,21 @@ export default function FollowUps() {
                 />
               </div>
 
+              {/* Associate Lead (Optional) */}
+              <div className="space-y-2">
+                <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">ASSOCIATE WITH LEAD (OPTIONAL)</label>
+                <select
+                  value={modalForm.leadId}
+                  onChange={(e) => setModalForm({ ...modalForm, leadId: e.target.value })}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 transition-colors bg-white appearance-auto cursor-pointer"
+                >
+                  <option value="">-- General / No Specific Lead --</option>
+                  {leads.map(l => (
+                    <option key={l.id} value={l.id}>{l.company} ({l.name})</option>
+                  ))}
+                </select>
+              </div>
+
               {/* 3 Columns */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {/* Task Type */}
@@ -282,7 +353,7 @@ export default function FollowUps() {
                   <select
                     value={modalForm.type}
                     onChange={(e) => setModalForm({ ...modalForm, type: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 transition-colors bg-white appearance-auto"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 transition-colors bg-white appearance-auto cursor-pointer"
                   >
                     <option value="Call">Phone Call</option>
                     <option value="Meeting">Meeting</option>
@@ -301,7 +372,7 @@ export default function FollowUps() {
                     required
                     value={modalForm.dueDate}
                     onChange={(e) => setModalForm({ ...modalForm, dueDate: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-colors"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-colors cursor-pointer"
                   />
                 </div>
 
@@ -311,7 +382,7 @@ export default function FollowUps() {
                   <select
                     value={modalForm.priority}
                     onChange={(e) => setModalForm({ ...modalForm, priority: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 transition-colors bg-white appearance-auto"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 transition-colors bg-white appearance-auto cursor-pointer"
                   >
                     <option value="High">High</option>
                     <option value="Medium">Medium</option>
@@ -322,7 +393,7 @@ export default function FollowUps() {
 
               <button
                 type="submit"
-                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all mt-2"
+                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all mt-2 cursor-pointer active:scale-95"
               >
                 Create Task checklist
               </button>

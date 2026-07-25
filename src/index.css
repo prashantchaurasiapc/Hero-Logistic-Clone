@@ -717,3 +717,89 @@ table {
   -ms-overflow-style: none !important;  /* IE and Edge */
   scrollbar-width: none !important;  /* Firefox */
 }
+
+/* ============================================================
+   OFFICIAL PRINT STYLES FOR PAYSLIPS, GROUP CERTIFICATES & REPORTS
+   ============================================================ */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm 15mm 10mm 15mm;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-family: 'Inter', sans-serif !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide app navigation, headers, footers, sidebars, buttons, toast */
+  header,
+  aside,
+  nav,
+  footer,
+  .print\:hidden,
+  button,
+  .toast,
+  [role="tooltip"] {
+    display: none !important;
+  }
+
+  /* Hide background content behind fixed modals */
+  #root > div > *:not(.fixed) {
+    display: none !important;
+  }
+
+  /* Transform fixed modal container to normal printable page */
+  .fixed.inset-0 {
+    position: relative !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    background: #ffffff !important;
+    backdrop-filter: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    z-index: 999999 !important;
+    display: block !important;
+  }
+
+  /* Printable document container */
+  .printable-document {
+    position: relative !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    border-radius: 0 !important;
+  }
+
+  /* Unclip any scrollable child containers */
+  .printable-document div {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    page-break-inside: avoid !important;
+  }
+
+  th, td {
+    border-color: #cbd5e1 !important;
+  }
+}
+

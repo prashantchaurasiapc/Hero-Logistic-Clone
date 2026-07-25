@@ -104,6 +104,24 @@ function LoadDetail({ load, onBack }) {
 
   const handleEditStop = (stop) => {
     setEditingStop(stop);
+    setStopForm({
+      type: stop.type || 'PICKUP',
+      address: stop.address?.replace('\n', ' ') || '',
+      date: stop.date?.split('/').reverse().join('-') || '',
+      time: stop.time ? (() => {
+        const t = stop.time.trim();
+        if (!t) return '';
+        const isPM = t.toUpperCase().includes('PM');
+        let [hourStr, minStr] = t.replace(/AM|PM/i, '').trim().split(':');
+        let hour = parseInt(hourStr, 10);
+        if (isPM && hour < 12) hour += 12;
+        if (!isPM && hour === 12) hour = 0;
+        return `${hour.toString().padStart(2, '0')}:${minStr}`;
+      })() : '',
+      contactName: stop.contactName || '',
+      contactPhone: stop.contactPhone || '',
+      instructions: stop.instructions || ''
+    });
     setShowStopModal(true);
     setActionMenuId(null);
   };
@@ -112,11 +130,28 @@ function LoadDetail({ load, onBack }) {
     setStopsList(stopsList.filter(s => s.id !== id));
     setActionMenuId(null);
   };
+
+  const [stopForm, setStopForm] = useState({
+    type: 'PICKUP', address: '', date: '', time: '', contactName: '', contactPhone: '', instructions: ''
+  });
+
   
   const handleMarkCompleted = (id) => {
     setStopsList(stopsList.map(s => s.id === id ? { ...s, completed: true } : s));
     setActionMenuId(null);
   };
+
+  const [expensesList, setExpensesList] = useState([
+    { id: 'EXP-101', date: '15/07/2025', type: 'Fuel', desc: 'BP Service Station - Seymour', amount: '$125.50', status: 'Approved', color: 'bg-emerald-50 text-emerald-700' },
+    { id: 'EXP-102', date: '15/07/2025', type: 'Toll', desc: 'CityLink Pass', amount: '$18.20', status: 'Pending', color: 'bg-amber-50 text-amber-700' },
+    { id: 'EXP-103', date: '16/07/2025', type: 'Meals', desc: 'Driver Allowance', amount: '$35.00', status: 'Approved', color: 'bg-emerald-50 text-emerald-700' },
+  ]);
+
+  const [documentsList, setDocumentsList] = useState([
+    { name: 'Bill of Lading (BOL)', date: '14/07/2025', size: '1.2 MB' },
+    { name: 'Consignment Note', date: '14/07/2025', size: '845 KB' },
+    { name: 'Weighbridge Ticket', date: '15/07/2025', size: '420 KB' },
+  ]);
 
   const tabs = ['Overview', 'Stops (4)', 'Items (1)', 'Driver & Vehicle', 'Expenses', 'Documents', 'Proof Photos', 'POD', 'Invoices', 'Activity'];
 
@@ -627,7 +662,14 @@ function LoadDetail({ load, onBack }) {
                   { icon: <FileText className="w-5 h-5 text-slate-500" />, label: 'Document' },
                   { icon: <Shield className="w-5 h-5 text-slate-500" />, label: 'Report' },
                 ].map((item, i) => (
-                  <button key={i} className="flex flex-col items-center gap-1.5 text-slate-500 hover:text-indigo-600 transition-colors flex-1">
+                  <button 
+                    key={i} 
+                    className="flex flex-col items-center gap-1.5 text-slate-500 hover:text-indigo-600 transition-colors flex-1"
+                    onClick={() => {
+                      if (item.label === 'Expense') setShowExpenseModal(true);
+                      else if (item.label === 'Document') setShowDocumentModal(true);
+                    }}
+                  >
                     {item.icon}
                     <span className="text-[11px] font-bold text-slate-600">{item.label}</span>
                   </button>
@@ -657,7 +699,11 @@ function LoadDetail({ load, onBack }) {
                 </div>
               </div>
               <button 
-                onClick={() => { setEditingStop(null); setShowStopModal(true); }}
+                onClick={() => { 
+                  setEditingStop(null); 
+                  setStopForm({ type: 'PICKUP', address: '', date: '', time: '', contactName: '', contactPhone: '', instructions: '' });
+                  setShowStopModal(true); 
+                }}
                 className="flex items-center gap-1.5 px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors uppercase tracking-wider"
               >
                 <Plus className="w-3.5 h-3.5" /> Add Stop
@@ -928,11 +974,7 @@ function LoadDetail({ load, onBack }) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {[
-                    { id: 'EXP-101', date: '15/07/2025', type: 'Fuel', desc: 'BP Service Station - Seymour', amount: '$125.50', status: 'Approved', color: 'bg-emerald-50 text-emerald-700' },
-                    { id: 'EXP-102', date: '15/07/2025', type: 'Toll', desc: 'CityLink Pass', amount: '$18.20', status: 'Pending', color: 'bg-amber-50 text-amber-700' },
-                    { id: 'EXP-103', date: '16/07/2025', type: 'Meals', desc: 'Driver Allowance', amount: '$35.00', status: 'Approved', color: 'bg-emerald-50 text-emerald-700' },
-                  ].map((exp) => (
+                  {expensesList.map((exp) => (
                     <tr key={exp.id} className="hover:bg-slate-50/50">
                       <td className="px-4 py-4 text-xs font-bold text-slate-600">{exp.date}</td>
                       <td className="px-4 py-4"><span className="px-2 py-1 rounded bg-slate-100 text-slate-700 text-[10px] font-black uppercase tracking-wider">{exp.type}</span></td>
@@ -972,11 +1014,7 @@ function LoadDetail({ load, onBack }) {
               </button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {[
-                { name: 'Bill of Lading (BOL)', date: '14/07/2025', size: '1.2 MB' },
-                { name: 'Consignment Note', date: '14/07/2025', size: '845 KB' },
-                { name: 'Weighbridge Ticket', date: '15/07/2025', size: '420 KB' },
-              ].map((doc, i) => (
+              {documentsList.map((doc, i) => (
                 <div key={i} className="p-4 border border-slate-200 rounded-xl flex flex-col justify-between hover:shadow-md transition-shadow group">
                   <div className="flex items-start gap-3 mb-4">
                     <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center text-red-500 shrink-0">
@@ -1309,56 +1347,87 @@ function LoadDetail({ load, onBack }) {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Stop Type</label>
-                <select defaultValue={editingStop?.type || 'PICKUP'} className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500">
-                  <option>PICKUP</option>
-                  <option>DROP-OFF</option>
-                  <option>REST STOP</option>
-                  <option>WEIGH STATION</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Address / Location</label>
-                <input type="text" defaultValue={editingStop?.address?.replace('\n', ' ') || ''} placeholder="Enter full stop address or location name..." className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              
+              const timeVal = stopForm.time;
+              let hour = timeVal ? parseInt(timeVal.split(':')[0], 10) : 0;
+              const isPM = hour >= 12;
+              const formattedTime = timeVal ? `${(hour % 12) || 12}:${timeVal.split(':')[1]} ${isPM ? 'PM' : 'AM'}` : '';
+
+              const newStopData = {
+                type: stopForm.type,
+                address: stopForm.address,
+                date: stopForm.date?.split('-').reverse().join('/') || '',
+                time: formattedTime,
+                contactName: stopForm.contactName,
+                contactPhone: stopForm.contactPhone,
+                instructions: stopForm.instructions
+              };
+              
+              if (editingStop) {
+                setStopsList(prev => prev.map(s => s.id === editingStop.id ? { ...s, ...newStopData } : s));
+              } else {
+                setStopsList(prev => [...prev, {
+                  id: prev.length ? Math.max(...prev.map(s=>s.id)) + 1 : 1,
+                  ...newStopData,
+                  completed: false
+                }]);
+              }
+              setShowStopModal(false);
+            }}>
+              <div className="p-6 space-y-4">
                 <div>
-                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Scheduled Date</label>
-                  <input type="date" defaultValue={editingStop?.date?.split('/').reverse().join('-') || ''} className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500" />
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Stop Type</label>
+                  <select value={stopForm.type} onChange={e => setStopForm({...stopForm, type: e.target.value})} className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500">
+                    <option>PICKUP</option>
+                    <option>DROP-OFF</option>
+                    <option>REST STOP</option>
+                    <option>WEIGH STATION</option>
+                  </select>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Scheduled Time</label>
-                  <input type="time" defaultValue={editingStop?.time?.replace(' AM', '')?.replace(' PM', '') || ''} className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500" />
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Address / Location</label>
+                  <input value={stopForm.address} onChange={e => setStopForm({...stopForm, address: e.target.value})} type="text" required placeholder="Enter full stop address or location name..." className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500" />
                 </div>
-              </div>
-              <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Primary Contact</label>
                 <div className="grid grid-cols-2 gap-4">
-                  <input type="text" defaultValue={editingStop?.contactName || ''} placeholder="Contact Name" className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500" />
-                  <input type="text" defaultValue={editingStop?.contactPhone || ''} placeholder="Phone Number" className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500" />
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Scheduled Date</label>
+                    <input value={stopForm.date} onChange={e => setStopForm({...stopForm, date: e.target.value})} type="date" required className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Scheduled Time</label>
+                    <input value={stopForm.time} onChange={e => setStopForm({...stopForm, time: e.target.value})} type="time" required className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Primary Contact</label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <input value={stopForm.contactName} onChange={e => setStopForm({...stopForm, contactName: e.target.value})} type="text" placeholder="Contact Name" className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500" />
+                    <input value={stopForm.contactPhone} onChange={e => setStopForm({...stopForm, contactPhone: e.target.value})} type="text" placeholder="Phone Number" className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Special Instructions (Optional)</label>
+                  <textarea value={stopForm.instructions} onChange={e => setStopForm({...stopForm, instructions: e.target.value})} rows="2" placeholder="e.g. Call 30 mins prior to arrival..." className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500 resize-none"></textarea>
                 </div>
               </div>
-              <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Special Instructions (Optional)</label>
-                <textarea rows="2" placeholder="e.g. Call 30 mins prior to arrival..." className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500 resize-none"></textarea>
+              <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+                <button 
+                  type="button"
+                  onClick={() => setShowStopModal(false)} 
+                  className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors shadow-sm"
+                >
+                  {editingStop ? 'Save Changes' : 'Add Stop'}
+                </button>
               </div>
-            </div>
-            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
-              <button 
-                onClick={() => setShowStopModal(false)} 
-                className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={() => setShowStopModal(false)} 
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors shadow-sm"
-              >
-                {editingStop ? 'Save Changes' : 'Add Stop'}
-              </button>
-            </div>
+            </form>
           </div>
         </div>
       )}
@@ -1373,43 +1442,62 @@ function LoadDetail({ load, onBack }) {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Expense Type</label>
-                <select className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500">
-                  <option>Fuel</option>
-                  <option>Toll</option>
-                  <option>Meals</option>
-                  <option>Maintenance</option>
-                  <option>Other</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Description</label>
-                <input type="text" placeholder="e.g. BP Service Station" className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.target);
+              const newExpense = {
+                id: 'EXP-' + Math.floor(100 + Math.random() * 900),
+                date: formData.get('date')?.split('-').reverse().join('/') || new Date().toLocaleDateString('en-GB'),
+                type: formData.get('type') || 'Other',
+                desc: formData.get('desc') || 'New Expense',
+                amount: `$${parseFloat(formData.get('amount') || 0).toFixed(2)}`,
+                status: 'Pending',
+                color: 'bg-amber-50 text-amber-700'
+              };
+              setExpensesList(prev => [...prev, newExpense]);
+              setShowExpenseModal(false);
+            }}>
+              <div className="p-6 space-y-4">
                 <div>
-                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Amount ($)</label>
-                  <input type="number" placeholder="0.00" className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500" />
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Expense Type</label>
+                  <select name="type" className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500">
+                    <option>Fuel</option>
+                    <option>Toll</option>
+                    <option>Meals</option>
+                    <option>Maintenance</option>
+                    <option>Other</option>
+                  </select>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Date</label>
-                  <input type="date" className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500" />
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Description</label>
+                  <input name="desc" type="text" placeholder="e.g. BP Service Station" required className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Amount ($)</label>
+                    <input name="amount" type="number" step="0.01" placeholder="0.00" required className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Date</label>
+                    <input name="date" type="date" required className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Upload Receipt</label>
+                  <label className="w-full border-2 border-dashed border-slate-200 rounded-xl p-6 flex flex-col items-center justify-center text-slate-400 hover:border-indigo-400 hover:bg-indigo-50 transition-colors cursor-pointer">
+                    <input type="file" name="receipt" className="hidden" accept="image/*,.pdf" onChange={(e) => {
+                      if(e.target.files[0]) e.target.nextElementSibling.nextElementSibling.innerText = e.target.files[0].name;
+                    }} />
+                    <Upload className="w-6 h-6 mb-2 text-slate-300" />
+                    <span className="text-[10px] font-bold">Click to browse or drag file here</span>
+                  </label>
                 </div>
               </div>
-              <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Upload Receipt</label>
-                <div className="w-full border-2 border-dashed border-slate-200 rounded-xl p-6 flex flex-col items-center justify-center text-slate-400 hover:border-indigo-400 hover:bg-indigo-50 transition-colors cursor-pointer">
-                  <Upload className="w-6 h-6 mb-2 text-slate-300" />
-                  <span className="text-[10px] font-bold">Click to browse or drag file here</span>
-                </div>
+              <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+                <button type="button" onClick={() => setShowExpenseModal(false)} className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors shadow-sm">Save Expense</button>
               </div>
-            </div>
-            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
-              <button onClick={() => setShowExpenseModal(false)} className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors">Cancel</button>
-              <button onClick={() => setShowExpenseModal(false)} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors shadow-sm">Save Expense</button>
-            </div>
+            </form>
           </div>
         </div>
       )}
@@ -1424,30 +1512,46 @@ function LoadDetail({ load, onBack }) {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Document Type</label>
-                <select className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500">
-                  <option>Bill of Lading (BOL)</option>
-                  <option>Consignment Note</option>
-                  <option>Weighbridge Ticket</option>
-                  <option>Customs Declaration</option>
-                  <option>Other</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">File</label>
-                <div className="w-full border-2 border-dashed border-slate-200 rounded-xl p-8 flex flex-col items-center justify-center text-slate-400 hover:border-indigo-400 hover:bg-indigo-50 transition-colors cursor-pointer">
-                  <Upload className="w-8 h-8 mb-3 text-slate-300" />
-                  <span className="text-xs font-bold text-slate-700 mb-1">Select a PDF or Image file</span>
-                  <span className="text-[10px] font-semibold">Max file size: 10MB</span>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.target);
+              const fileInput = formData.get('file');
+              const newDoc = {
+                name: formData.get('type') || 'Uploaded Document',
+                date: new Date().toLocaleDateString('en-GB'),
+                size: fileInput && fileInput.name ? `${(fileInput.size / 1024).toFixed(0)} KB` : '1.5 MB'
+              };
+              setDocumentsList(prev => [...prev, newDoc]);
+              setShowDocumentModal(false);
+            }}>
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Document Type</label>
+                  <select name="type" className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500">
+                    <option>Bill of Lading (BOL)</option>
+                    <option>Consignment Note</option>
+                    <option>Weighbridge Ticket</option>
+                    <option>Customs Declaration</option>
+                    <option>Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">File</label>
+                  <label className="w-full border-2 border-dashed border-slate-200 rounded-xl p-8 flex flex-col items-center justify-center text-slate-400 hover:border-indigo-400 hover:bg-indigo-50 transition-colors cursor-pointer">
+                    <input type="file" name="file" className="hidden" accept=".pdf,image/*" onChange={(e) => {
+                      if(e.target.files[0]) e.target.nextElementSibling.nextElementSibling.innerText = e.target.files[0].name;
+                    }} />
+                    <Upload className="w-8 h-8 mb-3 text-slate-300" />
+                    <span className="text-xs font-bold text-slate-700 mb-1">Select a PDF or Image file</span>
+                    <span className="text-[10px] font-semibold">Max file size: 10MB</span>
+                  </label>
                 </div>
               </div>
-            </div>
-            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
-              <button onClick={() => setShowDocumentModal(false)} className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors">Cancel</button>
-              <button onClick={() => setShowDocumentModal(false)} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors shadow-sm">Upload File</button>
-            </div>
+              <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+                <button type="button" onClick={() => setShowDocumentModal(false)} className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors shadow-sm">Upload File</button>
+              </div>
+            </form>
           </div>
         </div>
       )}

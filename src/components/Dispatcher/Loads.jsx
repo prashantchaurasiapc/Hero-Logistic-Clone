@@ -768,7 +768,7 @@ export default function Loads() {
                             value={stop.type}
                             onChange={(e) => {
                               const updated = [...stops];
-                              updated[index].type = e.target.value;
+                              updated[index] = { ...updated[index], type: e.target.value };
                               setStops(updated);
                             }}
                             className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
@@ -787,7 +787,7 @@ export default function Loads() {
                               value={stop.address}
                               onChange={(e) => {
                                 const updated = [...stops];
-                                updated[index].address = e.target.value;
+                                updated[index] = { ...updated[index], address: e.target.value };
                                 setStops(updated);
                               }}
                               className="w-full pl-8 pr-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
@@ -805,7 +805,7 @@ export default function Loads() {
                             value={stop.contact}
                             onChange={(e) => {
                               const updated = [...stops];
-                              updated[index].contact = e.target.value;
+                              updated[index] = { ...updated[index], contact: e.target.value };
                               setStops(updated);
                             }}
                             className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
@@ -819,7 +819,7 @@ export default function Loads() {
                             value={stop.phone}
                             onChange={(e) => {
                               const updated = [...stops];
-                              updated[index].phone = e.target.value;
+                              updated[index] = { ...updated[index], phone: e.target.value };
                               setStops(updated);
                             }}
                             className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
@@ -828,15 +828,14 @@ export default function Loads() {
                         <div>
                           <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">REQUIRED TIME</label>
                           <input 
-                            type="text" 
-                            placeholder="dd-mm-yyyy --:--"
-                            value={stop.time}
+                            type="datetime-local" 
+                            value={stop.time || ''}
                             onChange={(e) => {
                               const updated = [...stops];
-                              updated[index].time = e.target.value;
+                              updated[index] = { ...updated[index], time: e.target.value };
                               setStops(updated);
                             }}
-                            className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
+                            className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#FFD400] bg-white cursor-pointer"
                           />
                         </div>
                       </div>
@@ -904,7 +903,7 @@ export default function Loads() {
                             value={item.client}
                             onChange={(e) => {
                               const updated = [...declaredItems];
-                              updated[index].client = e.target.value;
+                              updated[index] = { ...updated[index], client: e.target.value };
                               setDeclaredItems(updated);
                             }}
                             className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none"
@@ -916,7 +915,7 @@ export default function Loads() {
                             value={item.pickupStop}
                             onChange={(e) => {
                               const updated = [...declaredItems];
-                              updated[index].pickupStop = e.target.value;
+                              updated[index] = { ...updated[index], pickupStop: e.target.value };
                               setDeclaredItems(updated);
                             }}
                             className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 bg-white focus:outline-none"
@@ -934,7 +933,7 @@ export default function Loads() {
                             value={item.dropStop}
                             onChange={(e) => {
                               const updated = [...declaredItems];
-                              updated[index].dropStop = e.target.value;
+                              updated[index] = { ...updated[index], dropStop: e.target.value };
                               setDeclaredItems(updated);
                             }}
                             className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 bg-white focus:outline-none"
@@ -957,7 +956,7 @@ export default function Loads() {
                             value={item.desc}
                             onChange={(e) => {
                               const updated = [...declaredItems];
-                              updated[index].desc = e.target.value;
+                              updated[index] = { ...updated[index], desc: e.target.value };
                               setDeclaredItems(updated);
                             }}
                             className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none"
@@ -970,7 +969,7 @@ export default function Loads() {
                             value={item.weight}
                             onChange={(e) => {
                               const updated = [...declaredItems];
-                              updated[index].weight = e.target.value;
+                              updated[index] = { ...updated[index], weight: e.target.value };
                               setDeclaredItems(updated);
                             }}
                             className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none"
@@ -1030,13 +1029,12 @@ export default function Loads() {
                     GLOBAL DEADLINE
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-800 text-xs">⏰</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-800 text-xs pointer-events-none z-10">⏰</span>
                     <input 
-                      type="text"
-                      value={globalDeadline}
+                      type="datetime-local"
+                      value={globalDeadline || ''}
                       onChange={(e) => setGlobalDeadline(e.target.value)}
-                      placeholder="dd-mm-yyyy --:--"
-                      className="w-full pl-8 pr-3.5 py-2.5 bg-white border border-slate-800 rounded-xl text-xs font-bold text-slate-800 focus:outline-none"
+                      className="w-full pl-8 pr-3.5 py-2.5 bg-white border border-slate-800 rounded-xl text-xs font-bold text-slate-800 focus:outline-none cursor-pointer"
                     />
                   </div>
                 </div>

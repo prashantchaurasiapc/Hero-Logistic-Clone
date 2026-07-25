@@ -135,8 +135,20 @@ const mockEquipment = [
 ];
 
 export default function WarehouseStaffEquipment({ wh, onBack }) {
+  const [staffList, setStaffList] = React.useState(mockStaff);
+  const [equipmentList, setEquipmentList] = React.useState(mockEquipment);
   const [showAddStaffModal, setShowAddStaffModal] = React.useState(false);
   const [modalTab, setModalTab] = React.useState('staff');
+  const [viewStaffModal, setViewStaffModal] = React.useState(null);
+  const [viewEquipmentModal, setViewEquipmentModal] = React.useState(null);
+  const [staffMenuIndex, setStaffMenuIndex] = React.useState(null);
+  const [equipmentMenuIndex, setEquipmentMenuIndex] = React.useState(null);
+  const [toastMessage, setToastMessage] = React.useState('');
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(''), 3000);
+  };
   return (
     <div className="wh-staff-container" style={{ background: '#F8FAFC', minHeight: '100vh', padding: '24px 32px', fontFamily: "'Inter','Outfit',sans-serif", overflowX: 'hidden' }}>
       <style>{`
@@ -150,7 +162,7 @@ export default function WarehouseStaffEquipment({ wh, onBack }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
         <div>
           <div style={{ fontSize: 12, fontWeight: 600, color: '#64748B', marginBottom: 8, display: 'flex', gap: 6 }}>
-            <span>Home</span> <span style={{ color: '#CBD5E1' }}>›</span> <span>Warehouse</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ color: '#0F172A' }}>Warehouse Staff & Equipment</span>
+            <span>Home</span> <span style={{ color: '#CBD5E1' }}>›</span> <span>Warehouse</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ cursor: 'pointer' }} onClick={onBack}>Warehouse Details</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ color: '#0F172A' }}>Warehouse Staff & Equipment</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
             <h1 style={{ fontSize: 22, fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.5px' }}>9.7 Warehouse Staff & Equipment – {wh?.name || 'Sydney Head Office Warehouse'}</h1>
@@ -163,7 +175,7 @@ export default function WarehouseStaffEquipment({ wh, onBack }) {
 
         <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
           <button onClick={onBack} style={{ padding: '6px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600, border: '1px solid #E2E8F0', background: '#fff', color: '#1E293B', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', letterSpacing: '-0.2px', whiteSpace: 'nowrap' }}>
-            &lt; Back to Warehouse
+            &lt; Back to Warehouse Details
           </button>
           <button onClick={() => setShowAddStaffModal(true)} style={{ padding: '6px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600, border: '1px solid #C7D2FE', background: '#EEF2FF', color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', letterSpacing: '-0.2px', whiteSpace: 'nowrap' }}>
             <span style={{ fontSize: 14, fontWeight: 400, marginTop: -2 }}>+</span> Add Staff / Equipment
@@ -253,7 +265,7 @@ export default function WarehouseStaffEquipment({ wh, onBack }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {mockStaff.map((row, idx) => (
+                  {staffList.map((row, idx) => (
                     <tr key={idx} style={{ borderBottom: '1px solid #E2E8F0' }}>
                       <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 600, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.id}</td>
                       <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
@@ -274,10 +286,78 @@ export default function WarehouseStaffEquipment({ wh, onBack }) {
                         <span style={{ fontSize: 11, fontWeight: 600, color: row.status === 'Active' ? '#22C55E' : '#F59E0B' }}>{row.status}</span>
                       </td>
                       <td style={{ padding: '12px 16px', fontSize: 11, fontWeight: 500, color: row.dueColor, whiteSpace: 'nowrap' }}>{row.due}</td>
-                      <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                        <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
-                          <button style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#64748B' }}><EyeIcon /></button>
-                          <button style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#64748B' }}><MoreHorizontalIcon /></button>
+                      <td style={{ padding: '12px 16px', textAlign: 'center', position: 'relative' }}>
+                        <div style={{ display: 'flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
+                          <button
+                            title="View Staff Details"
+                            onClick={() => setViewStaffModal(row)}
+                            style={{ background: '#F1F5F9', border: 'none', borderRadius: 6, cursor: 'pointer', padding: '6px 8px', color: '#475569', transition: 'all 0.15s ease', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = '#EEF2FF'; e.currentTarget.style.color = '#4F46E5'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = '#F1F5F9'; e.currentTarget.style.color = '#475569'; }}
+                          >
+                            <EyeIcon />
+                          </button>
+
+                          <div style={{ position: 'relative' }}>
+                            <button
+                              title="More Actions"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setStaffMenuIndex(staffMenuIndex === idx ? null : idx);
+                              }}
+                              style={{ background: staffMenuIndex === idx ? '#EEF2FF' : '#F1F5F9', border: 'none', borderRadius: 6, cursor: 'pointer', padding: '6px 8px', color: staffMenuIndex === idx ? '#4F46E5' : '#475569', transition: 'all 0.15s ease', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                              onMouseEnter={(e) => { e.currentTarget.style.background = '#EEF2FF'; e.currentTarget.style.color = '#4F46E5'; }}
+                              onMouseLeave={(e) => { if (staffMenuIndex !== idx) { e.currentTarget.style.background = '#F1F5F9'; e.currentTarget.style.color = '#475569'; } }}
+                            >
+                              <MoreHorizontalIcon />
+                            </button>
+
+                            {/* Staff Action Menu Dropdown */}
+                            {staffMenuIndex === idx && (
+                              <>
+                                <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setStaffMenuIndex(null)} />
+                                <div style={{ position: 'absolute', right: 0, top: '110%', width: 175, background: '#fff', borderRadius: 10, border: '1px solid #E2E8F0', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)', padding: '6px', zIndex: 100, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                  <button
+                                    onClick={() => { setViewStaffModal(row); setStaffMenuIndex(null); }}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                  >
+                                    👁️ View Details
+                                  </button>
+                                  <button
+                                    onClick={() => { showToast(`Contacting ${row.name} at ${row.phone}`); setStaffMenuIndex(null); }}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                  >
+                                    📞 Contact Member
+                                  </button>
+                                  <button
+                                    onClick={() => { showToast(`Access permissions updated for ${row.name}`); setStaffMenuIndex(null); }}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                  >
+                                    🔒 Manage Access
+                                  </button>
+                                  <div style={{ height: 1, background: '#E2E8F0', margin: '4px 0' }} />
+                                  <button
+                                    onClick={() => {
+                                      setStaffList(prev => prev.map((item, i) => i === idx ? { ...item, status: item.status === 'Active' ? 'On Leave' : 'Active' } : item));
+                                      showToast(`Staff member ${row.name} status updated.`);
+                                      setStaffMenuIndex(null);
+                                    }}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#EF4444', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#FEF2F2'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                  >
+                                    ⚡ Toggle Status
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </td>
                     </tr>
@@ -347,7 +427,7 @@ export default function WarehouseStaffEquipment({ wh, onBack }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {mockEquipment.map((row, idx) => (
+                  {equipmentList.map((row, idx) => (
                     <tr key={idx} style={{ borderBottom: '1px solid #E2E8F0' }}>
                       <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 600, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.id}</td>
                       <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 600, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.name}</td>
@@ -359,10 +439,78 @@ export default function WarehouseStaffEquipment({ wh, onBack }) {
                       <td style={{ padding: '12px 16px', fontSize: 11, fontWeight: 500, color: row.condColor, whiteSpace: 'nowrap' }}>{row.cond}</td>
                       <td style={{ padding: '12px 16px', fontSize: 11, fontWeight: 500, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.check}</td>
                       <td style={{ padding: '12px 16px', fontSize: 11, fontWeight: 500, color: row.serviceColor, whiteSpace: 'nowrap' }}>{row.service}</td>
-                      <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                        <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
-                          <button style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#64748B' }}><EyeIcon /></button>
-                          <button style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#64748B' }}><MoreHorizontalIcon /></button>
+                      <td style={{ padding: '12px 16px', textAlign: 'center', position: 'relative' }}>
+                        <div style={{ display: 'flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
+                          <button
+                            title="View Equipment Details"
+                            onClick={() => setViewEquipmentModal(row)}
+                            style={{ background: '#F1F5F9', border: 'none', borderRadius: 6, cursor: 'pointer', padding: '6px 8px', color: '#475569', transition: 'all 0.15s ease', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = '#EEF2FF'; e.currentTarget.style.color = '#4F46E5'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = '#F1F5F9'; e.currentTarget.style.color = '#475569'; }}
+                          >
+                            <EyeIcon />
+                          </button>
+
+                          <div style={{ position: 'relative' }}>
+                            <button
+                              title="More Actions"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEquipmentMenuIndex(equipmentMenuIndex === idx ? null : idx);
+                              }}
+                              style={{ background: equipmentMenuIndex === idx ? '#EEF2FF' : '#F1F5F9', border: 'none', borderRadius: 6, cursor: 'pointer', padding: '6px 8px', color: equipmentMenuIndex === idx ? '#4F46E5' : '#475569', transition: 'all 0.15s ease', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                              onMouseEnter={(e) => { e.currentTarget.style.background = '#EEF2FF'; e.currentTarget.style.color = '#4F46E5'; }}
+                              onMouseLeave={(e) => { if (equipmentMenuIndex !== idx) { e.currentTarget.style.background = '#F1F5F9'; e.currentTarget.style.color = '#475569'; } }}
+                            >
+                              <MoreHorizontalIcon />
+                            </button>
+
+                            {/* Equipment Action Menu Dropdown */}
+                            {equipmentMenuIndex === idx && (
+                              <>
+                                <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setEquipmentMenuIndex(null)} />
+                                <div style={{ position: 'absolute', right: 0, top: '110%', width: 180, background: '#fff', borderRadius: 10, border: '1px solid #E2E8F0', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)', padding: '6px', zIndex: 100, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                  <button
+                                    onClick={() => { setViewEquipmentModal(row); setEquipmentMenuIndex(null); }}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                  >
+                                    👁️ View Details
+                                  </button>
+                                  <button
+                                    onClick={() => { showToast(`Maintenance scheduled for ${row.name}`); setEquipmentMenuIndex(null); }}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                  >
+                                    🔧 Schedule Service
+                                  </button>
+                                  <button
+                                    onClick={() => { showToast(`Inspection completed for ${row.name}`); setEquipmentMenuIndex(null); }}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                  >
+                                    📋 Equipment Check
+                                  </button>
+                                  <div style={{ height: 1, background: '#E2E8F0', margin: '4px 0' }} />
+                                  <button
+                                    onClick={() => {
+                                      setEquipmentList(prev => prev.map((item, i) => i === idx ? { ...item, status: item.status === 'Online' ? 'Offline' : 'Online' } : item));
+                                      showToast(`Equipment ${row.name} status toggled.`);
+                                      setEquipmentMenuIndex(null);
+                                    }}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#EF4444', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#FEF2F2'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                  >
+                                    ⚡ Toggle Status
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </td>
                     </tr>
@@ -656,6 +804,116 @@ export default function WarehouseStaffEquipment({ wh, onBack }) {
           </div>
         </div>
       )}
+
+      {/* VIEW STAFF DETAILS MODAL */}
+      {viewStaffModal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(3px)' }} onClick={() => setViewStaffModal(null)} />
+          <div style={{ background: '#fff', width: '520px', borderRadius: 20, padding: '28px', position: 'relative', zIndex: 1, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', border: '1px solid #E2E8F0' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid #F1F5F9' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#EEF2FF', border: '1px solid #C7D2FE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: '#4F46E5' }}>
+                  {viewStaffModal.initials}
+                </div>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: '#0F172A' }}>{viewStaffModal.name}</h2>
+                  <div style={{ fontSize: 12, color: '#64748B', marginTop: 2, fontWeight: 500 }}>ID: {viewStaffModal.id} • {viewStaffModal.role}</div>
+                </div>
+              </div>
+              <button onClick={() => setViewStaffModal(null)} style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '6px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: '#64748B' }}>✕</button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
+              <div style={{ background: '#F8FAFC', padding: '12px 14px', borderRadius: 12, border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Role & Access</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: viewStaffModal.roleColor, marginTop: 4 }}>{viewStaffModal.role}</div>
+              </div>
+              <div style={{ background: '#F8FAFC', padding: '12px 14px', borderRadius: 12, border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Status</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: viewStaffModal.status === 'Active' ? '#22C55E' : '#F59E0B', marginTop: 4 }}>{viewStaffModal.status}</div>
+              </div>
+            </div>
+
+            <div style={{ background: '#FFF', padding: '14px', borderRadius: 12, border: '1px solid #E2E8F0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginBottom: 2 }}>Shift</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A' }}>{viewStaffModal.shift}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginBottom: 2 }}>Assigned Zone</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A' }}>{viewStaffModal.loc}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginBottom: 2 }}>Contact Phone</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A' }}>{viewStaffModal.phone}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginBottom: 2 }}>Training Due Date</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: viewStaffModal.dueColor }}>{viewStaffModal.due}</div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: 16, borderTop: '1px solid #F1F5F9' }}>
+              <button onClick={() => setViewStaffModal(null)} style={{ padding: '8px 18px', borderRadius: 8, fontSize: 12, fontWeight: 700, border: 'none', background: '#0F172A', color: '#fff', cursor: 'pointer' }}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* VIEW EQUIPMENT DETAILS MODAL */}
+      {viewEquipmentModal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(3px)' }} onClick={() => setViewEquipmentModal(null)} />
+          <div style={{ background: '#fff', width: '520px', borderRadius: 20, padding: '28px', position: 'relative', zIndex: 1, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', border: '1px solid #E2E8F0' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid #F1F5F9' }}>
+              <div>
+                <span style={{ fontSize: 11, fontWeight: 800, color: viewEquipmentModal.typeColor, background: '#F8FAFC', padding: '3px 8px', borderRadius: 6, border: '1px solid #E2E8F0' }}>{viewEquipmentModal.type}</span>
+                <h2 style={{ margin: '6px 0 0 0', fontSize: 18, fontWeight: 900, color: '#0F172A' }}>{viewEquipmentModal.name}</h2>
+                <div style={{ fontSize: 12, color: '#64748B', marginTop: 2, fontWeight: 500 }}>ID: {viewEquipmentModal.id}</div>
+              </div>
+              <button onClick={() => setViewEquipmentModal(null)} style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '6px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: '#64748B' }}>✕</button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
+              <div style={{ background: '#F8FAFC', padding: '12px 14px', borderRadius: 12, border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Status</div>
+                <div style={{ fontSize: 14, fontWeight: 900, color: viewEquipmentModal.status === 'Online' ? '#22C55E' : '#EF4444', marginTop: 4 }}>{viewEquipmentModal.status}</div>
+              </div>
+              <div style={{ background: '#F8FAFC', padding: '12px 14px', borderRadius: 12, border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Condition</div>
+                <div style={{ fontSize: 14, fontWeight: 900, color: viewEquipmentModal.condColor, marginTop: 4 }}>{viewEquipmentModal.cond}</div>
+              </div>
+              <div style={{ background: '#F8FAFC', padding: '12px 14px', borderRadius: 12, border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Location</div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A', marginTop: 4 }}>{viewEquipmentModal.loc}</div>
+              </div>
+            </div>
+
+            <div style={{ background: '#FFF', padding: '14px', borderRadius: 12, border: '1px solid #E2E8F0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginBottom: 2 }}>Last Safety Check</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A' }}>{viewEquipmentModal.check}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginBottom: 2 }}>Next Service Date</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: viewEquipmentModal.serviceColor }}>{viewEquipmentModal.service}</div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: 16, borderTop: '1px solid #F1F5F9' }}>
+              <button onClick={() => setViewEquipmentModal(null)} style={{ padding: '8px 18px', borderRadius: 8, fontSize: 12, fontWeight: 700, border: 'none', background: '#0F172A', color: '#fff', cursor: 'pointer' }}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TOAST NOTIFICATION BANNER */}
+      {toastMessage && (
+        <div style={{ position: 'fixed', bottom: 28, right: 28, zIndex: 10000, background: '#0F172A', color: '#fff', padding: '12px 20px', borderRadius: 12, fontSize: 13, fontWeight: 700, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3)', display: 'flex', alignItems: 'center', gap: 10, border: '1px solid #334155' }}>
+          <span style={{ color: '#22C55E' }}>✓</span> {toastMessage}
+        </div>
+      )}
+
     </div>
   );
 }

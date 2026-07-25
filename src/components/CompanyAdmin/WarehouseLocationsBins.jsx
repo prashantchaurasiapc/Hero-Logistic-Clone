@@ -91,6 +91,15 @@ const mockLocations = [
 
 export default function WarehouseLocationsBins({ wh, onBack }) {
   const [showAddLocationModal, setShowAddLocationModal] = React.useState(false);
+  const [viewLocationModal, setViewLocationModal] = React.useState(null);
+  const [actionMenuIndex, setActionMenuIndex] = React.useState(null);
+  const [editLocationModal, setEditLocationModal] = React.useState(null);
+  const [toastMessage, setToastMessage] = React.useState('');
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(''), 3000);
+  };
   return (
     <div className="wh-bins-container" style={{ background: '#F8FAFC', minHeight: '100vh', padding: '24px 32px', fontFamily: "'Inter','Outfit',sans-serif", overflowX: 'hidden' }}>
       <style>{`
@@ -103,7 +112,7 @@ export default function WarehouseLocationsBins({ wh, onBack }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, gap: 16, flexWrap: 'wrap' }}>
         <div style={{ flex: '1 1 300px', minWidth: 0 }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: '#64748B', marginBottom: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            <span>Home</span> <span style={{ color: '#CBD5E1' }}>›</span> <span>Warehouse</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ color: '#0F172A' }}>Warehouse Locations & Bins</span>
+            <span>Home</span> <span style={{ color: '#CBD5E1' }}>›</span> <span>Warehouse</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ cursor: 'pointer' }} onClick={onBack}>Warehouse Details</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ color: '#0F172A' }}>Warehouse Locations & Bins</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
             <h1 style={{ fontSize: 22, fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.5px' }}>9.6 Warehouse Locations & Bins – {wh?.name || 'Sydney Head Office Warehouse'}</h1>
@@ -116,7 +125,7 @@ export default function WarehouseLocationsBins({ wh, onBack }) {
 
         <div style={{ display: 'flex', gap: 10, marginTop: 14, flexWrap: 'wrap' }}>
           <button onClick={onBack} style={{ padding: '6px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600, border: '1px solid #E2E8F0', background: '#fff', color: '#1E293B', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', letterSpacing: '-0.2px', whiteSpace: 'nowrap' }}>
-            &lt; Back to Warehouse
+            &lt; Back to Warehouse Details
           </button>
           <button onClick={() => setShowAddLocationModal(true)} style={{ padding: '6px 12px', borderRadius: 6, fontSize: 11, fontWeight: 600, border: '1px solid #C7D2FE', background: '#EEF2FF', color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', letterSpacing: '-0.2px', whiteSpace: 'nowrap' }}>
             <span style={{ fontSize: 14, fontWeight: 400, marginTop: -2 }}>+</span> Add Location / Bin
@@ -225,10 +234,82 @@ export default function WarehouseLocationsBins({ wh, onBack }) {
                       <td style={{ padding: '12px 16px' }}>
                         <span style={{ display: 'inline-flex', padding: '4px 8px', borderRadius: 12, background: '#F0FDF4', color: '#22C55E', fontSize: 11, fontWeight: 600 }}>Active</span>
                       </td>
-                      <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                        <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
-                          <button style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#64748B' }}><EyeIcon /></button>
-                          <button style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#64748B' }}><MoreHorizontalIcon /></button>
+                      <td style={{ padding: '12px 16px', textAlign: 'center', position: 'relative' }}>
+                        <div style={{ display: 'flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
+                          <button
+                            title="View Location Details"
+                            onClick={() => setViewLocationModal(row)}
+                            style={{ background: '#F1F5F9', border: 'none', borderRadius: 6, cursor: 'pointer', padding: '6px 8px', color: '#475569', transition: 'all 0.15s ease', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = '#EEF2FF'; e.currentTarget.style.color = '#4F46E5'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = '#F1F5F9'; e.currentTarget.style.color = '#475569'; }}
+                          >
+                            <EyeIcon />
+                          </button>
+                          
+                          <div style={{ position: 'relative' }}>
+                            <button
+                              title="More Actions"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActionMenuIndex(actionMenuIndex === idx ? null : idx);
+                              }}
+                              style={{ background: actionMenuIndex === idx ? '#EEF2FF' : '#F1F5F9', border: 'none', borderRadius: 6, cursor: 'pointer', padding: '6px 8px', color: actionMenuIndex === idx ? '#4F46E5' : '#475569', transition: 'all 0.15s ease', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                              onMouseEnter={(e) => { e.currentTarget.style.background = '#EEF2FF'; e.currentTarget.style.color = '#4F46E5'; }}
+                              onMouseLeave={(e) => { if (actionMenuIndex !== idx) { e.currentTarget.style.background = '#F1F5F9'; e.currentTarget.style.color = '#475569'; } }}
+                            >
+                              <MoreHorizontalIcon />
+                            </button>
+
+                            {/* Action Menu Dropdown */}
+                            {actionMenuIndex === idx && (
+                              <>
+                                <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setActionMenuIndex(null)} />
+                                <div style={{ position: 'absolute', right: 0, top: '110%', width: 170, background: '#fff', borderRadius: 10, border: '1px solid #E2E8F0', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)', padding: '6px', zIndex: 100, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                  <button
+                                    onClick={() => { setViewLocationModal(row); setActionMenuIndex(null); }}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                  >
+                                    👁️ View Details
+                                  </button>
+                                  <button
+                                    onClick={() => { setEditLocationModal(row); setActionMenuIndex(null); }}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                  >
+                                    ✏️ Edit Location
+                                  </button>
+                                  <button
+                                    onClick={() => { showToast(`Barcode & QR printed for ${row.code}`); setActionMenuIndex(null); }}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                  >
+                                    🏷️ Print Barcode
+                                  </button>
+                                  <button
+                                    onClick={() => { showToast(`Status toggled for ${row.name}`); setActionMenuIndex(null); }}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                  >
+                                    🔄 Toggle Status
+                                  </button>
+                                  <div style={{ height: 1, background: '#E2E8F0', margin: '4px 0' }} />
+                                  <button
+                                    onClick={() => { showToast(`Location ${row.code} deleted`); setActionMenuIndex(null); }}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#EF4444', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.background = '#FEF2F2'}
+                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+                                  >
+                                    🗑️ Delete Location
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </td>
                     </tr>
@@ -509,6 +590,129 @@ export default function WarehouseLocationsBins({ wh, onBack }) {
               <button onClick={() => setShowAddLocationModal(false)} style={{ padding: '10px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, border: 'none', background: '#4F46E5', color: '#fff', cursor: 'pointer' }}>Save Location</button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* VIEW LOCATION DETAILS MODAL */}
+      {viewLocationModal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(3px)' }} onClick={() => setViewLocationModal(null)} />
+          <div style={{ background: '#fff', width: '560px', borderRadius: 20, padding: '28px', position: 'relative', zIndex: 1, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', border: '1px solid #E2E8F0' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid #F1F5F9' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ background: '#EEF2FF', color: '#4F46E5', fontSize: 13, fontWeight: 900, padding: '4px 10px', borderRadius: 8, letterSpacing: '0.5px' }}>{viewLocationModal.code}</span>
+                  <h2 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: '#0F172A' }}>{viewLocationModal.name}</h2>
+                </div>
+                <div style={{ fontSize: 12, color: '#64748B', marginTop: 4, fontWeight: 500 }}>
+                  Area: <strong style={{ color: '#1E293B' }}>{viewLocationModal.area}</strong> • Type: <strong style={{ color: '#1E293B' }}>{viewLocationModal.type}</strong>
+                </div>
+              </div>
+              <button onClick={() => setViewLocationModal(null)} style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '6px 10px', cursor: 'pointer', fontSize: 12, fontWeight: 700, color: '#64748B' }}>✕</button>
+            </div>
+
+            {/* Metrics grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
+              <div style={{ background: '#F8FAFC', padding: '12px 14px', borderRadius: 12, border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Total Bins</div>
+                <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', marginTop: 2 }}>{viewLocationModal.bins}</div>
+              </div>
+              <div style={{ background: '#F8FAFC', padding: '12px 14px', borderRadius: 12, border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Capacity</div>
+                <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', marginTop: 2 }}>{viewLocationModal.cap} m³</div>
+              </div>
+              <div style={{ background: '#F8FAFC', padding: '12px 14px', borderRadius: 12, border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>Used Space</div>
+                <div style={{ fontSize: 20, fontWeight: 900, color: '#4F46E5', marginTop: 2 }}>{viewLocationModal.used} m³</div>
+              </div>
+            </div>
+
+            {/* Utilisation progress bar */}
+            <div style={{ background: '#F8FAFC', padding: '16px', borderRadius: 12, border: '1px solid #E2E8F0', marginBottom: 20 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#1E293B' }}>Storage Utilisation Rate</span>
+                <span style={{ fontSize: 14, fontWeight: 900, color: '#4F46E5' }}>{viewLocationModal.util}</span>
+              </div>
+              <div style={{ height: 8, background: '#E2E8F0', borderRadius: 4, overflow: 'hidden' }}>
+                <div style={{ width: viewLocationModal.util, height: '100%', background: '#4F46E5', borderRadius: 4 }} />
+              </div>
+            </div>
+
+            {/* Sub-bins preview */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Location Bins Overview</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                {[1, 2, 3, 4, 5, 6].map((b) => (
+                  <div key={b} style={{ background: '#FFF', border: '1px solid #E2E8F0', borderRadius: 8, padding: '8px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#0F172A' }}>{viewLocationModal.code}-BIN-0{b}</span>
+                    <span style={{ fontSize: 9, fontWeight: 800, color: '#22C55E', background: '#F0FDF4', padding: '2px 6px', borderRadius: 4 }}>OK</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 16, borderTop: '1px solid #F1F5F9' }}>
+              <button
+                onClick={() => { showToast(`Printing Label for ${viewLocationModal.code}`); setViewLocationModal(null); }}
+                style={{ padding: '8px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, border: '1px solid #C7D2FE', background: '#EEF2FF', color: '#4F46E5', cursor: 'pointer' }}
+              >
+                🏷️ Print Location Barcode
+              </button>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  onClick={() => { const loc = viewLocationModal; setViewLocationModal(null); setEditLocationModal(loc); }}
+                  style={{ padding: '8px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, border: '1px solid #E2E8F0', background: '#fff', color: '#1E293B', cursor: 'pointer' }}
+                >
+                  ✏️ Edit
+                </button>
+                <button
+                  onClick={() => setViewLocationModal(null)}
+                  style={{ padding: '8px 16px', borderRadius: 8, fontSize: 12, fontWeight: 700, border: 'none', background: '#0F172A', color: '#fff', cursor: 'pointer' }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT LOCATION MODAL */}
+      {editLocationModal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(3px)' }} onClick={() => setEditLocationModal(null)} />
+          <div style={{ background: '#fff', width: '500px', borderRadius: 20, padding: '28px', position: 'relative', zIndex: 1, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', border: '1px solid #E2E8F0' }}>
+            <h2 style={{ margin: '0 0 20px 0', fontSize: 18, fontWeight: 900, color: '#0F172A' }}>Edit Location – {editLocationModal.code}</h2>
+            
+            <div style={{ display: 'grid', gap: 16 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#475569', marginBottom: 6 }}>Location Name</label>
+                <input type="text" defaultValue={editLocationModal.name} style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none', fontWeight: 600 }} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#475569', marginBottom: 6 }}>Area / Zone</label>
+                  <input type="text" defaultValue={editLocationModal.area} style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none', fontWeight: 600 }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#475569', marginBottom: 6 }}>Max Capacity (m³)</label>
+                  <input type="text" defaultValue={editLocationModal.cap} style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none', fontWeight: 600 }} />
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 28 }}>
+              <button onClick={() => setEditLocationModal(null)} style={{ padding: '9px 18px', borderRadius: 8, fontSize: 12, fontWeight: 700, border: '1px solid #E2E8F0', background: '#fff', color: '#475569', cursor: 'pointer' }}>Cancel</button>
+              <button onClick={() => { showToast(`Location ${editLocationModal.code} updated successfully!`); setEditLocationModal(null); }} style={{ padding: '9px 18px', borderRadius: 8, fontSize: 12, fontWeight: 700, border: 'none', background: '#4F46E5', color: '#fff', cursor: 'pointer' }}>Save Changes</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TOAST NOTIFICATION BANNER */}
+      {toastMessage && (
+        <div style={{ position: 'fixed', bottom: 28, right: 28, zIndex: 10000, background: '#0F172A', color: '#fff', padding: '12px 20px', borderRadius: 12, fontSize: 13, fontWeight: 700, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3)', display: 'flex', alignItems: 'center', gap: 10, border: '1px solid #334155' }}>
+          <span style={{ color: '#22C55E' }}>✓</span> {toastMessage}
         </div>
       )}
 

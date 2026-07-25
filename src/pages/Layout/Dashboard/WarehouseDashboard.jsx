@@ -118,6 +118,38 @@ export default function WarehouseDashboard() {
   const [whList, setWhList] = useState(initialWarehouses);
   const [editModal, setEditModal] = useState(null);
 
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All Status');
+  const [branchFilter, setBranchFilter] = useState('All Branches');
+  const [typeFilter, setTypeFilter] = useState('All Types');
+
+  const branchOptions = ['All Branches', ...Array.from(new Set(whList.map(w => w.branch).filter(Boolean)))];
+  const typeOptions = ['All Types', ...Array.from(new Set(whList.map(w => w.type).filter(Boolean)))];
+  const statusOptions = ['All Status', 'Active', 'Inactive', 'Maintenance'];
+
+  const filteredWarehouses = whList.filter(w => {
+    const q = searchQuery.toLowerCase().trim();
+    const matchesSearch = !q || 
+      (w.name && w.name.toLowerCase().includes(q)) ||
+      (w.code && w.code.toLowerCase().includes(q)) ||
+      (w.addr && w.addr.toLowerCase().includes(q)) ||
+      (w.branch && w.branch.toLowerCase().includes(q)) ||
+      (w.type && w.type.toLowerCase().includes(q));
+
+    const matchesStatus = statusFilter === 'All Status' || w.status === statusFilter;
+    const matchesBranch = branchFilter === 'All Branches' || w.branch === branchFilter;
+    const matchesType = typeFilter === 'All Types' || w.type === typeFilter;
+
+    return matchesSearch && matchesStatus && matchesBranch && matchesType;
+  });
+
+  const resetFilters = () => {
+    setSearchQuery('');
+    setStatusFilter('All Status');
+    setBranchFilter('All Branches');
+    setTypeFilter('All Types');
+  };
+
   const handleExport = () => {
     const csvContent = "data:text/csv;charset=utf-8,Warehouse Name,Code,Branch,Type,Status,Stock Items,Inventory Value,Utilization\nSydney Head Office Warehouse,WH-001,Sydney Head Office,General,Active,1250,485250,78";
     const encodedUri = encodeURI(csvContent);
@@ -926,107 +958,107 @@ export default function WarehouseDashboard() {
       {/* ── METRICS CARDS ── */}
       <div className="responsive-metrics-grid">
         {/* Card 1 */}
-        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '16px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 8, background: '#F5F3FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '10px 12px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+            <div style={{ width: 30, height: 30, borderRadius: 8, background: '#F5F3FF', display: 'flex', alignItems: 'center', justifyCenter: 'center', flexShrink: 0 }}>
               <BoxIcon color="#8B5CF6" />
             </div>
             <div style={{ overflow: 'hidden' }}>
-              <div style={{ fontSize: 9.5, fontWeight: 800, color: '#64748B', letterSpacing: '0.2px', textTransform: 'uppercase', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>TOTAL WAREHOUSES</div>
-              <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>6</div>
-              <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Active Warehouses</div>
+              <div style={{ fontSize: 9, fontWeight: 800, color: '#64748B', letterSpacing: '0.2px', textTransform: 'uppercase', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>TOTAL WAREHOUSES</div>
+              <div style={{ fontSize: 17, fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>6</div>
+              <div style={{ fontSize: 9.5, color: '#94A3B8', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Active Warehouses</div>
             </div>
           </div>
           <div onClick={() => {
             setView('list');
             document.getElementById('warehouse-list')?.scrollIntoView({ behavior: 'smooth' });
-          }} style={{ marginTop: 'auto', fontSize: 11, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
-            View all warehouses <span style={{ fontSize: 14 }}>→</span>
+          }} style={{ marginTop: 'auto', fontSize: 10, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer', paddingTop: 4 }}>
+            View all warehouses <span style={{ fontSize: 12 }}>→</span>
           </div>
         </div>
 
         {/* Card 2 */}
-        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '16px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 8, background: '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '10px 12px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+            <div style={{ width: 30, height: 30, borderRadius: 8, background: '#F0FDF4', display: 'flex', alignItems: 'center', justifyCenter: 'center', flexShrink: 0 }}>
               <CheckCircleIcon color="#10B981" />
             </div>
             <div style={{ overflow: 'hidden' }}>
-              <div style={{ fontSize: 9.5, fontWeight: 800, color: '#64748B', letterSpacing: '0.2px', textTransform: 'uppercase', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>TOTAL INVENTORY VALUE</div>
-              <div style={{ fontSize: 16, fontWeight: 900, color: '#0F172A', lineHeight: 1.1 }}>$1,256,850.00</div>
-              <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Across all warehouses</div>
+              <div style={{ fontSize: 9, fontWeight: 800, color: '#64748B', letterSpacing: '0.2px', textTransform: 'uppercase', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>TOTAL INVENTORY VALUE</div>
+              <div style={{ fontSize: 15, fontWeight: 900, color: '#0F172A', lineHeight: 1.1 }}>$1,256,850.00</div>
+              <div style={{ fontSize: 9.5, color: '#94A3B8', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Across all warehouses</div>
             </div>
           </div>
-          <div onClick={() => navigate('/warehouse/current-stock')} style={{ marginTop: 'auto', fontSize: 11, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
-            View inventory <span style={{ fontSize: 14 }}>→</span>
+          <div onClick={() => navigate('/warehouse/current-stock')} style={{ marginTop: 'auto', fontSize: 10, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer', paddingTop: 4 }}>
+            View inventory <span style={{ fontSize: 12 }}>→</span>
           </div>
         </div>
 
         {/* Card 3 */}
-        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '16px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 8, background: '#FFFBEB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '10px 12px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+            <div style={{ width: 30, height: 30, borderRadius: 8, background: '#FFFBEB', display: 'flex', alignItems: 'center', justifyCenter: 'center', flexShrink: 0 }}>
               <BoxIcon color="#F59E0B" />
             </div>
             <div style={{ overflow: 'hidden' }}>
-              <div style={{ fontSize: 9.5, fontWeight: 800, color: '#64748B', letterSpacing: '0.2px', textTransform: 'uppercase', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>TOTAL STOCK ITEMS</div>
-              <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>4,125</div>
-              <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>All warehouses</div>
+              <div style={{ fontSize: 9, fontWeight: 800, color: '#64748B', letterSpacing: '0.2px', textTransform: 'uppercase', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>TOTAL STOCK ITEMS</div>
+              <div style={{ fontSize: 17, fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>4,125</div>
+              <div style={{ fontSize: 9.5, color: '#94A3B8', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>All warehouses</div>
             </div>
           </div>
-          <div onClick={() => navigate('/warehouse/current-stock')} style={{ marginTop: 'auto', fontSize: 11, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
-            View stock <span style={{ fontSize: 14 }}>→</span>
+          <div onClick={() => navigate('/warehouse/current-stock')} style={{ marginTop: 'auto', fontSize: 10, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer', paddingTop: 4 }}>
+            View stock <span style={{ fontSize: 12 }}>→</span>
           </div>
         </div>
 
         {/* Card 4 */}
-        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '16px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 8, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '10px 12px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+            <div style={{ width: 30, height: 30, borderRadius: 8, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyCenter: 'center', flexShrink: 0 }}>
               <ClockIcon color="#3B82F6" />
             </div>
             <div style={{ overflow: 'hidden' }}>
-              <div style={{ fontSize: 9.5, fontWeight: 800, color: '#64748B', letterSpacing: '0.2px', textTransform: 'uppercase', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>PENDING PICK TASKS</div>
-              <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>28</div>
-              <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Requires attention</div>
+              <div style={{ fontSize: 9, fontWeight: 800, color: '#64748B', letterSpacing: '0.2px', textTransform: 'uppercase', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>PENDING PICK TASKS</div>
+              <div style={{ fontSize: 17, fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>28</div>
+              <div style={{ fontSize: 9.5, color: '#94A3B8', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Requires attention</div>
             </div>
           </div>
-          <div onClick={() => navigate('/warehouse/movements')} style={{ marginTop: 'auto', fontSize: 11, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
-            View tasks <span style={{ fontSize: 14 }}>→</span>
+          <div onClick={() => navigate('/warehouse/movements')} style={{ marginTop: 'auto', fontSize: 10, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer', paddingTop: 4 }}>
+            View tasks <span style={{ fontSize: 12 }}>→</span>
           </div>
         </div>
 
         {/* Card 5 */}
-        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '16px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 8, background: '#F5F3FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '10px 12px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+            <div style={{ width: 30, height: 30, borderRadius: 8, background: '#F5F3FF', display: 'flex', alignItems: 'center', justifyCenter: 'center', flexShrink: 0 }}>
               <TruckIcon color="#8B5CF6" />
             </div>
             <div style={{ overflow: 'hidden' }}>
-              <div style={{ fontSize: 9.5, fontWeight: 800, color: '#64748B', letterSpacing: '0.2px', textTransform: 'uppercase', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>INCOMING SHIPMENTS</div>
-              <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>14</div>
-              <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>In transit / Expected</div>
+              <div style={{ fontSize: 9, fontWeight: 800, color: '#64748B', letterSpacing: '0.2px', textTransform: 'uppercase', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>INCOMING SHIPMENTS</div>
+              <div style={{ fontSize: 17, fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>14</div>
+              <div style={{ fontSize: 9.5, color: '#94A3B8', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>In transit / Expected</div>
             </div>
           </div>
-          <div onClick={() => navigate('/warehouse/inbound')} style={{ marginTop: 'auto', fontSize: 11, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
-            View shipments <span style={{ fontSize: 14 }}>→</span>
+          <div onClick={() => navigate('/warehouse/inbound')} style={{ marginTop: 'auto', fontSize: 10, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer', paddingTop: 4 }}>
+            View shipments <span style={{ fontSize: 12 }}>→</span>
           </div>
         </div>
 
         {/* Card 6 */}
-        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '16px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 8, background: '#FEF2F2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '10px 12px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+            <div style={{ width: 30, height: 30, borderRadius: 8, background: '#FEF2F2', display: 'flex', alignItems: 'center', justifyCenter: 'center', flexShrink: 0 }}>
               <TruckIcon color="#EF4444" />
             </div>
             <div style={{ overflow: 'hidden' }}>
-              <div style={{ fontSize: 9.5, fontWeight: 800, color: '#64748B', letterSpacing: '0.2px', textTransform: 'uppercase', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>OUTGOING SHIPMENTS</div>
-              <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>19</div>
-              <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Scheduled / In progress</div>
+              <div style={{ fontSize: 9, fontWeight: 800, color: '#64748B', letterSpacing: '0.2px', textTransform: 'uppercase', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>OUTGOING SHIPMENTS</div>
+              <div style={{ fontSize: 17, fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>19</div>
+              <div style={{ fontSize: 9.5, color: '#94A3B8', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Scheduled / In progress</div>
             </div>
           </div>
-          <div onClick={() => navigate('/warehouse/outbound')} style={{ marginTop: 'auto', fontSize: 11, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
-            View shipments <span style={{ fontSize: 14 }}>→</span>
+          <div onClick={() => navigate('/warehouse/outbound')} style={{ marginTop: 'auto', fontSize: 10, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer', paddingTop: 4 }}>
+            View shipments <span style={{ fontSize: 12 }}>→</span>
           </div>
         </div>
       </div>
@@ -1037,28 +1069,51 @@ export default function WarehouseDashboard() {
         {/* WAREHOUSE LIST */}
         <div id="warehouse-list" style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, overflow: 'hidden' }}>
           <div style={{ padding: '20px 24px', borderBottom: '1px solid #F1F5F9' }}>
-            <h2 style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>WAREHOUSE LIST (6)</h2>
+            <h2 style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>WAREHOUSE LIST ({filteredWarehouses.length})</h2>
           </div>
 
           <div style={{ padding: '16px 24px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12, borderBottom: '1px solid #F1F5F9' }}>
             <div style={{ position: 'relative', flex: '1 1 200px' }}>
               <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }}><SearchIcon /></span>
-              <input placeholder="Search warehouses..." style={{ width: '100%', padding: '9px 12px 9px 36px', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: 13, outline: 'none', color: '#0F172A', boxSizing: 'border-box' }} />
+              <input 
+                placeholder="Search warehouses..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ width: '100%', padding: '9px 12px 9px 36px', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: 13, outline: 'none', color: '#0F172A', boxSizing: 'border-box' }} 
+              />
             </div>
 
             {/* Filter Dropdowns */}
-            {['All Status', 'All Branches', 'All Types'].map(label => (
-              <select key={label} style={{ padding: '9px 32px 9px 12px', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: 13, fontWeight: 600, color: '#334155', appearance: 'none', background: '#fff url("data:image/svg+xml;utf8,<svg fill=\'%2364748B\' height=\'16\' viewBox=\'0 0 24 24\' width=\'16\' xmlns=\'http://www.w3.org/2000/svg\'><path d=\'M7 10l5 5 5-5z\'/></svg>") no-repeat right 8px center', outline: 'none', flex: '1 1 120px', minWidth: '120px' }}>
-                <option>{label}</option>
-              </select>
-            ))}
+            <select 
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              style={{ padding: '9px 32px 9px 12px', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: 13, fontWeight: 600, color: '#334155', appearance: 'none', background: '#fff url("data:image/svg+xml;utf8,<svg fill=\'%2364748B\' height=\'16\' viewBox=\'0 0 24 24\' width=\'16\' xmlns=\'http://www.w3.org/2000/svg\'><path d=\'M7 10l5 5 5-5z\'/></svg>") no-repeat right 8px center', outline: 'none', flex: '1 1 120px', minWidth: '120px', cursor: 'pointer' }}
+            >
+              {statusOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+            </select>
+
+            <select 
+              value={branchFilter}
+              onChange={(e) => setBranchFilter(e.target.value)}
+              style={{ padding: '9px 32px 9px 12px', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: 13, fontWeight: 600, color: '#334155', appearance: 'none', background: '#fff url("data:image/svg+xml;utf8,<svg fill=\'%2364748B\' height=\'16\' viewBox=\'0 0 24 24\' width=\'16\' xmlns=\'http://www.w3.org/2000/svg\'><path d=\'M7 10l5 5 5-5z\'/></svg>") no-repeat right 8px center', outline: 'none', flex: '1 1 120px', minWidth: '120px', cursor: 'pointer' }}
+            >
+              {branchOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+            </select>
+
+            <select 
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              style={{ padding: '9px 32px 9px 12px', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: 13, fontWeight: 600, color: '#334155', appearance: 'none', background: '#fff url("data:image/svg+xml;utf8,<svg fill=\'%2364748B\' height=\'16\' viewBox=\'0 0 24 24\' width=\'16\' xmlns=\'http://www.w3.org/2000/svg\'><path d=\'M7 10l5 5 5-5z\'/></svg>") no-repeat right 8px center', outline: 'none', flex: '1 1 120px', minWidth: '120px', cursor: 'pointer' }}
+            >
+              {typeOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+            </select>
 
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <button style={{ padding: '9px', border: '1px solid #E2E8F0', borderRadius: 8, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FilterIcon /></button>
-              <button style={{ padding: '9px 14px', border: '1px solid #E2E8F0', borderRadius: 8, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#334155', whiteSpace: 'nowrap' }}>
+              <button onClick={resetFilters} title="Clear/Reset Filters" style={{ padding: '9px', border: '1px solid #E2E8F0', borderRadius: 8, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FilterIcon /></button>
+              <button onClick={handleExport} style={{ padding: '9px 14px', border: '1px solid #E2E8F0', borderRadius: 8, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#334155', whiteSpace: 'nowrap' }}>
                 <ExportIcon /> Export
               </button>
-              <button style={{ padding: '9px', border: '1px solid #E2E8F0', borderRadius: 8, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><RefreshIcon /></button>
+              <button onClick={resetFilters} title="Reset Filters" style={{ padding: '9px', border: '1px solid #E2E8F0', borderRadius: 8, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><RefreshIcon /></button>
             </div>
           </div>
 
@@ -1072,75 +1127,86 @@ export default function WarehouseDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {whList.map((w, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid #F8FAFC' }}>
-                    <td style={{ padding: '16px 24px', verticalAlign: 'top' }}>
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <div style={{ marginTop: 2 }}><StarIcon fill={w.isStar ? '#4F46E5' : 'none'} color={w.isStar ? '#4F46E5' : '#CBD5E1'} /></div>
-                        <div>
-                          <div style={{ fontSize: 13.5, fontWeight: 800, color: '#0F172A', marginBottom: 4, width: 140 }}>{w.name}</div>
-                          <div style={{ fontSize: 11, color: '#64748B', lineHeight: 1.4, width: 120 }}>{w.addr}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td style={{ padding: '16px 24px', verticalAlign: 'top' }}>
-                      <span onClick={() => handleWhClick(w)} style={{ fontSize: 13, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }}>{w.code}</span>
-                    </td>
-                    <td style={{ padding: '16px 24px', verticalAlign: 'top' }}>
-                      <div style={{ fontSize: 13, color: '#475569', fontWeight: 500, width: 80 }}>{w.branch}</div>
-                    </td>
-                    <td style={{ padding: '16px 24px', verticalAlign: 'top' }}>
-                      <div style={{ fontSize: 13, color: '#475569' }}>{w.type}</div>
-                    </td>
-                    <td style={{ padding: '16px 24px', verticalAlign: 'top' }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 6, background: w.status === 'Active' ? '#F0FDF4' : '#F1F5F9', color: w.status === 'Active' ? '#16A34A' : '#64748B' }}>
-                        {w.status}
-                      </span>
-                    </td>
-                    <td style={{ padding: '16px 24px', verticalAlign: 'top' }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>{w.stock}</div>
-                    </td>
-                    <td style={{ padding: '16px 24px', verticalAlign: 'top' }}>
-                      <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A' }}>{w.value}</div>
-                    </td>
-                    <td style={{ padding: '16px 24px', verticalAlign: 'top' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ fontSize: 13, color: '#0F172A', fontWeight: 600 }}>{w.util}%</div>
-                        <div style={{ width: 60, height: 6, background: '#EEF2FF', borderRadius: 4, overflow: 'hidden' }}>
-                          <div style={{ width: `${w.util}%`, height: '100%', background: '#4F46E5', borderRadius: 4 }}></div>
-                        </div>
-                      </div>
-                    </td>
-                    <td style={{ padding: '16px 24px', verticalAlign: 'top', position: 'relative' }}>
-                      <div onClick={() => setOpenRowAction(openRowAction === i ? null : i)} style={{ color: '#94A3B8', fontWeight: 800, fontSize: 18, letterSpacing: '1px', cursor: 'pointer', userSelect: 'none' }}>...</div>
-                      {openRowAction === i && (
-                        <div style={{ position: 'absolute', top: '100%', right: 24, marginTop: -10, width: 180, background: '#fff', border: '1px solid #E2E8F0', borderRadius: 8, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', zIndex: 100, padding: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                          <div onClick={() => { handleWhClick(w); setOpenRowAction(null); }} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', borderRadius: 6 }} onMouseOver={e => e.currentTarget.style.background = '#F1F5F9'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>View Details</div>
-                          <div onClick={() => { navigate('/warehouse/current-stock'); setOpenRowAction(null); }} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', borderRadius: 6 }} onMouseOver={e => e.currentTarget.style.background = '#F1F5F9'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>Manage Inventory</div>
-                          <div onClick={() => { 
-                            setEditModal({ ...w, index: i });
-                            setOpenRowAction(null); 
-                          }} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', borderRadius: 6 }} onMouseOver={e => e.currentTarget.style.background = '#F1F5F9'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>Edit Warehouse</div>
-                          <div style={{ height: 1, background: '#E2E8F0', margin: '4px 0' }}></div>
-                          <div onClick={() => { 
-                            if (window.confirm(`Are you sure you want to delete ${w.name}?`)) {
-                              const newList = [...whList];
-                              newList.splice(i, 1);
-                              setWhList(newList);
-                            }
-                            setOpenRowAction(null); 
-                          }} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#EF4444', cursor: 'pointer', borderRadius: 6 }} onMouseOver={e => e.currentTarget.style.background = '#FEF2F2'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>Delete</div>
-                        </div>
-                      )}
+                {filteredWarehouses.length === 0 ? (
+                  <tr>
+                    <td colSpan="9" style={{ padding: '32px', textAlign: 'center', color: '#64748B', fontSize: 13, fontWeight: 600 }}>
+                      No warehouses found matching your filters.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredWarehouses.map((w, i) => (
+                    <tr key={i} style={{ borderBottom: '1px solid #F8FAFC' }}>
+                      <td style={{ padding: '16px 24px', verticalAlign: 'top' }}>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <div style={{ marginTop: 2 }}><StarIcon fill={w.isStar ? '#4F46E5' : 'none'} color={w.isStar ? '#4F46E5' : '#CBD5E1'} /></div>
+                          <div>
+                            <div style={{ fontSize: 13.5, fontWeight: 800, color: '#0F172A', marginBottom: 4, width: 140 }}>{w.name}</div>
+                            <div style={{ fontSize: 11, color: '#64748B', lineHeight: 1.4, width: 120 }}>{w.addr}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td style={{ padding: '16px 24px', verticalAlign: 'top' }}>
+                        <span onClick={() => handleWhClick(w)} style={{ fontSize: 13, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }}>{w.code}</span>
+                      </td>
+                      <td style={{ padding: '16px 24px', verticalAlign: 'top' }}>
+                        <div style={{ fontSize: 13, color: '#475569', fontWeight: 500, width: 80 }}>{w.branch}</div>
+                      </td>
+                      <td style={{ padding: '16px 24px', verticalAlign: 'top' }}>
+                        <div style={{ fontSize: 13, color: '#475569' }}>{w.type}</div>
+                      </td>
+                      <td style={{ padding: '16px 24px', verticalAlign: 'top' }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 6, background: w.status === 'Active' ? '#F0FDF4' : '#F1F5F9', color: w.status === 'Active' ? '#16A34A' : '#64748B' }}>
+                          {w.status}
+                        </span>
+                      </td>
+                      <td style={{ padding: '16px 24px', verticalAlign: 'top' }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>{w.stock}</div>
+                      </td>
+                      <td style={{ padding: '16px 24px', verticalAlign: 'top' }}>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A' }}>{w.value}</div>
+                      </td>
+                      <td style={{ padding: '16px 24px', verticalAlign: 'top' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <div style={{ fontSize: 13, color: '#0F172A', fontWeight: 600 }}>{w.util}%</div>
+                          <div style={{ width: 60, height: 6, background: '#EEF2FF', borderRadius: 4, overflow: 'hidden' }}>
+                            <div style={{ width: `${w.util}%`, height: '100%', background: '#4F46E5', borderRadius: 4 }}></div>
+                          </div>
+                        </div>
+                      </td>
+                      <td style={{ padding: '16px 24px', verticalAlign: 'top', position: 'relative' }}>
+                        <div onClick={() => setOpenRowAction(openRowAction === i ? null : i)} style={{ color: '#94A3B8', fontWeight: 800, fontSize: 18, letterSpacing: '1px', cursor: 'pointer', userSelect: 'none' }}>...</div>
+                        {openRowAction === i && (
+                          <div style={{ position: 'absolute', top: '100%', right: 24, marginTop: -10, width: 180, background: '#fff', border: '1px solid #E2E8F0', borderRadius: 8, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', zIndex: 100, padding: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            <div onClick={() => { handleWhClick(w); setOpenRowAction(null); }} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', borderRadius: 6 }} onMouseOver={e => e.currentTarget.style.background = '#F1F5F9'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>View Details</div>
+                            <div onClick={() => { navigate('/warehouse/current-stock'); setOpenRowAction(null); }} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', borderRadius: 6 }} onMouseOver={e => e.currentTarget.style.background = '#F1F5F9'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>Manage Inventory</div>
+                            <div onClick={() => { 
+                              setEditModal({ ...w, index: i });
+                              setOpenRowAction(null); 
+                            }} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', borderRadius: 6 }} onMouseOver={e => e.currentTarget.style.background = '#F1F5F9'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>Edit Warehouse</div>
+                            <div style={{ height: 1, background: '#E2E8F0', margin: '4px 0' }}></div>
+                            <div onClick={() => { 
+                              if (window.confirm(`Are you sure you want to delete ${w.name}?`)) {
+                                const newList = [...whList];
+                                const origIdx = whList.findIndex(item => item.code === w.code);
+                                if (origIdx !== -1) newList.splice(origIdx, 1);
+                                setWhList(newList);
+                              }
+                              setOpenRowAction(null); 
+                            }} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#EF4444', cursor: 'pointer', borderRadius: 6 }} onMouseOver={e => e.currentTarget.style.background = '#FEF2F2'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>Delete</div>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
 
           <div style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #F1F5F9' }}>
-            <div style={{ fontSize: 13, color: '#64748B', fontWeight: 500 }}>Showing 1 to 6 of 6 warehouses</div>
+            <div style={{ fontSize: 13, color: '#64748B', fontWeight: 500 }}>
+              Showing {filteredWarehouses.length > 0 ? 1 : 0} to {filteredWarehouses.length} of {whList.length} warehouses
+            </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ display: 'flex', gap: 4 }}>
                 <button style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', border: '1px solid #E2E8F0', borderRadius: 6, cursor: 'pointer', color: '#64748B' }}>&lt;</button>

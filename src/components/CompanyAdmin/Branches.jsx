@@ -129,9 +129,28 @@ export default function Branches() {
     );
   };
 
+  const handleAddBranch = (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const newBranch = {
+      id: branchList.length + 1,
+      branchName: fd.get('branchName') || 'New Branch',
+      branchCode: fd.get('branchCode') || 'NEW-001',
+      company: 'Hero Logistics Pty Ltd',
+      country: 'Australia',
+      flag: '🇦🇺',
+      state: 'NSW',
+      manager: fd.get('manager') || 'Unassigned',
+      status: 'Active',
+      loads: 0
+    };
+    setBranchList(prev => [newBranch, ...prev]);
+    setIsAddingBranch(false);
+  };
+
   if (isAddingBranch) {
     return (
-      <div className="min-h-screen bg-[#f8f9fc] p-4 sm:p-6 lg:p-8 font-sans pb-24">
+      <form onSubmit={handleAddBranch} className="min-h-screen bg-[#f8f9fc] p-4 sm:p-6 lg:p-8 font-sans pb-24">
         
         {/* Header Breadcrumbs */}
         <div className="flex items-center justify-between mb-8">
@@ -158,6 +177,7 @@ export default function Branches() {
                  <div className="flex flex-col gap-1.5">
                     <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">BRANCH NAME</label>
                     <input 
+                       name="branchName"
                        type="text" 
                        placeholder="e.g. Sydney West Depot" 
                        className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 shadow-sm"
@@ -168,7 +188,7 @@ export default function Branches() {
                  <div className="flex flex-col gap-1.5">
                     <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">BRANCH TYPE</label>
                     <div className="relative">
-                       <select className="w-full pl-4 pr-10 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 shadow-sm appearance-none cursor-pointer">
+                       <select name="branchType" className="w-full pl-4 pr-10 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 shadow-sm appearance-none cursor-pointer">
                           <option>Local Branch</option>
                           <option>Head Office</option>
                           <option>Distribution Center</option>
@@ -183,6 +203,7 @@ export default function Branches() {
                     <div className="relative">
                        <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                        <input 
+                          name="address"
                           type="text" 
                           placeholder="123 Industrial Dr, Suburb, VIC 3000" 
                           className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 shadow-sm"
@@ -194,6 +215,7 @@ export default function Branches() {
                  <div className="flex flex-col gap-1.5 md:col-span-1">
                     <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">BRANCH CODE / ID</label>
                     <input 
+                       name="branchCode"
                        type="text" 
                        placeholder="e.g. SYD-WEST" 
                        className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 shadow-sm"
@@ -215,6 +237,7 @@ export default function Branches() {
                     <div className="flex flex-col gap-1.5">
                        <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">MANAGER NAME</label>
                        <input 
+                          name="manager"
                           type="text" 
                           placeholder="Enter full name" 
                           className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 shadow-sm"
@@ -227,6 +250,7 @@ export default function Branches() {
                        <div className="relative">
                           <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                           <input 
+                             name="phone"
                              type="text" 
                              placeholder="+61 400 000 000" 
                              className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 shadow-sm"
@@ -272,14 +296,14 @@ export default function Branches() {
 
         {/* Bottom Sticky Action Bar */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 flex justify-end items-center gap-4 z-10 sm:pl-[240px]">
-           <button onClick={() => setIsAddingBranch(false)} className="px-6 py-2.5 text-gray-600 font-bold text-[13px] hover:text-gray-900 transition-colors cursor-pointer">
+           <button type="button" onClick={() => setIsAddingBranch(false)} className="px-6 py-2.5 text-gray-600 font-bold text-[13px] hover:text-gray-900 transition-colors cursor-pointer">
               CANCEL
            </button>
-           <button onClick={() => setIsAddingBranch(false)} className="flex items-center gap-2 px-6 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-yellow-950 rounded-lg text-[13px] font-bold shadow-sm transition-colors cursor-pointer">
+           <button type="submit" className="flex items-center gap-2 px-6 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-yellow-950 rounded-lg text-[13px] font-bold shadow-sm transition-colors cursor-pointer">
               <CheckCircle2 size={16} /> SAVE BRANCH
            </button>
         </div>
-      </div>
+      </form>
     );
   }
 
