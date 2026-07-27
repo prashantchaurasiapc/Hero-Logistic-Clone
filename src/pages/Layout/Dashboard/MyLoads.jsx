@@ -13,12 +13,41 @@ const MyLoads = () => {
   const [statusFilter, setStatusFilter] = useState('All Status');
   const [loadTypeFilter, setLoadTypeFilter] = useState('All Load Types');
   const [dateFilter, setDateFilter] = useState('All Dates');
+  const [startDateFilter, setStartDateFilter] = useState('');
+  const [endDateFilter, setEndDateFilter] = useState('');
 
   // Modals & Popups state
   const [showSupportModal, setShowSupportModal] = useState(false);
   const [showBookModal, setShowBookModal] = useState(false);
   const [showMoreActionsMain, setShowMoreActionsMain] = useState(false);
   const [showMoreActionsDetails, setShowMoreActionsDetails] = useState(false);
+
+  // 3-Dots Action Menu & Delete Modal State
+  const [activeActionMenuId, setActiveActionMenuId] = useState(null);
+  const [deletingLoadId, setDeletingLoadId] = useState(null);
+
+  React.useEffect(() => {
+    const handleClickOutside = () => setActiveActionMenuId(null);
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
+  const handleOpenActionMenu = (e, loadId) => {
+    e.stopPropagation();
+    setActiveActionMenuId(prev => (prev === loadId ? null : loadId));
+  };
+
+  const handleConfirmDelete = (loadId) => {
+    setActiveActionMenuId(null);
+    setDeletingLoadId(loadId);
+  };
+
+  const handleExecuteDelete = () => {
+    if (!deletingLoadId) return;
+    setLoadsList(prev => prev.filter(item => item.id !== deletingLoadId));
+    showToast(`Load ${deletingLoadId} deleted successfully.`);
+    setDeletingLoadId(null);
+  };
 
   const [supportSubject, setSupportSubject] = useState('');
   const [supportDescription, setSupportDescription] = useState('');
@@ -137,7 +166,7 @@ const MyLoads = () => {
     if (activeTabFilter === 'Cancelled' && l.status !== 'Cancelled') return false;
 
     const query = searchQuery.toLowerCase();
-    const matchesSearch = 
+    const matchesSearch =
       l.id.toLowerCase().includes(query) ||
       l.ref.toLowerCase().includes(query) ||
       l.route.toLowerCase().includes(query) ||
@@ -155,6 +184,8 @@ const MyLoads = () => {
     setStatusFilter('All Status');
     setLoadTypeFilter('All Load Types');
     setDateFilter('All Dates');
+    setStartDateFilter('');
+    setEndDateFilter('');
     setActiveTabFilter('All Loads');
     showToast('Filters reset to default.');
   };
@@ -169,7 +200,7 @@ const MyLoads = () => {
 
   const handleBookSubmit = (e) => {
     e.preventDefault();
-    const routeText = (bookOrigin && bookDestination) 
+    const routeText = (bookOrigin && bookDestination)
       ? `${bookOrigin} → ${bookDestination}`
       : 'Melbourne VIC → Sydney NSW';
 
@@ -200,7 +231,7 @@ const MyLoads = () => {
 
   return (
     <div className="cp-dashboard">
-      
+
       {/* ============================================================
           VIEW 1: 14.2 MY LOADS / BOOKINGS (MATCHING SCREENSHOT EXACTLY)
           ============================================================ */}
@@ -263,7 +294,7 @@ const MyLoads = () => {
           </div>
 
           {/* Top 5 Metric Cards Row */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 14, marginBottom: 18 }}>
+          <div className="myloads-5metrics-grid">
             {/* Card 1: TOTAL LOADS */}
             <div className="cp-card" style={{ cursor: 'pointer' }} onClick={() => setActiveTabFilter('All Loads')}>
               <div className="cp-metric-header">
@@ -343,7 +374,7 @@ const MyLoads = () => {
           </div>
 
           {/* Status Tabs Row */}
-          <div style={{ display: 'flex', gap: 18, borderBottom: '1px solid #e2e8f0', marginBottom: 16, paddingBottom: 6 }}>
+          <div className="myloads-status-tabs">
             {['All Loads', 'In Transit', 'Upcoming', 'Completed', 'Cancelled'].map(tab => (
               <span
                 key={tab}
@@ -364,23 +395,23 @@ const MyLoads = () => {
           </div>
 
           {/* Search & Filter Controls Bar */}
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginBottom: 16 }}>
+          <div className="myloads-filter-bar">
             <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: 6, padding: '7px 12px', flex: 1, minWidth: 260 }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2.5" style={{ marginRight: 8 }}>
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
               </svg>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by load #, reference, route, or driver..." 
+                placeholder="Search by load #, reference, route, or driver..."
                 style={{ border: 'none', outline: 'none', fontSize: 13, color: '#334155', width: '100%', backgroundColor: 'transparent' }}
               />
             </div>
 
-            <select 
-              value={statusFilter} 
+            <select
+              value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               style={{ backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: 6, padding: '7px 12px', fontSize: 12.5, color: '#334155', outline: 'none', cursor: 'pointer' }}
             >
@@ -393,8 +424,8 @@ const MyLoads = () => {
               <option value="Confirmed">Confirmed</option>
             </select>
 
-            <select 
-              value={loadTypeFilter} 
+            <select
+              value={loadTypeFilter}
               onChange={(e) => setLoadTypeFilter(e.target.value)}
               style={{ backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: 6, padding: '7px 12px', fontSize: 12.5, color: '#334155', outline: 'none', cursor: 'pointer' }}
             >
@@ -405,8 +436,8 @@ const MyLoads = () => {
               <option value="Warehousing / 3PL">Warehousing / 3PL</option>
             </select>
 
-            <select 
-              value={dateFilter} 
+            <select
+              value={dateFilter}
               onChange={(e) => setDateFilter(e.target.value)}
               style={{ backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: 6, padding: '7px 12px', fontSize: 12.5, color: '#334155', outline: 'none', cursor: 'pointer' }}
             >
@@ -416,8 +447,46 @@ const MyLoads = () => {
               <option value="This Month">This Month</option>
             </select>
 
-            <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: 6, padding: '7px 12px', fontSize: 12.5, color: '#64748b' }}>
-              <span>Start date &rarr; End date 📅</span>
+            {/* Start Date Calendar Input */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: 6, padding: '5px 10px' }}>
+              <span style={{ fontSize: 11, fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>Start:</span>
+              <input
+                type="date"
+                value={startDateFilter}
+                onChange={(e) => setStartDateFilter(e.target.value)}
+                style={{
+                  border: 'none',
+                  outline: 'none',
+                  fontSize: 12,
+                  color: '#0f172a',
+                  backgroundColor: 'transparent',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit'
+                }}
+                title="Select Start Date"
+              />
+            </div>
+
+            <span style={{ color: '#94a3b8', fontSize: 13, fontWeight: 'bold' }}>→</span>
+
+            {/* End Date Calendar Input */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, backgroundColor: '#ffffff', border: '1px solid #cbd5e1', borderRadius: 6, padding: '5px 10px' }}>
+              <span style={{ fontSize: 11, fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>End:</span>
+              <input
+                type="date"
+                value={endDateFilter}
+                onChange={(e) => setEndDateFilter(e.target.value)}
+                style={{
+                  border: 'none',
+                  outline: 'none',
+                  fontSize: 12,
+                  color: '#0f172a',
+                  backgroundColor: 'transparent',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit'
+                }}
+                title="Select End Date"
+              />
             </div>
 
             <button className="cp-btn cp-btn-white" onClick={() => showToast('Advanced filter drawer opened.')}>
@@ -430,8 +499,8 @@ const MyLoads = () => {
           </div>
 
           {/* Main 2-Column Grid (Left: Loads List Table, Right: 3 Summary Cards) */}
-          <div style={{ display: 'grid', gridTemplateColumns: '70% 28.5%', gap: 20, alignItems: 'start' }}>
-            
+          <div className="myloads-main-layout">
+
             {/* LEFT COLUMN: LOADS LIST TABLE */}
             <div className="cp-card" style={{ padding: 0, overflow: 'hidden' }}>
               <div style={{ padding: '16px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -458,8 +527,8 @@ const MyLoads = () => {
                   <tbody>
                     {filteredLoads.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((row) => (
                       <tr key={row.id}>
-                        <td 
-                          className="cp-bold-link" 
+                        <td
+                          className="cp-bold-link"
                           onClick={() => handleOpenDetails(row.id)}
                         >
                           {row.id}
@@ -472,22 +541,80 @@ const MyLoads = () => {
                         <td style={{ fontSize: 11, color: '#64748b' }}>{row.pickup}</td>
                         <td style={{ fontSize: 11, color: '#64748b' }}>{row.delivery}</td>
                         <td style={{ fontSize: 11, fontWeight: 700, color: row.eta.includes('Arrived') ? '#047857' : '#0f172a' }}>{row.eta}</td>
-                        <td style={{ textAlign: 'center' }}>
-                          <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
-                            <button 
+                        <td style={{ textAlign: 'center', position: 'relative' }}>
+                          <div style={{ display: 'flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
+                            {/* Quick View Button */}
+                            <button
                               onClick={() => handleOpenDetails(row.id)}
-                              style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', fontSize: 13 }}
+                              style={{ background: 'rgba(37, 99, 235, 0.08)', border: '1px solid #bfdbfe', color: '#2563eb', borderRadius: 4, width: 26, height: 26, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13 }}
                               title="View Load Details"
                             >
                               👁️
                             </button>
-                            <button 
-                              onClick={() => showToast(`Options for ${row.id}`)}
-                              style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: 13 }}
+
+                            {/* 3-Dots Menu Button */}
+                            <button
+                              onClick={(e) => handleOpenActionMenu(e, row.id)}
+                              style={{
+                                background: activeActionMenuId === row.id ? '#1e293b' : '#f1f5f9',
+                                border: '1px solid #cbd5e1',
+                                color: activeActionMenuId === row.id ? '#ffffff' : '#475569',
+                                borderRadius: 4,
+                                width: 28,
+                                height: 26,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: 14,
+                                fontWeight: 'bold'
+                              }}
                               title="More options"
                             >
-                              ⋯
+                              •••
                             </button>
+
+                            {/* Dropdown Menu Popup - ONLY Delete Option */}
+                            {activeActionMenuId === row.id && (
+                              <div
+                                style={{
+                                  position: 'absolute',
+                                  top: '85%',
+                                  right: 10,
+                                  zIndex: 100,
+                                  backgroundColor: '#ffffff',
+                                  border: '1px solid #cbd5e1',
+                                  borderRadius: 8,
+                                  boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                                  minWidth: 120,
+                                  padding: '4px 0',
+                                  textAlign: 'left'
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <button
+                                  onClick={() => handleConfirmDelete(row.id)}
+                                  style={{
+                                    width: '100%',
+                                    padding: '8px 14px',
+                                    background: 'none',
+                                    border: 'none',
+                                    textAlign: 'left',
+                                    fontSize: 12,
+                                    fontWeight: '600',
+                                    color: '#dc2626',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 8
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fef2f2'}
+                                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                >
+                                  <span>🗑️</span> Delete
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -502,19 +629,19 @@ const MyLoads = () => {
                   Showing {filteredLoads.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredLoads.length)} of {filteredLoads.length} loads
                 </span>
                 <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                  <button 
+                  <button
                     disabled={currentPage === 1}
                     onClick={() => setCurrentPage(1)}
                     style={{ border: '1px solid #cbd5e1', background: currentPage === 1 ? '#f8fafc' : '#fff', opacity: currentPage === 1 ? 0.6 : 1, borderRadius: 4, padding: '3px 8px', fontSize: 11, cursor: currentPage === 1 ? 'default' : 'pointer' }}
                   >|&lt;</button>
-                  <button 
+                  <button
                     disabled={currentPage === 1}
                     onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                     style={{ border: '1px solid #cbd5e1', background: currentPage === 1 ? '#f8fafc' : '#fff', opacity: currentPage === 1 ? 0.6 : 1, borderRadius: 4, padding: '3px 8px', fontSize: 11, cursor: currentPage === 1 ? 'default' : 'pointer' }}
                   >&lt;</button>
-                  
+
                   {[1, 2, 3, 4, 5].map(p => (
-                    <button 
+                    <button
                       key={p}
                       onClick={() => setCurrentPage(p)}
                       style={{
@@ -532,12 +659,12 @@ const MyLoads = () => {
                     </button>
                   ))}
 
-                  <button 
+                  <button
                     disabled={currentPage === 5}
                     onClick={() => setCurrentPage(prev => Math.min(prev + 1, 5))}
                     style={{ border: '1px solid #cbd5e1', background: currentPage === 5 ? '#f8fafc' : '#fff', opacity: currentPage === 5 ? 0.6 : 1, borderRadius: 4, padding: '3px 8px', fontSize: 11, cursor: currentPage === 5 ? 'default' : 'pointer' }}
                   >&gt;</button>
-                  <button 
+                  <button
                     disabled={currentPage === 5}
                     onClick={() => setCurrentPage(5)}
                     style={{ border: '1px solid #cbd5e1', background: currentPage === 5 ? '#f8fafc' : '#fff', opacity: currentPage === 5 ? 0.6 : 1, borderRadius: 4, padding: '3px 8px', fontSize: 11, cursor: currentPage === 5 ? 'default' : 'pointer' }}
@@ -548,7 +675,7 @@ const MyLoads = () => {
 
             {/* RIGHT COLUMN: 3 SUMMARY CARDS */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              
+
               {/* CARD 1: LOADS BY STATUS (Donut Chart Graphic) */}
               <div className="cp-card">
                 <div className="cp-card-header">
@@ -631,7 +758,7 @@ const MyLoads = () => {
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                  <div 
+                  <div
                     onClick={() => { setActiveTabFilter('In Transit'); showToast('Filtered: Requires Attention'); }}
                     style={{ backgroundColor: '#fff5f5', border: '1px solid #fed7d7', borderRadius: 6, padding: '8px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
                   >
@@ -639,7 +766,7 @@ const MyLoads = () => {
                     <span style={{ backgroundColor: '#e53e3e', color: '#fff', borderRadius: '50%', width: 18, height: 18, fontSize: 10, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>5</span>
                   </div>
 
-                  <div 
+                  <div
                     onClick={() => { setActiveTabFilter('In Transit'); showToast('Filtered: Delayed Loads'); }}
                     style={{ backgroundColor: '#fffaf0', border: '1px solid #feebc8', borderRadius: 6, padding: '8px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
                   >
@@ -647,7 +774,7 @@ const MyLoads = () => {
                     <span style={{ backgroundColor: '#dd6b20', color: '#fff', borderRadius: '50%', width: 18, height: 18, fontSize: 10, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>4</span>
                   </div>
 
-                  <div 
+                  <div
                     onClick={() => { setActiveTabFilter('Completed'); showToast('Filtered: Proof of Delivery Pending'); }}
                     style={{ backgroundColor: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: 6, padding: '8px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
                   >
@@ -655,7 +782,7 @@ const MyLoads = () => {
                     <span style={{ backgroundColor: '#3182ce', color: '#fff', borderRadius: '50%', width: 18, height: 18, fontSize: 10, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>8</span>
                   </div>
 
-                  <div 
+                  <div
                     onClick={() => { navigate('/customer/invoices-payments'); showToast('Filtered: Invoice Pending'); }}
                     style={{ backgroundColor: '#f0fff4', border: '1px solid #c6f6d5', borderRadius: 6, padding: '8px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
                   >
@@ -750,6 +877,7 @@ const MyLoads = () => {
 
             <div className="cp-header-row">
               <div className="cp-header-left">
+
                 <div className="cp-title-group">
                   <span className="cp-section-code">14.3</span>
                   <h1 className="cp-page-title">Load Details &amp; Tracking</h1>
@@ -763,6 +891,14 @@ const MyLoads = () => {
               </div>
 
               <div className="cp-header-right">
+                <button className="cp-btn cp-btn-white" onClick={() => setCurrentView('MAIN_LIST')} style={{ fontWeight: '700', color: '#2563eb', borderColor: '#bfdbfe' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                  </svg>
+                  Back to My Loads
+                </button>
+
                 <button className="cp-help-link" onClick={() => setShowSupportModal(true)}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2">
                     <circle cx="12" cy="12" r="10"></circle>
@@ -860,7 +996,7 @@ const MyLoads = () => {
 
           {/* Main 3 Section Layout Grid */}
           <div className="cp-load-details-grid">
-            
+
             {/* LEFT CARD: LIVE TRACKING */}
             <div className="cp-card">
               <div className="cp-card-header">
@@ -873,13 +1009,13 @@ const MyLoads = () => {
                   <rect x="0" y="0" width="500" height="280" fill="#edf3e6" />
                   <path d="M 370 0 C 350 70 380 150 410 220 C 430 250 420 280 430 280 L 500 280 L 500 0 Z" fill="#d4e6f7" />
                   <path d="M 370 0 C 350 70 380 150 410 220 C 430 250 420 280 430 280" fill="none" stroke="#b0d4f1" strokeWidth="3" />
-                  <path 
-                    d="M 65 220 C 90 180 120 160 175 150 C 220 140 260 120 315 90 C 360 65 400 55 415 35" 
-                    fill="none" 
-                    stroke="#2563eb" 
-                    strokeWidth="3.5" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
+                  <path
+                    d="M 65 220 C 90 180 120 160 175 150 C 220 140 260 120 315 90 C 360 65 400 55 415 35"
+                    fill="none"
+                    stroke="#2563eb"
+                    strokeWidth="3.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   />
                   <circle cx="175" cy="150" r="3.5" fill="#ffffff" stroke="#2563eb" strokeWidth="2" />
                   <circle cx="315" cy="90" r="3.5" fill="#ffffff" stroke="#2563eb" strokeWidth="2" />
@@ -1062,9 +1198,9 @@ const MyLoads = () => {
                   <div className="cp-car-card">
                     <div className="cp-car-num-badge">1</div>
                     <div className="cp-car-img-wrapper">
-                      <img 
-                        src="/assets/cars/toyota_rav4.png" 
-                        alt="Toyota RAV4 2024" 
+                      <img
+                        src="/assets/cars/toyota_rav4.png"
+                        alt="Toyota RAV4 2024"
                         className="cp-car-img-photo"
                       />
                     </div>
@@ -1090,9 +1226,9 @@ const MyLoads = () => {
                   <div className="cp-car-card">
                     <div className="cp-car-num-badge">2</div>
                     <div className="cp-car-img-wrapper">
-                      <img 
-                        src="/assets/cars/mazda_cx5.png" 
-                        alt="Mazda CX-5 2024" 
+                      <img
+                        src="/assets/cars/mazda_cx5.png"
+                        alt="Mazda CX-5 2024"
                         className="cp-car-img-photo"
                       />
                     </div>
@@ -1462,7 +1598,7 @@ const MyLoads = () => {
       {showBookModal && (
         <div className="cp-modal-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setShowBookModal(false)}>
           <div className="cp-modal-content" style={{ maxWidth: 620, width: '92%', maxHeight: '88vh', display: 'flex', flexDirection: 'column', borderRadius: 12, overflow: 'hidden', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.08)', background: '#ffffff' }} onClick={(e) => e.stopPropagation()}>
-            
+
             {/* Modal Header (Fixed top) */}
             <div style={{ padding: '14px 20px', flexShrink: 0, background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', color: '#ffffff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
@@ -1477,10 +1613,10 @@ const MyLoads = () => {
 
             {/* Modal Form (Flex Column) */}
             <form onSubmit={handleBookSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', margin: 0 }}>
-              
+
               {/* Scrollable Form Body */}
               <div style={{ padding: '16px 20px', overflowY: 'auto', flex: 1 }}>
-                
+
                 {/* SECTION 1: CARGO INFORMATION */}
                 <div style={{ marginBottom: 14 }}>
                   <div style={{ fontSize: 11, fontWeight: '800', color: '#2563eb', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -1490,9 +1626,9 @@ const MyLoads = () => {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
                     <div>
                       <label style={{ display: 'block', fontSize: 10.5, fontWeight: '700', color: '#475569', marginBottom: 3 }}>CARGO CATEGORY *</label>
-                      <select 
-                        value={bookCargoType} 
-                        onChange={(e) => setBookCargoType(e.target.value)} 
+                      <select
+                        value={bookCargoType}
+                        onChange={(e) => setBookCargoType(e.target.value)}
                         style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: 12, color: '#0f172a', outline: 'none', backgroundColor: '#fff' }}
                         required
                       >
@@ -1506,25 +1642,25 @@ const MyLoads = () => {
 
                     <div>
                       <label style={{ display: 'block', fontSize: 10.5, fontWeight: '700', color: '#475569', marginBottom: 3 }}>ESTIMATED WEIGHT / UNITS</label>
-                      <input 
-                        type="text" 
-                        value={bookWeight} 
-                        onChange={(e) => setBookWeight(e.target.value)} 
-                        placeholder="e.g. 3,450 kg / 2 Vehicles" 
-                        style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: 12, color: '#0f172a', outline: 'none', boxSizing: 'border-box' }} 
+                      <input
+                        type="text"
+                        value={bookWeight}
+                        onChange={(e) => setBookWeight(e.target.value)}
+                        placeholder="e.g. 3,450 kg / 2 Vehicles"
+                        style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: 12, color: '#0f172a', outline: 'none', boxSizing: 'border-box' }}
                       />
                     </div>
                   </div>
 
                   <div>
                     <label style={{ display: 'block', fontSize: 10.5, fontWeight: '700', color: '#475569', marginBottom: 3 }}>VEHICLE / CARGO DESCRIPTION &amp; SPECS *</label>
-                    <input 
-                      type="text" 
-                      value={bookCargoSpecs} 
-                      onChange={(e) => setBookCargoSpecs(e.target.value)} 
-                      placeholder="e.g. 2024 Toyota RAV4 &amp; 2023 Mazda CX-5 (Enclosed Carrier)" 
-                      style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: 12, color: '#0f172a', outline: 'none', boxSizing: 'border-box' }} 
-                      required 
+                    <input
+                      type="text"
+                      value={bookCargoSpecs}
+                      onChange={(e) => setBookCargoSpecs(e.target.value)}
+                      placeholder="e.g. 2024 Toyota RAV4 &amp; 2023 Mazda CX-5 (Enclosed Carrier)"
+                      style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: 12, color: '#0f172a', outline: 'none', boxSizing: 'border-box' }}
+                      required
                     />
                   </div>
                 </div>
@@ -1538,25 +1674,25 @@ const MyLoads = () => {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                     <div>
                       <label style={{ display: 'block', fontSize: 10.5, fontWeight: '700', color: '#475569', marginBottom: 3 }}>PICKUP ORIGIN (CITY, STATE) *</label>
-                      <input 
-                        type="text" 
-                        value={bookOrigin} 
-                        onChange={(e) => setBookOrigin(e.target.value)} 
-                        placeholder="e.g. Melbourne VIC 3000" 
-                        style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: 12, color: '#0f172a', outline: 'none', boxSizing: 'border-box' }} 
-                        required 
+                      <input
+                        type="text"
+                        value={bookOrigin}
+                        onChange={(e) => setBookOrigin(e.target.value)}
+                        placeholder="e.g. Melbourne VIC 3000"
+                        style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: 12, color: '#0f172a', outline: 'none', boxSizing: 'border-box' }}
+                        required
                       />
                     </div>
 
                     <div>
                       <label style={{ display: 'block', fontSize: 10.5, fontWeight: '700', color: '#475569', marginBottom: 3 }}>DELIVERY DESTINATION (CITY, STATE) *</label>
-                      <input 
-                        type="text" 
-                        value={bookDestination} 
-                        onChange={(e) => setBookDestination(e.target.value)} 
-                        placeholder="e.g. Sydney NSW 2000" 
-                        style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: 12, color: '#0f172a', outline: 'none', boxSizing: 'border-box' }} 
-                        required 
+                      <input
+                        type="text"
+                        value={bookDestination}
+                        onChange={(e) => setBookDestination(e.target.value)}
+                        placeholder="e.g. Sydney NSW 2000"
+                        style={{ width: '100%', padding: '7px 10px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: 12, color: '#0f172a', outline: 'none', boxSizing: 'border-box' }}
+                        required
                       />
                     </div>
                   </div>
@@ -1571,30 +1707,30 @@ const MyLoads = () => {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
                     <div>
                       <label style={{ display: 'block', fontSize: 10.5, fontWeight: '700', color: '#475569', marginBottom: 3 }}>PICKUP DATE *</label>
-                      <input 
-                        type="date" 
-                        value={bookPickupDate} 
-                        onChange={(e) => setBookPickupDate(e.target.value)} 
-                        style={{ width: '100%', padding: '6.5px 8px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: 11.5, color: '#0f172a', outline: 'none', boxSizing: 'border-box' }} 
-                        required 
+                      <input
+                        type="date"
+                        value={bookPickupDate}
+                        onChange={(e) => setBookPickupDate(e.target.value)}
+                        style={{ width: '100%', padding: '6.5px 8px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: 11.5, color: '#0f172a', outline: 'none', boxSizing: 'border-box' }}
+                        required
                       />
                     </div>
 
                     <div>
                       <label style={{ display: 'block', fontSize: 10.5, fontWeight: '700', color: '#475569', marginBottom: 3 }}>EST. DELIVERY DATE</label>
-                      <input 
-                        type="date" 
-                        value={bookDeliveryDate} 
-                        onChange={(e) => setBookDeliveryDate(e.target.value)} 
-                        style={{ width: '100%', padding: '6.5px 8px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: 11.5, color: '#0f172a', outline: 'none', boxSizing: 'border-box' }} 
+                      <input
+                        type="date"
+                        value={bookDeliveryDate}
+                        onChange={(e) => setBookDeliveryDate(e.target.value)}
+                        style={{ width: '100%', padding: '6.5px 8px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: 11.5, color: '#0f172a', outline: 'none', boxSizing: 'border-box' }}
                       />
                     </div>
 
                     <div>
                       <label style={{ display: 'block', fontSize: 10.5, fontWeight: '700', color: '#475569', marginBottom: 3 }}>SERVICE PRIORITY</label>
-                      <select 
-                        value={bookPriority} 
-                        onChange={(e) => setBookPriority(e.target.value)} 
+                      <select
+                        value={bookPriority}
+                        onChange={(e) => setBookPriority(e.target.value)}
                         style={{ width: '100%', padding: '7px 8px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: 11.5, color: '#0f172a', outline: 'none', backgroundColor: '#fff' }}
                       >
                         <option value="Standard Delivery">Standard Delivery</option>
@@ -1608,11 +1744,11 @@ const MyLoads = () => {
                 {/* SECTION 4: SPECIAL INSTRUCTIONS */}
                 <div style={{ paddingTop: 10, borderTop: '1px solid #f1f5f9' }}>
                   <label style={{ display: 'block', fontSize: 10.5, fontWeight: '700', color: '#475569', marginBottom: 3 }}>SPECIAL DISPATCH INSTRUCTIONS (OPTIONAL)</label>
-                  <textarea 
-                    value={bookNotes} 
-                    onChange={(e) => setBookNotes(e.target.value)} 
-                    placeholder="e.g. Driver must contact site manager 30 mins prior to arrival. Gate access code: #4920" 
-                    style={{ width: '100%', height: 48, padding: '6px 10px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: 11.5, color: '#0f172a', outline: 'none', boxSizing: 'border-box', resize: 'none' }} 
+                  <textarea
+                    value={bookNotes}
+                    onChange={(e) => setBookNotes(e.target.value)}
+                    placeholder="e.g. Driver must contact site manager 30 mins prior to arrival. Gate access code: #4920"
+                    style={{ width: '100%', height: 48, padding: '6px 10px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: 11.5, color: '#0f172a', outline: 'none', boxSizing: 'border-box', resize: 'none' }}
                   />
                 </div>
 
@@ -1620,23 +1756,57 @@ const MyLoads = () => {
 
               {/* FOOTER ACTIONS (Fixed bottom inside modal card) */}
               <div style={{ padding: '12px 20px', flexShrink: 0, background: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', gap: 10, justifyContent: 'flex-end', alignItems: 'center' }}>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setShowBookModal(false)}
                   style={{ padding: '8px 16px', borderRadius: 6, border: '1px solid #cbd5e1', background: '#fff', color: '#475569', fontWeight: '600', fontSize: 12, cursor: 'pointer' }}
                 >
                   Cancel
                 </button>
 
-                <button 
-                  type="submit" 
-                  className="cp-btn cp-btn-blue" 
+                <button
+                  type="submit"
+                  className="cp-btn cp-btn-blue"
                   style={{ padding: '8.5px 22px', borderRadius: 6, fontSize: 12.5, fontWeight: '700', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 3px 10px rgba(37, 99, 235, 0.25)', cursor: 'pointer' }}
                 >
                   <span>🚀</span> Submit Booking Request
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deletingLoadId && (
+        <div className="cp-modal-overlay" onClick={() => setDeletingLoadId(null)}>
+          <div className="cp-modal-content" style={{ maxWidth: 420, borderRadius: 12 }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ padding: '18px 20px', textAlign: 'center' }}>
+              <div style={{ width: 48, height: 48, borderRadius: '50%', backgroundColor: '#fef2f2', color: '#dc2626', fontSize: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px auto' }}>
+                🗑️
+              </div>
+              <h3 style={{ margin: '0 0 6px 0', fontSize: 17, fontWeight: '800', color: '#0f172a' }}>Delete Load Record?</h3>
+              <p style={{ fontSize: 13, color: '#64748b', margin: 0, lineHeight: 1.5 }}>
+                Are you sure you want to delete load record <strong>{deletingLoadId}</strong>? This action cannot be undone.
+              </p>
+            </div>
+
+            <div style={{ padding: '12px 20px', backgroundColor: '#f8fafc', borderTop: '1px solid #e2e8f0', borderRadius: '0 0 12px 12px', display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button 
+                type="button" 
+                onClick={() => setDeletingLoadId(null)}
+                style={{ padding: '8px 16px', borderRadius: 6, border: '1px solid #cbd5e1', background: '#fff', color: '#475569', fontWeight: '600', fontSize: 12, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                onClick={handleExecuteDelete}
+                style={{ padding: '8px 18px', borderRadius: 6, border: 'none', background: '#dc2626', color: '#fff', fontWeight: '700', fontSize: 12, cursor: 'pointer' }}
+              >
+                Delete Load
+              </button>
+            </div>
           </div>
         </div>
       )}
