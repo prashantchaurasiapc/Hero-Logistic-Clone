@@ -676,17 +676,17 @@ export default function Messages() {
           </div>
 
           {/* Top Right Utilities */}
-          <div className="flex items-center gap-2.5 sm:gap-3.5 ml-auto shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 ml-auto shrink-0 flex-nowrap">
             <button 
               onClick={() => showToast('Help center opened')}
               className="flex items-center gap-1 text-xs font-bold text-[#4338CA] hover:text-[#312E81] transition-colors cursor-pointer"
             >
               <HelpCircle size={14} className="text-[#4338CA]" />
-              <span className="hidden xs:inline">Need help?</span>
+              <span className="hidden sm:inline">Need help?</span>
             </button>
 
             {/* Notification Bell with '11' Badge */}
-            <div className="relative cursor-pointer" onClick={() => showToast('11 Unread Notifications')}>
+            <div className="relative cursor-pointer shrink-0" onClick={() => showToast('11 Unread Notifications')}>
               <div className="p-0.5 text-slate-700 hover:text-slate-900">
                 <svg className="w-4.5 h-4.5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
@@ -698,8 +698,30 @@ export default function Messages() {
             </div>
 
             {/* User Profile Initial SM Circle */}
-            <div onClick={() => showToast('Logged in as SM (System Manager)')} className="w-6.5 h-6.5 rounded-full bg-[#0F172A] text-white flex items-center justify-center font-extrabold text-[10px] cursor-pointer shadow-xs">
+            <div onClick={() => showToast('Logged in as SM (System Manager)')} className="w-6.5 h-6.5 rounded-full bg-[#0F172A] text-white flex items-center justify-center font-extrabold text-[10px] cursor-pointer shadow-xs shrink-0">
               SM
+            </div>
+
+            {/* More Actions Dropdown Button */}
+            <div className="relative shrink-0">
+              <button 
+                onClick={() => setOpenMoreActions(!openMoreActions)}
+                className="flex items-center gap-1 text-[11px] sm:text-xs font-bold text-slate-700 bg-white border border-slate-200 px-2 sm:px-3 py-1 rounded-xl shadow-2xs hover:bg-slate-50 transition-colors cursor-pointer whitespace-nowrap"
+              >
+                <span>More Actions</span>
+                <ChevronDown size={12} className={`text-slate-500 transition-transform ${openMoreActions ? 'rotate-180' : ''}`} />
+              </button>
+
+              {openMoreActions && (
+                <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-slate-200 rounded-xl shadow-xl z-30 overflow-hidden py-1 text-xs text-left">
+                  <button onClick={() => { showToast('Archived messages opened'); setOpenMoreActions(false); }} className="w-full text-left px-3 py-1.5 font-medium hover:bg-slate-50 text-slate-700 flex items-center gap-2">
+                    <Inbox size={13} className="text-slate-400" /> View Archived Chat
+                  </button>
+                  <button onClick={() => { showToast('Exporting chat log...'); setOpenMoreActions(false); }} className="w-full text-left px-3 py-1.5 font-medium hover:bg-slate-50 text-slate-700 flex items-center gap-2">
+                    <FileText size={13} className="text-slate-400" /> Export Message Logs
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -721,35 +743,12 @@ export default function Messages() {
           </div>
 
           {/* Right Action Controls */}
-          <div className="flex flex-col items-end gap-1.5 shrink-0 w-full sm:w-auto">
-            {/* More Actions Dropdown Button */}
-            <div className="relative self-end sm:self-auto">
-              <button 
-                onClick={() => setOpenMoreActions(!openMoreActions)}
-                className="flex items-center gap-1 text-[10px] font-extrabold text-slate-700 bg-white border border-slate-200 px-2.5 py-0.5 rounded shadow-2xs hover:bg-slate-50 transition-colors cursor-pointer"
-              >
-                <span>More Actions</span>
-                <ChevronDown size={12} className="text-slate-500" />
-              </button>
-
-              {openMoreActions && (
-                <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-slate-200 rounded-xl shadow-xl z-30 overflow-hidden py-1 text-xs">
-                  <button onClick={() => { showToast('Archived messages opened'); setOpenMoreActions(false); }} className="w-full text-left px-3 py-1.5 font-medium hover:bg-slate-50 text-slate-700 flex items-center gap-2">
-                    <Inbox size={13} className="text-slate-400" /> View Archived Chat
-                  </button>
-                  <button onClick={() => { showToast('Exporting chat log...'); setOpenMoreActions(false); }} className="w-full text-left px-3 py-1.5 font-medium hover:bg-slate-50 text-slate-700 flex items-center gap-2">
-                    <FileText size={13} className="text-slate-400" /> Export Message Logs
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Main Header Action Buttons Row */}
-            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
-              <button 
-                onClick={() => showToast('Refreshing data...')}
-                className="flex-1 sm:flex-none justify-center flex items-center gap-1 bg-white border border-slate-200 hover:bg-slate-50 text-[#4338CA] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer hover:border-slate-300 whitespace-nowrap"
-              >
+          <div className="flex flex-wrap sm:flex-nowrap items-center justify-start sm:justify-end gap-2 w-full sm:w-auto shrink-0">
+            {/* Main Header Action Buttons */}
+            <button 
+              onClick={() => showToast('Refreshing data...')}
+              className="flex-1 sm:flex-none justify-center flex items-center gap-1 bg-white border border-slate-200 hover:bg-slate-50 text-[#4338CA] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer hover:border-slate-300 whitespace-nowrap"
+            >
                 <RefreshCw size={14} className="text-[#4338CA]" />
                 <span>Refresh</span>
               </button>
@@ -855,8 +854,6 @@ export default function Messages() {
             </div>
           </div>
         </div>
-      </div>
-
 
       {/* ========================================================================= */}
       {/* RENDER VIEW: 12.5 TEMPLATES & AUTOMATION                                  */}

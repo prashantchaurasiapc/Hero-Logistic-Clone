@@ -307,6 +307,11 @@ function App() {
         <Route path="/customer" element={<DashboardLayout role="customer" />}>
           <Route path="dashboard" element={<CustomerDashboard />} />
           <Route path="my-loads" element={<MyLoads />} />
+          <Route path="create-booking" element={<LoadRequests />} />
+          <Route path="invoices-payments" element={<CustomerInvoices />} />
+          <Route path="documents-pods" element={<CustomerDocuments />} />
+          <Route path="messages-support" element={<CustomerSupport />} />
+          <Route path="account-users" element={<CustomerSettings />} />
           <Route path="track-delivery" element={<TrackDelivery />} />
           <Route path="documents" element={<CustomerDocuments />} />
           <Route path="invoices" element={<CustomerInvoices />} />

@@ -9,8 +9,180 @@ import {
   Download, Eye, Lock, Unlock, MoreVertical, Mail, Phone, Calendar,
   Key, Save, ChevronRight, ChevronDown as ChevronDownIcon, Bell, MessageSquare,
   LifeBuoy, Headphones, Inbox, Printer, ArrowLeft, Gauge, Image as ImageIcon, ArrowRight, ChevronsUpDown, Flag, Info, Car, Weight, Navigation,
-  Menu, CheckCircle, Award, Filter, Columns, ArrowUpDown, AlertTriangle, Copy, Scale, Palette, Briefcase, Terminal, Cpu, Database, Wind
+  Menu, CheckCircle, Award, Filter, Columns, ArrowUpDown, AlertTriangle, Copy, Scale, Palette, Briefcase, Terminal, Cpu, Database, Wind, UploadCloud
 } from 'lucide-react';
+
+// Helper upload components moved outside to prevent unmounting on re-renders
+const VehicleLicenceFileUploadBox = () => {
+  const [file, setFile] = React.useState(null);
+  const [isDragging, setIsDragging] = React.useState(false);
+  const fileInputRef = React.useRef(null);
+
+  const handleFile = (selectedFile) => {
+    if (selectedFile) {
+      setFile({
+        name: selectedFile.name,
+        size: (selectedFile.size / (1024 * 1024)).toFixed(2) + ' MB',
+        url: URL.createObjectURL(selectedFile)
+      });
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  return (
+    <div className="w-full text-left">
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        className="hidden" 
+        accept=".pdf,.png,.jpg,.jpeg" 
+        onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+      />
+
+      {!file ? (
+        <div 
+          onClick={() => fileInputRef.current?.click()}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={`border border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all cursor-pointer group w-full ${
+            isDragging 
+              ? 'border-purple-600 bg-purple-100/50 scale-[0.99]' 
+              : 'border-gray-300 bg-gray-50/50 hover:border-purple-400 hover:bg-purple-50/50'
+          }`}
+        >
+          <div className="w-12 h-12 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-2xs">
+            <UploadCloud size={24} />
+          </div>
+          <p className="text-[13px] font-bold text-gray-900 mb-1">Drag and drop file here, or click to browse</p>
+          <p className="text-[11px] font-medium text-gray-400 mb-4">Support for PDF, PNG, JPG up to 10MB</p>
+          <button 
+            type="button"
+            onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+            className="px-5 py-2 bg-white border border-gray-200 rounded-lg shadow-sm text-xs font-bold text-gray-700 hover:border-purple-300 transition-all cursor-pointer"
+          >
+            Browse File
+          </button>
+        </div>
+      ) : (
+        <div className="border border-purple-200 bg-purple-50/50 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+              <FileText size={20} />
+            </div>
+            <div className="overflow-hidden">
+              <div className="flex items-center gap-2">
+                <p className="text-xs font-black text-gray-800 truncate max-w-[240px]">{file.name}</p>
+                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-[9px] font-bold">Uploaded</span>
+              </div>
+              <p className="text-[10px] text-gray-500 font-semibold">{file.size} • Ready for processing</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <a 
+              href={file.url} 
+              target="_blank" 
+              rel="noreferrer"
+              className="px-3 py-1.5 bg-white border border-purple-200 text-purple-700 rounded-lg text-xs font-bold hover:bg-purple-100 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            >
+              <Eye size={13} /> View File
+            </a>
+            <button 
+              type="button"
+              onClick={() => setFile(null)}
+              className="p-1.5 bg-rose-50 text-rose-600 border border-rose-200 rounded-lg hover:bg-rose-100 transition-all cursor-pointer"
+              title="Remove File"
+            >
+              <Trash2 size={15} />
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const VehicleDocUploadBox = ({ title }) => {
+  const [docFile, setDocFile] = React.useState(null);
+  const docInputRef = React.useRef(null);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setDocFile({
+        name: file.name,
+        size: (file.size / (1024 * 1024)).toFixed(2) + ' MB'
+      });
+    }
+  };
+
+  return (
+    <div className="w-full text-left">
+      <input 
+        type="file" 
+        ref={docInputRef} 
+        className="hidden" 
+        accept=".pdf,.png,.jpg,.jpeg" 
+        onChange={handleFileChange} 
+      />
+      {!docFile ? (
+        <div 
+          onClick={() => docInputRef.current?.click()}
+          className="border border-gray-200 rounded-xl p-4 flex flex-col h-[90px] hover:border-purple-300 transition-colors group cursor-pointer bg-white relative"
+        >
+          <h4 className="text-[11px] font-bold text-gray-700 leading-tight pr-6">{title}</h4>
+          <div className="absolute right-4 top-4 text-gray-400 group-hover:text-purple-600">
+            <UploadCloud size={14} />
+          </div>
+          <div className="mt-auto flex items-center justify-center gap-1.5 text-gray-500 group-hover:text-purple-700 transition-colors text-[10px] font-bold">
+            <UploadCloud size={12} /> Upload
+          </div>
+        </div>
+      ) : (
+        <div className="border border-purple-200 bg-purple-50/60 rounded-xl p-3 flex flex-col justify-between h-[90px] shadow-2xs">
+          <div className="flex items-center justify-between gap-1 overflow-hidden">
+            <div className="flex items-center gap-1.5 overflow-hidden">
+              <CheckCircle size={14} className="text-emerald-600 shrink-0" />
+              <h4 className="text-[11px] font-bold text-gray-800 truncate">{title}</h4>
+            </div>
+            <button 
+              type="button" 
+              onClick={(e) => { e.stopPropagation(); setDocFile(null); }}
+              className="text-gray-400 hover:text-rose-600 transition-colors shrink-0"
+              title="Remove File"
+            >
+              <Trash2 size={13} />
+            </button>
+          </div>
+          <div className="mt-auto">
+            <p className="text-[10px] font-bold text-purple-800 truncate">{docFile.name}</p>
+            <p className="text-[8px] font-medium text-gray-500">{docFile.size} • Uploaded</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const Vehicles = () => {
   const [vehicles, setVehicles] = React.useState([
@@ -453,7 +625,9 @@ const Vehicles = () => {
       if (typeof e.preventDefault === 'function') e.preventDefault();
       if (typeof e.stopPropagation === 'function') e.stopPropagation();
     }
-    setEditVehicleModal(null);
+    setTimeout(() => {
+      setEditVehicleModal(null);
+    }, 50);
   };
 
   const closeDetailsView = (e) => {
@@ -461,7 +635,9 @@ const Vehicles = () => {
       if (typeof e.preventDefault === 'function') e.preventDefault();
       if (typeof e.stopPropagation === 'function') e.stopPropagation();
     }
-    setManagingVehicle(null);
+    setTimeout(() => {
+      setManagingVehicle(null);
+    }, 50);
   };
 
   const handleAddVehicle = (e) => {
@@ -635,7 +811,7 @@ const Vehicles = () => {
                       <CheckCircle size={16} /> Reactivate
                     </button>
                   )}
-                  <button onClick={() => setManagingVehicle(null)} className="ml-2 w-9 h-9 flex items-center justify-center border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 cursor-pointer transition-colors shadow-sm bg-white">
+                  <button onClick={closeDetailsView} className="ml-2 w-9 h-9 flex items-center justify-center border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 cursor-pointer transition-colors shadow-sm bg-white">
                     <X size={18} />
                   </button>
                 </>
@@ -3407,6 +3583,76 @@ const Vehicles = () => {
         </div>
       )}
 
+      {/* EDIT VEHICLE MODAL */}
+      {editVehicleModal && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4" onClick={closeEditModal}>
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-150" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-2">
+                <Edit size={16} className="text-purple-600" /> Edit Vehicle ({editVehicleModal.id})
+              </h3>
+              <button onClick={closeEditModal} className="text-slate-400 hover:text-slate-600 text-lg font-bold cursor-pointer">&times;</button>
+            </div>
+            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Make / Model *</label>
+                  <input type="text" value={editVehicleModal.make || ''} onChange={e => setEditVehicleModal({...editVehicleModal, make: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Registration *</label>
+                  <input type="text" value={editVehicleModal.reg || ''} onChange={e => setEditVehicleModal({...editVehicleModal, reg: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Vehicle Type</label>
+                  <input type="text" value={editVehicleModal.type || ''} onChange={e => setEditVehicleModal({...editVehicleModal, type: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Year</label>
+                  <input type="text" value={editVehicleModal.year || ''} onChange={e => setEditVehicleModal({...editVehicleModal, year: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Status</label>
+                  <select value={editVehicleModal.status || 'ACTIVE'} onChange={e => setEditVehicleModal({...editVehicleModal, status: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold bg-white cursor-pointer">
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="MAINTENANCE">MAINTENANCE</option>
+                    <option value="OUT OF SERVICE">OUT OF SERVICE</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Branch / Depot</label>
+                  <input type="text" value={editVehicleModal.branch || ''} onChange={e => setEditVehicleModal({...editVehicleModal, branch: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Current Driver</label>
+                  <input type="text" value={editVehicleModal.driver || ''} onChange={e => setEditVehicleModal({...editVehicleModal, driver: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Odometer</label>
+                  <input type="text" value={editVehicleModal.odometer || ''} onChange={e => setEditVehicleModal({...editVehicleModal, odometer: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-2">
+              <button onClick={closeEditModal} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 font-bold hover:bg-white text-xs cursor-pointer">Cancel</button>
+              <button onClick={(e) => {
+                setVehicles(prev => prev.map(v => v.id === editVehicleModal.id ? editVehicleModal : v));
+                if (managingVehicle && managingVehicle.id === editVehicleModal.id) {
+                  setManagingVehicle(editVehicleModal);
+                }
+                closeEditModal(e);
+              }} className="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 text-xs shadow-sm cursor-pointer">Save Changes</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       </div>
     );
   }
@@ -3554,7 +3800,11 @@ const Vehicles = () => {
                 <div>
                   <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">REGISTRATION TYPE *</label>
                   <select className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
-                    <option>HR (Heavy Rigid)</option>
+                    <option>Heavy Vehicle Registration</option>
+                    <option>Light Vehicle Registration</option>
+                    <option>Commercial Registration</option>
+                    <option>Standard Registration</option>
+                    <option>Conditional Registration</option>
                   </select>
                 </div>
                 <div>
@@ -3565,6 +3815,13 @@ const Vehicles = () => {
                   <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">REGISTRATION STATE *</label>
                   <select className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
                     <option>NSW</option>
+                    <option>VIC</option>
+                    <option>QLD</option>
+                    <option>SA</option>
+                    <option>WA</option>
+                    <option>TAS</option>
+                    <option>ACT</option>
+                    <option>NT</option>
                   </select>
                 </div>
 
@@ -3581,25 +3838,20 @@ const Vehicles = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">LICENCE CLASS</label>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">FUEL TYPE</label>
                   <select className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
-                    <option>Class HR</option>
+                    <option>Diesel</option>
+                    <option>Petrol</option>
+                    <option>Electric</option>
+                    <option>Hybrid</option>
+                    <option>LPG</option>
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">LICENCE DOCUMENT UPLOAD</label>
-                <div className="border border-dashed border-gray-300 rounded-xl p-8 flex flex-col items-center justify-center text-center hover:bg-gray-50/50 hover:border-purple-300 transition-colors cursor-pointer group">
-                  <div className="p-3 mb-3 group-hover:-translate-y-1 transition-transform">
-                    <Upload className="w-6 h-6 text-gray-400 group-hover:text-purple-600 transition-colors" />
-                  </div>
-                  <p className="text-[13px] font-bold text-gray-900 mb-1">Drag and drop file here, or click to browse</p>
-                  <p className="text-[11px] font-medium text-gray-500 mb-4">Support for PDF, PNG, JPG up to 10MB</p>
-                  <button type="button" className="px-5 py-2 bg-white border border-gray-200 hover:border-purple-300 text-gray-700 text-xs font-bold rounded-lg shadow-sm transition-colors">
-                    Browse File
-                  </button>
-                </div>
+                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">REGISTRATION DOCUMENT UPLOAD</label>
+                <VehicleLicenceFileUploadBox />
               </div>
             </div>
           </div>
@@ -3612,32 +3864,24 @@ const Vehicles = () => {
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                  'Medical Certificate',
-                  'Police Verification',
-                  'Background Check',
-                  'Drug & Alcohol Certificate',
-                  'First Aid Certificate',
-                  'Training Certificate',
+                  'Safety Inspection',
+                  'Insurance Policy',
+                  'Roadworthy Certificate',
+                  'Emissions Compliance',
+                  'Heavy Vehicle Permit',
+                  'Weight Bridge Certificate',
                   'Other Documents'
                 ].map(doc => (
-                  <div key={doc} className="border border-gray-200 rounded-xl p-4 flex flex-col h-[90px] hover:border-purple-300 transition-colors group cursor-pointer bg-white relative">
-                    <h4 className="text-[11px] font-bold text-gray-700 leading-tight pr-6">{doc}</h4>
-                    <div className="absolute right-4 top-4 text-gray-400 group-hover:text-purple-600">
-                      <Upload size={14} />
-                    </div>
-                    <div className="mt-auto flex items-center justify-center gap-1.5 text-gray-500 group-hover:text-purple-700 transition-colors text-[10px] font-bold">
-                      <Upload size={12} /> Upload
-                    </div>
-                  </div>
+                  <VehicleDocUploadBox key={doc} title={doc} />
                 ))}
               </div>
             </div>
           </div>
 
-          {/* 5. Maintenance Preferences */}
+          {/* 4. Maintenance Preferences */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100">
-              <h3 className="text-[13px] font-black text-gray-900">5. Maintenance Preferences</h3>
+              <h3 className="text-[13px] font-black text-gray-900">4. Maintenance Preferences</h3>
             </div>
             <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
@@ -3674,10 +3918,10 @@ const Vehicles = () => {
             </div>
           </div>
 
-          {/* 6. Notes & Comments */}
+          {/* 5. Notes & Comments */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100">
-              <h3 className="text-[13px] font-black text-gray-900">6. Notes & Comments</h3>
+              <h3 className="text-[13px] font-black text-gray-900">5. Notes & Comments</h3>
             </div>
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
@@ -3709,7 +3953,13 @@ const Vehicles = () => {
         </div>
         <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
           <button
-            onClick={() => setShowAddModal(true)}
+            onMouseDown={(e) => { e.currentTarget.dataset.mouseDown = 'true'; }}
+            onClick={(e) => {
+              if (e.currentTarget.dataset.mouseDown === 'true') {
+                e.currentTarget.dataset.mouseDown = 'false';
+                setShowAddModal(true);
+              }
+            }}
             className="border border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100 text-[13px] font-semibold py-2 px-4 rounded-lg transition-colors flex items-center gap-2 shadow-sm cursor-pointer whitespace-nowrap flex-grow sm:flex-grow-0 justify-center"
           >
             <Plus className="w-4 h-4" /> Add Vehicle
@@ -3903,13 +4153,52 @@ const Vehicles = () => {
                               <div className={`text-[12px] font-bold whitespace-nowrap ${v.compliance === 'Overdue' ? 'text-red-600' : 'text-gray-900'}`}>{v.nextServiceDate}</div>
                               <div className={`text-[10px] font-medium whitespace-nowrap ${v.compliance === 'Overdue' ? 'text-red-500' : v.compliance === 'Expiring Soon' ? 'text-orange-500' : 'text-green-500'}`}>{v.nextServiceDays}</div>
                            </td>
-                           <td className="py-3 px-4 text-center" onClick={(e) => e.stopPropagation()}>
-                              <div className="flex items-center justify-center gap-1.5">
-                                 <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); setManagingVehicle(v); }} title="View Vehicle Details" className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"><Eye size={13} /></button>
-                                 <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); setEditVehicleModal(v); }} title="Edit Vehicle" className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"><Edit size={13} /></button>
-                                 <button onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); if (window.confirm(`Delete vehicle ${v.id}?`)) deleteVehicle(v.id); }} title="Delete Vehicle" className="w-7 h-7 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"><Trash2 size={13} /></button>
-                              </div>
-                           </td>
+                            <td className="py-3 px-4 text-center" onClick={(e) => e.stopPropagation()}>
+                               <div className="flex items-center justify-center gap-1.5">
+                                  <button 
+                                     onMouseDown={(e) => { e.stopPropagation(); e.currentTarget.dataset.mouseDown = 'true'; }} 
+                                     onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        if (e.currentTarget.dataset.mouseDown === 'true') {
+                                           e.currentTarget.dataset.mouseDown = 'false';
+                                           setManagingVehicle(v); 
+                                        }
+                                     }} 
+                                     title="View Vehicle Details" 
+                                     className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"
+                                  >
+                                     <Eye size={13} />
+                                  </button>
+                                  <button 
+                                     onMouseDown={(e) => { e.stopPropagation(); e.currentTarget.dataset.mouseDown = 'true'; }} 
+                                     onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        if (e.currentTarget.dataset.mouseDown === 'true') {
+                                           e.currentTarget.dataset.mouseDown = 'false';
+                                           setEditVehicleModal(v); 
+                                        }
+                                     }} 
+                                     title="Edit Vehicle" 
+                                     className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"
+                                  >
+                                     <Edit size={13} />
+                                  </button>
+                                  <button 
+                                     onMouseDown={(e) => { e.stopPropagation(); e.currentTarget.dataset.mouseDown = 'true'; }} 
+                                     onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        if (e.currentTarget.dataset.mouseDown === 'true') {
+                                           e.currentTarget.dataset.mouseDown = 'false';
+                                           if (window.confirm(`Delete vehicle ${v.id}?`)) deleteVehicle(v.id); 
+                                        }
+                                     }} 
+                                     title="Delete Vehicle" 
+                                     className="w-7 h-7 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"
+                                  >
+                                     <Trash2 size={13} />
+                                  </button>
+                               </div>
+                            </td>
                         </tr>
                      ))}
                   </tbody>
@@ -4079,7 +4368,7 @@ const Vehicles = () => {
 
       {/* EDIT VEHICLE MODAL */}
       {editVehicleModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4" onClick={closeEditModal}>
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4" onClick={closeEditModal}>
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-150" onClick={e => e.stopPropagation()}>
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
               <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-2">

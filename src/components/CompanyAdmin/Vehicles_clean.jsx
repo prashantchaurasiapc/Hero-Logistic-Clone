@@ -585,7 +585,17 @@ const Vehicles = () => {
                     {managingVehicle.status === 'OUT OF SERVICE' ? <CheckCircle size={16} /> : <Trash2 size={16} />}
                     {managingVehicle.status === 'OUT OF SERVICE' ? 'Reactivate' : 'Deactivate'}
                   </button>
-                  <button onClick={() => setManagingVehicle(null)} className="ml-2 w-9 h-9 flex items-center justify-center border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 cursor-pointer transition-colors shadow-sm bg-white" title="Close Details">
+                  <button 
+                    onMouseDown={(e) => { e.currentTarget.dataset.mouseDown = 'true'; }}
+                    onClick={(e) => {
+                      if (e.currentTarget.dataset.mouseDown === 'true') {
+                        e.currentTarget.dataset.mouseDown = 'false';
+                        setManagingVehicle(null);
+                      }
+                    }} 
+                    className="ml-2 w-9 h-9 flex items-center justify-center border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 cursor-pointer transition-colors shadow-sm bg-white" 
+                    title="Close Details"
+                  >
                     <X size={18} />
                   </button>
                 </>
@@ -2866,7 +2876,11 @@ const Vehicles = () => {
                 <div>
                   <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">REGISTRATION TYPE *</label>
                   <select className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
-                    <option>HR (Heavy Rigid)</option>
+                    <option>Heavy Vehicle Registration</option>
+                    <option>Light Vehicle Registration</option>
+                    <option>Commercial Registration</option>
+                    <option>Standard Registration</option>
+                    <option>Conditional Registration</option>
                   </select>
                 </div>
                 <div>
@@ -2877,6 +2891,13 @@ const Vehicles = () => {
                   <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">REGISTRATION STATE *</label>
                   <select className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
                     <option>NSW</option>
+                    <option>VIC</option>
+                    <option>QLD</option>
+                    <option>SA</option>
+                    <option>WA</option>
+                    <option>TAS</option>
+                    <option>ACT</option>
+                    <option>NT</option>
                   </select>
                 </div>
 
@@ -2895,15 +2916,19 @@ const Vehicles = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">LICENCE CLASS</label>
+                  <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">FUEL TYPE</label>
                   <select className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
-                    <option>Class HR</option>
+                    <option>Diesel</option>
+                    <option>Petrol</option>
+                    <option>Electric</option>
+                    <option>Hybrid</option>
+                    <option>LPG</option>
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">LICENCE DOCUMENT UPLOAD</label>
+                <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">REGISTRATION DOCUMENT UPLOAD</label>
                 <VehicleLicenceFileUploadBox />
               </div>
             </div>
@@ -2917,12 +2942,12 @@ const Vehicles = () => {
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                  'Medical Certificate',
-                  'Police Verification',
-                  'Background Check',
-                  'Drug & Alcohol Certificate',
-                  'First Aid Certificate',
-                  'Training Certificate',
+                  'Safety Inspection',
+                  'Insurance Policy',
+                  'Roadworthy Certificate',
+                  'Emissions Compliance',
+                  'Heavy Vehicle Permit',
+                  'Weight Bridge Certificate',
                   'Other Documents'
                 ].map(doc => (
                   <VehicleDocUploadBox key={doc} title={doc} />
@@ -2931,10 +2956,10 @@ const Vehicles = () => {
             </div>
           </div>
 
-          {/* 5. Maintenance Preferences */}
+          {/* 4. Maintenance Preferences */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100">
-              <h3 className="text-[13px] font-black text-gray-900">5. Maintenance Preferences</h3>
+              <h3 className="text-[13px] font-black text-gray-900">4. Maintenance Preferences</h3>
             </div>
             <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
@@ -2971,10 +2996,10 @@ const Vehicles = () => {
             </div>
           </div>
 
-          {/* 6. Notes & Comments */}
+          {/* 5. Notes & Comments */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100">
-              <h3 className="text-[13px] font-black text-gray-900">6. Notes & Comments</h3>
+              <h3 className="text-[13px] font-black text-gray-900">5. Notes & Comments</h3>
             </div>
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
@@ -3006,7 +3031,13 @@ const Vehicles = () => {
         </div>
         <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
           <button
-            onClick={() => setShowAddModal(true)}
+            onMouseDown={(e) => { e.currentTarget.dataset.mouseDown = 'true'; }}
+            onClick={(e) => {
+              if (e.currentTarget.dataset.mouseDown === 'true') {
+                e.currentTarget.dataset.mouseDown = 'false';
+                setShowAddModal(true);
+              }
+            }}
             className="border border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100 text-[13px] font-semibold py-2 px-4 rounded-lg transition-colors flex items-center gap-2 shadow-sm cursor-pointer whitespace-nowrap flex-grow sm:flex-grow-0 justify-center"
           >
             <Plus className="w-4 h-4" /> Add Vehicle
@@ -3189,12 +3220,51 @@ const Vehicles = () => {
                               <div className={`text-[10px] font-medium whitespace-nowrap ${v.compliance === 'Overdue' ? 'text-red-500' : v.compliance === 'Expiring Soon' ? 'text-orange-500' : 'text-green-500'}`}>{v.nextServiceDays}</div>
                            </td>
                            <td className="py-3 px-4 text-center" onClick={(e) => e.stopPropagation()}>
-                              <div className="flex items-center justify-center gap-1.5">
-                                 <button onClick={() => setManagingVehicle(v)} title="View Vehicle Details" className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"><Eye size={13} /></button>
-                                 <button onClick={() => setEditVehicleModal(v)} title="Edit Vehicle" className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"><Edit size={13} /></button>
-                                 <button onClick={() => { if (window.confirm(`Delete vehicle ${v.id}?`)) deleteVehicle(v.id); }} title="Delete Vehicle" className="w-7 h-7 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"><Trash2 size={13} /></button>
-                              </div>
-                           </td>
+                               <div className="flex items-center justify-center gap-1.5">
+                                  <button 
+                                     onMouseDown={(e) => { e.stopPropagation(); e.currentTarget.dataset.mouseDown = 'true'; }} 
+                                     onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        if (e.currentTarget.dataset.mouseDown === 'true') {
+                                           e.currentTarget.dataset.mouseDown = 'false';
+                                           setManagingVehicle(v); 
+                                        }
+                                     }} 
+                                     title="View Vehicle Details" 
+                                     className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"
+                                  >
+                                     <Eye size={13} />
+                                  </button>
+                                  <button 
+                                     onMouseDown={(e) => { e.stopPropagation(); e.currentTarget.dataset.mouseDown = 'true'; }} 
+                                     onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        if (e.currentTarget.dataset.mouseDown === 'true') {
+                                           e.currentTarget.dataset.mouseDown = 'false';
+                                           setEditVehicleModal(v); 
+                                        }
+                                     }} 
+                                     title="Edit Vehicle" 
+                                     className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"
+                                  >
+                                     <Edit size={13} />
+                                  </button>
+                                  <button 
+                                     onMouseDown={(e) => { e.stopPropagation(); e.currentTarget.dataset.mouseDown = 'true'; }} 
+                                     onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        if (e.currentTarget.dataset.mouseDown === 'true') {
+                                           e.currentTarget.dataset.mouseDown = 'false';
+                                           if (window.confirm(`Delete vehicle ${v.id}?`)) deleteVehicle(v.id); 
+                                        }
+                                     }} 
+                                     title="Delete Vehicle" 
+                                     className="w-7 h-7 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"
+                                  >
+                                     <Trash2 size={13} />
+                                  </button>
+                               </div>
+                            </td>
                         </tr>
                      ))}
                   </tbody>
