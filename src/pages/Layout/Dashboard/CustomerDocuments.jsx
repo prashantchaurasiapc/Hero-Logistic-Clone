@@ -1,824 +1,1485 @@
 import React, { useState, useRef } from 'react';
-import './CustomerDashboard.css';
+import {
+  FileText, FileCheck, Receipt, FileSearch, Folder, Search, Filter, RefreshCw,
+  Upload, Download, Plus, Star, MoreHorizontal, ExternalLink, Eye, ChevronRight,
+  X, Check, AlertCircle, CheckCircle2, ArrowRight, Layers, FileCode, HelpCircle,
+  Clock, Shield, Paperclip, Send, Mail, Trash2
+} from 'lucide-react';
 
-// Custom Checkbox Component
-const CustomCheckbox = ({ checked, onChange }) => {
-  return (
-    <div 
-      onClick={onChange}
-      style={{
-        width: 18,
-        height: 18,
-        borderRadius: 4,
-        border: checked ? '2.5px solid #b45309' : '2.5px solid #94a3b8',
-        backgroundColor: checked ? '#fffbeb' : '#ffffff',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        cursor: 'pointer',
-        userSelect: 'none',
-        transition: 'all 0.1s ease',
-        boxSizing: 'border-box',
-        margin: '0 auto'
-      }}
-    >
-      {checked && (
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#b45309" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="20 6 9 17 4 12"></polyline>
-        </svg>
-      )}
-    </div>
-  );
-};
+export default function CustomerDocuments() {
+  // Toast Notification State
+  const [toastMsg, setToastMsg] = useState('');
+  const triggerToast = (msg) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(''), 3500);
+  };
 
-// Helper to render file size with different styles for value and unit
-const renderSize = (sizeStr) => {
-  if (!sizeStr) return '';
-  const parts = sizeStr.split(' ');
-  if (parts.length === 2) {
-    return (
-      <span>
-        <span style={{ fontWeight: '600', color: '#475569' }}>{parts[0]}</span>
-        <span style={{ fontSize: '9px', fontWeight: '800', color: '#94a3b8', marginLeft: 4, textTransform: 'uppercase' }}>{parts[1]}</span>
-      </span>
-    );
-  }
-  return sizeStr;
-};
+  // Sub-tab State
+  const [activeTab, setActiveTab] = useState('All Documents');
 
-const CustomerDocuments = () => {
-  const [density, setDensity] = useState('RELAXED'); // COMPACT, DEFAULT, RELAXED
-  const [showColumnsDropdown, setShowColumnsDropdown] = useState(false);
-  const [showSupportModal, setShowSupportModal] = useState(false);
-  
-  // Form States
-  const [supportSubject, setSupportSubject] = useState('');
-  const [supportDescription, setSupportDescription] = useState('');
+  // Search & Filter State
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedType, setSelectedType] = useState('All Document Types');
+  const [selectedLoad, setSelectedLoad] = useState('All Loads');
+  const [selectedDateFilter, setSelectedDateFilter] = useState('All Dates');
 
-  const [toast, setToast] = useState(null);
-  const fileInputRef = useRef(null);
+  // Selected Checkboxes State for Bulk Action
+  const [selectedDocIds, setSelectedDocIds] = useState([]);
 
-  // Column Visibility (Default matches screenshot: all visible)
-  const [visibleColumns, setVisibleColumns] = useState({
-    fileName: true,
-    category: true,
-    size: true,
-    actions: true
+  // 3-Dots Action Dropdown Menu State
+  const [activeMenuDocId, setActiveMenuDocId] = useState(null);
+
+  // Email Document Modal State
+  const [emailModalDoc, setEmailModalDoc] = useState(null);
+  const [emailForm, setEmailForm] = useState({
+    recipientEmail: 'accounts@abctransport.com.au',
+    subject: '',
+    message: ''
   });
 
-  const columnsList = [
-    { key: 'fileName', label: 'Document File Name' },
-    { key: 'category', label: 'Paper Category' },
-    { key: 'size', label: 'Size' },
-    { key: 'actions', label: 'Actions' }
-  ];
+  // Modal File Input Ref & Attached File State
+  const modalFileInputRef = useRef(null);
+  const [attachedFile, setAttachedFile] = useState(null);
 
-  // Document List Data (matches screenshot exactly)
+  // Documents List Data State (Matching 2nd Screenshot Exactly)
   const [documents, setDocuments] = useState([
-    { id: 'DOC-01', fileName: 'Signed_BOL_LD-9411.pdf', category: 'Bill of Lading', size: '245 KB', checked: false },
-    { id: 'DOC-02', fileName: 'Signed_POD_LD-9411.pdf', category: 'Proof of Delivery', size: '185 KB', checked: false },
-    { id: 'DOC-03', fileName: 'Invoice_Receipt_INV-3981.pdf', category: 'Tax Invoice', size: '120 KB', checked: false }
+    {
+      id: 'DOC-101',
+      name: 'INV-2025-0529.pdf',
+      type: 'Invoice',
+      typeBadge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      iconColor: 'text-red-500',
+      relatedTo: 'ABC Transport Solutions',
+      loadRef: 'LD-3987',
+      route: 'Melbourne VIC → Sydney NSW',
+      date: '29 May 2025',
+      uploadedBy: 'System',
+      size: '156 KB'
+    },
+    {
+      id: 'DOC-102',
+      name: 'POD-LD-3987.pdf',
+      type: 'POD',
+      typeBadge: 'bg-purple-50 text-purple-700 border-purple-200',
+      iconColor: 'text-emerald-500',
+      relatedTo: 'ABC Transport Solutions',
+      loadRef: 'LD-3987',
+      route: 'Melbourne VIC → Sydney NSW',
+      date: '30 May 2025',
+      uploadedBy: 'Driver App',
+      size: '243 KB'
+    },
+    {
+      id: 'DOC-103',
+      name: 'LD-3987-preload.jpg',
+      type: 'Photo',
+      typeBadge: 'bg-blue-50 text-blue-700 border-blue-200',
+      iconColor: 'text-amber-500',
+      relatedTo: 'ABC Transport Solutions',
+      loadRef: 'LD-3987',
+      route: 'Melbourne VIC → Sydney NSW',
+      date: '30 May 2025',
+      uploadedBy: 'Driver App',
+      size: '1.2 MB'
+    },
+    {
+      id: 'DOC-104',
+      name: 'LD-3987-delivery.jpg',
+      type: 'Photo',
+      typeBadge: 'bg-blue-50 text-blue-700 border-blue-200',
+      iconColor: 'text-amber-500',
+      relatedTo: 'ABC Transport Solutions',
+      loadRef: 'LD-3987',
+      route: 'Melbourne VIC → Sydney NSW',
+      date: '30 May 2025',
+      uploadedBy: 'Driver App',
+      size: '1.8 MB'
+    },
+    {
+      id: 'DOC-105',
+      name: 'Condition Report.pdf',
+      type: 'Condition Report',
+      typeBadge: 'bg-amber-50 text-amber-700 border-amber-200',
+      iconColor: 'text-red-500',
+      relatedTo: 'ABC Transport Solutions',
+      loadRef: 'LD-3981',
+      route: 'Brisbane QLD → Perth WA',
+      date: '28 May 2025',
+      uploadedBy: 'Driver App',
+      size: '312 KB'
+    },
+    {
+      id: 'DOC-106',
+      name: 'Pre-Load Condition.pdf',
+      type: 'Condition Report',
+      typeBadge: 'bg-amber-50 text-amber-700 border-amber-200',
+      iconColor: 'text-red-500',
+      relatedTo: 'ABC Transport Solutions',
+      loadRef: 'LD-3981',
+      route: 'Brisbane QLD → Perth WA',
+      date: '27 May 2025',
+      uploadedBy: 'Driver App',
+      size: '296 KB'
+    },
+    {
+      id: 'DOC-107',
+      name: 'Delivery Instructions.pdf',
+      type: 'Other',
+      typeBadge: 'bg-slate-100 text-slate-700 border-slate-200',
+      iconColor: 'text-red-500',
+      relatedTo: 'ABC Transport Solutions',
+      loadRef: 'LD-3975',
+      route: 'Adelaide SA → Melbourne VIC',
+      date: '26 May 2025',
+      uploadedBy: 'Dispatch',
+      size: '184 KB'
+    },
+    {
+      id: 'DOC-108',
+      name: 'Rates Confirmation.xlsx',
+      type: 'Other',
+      typeBadge: 'bg-slate-100 text-slate-700 border-slate-200',
+      iconColor: 'text-emerald-600',
+      relatedTo: 'ABC Transport Solutions',
+      loadRef: 'General',
+      route: '',
+      date: '15 May 2025',
+      uploadedBy: 'Accounts',
+      size: '45 KB'
+    }
   ]);
 
-  const showToast = (msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 4000);
-  };
-
-  const toggleColumn = (key) => {
-    setVisibleColumns(prev => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  const handleSupportSubmit = (e) => {
-    e.preventDefault();
-    showToast('Support ticket submitted successfully.');
-    setShowSupportModal(false);
-    setSupportSubject('');
-    setSupportDescription('');
-  };
-
-  // Checkbox handlers
-  const isAllChecked = documents.length > 0 && documents.every(d => d.checked);
-
-  const handleMasterCheckbox = () => {
-    const targetState = !isAllChecked;
-    setDocuments(prev => prev.map(d => ({ ...d, checked: targetState })));
-  };
-
-  const handleRowCheckbox = (id) => {
-    setDocuments(prev => prev.map(d => 
-      d.id === id ? { ...d, checked: !d.checked } : d
-    ));
-  };
-
-  // File Upload Handlers
-  const handleUploadClick = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
-
-  const handleFileChange = (e) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      simulateFileUpload(files[0].name, files[0].size);
-    }
-  };
-
-  const simulateFileUpload = (name, rawSize) => {
-    let sizeStr = '';
-    if (rawSize < 1024 * 1024) {
-      sizeStr = `${Math.round(rawSize / 1024)} KB`;
+  // Bulk Selection Handlers
+  const handleSelectAll = () => {
+    if (selectedDocIds.length === documents.length) {
+      setSelectedDocIds([]);
     } else {
-      sizeStr = `${(rawSize / (1024 * 1024)).toFixed(1)} MB`;
+      setSelectedDocIds(documents.map(d => d.id));
     }
+  };
 
-    let categoryStr = 'Other Document';
-    const lowerName = name.toLowerCase();
-    if (lowerName.includes('bol')) {
-      categoryStr = 'Bill of Lading';
-    } else if (lowerName.includes('pod')) {
-      categoryStr = 'Proof of Delivery';
-    } else if (lowerName.includes('invoice') || lowerName.includes('receipt') || lowerName.includes('tax')) {
-      categoryStr = 'Tax Invoice';
+  const handleSelectDoc = (id) => {
+    if (selectedDocIds.includes(id)) {
+      setSelectedDocIds(selectedDocIds.filter(i => i !== id));
+    } else {
+      setSelectedDocIds([...selectedDocIds, id]);
     }
-    
-    // Add file dynamically
+  };
+
+  // Modals State
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
+  const [previewDoc, setPreviewDoc] = useState(null);
+
+  // Header Bookmark State
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  
+  // Header More Actions Dropdown State
+  const [isMoreActionsOpen, setIsMoreActionsOpen] = useState(false);
+
+  // Upload Modal Form State
+  const [uploadForm, setUploadForm] = useState({
+    docName: '',
+    docType: 'POD (Proof of Delivery)',
+    loadRef: 'LD-3987'
+  });
+
+  const handleModalFileChange = (files) => {
+    if (files && files.length > 0) {
+      const file = files[0];
+      let sizeStr = '';
+      if (file.size < 1024 * 1024) {
+        sizeStr = `${Math.round(file.size / 1024)} KB`;
+      } else {
+        sizeStr = `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
+      }
+
+      setAttachedFile({
+        name: file.name,
+        size: sizeStr
+      });
+
+      // Auto fill title if empty
+      if (!uploadForm.docName) {
+        setUploadForm(prev => ({ ...prev, docName: file.name }));
+      }
+
+      triggerToast(`Selected file: ${file.name} (${sizeStr})`);
+    }
+  };
+
+  const handleSaveUpload = (e) => {
+    e.preventDefault();
+    const finalDocName = uploadForm.docName || attachedFile?.name || 'Uploaded_Document.pdf';
+
     const newDoc = {
-      id: `DOC-0${documents.length + 1}`,
-      fileName: name,
-      category: categoryStr,
-      size: sizeStr,
-      checked: false
+      id: `DOC-${Date.now()}`,
+      name: finalDocName.endsWith('.pdf') || finalDocName.endsWith('.jpg') || finalDocName.endsWith('.png') || finalDocName.endsWith('.xlsx')
+        ? finalDocName 
+        : `${finalDocName}.pdf`,
+      type: uploadForm.docType.includes('POD') ? 'POD' : uploadForm.docType.includes('Invoice') ? 'Invoice' : 'Other',
+      typeBadge: uploadForm.docType.includes('POD') ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-blue-50 text-blue-700 border-blue-200',
+      iconColor: uploadForm.docType.includes('POD') ? 'text-emerald-500' : 'text-blue-500',
+      relatedTo: 'ABC Transport Solutions',
+      loadRef: uploadForm.loadRef,
+      route: 'Sydney NSW → Melbourne VIC',
+      date: 'Just now',
+      uploadedBy: 'Portal User',
+      size: attachedFile?.size || '240 KB'
     };
 
-    setDocuments(prev => [...prev, newDoc]);
-    showToast('File uploaded successfully.');
+    setDocuments(prev => [newDoc, ...prev]);
+    setIsUploadModalOpen(false);
+    setUploadForm({ docName: '', docType: 'POD (Proof of Delivery)', loadRef: 'LD-3987' });
+    setAttachedFile(null);
+    triggerToast('Document uploaded successfully!');
   };
 
-  const getCellPadding = () => {
-    if (density === 'COMPACT') return '10px 16px';
-    if (density === 'DEFAULT') return '16px 20px';
-    return '24px 28px'; // RELAXED
+  // Request Document Modal Form
+  const [requestForm, setRequestForm] = useState({
+    docType: 'Signed POD',
+    loadRef: 'LD-3987',
+    notes: ''
+  });
+
+  const handleSaveRequest = (e) => {
+    e.preventDefault();
+    setIsRequestModalOpen(false);
+    setRequestForm({ docType: 'Signed POD', loadRef: 'LD-3987', notes: '' });
+    triggerToast('Document request sent to dispatch team!');
   };
+
+  const handleSendEmail = (e) => {
+    e.preventDefault();
+    triggerToast(`Document ${emailModalDoc?.name} sent to ${emailForm.recipientEmail}!`);
+    setEmailModalDoc(null);
+  };
+
+  const handleDeleteDoc = (id, name) => {
+    setDocuments(prev => prev.filter(d => d.id !== id));
+    setActiveMenuDocId(null);
+    triggerToast(`Document ${name} deleted successfully.`);
+  };
+
+  // Filtered Documents Logic
+  const filteredDocuments = documents.filter(doc => {
+    const matchesSearch = doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          doc.loadRef.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          doc.type.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    let matchesTab = true;
+    if (activeTab === 'Proof of Delivery (PODs)') matchesTab = doc.type === 'POD';
+    else if (activeTab === 'Condition Reports') matchesTab = doc.type === 'Condition Report';
+    else if (activeTab === 'Invoices') matchesTab = doc.type === 'Invoice';
+    else if (activeTab === 'Other Documents') matchesTab = doc.type === 'Other' || doc.type === 'Photo';
+
+    let matchesTypeDropdown = true;
+    if (selectedType !== 'All Document Types') {
+      matchesTypeDropdown = doc.type.toLowerCase().includes(selectedType.toLowerCase());
+    }
+
+    return matchesSearch && matchesTab && matchesTypeDropdown;
+  });
 
   return (
-    <div className="customer-dashboard documents-wrapper">
-      {/* Header Container */}
-      <div className="customer-header-container" style={{ flexShrink: 0 }}>
-        <div>
-          <h1 className="customer-title">Customer Shipper Portal &bull; Documents</h1>
-          <p className="customer-subtitle">Request load deliveries, audit invoices, download BOL papers, and track active route paths.</p>
+    <div className="w-full min-h-screen bg-[#F8FAFC] text-slate-800 text-left font-sans p-4 sm:p-6 space-y-6">
+      
+      {/* Toast Notification */}
+      {toastMsg && (
+        <div className="fixed bottom-6 right-6 z-[999999] bg-slate-900 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-2xl animate-fade-in border border-slate-700 flex items-center gap-2">
+          <CheckCircle2 size={16} className="text-emerald-400" />
+          <span>{toastMsg}</span>
         </div>
-        <button onClick={() => setShowSupportModal(true)} className="contact-support-btn">Contact Support</button>
-      </div>
+      )}
 
-      {/* Main Grid Layout */}
-      <div className="documents-grid">
-        {/* Left: Secure Documents Vault */}
-        <div style={S.leftCard}>
-          <div style={S.cardHeader}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-              <h2 style={S.cardTitle}>Secure Documents Vault</h2>
-              
-              {/* Selected Pills */}
-              {documents.some(d => d.checked) && (
-                <div style={S.selectedPill}>
-                  <span style={S.selectedPillText}>
-                    {documents.filter(d => d.checked).length} SELECTED
-                  </span>
-                  <button onClick={() => showToast('Exporting selected documents as CSV.')} style={S.csvExportBtn}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: 5, verticalAlign: 'middle'}}>
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                      <polyline points="7 10 12 15 17 10"></polyline>
-                      <line x1="12" y1="15" x2="12" y2="3"></line>
-                    </svg>
-                    <span>CSV Export</span>
-                  </button>
-                </div>
-              )}
-            </div>
+      {/* Hidden File Input for Modal Dropzone */}
+      <input 
+        type="file"
+        ref={modalFileInputRef}
+        onChange={e => handleModalFileChange(e.target.files)}
+        className="hidden"
+        accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx"
+      />
 
-            <div style={S.headerControlsRight}>
-              {/* Density Controls Pill */}
-              <div style={S.densityPill}>
-                {['COMPACT', 'DEFAULT', 'RELAXED'].map((d) => (
-                  <span
-                    key={d}
-                    onClick={() => setDensity(d)}
-                    style={{
-                      ...S.densityOption,
-                      backgroundColor: density === d ? '#FFCC00' : 'transparent',
-                      color: density === d ? '#000000' : '#64748b',
-                      fontWeight: density === d ? '800' : '600',
-                    }}
-                  >
-                    {d}
-                  </span>
-                ))}
-              </div>
-
-              {/* Column Visibility Trigger */}
-              <div style={{ position: 'relative' }}>
-                <button 
-                  onClick={() => setShowColumnsDropdown(!showColumnsDropdown)}
-                  style={{
-                    ...S.columnsBtn,
-                    border: showColumnsDropdown ? '2px solid #000000' : '1px solid #cbd5e1',
-                    padding: showColumnsDropdown ? '4px 14px' : '5px 15px'
-                  }}
-                >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: 6, verticalAlign: 'middle'}}>
-                    <circle cx="12" cy="12" r="3"></circle>
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                  </svg>
-                  <span style={{verticalAlign: 'middle'}}>COLUMNS</span>
-                </button>
-
-                {showColumnsDropdown && (
-                  <>
-                    <div style={S.dropdownOverlay} onClick={() => setShowColumnsDropdown(false)} />
-                    <div className="columns-dropdown-panel" style={S.dropdownPanel}>
-                      <div style={S.dropdownTitle}>COLUMN VISIBILITY</div>
-                      {columnsList.map((col) => (
-                        <label key={col.key} style={S.dropdownLabel}>
-                          <input 
-                            type="checkbox" 
-                            checked={visibleColumns[col.key]}
-                            onChange={() => toggleColumn(col.key)}
-                            style={S.checkboxInput}
-                          />
-                          <span>{col.label}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
+      {/* =========================================================================
+         HEADER & TOP BREADCRUMBS (Fully Interactive)
+         ========================================================================= */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 mb-1">
+            <span 
+              onClick={() => triggerToast("Navigated to Home")}
+              className="hover:text-slate-700 cursor-pointer transition-colors"
+            >
+              Home
+            </span>
+            <ChevronRight size={10} />
+            <span 
+              onClick={() => triggerToast("Navigated to Customer Portal")}
+              className="hover:text-slate-700 cursor-pointer transition-colors"
+            >
+              Customer Portal
+            </span>
+            <ChevronRight size={10} />
+            <span className="text-slate-700 font-extrabold">Documents & PODs</span>
           </div>
 
-          {/* Documents Table */}
-          <div style={S.tableWrapper}>
-            <table style={S.table}>
+          {/* Title & Bookmark */}
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+              14.6 Documents & PODs
+            </h1>
+            <button 
+              onClick={() => {
+                const nextState = !isBookmarked;
+                setIsBookmarked(nextState);
+                triggerToast(nextState ? "Page bookmarked successfully!" : "Page removed from bookmarks.");
+              }}
+              title={isBookmarked ? "Remove Bookmark" : "Bookmark Page"}
+              className="p-1.5 text-slate-400 hover:text-amber-500 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors"
+            >
+              <Star size={17} className={isBookmarked ? "text-amber-500 fill-amber-500" : "text-slate-400"} />
+            </button>
+          </div>
+          <p className="text-xs text-slate-500 font-medium mt-0.5">
+            Access all your documents, proof of deliveries and reports.
+          </p>
+        </div>
+
+        {/* Top Right Action Buttons */}
+        <div className="flex items-center gap-2 flex-wrap relative">
+          <button 
+            onClick={() => setIsUploadModalOpen(true)}
+            className="px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-extrabold text-xs rounded-xl shadow-2xs cursor-pointer flex items-center gap-1.5 transition-colors"
+          >
+            <Upload size={14} className="text-blue-600" />
+            <span>Upload Document</span>
+          </button>
+
+          <button 
+            onClick={() => setIsRequestModalOpen(true)}
+            className="px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-extrabold text-xs rounded-xl shadow-2xs cursor-pointer flex items-center gap-1.5 transition-colors"
+          >
+            <FileText size={14} className="text-blue-600" />
+            <span>Request Document</span>
+          </button>
+
+          <button 
+            onClick={() => {
+              if (selectedDocIds.length === 0) {
+                triggerToast("Please select documents using checkboxes to download bulk files.");
+              } else {
+                triggerToast(`Downloading ${selectedDocIds.length} selected documents as ZIP archive...`);
+              }
+            }}
+            className="px-4 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors"
+          >
+            <Download size={14} />
+            <span>Download Selected</span>
+          </button>
+
+          {/* More Actions Dropdown Trigger */}
+          <div className="relative">
+            <button 
+              onClick={() => setIsMoreActionsOpen(!isMoreActionsOpen)}
+              className="px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 font-bold text-xs text-slate-700 rounded-xl shadow-2xs cursor-pointer flex items-center gap-1.5 transition-colors"
+            >
+              <span>More Actions</span>
+              <span className="text-[10px]">{isMoreActionsOpen ? '▲' : '▼'}</span>
+            </button>
+
+            {/* More Actions Floating Dropdown Menu */}
+            {isMoreActionsOpen && (
+              <>
+                <div 
+                  className="fixed inset-0 z-40"
+                  onClick={() => setIsMoreActionsOpen(false)}
+                />
+                <div className="absolute right-0 top-full mt-1.5 bg-white rounded-xl shadow-2xl border border-slate-200 p-1.5 z-50 text-left w-56 space-y-0.5 animate-fade-in font-sans text-xs">
+                  <button
+                    onClick={() => {
+                      setIsMoreActionsOpen(false);
+                      triggerToast("Exporting all 128 documents metadata to CSV file...");
+                    }}
+                    className="w-full flex items-center gap-2 px-2.5 py-1.5 text-slate-700 hover:bg-blue-50 hover:text-blue-700 font-extrabold rounded-lg cursor-pointer transition-colors"
+                  >
+                    <FileText size={13} className="text-blue-600" />
+                    <span>Export All (CSV)</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setIsMoreActionsOpen(false);
+                      triggerToast("Preparing ZIP archive download for all 128 documents...");
+                    }}
+                    className="w-full flex items-center gap-2 px-2.5 py-1.5 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 font-extrabold rounded-lg cursor-pointer transition-colors"
+                  >
+                    <Download size={13} className="text-emerald-600" />
+                    <span>Download All (ZIP Archive)</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setIsMoreActionsOpen(false);
+                      triggerToast("Opening print dialog for document summary report...");
+                      window.print();
+                    }}
+                    className="w-full flex items-center gap-2 px-2.5 py-1.5 text-slate-700 hover:bg-purple-50 hover:text-purple-700 font-extrabold rounded-lg cursor-pointer transition-colors"
+                  >
+                    <FileSearch size={13} className="text-purple-600" />
+                    <span>Print Summary Report</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setIsMoreActionsOpen(false);
+                      triggerToast("Documents vault data refreshed!");
+                    }}
+                    className="w-full flex items-center gap-2 px-2.5 py-1.5 text-slate-700 hover:bg-amber-50 hover:text-amber-700 font-extrabold rounded-lg cursor-pointer transition-colors"
+                  >
+                    <RefreshCw size={13} className="text-amber-600" />
+                    <span>Refresh Data</span>
+                  </button>
+
+                  <div className="my-1 border-t border-slate-100" />
+
+                  <button
+                    onClick={() => {
+                      setIsMoreActionsOpen(false);
+                      triggerToast("Document Vault Settings opened.");
+                    }}
+                    className="w-full flex items-center gap-2 px-2.5 py-1.5 text-slate-700 hover:bg-slate-100 font-extrabold rounded-lg cursor-pointer transition-colors"
+                  >
+                    <Shield size={13} className="text-slate-500" />
+                    <span>Vault Settings</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+
+        </div>
+      </div>
+
+      {/* =========================================================================
+         TOP 5 METRIC SUMMARY CARDS (1-Row Grid matching 2nd Screenshot)
+         ========================================================================= */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+        
+        {/* Card 1: TOTAL DOCUMENTS */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 shadow-2xs hover:shadow-md transition-all space-y-2">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center font-bold shrink-0">
+              <FileText size={16} />
+            </div>
+            <div>
+              <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">TOTAL DOCUMENTS</span>
+              <span className="text-lg font-black text-slate-900 leading-none mt-0.5 block">128</span>
+            </div>
+          </div>
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px]">
+            <button onClick={() => setActiveTab('All Documents')} className="font-extrabold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer">
+              View all documents <ArrowRight size={10} />
+            </button>
+          </div>
+        </div>
+
+        {/* Card 2: PODS (PROOF OF DELIVERY) */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 shadow-2xs hover:shadow-md transition-all space-y-2">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center font-bold shrink-0">
+              <FileCheck size={16} />
+            </div>
+            <div>
+              <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">PODS (PROOF OF DELIVERY)</span>
+              <span className="text-lg font-black text-slate-900 leading-none mt-0.5 block">64</span>
+            </div>
+          </div>
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px]">
+            <button onClick={() => setActiveTab('Proof of Delivery (PODs)')} className="font-extrabold text-purple-600 hover:text-purple-800 flex items-center gap-1 cursor-pointer">
+              View all PODs <ArrowRight size={10} />
+            </button>
+          </div>
+        </div>
+
+        {/* Card 3: INVOICES */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 shadow-2xs hover:shadow-md transition-all space-y-2">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center font-bold shrink-0">
+              <Receipt size={16} />
+            </div>
+            <div>
+              <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">INVOICES</span>
+              <span className="text-lg font-black text-slate-900 leading-none mt-0.5 block">24</span>
+            </div>
+          </div>
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px]">
+            <button onClick={() => setActiveTab('Invoices')} className="font-extrabold text-emerald-600 hover:text-emerald-800 flex items-center gap-1 cursor-pointer">
+              View all invoices <ArrowRight size={10} />
+            </button>
+          </div>
+        </div>
+
+        {/* Card 4: CONDITION REPORTS */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 shadow-2xs hover:shadow-md transition-all space-y-2">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center font-bold shrink-0">
+              <FileSearch size={16} />
+            </div>
+            <div>
+              <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">CONDITION REPORTS</span>
+              <span className="text-lg font-black text-slate-900 leading-none mt-0.5 block">18</span>
+            </div>
+          </div>
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px]">
+            <button onClick={() => setActiveTab('Condition Reports')} className="font-extrabold text-amber-600 hover:text-amber-800 flex items-center gap-1 cursor-pointer">
+              View all reports <ArrowRight size={10} />
+            </button>
+          </div>
+        </div>
+
+        {/* Card 5: OTHER DOCUMENTS */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 shadow-2xs hover:shadow-md transition-all space-y-2">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-teal-50 text-teal-600 border border-teal-100 flex items-center justify-center font-bold shrink-0">
+              <Folder size={16} />
+            </div>
+            <div>
+              <span className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider block">OTHER DOCUMENTS</span>
+              <span className="text-lg font-black text-slate-900 leading-none mt-0.5 block">22</span>
+            </div>
+          </div>
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px]">
+            <button onClick={() => setActiveTab('Other Documents')} className="font-extrabold text-teal-600 hover:text-teal-800 flex items-center gap-1 cursor-pointer">
+              View all other docs <ArrowRight size={10} />
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      {/* =========================================================================
+         FILTERS & SUB-TABS TOOLBAR ROW
+         ========================================================================= */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl shadow-2xs p-3.5 space-y-3">
+        
+        {/* Search Bar & Dropdowns Filter Line */}
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+          
+          {/* Left: Search input */}
+          <div className="relative flex-1">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input 
+              type="text"
+              placeholder="Search by document name, load #, reference..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-3 py-1.5 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-400"
+            />
+          </div>
+
+          {/* Right: Dropdowns & Date filters */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <select
+              value={selectedType}
+              onChange={e => setSelectedType(e.target.value)}
+              className="px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 bg-white focus:outline-none focus:border-blue-400 cursor-pointer"
+            >
+              <option value="All Document Types">All Document Types</option>
+              <option value="Invoice">Invoice</option>
+              <option value="POD">POD (Proof of Delivery)</option>
+              <option value="Condition Report">Condition Report</option>
+              <option value="Photo">Photos</option>
+              <option value="Other">Other Documents</option>
+            </select>
+
+            <select
+              value={selectedLoad}
+              onChange={e => setSelectedLoad(e.target.value)}
+              className="px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 bg-white focus:outline-none focus:border-blue-400 cursor-pointer"
+            >
+              <option value="All Loads">All Loads</option>
+              <option value="LD-3987">LD-3987</option>
+              <option value="LD-3981">LD-3981</option>
+              <option value="LD-3975">LD-3975</option>
+            </select>
+
+            <select
+              value={selectedDateFilter}
+              onChange={e => setSelectedDateFilter(e.target.value)}
+              className="px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 bg-white focus:outline-none focus:border-blue-400 cursor-pointer"
+            >
+              <option value="All Dates">All Dates</option>
+              <option value="Today">Today</option>
+              <option value="Last 7 Days">Last 7 Days</option>
+              <option value="Last 30 Days">Last 30 Days</option>
+            </select>
+
+            <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl px-2 py-1 text-xs text-slate-500 font-medium">
+              <span className="text-[10px] text-slate-400 font-bold uppercase">Upload Date</span>
+              <input type="date" className="bg-transparent text-xs text-slate-700 focus:outline-none" />
+              <span>→</span>
+              <input type="date" className="bg-transparent text-xs text-slate-700 focus:outline-none" />
+            </div>
+
+            <button 
+              onClick={() => triggerToast("Filters applied.")}
+              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-xl cursor-pointer flex items-center gap-1"
+            >
+              <Filter size={13} />
+              <span>Filters</span>
+            </button>
+
+            <button 
+              onClick={() => {
+                setSearchTerm('');
+                setSelectedType('All Document Types');
+                setSelectedLoad('All Loads');
+                setSelectedDateFilter('All Dates');
+                triggerToast("Filters reset!");
+              }}
+              className="p-1.5 text-slate-400 hover:text-slate-700 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer"
+            >
+              <RefreshCw size={13} />
+            </button>
+          </div>
+
+        </div>
+
+        {/* Sub-Tabs Row */}
+        <div className="flex items-center gap-6 border-b border-slate-100 text-xs font-bold text-slate-500 pt-1 overflow-x-auto">
+          {[
+            { label: 'All Documents', count: 128 },
+            { label: 'Proof of Delivery (PODs)', count: 64 },
+            { label: 'Condition Reports', count: 18 },
+            { label: 'Invoices', count: 24 },
+            { label: 'Other Documents', count: 22 }
+          ].map((tab) => {
+            const isTabActive = activeTab === tab.label;
+            return (
+              <button 
+                key={tab.label}
+                onClick={() => setActiveTab(tab.label)}
+                className={`pb-2 transition-all cursor-pointer flex items-center gap-1.5 border-b-2 whitespace-nowrap ${
+                  isTabActive 
+                    ? 'border-blue-600 text-blue-600 font-black' 
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+      </div>
+
+      {/* =========================================================================
+         MAIN WORKSPACE GRID (8 Cols Documents Table + 4 Cols Side Cards)
+         Equal Height Bottom Alignment (items-stretch)
+         ========================================================================= */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+        
+        {/* COLUMN 1 (8 Cols): DOCUMENTS TABLE (Flex Col Justify-Between) */}
+        <div className="lg:col-span-8 bg-white border border-slate-200/80 rounded-2xl shadow-2xs p-4 flex flex-col justify-between overflow-hidden">
+          
+          {/* Table Container with Horizontal Scroll & Whitespace Nowrap */}
+          <div className="overflow-x-auto w-full flex-1">
+            <table className="w-full text-left border-collapse whitespace-nowrap">
               <thead>
-                <tr style={S.theadRow}>
-                  <th style={{ ...S.th, padding: getCellPadding(), width: 64, textAlign: 'center' }}>
-                    <CustomCheckbox 
-                      checked={isAllChecked}
-                      onChange={handleMasterCheckbox}
+                <tr className="border-b border-slate-100 bg-slate-50/50 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider whitespace-nowrap">
+                  <th className="py-2.5 px-3 w-10 text-center">
+                    <input 
+                      type="checkbox"
+                      checked={selectedDocIds.length === documents.length && documents.length > 0}
+                      onChange={handleSelectAll}
+                      className="rounded border-slate-300 cursor-pointer"
                     />
                   </th>
-                  {visibleColumns.fileName && <th style={{ ...S.th, padding: getCellPadding() }}>DOCUMENT FILE NAME</th>}
-                  {visibleColumns.category && <th style={{ ...S.th, padding: getCellPadding() }}>PAPER CATEGORY</th>}
-                  {visibleColumns.size && <th style={{ ...S.th, padding: getCellPadding() }}>SIZE</th>}
-                  {visibleColumns.actions && <th style={{ ...S.th, padding: getCellPadding() }}>ACTIONS</th>}
+                  <th className="py-2.5 px-3 whitespace-nowrap">Document Name</th>
+                  <th className="py-2.5 px-3 whitespace-nowrap">Type</th>
+                  <th className="py-2.5 px-3 whitespace-nowrap">Related To</th>
+                  <th className="py-2.5 px-3 whitespace-nowrap">Load / Reference</th>
+                  <th className="py-2.5 px-3 whitespace-nowrap">Date</th>
+                  <th className="py-2.5 px-3 whitespace-nowrap">Uploaded By</th>
+                  <th className="py-2.5 px-3 whitespace-nowrap">Size</th>
+                  <th className="py-2.5 px-3 text-right whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
-              <tbody>
-                {documents.map((row) => (
-                  <tr 
-                    key={row.id} 
-                    style={{
-                      ...S.tbodyRow,
-                      backgroundColor: row.checked ? '#fefce8' : 'transparent'
-                    }}
-                  >
-                    <td style={{ ...S.td, padding: getCellPadding(), textAlign: 'center' }}>
-                      <CustomCheckbox 
-                        checked={row.checked}
-                        onChange={() => handleRowCheckbox(row.id)}
-                      />
+              <tbody className="divide-y divide-slate-100 text-xs whitespace-nowrap">
+                {filteredDocuments.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="py-8 text-center text-slate-400 font-medium">
+                      No documents found matching your search.
                     </td>
-                    {visibleColumns.fileName && <td style={{ ...S.td, padding: getCellPadding(), fontWeight: '700', color: '#0f172a' }}>{row.fileName}</td>}
-                    {visibleColumns.category && <td style={{ ...S.td, padding: getCellPadding() }}>{row.category}</td>}
-                    {visibleColumns.size && <td style={{ ...S.td, padding: getCellPadding() }}>{renderSize(row.size)}</td>}
-                    {visibleColumns.actions && (
-                      <td style={{ ...S.td, padding: getCellPadding() }}>
-                        <button 
-                          onClick={() => showToast(`Downloading ${row.fileName}`)}
-                          style={S.actionDownloadBtn}
-                        >
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: 6}}>
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <polyline points="14 2 14 8 20 8"></polyline>
-                            <line x1="16" y1="13" x2="8" y2="13"></line>
-                            <line x1="16" y1="17" x2="8" y2="17"></line>
-                            <polyline points="10 9 9 9 8 9"></polyline>
-                          </svg>
-                          <span>Download</span>
-                        </button>
-                      </td>
-                    )}
                   </tr>
-                ))}
+                ) : (
+                  filteredDocuments.map((doc) => {
+                    const isSelected = selectedDocIds.includes(doc.id);
+                    return (
+                      <tr key={doc.id} className={`hover:bg-slate-50/80 transition-colors whitespace-nowrap ${isSelected ? 'bg-blue-50/40' : ''}`}>
+                        
+                        {/* Checkbox */}
+                        <td className="py-3 px-3 text-center whitespace-nowrap">
+                          <input 
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleSelectDoc(doc.id)}
+                            className="rounded border-slate-300 cursor-pointer"
+                          />
+                        </td>
+
+                        {/* Document Name */}
+                        <td className="py-3 px-3 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <FileText size={15} className={`${doc.iconColor} shrink-0`} />
+                            <div className="flex items-center gap-2">
+                              <span 
+                                onClick={() => setPreviewDoc(doc)}
+                                className="font-extrabold text-slate-900 hover:text-blue-600 cursor-pointer block whitespace-nowrap"
+                              >
+                                {doc.name}
+                              </span>
+                              {doc.type === 'Invoice' && <span className="text-[9.5px] text-slate-400 font-medium whitespace-nowrap">Invoice</span>}
+                              {doc.type === 'POD' && <span className="text-[9.5px] text-slate-400 font-medium whitespace-nowrap">Proof of Delivery</span>}
+                              {doc.type === 'Photo' && <span className="text-[9.5px] text-slate-400 font-medium whitespace-nowrap">Delivery Photos</span>}
+                              {doc.type === 'Condition Report' && <span className="text-[9.5px] text-slate-400 font-medium whitespace-nowrap">Condition Report</span>}
+                              {doc.type === 'Other' && <span className="text-[9.5px] text-slate-400 font-medium whitespace-nowrap">Other Document</span>}
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Type Badge */}
+                        <td className="py-3 px-3 whitespace-nowrap">
+                          <span className={`px-2 py-0.5 rounded border text-[9.5px] font-extrabold inline-block whitespace-nowrap ${doc.typeBadge}`}>
+                            {doc.type}
+                          </span>
+                        </td>
+
+                        {/* Related To */}
+                        <td className="py-3 px-3 font-medium text-slate-700 whitespace-nowrap">
+                          {doc.relatedTo}
+                        </td>
+
+                        {/* Load / Reference */}
+                        <td className="py-3 px-3 whitespace-nowrap">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-extrabold text-slate-900 whitespace-nowrap">{doc.loadRef}</span>
+                            {doc.route && <span className="text-[9.5px] text-slate-400 font-medium whitespace-nowrap">({doc.route})</span>}
+                          </div>
+                        </td>
+
+                        {/* Date */}
+                        <td className="py-3 px-3 font-medium text-slate-600 whitespace-nowrap">
+                          {doc.date}
+                        </td>
+
+                        {/* Uploaded By */}
+                        <td className="py-3 px-3 font-medium text-slate-600 whitespace-nowrap">
+                          {doc.uploadedBy}
+                        </td>
+
+                        {/* Size */}
+                        <td className="py-3 px-3 font-medium text-slate-600 whitespace-nowrap">
+                          {doc.size}
+                        </td>
+
+                        {/* Actions (Only 3-Dots Menu Button) */}
+                        <td className="py-3 px-3 text-right whitespace-nowrap relative">
+                          <div className="flex items-center justify-end">
+                            
+                            {/* 3-Dots Dropdown Trigger */}
+                            <div className="relative">
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveMenuDocId(activeMenuDocId === doc.id ? null : doc.id);
+                                }}
+                                title="More Options"
+                                className={`p-1.5 rounded-lg cursor-pointer transition-colors ${
+                                  activeMenuDocId === doc.id 
+                                    ? 'text-slate-900 bg-slate-200' 
+                                    : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
+                                }`}
+                              >
+                                <MoreHorizontal size={15} />
+                              </button>
+
+                              {/* 3-Dots Floating Dropdown Menu */}
+                              {activeMenuDocId === doc.id && (
+                                <>
+                                  <div 
+                                    className="fixed inset-0 z-40" 
+                                    onClick={() => setActiveMenuDocId(null)} 
+                                  />
+                                  <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-2xl border border-slate-200 p-1.5 z-50 text-left w-48 space-y-0.5 animate-fade-in font-sans text-xs">
+                                    <button
+                                      onClick={() => {
+                                        setActiveMenuDocId(null);
+                                        setPreviewDoc(doc);
+                                      }}
+                                      className="w-full flex items-center gap-2 px-2.5 py-1.5 text-slate-700 hover:bg-blue-50 hover:text-blue-700 font-extrabold rounded-lg cursor-pointer transition-colors"
+                                    >
+                                      <Eye size={13} className="text-blue-600" />
+                                      <span>Preview Document</span>
+                                    </button>
+
+                                    <button
+                                      onClick={() => {
+                                        setActiveMenuDocId(null);
+                                        triggerToast(`Downloading ${doc.name}...`);
+                                      }}
+                                      className="w-full flex items-center gap-2 px-2.5 py-1.5 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 font-extrabold rounded-lg cursor-pointer transition-colors"
+                                    >
+                                      <Download size={13} className="text-emerald-600" />
+                                      <span>Download File</span>
+                                    </button>
+
+                                    <button
+                                      onClick={() => {
+                                        setActiveMenuDocId(null);
+                                        setEmailModalDoc(doc);
+                                        setEmailForm({
+                                          recipientEmail: 'accounts@abctransport.com.au',
+                                          subject: `Document Attached: ${doc.name} (${doc.loadRef})`,
+                                          message: `Hi Team,\n\nPlease find attached document ${doc.name} related to load ${doc.loadRef}.`
+                                        });
+                                      }}
+                                      className="w-full flex items-center gap-2 px-2.5 py-1.5 text-slate-700 hover:bg-purple-50 hover:text-purple-700 font-extrabold rounded-lg cursor-pointer transition-colors"
+                                    >
+                                      <Send size={13} className="text-purple-600" />
+                                      <span>Email Document</span>
+                                    </button>
+
+                                    <button
+                                      onClick={() => {
+                                        setActiveMenuDocId(null);
+                                        triggerToast(`Direct URL for ${doc.name} copied to clipboard!`);
+                                      }}
+                                      className="w-full flex items-center gap-2 px-2.5 py-1.5 text-slate-700 hover:bg-amber-50 hover:text-amber-700 font-extrabold rounded-lg cursor-pointer transition-colors"
+                                    >
+                                      <Paperclip size={13} className="text-amber-600" />
+                                      <span>Copy Direct Link</span>
+                                    </button>
+
+                                    <div className="my-1 border-t border-slate-100" />
+
+                                    <button
+                                      onClick={() => handleDeleteDoc(doc.id, doc.name)}
+                                      className="w-full flex items-center gap-2 px-2.5 py-1.5 text-red-600 hover:bg-red-50 font-extrabold rounded-lg cursor-pointer transition-colors"
+                                    >
+                                      <Trash2 size={13} className="text-red-600" />
+                                      <span>Delete Document</span>
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+
+                          </div>
+                        </td>
+
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
-        </div>
 
-        {/* Right: Upload Section */}
-        <div style={S.rightCard}>
-          <div>
-            <h2 style={S.cardTitle}>Upload signed BOL / customs papers</h2>
-            <p style={S.cardSubtitle}>UPLOAD LOGISTICS DOCUMENTS (POD, BILLS, INSPECTIONS)</p>
+          {/* Table Pagination (Pushed to bottom using mt-auto) */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400 font-semibold pt-3 mt-auto border-t border-slate-100">
+            <span>Showing 1 to {filteredDocuments.length} of {documents.length} documents</span>
+            
+            <div className="flex items-center gap-1 text-xs font-bold text-slate-600">
+              <button className="px-2 py-1 border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-400">&lt;&lt;</button>
+              <button className="px-2 py-1 border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-400">&lt;</button>
+              <button className="px-3 py-1 bg-blue-600 text-white rounded-lg">1</button>
+              <button className="px-3 py-1 border border-slate-200 rounded-lg hover:bg-slate-50">2</button>
+              <button className="px-3 py-1 border border-slate-200 rounded-lg hover:bg-slate-50">3</button>
+              <button className="px-3 py-1 border border-slate-200 rounded-lg hover:bg-slate-50">4</button>
+              <button className="px-3 py-1 border border-slate-200 rounded-lg hover:bg-slate-50">5</button>
+              <button className="px-2 py-1 border border-slate-200 rounded-lg hover:bg-slate-50">&gt;</button>
+              <button className="px-2 py-1 border border-slate-200 rounded-lg hover:bg-slate-50">&gt;&gt;</button>
+            </div>
           </div>
 
-          <div 
-            onClick={handleUploadClick}
-            style={S.uploadContainer}
-          >
-            <input 
-              type="file" 
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              style={{ display: 'none' }}
-              accept=".pdf,.jpg,.jpeg,.png"
-            />
-            
-            <div style={S.uploadIconCircle}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#b45309" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21.2 15v3.8a2 2 0 0 1-2 2H4.8a2 2 0 0 1-2-2V15"></path>
-                <polyline points="7.6 10 12 5.6 16.4 10"></polyline>
-                <line x1="12" y1="5.6" x2="12" y2="15"></line>
-              </svg>
+        </div>
+
+        {/* COLUMN 2 (4 Cols): SIDE CARDS (Compact Shorter Height) */}
+        <div className="lg:col-span-4 space-y-3">
+          
+          {/* CARD 1: DOCUMENTS BY TYPE (Donut Chart & Legend) */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl shadow-2xs p-3 space-y-2">
+            <div className="flex justify-between items-center pb-1.5 border-b border-slate-100">
+              <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-wider">DOCUMENTS BY TYPE</h2>
+              <button onClick={() => triggerToast("Generating full document type report...")} className="text-[10px] font-extrabold text-blue-600 hover:text-blue-800 cursor-pointer flex items-center gap-0.5">
+                View report <ArrowRight size={9} />
+              </button>
             </div>
 
-            <span style={S.uploadMainText}>Drag &amp; drop file or click to select</span>
-            <span style={S.uploadSubText}>Supports .PDF, .JPG, .JPEG, .PNG (Max 10MB)</span>
+            <div className="flex items-center justify-around gap-3 py-1">
+              
+              {/* Donut Ring Visual Representation */}
+              <div className="relative w-20 h-20 flex items-center justify-center shrink-0">
+                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                  {/* Background Circle */}
+                  <path className="text-slate-100" strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                  {/* Segment 1: PODs (50%) - Blue */}
+                  <path className="text-blue-600" strokeDasharray="50, 100" strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                  {/* Segment 2: Invoices (18.8%) - Emerald */}
+                  <path className="text-emerald-500" strokeDasharray="18.8, 100" strokeDashoffset="-50" strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                  {/* Segment 3: Condition Reports (14.1%) - Amber */}
+                  <path className="text-amber-500" strokeDasharray="14.1, 100" strokeDashoffset="-68.8" strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                  {/* Segment 4: Other (17.1%) - Sky */}
+                  <path className="text-sky-400" strokeDasharray="17.1, 100" strokeDashoffset="-82.9" strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                </svg>
+                
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                  <span className="text-sm font-black text-slate-900 leading-none">128</span>
+                  <span className="text-[7.5px] font-extrabold text-slate-400 uppercase">Total</span>
+                </div>
+              </div>
+
+              {/* Legend Grid */}
+              <div className="space-y-1 text-xs">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0"></span>
+                  <span className="text-slate-600 font-medium text-[10px]">PODs:</span>
+                  <span className="font-extrabold text-slate-900 text-[10px]">64 (50%)</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                  <span className="text-slate-600 font-medium text-[10px]">Invoices:</span>
+                  <span className="font-extrabold text-slate-900 text-[10px]">24 (19%)</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+                  <span className="text-slate-600 font-medium text-[10px]">Reports:</span>
+                  <span className="font-extrabold text-slate-900 text-[10px]">18 (14%)</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-sky-400 shrink-0"></span>
+                  <span className="text-slate-600 font-medium text-[10px]">Other:</span>
+                  <span className="font-extrabold text-slate-900 text-[10px]">22 (17%)</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          {/* CARD 2: RECENTLY UPLOADED */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl shadow-2xs p-3 space-y-2">
+            <div className="flex justify-between items-center pb-1.5 border-b border-slate-100">
+              <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-wider">RECENTLY UPLOADED</h2>
+              <button onClick={() => triggerToast("Viewing all document uploads...")} className="text-[10px] font-extrabold text-blue-600 hover:text-blue-800 cursor-pointer flex items-center gap-0.5">
+                View all <ArrowRight size={9} />
+              </button>
+            </div>
+
+            <div className="space-y-1.5 text-xs">
+              {[
+                { name: 'POD-LD-3987.pdf', date: '30 May 2025', size: '243 KB', color: 'text-emerald-500' },
+                { name: 'LD-3987-delivery.jpg', date: '30 May 2025', size: '1.8 MB', color: 'text-amber-500' },
+                { name: 'Condition Report.pdf', date: '28 May 2025', size: '312 KB', color: 'text-red-500' },
+                { name: 'INV-2025-0529.pdf', date: '29 May 2025', size: '166 KB', color: 'text-red-500' }
+              ].map((item, i) => (
+                <div key={i} className="flex items-center justify-between p-1.5 rounded-xl border border-slate-100 hover:border-slate-200 hover:bg-slate-50 transition-all">
+                  <div className="flex items-center gap-1.5">
+                    <FileText size={13} className={item.color} />
+                    <div>
+                      <span className="font-extrabold text-slate-900 block text-[11px] leading-tight">{item.name}</span>
+                      <span className="text-[9px] text-slate-400 font-medium">{item.date}</span>
+                    </div>
+                  </div>
+                  <span className="text-[9.5px] font-extrabold text-slate-500">{item.size}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* CARD 3: QUICK ACTIONS */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl shadow-2xs p-3 space-y-2">
+            <div className="flex justify-between items-center pb-1.5 border-b border-slate-100">
+              <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-wider">QUICK ACTIONS</h2>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button 
+                onClick={() => setIsUploadModalOpen(true)}
+                className="p-2 bg-slate-50 border border-slate-200 hover:bg-blue-50 hover:border-blue-200 rounded-xl text-left font-extrabold text-[11px] text-slate-800 flex flex-col gap-0.5 cursor-pointer transition-all"
+              >
+                <Upload size={14} className="text-blue-600" />
+                <span>Upload Document</span>
+              </button>
+
+              <button 
+                onClick={() => setIsRequestModalOpen(true)}
+                className="p-2 bg-slate-50 border border-slate-200 hover:bg-blue-50 hover:border-blue-200 rounded-xl text-left font-extrabold text-[11px] text-slate-800 flex flex-col gap-0.5 cursor-pointer transition-all"
+              >
+                <FileText size={14} className="text-blue-600" />
+                <span>Request Document</span>
+              </button>
+
+              <button 
+                onClick={() => triggerToast("Downloading complete account statement PDF...")}
+                className="p-2 bg-slate-50 border border-slate-200 hover:bg-blue-50 hover:border-blue-200 rounded-xl text-left font-extrabold text-[11px] text-slate-800 flex flex-col gap-0.5 cursor-pointer transition-all"
+              >
+                <Download size={14} className="text-blue-600" />
+                <span>Download Statement</span>
+              </button>
+
+              <button 
+                onClick={() => triggerToast("Opening help center for documents...")}
+                className="p-2 bg-slate-50 border border-slate-200 hover:bg-blue-50 hover:border-blue-200 rounded-xl text-left font-extrabold text-[11px] text-slate-800 flex flex-col gap-0.5 cursor-pointer transition-all"
+              >
+                <HelpCircle size={14} className="text-blue-600" />
+                <span>Need Help?</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* =========================================================================
+         DEVELOPER NOTES BANNER (Exact Match 2nd Screenshot)
+         ========================================================================= */}
+      <div className="bg-[#1E293B] text-white rounded-2xl p-4 shadow-lg space-y-3 font-sans border border-slate-700">
+        <div className="flex items-center justify-between border-b border-slate-700 pb-2">
+          <div className="flex items-center gap-2">
+            <span className="text-blue-400 font-mono font-bold text-xs">&lt;/&gt;</span>
+            <h3 className="font-extrabold uppercase text-[11px] tracking-wider text-slate-200">DEVELOPER NOTES – DOCUMENTS & PODS</h3>
+          </div>
+          <span className="text-[9.5px] font-mono text-slate-400 font-semibold">REF: 14.6-DOCUMENTS-PODS-SPEC</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-3 text-left">
+          {[
+            { title: '1. PURPOSE', items: ['Provide secure access to all documents.', 'View, download and manage PODs.', 'Maintain complete document history.'] },
+            { title: '2. KEY FEATURES', items: ['Filter by type, load and date.', 'Quick preview and download.', 'Bulk download selected documents.', 'Upload and request documents.'] },
+            { title: '3. DATA SOURCES', items: ['Documents module.', 'Loads module (PODs, reports).', 'Invoices module.', 'Driver App uploads.'] },
+            { title: '4. SECURITY & ACCESS', items: ['Customers see only their documents.', 'Role-based access for portal users.', 'Files stored in secure storage.', 'Encrypted in transit and at rest.'] },
+            { title: '5. INTEGRATIONS', items: ['Driver App (document uploads).', 'Email/SMS (document notifications).', 'Accounting (invoices & statements).', 'Cloud storage (AWS S3/DO Spaces).'] },
+            { title: '6. PERFORMANCE', items: ['Lazy load documents.', 'Optimize previews for large files.', 'CDN for fast file delivery.', 'Audit log for uploads/downloads.'] }
+          ].map((col, i) => (
+            <div key={i}>
+              <h4 className="font-extrabold text-blue-400 mb-1 uppercase text-[8.5px] tracking-wider">{col.title}</h4>
+              <ul className="space-y-0.5 text-[9.5px] text-slate-300 font-medium">
+                {col.items.map((item, j) => <li key={j}>• {item}</li>)}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        <div className="pt-2 border-t border-slate-700 flex flex-col sm:flex-row items-center justify-between text-[8.5px] text-slate-400 font-semibold gap-2">
+          <div className="flex items-center gap-1.5">
+            <RefreshCw size={10} className="text-blue-400 animate-spin-slow" />
+            <span>All times shown in your local time (AEST) • Data auto-refreshes every 5 minutes</span>
           </div>
         </div>
       </div>
 
-      {/* Support Ticket Modal (Drawer) */}
-      {showSupportModal && (
-        <div style={S.modalOverlay} onClick={() => setShowSupportModal(false)}>
-          <div style={S.modalContent} onClick={(e) => e.stopPropagation()}>
-            <div style={S.modalHeader}>
-              <h2 style={S.modalTitle}>Shipper Help Desk &amp; Ticket Center</h2>
-              <button onClick={() => setShowSupportModal(false)} style={S.closeBtn}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
+      {/* =========================================================================
+         UPLOAD DOCUMENT MODAL (With Working File Picker & Drag-and-Drop)
+         ========================================================================= */}
+      {isUploadModalOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[99999] flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setIsUploadModalOpen(false)}
+        >
+          <div 
+            className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-5 space-y-4 text-left font-sans"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center font-bold">
+                  <Upload size={16} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">Upload Document</h3>
+                  <p className="text-[10.5px] text-slate-500 font-medium">Upload signed POD, BOL or customs paper</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsUploadModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 cursor-pointer"
+              >
+                <X size={16} />
               </button>
             </div>
-            
-            <form onSubmit={handleSupportSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-              <div style={S.modalBody}>
-                <div style={S.fieldGroup}>
-                  <label style={S.fieldLabel}>SUBJECT HEADING</label>
-                  <input 
-                    type="text" 
-                    value={supportSubject}
-                    onChange={(e) => setSupportSubject(e.target.value)}
-                    placeholder="e.g. Shipment update delay" 
-                    style={S.textInput}
-                    required
-                  />
+
+            <form onSubmit={handleSaveUpload} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Document Title / File Name *</label>
+                <input 
+                  type="text"
+                  required
+                  placeholder="e.g. POD-LD-3987.pdf"
+                  value={uploadForm.docName}
+                  onChange={e => setUploadForm({ ...uploadForm, docName: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl font-medium text-slate-800 focus:outline-none focus:border-blue-400"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Document Category</label>
+                  <select
+                    value={uploadForm.docType}
+                    onChange={e => setUploadForm({ ...uploadForm, docType: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl font-bold text-slate-800 bg-white focus:outline-none focus:border-blue-400 cursor-pointer"
+                  >
+                    <option value="POD (Proof of Delivery)">POD (Proof of Delivery)</option>
+                    <option value="Bill of Lading">Bill of Lading</option>
+                    <option value="Condition Report">Condition Report</option>
+                    <option value="Tax Invoice">Tax Invoice</option>
+                    <option value="Other">Other</option>
+                  </select>
                 </div>
 
-                <div style={S.fieldGroup}>
-                  <label style={S.fieldLabel}>PROBLEM DESCRIPTION</label>
-                  <textarea 
-                    value={supportDescription}
-                    onChange={(e) => setSupportDescription(e.target.value)}
-                    placeholder="Please provide specific details..." 
-                    style={S.textareaInput}
-                    required
-                  />
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Related Load #</label>
+                  <select
+                    value={uploadForm.loadRef}
+                    onChange={e => setUploadForm({ ...uploadForm, loadRef: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl font-bold text-slate-800 bg-white focus:outline-none focus:border-blue-400 cursor-pointer"
+                  >
+                    <option value="LD-3987">LD-3987</option>
+                    <option value="LD-3981">LD-3981</option>
+                    <option value="LD-3975">LD-3975</option>
+                    <option value="General">General / No Load</option>
+                  </select>
                 </div>
               </div>
 
-              <div style={S.modalFooter}>
-                <button type="button" onClick={() => setShowSupportModal(false)} style={S.btnCancel}>Cancel</button>
-                <button type="submit" style={S.btnSubmit}>Submit Ticket</button>
+              {/* Upload Dropzone (Interactive Drag & Drop and File Picker) */}
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Attach File *</label>
+                
+                <div 
+                  onClick={() => modalFileInputRef.current?.click()}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (e.dataTransfer.files) {
+                      handleModalFileChange(e.dataTransfer.files);
+                    }
+                  }}
+                  className={`border-2 dashed rounded-xl p-4 text-center cursor-pointer transition-all space-y-1 ${
+                    attachedFile 
+                      ? 'bg-emerald-50/70 border-emerald-300' 
+                      : 'bg-slate-50 hover:bg-blue-50/50 border-slate-200 hover:border-blue-300'
+                  }`}
+                >
+                  {attachedFile ? (
+                    <div className="space-y-1">
+                      <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+                        <Check size={18} />
+                      </div>
+                      <p className="font-extrabold text-emerald-900 text-xs">
+                        Selected: {attachedFile.name}
+                      </p>
+                      <p className="text-[10px] text-emerald-600 font-medium">
+                        Size: {attachedFile.size} • Click to change file
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <Upload size={22} className="mx-auto text-blue-600" />
+                      <p className="font-extrabold text-slate-800 text-xs">
+                        Drag & drop file or click to browse
+                      </p>
+                      <p className="text-[10px] text-slate-400 font-medium">
+                        Supports PDF, JPG, PNG, DOCX, XLSX (Max 10MB)
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setIsUploadModalOpen(false);
+                    setAttachedFile(null);
+                  }}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
+                >
+                  Save & Upload
+                </button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* Toast Notification */}
-      {toast && (
-        <div className="settings-toast" style={S.toastContainer}>
-          <div style={S.toastIcon}>✓</div>
-          <span style={S.toastText}>{toast}</span>
-          <button onClick={() => setToast(null)} style={S.toastCloseBtn}>✕</button>
+      {/* =========================================================================
+         REQUEST DOCUMENT MODAL
+         ========================================================================= */}
+      {isRequestModalOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[99999] flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setIsRequestModalOpen(false)}
+        >
+          <div 
+            className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-5 space-y-4 text-left font-sans"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center font-bold">
+                  <FileText size={16} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">Request Document</h3>
+                  <p className="text-[10.5px] text-slate-500 font-medium">Request missing POD or condition report from dispatch</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsRequestModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveRequest} className="space-y-3 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Document Needed</label>
+                  <select
+                    value={requestForm.docType}
+                    onChange={e => setRequestForm({ ...requestForm, docType: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl font-bold text-slate-800 bg-white focus:outline-none focus:border-blue-400 cursor-pointer"
+                  >
+                    <option value="Signed POD">Signed POD</option>
+                    <option value="Pre-load Condition Photos">Pre-load Condition Photos</option>
+                    <option value="Weighbridge Docket">Weighbridge Docket</option>
+                    <option value="Tax Invoice">Tax Invoice</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Load Reference #</label>
+                  <select
+                    value={requestForm.loadRef}
+                    onChange={e => setRequestForm({ ...requestForm, loadRef: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl font-bold text-slate-800 bg-white focus:outline-none focus:border-blue-400 cursor-pointer"
+                  >
+                    <option value="LD-3987">LD-3987</option>
+                    <option value="LD-3981">LD-3981</option>
+                    <option value="LD-3975">LD-3975</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Notes / Instructions for Dispatch</label>
+                <textarea 
+                  rows={3}
+                  placeholder="e.g. Need high resolution scan of signed delivery receipt..."
+                  value={requestForm.notes}
+                  onChange={e => setRequestForm({ ...requestForm, notes: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl font-medium text-slate-800 focus:outline-none focus:border-blue-400"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button 
+                  type="button" 
+                  onClick={() => setIsRequestModalOpen(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
+                >
+                  Send Request
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
-      <style>{`
-        @keyframes slideIn {
-          from { transform: translateX(100px); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes slideInRight {
-          from { transform: translateX(100%); }
-          to { transform: translateX(0); }
-        }
-      `}</style>
+      {/* =========================================================================
+         EMAIL DOCUMENT MODAL
+         ========================================================================= */}
+      {emailModalDoc && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[99999] flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setEmailModalDoc(null)}
+        >
+          <div 
+            className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-5 space-y-4 text-left font-sans"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center font-bold">
+                  <Send size={16} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">Email Document</h3>
+                  <p className="text-[10.5px] text-slate-500 font-medium">Send {emailModalDoc.name} via email</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setEmailModalDoc(null)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSendEmail} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Recipient Email Address *</label>
+                <input 
+                  type="email"
+                  required
+                  value={emailForm.recipientEmail}
+                  onChange={e => setEmailForm({ ...emailForm, recipientEmail: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl font-medium text-slate-800 focus:outline-none focus:border-blue-400"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Subject</label>
+                <input 
+                  type="text"
+                  required
+                  value={emailForm.subject}
+                  onChange={e => setEmailForm({ ...emailForm, subject: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl font-medium text-slate-800 focus:outline-none focus:border-blue-400"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Email Message</label>
+                <textarea 
+                  rows={3}
+                  value={emailForm.message}
+                  onChange={e => setEmailForm({ ...emailForm, message: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl font-medium text-slate-800 focus:outline-none focus:border-blue-400"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button 
+                  type="button" 
+                  onClick={() => setEmailModalDoc(null)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
+                >
+                  Send Email
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+         PREVIEW DOCUMENT MODAL
+         ========================================================================= */}
+      {previewDoc && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[99999] flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setPreviewDoc(null)}
+        >
+          <div 
+            className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-5 space-y-4 text-left font-sans"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center font-bold">
+                  <FileText size={16} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">{previewDoc.name}</h3>
+                  <p className="text-[10.5px] text-slate-500 font-medium">{previewDoc.type} • {previewDoc.size}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setPreviewDoc(null)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-2">
+                <div className="flex justify-between font-bold">
+                  <span className="text-slate-500">Document Type:</span>
+                  <span className="text-slate-900">{previewDoc.type}</span>
+                </div>
+                <div className="flex justify-between font-bold">
+                  <span className="text-slate-500">Related Load:</span>
+                  <span className="text-blue-600 font-mono">{previewDoc.loadRef}</span>
+                </div>
+                <div className="flex justify-between font-bold">
+                  <span className="text-slate-500">Uploaded Date:</span>
+                  <span className="text-slate-900">{previewDoc.date}</span>
+                </div>
+                <div className="flex justify-between font-bold">
+                  <span className="text-slate-500">Uploaded By:</span>
+                  <span className="text-slate-900">{previewDoc.uploadedBy}</span>
+                </div>
+              </div>
+
+              {/* Document Preview Box */}
+              <div className="border border-slate-200 rounded-xl p-6 text-center bg-slate-100 flex flex-col items-center justify-center space-y-2 min-h-[160px]">
+                <FileText size={40} className="text-blue-600" />
+                <p className="font-extrabold text-slate-800 text-xs">{previewDoc.name}</p>
+                <p className="text-[10px] text-slate-500">Document ready for viewing and download</p>
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    triggerToast(`Downloading ${previewDoc.name}...`);
+                  }}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
+                >
+                  <Download size={13} />
+                  <span>Download Document</span>
+                </button>
+
+                <button 
+                  type="button" 
+                  onClick={() => setPreviewDoc(null)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
+                >
+                  Close Preview
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
-};
-
-/* ─── Styles Object ─── */
-const S = {
-  leftCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: '24px 32px',
-    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
-    border: '1px solid #e2e8f0',
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100%',
-    boxSizing: 'border-box',
-    overflowY: 'auto'
-  },
-  cardHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 16,
-    marginBottom: 20
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#0f172a',
-    margin: 0
-  },
-  headerControlsRight: {
-    display: 'flex',
-    gap: 12,
-    alignItems: 'center',
-    flexWrap: 'wrap'
-  },
-  selectedPill: {
-    backgroundColor: '#fffbeb',
-    border: '1px solid #fde047',
-    borderRadius: 12,
-    padding: '6px 16px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 16
-  },
-  selectedPillText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#b45309',
-    letterSpacing: '0.5px',
-    whiteSpace: 'nowrap'
-  },
-  csvExportBtn: {
-    backgroundColor: 'transparent',
-    border: '1px solid #b45309',
-    borderRadius: 20,
-    padding: '4px 12px',
-    color: '#b45309',
-    fontSize: 11,
-    fontWeight: '800',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    transition: 'all 0.15s ease',
-    whiteSpace: 'nowrap'
-  },
-  densityPill: {
-    display: 'flex',
-    backgroundColor: '#f1f5f9',
-    borderRadius: 30,
-    padding: 4,
-    border: '1px solid #e2e8f0'
-  },
-  densityOption: {
-    padding: '6px 16px',
-    borderRadius: 30,
-    fontSize: 10.5,
-    cursor: 'pointer',
-    userSelect: 'none',
-    transition: 'all 0.15s ease'
-  },
-  columnsBtn: {
-    backgroundColor: '#ffffff',
-    color: '#475569',
-    border: '1px solid #cbd5e1',
-    borderRadius: 30,
-    fontSize: 10.5,
-    fontWeight: '800',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 6,
-    boxSizing: 'border-box',
-    transition: 'all 0.15s ease',
-    outline: 'none'
-  },
-  dropdownOverlay: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 10
-  },
-  dropdownPanel: {
-    position: 'absolute',
-    top: '100%',
-    right: 0,
-    marginTop: 8,
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    border: '1px solid #e2e8f0',
-    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-    padding: 16,
-    zIndex: 20,
-    width: 220
-  },
-  dropdownTitle: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#94a3b8',
-    marginBottom: 12,
-    letterSpacing: '0.5px'
-  },
-  dropdownLabel: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 10,
-    fontSize: 13.5,
-    color: '#475569',
-    cursor: 'pointer',
-    userSelect: 'none'
-  },
-  checkboxInput: {
-    width: 16,
-    height: 16,
-    cursor: 'pointer'
-  },
-  tableWrapper: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    border: '1px solid #e2e8f0',
-    overflowX: 'auto',
-    WebkitOverflowScrolling: 'touch'
-  },
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse',
-    textAlign: 'left',
-    whiteSpace: 'nowrap'
-  },
-  theadRow: {
-    borderBottom: '1px solid #e2e8f0',
-    backgroundColor: '#f8fafc'
-  },
-  th: {
-    fontSize: 10.5,
-    fontWeight: '800',
-    color: '#64748b',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px'
-  },
-  tbodyRow: {
-    borderBottom: '1px solid #f1f5f9',
-    transition: 'background-color 0.15s ease'
-  },
-  td: {
-    fontSize: 13.5,
-    color: '#334155'
-  },
-  actionDownloadBtn: {
-    backgroundColor: '#ffffff',
-    border: '1px solid #cbd5e1',
-    borderRadius: 30,
-    padding: '6px 14px',
-    color: '#334155',
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 6,
-    fontSize: 11,
-    fontWeight: '700',
-    cursor: 'pointer',
-    transition: 'all 0.15s ease',
-    outline: 'none'
-  },
-  rightCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: '24px 32px',
-    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
-    border: '1px solid #e2e8f0',
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100%',
-    boxSizing: 'border-box'
-  },
-  cardSubtitle: {
-    fontSize: 10.5,
-    fontWeight: '800',
-    color: '#64748b',
-    marginTop: 6,
-    letterSpacing: '0.5px'
-  },
-  uploadContainer: {
-    flex: 1,
-    border: '2px dashed #cbd5e1',
-    borderRadius: 12,
-    backgroundColor: '#ffffff',
-    marginTop: 20,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '40px 24px',
-    cursor: 'pointer',
-    transition: 'all 0.15s ease',
-    userSelect: 'none'
-  },
-  uploadIconCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: '50%',
-    backgroundColor: '#fffbeb',
-    border: '1px solid #fde047',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16
-  },
-  uploadMainText: {
-    fontSize: 13.5,
-    fontWeight: '800',
-    color: '#0f172a',
-    marginBottom: 6,
-    textAlign: 'center'
-  },
-  uploadSubText: {
-    fontSize: 11,
-    color: '#64748b',
-    textAlign: 'center'
-  },
-  modalOverlay: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(15, 23, 42, 0.4)',
-    backdropFilter: 'blur(3px)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    zIndex: 1000,
-    fontFamily: "'Outfit', 'Inter', sans-serif"
-  },
-  modalContent: {
-    backgroundColor: '#ffffff',
-    height: '100%',
-    width: '100%',
-    maxWidth: 450,
-    boxShadow: '-10px 0 25px -5px rgba(0, 0, 0, 0.1), -5px 0 10px -5px rgba(0, 0, 0, 0.04)',
-    overflow: 'hidden',
-    borderLeft: '1px solid #e2e8f0',
-    borderRadius: '16px 0 0 16px',
-    display: 'flex',
-    flexDirection: 'column',
-    animation: 'slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
-  },
-  modalHeader: {
-    padding: '24px 28px',
-    borderBottom: '1px solid #f1f5f9',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center'
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#0f172a',
-    margin: 0
-  },
-  closeBtn: {
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    padding: 4,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: '50%',
-    transition: 'background-color 0.15s ease'
-  },
-  modalBody: {
-    padding: '28px',
-    flex: 1
-  },
-  fieldGroup: {
-    marginBottom: 20
-  },
-  fieldLabel: {
-    display: 'block',
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#64748b',
-    marginBottom: 8,
-    letterSpacing: '0.5px'
-  },
-  textInput: {
-    width: '100%',
-    padding: '12px 16px',
-    borderRadius: 8,
-    border: '1px solid #cbd5e1',
-    fontSize: 14,
-    color: '#334155',
-    outline: 'none',
-    boxSizing: 'border-box',
-    transition: 'border-color 0.15s ease'
-  },
-  textareaInput: {
-    width: '100%',
-    height: 120,
-    padding: '12px 16px',
-    borderRadius: 8,
-    border: '1px solid #cbd5e1',
-    fontSize: 14,
-    color: '#334155',
-    outline: 'none',
-    boxSizing: 'border-box',
-    resize: 'none',
-    transition: 'border-color 0.15s ease'
-  },
-  modalFooter: {
-    padding: '20px 28px 28px 28px',
-    display: 'flex',
-    justifyContent: 'flex-end',
-    gap: 12,
-    borderTop: '1px solid #f1f5f9'
-  },
-  btnCancel: {
-    backgroundColor: '#ffffff',
-    color: '#0f172a',
-    border: '1px solid #cbd5e1',
-    borderRadius: 30,
-    padding: '10px 24px',
-    fontSize: 13,
-    fontWeight: '800',
-    cursor: 'pointer',
-    transition: 'all 0.15s ease'
-  },
-  btnSubmit: {
-    backgroundColor: '#FFCC00',
-    color: '#000000',
-    border: 'none',
-    borderRadius: 30,
-    padding: '10px 28px',
-    fontSize: 13,
-    fontWeight: '800',
-    cursor: 'pointer',
-    boxShadow: '0 4px 14px rgba(255, 204, 0, 0.35)',
-    transition: 'all 0.15s ease'
-  },
-  toastContainer: {
-    position: 'fixed',
-    bottom: 40,
-    right: 32,
-    backgroundColor: '#ecfdf5',
-    border: '1px solid #a7f3d0',
-    borderRadius: 12,
-    padding: '14px 20px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 10,
-    zIndex: 1100,
-    boxShadow: '0 10px 25px -5px rgba(0,0,0,0.05)',
-    maxWidth: 420,
-    animation: 'slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1)'
-  },
-  toastIcon: {
-    color: '#10b981',
-    fontSize: 20,
-    fontWeight: 'bold',
-    lineHeight: 1
-  },
-  toastText: {
-    fontSize: 13.5,
-    fontWeight: '600',
-    color: '#065f46',
-    flex: 1
-  },
-  toastCloseBtn: {
-    background: 'none',
-    border: 'none',
-    fontSize: 16,
-    color: '#64748b',
-    cursor: 'pointer',
-    padding: 0,
-    lineHeight: 1
-  }
-};
-
-export default CustomerDocuments;
+}

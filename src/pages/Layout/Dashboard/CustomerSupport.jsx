@@ -1,887 +1,864 @@
 import React, { useState } from 'react';
-import './CustomerDashboard.css';
+import {
+  MessageSquare, Ticket, Clock, CheckCircle2, Search, Send, Paperclip,
+  Image as ImageIcon, Smile, ChevronRight, Star, Plus, MoreHorizontal,
+  ExternalLink, FileText, HelpCircle, Shield, RefreshCw, X, ArrowRight,
+  AlertCircle, CheckCircle, Info, Phone, MessageCircle, User, Bot, Headphones,
+  Download
+} from 'lucide-react';
 
-// SVG Gear Icon for Columns Button
-const GearIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="3"></circle>
-    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-  </svg>
-);
+export default function CustomerSupport() {
+  // Toast Notification State
+  const [toastMsg, setToastMsg] = useState('');
+  const triggerToast = (msg) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(''), 3500);
+  };
 
-// SVG CSV Download Icon
-const DownloadIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 6 }}>
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-    <polyline points="7 10 12 15 17 10"></polyline>
-    <line x1="12" y1="15" x2="12" y2="3"></line>
-  </svg>
-);
+  // Active Selected Conversation State
+  const [selectedConvId, setSelectedConvId] = useState(1);
+  const [convSearchTerm, setConvSearchTerm] = useState('');
+  const [convCategory, setConvCategory] = useState('All Categories');
 
-// Custom Checkbox Component
-const CustomCheckbox = ({ checked, onChange }) => (
-  <div 
-    onClick={onChange}
-    style={{
-      width: 16,
-      height: 16,
-      borderRadius: 4,
-      border: checked ? '2px solid #0066cc' : '2px solid #cbd5e1',
-      backgroundColor: checked ? '#0066cc' : '#ffffff',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      cursor: 'pointer',
-      transition: 'all 0.15s ease',
-      boxSizing: 'border-box',
-      userSelect: 'none'
-    }}
-  >
-    {checked && (
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round">
-        <polyline points="20 6 9 17 4 12"></polyline>
-      </svg>
-    )}
-  </div>
-);
-
-const CustomerSupport = () => {
-  // Support Tickets State
-  const [tickets, setTickets] = useState([
+  // Conversations List Data State (Matches 2nd Screenshot Exactly)
+  const [conversations, setConversations] = useState([
     {
-      id: 'TKT-1001',
-      subject: 'Delayed shipment delivery Springfield',
-      dateFiled: '2026-07-15',
-      status: 'OPEN'
+      id: 1,
+      title: 'Dispatch Team',
+      sub: 'General enquiries and load updates',
+      listSub: 'Load LD-3987 update',
+      avatar: 'DT',
+      bg: 'bg-purple-600',
+      time: '10:24 AM',
+      dateStarted: '29 May 2025, 10:15 AM',
+      lastMessage: "Thank you! We'll confirm shortly.",
+      unread: 2,
+      category: 'Dispatch',
+      isBot: true,
+      messages: [
+        { id: 1, sender: 'Dispatch Team', isMe: false, text: 'Hi ABC Transport Solutions,\nYour load LD-3987 is now In Transit.\nEstimated delivery: 30 May 2025 at 02:30 PM', time: '10:15 AM' },
+        { id: 2, sender: 'You', isMe: true, text: 'Hi team,\nThanks for the update. Can you please confirm if there are any delays expected?', time: '10:18 AM', read: true },
+        { id: 3, sender: 'Dispatch Team', isMe: false, text: "At this stage everything is on track. We'll notify you immediately if there are any changes.", time: '10:20 AM' },
+        { id: 4, sender: 'You', isMe: true, text: 'Thank you!', time: '10:21 AM', read: true },
+        { id: 5, sender: 'Dispatch Team', isMe: false, text: "You're welcome! Have a great day.", time: '10:22 AM' }
+      ]
     },
     {
-      id: 'TKT-1002',
-      subject: 'Invoice amount discrepancy INV-3981',
-      dateFiled: '2026-07-16',
-      status: 'OPEN'
+      id: 2,
+      title: 'Support Team',
+      sub: 'Portal access and technical issues',
+      listSub: 'Portal access request',
+      avatar: 'ST',
+      bg: 'bg-blue-600',
+      time: 'Yesterday',
+      dateStarted: '28 May 2025, 03:00 PM',
+      lastMessage: 'We have reset your password. Please...',
+      unread: 0,
+      category: 'Support',
+      isBot: false,
+      messages: [
+        { id: 1, sender: 'Support Team', isMe: false, text: 'Hello John, how can we assist you today?', time: '03:00 PM' },
+        { id: 2, sender: 'You', isMe: true, text: 'Need a password reset link for our new booking staff.', time: '03:05 PM', read: true },
+        { id: 3, sender: 'Support Team', isMe: false, text: 'We have reset your password. Please check your email inbox.', time: '03:10 PM' }
+      ]
+    },
+    {
+      id: 3,
+      title: 'Accounts Team',
+      sub: 'Invoices, rates and billing queries',
+      listSub: 'Invoices, rates and ...',
+      avatar: 'AT',
+      bg: 'bg-teal-600',
+      time: '28 May 2025',
+      dateStarted: '28 May 2025, 09:30 AM',
+      lastMessage: 'Payment received, thank you.',
+      unread: 0,
+      category: 'Accounts',
+      isBot: false,
+      messages: [
+        { id: 1, sender: 'You', isMe: true, text: 'Payment sent for Invoice INV-2025-0529.', time: '09:30 AM', read: true },
+        { id: 2, sender: 'Accounts Team', isMe: false, text: 'Payment received, thank you.', time: '09:45 AM' }
+      ]
+    },
+    {
+      id: 4,
+      title: 'Dispatch Team',
+      sub: 'Booking confirmation #LD-3940',
+      listSub: 'Booking confirmatio...',
+      avatar: 'DT',
+      bg: 'bg-purple-600',
+      time: '26 May 2025',
+      dateStarted: '26 May 2025, 11:00 AM',
+      lastMessage: 'Your booking has been confir...',
+      unread: 0,
+      category: 'Dispatch',
+      isBot: false,
+      messages: [
+        { id: 1, sender: 'You', isMe: true, text: 'Can we add 2 extra pallets to booking LD-3940?', time: '11:00 AM', read: true },
+        { id: 2, sender: 'Dispatch Team', isMe: false, text: 'Your booking has been confirmed with extra space.', time: '11:20 AM' }
+      ]
+    },
+    {
+      id: 5,
+      title: 'Support Team',
+      sub: 'Document upload query',
+      listSub: 'Document upload q...',
+      avatar: 'ST',
+      bg: 'bg-blue-600',
+      time: '24 May 2025',
+      dateStarted: '24 May 2025, 02:15 PM',
+      lastMessage: 'This is now resolved, Thank y...',
+      unread: 0,
+      category: 'Support',
+      isBot: false,
+      messages: [
+        { id: 1, sender: 'You', isMe: true, text: 'Is POD upload working for bulk PDF exports?', time: '02:15 PM', read: true },
+        { id: 2, sender: 'Support Team', isMe: false, text: 'This is now resolved, Thank you.', time: '02:40 PM' }
+      ]
     }
   ]);
 
-  // Form Fields State
-  const [subject, setSubject] = useState('');
-  const [description, setDescription] = useState('');
+  // Active Chat Message Input State
+  const [chatInputText, setChatInputText] = useState('');
 
-  // UI Settings State
-  const [density, setDensity] = useState('RELAXED'); // COMPACT, DEFAULT, RELAXED
-  const [showColumnsDropdown, setShowColumnsDropdown] = useState(false);
-  const [visibleCols, setVisibleCols] = useState({
-    ticketId: true,
-    subject: true,
-    dateFiled: true,
-    stateStatus: true
-  });
+  // Handle Send Message
+  const handleSendMessage = (e) => {
+    e?.preventDefault();
+    if (!chatInputText.trim()) return;
 
-  // Selection State
-  const [selectedIds, setSelectedIds] = useState([]);
-  
-  // Drawer / Toast States
-  const [showSupportModal, setShowSupportModal] = useState(false);
-  const [supportSubject, setSupportSubject] = useState('');
-  const [supportDescription, setSupportDescription] = useState('');
-  const [toast, setToast] = useState(null);
-
-  // Trigger Toast Notification
-  const triggerToast = (msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 4000);
-  };
-
-  // Row selection handlers
-  const handleSelectRow = (id) => {
-    setSelectedIds(prev => 
-      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
-    );
-  };
-
-  const handleSelectAll = () => {
-    if (selectedIds.length === tickets.length) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(tickets.map(t => t.id));
-    }
-  };
-
-  // Submit Support Ticket Form
-  const handleFormSubmit = (e) => {
-    e.preventDefault();
-    if (!subject.trim() || !description.trim()) return;
-
-    const tktNum = Math.floor(1000 + Math.random() * 9000);
-    const newTkt = {
-      id: `TKT-${tktNum}`,
-      subject: subject,
-      dateFiled: new Date().toISOString().split('T')[0],
-      status: 'OPEN'
+    const timeNow = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const newMsg = {
+      id: Date.now(),
+      sender: 'You',
+      isMe: true,
+      text: chatInputText,
+      time: timeNow,
+      read: true
     };
 
-    setTickets(prev => [newTkt, ...prev]);
-    setSubject('');
-    setDescription('');
-    triggerToast('Support request registered. Developer logs created.');
+    setConversations(prev => prev.map(conv => {
+      if (conv.id === selectedConvId) {
+        return {
+          ...conv,
+          lastMessage: chatInputText,
+          time: timeNow,
+          messages: [...conv.messages, newMsg]
+        };
+      }
+      return conv;
+    }));
+
+    setChatInputText('');
+    triggerToast('Message sent to dispatch team!');
   };
 
-  // Submit Support modal/drawer ticket
-  const handleModalSubmit = (e) => {
+  // Support Tickets State
+  const [supportTickets, setSupportTickets] = useState([
+    { id: '#SUP-2025-0156', title: 'Portal access for new user', created: '29 May 2025', status: 'Open', statusBg: 'bg-[#FFFBEB] text-[#B45309] border-[#FDE047]' },
+    { id: '#SUP-2025-0148', title: 'Document upload failing', created: '28 May 2025', status: 'In Progress', statusBg: 'bg-blue-50 text-blue-700 border-blue-200' },
+    { id: '#SUP-2025-0123', title: 'Invoice discrepancy query', created: '22 May 2025', status: 'Open', statusBg: 'bg-[#FFFBEB] text-[#B45309] border-[#FDE047]' }
+  ]);
+
+  // Create Ticket Modal State
+  const [isCreateTicketModalOpen, setIsCreateTicketModalOpen] = useState(false);
+  const [ticketForm, setTicketForm] = useState({
+    subject: '',
+    category: 'Portal Support',
+    priority: 'Normal',
+    description: ''
+  });
+
+  const handleSaveCreateTicket = (e) => {
     e.preventDefault();
-    triggerToast('Support request registered. Developer logs created.');
-    setShowSupportModal(false);
-    setSupportSubject('');
-    setSupportDescription('');
+    if (!ticketForm.subject) return;
+
+    const newTicket = {
+      id: `#SUP-2025-0${Math.floor(160 + Math.random() * 840)}`,
+      title: ticketForm.subject,
+      created: 'Just now',
+      status: 'Open',
+      statusBg: 'bg-[#FFFBEB] text-[#B45309] border-[#FDE047]'
+    };
+
+    setSupportTickets(prev => [newTicket, ...prev]);
+    setIsCreateTicketModalOpen(false);
+    setTicketForm({ subject: '', category: 'Portal Support', priority: 'Normal', description: '' });
+    triggerToast('Support Ticket created successfully!');
   };
 
-  // CSV Export logic
-  const handleExportCSV = () => {
-    const selectedTickets = tickets.filter(t => selectedIds.includes(t.id));
-    if (selectedTickets.length === 0) return;
+  // Quick View Load Modal
+  const [isViewLoadModalOpen, setIsViewLoadModalOpen] = useState(false);
 
-    // Headers based on visible columns
-    const headers = [];
-    if (visibleCols.ticketId) headers.push('Ticket ID');
-    if (visibleCols.subject) headers.push('Subject Heading');
-    if (visibleCols.dateFiled) headers.push('Date Filed');
-    if (visibleCols.stateStatus) headers.push('State Status');
-
-    // If no columns are visible, export all fields as fallback
-    const useFallback = headers.length === 0;
-    const finalHeaders = useFallback 
-      ? ['Ticket ID', 'Subject Heading', 'Date Filed', 'State Status']
-      : headers;
-
-    const csvRows = [finalHeaders.join(',')];
-
-    for (const tkt of selectedTickets) {
-      const row = [];
-      if (useFallback || visibleCols.ticketId) row.push(`"${tkt.id}"`);
-      if (useFallback || visibleCols.subject) row.push(`"${tkt.subject.replace(/"/g, '""')}"`);
-      if (useFallback || visibleCols.dateFiled) row.push(`"${tkt.dateFiled}"`);
-      if (useFallback || visibleCols.stateStatus) row.push(`"${tkt.status}"`);
-      csvRows.push(row.join(','));
-    }
-
-    const csvContent = "data:text/csv;charset=utf-8," + csvRows.join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `support_tickets_${Date.now()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    triggerToast('CSV file downloaded successfully.');
-  };
-
-  // Sizing styles depending on Table Density
-  const getDensityStyle = () => {
-    switch (density) {
-      case 'COMPACT':
-        return { padding: '8px 12px', fontSize: '11.5px' };
-      case 'DEFAULT':
-        return { padding: '12px 16px', fontSize: '12px' };
-      case 'RELAXED':
-      default:
-        return { padding: '16px 20px', fontSize: '13px' };
-    }
-  };
-
-  const densityPadding = getDensityStyle();
+  // Filtered Conversations
+  const activeConversation = conversations.find(c => c.id === selectedConvId) || conversations[0];
+  const filteredConversations = conversations.filter(conv => {
+    const matchesSearch = conv.title.toLowerCase().includes(convSearchTerm.toLowerCase()) ||
+                          conv.sub.toLowerCase().includes(convSearchTerm.toLowerCase()) ||
+                          conv.lastMessage.toLowerCase().includes(convSearchTerm.toLowerCase());
+    const matchesCategory = convCategory === 'All Categories' || convCategory === 'All' || conv.category === convCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   return (
-    <div className="customer-dashboard documents-wrapper">
-      {/* Header Panel */}
-      <div className="customer-header-container" style={{ flexShrink: 0 }}>
-        <div>
-          <h1 className="customer-title" style={{ fontSize: '20px', fontWeight: '800' }}>Customer Shipper Portal &bull; Support</h1>
-          <p className="customer-subtitle" style={{ fontSize: '12.5px', marginTop: '2px' }}>Request load deliveries, audit invoices, download BOL papers, and track active route paths.</p>
+    <div className="w-full min-h-screen bg-[#F8FAFC] text-slate-800 text-left font-sans p-4 sm:p-6 space-y-6">
+      
+      {/* Toast Notification */}
+      {toastMsg && (
+        <div className="fixed bottom-6 right-6 z-[999999] bg-slate-900 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-2xl animate-fade-in border border-slate-700 flex items-center gap-2">
+          <CheckCircle2 size={16} className="text-emerald-400" />
+          <span>{toastMsg}</span>
         </div>
-        <button onClick={() => setShowSupportModal(true)} className="contact-support-btn" style={{ fontSize: '12px', padding: '6px 14px' }}>Contact Support</button>
+      )}
+
+      {/* =========================================================================
+         HEADER & TOP BREADCRUMBS
+         ========================================================================= */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 mb-1">
+            <span>Home</span>
+            <ChevronRight size={10} />
+            <span>Customer Portal</span>
+            <ChevronRight size={10} />
+            <span className="text-slate-700 font-extrabold">Messages & Support</span>
+          </div>
+
+          {/* Title & Bookmark */}
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+              14.7 Messages & Support
+            </h1>
+            <button 
+              onClick={() => triggerToast("Page bookmarked!")}
+              className="p-1 text-slate-400 hover:text-amber-500 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors"
+            >
+              <Star size={16} />
+            </button>
+          </div>
+          <p className="text-xs text-slate-500 font-medium mt-0.5">
+            Communicate with our team and get help when you need it.
+          </p>
+        </div>
+
+        {/* Top Right Action Buttons */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <button 
+            onClick={() => { setSelectedConvId(1); triggerToast("Chat focused on Dispatch Team"); }}
+            className="px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-extrabold text-xs rounded-xl shadow-2xs cursor-pointer flex items-center gap-1.5 transition-colors"
+          >
+            <MessageSquare size={14} className="text-blue-600" />
+            <span>Message Dispatch</span>
+          </button>
+
+          <button 
+            onClick={() => setIsCreateTicketModalOpen(true)}
+            className="px-4 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors"
+          >
+            <Plus size={14} />
+            <span>Create Support Ticket</span>
+          </button>
+
+          <button 
+            onClick={() => triggerToast("More actions menu opened.")}
+            className="px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 font-bold text-xs text-slate-700 rounded-xl shadow-2xs cursor-pointer flex items-center gap-1 transition-colors"
+          >
+            <span>More Actions</span>
+            <span className="text-[10px]">▼</span>
+          </button>
+        </div>
       </div>
 
-      {/* Two Columns Layout */}
-      <div className="documents-grid">
+      {/* =========================================================================
+         TOP METRICS CARDS (4 Cards Grid)
+         ========================================================================= */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
-        {/* Left Column: Support Tickets History */}
-        <div style={S.leftPanel}>
-          {/* Header controls row */}
-          <div style={S.leftHeader}>
-            <div style={S.leftHeaderLeft}>
-              <h2 style={S.leftTitle}>Support Tickets history</h2>
-              {/* Conditional CSV Exporter Button */}
-              {selectedIds.length > 0 && (
-                <div style={S.selectedActions}>
-                  <span style={S.selectedText}>{selectedIds.length} SELECTED</span>
-                  <button onClick={handleExportCSV} style={S.csvBtn}>
-                    <DownloadIcon />
-                    CSV Export
-                  </button>
-                </div>
+        {/* Card 1: Unread Messages */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs hover:shadow-md transition-all space-y-2">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center font-bold shrink-0">
+              <MessageSquare size={18} />
+            </div>
+            <div>
+              <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">UNREAD MESSAGES</span>
+              <span className="text-xl font-black text-slate-900 leading-none mt-0.5 block">2</span>
+            </div>
+          </div>
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10.5px]">
+            <button onClick={() => setSelectedConvId(1)} className="font-extrabold text-purple-600 hover:text-purple-800 flex items-center gap-1 cursor-pointer">
+              View all messages <ArrowRight size={11} />
+            </button>
+          </div>
+        </div>
+
+        {/* Card 2: Open Tickets */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs hover:shadow-md transition-all space-y-2">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center font-bold shrink-0">
+              <Ticket size={18} />
+            </div>
+            <div>
+              <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">OPEN TICKETS</span>
+              <span className="text-xl font-black text-slate-900 leading-none mt-0.5 block">3</span>
+            </div>
+          </div>
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10.5px]">
+            <button onClick={() => triggerToast("Viewing your support tickets...")} className="font-extrabold text-emerald-600 hover:text-emerald-800 flex items-center gap-1 cursor-pointer">
+              View my tickets <ArrowRight size={11} />
+            </button>
+          </div>
+        </div>
+
+        {/* Card 3: Awaiting Response */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs hover:shadow-md transition-all space-y-2">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center font-bold shrink-0">
+              <Clock size={18} />
+            </div>
+            <div>
+              <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">AWAITING RESPONSE</span>
+              <span className="text-xl font-black text-slate-900 leading-none mt-0.5 block">1</span>
+            </div>
+          </div>
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10.5px]">
+            <button onClick={() => triggerToast("Filtering tickets requiring reply...")} className="font-extrabold text-amber-600 hover:text-amber-800 flex items-center gap-1 cursor-pointer">
+              Requires your reply <ArrowRight size={11} />
+            </button>
+          </div>
+        </div>
+
+        {/* Card 4: Resolved Tickets */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs hover:shadow-md transition-all space-y-2">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 border border-sky-100 flex items-center justify-center font-bold shrink-0">
+              <CheckCircle2 size={18} />
+            </div>
+            <div>
+              <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">RESOLVED TICKETS (30 DAYS)</span>
+              <span className="text-xl font-black text-slate-900 leading-none mt-0.5 block">7</span>
+            </div>
+          </div>
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10.5px]">
+            <button onClick={() => triggerToast("Viewing resolved ticket history...")} className="font-extrabold text-sky-600 hover:text-sky-800 flex items-center gap-1 cursor-pointer">
+              View history <ArrowRight size={11} />
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      {/* =========================================================================
+         MAIN WORKSPACE GRID (Equal Height Columns: 3 cols, 6 cols [WIDER], 3 cols)
+         ========================================================================= */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+        
+        {/* COLUMN 1 (3 Cols): CONVERSATIONS LIST (Equal Height & Flush Bottom) */}
+        <div className="lg:col-span-3 bg-white border border-slate-200/80 rounded-2xl shadow-2xs p-3.5 flex flex-col justify-between h-full min-h-[640px]">
+          
+          <div className="space-y-3">
+            <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+              <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider">CONVERSATIONS</h2>
+            </div>
+
+            {/* Search bar & Filter dropdown */}
+            <div className="space-y-2">
+              <div className="relative">
+                <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input 
+                  type="text"
+                  placeholder="Search conversations..."
+                  value={convSearchTerm}
+                  onChange={e => setConvSearchTerm(e.target.value)}
+                  className="w-full pl-8 pr-2 py-1.5 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-400 font-sans"
+                />
+              </div>
+              <select
+                value={convCategory}
+                onChange={e => setConvCategory(e.target.value)}
+                className="w-full px-2.5 py-1.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 bg-white focus:outline-none focus:border-blue-400 cursor-pointer font-sans"
+              >
+                <option value="All Categories">All Categories</option>
+                <option value="Dispatch">Dispatch</option>
+                <option value="Support">Support</option>
+                <option value="Accounts">Accounts</option>
+              </select>
+            </div>
+
+            {/* Conversations Items List */}
+            <div className="space-y-1 overflow-y-auto max-h-[460px] pr-0.5">
+              {filteredConversations.length === 0 ? (
+                <p className="py-6 text-center text-slate-400 text-xs font-semibold">No conversations found.</p>
+              ) : (
+                filteredConversations.map((conv) => {
+                  const isSelected = conv.id === selectedConvId;
+                  return (
+                    <div 
+                      key={conv.id}
+                      onClick={() => setSelectedConvId(conv.id)}
+                      className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all relative overflow-hidden ${
+                        isSelected 
+                          ? 'bg-blue-50/70 border-blue-200 shadow-2xs border-l-4 border-l-blue-600' 
+                          : 'border-slate-100 hover:border-slate-200 hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-1.5">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-7 h-7 rounded-full ${conv.bg} text-white font-extrabold text-[9.5px] flex items-center justify-center shrink-0`}>
+                            {conv.avatar}
+                          </div>
+                          <div>
+                            <span className="font-extrabold text-slate-900 text-xs block leading-tight">{conv.title}</span>
+                            <span className="text-[9.5px] text-slate-500 font-medium block truncate max-w-[120px]">{conv.listSub || conv.sub}</span>
+                          </div>
+                        </div>
+                        <span className="text-[9px] font-bold text-slate-400 shrink-0">{conv.time}</span>
+                      </div>
+
+                      <div className="mt-2 flex items-center justify-between gap-1 pl-9">
+                        <span className="text-[10.5px] text-slate-600 font-medium truncate block">{conv.lastMessage}</span>
+                        {conv.unread > 0 && (
+                          <span className="w-4 h-4 rounded-full bg-blue-600 text-white font-extrabold text-[9px] flex items-center justify-center shrink-0">
+                            {conv.unread}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
               )}
             </div>
+          </div>
 
-            <div style={S.leftHeaderRight}>
-              {/* Density toggle buttons */}
-              <div style={S.densityWrapper}>
-                {['COMPACT', 'DEFAULT', 'RELAXED'].map((d) => (
-                  <button
-                    key={d}
-                    onClick={() => setDensity(d)}
-                    style={{
-                      ...S.densityBtn,
-                      backgroundColor: density === d ? '#FFCC00' : 'transparent',
-                      color: density === d ? '#000000' : '#64748b',
-                      fontWeight: density === d ? '800' : '600'
-                    }}
-                  >
-                    {d}
-                  </button>
-                ))}
-              </div>
-
-              {/* Columns Selector Button */}
-              <div style={{ position: 'relative' }}>
-                <button 
-                  onClick={() => setShowColumnsDropdown(prev => !prev)} 
-                  style={{
-                    ...S.columnsBtn,
-                    borderColor: showColumnsDropdown ? '#ffcc00' : '#cbd5e1',
-                    boxShadow: showColumnsDropdown ? '0 0 0 2px rgba(255, 204, 0, 0.2)' : 'none'
-                  }}
-                >
-                  <GearIcon />
-                  COLUMNS
-                </button>
-
-                {/* Dropdown for Columns Visibility */}
-                {showColumnsDropdown && (
-                  <div className="columns-dropdown-panel" style={S.dropdownMenu}>
-                    <div style={S.dropdownHeader}>COLUMN VISIBILITY</div>
-                    
-                    <label style={S.dropdownItem}>
-                      <input
-                        type="checkbox"
-                        checked={visibleCols.ticketId}
-                        onChange={() => setVisibleCols(prev => ({ ...prev, ticketId: !prev.ticketId }))}
-                        style={S.dropdownCheckbox}
-                      />
-                      Ticket ID
-                    </label>
-
-                    <label style={S.dropdownItem}>
-                      <input
-                        type="checkbox"
-                        checked={visibleCols.subject}
-                        onChange={() => setVisibleCols(prev => ({ ...prev, subject: !prev.subject }))}
-                        style={S.dropdownCheckbox}
-                      />
-                      Subject Heading
-                    </label>
-
-                    <label style={S.dropdownItem}>
-                      <input
-                        type="checkbox"
-                        checked={visibleCols.dateFiled}
-                        onChange={() => setVisibleCols(prev => ({ ...prev, dateFiled: !prev.dateFiled }))}
-                        style={S.dropdownCheckbox}
-                      />
-                      Date Filed
-                    </label>
-
-                    <label style={S.dropdownItem}>
-                      <input
-                        type="checkbox"
-                        checked={visibleCols.stateStatus}
-                        onChange={() => setVisibleCols(prev => ({ ...prev, stateStatus: !prev.stateStatus }))}
-                        style={S.dropdownCheckbox}
-                      />
-                      State Status
-                    </label>
-                  </div>
-                )}
-              </div>
+          {/* Pagination (Flush at Bottom) */}
+          <div className="flex items-center justify-between text-[10px] text-slate-400 font-semibold pt-3 border-t border-slate-100 mt-2">
+            <span>Showing 1 to {filteredConversations.length} of {conversations.length}</span>
+            <div className="flex items-center gap-1">
+              <button className="px-1.5 py-0.5 border border-slate-200 rounded text-slate-500 hover:bg-slate-50">&lt;</button>
+              <button className="px-2 py-0.5 bg-blue-600 text-white font-bold rounded">1</button>
+              <button className="px-1.5 py-0.5 border border-slate-200 rounded text-slate-500 hover:bg-slate-50">&gt;</button>
             </div>
           </div>
 
-          {/* Table Container */}
-          <div style={S.tableWrapper}>
-            <table style={S.table}>
-              <thead style={S.thead}>
-                <tr>
-                  <th style={{ ...S.th, ...densityPadding, width: 40 }}>
-                    <CustomCheckbox 
-                      checked={tickets.length > 0 && selectedIds.length === tickets.length} 
-                      onChange={handleSelectAll} 
-                    />
-                  </th>
-                  {visibleCols.ticketId && <th style={{ ...S.th, ...densityPadding }}>TICKET ID</th>}
-                  {visibleCols.subject && <th style={{ ...S.th, ...densityPadding }}>SUBJECT HEADING</th>}
-                  {visibleCols.dateFiled && <th style={{ ...S.th, ...densityPadding }}>DATE FILED</th>}
-                  {visibleCols.stateStatus && <th style={{ ...S.th, ...densityPadding }}>STATE STATUS</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {tickets.map((tkt) => {
-                  const isChecked = selectedIds.includes(tkt.id);
-                  return (
-                    <tr 
-                      key={tkt.id} 
-                      style={{ 
-                        ...S.tr,
-                        backgroundColor: isChecked ? '#fffbeb' : '#ffffff',
-                        borderBottom: '1px solid #f1f5f9'
-                      }}
-                    >
-                      <td style={{ ...S.td, ...densityPadding, width: 40 }}>
-                        <CustomCheckbox 
-                          checked={isChecked} 
-                          onChange={() => handleSelectRow(tkt.id)} 
-                        />
-                      </td>
-                      {visibleCols.ticketId && (
-                        <td style={{ ...S.td, ...densityPadding, fontWeight: '700', color: '#0f172a' }}>
-                          {tkt.id}
-                        </td>
-                      )}
-                      {visibleCols.subject && (
-                        <td style={{ ...S.td, ...densityPadding, color: '#334155', fontWeight: '500' }}>
-                          {tkt.subject}
-                        </td>
-                      )}
-                      {visibleCols.dateFiled && (
-                        <td style={{ ...S.td, ...densityPadding, color: '#64748b' }}>
-                          {tkt.dateFiled}
-                        </td>
-                      )}
-                      {visibleCols.stateStatus && (
-                        <td style={{ ...S.td, ...densityPadding }}>
-                          <span style={S.statusPill}>
-                            {tkt.status}
-                          </span>
-                        </td>
-                      )}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
         </div>
 
-        {/* Right Column: Create Support Ticket */}
-        <div style={S.rightPanel}>
-          <div style={S.formHeader}>
-            <h2 style={S.formTitle}>Create Support Ticket</h2>
-            <p style={S.formSubtitle}>Request assistance from our platform support desk.</p>
+        {/* COLUMN 2 (6 Cols): ACTIVE CHAT THREAD WORKSPACE (WIDER WIDTH 6 COLS & FLUSH BOTTOM) */}
+        <div className="lg:col-span-6 bg-white border border-slate-200/80 rounded-2xl shadow-2xs flex flex-col justify-between h-full min-h-[640px] text-left overflow-hidden">
+          
+          {/* Chat Header */}
+          <div className="p-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                {activeConversation.isBot ? <Headphones size={16} /> : activeConversation.avatar}
+              </div>
+              <div>
+                <h3 className="text-xs font-black text-slate-900 leading-tight">{activeConversation.title}</h3>
+                <p className="text-[10px] text-slate-500 font-medium">{activeConversation.sub}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-[9.5px] text-slate-400 font-medium hidden sm:inline">
+                Conversation started {activeConversation.dateStarted}
+              </span>
+              <button 
+                onClick={() => setIsViewLoadModalOpen(true)}
+                className="px-2.5 py-1 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-extrabold text-[10.5px] rounded-lg cursor-pointer transition-colors shadow-2xs"
+              >
+                View Load
+              </button>
+              <button 
+                onClick={() => triggerToast("Conversation menu opened")}
+                className="p-1 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 cursor-pointer"
+              >
+                <MoreHorizontal size={14} />
+              </button>
+            </div>
           </div>
 
-          <form onSubmit={handleFormSubmit} style={S.form}>
-            <div style={S.fieldGroup}>
-              <label style={S.fieldLabel}>SUBJECT HEADING</label>
-              <input
-                type="text"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                placeholder="e.g. Shipment update delay"
-                style={S.input}
-                required
-              />
+          {/* Chat Messages Body */}
+          <div className="flex-1 p-4 space-y-4 overflow-y-auto bg-[#FAFAFA] min-h-[380px]">
+            
+            {/* Date Divider */}
+            <div className="flex items-center justify-center">
+              <span className="px-3 py-0.5 bg-slate-200/60 text-slate-500 text-[9.5px] font-extrabold rounded-full">
+                29 May 2025
+              </span>
             </div>
 
-            <div style={S.fieldGroup}>
-              <label style={S.fieldLabel}>PROBLEM DESCRIPTION</label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Please provide specific details..."
-                style={S.textarea}
-                required
-              />
-            </div>
+            {/* Render Chat Messages */}
+            {activeConversation.messages.map((msg) => (
+              <div key={msg.id} className={`flex gap-2.5 ${msg.isMe ? 'justify-end' : 'justify-start'}`}>
+                {!msg.isMe && (
+                  <div className="w-7 h-7 rounded-full bg-blue-600 text-white font-extrabold text-[9px] flex items-center justify-center shrink-0 mt-0.5">
+                    DT
+                  </div>
+                )}
 
-            <button type="submit" style={S.submitBtn}>
-              Submit Support Ticket
-            </button>
+                <div className={`max-w-[78%] p-3 rounded-2xl text-xs font-medium space-y-1 ${
+                  msg.isMe 
+                    ? 'bg-[#EFF6FF] text-blue-950 rounded-tr-xs border border-blue-100 shadow-2xs' 
+                    : 'bg-white text-slate-800 rounded-tl-xs border border-slate-200/80 shadow-2xs'
+                }`}>
+                  <p className="whitespace-pre-line leading-relaxed">{msg.text}</p>
+                  <div className={`flex items-center gap-1 text-[9px] font-bold ${msg.isMe ? 'justify-end text-blue-400' : 'text-slate-400'}`}>
+                    <span>{msg.time}</span>
+                    {msg.isMe && <span className="text-blue-600">✓✓</span>}
+                  </div>
+                </div>
+              </div>
+            ))}
+
+          </div>
+
+          {/* Chat Input Toolbar Footer (Flush at Bottom) */}
+          <form onSubmit={handleSendMessage} className="p-3 border-t border-slate-100 bg-white space-y-2">
+            <textarea 
+              rows={2}
+              placeholder="Type your message..."
+              value={chatInputText}
+              onChange={e => setChatInputText(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
+              className="w-full p-2 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-400 resize-none font-sans"
+            />
+
+            <div className="flex items-center justify-between pt-1">
+              <div className="flex items-center gap-2 text-slate-400">
+                <button type="button" onClick={() => triggerToast("File attachment clicked")} className="p-1 hover:text-slate-600 rounded cursor-pointer">
+                  <Paperclip size={15} />
+                </button>
+                <button type="button" onClick={() => triggerToast("Image upload clicked")} className="p-1 hover:text-slate-600 rounded cursor-pointer">
+                  <ImageIcon size={15} />
+                </button>
+                <button type="button" onClick={() => triggerToast("Emoji picker clicked")} className="p-1 hover:text-slate-600 rounded cursor-pointer">
+                  <Smile size={15} />
+                </button>
+              </div>
+
+              <button 
+                type="submit"
+                className="px-5 py-1.5 bg-[#2563EB] hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors"
+              >
+                <span>Send</span>
+                <Send size={12} />
+              </button>
+            </div>
           </form>
+
+        </div>
+
+        {/* COLUMN 3 (3 Cols): SIDE CARDS (Contact Dispatch, Support Tickets, Help Resources) */}
+        <div className="lg:col-span-3 flex flex-col justify-between h-full min-h-[640px] space-y-3.5">
+          
+          {/* CARD 1: CONTACT DISPATCH */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl shadow-2xs p-3.5 space-y-2.5">
+            <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+              <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider">CONTACT DISPATCH</h2>
+            </div>
+            
+            <p className="text-[11.5px] text-slate-600 font-medium leading-relaxed">
+              For load updates, changes or urgent matters, message our dispatch team directly.
+            </p>
+
+            <button 
+              onClick={() => { setSelectedConvId(1); triggerToast("Chat window focused on Dispatch Team"); }}
+              className="w-full py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-xs cursor-pointer flex items-center justify-center gap-2 transition-colors"
+            >
+              <MessageSquare size={14} />
+              <span>Message Dispatch</span>
+            </button>
+
+            <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-medium pt-0.5">
+              <Clock size={12} className="text-slate-400 shrink-0" />
+              <span>Expected response time: Usually within 15 mins during work hours.</span>
+            </div>
+          </div>
+
+          {/* CARD 2: MY SUPPORT TICKETS */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl shadow-2xs p-3.5 space-y-2.5">
+            <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+              <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider">MY SUPPORT TICKETS</h2>
+              <button onClick={() => triggerToast("Viewing all support tickets")} className="text-[10.5px] font-extrabold text-blue-600 hover:text-blue-800 cursor-pointer flex items-center gap-0.5">
+                View all tickets <ArrowRight size={10} />
+              </button>
+            </div>
+
+            <div className="space-y-2 text-xs">
+              {supportTickets.map((tkt) => (
+                <div key={tkt.id} className="p-2 rounded-xl border border-slate-100 hover:border-slate-200 hover:bg-slate-50 transition-all flex items-start justify-between gap-1.5">
+                  <div className="space-y-0.5">
+                    <span className="text-[9.5px] font-mono font-extrabold text-slate-400 block">{tkt.id}</span>
+                    <span className="font-extrabold text-slate-900 block leading-tight text-[11px]">{tkt.title}</span>
+                    <span className="text-[9px] text-slate-400 font-medium block">Created: {tkt.created}</span>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded border text-[9px] font-extrabold shrink-0 ${tkt.statusBg}`}>
+                    {tkt.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px]">
+              <button onClick={() => setIsCreateTicketModalOpen(true)} className="font-extrabold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer">
+                + Create new support ticket
+              </button>
+            </div>
+          </div>
+
+          {/* CARD 3: HELP RESOURCES (Flush at Bottom) */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl shadow-2xs p-3.5 space-y-2.5">
+            <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+              <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider">HELP RESOURCES</h2>
+            </div>
+
+            <div className="space-y-2 text-xs">
+              {[
+                { title: 'Customer Portal Guide', desc: 'Step-by-step guide to using the portal', icon: FileText },
+                { title: 'FAQs', desc: 'Find answers to common questions', icon: HelpCircle },
+                { title: 'How to Track a Load', desc: 'Learn how to track your loads', icon: MessageCircle }
+              ].map((res, i) => {
+                const IconComponent = res.icon;
+                return (
+                  <div 
+                    key={i} 
+                    onClick={() => triggerToast(`Opening article: ${res.title}`)}
+                    className="flex items-center justify-between p-2 rounded-xl border border-slate-100 hover:border-slate-200 hover:bg-slate-50 cursor-pointer transition-all"
+                  >
+                    <div className="flex items-center gap-2">
+                      <IconComponent size={14} className="text-blue-600 shrink-0" />
+                      <div>
+                        <span className="font-extrabold text-slate-900 block leading-tight text-[11px]">{res.title}</span>
+                        <span className="text-[9.5px] text-slate-500 font-medium block truncate max-w-[130px]">{res.desc}</span>
+                      </div>
+                    </div>
+                    <Download size={13} className="text-blue-600 shrink-0" />
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="pt-1.5 border-t border-slate-100 flex items-center justify-between text-[10px]">
+              <button onClick={() => triggerToast("Opening help knowledge base...")} className="font-extrabold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer">
+                View all help articles <ArrowRight size={10} />
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* =========================================================================
+         DEVELOPER NOTES BANNER (Exact Match 2nd Screenshot)
+         ========================================================================= */}
+      <div className="bg-[#1E293B] text-white rounded-2xl p-4 shadow-lg space-y-3 font-sans border border-slate-700">
+        <div className="flex items-center justify-between border-b border-slate-700 pb-2">
+          <div className="flex items-center gap-2">
+            <span className="text-blue-400 font-mono font-bold text-xs">&lt;/&gt;</span>
+            <h3 className="font-extrabold uppercase text-[11px] tracking-wider text-slate-200">DEVELOPER NOTES – MESSAGES & SUPPORT</h3>
+          </div>
+          <span className="text-[9.5px] font-mono text-slate-400 font-semibold">REF: 14.7-MESSAGES-SUPPORT-SPEC</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-3 text-left">
+          {[
+            { title: '1. PURPOSE', items: ['Enable secure messaging with dispatch.', 'Allow customers to raise support tickets.', 'Provide visibility of ticket status.'] },
+            { title: '2. KEY FEATURES', items: ['Real-time messaging with dispatch team.', 'Create and manage support tickets.', 'Unread message indicators.', 'Attach files and images in messages.'] },
+            { title: '3. DATA SOURCES', items: ['Messages module.', 'Support tickets module.', 'Loads module (for context).', 'Users & roles module.'] },
+            { title: '4. SECURITY & ACCESS', items: ['Customers can only message their company.', 'Role-based ticket visibility.', 'Files scanned and stored securely.', 'Audit log for messages and tickets.'] },
+            { title: '5. INTEGRATIONS', items: ['Email/SMS notifications.', 'Driver App (dispatch messages).', 'Document storage (AWS S3/DO Spaces).', 'Accounting (for invoice related queries).'] },
+            { title: '6. PERFORMANCE', items: ['Real-time messaging via WebSocket.', 'Pagination for conversations.', 'Auto-refresh for new messages.', 'Ticket status updates in real-time.'] }
+          ].map((col, i) => (
+            <div key={i}>
+              <h4 className="font-extrabold text-blue-400 mb-1 uppercase text-[8.5px] tracking-wider">{col.title}</h4>
+              <ul className="space-y-0.5 text-[9.5px] text-slate-300 font-medium">
+                {col.items.map((item, j) => <li key={j}>• {item}</li>)}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        <div className="pt-2 border-t border-slate-700 flex flex-col sm:flex-row items-center justify-between text-[8.5px] text-slate-400 font-semibold gap-2">
+          <div className="flex items-center gap-1.5">
+            <RefreshCw size={10} className="text-blue-400 animate-spin-slow" />
+            <span>All times shown in your local time (AEST) • Data auto-refreshes every 5 minutes</span>
+          </div>
         </div>
       </div>
 
-      {/* Support Drawer Modal (Contact Support Button Trigger) */}
-      {showSupportModal && (
-        <div style={S.modalOverlay} onClick={() => setShowSupportModal(false)}>
-          <div style={S.modalContent} onClick={(e) => e.stopPropagation()}>
-            <div style={S.modalHeader}>
-              <h2 style={S.modalTitle}>Shipper Help Desk &amp; Ticket Center</h2>
-              <button onClick={() => setShowSupportModal(false)} style={S.closeBtn}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
+      {/* =========================================================================
+         CREATE SUPPORT TICKET MODAL
+         ========================================================================= */}
+      {isCreateTicketModalOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[99999] flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setIsCreateTicketModalOpen(false)}
+        >
+          <div 
+            className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-5 space-y-4 text-left font-sans"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center font-bold">
+                  <Ticket size={16} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">Create Support Ticket</h3>
+                  <p className="text-[10.5px] text-slate-500 font-medium">Submit a request to our platform helpdesk</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsCreateTicketModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 cursor-pointer"
+              >
+                <X size={16} />
               </button>
             </div>
-            
-            <form onSubmit={handleModalSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-              <div style={S.modalBody}>
-                <div style={S.fieldGroup}>
-                  <label style={S.fieldLabel}>SUBJECT HEADING</label>
-                  <input 
-                    type="text" 
-                    value={supportSubject}
-                    onChange={(e) => setSupportSubject(e.target.value)}
-                    placeholder="e.g. Ticket system inquiry" 
-                    style={S.input}
-                    required
-                  />
+
+            <form onSubmit={handleSaveCreateTicket} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Subject Heading *</label>
+                <input 
+                  type="text"
+                  required
+                  placeholder="e.g. Invoice discrepancy query INV-2025"
+                  value={ticketForm.subject}
+                  onChange={e => setTicketForm({ ...ticketForm, subject: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl font-medium text-slate-800 focus:outline-none focus:border-blue-400"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Category</label>
+                  <select
+                    value={ticketForm.category}
+                    onChange={e => setTicketForm({ ...ticketForm, category: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl font-bold text-slate-800 bg-white focus:outline-none focus:border-blue-400 cursor-pointer"
+                  >
+                    <option value="Portal Support">Portal Support</option>
+                    <option value="Billing & Invoices">Billing & Invoices</option>
+                    <option value="Load Tracking">Load Tracking</option>
+                    <option value="Technical Issue">Technical Issue</option>
+                  </select>
                 </div>
 
-                <div style={S.fieldGroup}>
-                  <label style={S.fieldLabel}>PROBLEM DESCRIPTION</label>
-                  <textarea 
-                    value={supportDescription}
-                    onChange={(e) => setSupportDescription(e.target.value)}
-                    placeholder="Please provide specific details..." 
-                    style={S.textarea}
-                    required
-                  />
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Priority</label>
+                  <select
+                    value={ticketForm.priority}
+                    onChange={e => setTicketForm({ ...ticketForm, priority: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl font-bold text-slate-800 bg-white focus:outline-none focus:border-blue-400 cursor-pointer"
+                  >
+                    <option value="Low">Low</option>
+                    <option value="Normal">Normal</option>
+                    <option value="Urgent">Urgent</option>
+                  </select>
                 </div>
               </div>
 
-              <div style={S.modalFooter}>
-                <button type="button" onClick={() => setShowSupportModal(false)} style={S.btnCancel}>Cancel</button>
-                <button type="submit" style={S.btnSubmit}>Submit Ticket</button>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Problem Description *</label>
+                <textarea 
+                  rows={4}
+                  required
+                  placeholder="Please provide specific details..."
+                  value={ticketForm.description}
+                  onChange={e => setTicketForm({ ...ticketForm, description: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl font-medium text-slate-800 focus:outline-none focus:border-blue-400"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button 
+                  type="button" 
+                  onClick={() => setIsCreateTicketModalOpen(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
+                >
+                  Submit Ticket
+                </button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* Toast Notification (Success Message Popup) */}
-      {toast && (
-        <div className="settings-toast" style={S.toastContainer}>
-          <div style={S.toastIcon}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
+      {/* =========================================================================
+         VIEW LOAD DETAILS QUICK MODAL
+         ========================================================================= */}
+      {isViewLoadModalOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[99999] flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setIsViewLoadModalOpen(false)}
+        >
+          <div 
+            className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-5 space-y-4 text-left font-sans"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center font-bold">
+                  🚚
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">Load Details: LD-3987</h3>
+                  <p className="text-[10.5px] text-slate-500 font-medium">In Transit • Estimated delivery 30 May 2025</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsViewLoadModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-2">
+                <div className="flex justify-between font-bold">
+                  <span className="text-slate-500">Origin:</span>
+                  <span className="text-slate-900">Sydney Terminal WH-1</span>
+                </div>
+                <div className="flex justify-between font-bold">
+                  <span className="text-slate-500">Destination:</span>
+                  <span className="text-slate-900">Melbourne Depot</span>
+                </div>
+                <div className="flex justify-between font-bold">
+                  <span className="text-slate-500">Freight Type:</span>
+                  <span className="text-blue-600">Car Carrying (4 Vehicles)</span>
+                </div>
+                <div className="flex justify-between font-bold">
+                  <span className="text-slate-500">Driver Assigned:</span>
+                  <span className="text-slate-900">Noah Williams (TRK-104)</span>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-end">
+                <button 
+                  type="button" 
+                  onClick={() => setIsViewLoadModalOpen(false)}
+                  className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
+                >
+                  Close Window
+                </button>
+              </div>
+            </div>
           </div>
-          <span style={S.toastText}>{toast}</span>
-          <button onClick={() => setToast(null)} style={S.toastCloseBtn}>✕</button>
         </div>
       )}
 
-      <style>{`
-        @keyframes slideIn {
-          from { transform: translateY(20px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-        @keyframes slideInRight {
-          from { transform: translateX(100%); }
-          to { transform: translateX(0); }
-        }
-      `}</style>
     </div>
   );
-};
-
-/* Styles Object */
-const S = {
-  leftPanel: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    border: '1px solid #e2e8f0',
-    padding: '16px 20px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 16,
-    height: '100%',
-    boxSizing: 'border-box'
-  },
-  leftHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 16,
-    flexShrink: 0
-  },
-  leftHeaderLeft: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 16,
-    flexWrap: 'wrap'
-  },
-  leftTitle: {
-    fontSize: 14.5,
-    fontWeight: '800',
-    color: '#0f172a',
-    margin: 0
-  },
-  selectedActions: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: '#fffbeb',
-    border: '1px solid #fde047',
-    borderRadius: 8,
-    padding: '4px 10px',
-    animation: 'slideIn 0.2s ease'
-  },
-  selectedText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#b45309'
-  },
-  csvBtn: {
-    backgroundColor: '#ffffff',
-    border: '1px solid #fde047',
-    borderRadius: 6,
-    padding: '3px 10px',
-    color: '#b45309',
-    fontSize: 10.5,
-    fontWeight: '700',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    outline: 'none',
-    boxSizing: 'border-box'
-  },
-  leftHeaderRight: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 12,
-    flexWrap: 'wrap'
-  },
-  densityWrapper: {
-    display: 'flex',
-    backgroundColor: '#f1f5f9',
-    borderRadius: 8,
-    padding: 2
-  },
-  densityBtn: {
-    border: 'none',
-    borderRadius: 6,
-    padding: '4px 10px',
-    fontSize: 9.5,
-    cursor: 'pointer',
-    transition: 'all 0.15s ease',
-    outline: 'none'
-  },
-  columnsBtn: {
-    backgroundColor: '#ffffff',
-    border: '1px solid #cbd5e1',
-    borderRadius: 8,
-    padding: '5px 12px',
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#475569',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 6,
-    cursor: 'pointer',
-    outline: 'none',
-    transition: 'all 0.15s ease'
-  },
-  dropdownMenu: {
-    position: 'absolute',
-    top: '100%',
-    right: 0,
-    marginTop: 6,
-    backgroundColor: '#ffffff',
-    border: '1px solid #e2e8f0',
-    borderRadius: 12,
-    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05)',
-    padding: 12,
-    zIndex: 100,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 8,
-    minWidth: 160,
-    boxSizing: 'border-box'
-  },
-  dropdownHeader: {
-    fontSize: 9.5,
-    fontWeight: '800',
-    color: '#64748b',
-    borderBottom: '1px solid #f1f5f9',
-    paddingBottom: 6,
-    marginBottom: 4,
-    letterSpacing: '0.5px'
-  },
-  dropdownItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    fontSize: 11.5,
-    color: '#334155',
-    fontWeight: '600',
-    cursor: 'pointer',
-    userSelect: 'none'
-  },
-  dropdownCheckbox: {
-    cursor: 'pointer',
-    accentColor: '#0066cc',
-    width: 14,
-    height: 14
-  },
-  tableWrapper: {
-    flex: 1,
-    overflowY: 'auto',
-    overflowX: 'auto',
-    WebkitOverflowScrolling: 'touch',
-    border: '1px solid #e2e8f0',
-    borderRadius: 8,
-    backgroundColor: '#ffffff'
-  },
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse',
-    textAlign: 'left',
-    whiteSpace: 'nowrap'
-  },
-  thead: {
-    backgroundColor: '#f8fafc',
-    borderBottom: '1px solid #e2e8f0',
-    position: 'sticky',
-    top: 0,
-    zIndex: 1
-  },
-  th: {
-    fontWeight: '700',
-    color: '#475569',
-    fontSize: 11,
-    letterSpacing: '0.2px'
-  },
-  tr: {
-    transition: 'background-color 0.15s ease'
-  },
-  td: {
-    color: '#334155',
-    verticalAlign: 'middle',
-    boxSizing: 'border-box'
-  },
-  statusPill: {
-    display: 'inline-block',
-    fontSize: 10,
-    fontWeight: '700',
-    padding: '2px 8px',
-    borderRadius: 12,
-    backgroundColor: '#f1f5f9',
-    border: '1px solid #cbd5e1',
-    color: '#475569'
-  },
-  rightPanel: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    border: '1px solid #e2e8f0',
-    padding: '16px 20px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 16,
-    height: 'fit-content',
-    boxSizing: 'border-box',
-    flexShrink: 0
-  },
-  formHeader: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 4
-  },
-  formTitle: {
-    fontSize: 14.5,
-    fontWeight: '800',
-    color: '#0f172a',
-    margin: 0
-  },
-  formSubtitle: {
-    fontSize: 11,
-    color: '#64748b',
-    margin: 0,
-    fontWeight: '500',
-    lineHeight: '1.4'
-  },
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 14
-  },
-  fieldGroup: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 6
-  },
-  fieldLabel: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#64748b',
-    letterSpacing: '0.5px'
-  },
-  input: {
-    width: '100%',
-    padding: '8px 12px',
-    borderRadius: 8,
-    border: '1px solid #cbd5e1',
-    fontSize: 12.5,
-    color: '#334155',
-    outline: 'none',
-    boxSizing: 'border-box',
-    transition: 'border-color 0.15s ease'
-  },
-  textarea: {
-    width: '100%',
-    height: 100,
-    padding: '8px 12px',
-    borderRadius: 8,
-    border: '1px solid #cbd5e1',
-    fontSize: 12.5,
-    color: '#334155',
-    outline: 'none',
-    boxSizing: 'border-box',
-    resize: 'none',
-    transition: 'border-color 0.15s ease'
-  },
-  submitBtn: {
-    width: '100%',
-    backgroundColor: '#FFCC00',
-    color: '#000000',
-    border: 'none',
-    borderRadius: 8,
-    padding: '10px',
-    fontSize: 12.5,
-    fontWeight: '800',
-    cursor: 'pointer',
-    transition: 'all 0.15s ease',
-    outline: 'none'
-  },
-  // Modal Drawer styles
-  modalOverlay: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(15, 23, 42, 0.4)',
-    backdropFilter: 'blur(3px)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    zIndex: 1000,
-    fontFamily: "'Outfit', 'Inter', sans-serif"
-  },
-  modalContent: {
-    backgroundColor: '#ffffff',
-    height: '100%',
-    width: '100%',
-    maxWidth: 450,
-    boxShadow: '-10px 0 25px -5px rgba(0, 0, 0, 0.1), -5px 0 10px -5px rgba(0, 0, 0, 0.04)',
-    overflow: 'hidden',
-    borderLeft: '1px solid #e2e8f0',
-    borderRadius: '16px 0 0 16px',
-    display: 'flex',
-    flexDirection: 'column',
-    animation: 'slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
-  },
-  modalHeader: {
-    padding: '24px 28px',
-    borderBottom: '1px solid #f1f5f9',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center'
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#0f172a',
-    margin: 0
-  },
-  closeBtn: {
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    padding: 4,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: '50%',
-    transition: 'background-color 0.15s ease'
-  },
-  modalBody: {
-    padding: '28px',
-    flex: 1
-  },
-  modalFooter: {
-    padding: '20px 28px 28px 28px',
-    display: 'flex',
-    justifyContent: 'flex-end',
-    gap: 12,
-    borderTop: '1px solid #f1f5f9'
-  },
-  btnCancel: {
-    backgroundColor: '#ffffff',
-    color: '#0f172a',
-    border: '1px solid #cbd5e1',
-    borderRadius: 30,
-    padding: '10px 24px',
-    fontSize: 13,
-    fontWeight: '800',
-    cursor: 'pointer',
-    transition: 'all 0.15s ease'
-  },
-  btnSubmit: {
-    backgroundColor: '#FFCC00',
-    color: '#000000',
-    border: 'none',
-    borderRadius: 30,
-    padding: '10px 28px',
-    fontSize: 13,
-    fontWeight: '800',
-    cursor: 'pointer',
-    boxShadow: '0 4px 14px rgba(255, 204, 0, 0.35)',
-    transition: 'all 0.15s ease'
-  },
-  // Toast styles
-  toastContainer: {
-    position: 'fixed',
-    bottom: 40,
-    right: 32,
-    backgroundColor: '#ecfdf5',
-    border: '1px solid #a7f3d0',
-    borderRadius: 12,
-    padding: '14px 20px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 10,
-    zIndex: 1100,
-    boxShadow: '0 10px 25px -5px rgba(0,0,0,0.05)',
-    maxWidth: 420,
-    animation: 'slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1)'
-  },
-  toastIcon: {
-    backgroundColor: '#10b981',
-    color: '#ffffff',
-    width: 22,
-    height: 22,
-    borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  toastText: {
-    fontSize: 13.5,
-    fontWeight: '600',
-    color: '#065f46',
-    flex: 1
-  },
-  toastCloseBtn: {
-    background: 'none',
-    border: 'none',
-    fontSize: 16,
-    color: '#64748b',
-    cursor: 'pointer',
-    padding: 0,
-    lineHeight: 1
-  }
-};
-
-export default CustomerSupport;
+}

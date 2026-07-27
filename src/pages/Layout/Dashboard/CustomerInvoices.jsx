@@ -1,739 +1,1435 @@
 import React, { useState } from 'react';
-import './CustomerDashboard.css';
+import {
+  Receipt, CreditCard, DollarSign, Clock, ShieldCheck, Search, Filter, RefreshCw,
+  Download, Eye, Plus, Star, ChevronRight, CheckCircle2, ArrowRight, X, Check,
+  HelpCircle, Lock, FileText, AlertTriangle, Building2, Send, Calendar
+} from 'lucide-react';
 
-// Custom Checkbox Component
-const CustomCheckbox = ({ checked, onChange }) => {
-  return (
-    <div 
-      onClick={onChange}
-      style={{
-        width: 18,
-        height: 18,
-        borderRadius: 4,
-        border: checked ? '2.5px solid #b45309' : '2.5px solid #94a3b8',
-        backgroundColor: checked ? '#fffbeb' : '#ffffff',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        cursor: 'pointer',
-        userSelect: 'none',
-        transition: 'all 0.1s ease',
-        boxSizing: 'border-box',
-        margin: '0 auto'
-      }}
-    >
-      {checked && (
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#b45309" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="20 6 9 17 4 12"></polyline>
-        </svg>
-      )}
-    </div>
-  );
-};
-
-// Helper to style the invoice state pill
-const getInvoiceStateStyle = (state) => {
-  const cleanState = (state || '').toUpperCase();
-  if (cleanState.includes('PAID')) {
-    return {
-      backgroundColor: '#ecfdf5',
-      color: '#047857',
-      border: '1px solid #a7f3d0',
-      display: 'inline-block',
-      padding: '4px 10px',
-      borderRadius: 30,
-      fontSize: '10.5px',
-      fontWeight: '800',
-      textTransform: 'uppercase',
-      letterSpacing: '0.5px'
-    };
-  }
-  return {
-    backgroundColor: '#f1f5f9',
-    color: '#475569',
-    border: '1px solid #e2e8f0',
-    display: 'inline-block',
-    padding: '4px 10px',
-    borderRadius: 30,
-    fontSize: '10.5px',
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px'
+export default function CustomerInvoices() {
+  // Toast Notification State
+  const [toastMsg, setToastMsg] = useState('');
+  const triggerToast = (msg) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(''), 3500);
   };
-};
 
-const CustomerInvoices = () => {
-  const [density, setDensity] = useState('RELAXED'); // COMPACT, DEFAULT, RELAXED (RELAXED is default in screenshot)
-  const [showColumnsDropdown, setShowColumnsDropdown] = useState(false);
-  const [showSupportModal, setShowSupportModal] = useState(false);
+  // Header State
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [isMoreActionsOpen, setIsMoreActionsOpen] = useState(false);
 
-  // Support Form States
-  const [supportSubject, setSupportSubject] = useState('');
-  const [supportDescription, setSupportDescription] = useState('');
+  // Search & Filter State
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('All Status');
+  const [selectedDateFilter, setSelectedDateFilter] = useState('All Dates');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
 
-  const [toast, setToast] = useState(null);
+  // Table Checkbox Selection State
+  const [selectedInvoiceIds, setSelectedInvoiceIds] = useState([]);
 
-  // Column Visibility (Default matches screenshot: only State visible)
-  const [visibleColumns, setVisibleColumns] = useState({
-    invoiceId: true,
-    totalAmount: true,
-    dueDate: true,
-    state: true,
-    actions: true
+  // Modals State
+  const [isMakePaymentModalOpen, setIsMakePaymentModalOpen] = useState(false);
+  const [isPaymentMethodsModalOpen, setIsPaymentMethodsModalOpen] = useState(false);
+  const [isStatementModalOpen, setIsStatementModalOpen] = useState(false);
+  const [previewInvoice, setPreviewInvoice] = useState(null);
+  const [payInvoiceTarget, setPayInvoiceTarget] = useState(null); // single invoice or null for all
+
+  // Payment Form State
+  const [paymentForm, setPaymentForm] = useState({
+    cardNumber: '•••• •••• •••• 4242',
+    cardExpiry: '12/28',
+    cardCvc: '•••',
+    nameOnCard: 'ABC Transport Solutions',
+    amount: '18540.00'
   });
 
-  const columnsList = [
-    { key: 'invoiceId', label: 'Invoice ID' },
-    { key: 'totalAmount', label: 'Total Amount' },
-    { key: 'dueDate', label: 'Due Date' },
-    { key: 'state', label: 'State' },
-    { key: 'actions', label: 'Actions' }
-  ];
-
-  // Invoices Data (Matches mockup exactly: unchecked by default, PAID state)
+  // Invoices List Data State (Exact Match to Screenshot 2)
   const [invoices, setInvoices] = useState([
-    { id: 'INV-01', invoiceId: 'INV-8910', totalAmount: '$1,240.00', dueDate: '06/25/2026', state: 'PAID', checked: false },
-    { id: 'INV-02', invoiceId: 'INV-8911', totalAmount: '$3,500.00', dueDate: '06/28/2026', state: 'PAID', checked: false }
+    {
+      id: 'INV-2025-0529',
+      number: 'INV-2025-0529',
+      date: '29 May 2025',
+      dueDate: '28 Jun 2025',
+      loadRef: 'LD-3987',
+      route: 'Melbourne VIC → Sydney NSW',
+      amount: '$8,540.70',
+      numericAmount: 8540.70,
+      status: 'Overdue',
+      statusBadge: 'bg-red-50 text-red-700 border-red-200'
+    },
+    {
+      id: 'INV-2025-0528',
+      number: 'INV-2025-0528',
+      date: '28 May 2025',
+      dueDate: '27 Jun 2025',
+      loadRef: 'LD-3981',
+      route: 'Brisbane QLD → Perth WA',
+      amount: '$6,250.00',
+      numericAmount: 6250.00,
+      status: 'Overdue',
+      statusBadge: 'bg-red-50 text-red-700 border-red-200'
+    },
+    {
+      id: 'INV-2025-0527',
+      number: 'INV-2025-0527',
+      date: '27 May 2025',
+      dueDate: '26 Jun 2025',
+      loadRef: 'LD-3975',
+      route: 'Adelaide SA → Melbourne VIC',
+      amount: '$5,760.50',
+      numericAmount: 5760.50,
+      status: 'Overdue',
+      statusBadge: 'bg-red-50 text-red-700 border-red-200'
+    },
+    {
+      id: 'INV-2025-0519',
+      number: 'INV-2025-0519',
+      date: '19 May 2025',
+      dueDate: '18 Jun 2025',
+      loadRef: 'LD-3962',
+      route: 'Sydney NSW → Newcastle NSW',
+      amount: '$6,980.00',
+      numericAmount: 6980.00,
+      status: 'Paid',
+      statusBadge: 'bg-emerald-50 text-emerald-700 border-emerald-200'
+    },
+    {
+      id: 'INV-2025-0515',
+      number: 'INV-2025-0515',
+      date: '15 May 2025',
+      dueDate: '14 Jun 2025',
+      loadRef: 'LD-3958',
+      route: 'Melbourne VIC → Brisbane QLD',
+      amount: '$4,360.20',
+      numericAmount: 4360.20,
+      status: 'Paid',
+      statusBadge: 'bg-emerald-50 text-emerald-700 border-emerald-200'
+    },
+    {
+      id: 'INV-2025-0507',
+      number: 'INV-2025-0507',
+      date: '07 May 2025',
+      dueDate: '06 Jun 2025',
+      loadRef: 'LD-3951',
+      route: 'Perth WA → Adelaide SA',
+      amount: '$6,120.00',
+      numericAmount: 6120.00,
+      status: 'Paid',
+      statusBadge: 'bg-emerald-50 text-emerald-700 border-emerald-200'
+    },
+    {
+      id: 'INV-2025-0429',
+      number: 'INV-2025-0429',
+      date: '29 Apr 2025',
+      dueDate: '29 May 2025',
+      loadRef: 'LD-3944',
+      route: 'Brisbane QLD → Sydney NSW',
+      amount: '$7,450.00',
+      numericAmount: 7450.00,
+      status: 'Paid',
+      statusBadge: 'bg-emerald-50 text-emerald-700 border-emerald-200'
+    },
+    {
+      id: 'INV-2025-0418',
+      number: 'INV-2025-0418',
+      date: '18 Apr 2025',
+      dueDate: '18 May 2025',
+      loadRef: 'LD-3938',
+      route: 'Sydney NSW → Melbourne VIC',
+      amount: '$5,980.00',
+      numericAmount: 5980.00,
+      status: 'Paid',
+      statusBadge: 'bg-emerald-50 text-emerald-700 border-emerald-200'
+    }
   ]);
 
-  const showToast = (msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 4000);
+  // Bulk Selection Handlers
+  const handleSelectAll = () => {
+    if (selectedInvoiceIds.length === invoices.length) {
+      setSelectedInvoiceIds([]);
+    } else {
+      setSelectedInvoiceIds(invoices.map(inv => inv.id));
+    }
   };
 
-  const toggleColumn = (key) => {
-    setVisibleColumns(prev => ({ ...prev, [key]: !prev[key] }));
+  const handleSelectInvoice = (id) => {
+    if (selectedInvoiceIds.includes(id)) {
+      setSelectedInvoiceIds(selectedInvoiceIds.filter(i => i !== id));
+    } else {
+      setSelectedInvoiceIds([...selectedInvoiceIds, id]);
+    }
   };
 
-  const handleSupportSubmit = (e) => {
+  // Submit Payment Handler
+  const handleProcessPayment = (e) => {
     e.preventDefault();
-    showToast('Support ticket submitted successfully.');
-    setShowSupportModal(false);
-    setSupportSubject('');
-    setSupportDescription('');
+    if (payInvoiceTarget) {
+      // Pay specific invoice
+      setInvoices(prev => prev.map(inv => 
+        inv.id === payInvoiceTarget.id 
+          ? { ...inv, status: 'Paid', statusBadge: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
+          : inv
+      ));
+      triggerToast(`Payment of ${payInvoiceTarget.amount} for invoice ${payInvoiceTarget.number} successful!`);
+    } else {
+      // Pay all overdue
+      setInvoices(prev => prev.map(inv => 
+        inv.status === 'Overdue' 
+          ? { ...inv, status: 'Paid', statusBadge: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
+          : inv
+      ));
+      triggerToast('Full outstanding balance payment of $18,540.00 AUD processed successfully!');
+    }
+    setIsMakePaymentModalOpen(false);
+    setPayInvoiceTarget(null);
   };
 
-  // Checkbox Handlers
-  const isAllChecked = invoices.length > 0 && invoices.every(inv => inv.checked);
-
-  const handleMasterCheckbox = () => {
-    const targetState = !isAllChecked;
-    setInvoices(prev => prev.map(inv => ({ ...inv, checked: targetState })));
-  };
-
-  const handleRowCheckbox = (id) => {
-    setInvoices(prev => prev.map(inv => 
-      inv.id === id ? { ...inv, checked: !inv.checked } : inv
-    ));
-  };
-
-  const handleCsvExport = () => {
-    const selectedInvoices = invoices.filter(inv => inv.checked);
-    const dataToExport = selectedInvoices.length > 0 ? selectedInvoices : invoices;
+  // Filtered Invoices Logic
+  const filteredInvoices = invoices.filter(inv => {
+    const matchesSearch = inv.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          inv.loadRef.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          inv.route.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          inv.amount.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // Create CSV content
-    const headers = ['Invoice ID', 'Total Amount', 'Due Date', 'State'];
-    const rows = dataToExport.map(inv => [
-      inv.invoiceId,
-      inv.totalAmount,
-      inv.dueDate,
-      inv.state
-    ]);
-    
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-      
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "invoices_export.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    showToast(`Successfully downloaded CSV for ${dataToExport.length} invoices.`);
-  };
+    let matchesStatus = true;
+    if (selectedStatus !== 'All Status') {
+      matchesStatus = inv.status.toLowerCase() === selectedStatus.toLowerCase();
+    }
 
-  const getCellPadding = () => {
-    if (density === 'COMPACT') return '10px 16px';
-    if (density === 'DEFAULT') return '16px 20px';
-    return '24px 28px'; // RELAXED
-  };
+    let matchesDateFilter = true;
+    if (selectedDateFilter === 'May 2025') {
+      matchesDateFilter = inv.date.includes('May 2025');
+    } else if (selectedDateFilter === 'April 2025') {
+      matchesDateFilter = inv.date.includes('Apr 2025');
+    }
+
+    return matchesSearch && matchesStatus && matchesDateFilter;
+  });
 
   return (
-    <div className="customer-dashboard documents-wrapper">
-      {/* Header Container */}
-      <div className="customer-header-container" style={{ flexShrink: 0 }}>
-        <div>
-          <h1 className="customer-title">Customer Shipper Portal &bull; Invoices</h1>
-          <p className="customer-subtitle">Request load deliveries, audit invoices, download BOL papers, and track active route paths.</p>
+    <div className="w-full min-h-screen bg-[#F8FAFC] text-slate-800 text-left font-sans p-4 sm:p-6 space-y-6">
+      
+      {/* Toast Notification */}
+      {toastMsg && (
+        <div className="fixed bottom-6 right-6 z-[999999] bg-slate-900 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-2xl animate-fade-in border border-slate-700 flex items-center gap-2">
+          <CheckCircle2 size={16} className="text-emerald-400" />
+          <span>{toastMsg}</span>
         </div>
-        <button onClick={() => setShowSupportModal(true)} className="contact-support-btn">Contact Support</button>
-      </div>
+      )}
 
-      {/* Main Single Card Panel */}
-      <div style={S.mainCard}>
-        <div style={S.cardHeader}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-            <h2 style={S.cardTitle}>Shippers billing invoices</h2>
-            
-            {/* Selected Pills (CSV Export) */}
-            {invoices.some(inv => inv.checked) && (
-              <div style={S.selectedPill}>
-                <span style={S.selectedPillText}>
-                  {invoices.filter(inv => inv.checked).length} SELECTED
-                </span>
-                <button onClick={handleCsvExport} style={S.csvExportBtn}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: 5, verticalAlign: 'middle'}}>
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                  </svg>
-                  <span>CSV Export</span>
-                </button>
-              </div>
+      {/* =========================================================================
+         HEADER & TOP BREADCRUMBS (Exact Match 2nd Screenshot)
+         ========================================================================= */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 mb-1">
+            <span 
+              onClick={() => triggerToast("Navigated to Home")}
+              className="hover:text-slate-700 cursor-pointer transition-colors"
+            >
+              Home
+            </span>
+            <ChevronRight size={10} />
+            <span 
+              onClick={() => triggerToast("Navigated to Customer Portal")}
+              className="hover:text-slate-700 cursor-pointer transition-colors"
+            >
+              Customer Portal
+            </span>
+            <ChevronRight size={10} />
+            <span className="text-slate-700 font-extrabold">Invoices & Payments</span>
+          </div>
+
+          {/* Title & Bookmark */}
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+              14.5 Invoices & Payments
+            </h1>
+            <button 
+              onClick={() => {
+                const nextState = !isBookmarked;
+                setIsBookmarked(nextState);
+                triggerToast(nextState ? "Page bookmarked successfully!" : "Page removed from bookmarks.");
+              }}
+              title={isBookmarked ? "Remove Bookmark" : "Bookmark Page"}
+              className="p-1.5 text-slate-400 hover:text-amber-500 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors"
+            >
+              <Star size={17} className={isBookmarked ? "text-amber-500 fill-amber-500" : "text-slate-400"} />
+            </button>
+          </div>
+          <p className="text-xs text-slate-500 font-medium mt-0.5">
+            View, download and pay your invoices securely.
+          </p>
+        </div>
+
+        {/* Top Right Action Buttons */}
+        <div className="flex items-center gap-2 flex-wrap relative">
+          <button 
+            onClick={() => setIsStatementModalOpen(true)}
+            className="px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-extrabold text-xs rounded-xl shadow-2xs cursor-pointer flex items-center gap-1.5 transition-colors"
+          >
+            <FileText size={14} className="text-blue-600" />
+            <span>Statement</span>
+          </button>
+
+          <button 
+            onClick={() => setIsPaymentMethodsModalOpen(true)}
+            className="px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-extrabold text-xs rounded-xl shadow-2xs cursor-pointer flex items-center gap-1.5 transition-colors"
+          >
+            <CreditCard size={14} className="text-blue-600" />
+            <span>Payment Methods</span>
+          </button>
+
+          <button 
+            onClick={() => {
+              setPayInvoiceTarget(null);
+              setIsMakePaymentModalOpen(true);
+            }}
+            className="px-4 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5 transition-colors"
+          >
+            <Plus size={14} />
+            <span>Make a Payment</span>
+          </button>
+
+          {/* More Actions Dropdown */}
+          <div className="relative">
+            <button 
+              onClick={() => setIsMoreActionsOpen(!isMoreActionsOpen)}
+              className="px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 font-bold text-xs text-slate-700 rounded-xl shadow-2xs cursor-pointer flex items-center gap-1.5 transition-colors"
+            >
+              <span>More Actions</span>
+              <span className="text-[10px]">{isMoreActionsOpen ? '▲' : '▼'}</span>
+            </button>
+
+            {isMoreActionsOpen && (
+              <>
+                <div 
+                  className="fixed inset-0 z-40"
+                  onClick={() => setIsMoreActionsOpen(false)}
+                />
+                <div className="absolute right-0 top-full mt-1.5 bg-white rounded-xl shadow-2xl border border-slate-200 p-1.5 z-50 text-left w-56 space-y-0.5 animate-fade-in font-sans text-xs">
+                  <button
+                    onClick={() => {
+                      setIsMoreActionsOpen(false);
+                      triggerToast("Downloading complete invoices statement CSV...");
+                    }}
+                    className="w-full flex items-center gap-2 px-2.5 py-1.5 text-slate-700 hover:bg-blue-50 hover:text-blue-700 font-extrabold rounded-lg cursor-pointer transition-colors"
+                  >
+                    <FileText size={13} className="text-blue-600" />
+                    <span>Export Invoices (CSV)</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setIsMoreActionsOpen(false);
+                      triggerToast("Downloading all invoices as ZIP...");
+                    }}
+                    className="w-full flex items-center gap-2 px-2.5 py-1.5 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 font-extrabold rounded-lg cursor-pointer transition-colors"
+                  >
+                    <Download size={13} className="text-emerald-600" />
+                    <span>Bulk Download (ZIP)</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setIsMoreActionsOpen(false);
+                      triggerToast("Opening print dialog for billing summary...");
+                      window.print();
+                    }}
+                    className="w-full flex items-center gap-2 px-2.5 py-1.5 text-slate-700 hover:bg-purple-50 hover:text-purple-700 font-extrabold rounded-lg cursor-pointer transition-colors"
+                  >
+                    <Receipt size={13} className="text-purple-600" />
+                    <span>Print Invoices Report</span>
+                  </button>
+
+                  <div className="my-1 border-t border-slate-100" />
+
+                  <button
+                    onClick={() => {
+                      setIsMoreActionsOpen(false);
+                      triggerToast("Invoices vault data refreshed!");
+                    }}
+                    className="w-full flex items-center gap-2 px-2.5 py-1.5 text-slate-700 hover:bg-slate-100 font-extrabold rounded-lg cursor-pointer transition-colors"
+                  >
+                    <RefreshCw size={13} className="text-slate-500" />
+                    <span>Refresh Vault</span>
+                  </button>
+                </div>
+              </>
             )}
           </div>
 
-          <div style={S.headerControlsRight}>
-            {/* Density Controls Pill */}
-            <div style={S.densityPill}>
-              {['COMPACT', 'DEFAULT', 'RELAXED'].map((d) => (
-                <span
-                  key={d}
-                  onClick={() => setDensity(d)}
-                  style={{
-                    ...S.densityOption,
-                    backgroundColor: density === d ? '#FFCC00' : 'transparent',
-                    color: density === d ? '#000000' : '#64748b',
-                    fontWeight: density === d ? '800' : '600',
-                  }}
-                >
-                  {d}
-                </span>
-              ))}
-            </div>
-
-            {/* Column Visibility Trigger */}
-            <div style={{ position: 'relative' }}>
-              <button 
-                onClick={() => setShowColumnsDropdown(!showColumnsDropdown)}
-                style={{
-                  ...S.columnsBtn,
-                  border: showColumnsDropdown ? '2px solid #000000' : '1px solid #cbd5e1',
-                  padding: showColumnsDropdown ? '4px 14px' : '5px 15px'
-                }}
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{marginRight: 6, verticalAlign: 'middle'}}>
-                  <circle cx="12" cy="12" r="3"></circle>
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                </svg>
-                <span style={{verticalAlign: 'middle'}}>COLUMNS</span>
-              </button>
-
-              {showColumnsDropdown && (
-                  <>
-                    <div style={S.dropdownOverlay} onClick={() => setShowColumnsDropdown(false)} />
-                    <div className="columns-dropdown-panel" style={S.dropdownPanel}>
-                      <div style={S.dropdownTitle}>COLUMN VISIBILITY</div>
-                    {columnsList.map((col) => (
-                      <label key={col.key} style={S.dropdownLabel}>
-                        <input 
-                          type="checkbox" 
-                          checked={visibleColumns[col.key]}
-                          onChange={() => toggleColumn(col.key)}
-                          style={S.checkboxInput}
-                        />
-                        <span>{col.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Invoices Table */}
-        <div style={S.tableWrapper}>
-          <table style={S.table}>
-            <thead>
-              <tr style={S.theadRow}>
-                <th style={{ ...S.th, padding: getCellPadding(), width: 64, textAlign: 'center' }}>
-                  <CustomCheckbox 
-                    checked={isAllChecked}
-                    onChange={handleMasterCheckbox}
-                  />
-                </th>
-                {visibleColumns.invoiceId && <th style={{ ...S.th, padding: getCellPadding() }}>INVOICE ID</th>}
-                {visibleColumns.totalAmount && <th style={{ ...S.th, padding: getCellPadding() }}>TOTAL AMOUNT</th>}
-                {visibleColumns.dueDate && <th style={{ ...S.th, padding: getCellPadding() }}>DUE DATE</th>}
-                {visibleColumns.state && <th style={{ ...S.th, padding: getCellPadding() }}>STATE</th>}
-                {visibleColumns.actions && <th style={{ ...S.th, padding: getCellPadding() }}>ACTIONS</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {invoices.map((row) => (
-                <tr 
-                  key={row.id} 
-                  style={{
-                    ...S.tbodyRow,
-                    backgroundColor: row.checked ? '#fefce8' : 'transparent'
-                  }}
-                >
-                  <td style={{ ...S.td, padding: getCellPadding(), textAlign: 'center' }}>
-                    <CustomCheckbox 
-                      checked={row.checked}
-                      onChange={() => handleRowCheckbox(row.id)}
-                    />
-                  </td>
-                  {visibleColumns.invoiceId && <td style={{ ...S.td, padding: getCellPadding(), fontWeight: '700', color: '#0f172a' }}>{row.invoiceId}</td>}
-                  {visibleColumns.totalAmount && <td style={{ ...S.td, padding: getCellPadding() }}>{row.totalAmount}</td>}
-                  {visibleColumns.dueDate && <td style={{ ...S.td, padding: getCellPadding() }}>{row.dueDate}</td>}
-                  {visibleColumns.state && (
-                    <td style={{ ...S.td, padding: getCellPadding() }}>
-                      <span style={getInvoiceStateStyle(row.state)}>{row.state}</span>
-                    </td>
-                  )}
-                  {visibleColumns.actions && (
-                    <td style={{ ...S.td, padding: getCellPadding() }}>
-                      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                        <span style={{ fontSize: 13.5, color: '#64748b', marginRight: 16 }}>Paid and Cleared</span>
-                        <button 
-                          onClick={() => showToast(`Downloading PDF for invoice ${row.invoiceId}...`)}
-                          style={S.actionBtn}
-                        >
-                          Download Invoice PDF
-                        </button>
-                        <button 
-                          onClick={() => showToast(`Reminders toggled for invoice ${row.invoiceId}`)}
-                          style={S.actionBtn}
-                        >
-                          Reminders OFF
-                        </button>
-                      </div>
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       </div>
 
-      {/* Support Ticket Modal (Drawer) */}
-      {showSupportModal && (
-        <div style={S.modalOverlay} onClick={() => setShowSupportModal(false)}>
-          <div style={S.modalContent} onClick={(e) => e.stopPropagation()}>
-            <div style={S.modalHeader}>
-              <h2 style={S.modalTitle}>Shipper Help Desk &amp; Ticket Center</h2>
-              <button onClick={() => setShowSupportModal(false)} style={S.closeBtn}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
+      {/* =========================================================================
+         TOP 5 METRIC SUMMARY CARDS (Exact Match 2nd Screenshot Vertical Stack)
+         ========================================================================= */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        
+        {/* Card 1: OUTSTANDING BALANCE */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-3 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between whitespace-nowrap min-w-0">
+          <div className="flex items-start gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center font-bold shrink-0 mt-0.5">
+              <Receipt size={16} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="text-[9px] font-extrabold text-slate-900 uppercase tracking-wider block truncate whitespace-nowrap">OUTSTANDING BALANCE</span>
+              <div className="flex items-baseline gap-1 mt-0.5 whitespace-nowrap">
+                <span className="text-base sm:text-lg font-black text-slate-900 leading-none whitespace-nowrap">$18,540.00</span>
+                <span className="text-[10px] font-extrabold text-slate-400 whitespace-nowrap">AUD</span>
+              </div>
+              <span className="text-[10px] font-extrabold text-amber-600 block mt-1 whitespace-nowrap truncate">Due in 6 invoices</span>
+            </div>
+          </div>
+          <div className="pt-2 mt-2 border-t border-slate-100 whitespace-nowrap">
+            <button onClick={() => setSelectedStatus('Overdue')} className="text-[10.5px] font-extrabold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer whitespace-nowrap">
+              <span>View outstanding</span>
+              <ArrowRight size={11} />
+            </button>
+          </div>
+        </div>
+
+        {/* Card 2: OVERDUE AMOUNT */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-3 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between whitespace-nowrap min-w-0">
+          <div className="flex items-start gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-red-50 text-red-600 border border-red-100 flex items-center justify-center font-bold shrink-0 mt-0.5">
+              <Clock size={16} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="text-[9px] font-extrabold text-slate-900 uppercase tracking-wider block truncate whitespace-nowrap">OVERDUE AMOUNT</span>
+              <div className="flex items-baseline gap-1 mt-0.5 whitespace-nowrap">
+                <span className="text-base sm:text-lg font-black text-slate-900 leading-none whitespace-nowrap">$12,450.00</span>
+                <span className="text-[10px] font-extrabold text-slate-400 whitespace-nowrap">AUD</span>
+              </div>
+              <span className="text-[10px] font-extrabold text-red-600 block mt-1 whitespace-nowrap truncate">6 invoices overdue</span>
+            </div>
+          </div>
+          <div className="pt-2 mt-2 border-t border-slate-100 whitespace-nowrap">
+            <button onClick={() => setSelectedStatus('Overdue')} className="text-[10.5px] font-extrabold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer whitespace-nowrap">
+              <span>View overdue</span>
+              <ArrowRight size={11} />
+            </button>
+          </div>
+        </div>
+
+        {/* Card 3: PAID THIS MONTH */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-3 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between whitespace-nowrap min-w-0">
+          <div className="flex items-start gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center font-bold shrink-0 mt-0.5">
+              <CheckCircle2 size={16} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="text-[9px] font-extrabold text-slate-900 uppercase tracking-wider block truncate whitespace-nowrap">PAID THIS MONTH</span>
+              <div className="flex items-baseline gap-1 mt-0.5 whitespace-nowrap">
+                <span className="text-base sm:text-lg font-black text-slate-900 leading-none whitespace-nowrap">$22,680.00</span>
+                <span className="text-[10px] font-extrabold text-slate-400 whitespace-nowrap">AUD</span>
+              </div>
+              <span className="text-[10px] font-extrabold text-emerald-600 block mt-1 whitespace-nowrap truncate">↑ 18.7% vs last month</span>
+            </div>
+          </div>
+          <div className="pt-2 mt-2 border-t border-slate-100 whitespace-nowrap">
+            <button onClick={() => setSelectedStatus('Paid')} className="text-[10.5px] font-extrabold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer whitespace-nowrap">
+              <span>View payments</span>
+              <ArrowRight size={11} />
+            </button>
+          </div>
+        </div>
+
+        {/* Card 4: TOTAL INVOICED (YTD) */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-3 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between whitespace-nowrap min-w-0">
+          <div className="flex items-start gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center font-bold shrink-0 mt-0.5">
+              <DollarSign size={16} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="text-[9px] font-extrabold text-slate-900 uppercase tracking-wider block truncate whitespace-nowrap">TOTAL INVOICED (YTD)</span>
+              <div className="flex items-baseline gap-1 mt-0.5 whitespace-nowrap">
+                <span className="text-base sm:text-lg font-black text-slate-900 leading-none whitespace-nowrap">$245,780.00</span>
+                <span className="text-[10px] font-extrabold text-slate-400 whitespace-nowrap">AUD</span>
+              </div>
+              <span className="text-[10px] font-semibold text-transparent block mt-1 whitespace-nowrap select-none">Spacer</span>
+            </div>
+          </div>
+          <div className="pt-2 mt-2 border-t border-slate-100 whitespace-nowrap">
+            <button onClick={() => setSelectedStatus('All Status')} className="text-[10.5px] font-extrabold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer whitespace-nowrap">
+              <span>View summary</span>
+              <ArrowRight size={11} />
+            </button>
+          </div>
+        </div>
+
+        {/* Card 5: CREDIT BALANCE */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-3 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between whitespace-nowrap min-w-0">
+          <div className="flex items-start gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-teal-50 text-teal-600 border border-teal-100 flex items-center justify-center font-bold shrink-0 mt-0.5">
+              <CreditCard size={16} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className="text-[9px] font-extrabold text-slate-900 uppercase tracking-wider block truncate whitespace-nowrap">CREDIT BALANCE</span>
+              <div className="flex items-baseline gap-1 mt-0.5 whitespace-nowrap">
+                <span className="text-base sm:text-lg font-black text-slate-900 leading-none whitespace-nowrap">$0.00</span>
+                <span className="text-[10px] font-extrabold text-slate-400 whitespace-nowrap">AUD</span>
+              </div>
+              <span className="text-[10px] font-semibold text-slate-400 block mt-1 whitespace-nowrap truncate">No credit available</span>
+            </div>
+          </div>
+          <div className="pt-2 mt-2 border-t border-slate-100 whitespace-nowrap">
+            <button onClick={() => triggerToast("Viewing credit statement...")} className="text-[10.5px] font-extrabold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer whitespace-nowrap">
+              <span>View statement</span>
+              <ArrowRight size={11} />
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      {/* =========================================================================
+         FILTERS & SEARCH TOOLBAR ROW (Fully Working Live Search & Date Pickers)
+         ========================================================================= */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl shadow-2xs p-3.5 space-y-3">
+        
+        {/* Search Bar & Dropdowns Filter Line */}
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+          
+          {/* Left: Search input */}
+          <div className="relative flex-1">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input 
+              type="text"
+              placeholder="Search by invoice #, load # or reference..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-3 py-1.5 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-400"
+            />
+          </div>
+
+          {/* Right: Status & Date Dropdowns & Range Pickers */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <select
+              value={selectedStatus}
+              onChange={e => {
+                setSelectedStatus(e.target.value);
+                triggerToast(`Filtered by status: ${e.target.value}`);
+              }}
+              className="px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 bg-white focus:outline-none focus:border-blue-400 cursor-pointer"
+            >
+              <option value="All Status">All Status</option>
+              <option value="Overdue">Overdue</option>
+              <option value="Paid">Paid</option>
+            </select>
+
+            <select
+              value={selectedDateFilter}
+              onChange={e => {
+                setSelectedDateFilter(e.target.value);
+                triggerToast(`Filtered by date: ${e.target.value}`);
+              }}
+              className="px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 bg-white focus:outline-none focus:border-blue-400 cursor-pointer"
+            >
+              <option value="All Dates">All Dates</option>
+              <option value="May 2025">May 2025</option>
+              <option value="April 2025">April 2025</option>
+            </select>
+
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1 text-xs text-slate-500 font-medium">
+              <input 
+                type="date" 
+                value={startDate}
+                onChange={e => setStartDate(e.target.value)}
+                className="bg-transparent text-xs text-slate-700 font-semibold focus:outline-none cursor-pointer" 
+              />
+              <span>→</span>
+              <input 
+                type="date" 
+                value={endDate}
+                onChange={e => setEndDate(e.target.value)}
+                className="bg-transparent text-xs text-slate-700 font-semibold focus:outline-none cursor-pointer" 
+              />
+            </div>
+
+            <button 
+              onClick={() => setIsFilterDrawerOpen(true)}
+              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs rounded-xl cursor-pointer flex items-center gap-1 transition-colors"
+            >
+              <Filter size={13} />
+              <span>Filters</span>
+            </button>
+
+            <button 
+              onClick={() => {
+                setSearchTerm('');
+                setSelectedStatus('All Status');
+                setSelectedDateFilter('All Dates');
+                setStartDate('');
+                setEndDate('');
+                triggerToast("All invoice filters reset!");
+              }}
+              title="Reset Filters"
+              className="p-1.5 text-slate-400 hover:text-slate-700 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors"
+            >
+              <RefreshCw size={13} />
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* =========================================================================
+         MAIN WORKSPACE GRID (8 Cols Invoices Table + 4 Cols Side Cards)
+         Equal Height Bottom Alignment (items-stretch)
+         ========================================================================= */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+        
+        {/* COLUMN 1 (8 Cols): INVOICES TABLE & PAGINATION */}
+        <div className="lg:col-span-8 bg-white border border-slate-200/80 rounded-2xl shadow-2xs p-4 flex flex-col justify-between overflow-hidden">
+          
+          <div className="space-y-3">
+            
+            {/* Table Top Title Header - INVOICES Tab Badge (Exact Match 1st Screenshot) */}
+            <div className="flex items-center gap-2 pb-2.5 border-b border-slate-100">
+              <span className="text-xs font-black text-blue-600 tracking-wider uppercase">INVOICES</span>
+              <span className="min-w-5 h-5 px-1.5 rounded-full bg-[#2563EB] text-white text-[10px] font-black flex items-center justify-center shadow-2xs">
+                24
+              </span>
+            </div>
+
+            {/* Table Container with Horizontal Scroll & Whitespace Nowrap */}
+            <div className="overflow-x-auto w-full">
+              <table className="w-full text-left border-collapse whitespace-nowrap">
+                <thead>
+                  <tr className="border-b border-slate-100 bg-slate-50/50 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider whitespace-nowrap">
+                    <th className="py-2.5 px-3 w-10 text-center">
+                      <input 
+                        type="checkbox"
+                        checked={selectedInvoiceIds.length === invoices.length && invoices.length > 0}
+                        onChange={handleSelectAll}
+                        className="rounded border-slate-300 cursor-pointer"
+                      />
+                    </th>
+                    <th className="py-2.5 px-3 whitespace-nowrap">Invoice #</th>
+                    <th className="py-2.5 px-3 whitespace-nowrap">Invoice Date</th>
+                    <th className="py-2.5 px-3 whitespace-nowrap">Due Date</th>
+                    <th className="py-2.5 px-3 whitespace-nowrap">Load / Reference</th>
+                    <th className="py-2.5 px-3 whitespace-nowrap">Amount (AUD)</th>
+                    <th className="py-2.5 px-3 whitespace-nowrap">Status</th>
+                    <th className="py-2.5 px-3 text-right whitespace-nowrap">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-xs whitespace-nowrap">
+                  {filteredInvoices.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="py-8 text-center text-slate-400 font-medium">
+                        No invoices found matching your criteria.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredInvoices.map((inv) => {
+                      const isSelected = selectedInvoiceIds.includes(inv.id);
+                      return (
+                        <tr key={inv.id} className={`hover:bg-slate-50/80 transition-colors whitespace-nowrap ${isSelected ? 'bg-blue-50/40' : ''}`}>
+                          
+                          {/* Checkbox */}
+                          <td className="py-3 px-3 text-center whitespace-nowrap">
+                            <input 
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleSelectInvoice(inv.id)}
+                              className="rounded border-slate-300 cursor-pointer"
+                            />
+                          </td>
+
+                          {/* Invoice # */}
+                          <td className="py-3 px-3 font-extrabold text-blue-600 hover:text-blue-800 cursor-pointer whitespace-nowrap" onClick={() => setPreviewInvoice(inv)}>
+                            {inv.number}
+                          </td>
+
+                          {/* Invoice Date */}
+                          <td className="py-3 px-3 font-medium text-slate-600 whitespace-nowrap">
+                            {inv.date}
+                          </td>
+
+                          {/* Due Date */}
+                          <td className="py-3 px-3 font-medium text-slate-600 whitespace-nowrap">
+                            {inv.dueDate}
+                          </td>
+
+                          {/* Load / Reference */}
+                          <td className="py-3 px-3 whitespace-nowrap">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-extrabold text-slate-900 whitespace-nowrap">{inv.loadRef}</span>
+                              <span className="text-[9.5px] text-slate-400 font-medium whitespace-nowrap">({inv.route})</span>
+                            </div>
+                          </td>
+
+                          {/* Amount */}
+                          <td className="py-3 px-3 font-black text-slate-900 whitespace-nowrap">
+                            {inv.amount}
+                          </td>
+
+                          {/* Status Badge */}
+                          <td className="py-3 px-3 whitespace-nowrap">
+                            <span className={`px-2.5 py-0.5 rounded border text-[9.5px] font-black uppercase inline-block whitespace-nowrap ${inv.statusBadge}`}>
+                              {inv.status}
+                            </span>
+                          </td>
+
+                          {/* Actions Column */}
+                          <td className="py-3 px-3 text-right whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button 
+                                onClick={() => setPreviewInvoice(inv)}
+                                title="Preview Invoice"
+                                className="p-1 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded-lg cursor-pointer transition-colors"
+                              >
+                                <Eye size={14} />
+                              </button>
+
+                              <button 
+                                onClick={() => triggerToast(`Downloading PDF for invoice ${inv.number}...`)}
+                                title="Download PDF"
+                                className="p-1 text-slate-400 hover:text-emerald-600 hover:bg-slate-100 rounded-lg cursor-pointer transition-colors"
+                              >
+                                <Download size={14} />
+                              </button>
+
+                              {inv.status === 'Overdue' && (
+                                <button 
+                                  onClick={() => {
+                                    setPayInvoiceTarget(inv);
+                                    setIsMakePaymentModalOpen(true);
+                                  }}
+                                  className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-[10px] rounded-lg cursor-pointer transition-colors shadow-2xs"
+                                >
+                                  Pay
+                                </button>
+                              )}
+                            </div>
+                          </td>
+
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Table Pagination */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400 font-semibold pt-3 border-t border-slate-100">
+              <span>Showing 1 to {filteredInvoices.length} of 24 invoices</span>
+              
+              <div className="flex items-center gap-1 text-xs font-bold text-slate-600">
+                <button className="px-2 py-1 border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-400">&lt;&lt;</button>
+                <button className="px-2 py-1 border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-400">&lt;</button>
+                <button className="px-3 py-1 bg-blue-600 text-white rounded-lg">1</button>
+                <button className="px-3 py-1 border border-slate-200 rounded-lg hover:bg-slate-50">2</button>
+                <button className="px-3 py-1 border border-slate-200 rounded-lg hover:bg-slate-50">3</button>
+                <button className="px-2 py-1 border border-slate-200 rounded-lg hover:bg-slate-50">&gt;</button>
+                <button className="px-2 py-1 border border-slate-200 rounded-lg hover:bg-slate-50">&gt;&gt;</button>
+              </div>
+            </div>
+          </div>
+
+          {/* 3 Informational Banner Pills below Table */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-4 mt-3 border-t border-slate-100 text-xs">
+            <div className="flex items-center gap-2 p-2.5 bg-blue-50/60 border border-blue-100 rounded-xl text-blue-900 font-medium">
+              <Clock size={15} className="text-blue-600 shrink-0" />
+              <div>
+                <span className="font-extrabold uppercase text-[9.5px] block text-blue-700">PAY ON TIME</span>
+                <span className="text-[10.5px] text-blue-950">Avoid late fees and keep account in good standing.</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 p-2.5 bg-emerald-50/60 border border-emerald-100 rounded-xl text-emerald-900 font-medium">
+              <FileText size={15} className="text-emerald-600 shrink-0" />
+              <div>
+                <span className="font-extrabold uppercase text-[9.5px] block text-emerald-700">NEED A COPY?</span>
+                <span className="text-[10.5px] text-emerald-950">Download any invoice, statement or receipt.</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 p-2.5 bg-purple-50/60 border border-purple-100 rounded-xl text-purple-900 font-medium">
+              <HelpCircle size={15} className="text-purple-600 shrink-0" />
+              <div>
+                <span className="font-extrabold uppercase text-[9.5px] block text-purple-700">QUESTIONS?</span>
+                <span className="text-[10.5px] text-purple-950">Contact our accounts team for any billing queries.</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* COLUMN 2 (4 Cols): SIDE CARDS (Donut Chart, Make Payment, Recent Payments) */}
+        <div className="lg:col-span-4 space-y-3">
+          
+          {/* CARD 1: OUTSTANDING SUMMARY (Donut Chart & Ageing Legend) */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl shadow-2xs p-3.5 space-y-3">
+            <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+              <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-wider">OUTSTANDING SUMMARY</h2>
+              <button onClick={() => triggerToast("Generating full ageing report...")} className="text-[10px] font-extrabold text-blue-600 hover:text-blue-800 cursor-pointer flex items-center gap-0.5">
+                View ageing report <ArrowRight size={9} />
               </button>
             </div>
-            
-            <form onSubmit={handleSupportSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-              <div style={S.modalBody}>
-                <div style={S.fieldGroup}>
-                  <label style={S.fieldLabel}>SUBJECT HEADING</label>
+
+            <div className="flex items-center justify-around gap-3 py-1">
+              
+              {/* Donut Ring Visual Representation */}
+              <div className="relative w-24 h-24 flex items-center justify-center shrink-0">
+                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                  {/* Background Circle */}
+                  <path className="text-slate-100" strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                  {/* Segment 1: 0-30 Days (33%) - Blue */}
+                  <path className="text-blue-600" strokeDasharray="33, 100" strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                  {/* Segment 2: 31-60 Days (40%) - Amber */}
+                  <path className="text-amber-500" strokeDasharray="40, 100" strokeDashoffset="-33" strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                  {/* Segment 3: 61-90 Days (20%) - Orange */}
+                  <path className="text-orange-500" strokeDasharray="20, 100" strokeDashoffset="-73" strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                  {/* Segment 4: 90+ Days (7%) - Red */}
+                  <path className="text-red-500" strokeDasharray="7, 100" strokeDashoffset="-93" strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                </svg>
+                
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                  <span className="text-xs font-black text-slate-900 leading-none">$18,540</span>
+                  <span className="text-[7.5px] font-extrabold text-slate-400 uppercase">Outstanding</span>
+                </div>
+              </div>
+
+              {/* Legend Breakdown */}
+              <div className="space-y-1 text-xs">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0"></span>
+                  <span className="text-slate-600 font-medium text-[10px]">0 - 30 Days:</span>
+                  <span className="font-extrabold text-slate-900 text-[10px]">$5,090 (33%)</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+                  <span className="text-slate-600 font-medium text-[10px]">31 - 60 Days:</span>
+                  <span className="font-extrabold text-slate-900 text-[10px]">$7,450 (40%)</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-orange-500 shrink-0"></span>
+                  <span className="text-slate-600 font-medium text-[10px]">61 - 90 Days:</span>
+                  <span className="font-extrabold text-slate-900 text-[10px]">$3,780 (20%)</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-red-500 shrink-0"></span>
+                  <span className="text-slate-600 font-medium text-[10px]">90+ Days:</span>
+                  <span className="font-extrabold text-slate-900 text-[10px]">$1,220 (7%)</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          {/* CARD 2: MAKE A PAYMENT */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl shadow-2xs p-3.5 space-y-3">
+            <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+              <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-wider">MAKE A PAYMENT</h2>
+            </div>
+
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500">Total Outstanding</span>
+                <span className="text-base font-black text-red-600">$18,540.00 AUD</span>
+              </div>
+
+              <button 
+                onClick={() => {
+                  setPayInvoiceTarget(null);
+                  setIsMakePaymentModalOpen(true);
+                }}
+                className="w-full py-2.5 bg-[#2563EB] hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-xs cursor-pointer flex items-center justify-center gap-2 transition-colors"
+              >
+                <Lock size={13} />
+                <span>Pay Now</span>
+              </button>
+
+              <div className="text-center space-y-0.5">
+                <span className="text-[9.5px] font-bold text-slate-400 block">Secure payment powered by Stripe</span>
+                <span className="text-[9px] font-medium text-slate-400 block">Cards, Apple Pay and Google Pay accepted</span>
+              </div>
+            </div>
+          </div>
+
+          {/* CARD 3: RECENT PAYMENTS */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl shadow-2xs p-3.5 space-y-3">
+            <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+              <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-wider">RECENT PAYMENTS</h2>
+              <button onClick={() => triggerToast("Viewing all payment history...")} className="text-[10px] font-extrabold text-blue-600 hover:text-blue-800 cursor-pointer flex items-center gap-0.5">
+                View all payments <ArrowRight size={9} />
+              </button>
+            </div>
+
+            <div className="space-y-2 text-xs">
+              {[
+                { ref: 'PAY-2025-0515', date: '15 May 2025', amount: '$4,360.20' },
+                { ref: 'PAY-2025-0507', date: '07 May 2025', amount: '$6,120.00' },
+                { ref: 'PAY-2025-0429', date: '29 Apr 2025', amount: '$7,450.00' },
+                { ref: 'PAY-2025-0418', date: '18 Apr 2025', amount: '$5,980.00' }
+              ].map((item, i) => (
+                <div key={i} className="flex items-center justify-between p-2 rounded-xl border border-slate-100 hover:border-slate-200 hover:bg-slate-50 transition-all">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 size={15} className="text-emerald-500 shrink-0" />
+                    <div>
+                      <span className="font-extrabold text-slate-900 block text-[11px] leading-tight">{item.ref}</span>
+                      <span className="text-[9px] text-slate-400 font-medium">{item.date}</span>
+                    </div>
+                  </div>
+                  <span className="text-[10.5px] font-extrabold text-emerald-700">{item.amount}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* =========================================================================
+         DEVELOPER NOTES BANNER (Exact Match 2nd Screenshot)
+         ========================================================================= */}
+      <div className="bg-[#1E293B] text-white rounded-2xl p-4 shadow-lg space-y-3 font-sans border border-slate-700">
+        <div className="flex items-center justify-between border-b border-slate-700 pb-2">
+          <div className="flex items-center gap-2">
+            <span className="text-blue-400 font-mono font-bold text-xs">&lt;/&gt;</span>
+            <h3 className="font-extrabold uppercase text-[11px] tracking-wider text-slate-200">DEVELOPER NOTES – INVOICES & PAYMENTS</h3>
+          </div>
+          <span className="text-[9.5px] font-mono text-slate-400 font-semibold">REF: 14.5-INVOICES-PAYMENTS-SPEC</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-3 text-left">
+          {[
+            { title: '1. PURPOSE', items: ['Allow customers to view and manage invoices.', 'Enable secure online payments.', 'Provide statements and payment history.'] },
+            { title: '2. KEY FEATURES', items: ['Invoice list with status and actions.', 'Ageing summary for outstanding balances.', 'Online payments via Stripe integration.', 'Download invoices and statements.'] },
+            { title: '3. DATA SOURCES', items: ['Invoices module.', 'Payments module.', 'Customer and load data.', 'Stripe payment status.'] },
+            { title: '4. SECURITY & ACCESS', items: ['Customers see only their invoices.', 'Role-based access for portal users.', 'Secure payment via Stripe.', 'Data encrypted in transit and at rest.'] },
+            { title: '5. INTEGRATIONS', items: ['Stripe (payments).', 'Email/SMS (payment confirmations).', 'Accounting export (optional).'] },
+            { title: '6. PERFORMANCE', items: ['Page load under 2 seconds.', 'Filters return results in under 1 second.', 'Payment status updates in real-time.'] }
+          ].map((col, i) => (
+            <div key={i}>
+              <h4 className="font-extrabold text-blue-400 mb-1 uppercase text-[8.5px] tracking-wider">{col.title}</h4>
+              <ul className="space-y-0.5 text-[9.5px] text-slate-300 font-medium">
+                {col.items.map((item, j) => <li key={j}>• {item}</li>)}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        <div className="pt-2 border-t border-slate-700 flex flex-col sm:flex-row items-center justify-between text-[8.5px] text-slate-400 font-semibold gap-2">
+          <div className="flex items-center gap-1.5">
+            <RefreshCw size={10} className="text-blue-400 animate-spin-slow" />
+            <span>All times shown in your local time (AEST) • Data auto-refreshes every 5 minutes</span>
+          </div>
+        </div>
+      </div>
+
+      {/* =========================================================================
+         MAKE PAYMENT MODAL (Stripe Integration Simulation)
+         ========================================================================= */}
+      {isMakePaymentModalOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[99999] flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setIsMakePaymentModalOpen(false)}
+        >
+          <div 
+            className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-5 space-y-4 text-left font-sans"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center font-bold">
+                  <CreditCard size={16} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">
+                    {payInvoiceTarget ? `Pay Invoice ${payInvoiceTarget.number}` : 'Make a Payment'}
+                  </h3>
+                  <p className="text-[10.5px] text-slate-500 font-medium">Secure card checkout powered by Stripe</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsMakePaymentModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleProcessPayment} className="space-y-3 text-xs">
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                <div className="flex justify-between font-extrabold text-slate-700">
+                  <span>Payment Amount:</span>
+                  <span className="text-blue-600 text-sm font-black">
+                    {payInvoiceTarget ? payInvoiceTarget.amount : '$18,540.00 AUD'}
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-400">
+                  {payInvoiceTarget ? `Invoice ${payInvoiceTarget.number} (${payInvoiceTarget.loadRef})` : 'Full outstanding 6 overdue invoices'}
+                </p>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Name on Credit Card</label>
+                <input 
+                  type="text"
+                  required
+                  value={paymentForm.nameOnCard}
+                  onChange={e => setPaymentForm({ ...paymentForm, nameOnCard: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl font-medium text-slate-800 focus:outline-none focus:border-blue-400"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Credit Card Number</label>
+                <div className="relative">
                   <input 
-                    type="text" 
-                    value={supportSubject}
-                    onChange={(e) => setSupportSubject(e.target.value)}
-                    placeholder="e.g. Shipment update delay" 
-                    style={S.textInput}
+                    type="text"
                     required
+                    value={paymentForm.cardNumber}
+                    onChange={e => setPaymentForm({ ...paymentForm, cardNumber: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl font-medium text-slate-800 focus:outline-none focus:border-blue-400"
+                  />
+                  <CreditCard size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Expiry Date</label>
+                  <input 
+                    type="text"
+                    required
+                    placeholder="MM/YY"
+                    value={paymentForm.cardExpiry}
+                    onChange={e => setPaymentForm({ ...paymentForm, cardExpiry: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl font-medium text-slate-800 focus:outline-none focus:border-blue-400"
                   />
                 </div>
 
-                <div style={S.fieldGroup}>
-                  <label style={S.fieldLabel}>PROBLEM DESCRIPTION</label>
-                  <textarea 
-                    value={supportDescription}
-                    onChange={(e) => setSupportDescription(e.target.value)}
-                    placeholder="Please provide specific details..." 
-                    style={S.textareaInput}
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">CVC Code</label>
+                  <input 
+                    type="text"
                     required
+                    placeholder="123"
+                    value={paymentForm.cardCvc}
+                    onChange={e => setPaymentForm({ ...paymentForm, cardCvc: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl font-medium text-slate-800 focus:outline-none focus:border-blue-400"
                   />
                 </div>
               </div>
 
-              <div style={S.modalFooter}>
-                <button type="button" onClick={() => setShowSupportModal(false)} style={S.btnCancel}>Cancel</button>
-                <button type="submit" style={S.btnSubmit}>Submit Ticket</button>
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-1 text-[10px] text-slate-400 font-medium">
+                  <Lock size={11} className="text-emerald-500" />
+                  <span>256-Bit SSL Encrypted</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button 
+                    type="button" 
+                    onClick={() => setIsMakePaymentModalOpen(false)}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit"
+                    className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Lock size={12} />
+                    <span>Confirm & Pay</span>
+                  </button>
+                </div>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* Toast Notification */}
-      {toast && (
-        <div className="settings-toast" style={S.toastContainer}>
-          <div style={S.toastIcon}>✓</div>
-          <span style={S.toastText}>{toast}</span>
-          <button onClick={() => setToast(null)} style={S.toastCloseBtn}>✕</button>
+      {/* =========================================================================
+         PAYMENT METHODS MODAL
+         ========================================================================= */}
+      {isPaymentMethodsModalOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[99999] flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setIsPaymentMethodsModalOpen(false)}
+        >
+          <div 
+            className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-5 space-y-4 text-left font-sans"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center font-bold">
+                  <CreditCard size={16} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">Saved Payment Methods</h3>
+                  <p className="text-[10.5px] text-slate-500 font-medium">Manage credit cards and direct debit options</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsPaymentMethodsModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3 border border-blue-200 bg-blue-50/50 rounded-xl flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <CreditCard size={20} className="text-blue-600" />
+                  <div>
+                    <span className="font-extrabold text-slate-900 block">Visa ending in 4242</span>
+                    <span className="text-[10px] text-slate-500 font-medium">Expires 12/28 • Default Payment Method</span>
+                  </div>
+                </div>
+                <span className="px-2 py-0.5 bg-blue-600 text-white rounded text-[9.5px] font-bold">DEFAULT</span>
+              </div>
+
+              <div className="p-3 border border-slate-200 rounded-xl flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Building2 size={20} className="text-slate-500" />
+                  <div>
+                    <span className="font-extrabold text-slate-900 block">ANZ Bank Direct Debit</span>
+                    <span className="text-[10px] text-slate-500 font-medium">Account ending in 8819</span>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => triggerToast("Set as default payment method")} 
+                  className="text-blue-600 hover:underline font-bold text-xs cursor-pointer"
+                >
+                  Make Default
+                </button>
+              </div>
+
+              <button 
+                onClick={() => triggerToast("Add new credit card form opened")}
+                className="w-full py-2 bg-slate-50 border border-dashed border-slate-300 hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-xl cursor-pointer flex items-center justify-center gap-1.5 transition-colors"
+              >
+                <Plus size={14} className="text-blue-600" />
+                <span>Add New Payment Method</span>
+              </button>
+
+              <div className="pt-2 border-t border-slate-100 flex justify-end">
+                <button 
+                  onClick={() => setIsPaymentMethodsModalOpen(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
-      <style>{`
-        @keyframes slideIn {
-          from { transform: translateX(100px); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes slideInRight {
-          from { transform: translateX(100%); }
-          to { transform: translateX(0); }
-        }
-      `}</style>
+      {/* =========================================================================
+         ADVANCED FILTERS MODAL
+         ========================================================================= */}
+      {isFilterDrawerOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[99999] flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setIsFilterDrawerOpen(false)}
+        >
+          <div 
+            className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-5 space-y-4 text-left font-sans"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center font-bold">
+                  <Filter size={16} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">Advanced Invoice Filters</h3>
+                  <p className="text-[10.5px] text-slate-500 font-medium">Filter by status, date range and invoice amount</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsFilterDrawerOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Invoice Status</label>
+                <select
+                  value={selectedStatus}
+                  onChange={e => setSelectedStatus(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl font-bold text-slate-800 bg-white focus:outline-none focus:border-blue-400 cursor-pointer"
+                >
+                  <option value="All Status">All Statuses</option>
+                  <option value="Overdue">Overdue Only</option>
+                  <option value="Paid">Paid Only</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Quick Date Range</label>
+                <select
+                  value={selectedDateFilter}
+                  onChange={e => setSelectedDateFilter(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl font-bold text-slate-800 bg-white focus:outline-none focus:border-blue-400 cursor-pointer"
+                >
+                  <option value="All Dates">All Dates</option>
+                  <option value="May 2025">May 2025</option>
+                  <option value="April 2025">April 2025</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Start Date</label>
+                  <input 
+                    type="date"
+                    value={startDate}
+                    onChange={e => setStartDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl font-medium text-slate-800 focus:outline-none focus:border-blue-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">End Date</label>
+                  <input 
+                    type="date"
+                    value={endDate}
+                    onChange={e => setEndDate(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl font-medium text-slate-800 focus:outline-none focus:border-blue-400"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setSearchTerm('');
+                    setSelectedStatus('All Status');
+                    setSelectedDateFilter('All Dates');
+                    setStartDate('');
+                    setEndDate('');
+                    triggerToast("All filters cleared.");
+                  }}
+                  className="text-slate-500 hover:text-slate-800 font-bold text-xs cursor-pointer"
+                >
+                  Reset All
+                </button>
+
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setIsFilterDrawerOpen(false);
+                    triggerToast(`Applied filters - showing ${filteredInvoices.length} matching invoices.`);
+                  }}
+                  className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
+                >
+                  Apply Filters ({filteredInvoices.length})
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+         STATEMENT MODAL
+         ========================================================================= */}
+      {isStatementModalOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[99999] flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setIsStatementModalOpen(false)}
+        >
+          <div 
+            className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-5 space-y-4 text-left font-sans"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 border border-purple-100 flex items-center justify-center font-bold">
+                  <FileText size={16} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">Account Statement</h3>
+                  <p className="text-[10.5px] text-slate-500 font-medium">Download complete billing history statement</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsStatementModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-1">
+                <div className="flex justify-between font-bold">
+                  <span className="text-slate-500">Account Holder:</span>
+                  <span className="text-slate-900">ABC Transport Solutions</span>
+                </div>
+                <div className="flex justify-between font-bold">
+                  <span className="text-slate-500">Total Outstanding:</span>
+                  <span className="text-red-600 font-black">$18,540.00 AUD</span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <button 
+                  onClick={() => {
+                    setIsStatementModalOpen(false);
+                    triggerToast("Downloading Statement PDF...");
+                  }}
+                  className="w-full p-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-900 font-extrabold rounded-xl cursor-pointer flex items-center justify-between transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <FileText size={16} className="text-blue-600" />
+                    <span>Download PDF Statement</span>
+                  </div>
+                  <Download size={14} className="text-blue-600" />
+                </button>
+
+                <button 
+                  onClick={() => {
+                    setIsStatementModalOpen(false);
+                    triggerToast("Downloading CSV Statement...");
+                  }}
+                  className="w-full p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-800 font-extrabold rounded-xl cursor-pointer flex items-center justify-between transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <Receipt size={16} className="text-emerald-600" />
+                    <span>Export CSV Spreadsheet</span>
+                  </div>
+                  <Download size={14} className="text-slate-600" />
+                </button>
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex justify-end">
+                <button 
+                  onClick={() => setIsStatementModalOpen(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+         PREVIEW INVOICE MODAL
+         ========================================================================= */}
+      {previewInvoice && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[99999] flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setPreviewInvoice(null)}
+        >
+          <div 
+            className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-5 space-y-4 text-left font-sans"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center font-bold">
+                  <Receipt size={16} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">Tax Invoice {previewInvoice.number}</h3>
+                  <p className="text-[10.5px] text-slate-500 font-medium">Issued {previewInvoice.date} • Due {previewInvoice.dueDate}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setPreviewInvoice(null)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3.5 bg-slate-50 border border-slate-100 rounded-xl space-y-2">
+                <div className="flex justify-between font-bold">
+                  <span className="text-slate-500">Invoice Number:</span>
+                  <span className="text-slate-900 font-mono">{previewInvoice.number}</span>
+                </div>
+                <div className="flex justify-between font-bold">
+                  <span className="text-slate-500">Related Load:</span>
+                  <span className="text-blue-600 font-mono">{previewInvoice.loadRef} ({previewInvoice.route})</span>
+                </div>
+                <div className="flex justify-between font-bold">
+                  <span className="text-slate-500">Invoice Amount:</span>
+                  <span className="text-slate-900 text-sm font-black">{previewInvoice.amount} AUD</span>
+                </div>
+                <div className="flex justify-between font-bold">
+                  <span className="text-slate-500">Current Status:</span>
+                  <span className={`px-2 py-0.5 rounded border text-[9.5px] font-black uppercase ${previewInvoice.statusBadge}`}>
+                    {previewInvoice.status}
+                  </span>
+                </div>
+              </div>
+
+              {/* Line Items Breakdown Mock */}
+              <div className="border border-slate-200 rounded-xl p-3 bg-white space-y-2">
+                <span className="font-extrabold text-[10.5px] text-slate-400 uppercase tracking-wider block">LINE ITEM BREAKDOWN</span>
+                <div className="flex justify-between font-medium text-slate-700 text-xs border-b border-slate-100 pb-1.5">
+                  <span>Freights Transport Charge ({previewInvoice.loadRef})</span>
+                  <span className="font-bold">{previewInvoice.amount}</span>
+                </div>
+                <div className="flex justify-between font-medium text-slate-400 text-[10.5px]">
+                  <span>GST (10% Included)</span>
+                  <span>Included</span>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                <button 
+                  type="button" 
+                  onClick={() => triggerToast(`Downloading PDF for invoice ${previewInvoice.number}...`)}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
+                >
+                  <Download size={13} />
+                  <span>Download PDF</span>
+                </button>
+
+                <div className="flex items-center gap-2">
+                  {previewInvoice.status === 'Overdue' && (
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        setPayInvoiceTarget(previewInvoice);
+                        setPreviewInvoice(null);
+                        setIsMakePaymentModalOpen(true);
+                      }}
+                      className="px-4 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1"
+                    >
+                      <Lock size={12} />
+                      <span>Pay Invoice</span>
+                    </button>
+                  )}
+                  <button 
+                    type="button" 
+                    onClick={() => setPreviewInvoice(null)}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
-};
-
-/* ─── Styles Object ─── */
-const S = {
-  mainCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: '24px 32px',
-    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
-    border: '1px solid #e2e8f0',
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100%',
-    boxSizing: 'border-box',
-    overflowY: 'auto',
-    marginTop: 24,
-    flex: 1
-  },
-  cardHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 16,
-    marginBottom: 20
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#0f172a',
-    margin: 0
-  },
-  headerControlsRight: {
-    display: 'flex',
-    gap: 12,
-    alignItems: 'center',
-    flexWrap: 'wrap'
-  },
-  selectedPill: {
-    backgroundColor: '#fffbeb',
-    border: '1px solid #fde047',
-    borderRadius: 12,
-    padding: '6px 16px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 16
-  },
-  selectedPillText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#b45309',
-    letterSpacing: '0.5px',
-    whiteSpace: 'nowrap'
-  },
-  csvExportBtn: {
-    backgroundColor: 'transparent',
-    border: '1px solid #b45309',
-    borderRadius: 20,
-    padding: '4px 12px',
-    color: '#b45309',
-    fontSize: 11,
-    fontWeight: '800',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    transition: 'all 0.15s ease',
-    whiteSpace: 'nowrap'
-  },
-  densityPill: {
-    display: 'flex',
-    backgroundColor: '#f1f5f9',
-    borderRadius: 30,
-    padding: 4,
-    border: '1px solid #e2e8f0'
-  },
-  densityOption: {
-    padding: '6px 16px',
-    borderRadius: 30,
-    fontSize: 10.5,
-    cursor: 'pointer',
-    userSelect: 'none',
-    transition: 'all 0.15s ease'
-  },
-  columnsBtn: {
-    backgroundColor: '#ffffff',
-    color: '#475569',
-    border: '1px solid #cbd5e1',
-    borderRadius: 30,
-    fontSize: 10.5,
-    fontWeight: '800',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 6,
-    boxSizing: 'border-box',
-    transition: 'all 0.15s ease',
-    outline: 'none'
-  },
-  dropdownOverlay: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 10
-  },
-  dropdownPanel: {
-    position: 'absolute',
-    top: '100%',
-    right: 0,
-    marginTop: 8,
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    border: '1px solid #e2e8f0',
-    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-    padding: 16,
-    zIndex: 20,
-    width: 220
-  },
-  dropdownTitle: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#94a3b8',
-    marginBottom: 12,
-    letterSpacing: '0.5px'
-  },
-  dropdownLabel: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 10,
-    fontSize: 13.5,
-    color: '#475569',
-    cursor: 'pointer',
-    userSelect: 'none'
-  },
-  checkboxInput: {
-    width: 16,
-    height: 16,
-    cursor: 'pointer'
-  },
-  tableWrapper: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    border: '1px solid #e2e8f0',
-    overflowX: 'auto',
-    WebkitOverflowScrolling: 'touch'
-  },
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse',
-    textAlign: 'left',
-    whiteSpace: 'nowrap'
-  },
-  theadRow: {
-    borderBottom: '1px solid #e2e8f0',
-    backgroundColor: '#f8fafc'
-  },
-  th: {
-    fontSize: 10.5,
-    fontWeight: '800',
-    color: '#64748b',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px'
-  },
-  tbodyRow: {
-    borderBottom: '1px solid #f1f5f9',
-    transition: 'background-color 0.15s ease'
-  },
-  td: {
-    fontSize: 13.5,
-    color: '#334155'
-  },
-  actionBtn: {
-    backgroundColor: '#ffffff',
-    border: '1px solid #cbd5e1',
-    borderRadius: 30,
-    padding: '6px 14px',
-    color: '#475569',
-    fontSize: 11,
-    fontWeight: '700',
-    cursor: 'pointer',
-    transition: 'all 0.15s ease',
-    outline: 'none',
-    boxSizing: 'border-box'
-  },
-  modalOverlay: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(15, 23, 42, 0.4)',
-    backdropFilter: 'blur(3px)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    zIndex: 1000,
-    fontFamily: "'Outfit', 'Inter', sans-serif"
-  },
-  modalContent: {
-    backgroundColor: '#ffffff',
-    height: '100%',
-    width: '100%',
-    maxWidth: 450,
-    boxShadow: '-10px 0 25px -5px rgba(0, 0, 0, 0.1), -5px 0 10px -5px rgba(0, 0, 0, 0.04)',
-    overflow: 'hidden',
-    borderLeft: '1px solid #e2e8f0',
-    borderRadius: '16px 0 0 16px',
-    display: 'flex',
-    flexDirection: 'column',
-    animation: 'slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
-  },
-  modalHeader: {
-    padding: '24px 28px',
-    borderBottom: '1px solid #f1f5f9',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center'
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#0f172a',
-    margin: 0
-  },
-  closeBtn: {
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    padding: 4,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: '50%',
-    transition: 'background-color 0.15s ease'
-  },
-  modalBody: {
-    padding: '28px',
-    flex: 1
-  },
-  fieldGroup: {
-    marginBottom: 20
-  },
-  fieldLabel: {
-    display: 'block',
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#64748b',
-    marginBottom: 8,
-    letterSpacing: '0.5px'
-  },
-  textInput: {
-    width: '100%',
-    padding: '12px 16px',
-    borderRadius: 8,
-    border: '1px solid #cbd5e1',
-    fontSize: 14,
-    color: '#334155',
-    outline: 'none',
-    boxSizing: 'border-box',
-    transition: 'border-color 0.15s ease'
-  },
-  textareaInput: {
-    width: '100%',
-    height: 120,
-    padding: '12px 16px',
-    borderRadius: 8,
-    border: '1px solid #cbd5e1',
-    fontSize: 14,
-    color: '#334155',
-    outline: 'none',
-    boxSizing: 'border-box',
-    resize: 'none',
-    transition: 'border-color 0.15s ease'
-  },
-  modalFooter: {
-    padding: '20px 28px 28px 28px',
-    display: 'flex',
-    justifyContent: 'flex-end',
-    gap: 12,
-    borderTop: '1px solid #f1f5f9'
-  },
-  btnCancel: {
-    backgroundColor: '#ffffff',
-    color: '#0f172a',
-    border: '1px solid #cbd5e1',
-    borderRadius: 30,
-    padding: '10px 24px',
-    fontSize: 13,
-    fontWeight: '800',
-    cursor: 'pointer',
-    transition: 'all 0.15s ease'
-  },
-  btnSubmit: {
-    backgroundColor: '#FFCC00',
-    color: '#000000',
-    border: 'none',
-    borderRadius: 30,
-    padding: '10px 28px',
-    fontSize: 13,
-    fontWeight: '800',
-    cursor: 'pointer',
-    boxShadow: '0 4px 14px rgba(255, 204, 0, 0.35)',
-    transition: 'all 0.15s ease'
-  },
-  toastContainer: {
-    position: 'fixed',
-    bottom: 40,
-    right: 32,
-    backgroundColor: '#ecfdf5',
-    border: '1px solid #a7f3d0',
-    borderRadius: 12,
-    padding: '14px 20px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 10,
-    zIndex: 1100,
-    boxShadow: '0 10px 25px -5px rgba(0,0,0,0.05)',
-    maxWidth: 420,
-    animation: 'slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1)'
-  },
-  toastIcon: {
-    color: '#10b981',
-    fontSize: 20,
-    fontWeight: 'bold',
-    lineHeight: 1
-  },
-  toastText: {
-    fontSize: 13.5,
-    fontWeight: '600',
-    color: '#065f46',
-    flex: 1
-  },
-  toastCloseBtn: {
-    background: 'none',
-    border: 'none',
-    fontSize: 16,
-    color: '#64748b',
-    cursor: 'pointer',
-    padding: 0,
-    lineHeight: 1
-  }
-};
-
-export default CustomerInvoices;
+}
