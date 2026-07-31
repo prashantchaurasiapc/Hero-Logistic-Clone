@@ -261,8 +261,8 @@ function App() {
           <Route path="dashboard" element={<CommandCenter />} />
           <Route path="dispatch-dashboard" element={<CommandCenter />} />
           <Route path="command-center" element={<CommandCenter />} />
-          <Route path="create-load" element={<DispatcherLoads />} />
-          <Route path="load-inbox" element={<LoadInbox />} />
+          <Route path="create-load" element={<Loads />} />
+          <Route path="load-inbox" element={<Navigate to="/dispatcher/dashboard" replace />} />
           <Route path="active-loads" element={<DispatcherLoads />} />
           <Route path="loads" element={<DispatcherLoads />} />
           <Route path="planning-board" element={<TerminalWorkspace />} />
