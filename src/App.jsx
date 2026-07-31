@@ -175,6 +175,8 @@ import CustomerSettings from './pages/Layout/Dashboard/CustomerSettings';
 
 import CustomerPortal from './components/CustomerPortal/CustomerPortal';
 
+import Tools from './components/WareHouseDashboard/Tools';
+
 /* ============================================================
    APP ROUTES
    ============================================================ */
@@ -349,6 +351,8 @@ function App() {
           <Route path="scanning" element={<WarehouseScanning />} />
           <Route path="labels" element={<WarehouseLabels />} />
           <Route path="reports" element={<WarehouseReports />} />
+          <Route path="tools" element={<Tools />} />
+          <Route path="tools/:tab" element={<Tools />} />
           <Route path="profile" element={<MyProfile />} />
           <Route path="settings" element={<CompanySettings />} />
           <Route path="*" element={<WarehouseDashboard />} />

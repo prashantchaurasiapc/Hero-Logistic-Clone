@@ -11,7 +11,8 @@ import {
   FiInbox, FiZap, FiSend, FiClock,
   FiBell, FiFileText, FiPlus, FiCalendar,
   FiAlertCircle, FiBriefcase, FiLogIn, FiLogOut as FiLogOutIcon,
-  FiPackage, FiMaximize, FiCheckCircle, FiRefreshCw, FiCloudOff
+  FiPackage, FiMaximize, FiCheckCircle, FiRefreshCw, FiCloudOff,
+  FiSliders
 } from 'react-icons/fi';
 import { BsQrCodeScan } from 'react-icons/bs';
 
@@ -94,7 +95,7 @@ const roleConfigs = {
       { icon: <FiDollarSign />, label: 'Finance', path: '/company-admin/finance' },
       { icon: <FiFileText />, label: 'Documents', path: '/company-admin/documents' },
       { icon: <FiNavigation />, label: 'Live Tracking', path: '/company-admin/live-tracking' },
-      { icon: <FiBarChart2 />, label: 'Reports', path: '/company-admin/reports' },
+      { icon: <FiBarChart2 />, label: 'Reports & Analytics', path: '/company-admin/reports' },
       { icon: <FiMessageSquare />, label: 'Messages', path: '/company-admin/messages', badge: '8' },
     ],
     subMenus: [
@@ -134,7 +135,7 @@ const roleConfigs = {
       { icon: <FiHome />, label: 'Yard / Warehouse', path: '/dispatcher/warehouse' },
       { icon: <FiClipboard />, label: 'Workforce Availability', path: '/dispatcher/workforce-availability' },
       { icon: <FiMessageSquare />, label: 'Messages', path: '/dispatcher/messages' },
-      { icon: <FiBarChart2 />, label: 'Reports', path: '/dispatcher/reports' },
+      { icon: <FiBarChart2 />, label: 'Reports & Analytics', path: '/dispatcher/reports' },
     ],
     extraItems: [
       { icon: <FiUser />, label: 'Profile', path: '/dispatcher/profile' },
@@ -169,6 +170,7 @@ const roleConfigs = {
     basePath: '/warehouse',
     userName: 'James Patel',
     userRole: 'WAREHOUSE MANAGER',
+    hasSubMenus: true,
     menuItems: [
       { icon: <FiHome />, label: 'Dashboard', path: '/warehouse/dashboard' },
       { icon: <FiSearch />, label: 'Find Stock', path: '/warehouse/find-stock' },
@@ -176,11 +178,26 @@ const roleConfigs = {
       { icon: <FiRefreshCw />, label: 'Move / Transfer', path: '/warehouse/move-transfer' },
       { icon: <FiTruck />, label: 'Load Lanes', path: '/warehouse/load-lanes' },
       { icon: <FiTruck />, label: 'Dispatch Ready', path: '/warehouse/dispatch-ready' },
+      { icon: <FiClock />, label: 'Stage (Holding Areas)', path: '/warehouse/holding-areas' },
       { icon: <FiClock />, label: 'Movement History', path: '/warehouse/movement-history' },
       { icon: <FiMessageSquare />, label: 'Messages', path: '/warehouse/messages' },
       { icon: <FiClock />, label: 'My Shift', path: '/warehouse/my-shift' },
       { icon: <FiMapPin />, label: 'Warehouse & Yard Map', path: '/warehouse/warehouse-yard-map' },
-      { icon: <FiBox />, label: 'Stage (Holding Areas)', path: '/warehouse/holding-areas' },
+      { icon: <FiBarChart2 />, label: 'Reports & Analytics', path: '/warehouse/reports' },
+    ],
+    subMenus: [
+      {
+        key: 'tools',
+        icon: <FiSliders />,
+        label: 'Tools',
+        items: [
+          { label: 'Labels & Barcodes', path: '/warehouse/tools/labels' },
+          { label: 'Print Documents', path: '/warehouse/tools/print-documents' },
+          { label: 'QR Scanner', path: '/warehouse/tools/qr-scanner' },
+          { label: 'Import / Export', path: '/warehouse/tools/import-export' },
+          { label: 'Batch Printing', path: '/warehouse/tools/batch-printing' },
+        ],
+      },
     ],
     extraItems: [
       { icon: <FiUser />, label: 'Profile', path: '/warehouse/profile' },
@@ -208,6 +225,7 @@ const roleConfigs = {
       { icon: <FiMapPin />, label: 'Yard & Warehouse Map', path: '/yard/map' },
       { icon: <FiLogOutIcon />, label: 'Outbound Dispatch', path: '/yard/outbound' },
       { icon: <FiTag />, label: 'Labels & Barcodes', path: '/yard/labels' },
+      { icon: <FiBarChart2 />, label: 'Reports & Analytics', path: '/yard/reports' },
       { icon: <FiAlertTriangle />, label: 'Report Issue', path: '/yard/report-issue' },
     ],
   },
@@ -257,8 +275,19 @@ const roleConfigs = {
    ============================================================ */
 const Sidebar = ({ role, isOpen, onClose }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const config = roleConfigs[role];
-  const [openSubMenus, setOpenSubMenus] = useState({});
+  const [openSubMenus, setOpenSubMenus] = useState(() => {
+    const initial = {};
+    if (config?.subMenus) {
+      config.subMenus.forEach(sub => {
+        if (sub.items.some(item => location.pathname.startsWith(item.path))) {
+          initial[sub.key] = true;
+        }
+      });
+    }
+    return initial;
+  });
 
   const handleNavClick = () => {
     if (onClose) onClose();
@@ -347,33 +376,38 @@ const Sidebar = ({ role, isOpen, onClose }) => {
             </li>
           ))}
 
-          {/* Submenus (Company Admin) */}
+          {/* Submenus (Company Admin / Warehouse Tools) */}
           {config.subMenus?.map((sub) => (
-            <li key={sub.key}>
-              <div
-                className={`nav-item submenu-toggle ${openSubMenus[sub.key] ? 'open' : ''}`}
-                onClick={() => toggleSubMenu(sub.key)}
-              >
-                <span className="nav-icon">{sub.icon}</span>
-                <span className="nav-label">{sub.label}</span>
-                {openSubMenus[sub.key] ? <FiChevronUp className="chevron" /> : <FiChevronDown className="chevron" />}
-              </div>
-              {openSubMenus[sub.key] && (
-                <ul className="submenu">
-                  {sub.items.map((subItem, i) => (
-                    <li key={i}>
-                      <NavLink
-                        to={subItem.path}
-                        className={({ isActive }) => `submenu-item ${isActive ? 'active' : ''}`}
-                        onClick={handleNavClick}
-                      >
-                        {subItem.label}
-                      </NavLink>
-                    </li>
-                  ))}
-                </ul>
+            <React.Fragment key={sub.key}>
+              {sub.header && (
+                <div className="sidebar-section-header">{sub.header}</div>
               )}
-            </li>
+              <li>
+                <div
+                  className={`nav-item submenu-toggle ${openSubMenus[sub.key] ? 'open' : ''}`}
+                  onClick={() => toggleSubMenu(sub.key)}
+                >
+                  <span className="nav-icon">{sub.icon}</span>
+                  <span className="nav-label">{sub.label}</span>
+                  {openSubMenus[sub.key] ? <FiChevronUp className="chevron" /> : <FiChevronDown className="chevron" />}
+                </div>
+                {openSubMenus[sub.key] && (
+                  <ul className="submenu">
+                    {sub.items.map((subItem, i) => (
+                      <li key={i}>
+                        <NavLink
+                          to={subItem.path}
+                          className={({ isActive }) => `submenu-item ${isActive ? 'active' : ''}`}
+                          onClick={handleNavClick}
+                        >
+                          {subItem.label}
+                        </NavLink>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            </React.Fragment>
           ))}
 
           {/* Extra items after submenus (Company Admin) */}

@@ -222,6 +222,16 @@
   text-transform: uppercase;
 }
 
+.sidebar-section-header {
+  font-size: 10px;
+  font-weight: 800;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 12px 14px 4px 14px;
+  margin-top: 6px;
+}
+
 .submenu-toggle {
   display: flex;
   justify-content: space-between;
