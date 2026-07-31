@@ -162,6 +162,7 @@ const Movements = WarehouseMovements;
 // Pnl is imported at the top of the file
 // VehicleCosts is imported at the top of the file
 // AccountsReports is imported at the top of the file
+import AccountsProfile from './components/Accounts/profile';
 import MyLoads from './pages/Layout/Dashboard/MyLoads';
 import TrackDelivery from './pages/Layout/Dashboard/TrackDelivery';
 import CustomerDocuments from './pages/Layout/Dashboard/CustomerDocuments';
@@ -396,6 +397,7 @@ function App() {
           <Route path="pnl" element={<Pnl />} />
           <Route path="vehicle-costs" element={<VehicleCosts />} />
           <Route path="reports" element={<AccountsReports />} />
+          <Route path="profile" element={<AccountsProfile />} />
           <Route path="settings" element={<AccountsDashboard />} />
         </Route>
 

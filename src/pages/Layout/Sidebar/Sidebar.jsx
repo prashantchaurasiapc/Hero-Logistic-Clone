@@ -216,7 +216,6 @@ const roleConfigs = {
     userRole: 'ACCOUNTS',
     menuItems: [
       { icon: <FiGrid />, label: 'Accounts Dashboard', path: '/accounts/dashboard' },
-      { icon: <FiTag />, label: 'Customer Pricing', path: '/accounts/customer-pricing' },
       { icon: <FiFileText />, label: 'Invoice Review', path: '/accounts/invoice-review' },
       { icon: <FiFileText />, label: 'Sent Invoices', path: '/accounts/sent-invoices' },
       { icon: <FiDollarSign />, label: 'Payments', path: '/accounts/payments' },
@@ -227,7 +226,8 @@ const roleConfigs = {
       { icon: <FiFileText />, label: 'GST / PAYG', path: '/accounts/gst-payg' },
       { icon: <FiBarChart2 />, label: 'P&L', path: '/accounts/pnl' },
       { icon: <FiBarChart2 />, label: 'Vehicle Costs', path: '/accounts/vehicle-costs' },
-      { icon: <FiFileText />, label: 'Reports', path: '/accounts/reports' },
+      {icon: <FiFileText />, label: 'Reports', path: '/accounts/reports' },
+      { icon: <FiUser />, label: 'Profile', path: '/accounts/profile' },
     ],
   },
 
