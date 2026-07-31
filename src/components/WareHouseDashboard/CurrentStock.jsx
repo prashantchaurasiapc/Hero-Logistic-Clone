@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Search, Filter, QrCode, ArrowRightLeft, Eye, 
   ChevronDown, Maximize2, X, MapPin, Tag, FileText, User, 
-  Calendar, Package, History, ExternalLink, CheckCircle2, Clock, Grid, List
+  Calendar, Package, History, ExternalLink, CheckCircle2, Clock, Grid, List, Box
 } from 'lucide-react';
 
 /* Mock stock data matching Screenshot 2 exactly */
@@ -201,6 +201,7 @@ export default function CurrentStock() {
   // Selection & Details panel state
   const [selectedItem, setSelectedItem] = useState(initialStockItems[0]);
   const [isDetailExpanded, setIsDetailExpanded] = useState(false);
+  const [viewModalItem, setViewModalItem] = useState(null);
 
   // Modals state
   const [moveModalOpen, setMoveModalOpen] = useState(false);
@@ -243,8 +244,12 @@ export default function CurrentStock() {
     const matchesStatus = selectedStatus === 'All Statuses' || item.status === selectedStatus;
     const matchesLoad = selectedLoad === 'All Loads' || item.loadJob === selectedLoad;
     const matchesCustomer = selectedCustomer === 'All Customers' || item.customer === selectedCustomer;
+    const matchesZone = selectedZone === 'All Zones' || (item.locationDetail && item.locationDetail.includes(selectedZone)) || (item.location && item.location.includes(selectedZone));
+    const matchesRow = selectedRow === 'All Rows' || (item.locationDetail && item.locationDetail.includes(selectedRow)) || (item.rowBayPos && item.rowBayPos.includes(selectedRow));
+    const matchesBay = selectedBay === 'All Bays' || (item.locationDetail && item.locationDetail.includes(selectedBay)) || (item.rowBayPos && item.rowBayPos.includes(selectedBay));
+    const matchesStaging = selectedStaging === 'All Staging Areas' || (item.locationDetail && item.locationDetail.includes(selectedStaging)) || (item.loadDetail && item.loadDetail.includes(selectedStaging));
 
-    return matchesSearch && matchesType && matchesLocation && matchesStatus && matchesLoad && matchesCustomer;
+    return matchesSearch && matchesType && matchesLocation && matchesStatus && matchesLoad && matchesCustomer && matchesZone && matchesRow && matchesBay && matchesStaging;
   });
 
   return (
@@ -884,8 +889,85 @@ export default function CurrentStock() {
         }
 
         @media (max-width: 768px) {
-          .wh-stock-search-row { flex-direction: column; align-items: stretch; }
-          .wh-stock-dropdowns-grid { grid-template-columns: 1fr; }
+          .wh-stock-top-bar {
+            padding: 16px 16px 12px 16px;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+          }
+          .wh-stock-top-actions {
+            width: 100%;
+            display: flex;
+            gap: 8px;
+          }
+          .wh-stock-top-actions button {
+            flex: 1;
+            justify-content: center;
+            padding: 0 10px;
+            font-size: 11.5px;
+          }
+          .wh-stock-master-grid {
+            padding: 0 12px 16px 12px;
+            gap: 12px;
+          }
+          .wh-stock-search-row {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 10px;
+          }
+          .wh-stock-filter-toggle-btn {
+            width: 100%;
+            justify-content: center;
+          }
+          .wh-stock-dropdowns-grid,
+          .wh-stock-dropdowns-grid.second-row {
+            grid-template-columns: 1fr !important;
+            gap: 10px !important;
+          }
+          .wh-stock-results-bar {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+          }
+          .wh-results-controls {
+            width: 100%;
+            justify-content: space-between;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .wh-stock-main-title {
+            font-size: 17px;
+          }
+          .wh-modal-overlay {
+            padding: 8px !important;
+            align-items: center !important;
+          }
+          .wh-modal-box {
+            width: 100% !important;
+            max-width: 100% !important;
+            max-height: 90vh !important;
+            overflow-y: auto !important;
+            border-radius: 12px !important;
+          }
+          .wh-stock-top-actions {
+            flex-direction: column;
+          }
+          .wh-stock-top-actions button {
+            width: 100%;
+          }
+          .wh-results-controls {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+          }
+          .wh-sort-wrap {
+            width: 100%;
+            justify-content: space-between;
+          }
+          .wh-sort-select {
+            flex: 1;
+          }
         }
       `}</style>
       
@@ -1126,7 +1208,12 @@ export default function CurrentStock() {
                         <tr 
                           key={item.id} 
                           className={isSelected ? 'selected-row' : ''}
-                          onClick={() => setSelectedItem(item)}
+                          onClick={() => {
+                            setSelectedItem(item);
+                            if (window.innerWidth < 1280) {
+                              setViewModalItem(item);
+                            }
+                          }}
                         >
                           {/* Item / Description */}
                           <td>
@@ -1202,6 +1289,7 @@ export default function CurrentStock() {
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedItem(item);
+                                setViewModalItem(item);
                               }}
                             >
                               View
@@ -1487,6 +1575,95 @@ export default function CurrentStock() {
 
             <div className="wh-modal-footer">
               <button className="wh-modal-btn-cancel" onClick={() => setScannerModalOpen(false)}>Close Camera</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── VIEW ITEM DETAILS MODAL POPUP ── */}
+      {viewModalItem && (
+        <div className="wh-modal-overlay" style={{ zIndex: 999999 }} onClick={() => setViewModalItem(null)}>
+          <div className="wh-modal-box" style={{ maxWidth: 500, borderRadius: 12, overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.3)' }} onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center px-5 py-3.5 border-b border-slate-200 bg-slate-50">
+              <h3 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
+                <Box size={16} className="text-amber-500" />
+                Item Details ({viewModalItem.title})
+              </h3>
+              <button onClick={() => setViewModalItem(null)} className="p-1 text-slate-400 hover:text-slate-600 font-bold"><X size={18} /></button>
+            </div>
+
+            {/* Header Hero Box */}
+            <div className="p-4 bg-slate-100/80 border-b border-slate-200 flex items-center gap-4">
+              <img src={viewModalItem.image} alt={viewModalItem.title} className="w-20 h-16 rounded-lg object-cover border border-slate-300 shadow-sm" />
+              <div>
+                <h4 className="font-extrabold text-base text-slate-900">{viewModalItem.title}</h4>
+                <div className="text-[11px] text-slate-500 font-mono mt-0.5">
+                  Item #: <strong>{viewModalItem.itemNo}</strong> {viewModalItem.vin ? `• VIN: ${viewModalItem.vin}` : ''}
+                </div>
+                <div className="flex items-center gap-2 mt-1.5">
+                  <span className="text-[10px] font-bold px-2 py-0.5 bg-blue-100 text-blue-800 rounded">
+                    {viewModalItem.typeBadge || viewModalItem.type}
+                  </span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded badge-${viewModalItem.statusColor}`}>
+                    {viewModalItem.status}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Details Grid Body */}
+            <div className="p-5 flex flex-col gap-2.5 text-xs bg-white">
+              <div className="flex justify-between py-1.5 border-b border-slate-100">
+                <span className="text-slate-500 font-medium">Current Location:</span>
+                <span className="font-extrabold text-slate-900">{viewModalItem.locationDetail}</span>
+              </div>
+              <div className="flex justify-between py-1.5 border-b border-slate-100">
+                <span className="text-slate-500 font-medium">Status:</span>
+                <span className="font-bold text-emerald-700">{viewModalItem.status}</span>
+              </div>
+              <div className="flex justify-between py-1.5 border-b border-slate-100">
+                <span className="text-slate-500 font-medium">Load / Job:</span>
+                <span className="font-bold text-slate-900">{viewModalItem.loadJob} {viewModalItem.loadDetail ? `(${viewModalItem.loadDetail})` : ''}</span>
+              </div>
+              <div className="flex justify-between py-1.5 border-b border-slate-100">
+                <span className="text-slate-500 font-medium">Customer:</span>
+                <span className="font-bold text-slate-900">{viewModalItem.customer}</span>
+              </div>
+              <div className="flex justify-between py-1.5 border-b border-slate-100">
+                <span className="text-slate-500 font-medium">Received Date:</span>
+                <span className="font-medium text-slate-800">{viewModalItem.receivedDate}</span>
+              </div>
+              <div className="flex justify-between py-1.5 border-b border-slate-100">
+                <span className="text-slate-500 font-medium">Item Type:</span>
+                <span className="font-semibold text-slate-900">{viewModalItem.type}</span>
+              </div>
+              <div className="flex justify-between py-1.5 border-b border-slate-100">
+                <span className="text-slate-500 font-medium">Condition:</span>
+                <span className="font-semibold text-slate-800">{viewModalItem.condition}</span>
+              </div>
+              <div className="flex justify-between py-1.5">
+                <span className="text-slate-500 font-medium">Notes:</span>
+                <span className="font-medium text-slate-700">{viewModalItem.notes || '-'}</span>
+              </div>
+            </div>
+
+            {/* Modal Footer Actions */}
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-2">
+              <button 
+                onClick={() => {
+                  setViewModalItem(null);
+                  setMoveModalOpen(true);
+                }} 
+                className="px-4 py-2 bg-amber-400 text-slate-900 font-extrabold rounded-lg text-xs hover:bg-amber-500 shadow-sm"
+              >
+                Move / Transfer
+              </button>
+              <button 
+                onClick={() => setViewModalItem(null)} 
+                className="px-4 py-2 border border-slate-300 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

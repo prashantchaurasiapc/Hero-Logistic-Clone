@@ -541,11 +541,13 @@ export default function WarehouseHoldingAreas() {
           background: #F8FAFC;
           border-bottom: 1px solid #E2E8F0;
           text-align: left;
+          white-space: nowrap;
         }
         .wh-st-table td {
           padding: 10px 12px;
           border-bottom: 1px solid #F1F5F9;
           vertical-align: middle;
+          white-space: nowrap;
         }
         .wh-st-table tr:hover { background: #F8FAFC; }
 
@@ -728,14 +730,48 @@ export default function WarehouseHoldingAreas() {
           box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); overflow: hidden;
         }
 
+        .wh-st-table-wrap::-webkit-scrollbar {
+          height: 6px;
+        }
+        .wh-st-table-wrap::-webkit-scrollbar-track {
+          background: #F1F5F9;
+        }
+        .wh-st-table-wrap::-webkit-scrollbar-thumb {
+          background: #CBD5E1;
+          border-radius: 4px;
+        }
+
         @media (max-width: 1024px) {
           .wh-st-stats-grid { grid-template-columns: repeat(2, 1fr); }
-          .wh-st-master-grid { flex-direction: column; }
+          .wh-st-master-grid { flex-direction: column; width: 100%; }
           .wh-st-right-col { width: 100%; }
         }
         @media (max-width: 640px) {
+          .wh-stage-container { padding: 10px; width: 100%; max-width: 100vw; box-sizing: border-box; }
+          .wh-st-master-grid { width: 100%; max-width: 100%; box-sizing: border-box; }
+          .wh-st-left-col { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; }
+          .wh-st-main-card { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; overflow: hidden; }
           .wh-st-stats-grid { grid-template-columns: 1fr; }
-          .wh-stage-container { padding: 12px; }
+          .wh-st-header-row { flex-direction: column; align-items: flex-start; gap: 10px; }
+          .wh-st-actions-top { width: 100%; display: flex; flex-direction: column; gap: 6px; }
+          .wh-st-actions-top button { width: 100%; height: 38px; justify-content: center; }
+          .wh-modal-overlay {
+            padding: 8px !important;
+            align-items: center !important;
+          }
+          .wh-modal-box {
+            width: 100% !important;
+            max-width: 100% !important;
+            max-height: 90vh !important;
+            overflow-y: auto !important;
+            border-radius: 12px !important;
+          }
+          .wh-st-search-row { flex-direction: column; align-items: stretch; gap: 8px; }
+          .wh-st-search-wrap { width: 100%; min-width: 0; }
+          .wh-st-filter-sel { width: 100%; box-sizing: border-box; }
+          .wh-st-table-wrap { width: 100%; display: block; overflow-x: auto !important; -webkit-overflow-scrolling: touch; box-sizing: border-box; }
+          .wh-st-table { min-width: 850px; }
+          .wh-st-table th, .wh-st-table td { white-space: nowrap; }
         }
       `}</style>
 
@@ -1258,8 +1294,8 @@ export default function WarehouseHoldingAreas() {
             {/* MODAL BODY (2-COLUMN GRID) */}
             <form onSubmit={handleCreateArea} className="grid grid-cols-1 md:grid-cols-12">
               
-              {/* LEFT STEPPER PANEL (5 COLS - ~175px WIDTH) */}
-              <div className="md:col-span-5 p-3 bg-slate-50 border-r border-slate-200 flex flex-col justify-between select-none">
+              {/* LEFT STEPPER PANEL (5 COLS - ~175px WIDTH, HIDDEN ON MOBILE) */}
+              <div className="hidden md:flex md:col-span-5 p-3 bg-slate-50 border-r border-slate-200 flex-col justify-between select-none">
                 <div>
                   <div className="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-4">
                     HOW TO ADD A HOLDING AREA
@@ -1274,9 +1310,9 @@ export default function WarehouseHoldingAreas() {
                       1
                     </div>
                     <div>
-                      <div className={`font-extrabold text-xs transition-colors ${activeStep === 1 ? 'text-amber-700' : 'text-slate-800'}`}>Enter Area Details</div>
+                      <div className={`font-extrabold text-xs transition-colors ${activeStep === 1 ? 'text-amber-700' : 'text-slate-800'}`}>Basic Information</div>
                       <div className="text-[10px] text-slate-500 mt-0.5 leading-snug">
-                        Add name, code and select the zone where this holding area is located.
+                        Provide an area name and area code to uniquely identify this staging spot.
                       </div>
                     </div>
                   </div>
@@ -1330,8 +1366,8 @@ export default function WarehouseHoldingAreas() {
                   </div>
                 </div>
 
-                {/* BOTTOM TIP BOX */}
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-800 text-[10px] flex gap-2 items-start mt-2">
+                {/* HELP NOTE BOX AT BOTTOM */}
+                <div className="p-2.5 bg-blue-50/80 border border-blue-200/80 rounded-lg flex items-start gap-2 text-[10.5px] text-blue-900">
                   <Info size={14} className="flex-shrink-0 text-blue-600 mt-0.5" />
                   <span className="leading-snug">
                     Holding areas help you organize inventory before items are moved to load lanes for dispatch.
@@ -1339,8 +1375,8 @@ export default function WarehouseHoldingAreas() {
                 </div>
               </div>
 
-              {/* RIGHT FORM FIELDS PANEL (7 COLS) */}
-              <div className="md:col-span-7 p-3 flex flex-col justify-between">
+              {/* RIGHT FORM FIELDS PANEL (12 COLS ON MOBILE, 7 COLS ON DESKTOP) */}
+              <div className="col-span-12 md:col-span-7 p-4 flex flex-col justify-between">
                 <div className="space-y-4">
                   
                   {/* AREA DETAILS SECTION */}
@@ -1349,7 +1385,7 @@ export default function WarehouseHoldingAreas() {
                       AREA DETAILS
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-3 mb-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                       <div>
                         <label className="text-[10.5px] font-extrabold text-slate-700 block mb-1">Area Name <span className="text-red-500">*</span></label>
                         <input
@@ -1375,7 +1411,7 @@ export default function WarehouseHoldingAreas() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="text-[10.5px] font-extrabold text-slate-700 block mb-1">Zone <span className="text-red-500">*</span></label>
                         <select
@@ -1419,7 +1455,7 @@ export default function WarehouseHoldingAreas() {
                       CAPACITY
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="text-[10.5px] font-extrabold text-slate-700 block mb-1">Maximum Capacity <span className="text-red-500">*</span></label>
                         <input
@@ -1464,7 +1500,7 @@ export default function WarehouseHoldingAreas() {
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <label className="flex items-start gap-2 cursor-pointer">
                         <input
                           type="checkbox"

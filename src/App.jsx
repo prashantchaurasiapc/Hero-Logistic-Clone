@@ -163,7 +163,7 @@ const Movements = WarehouseMovements;
 // Pnl is imported at the top of the file
 // VehicleCosts is imported at the top of the file
 // AccountsReports is imported at the top of the file
-import AccountsProfile from './components/Accounts/profile';
+import AccountsProfile from './components/Accounts/Profile';
 import MyLoads from './pages/Layout/Dashboard/MyLoads';
 import TrackDelivery from './pages/Layout/Dashboard/TrackDelivery';
 import CustomerDocuments from './pages/Layout/Dashboard/CustomerDocuments';

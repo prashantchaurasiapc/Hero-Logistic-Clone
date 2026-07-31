@@ -544,19 +544,21 @@ export default function WarehouseInbound() {
         }
 
         .rcv-data-table th {
-          padding: 6px 10px;
+          padding: 8px 12px;
           font-size: 9px;
           font-weight: 800;
           color: #64748B;
           text-transform: uppercase;
           background: #F8FAFC;
           border-bottom: 1px solid #E2E8F0;
+          white-space: nowrap;
         }
 
         .rcv-data-table td {
-          padding: 6px 10px;
+          padding: 8px 12px;
           border-bottom: 1px solid #F1F5F9;
           vertical-align: middle;
+          white-space: nowrap;
         }
 
         .tbl-item-cell {
@@ -851,18 +853,51 @@ export default function WarehouseInbound() {
 
         /* MOBILE RESPONSIVE MEDIA QUERIES */
         @media (max-width: 1024px) {
-          .wh-rcv-master-grid { flex-direction: column; }
-          .wh-rcv-top-cards-row { flex-direction: column; }
-          .wh-card-1, .wh-card-2, .wh-card-3 { width: 100%; flex: auto; }
-          .wh-rcv-right-col { width: 100%; }
+          .wh-rcv-master-grid { flex-direction: column; width: 100%; }
+          .wh-rcv-top-cards-row { flex-direction: column; width: 100%; }
+          .wh-card-1, .wh-card-2, .wh-card-3 { width: 100%; flex: auto; box-sizing: border-box; }
+          .wh-rcv-right-col { width: 100%; box-sizing: border-box; }
         }
 
         @media (max-width: 640px) {
-          .wh-receive-container { padding: 12px; }
-          .rcv-form-grid-2 { grid-template-columns: 1fr; }
-          .dropzones-grid { grid-template-columns: 1fr; }
-          .wh-rcv-header-row { flex-direction: column; align-items: flex-start; }
-          .wh-rcv-top-btns { width: 100%; justify-content: flex-start; }
+          .wh-receive-container { padding: 10px; overflow-x: hidden; width: 100%; box-sizing: border-box; }
+          .wh-rcv-left-col { width: 100%; max-width: 100%; box-sizing: border-box; }
+          .rcv-form-grid-2 { grid-template-columns: 1fr !important; }
+          .dropzones-grid { grid-template-columns: 1fr !important; width: 100%; }
+          .dropzone-box { width: 100%; box-sizing: border-box; padding: 12px 8px; }
+          .wh-rcv-header-row {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+            width: 100%;
+          }
+          .wh-rcv-top-btns {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+          }
+          .wh-rcv-top-btns button {
+            width: 100%;
+            height: 38px;
+            justify-content: center;
+            padding: 0 12px;
+            font-size: 12px;
+          }
+          .wh-rcv-table-card, .wh-rcv-docs-card {
+            padding: 10px;
+            width: 100%;
+            box-sizing: border-box;
+          }
+          .table-card-footer {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+            width: 100%;
+          }
+          .btn-add-another {
+            width: 100%;
+          }
         }
       `}</style>
 

@@ -289,6 +289,7 @@ export default function WarehouseMovements() {
   const [quickTimeFilter, setQuickTimeFilter] = useState('Last 7 Days');
   const [historyLogs, setHistoryLogs] = useState(initialHistoryLogs);
   const [detailsModalLog, setDetailsModalLog] = useState(null);
+  const [showHistoryFilters, setShowHistoryFilters] = useState(true);
 
   // ── TOAST NOTIFICATION ──
   const [toast, setToast] = useState(null);
@@ -583,6 +584,9 @@ export default function WarehouseMovements() {
             display: flex;
             flex-direction: column;
             gap: 2px;
+            min-width: 0;
+            width: 100%;
+            box-sizing: border-box;
           }
           .wh-mh-filter-lbl {
             font-size: 9px;
@@ -591,7 +595,7 @@ export default function WarehouseMovements() {
             text-transform: uppercase;
           }
           .wh-mh-filter-sel {
-            height: 28px;
+            height: 30px;
             padding: 0 6px;
             border-radius: 6px;
             border: 1px solid #CBD5E1;
@@ -600,6 +604,11 @@ export default function WarehouseMovements() {
             font-weight: 600;
             color: #0F172A;
             outline: none;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            min-width: 0;
+            text-overflow: ellipsis;
           }
 
           /* TABLE CARD */
@@ -764,12 +773,24 @@ export default function WarehouseMovements() {
 
           @media (max-width: 1024px) {
             .wh-mh-filters-grid { grid-template-columns: repeat(2, 1fr); }
-            .wh-mh-master-grid { flex-direction: column; }
+            .wh-mh-master-grid { flex-direction: column; width: 100%; }
             .wh-mh-right-col { width: 100%; }
           }
           @media (max-width: 640px) {
-            .wh-mh-filters-grid { grid-template-columns: 1fr; }
-            .wh-mvt-history-container { padding: 12px; }
+            .wh-mvt-history-container { padding: 10px; width: 100%; max-width: 100vw; box-sizing: border-box; overflow-x: hidden; }
+            .wh-mh-master-grid { width: 100%; max-width: 100%; box-sizing: border-box; }
+            .wh-mh-left-col { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; }
+            .wh-mh-card { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; padding: 12px; }
+            .wh-mh-filters-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; width: 100%; max-width: 100%; box-sizing: border-box; }
+            .wh-mh-filter-item { width: 100%; min-width: 0; box-sizing: border-box; }
+            .wh-mh-filter-sel { width: 100%; max-width: 100%; box-sizing: border-box; font-size: 10.5px; }
+            .wh-mh-header-row { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .wh-mh-actions-top { width: 100%; display: flex; gap: 8px; }
+            .wh-mh-actions-top button { flex: 1; justify-content: center; }
+            .wh-mh-search-row { flex-direction: column; align-items: stretch; gap: 8px; }
+            .wh-mh-search-wrap { width: 100%; min-width: 0; }
+            .wh-mh-table-card { overflow-x: auto; width: 100%; }
+            .wh-mh-table th, .wh-mh-table td { white-space: nowrap; }
           }
         `}</style>
 
@@ -813,7 +834,11 @@ export default function WarehouseMovements() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <button className="wh-btn-export-mh" style={{ height: '34px' }}>
+                  <button 
+                    className="wh-btn-export-mh" 
+                    style={{ height: '34px', background: showHistoryFilters ? '#FFD400' : '#FFFFFF', borderColor: showHistoryFilters ? '#FFD400' : '#CBD5E1' }}
+                    onClick={() => setShowHistoryFilters(!showHistoryFilters)}
+                  >
                     <Filter size={13} />
                     <span>Filters</span>
                   </button>
@@ -826,96 +851,98 @@ export default function WarehouseMovements() {
                 </div>
               </div>
 
-              {/* 2-ROW FILTERS GRID */}
-              <div className="wh-mh-filters-grid">
-                <div className="wh-mh-filter-item">
-                  <span className="wh-mh-filter-lbl">Date Range</span>
-                  <select className="wh-mh-filter-sel">
-                    <option>14/07/2026 - 21/07/2026</option>
-                    <option>Today</option>
-                    <option>This Month</option>
-                  </select>
-                </div>
+              {/* 2-ROW FILTERS GRID (TOGGLEABLE) */}
+              {showHistoryFilters && (
+                <div className="wh-mh-filters-grid">
+                  <div className="wh-mh-filter-item">
+                    <span className="wh-mh-filter-lbl">Date Range</span>
+                    <select className="wh-mh-filter-sel">
+                      <option>14/07/2026 - 21/07/2026</option>
+                      <option>Today</option>
+                      <option>This Month</option>
+                    </select>
+                  </div>
 
-                <div className="wh-mh-filter-item">
-                  <span className="wh-mh-filter-lbl">Movement Type</span>
-                  <select value={historyTypeFilter} onChange={e => setHistoryTypeFilter(e.target.value)} className="wh-mh-filter-sel">
-                    <option value="All">All Types</option>
-                    <option value="Move">Move</option>
-                    <option value="Stage">Stage</option>
-                    <option value="Transfer">Transfer</option>
-                    <option value="Receive">Receive</option>
-                    <option value="Return">Return</option>
-                  </select>
-                </div>
+                  <div className="wh-mh-filter-item">
+                    <span className="wh-mh-filter-lbl">Movement Type</span>
+                    <select value={historyTypeFilter} onChange={e => setHistoryTypeFilter(e.target.value)} className="wh-mh-filter-sel">
+                      <option value="All">All Types</option>
+                      <option value="Move">Move</option>
+                      <option value="Stage">Stage</option>
+                      <option value="Transfer">Transfer</option>
+                      <option value="Receive">Receive</option>
+                      <option value="Return">Return</option>
+                    </select>
+                  </div>
 
-                <div className="wh-mh-filter-item">
-                  <span className="wh-mh-filter-lbl">From Location</span>
-                  <select className="wh-mh-filter-sel">
-                    <option>All Locations</option>
-                    <option>Zone A</option>
-                    <option>Warehouse 1</option>
-                    <option>Container Yard</option>
-                  </select>
-                </div>
+                  <div className="wh-mh-filter-item">
+                    <span className="wh-mh-filter-lbl">From Location</span>
+                    <select className="wh-mh-filter-sel">
+                      <option>All Locations</option>
+                      <option>Zone A</option>
+                      <option>Warehouse 1</option>
+                      <option>Container Yard</option>
+                    </select>
+                  </div>
 
-                <div className="wh-mh-filter-item">
-                  <span className="wh-mh-filter-lbl">To Location</span>
-                  <select className="wh-mh-filter-sel">
-                    <option>All Locations</option>
-                    <option>Lane 1 (Main Yard)</option>
-                    <option>Lane 5 (DG Staging)</option>
-                    <option>Lane 6 (Container Bay)</option>
-                  </select>
-                </div>
+                  <div className="wh-mh-filter-item">
+                    <span className="wh-mh-filter-lbl">To Location</span>
+                    <select className="wh-mh-filter-sel">
+                      <option>All Locations</option>
+                      <option>Zone B</option>
+                      <option>Warehouse 2</option>
+                      <option>Main Yard</option>
+                    </select>
+                  </div>
 
-                <div className="wh-mh-filter-item">
-                  <span className="wh-mh-filter-lbl">Item Type</span>
-                  <select className="wh-mh-filter-sel">
-                    <option>All Types</option>
-                    <option>Vehicle</option>
-                    <option>Pallet</option>
-                    <option>Container</option>
-                  </select>
-                </div>
+                  <div className="wh-mh-filter-item">
+                    <span className="wh-mh-filter-lbl">Item Type</span>
+                    <select className="wh-mh-filter-sel">
+                      <option>All Types</option>
+                      <option>Vehicle</option>
+                      <option>Pallet</option>
+                      <option>Container</option>
+                    </select>
+                  </div>
 
-                <div className="wh-mh-filter-item">
-                  <span className="wh-mh-filter-lbl">Item / Stock</span>
-                  <select className="wh-mh-filter-sel">
-                    <option>All Items</option>
-                  </select>
-                </div>
+                  <div className="wh-mh-filter-item">
+                    <span className="wh-mh-filter-lbl">Item / Stock</span>
+                    <select className="wh-mh-filter-sel">
+                      <option>All Items</option>
+                    </select>
+                  </div>
 
-                <div className="wh-mh-filter-item">
-                  <span className="wh-mh-filter-lbl">Load / Reference</span>
-                  <select className="wh-mh-filter-sel">
-                    <option>All</option>
-                  </select>
-                </div>
+                  <div className="wh-mh-filter-item">
+                    <span className="wh-mh-filter-lbl">Load / Reference</span>
+                    <select className="wh-mh-filter-sel">
+                      <option>All</option>
+                    </select>
+                  </div>
 
-                <div className="wh-mh-filter-item">
-                  <span className="wh-mh-filter-lbl">Driver / Staff</span>
-                  <select className="wh-mh-filter-sel">
-                    <option>All</option>
-                  </select>
-                </div>
+                  <div className="wh-mh-filter-item">
+                    <span className="wh-mh-filter-lbl">Driver / Staff</span>
+                    <select className="wh-mh-filter-sel">
+                      <option>All</option>
+                    </select>
+                  </div>
 
-                <div className="wh-mh-filter-item">
-                  <span className="wh-mh-filter-lbl">Movement Reason</span>
-                  <select className="wh-mh-filter-sel">
-                    <option>All Reasons</option>
-                  </select>
-                </div>
+                  <div className="wh-mh-filter-item">
+                    <span className="wh-mh-filter-lbl">Movement Reason</span>
+                    <select className="wh-mh-filter-sel">
+                      <option>All Reasons</option>
+                    </select>
+                  </div>
 
-                <div className="wh-mh-filter-item">
-                  <span className="wh-mh-filter-lbl">Result</span>
-                  <select value={historyResultFilter} onChange={e => setHistoryResultFilter(e.target.value)} className="wh-mh-filter-sel">
-                    <option value="All">All Results</option>
-                    <option value="Completed">Completed</option>
-                    <option value="Failed">Failed</option>
-                  </select>
+                  <div className="wh-mh-filter-item">
+                    <span className="wh-mh-filter-lbl">Result</span>
+                    <select value={historyResultFilter} onChange={e => setHistoryResultFilter(e.target.value)} className="wh-mh-filter-sel">
+                      <option value="All">All Results</option>
+                      <option value="Completed">Completed</option>
+                      <option value="Failed">Failed</option>
+                    </select>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* AUDIT LOG TABLE CARD */}
@@ -1375,8 +1402,64 @@ export default function WarehouseMovements() {
         .mvt-movement-date { font-size: 9.5px; font-weight: 700; color: #64748B; margin-bottom: 1px; }
         .mvt-movement-label { font-size: 11px; font-weight: 800; color: #0F172A; }
         .mvt-movement-detail { font-size: 10px; color: #64748B; font-weight: 500; }
-        .mvt-help-item { display: flex; align-items: flex-start; gap: 6px; padding: 5px 14px; font-size: 10px; color: #475569; line-height: 1.4; }
-        .mvt-help-dot { width: 5px; height: 5px; border-radius: 50%; background: #CBD5E1; flex-shrink: 0; margin-top: 4px; }
+        .mvt-table th { padding: 8px 10px; font-size: 8.5px; font-weight: 800; color: #64748B; text-transform: uppercase; background: #F8FAFC; border-bottom: 1px solid #E2E8F0; text-align: left; letter-spacing: 0.3px; white-space: nowrap; }
+        .mvt-table td { padding: 8px 10px; border-bottom: 1px solid #F1F5F9; vertical-align: middle; white-space: nowrap; }
+
+        @media (max-width: 1024px) {
+          .mvt-master {
+            flex-direction: column;
+            width: 100%;
+          }
+          .mvt-left, .mvt-right {
+            width: 100% !important;
+            flex: auto;
+          }
+          .mvt-top-two {
+            flex-direction: column;
+            width: 100%;
+          }
+          .mvt-type-col {
+            flex: auto;
+            width: 100% !important;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .mvt-page {
+            padding: 10px;
+            overflow-x: hidden;
+            width: 100%;
+            box-sizing: border-box;
+          }
+          .mvt-title-row {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+            width: 100%;
+          }
+          .mvt-actions {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+          }
+          .mvt-actions button {
+            width: 100%;
+            height: 38px;
+            justify-content: center;
+          }
+          .mvt-grid2 {
+            grid-template-columns: 1fr !important;
+          }
+          .mvt-table-wrap {
+            overflow-x: auto;
+            width: 100%;
+            -webkit-overflow-scrolling: touch;
+          }
+          .mvt-table th, .mvt-table td {
+            white-space: nowrap;
+          }
+        }
       `}</style>
 
       {/* PAGE TITLE + ACTIONS */}

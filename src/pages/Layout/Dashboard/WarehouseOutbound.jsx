@@ -448,11 +448,13 @@ export default function WarehouseOutbound() {
           background: #F8FAFC;
           border-bottom: 1px solid #E2E8F0;
           text-align: left;
+          white-space: nowrap;
         }
         .wh-dp-table td {
           padding: 10px 12px;
           border-bottom: 1px solid #F1F5F9;
           vertical-align: middle;
+          white-space: nowrap;
         }
         .wh-dp-table tr:hover { background: #F8FAFC; }
 
@@ -464,6 +466,8 @@ export default function WarehouseOutbound() {
           border-radius: 6px;
           font-size: 9.5px;
           font-weight: 800;
+          white-space: nowrap;
+          display: inline-block;
         }
         .badge-awaiting {
           background: #DBEAFE;
@@ -472,6 +476,8 @@ export default function WarehouseOutbound() {
           border-radius: 6px;
           font-size: 9.5px;
           font-weight: 800;
+          white-space: nowrap;
+          display: inline-block;
         }
         .badge-hold {
           background: #FEF3C7;
@@ -480,6 +486,8 @@ export default function WarehouseOutbound() {
           border-radius: 6px;
           font-size: 9.5px;
           font-weight: 800;
+          white-space: nowrap;
+          display: inline-block;
         }
         .badge-vehicle {
           background: #F1F5F9;
@@ -490,6 +498,7 @@ export default function WarehouseOutbound() {
           font-weight: 700;
           display: inline-block;
           margin-top: 2px;
+          white-space: nowrap;
         }
 
         .btn-view-load {
@@ -698,14 +707,38 @@ export default function WarehouseOutbound() {
           border-top: 1px solid #E2E8F0;
         }
 
+        .wh-dp-table-wrap::-webkit-scrollbar {
+          height: 6px;
+        }
+        .wh-dp-table-wrap::-webkit-scrollbar-track {
+          background: #F1F5F9;
+        }
+        .wh-dp-table-wrap::-webkit-scrollbar-thumb {
+          background: #CBD5E1;
+          border-radius: 4px;
+        }
+
         @media (max-width: 1024px) {
           .wh-dp-stats-grid { grid-template-columns: repeat(2, 1fr); }
-          .wh-dp-master-grid { flex-direction: column; }
+          .wh-dp-master-grid { flex-direction: column; width: 100%; }
           .wh-dp-right-col { width: 100%; }
         }
         @media (max-width: 640px) {
+          .wh-dispatch-container { padding: 10px; width: 100%; max-width: 100vw; box-sizing: border-box; }
+          .wh-dp-master-grid { width: 100%; max-width: 100%; box-sizing: border-box; }
+          .wh-dp-left-col { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; }
+          .wh-dp-main-card { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; overflow: hidden; }
           .wh-dp-stats-grid { grid-template-columns: 1fr; }
-          .wh-dispatch-container { padding: 12px; }
+          .wh-dp-header-row { flex-direction: column; align-items: flex-start; gap: 10px; }
+          .wh-dp-actions-top { width: 100%; display: flex; gap: 8px; }
+          .wh-dp-actions-top button { flex: 1; justify-content: center; }
+          .wh-dp-search-row { flex-direction: column; align-items: stretch; gap: 8px; }
+          .wh-dp-filters-bar { display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; width: 100%; box-sizing: border-box; }
+          .wh-filter-item { width: 100%; }
+          .wh-filter-sel { width: 100%; box-sizing: border-box; }
+          .wh-dp-table-wrap { width: 100%; display: block; overflow-x: auto !important; -webkit-overflow-scrolling: touch; box-sizing: border-box; }
+          .wh-dp-table { min-width: 820px; }
+          .wh-dp-table th, .wh-dp-table td { white-space: nowrap; }
         }
       `}</style>
 
