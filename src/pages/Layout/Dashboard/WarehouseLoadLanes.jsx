@@ -1,11 +1,18 @@
 import React, { useState } from 'react';
-import { Settings, Plus, X, ArrowRight, Check, Download } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
+import { Settings, Plus, X, ArrowRight, Check, Download, Search } from 'lucide-react';
 import './WarehouseDashboard.css';
 
 const WarehouseLoadLanes = () => {
+  const location = useLocation();
+  const isYard = location.pathname.startsWith('/yard');
   // Density states ('compact' | 'default' | 'relaxed')
   const [leftDensity, setLeftDensity] = useState('default');
   const [rightDensity, setRightDensity] = useState('default');
+
+  // Search states for both tables
+  const [leftSearch, setLeftSearch] = useState('');
+  const [rightSearch, setRightSearch] = useState('');
 
   // Column visibility states
   const [leftVisibleColumns, setLeftVisibleColumns] = useState({
@@ -50,6 +57,16 @@ const WarehouseLoadLanes = () => {
     { id: 'QA-2', code: 'VIN-3YV1HP52X81254', lane: 'Lane A2', status: 'QUEUEING' },
     { id: 'QA-3', code: 'VIN-8ZV9HK21W92110', lane: 'Lane C3', status: 'QUEUEING' }
   ]);
+
+  const filteredLoadLanes = loadLanes.filter(l => {
+    const q = leftSearch.toLowerCase().trim();
+    return !q || l.name.toLowerCase().includes(q) || l.status.toLowerCase().includes(q);
+  });
+
+  const filteredAssets = queueingAssets.filter(a => {
+    const q = rightSearch.toLowerCase().trim();
+    return !q || a.code.toLowerCase().includes(q) || (a.lane && a.lane.toLowerCase().includes(q));
+  });
 
   // Helpers to get density padding
   const getCellPadding = (density) => {
@@ -193,7 +210,7 @@ const WarehouseLoadLanes = () => {
       {/* Header section matches WarehouseMap perfectly */}
       <div className="warehouse-header" style={{ marginBottom: '16px' }}>
         <div className="warehouse-header-titles" style={{ textAlign: 'left' }}>
-          <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#0f172a', margin: 0 }}>Load Lanes</h1>
+          <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#0f172a', margin: 0 }}>{isYard ? 'Yard Load Lanes Allocation' : 'Load Lanes'}</h1>
         </div>
       </div>
 
@@ -213,8 +230,8 @@ const WarehouseLoadLanes = () => {
         textAlign: 'left'
       }}>
         <div>
-          <h2 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: '0 0 4px 0' }}>Load Lane Management</h2>
-          <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>Manage outbound dispatch loading queues and lane spotting.</p>
+          <h2 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: '0 0 4px 0' }}>{isYard ? 'Yard Load Lane Management' : 'Load Lane Management'}</h2>
+          <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>{isYard ? 'Manage outbound yard dispatch loading queues and trailer spotting.' : 'Manage outbound dispatch loading queues and lane spotting.'}</p>
         </div>
         <button
           onClick={() => setAddLaneModalOpen(true)}
@@ -292,7 +309,19 @@ const WarehouseLoadLanes = () => {
               </h2>
             )}
 
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center', marginLeft: 'auto' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center', marginLeft: 'auto', flex: 1, justifyContent: 'flex-end' }}>
+              {/* Quick Search */}
+              <div style={{ position: 'relative', minWidth: '180px', flex: '1 1 180px' }}>
+                <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                <input 
+                  type="text"
+                  placeholder="Search lanes..."
+                  value={leftSearch}
+                  onChange={(e) => setLeftSearch(e.target.value)}
+                  style={{ width: '100%', padding: '6px 12px 6px 30px', fontSize: '11px', fontWeight: '700', borderRadius: '8px', border: '1px solid #e2e8f0', outline: 'none' }}
+                />
+              </div>
+
               {/* Density control */}
               <div className="wh-segmented-control">
                 {['COMPACT', 'DEFAULT', 'RELAXED'].map((mode) => {
@@ -427,7 +456,14 @@ const WarehouseLoadLanes = () => {
                 </tr>
               </thead>
               <tbody>
-                {loadLanes.map(row => {
+                {filteredLoadLanes.length === 0 ? (
+                  <tr>
+                    <td colSpan="4" style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '12px', fontWeight: '700' }}>
+                      No load lanes found matching "{leftSearch}".
+                    </td>
+                  </tr>
+                ) : (
+                  filteredLoadLanes.map(row => {
                   const isChecked = leftSelectedRows.includes(row.name);
                   const assignedCount = getAssignedAssetCount(row.name);
                   return (
@@ -496,7 +532,7 @@ const WarehouseLoadLanes = () => {
                       )}
                     </tr>
                   );
-                })}
+                }))}
               </tbody>
             </table>
           </div>
@@ -519,7 +555,19 @@ const WarehouseLoadLanes = () => {
             <h2 style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
               Queueing Assets
             </h2>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center', flex: 1, justifyContent: 'flex-end' }}>
+              {/* Quick Search */}
+              <div style={{ position: 'relative', minWidth: '180px', flex: '1 1 180px' }}>
+                <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                <input 
+                  type="text"
+                  placeholder="Search assets..."
+                  value={rightSearch}
+                  onChange={(e) => setRightSearch(e.target.value)}
+                  style={{ width: '100%', padding: '6px 12px 6px 30px', fontSize: '11px', fontWeight: '700', borderRadius: '8px', border: '1px solid #e2e8f0', outline: 'none' }}
+                />
+              </div>
+
               {/* Density control */}
               <div className="wh-segmented-control">
                 {['COMPACT', 'DEFAULT', 'RELAXED'].map((mode) => {
@@ -685,7 +733,14 @@ const WarehouseLoadLanes = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {queueingAssets.map(row => {
+                  {filteredAssets.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '12px', fontWeight: '700' }}>
+                        No queueing assets found matching "{rightSearch}".
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredAssets.map(row => {
                     const isChecked = rightSelectedRows.includes(row.id);
                     return (
                       <tr
@@ -782,7 +837,7 @@ const WarehouseLoadLanes = () => {
                         )}
                       </tr>
                     );
-                  })}
+                  }))}
                 </tbody>
               </table>
             )}

@@ -493,6 +493,7 @@ export default function CompanySettings() {
 
   // AI Configuration State (13.5 - Screenshot 2 Match)
   const [aiTab, setAiTab] = useState('Overview');
+  const [activeAiFeatureMenuId, setActiveAiFeatureMenuId] = useState(null);
   const [aiFeaturesList, setAiFeaturesList] = useState([
     { id: 1, name: 'AI Load Creation', desc: 'Auto-create loads from emails, bookings and documents', status: 'Enabled', model: 'GPT-4o', confidence: 90, autoExecute: true, iconBg: 'bg-blue-50 text-blue-600 border border-blue-100', icon: <FileText size={13} /> },
     { id: 2, name: 'Trailer Recommendation', desc: 'Suggest best trailer based on load and availability', status: 'Enabled', model: 'Hero AI Model v1.3', confidence: 85, autoExecute: true, iconBg: 'bg-orange-50 text-orange-600 border border-orange-100', icon: <Zap size={13} /> },
@@ -1868,7 +1869,7 @@ export default function CompanySettings() {
           </div>
 
           {/* SUB-TAB NAVIGATION (7 TABS) */}
-          <div className="flex items-center gap-6 border-b border-slate-200/80 overflow-x-auto pt-1">
+          <div className="flex items-center gap-2 border-b border-slate-200/80 overflow-x-auto pb-3 pt-1 scrollbar-hide">
             {[
               'Company Details', 'Branding', 'Financial & Tax', 
               'Operational Defaults', 'Payment Terms', 'Document Numbering', 'Other Preferences'
@@ -1876,10 +1877,10 @@ export default function CompanySettings() {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`py-2 text-xs font-bold whitespace-nowrap transition-all border-b-2 cursor-pointer ${
+                className={`px-3.5 py-1.5 text-xs font-black whitespace-nowrap transition-all rounded-xl cursor-pointer outline-none focus:outline-none focus:ring-0 select-none ${
                   activeTab === tab 
-                    ? 'border-[#2563EB] text-[#2563EB]' 
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                    ? 'bg-[#2563EB] text-white shadow-xs' 
+                    : 'bg-slate-100/70 text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 border border-slate-200/60 font-bold'
                 }`}
               >
                 {tab}
@@ -2930,15 +2931,15 @@ export default function CompanySettings() {
           </div>
 
           {/* SUB-TAB NAVIGATION (6 TABS) */}
-          <div className="flex items-center gap-6 border-b border-slate-200/80 overflow-x-auto pt-1">
+          <div className="flex items-center gap-2 border-b border-slate-200/80 overflow-x-auto pb-3 pt-1 scrollbar-hide">
             {['Users', 'Roles', 'Permissions', 'Branch Access', 'Login & Security', 'Activity Log'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setUsersTab(tab)}
-                className={`py-2 text-xs font-bold whitespace-nowrap transition-all border-b-2 cursor-pointer ${
+                className={`px-3.5 py-1.5 text-xs font-black whitespace-nowrap transition-all rounded-xl cursor-pointer outline-none focus:outline-none focus:ring-0 select-none ${
                   usersTab === tab 
-                    ? 'border-[#2563EB] text-[#2563EB]' 
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                    ? 'bg-[#2563EB] text-white shadow-xs' 
+                    : 'bg-slate-100/70 text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 border border-slate-200/60 font-bold'
                 }`}
               >
                 {tab}
@@ -3709,15 +3710,15 @@ export default function CompanySettings() {
           </div>
 
           {/* SUB-TAB NAVIGATION (7 TABS) */}
-          <div className="flex items-center gap-6 border-b border-slate-200/80 overflow-x-auto pt-1">
+          <div className="flex items-center gap-2 border-b border-slate-200/80 overflow-x-auto pb-3 pt-1 scrollbar-hide">
             {['Overview', 'Invoice Automation', 'Payment Reminders', 'Compliance Reminders', 'Load Status Actions', 'Customer Notifications', 'Approval Workflows'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setWorkflowTab(tab)}
-                className={`py-2 text-xs font-bold whitespace-nowrap transition-all border-b-2 cursor-pointer ${
+                className={`px-3.5 py-1.5 text-xs font-black whitespace-nowrap transition-all rounded-xl cursor-pointer outline-none focus:outline-none focus:ring-0 select-none ${
                   workflowTab === tab 
-                    ? 'border-[#2563EB] text-[#2563EB]' 
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                    ? 'bg-[#2563EB] text-white shadow-xs' 
+                    : 'bg-slate-100/70 text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 border border-slate-200/60 font-bold'
                 }`}
               >
                 {tab}
@@ -4264,15 +4265,15 @@ export default function CompanySettings() {
           </div>
 
           {/* SUB-TAB NAVIGATION (8 TABS) */}
-          <div className="flex items-center gap-6 border-b border-slate-200/80 overflow-x-auto pt-1">
+          <div className="flex items-center gap-2 border-b border-slate-200/80 overflow-x-auto pb-3 pt-1 scrollbar-hide">
             {['Overview', 'Feature Settings', 'AI Models', 'Data Sources', 'Automation', 'AI Prompts & Templates', 'Usage & Limits', 'Logs & Monitoring'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setAiTab(tab)}
-                className={`py-2 text-xs font-bold whitespace-nowrap transition-all border-b-2 cursor-pointer ${
+                className={`px-3.5 py-1.5 text-xs font-black whitespace-nowrap transition-all rounded-xl cursor-pointer outline-none focus:outline-none focus:ring-0 select-none ${
                   aiTab === tab 
-                    ? 'border-[#2563EB] text-[#2563EB]' 
-                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                    ? 'bg-[#2563EB] text-white shadow-xs' 
+                    : 'bg-slate-100/70 text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 border border-slate-200/60 font-bold'
                 }`}
               >
                 {tab}
@@ -4488,13 +4489,112 @@ export default function CompanySettings() {
                           </button>
                         </td>
 
-                        <td className="py-2 px-1 text-right whitespace-nowrap">
+                        <td className="py-2 px-1 text-right whitespace-nowrap relative">
                           <button 
-                            onClick={() => triggerToast(`Opening options for ${feat.name}...`)} 
-                            className="p-1 hover:bg-slate-200 rounded-lg text-slate-400 hover:text-slate-900 cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveAiFeatureMenuId(activeAiFeatureMenuId === feat.id ? null : feat.id);
+                            }} 
+                            className="w-7 h-7 inline-flex items-center justify-center rounded-lg border border-slate-200/80 bg-white hover:bg-slate-100 hover:border-slate-300 text-slate-500 hover:text-slate-900 transition-all cursor-pointer outline-none focus:outline-none focus:ring-0 select-none shadow-2xs"
                           >
                             <MoreHorizontal size={13} />
                           </button>
+
+                          {/* 3-DOT INTERACTIVE ACTION DROPDOWN MENU */}
+                          {activeAiFeatureMenuId === feat.id && (
+                            <>
+                              <div 
+                                className="fixed inset-0 z-40" 
+                                onClick={() => setActiveAiFeatureMenuId(null)} 
+                              />
+                              <div 
+                                className="absolute right-0 top-full mt-1.5 w-56 bg-white rounded-xl border border-slate-200 shadow-xl z-50 p-1.5 text-left space-y-1 animate-in fade-in zoom-in-95 duration-100"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <div className="px-2.5 py-1.5 border-b border-slate-100 mb-1">
+                                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">FEATURE ACTIONS</span>
+                                  <span className="text-xs font-black text-slate-900 truncate block">{feat.name}</span>
+                                </div>
+
+                                {/* Action 1: Toggle Status */}
+                                <button
+                                  onClick={() => {
+                                    const nextStatus = feat.status === 'Enabled' ? 'Disabled' : 'Enabled';
+                                    setAiFeaturesList(aiFeaturesList.map(f => f.id === feat.id ? { ...f, status: nextStatus } : f));
+                                    triggerToast(`${feat.name} is now ${nextStatus}!`);
+                                    setActiveAiFeatureMenuId(null);
+                                  }}
+                                  className="w-full px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center justify-between cursor-pointer transition-colors"
+                                >
+                                  <span className="flex items-center gap-2">
+                                    <Zap size={13} className={feat.status === 'Enabled' ? 'text-rose-500' : 'text-emerald-500'} />
+                                    {feat.status === 'Enabled' ? 'Disable Feature' : 'Enable Feature'}
+                                  </span>
+                                  <span className={`text-[9px] font-black px-1.5 py-0.5 rounded ${feat.status === 'Enabled' ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                                    {feat.status === 'Enabled' ? 'OFF' : 'ON'}
+                                  </span>
+                                </button>
+
+                                {/* Action 2: Toggle Auto Execute */}
+                                <button
+                                  onClick={() => {
+                                    const nextAuto = !feat.autoExecute;
+                                    setAiFeaturesList(aiFeaturesList.map(f => f.id === feat.id ? { ...f, autoExecute: nextAuto } : f));
+                                    triggerToast(`${feat.name} Auto-Execute set to ${nextAuto ? 'ENABLED' : 'DISABLED'}`);
+                                    setActiveAiFeatureMenuId(null);
+                                  }}
+                                  className="w-full px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center gap-2 cursor-pointer transition-colors"
+                                >
+                                  <Sliders size={13} className="text-blue-500" />
+                                  <span>Toggle Auto-Execute ({feat.autoExecute ? 'ON' : 'OFF'})</span>
+                                </button>
+
+                                {/* Action 3: Increase Confidence Threshold */}
+                                <button
+                                  onClick={() => {
+                                    const nextConf = feat.confidence >= 95 ? 75 : feat.confidence + 5;
+                                    setAiFeaturesList(aiFeaturesList.map(f => f.id === feat.id ? { ...f, confidence: nextConf } : f));
+                                    triggerToast(`${feat.name} confidence threshold updated to ${nextConf}%`);
+                                    setActiveAiFeatureMenuId(null);
+                                  }}
+                                  className="w-full px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center gap-2 cursor-pointer transition-colors"
+                                >
+                                  <CheckCircle2 size={13} className="text-emerald-500" />
+                                  <span>Set Threshold ({feat.confidence}%)</span>
+                                </button>
+
+                                {/* Action 4: Switch Model */}
+                                <button
+                                  onClick={() => {
+                                    const models = ['GPT-4o', 'Hero AI Model v1.3', 'Azure OCR v3', 'Compliance AI v2.2'];
+                                    const nextModel = models[(models.indexOf(feat.model) + 1) % models.length];
+                                    setAiFeaturesList(aiFeaturesList.map(f => f.id === feat.id ? { ...f, model: nextModel } : f));
+                                    triggerToast(`${feat.name} model switched to ${nextModel}`);
+                                    setActiveAiFeatureMenuId(null);
+                                  }}
+                                  className="w-full px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center gap-2 cursor-pointer transition-colors"
+                                >
+                                  <Cpu size={13} className="text-purple-500" />
+                                  <span>Switch AI Model ({feat.model})</span>
+                                </button>
+
+                                <div className="my-1 border-t border-slate-100" />
+
+                                {/* Action 5: View Logs */}
+                                <button
+                                  onClick={() => {
+                                    setAiTab('Logs & Monitoring');
+                                    triggerToast(`Viewing AI audit logs for ${feat.name}...`);
+                                    setActiveAiFeatureMenuId(null);
+                                  }}
+                                  className="w-full px-2.5 py-1.5 rounded-lg text-xs font-bold text-[#2563EB] hover:bg-blue-50 flex items-center gap-2 cursor-pointer transition-colors"
+                                >
+                                  <FileText size={13} className="text-blue-500" />
+                                  <span>View Feature Logs</span>
+                                </button>
+                              </div>
+                            </>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -5029,11 +5129,13 @@ export default function CompanySettings() {
           </div>
 
           {/* SUB-TABS */}
-          <div className="flex items-center gap-0 border-b border-slate-200/80 overflow-x-auto pt-1">
+          <div className="flex items-center gap-2 border-b border-slate-200/80 overflow-x-auto pb-3 pt-1 scrollbar-hide">
             {['Overview', 'Connected Integrations', 'Available Integrations', 'API & Webhooks', 'Data Sync', 'Integration Logs', 'Settings'].map((tab) => (
               <button key={tab} onClick={() => setIntegrationsTab(tab)}
-                className={`py-2 px-3 text-xs font-bold whitespace-nowrap transition-all border-b-2 focus:outline-none focus:ring-0 outline-none cursor-pointer ${
-                  integrationsTab === tab ? 'border-[#2563EB] text-[#2563EB]' : 'border-transparent text-slate-500 hover:text-slate-800'
+                className={`px-3.5 py-1.5 text-xs font-black whitespace-nowrap transition-all rounded-xl cursor-pointer outline-none focus:outline-none focus:ring-0 select-none ${
+                  integrationsTab === tab 
+                    ? 'bg-[#2563EB] text-white shadow-xs' 
+                    : 'bg-slate-100/70 text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 border border-slate-200/60 font-bold'
                 }`}>{tab}</button>
             ))}
           </div>
@@ -5140,7 +5242,7 @@ export default function CompanySettings() {
                             <td className="py-2 px-2 whitespace-nowrap"><span className="text-[9px] font-semibold text-slate-500">{item.last}</span></td>
                             <td className="py-2 px-2 whitespace-nowrap"><span className="text-[9px] font-semibold text-slate-500">{item.next}</span></td>
                             <td className="py-2 px-1.5 text-right whitespace-nowrap">
-                              <button onClick={() => triggerToast(`Managing ${item.name}...`)} className="p-1 hover:bg-slate-200 rounded-lg text-slate-400 hover:text-slate-900 cursor-pointer"><MoreHorizontal size={13} /></button>
+                              <button onClick={() => triggerToast(`Managing ${item.name}...`)} className="w-7 h-7 inline-flex items-center justify-center rounded-lg border border-slate-200/80 bg-white hover:bg-slate-100 hover:border-slate-300 text-slate-500 hover:text-slate-900 transition-all cursor-pointer outline-none focus:outline-none focus:ring-0 select-none shadow-2xs"><MoreHorizontal size={13} /></button>
                             </td>
                           </tr>
                         ))}
@@ -5588,13 +5690,15 @@ export default function CompanySettings() {
           </div>
 
           {/* SUB TABS */}
-          <div className="flex items-center gap-0 border-b border-slate-200/80 overflow-x-auto pt-1">
+          <div className="flex items-center gap-2 border-b border-slate-200/80 overflow-x-auto pb-3 pt-1 scrollbar-hide">
             {['Overview', 'Notification Channels', 'Templates', 'Notification Rules', 'Recipient Groups', 'Communication Preferences', 'History & Logs'].map((tab) => (
               <button 
                 key={tab} 
                 onClick={() => setNotificationsTab(tab)}
-                className={`py-2 px-3 text-xs font-bold whitespace-nowrap transition-all border-b-2 focus:outline-none focus:ring-0 outline-none cursor-pointer ${
-                  notificationsTab === tab ? 'border-[#2563EB] text-[#2563EB]' : 'border-transparent text-slate-500 hover:text-slate-800'
+                className={`px-3.5 py-1.5 text-xs font-black whitespace-nowrap transition-all rounded-xl cursor-pointer outline-none focus:outline-none focus:ring-0 select-none ${
+                  notificationsTab === tab 
+                    ? 'bg-[#2563EB] text-white shadow-xs' 
+                    : 'bg-slate-100/70 text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 border border-slate-200/60 font-bold'
                 }`}
               >
                 {tab}
@@ -5714,7 +5818,7 @@ export default function CompanySettings() {
                                 ) : <span className="text-[9px] font-semibold text-slate-400">-</span>}
                               </td>
                               <td className="py-2 px-1.5 text-right whitespace-nowrap">
-                                <button onClick={() => triggerToast(`Configuring ${ch.name}...`)} className="p-1 hover:bg-slate-200 rounded-lg text-slate-400 hover:text-slate-900 cursor-pointer"><MoreHorizontal size={13} /></button>
+                                <button onClick={() => triggerToast(`Configuring ${ch.name}...`)} className="w-7 h-7 inline-flex items-center justify-center rounded-lg border border-slate-200/80 bg-white hover:bg-slate-100 hover:border-slate-300 text-slate-500 hover:text-slate-900 transition-all cursor-pointer outline-none focus:outline-none focus:ring-0 select-none shadow-2xs"><MoreHorizontal size={13} /></button>
                               </td>
                             </tr>
                           ))}
@@ -6167,13 +6271,15 @@ export default function CompanySettings() {
           </div>
 
           {/* SUB TABS */}
-          <div className="flex items-center gap-0 border-b border-slate-200/80 overflow-x-auto pt-1">
+          <div className="flex items-center gap-2 border-b border-slate-200/80 overflow-x-auto pb-3 pt-1 scrollbar-hide">
             {['Overview', 'Audit Logs', 'Login History', 'Security Events', 'Permission Changes', 'Data Access', 'Exports & Downloads', 'Blocked Actions', 'Settings'].map((tab) => (
               <button 
                 key={tab} 
                 onClick={() => setSecurityLogsTab(tab)}
-                className={`py-2 px-3 text-xs font-bold whitespace-nowrap transition-all border-b-2 focus:outline-none focus:ring-0 outline-none cursor-pointer ${
-                  securityLogsTab === tab ? 'border-[#2563EB] text-[#2563EB]' : 'border-transparent text-slate-500 hover:text-slate-800'
+                className={`px-3.5 py-1.5 text-xs font-black whitespace-nowrap transition-all rounded-xl cursor-pointer outline-none focus:outline-none focus:ring-0 select-none ${
+                  securityLogsTab === tab 
+                    ? 'bg-[#2563EB] text-white shadow-xs' 
+                    : 'bg-slate-100/70 text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 border border-slate-200/60 font-bold'
                 }`}
               >
                 {tab}
@@ -6997,13 +7103,15 @@ export default function CompanySettings() {
           </div>
 
           {/* SUB TABS */}
-          <div className="flex items-center gap-0 border-b border-slate-200/80 overflow-x-auto pt-1">
+          <div className="flex items-center gap-2 border-b border-slate-200/80 overflow-x-auto pb-3 pt-1 scrollbar-hide">
             {['Overview', 'Plan & Usage', 'Add-ons', 'Invoices', 'Payment Methods', 'Billing History', 'Quotes & Orders'].map((tab) => (
               <button 
                 key={tab} 
                 onClick={() => setBillingTab(tab)}
-                className={`py-2 px-3 text-xs font-bold whitespace-nowrap transition-all border-b-2 focus:outline-none focus:ring-0 outline-none cursor-pointer ${
-                  billingTab === tab ? 'border-[#2563EB] text-[#2563EB]' : 'border-transparent text-slate-500 hover:text-slate-800'
+                className={`px-3.5 py-1.5 text-xs font-black whitespace-nowrap transition-all rounded-xl cursor-pointer outline-none focus:outline-none focus:ring-0 select-none ${
+                  billingTab === tab 
+                    ? 'bg-[#2563EB] text-white shadow-xs' 
+                    : 'bg-slate-100/70 text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 border border-slate-200/60 font-bold'
                 }`}
               >
                 {tab}

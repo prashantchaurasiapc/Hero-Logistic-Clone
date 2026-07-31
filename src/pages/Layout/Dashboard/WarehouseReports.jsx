@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   TrendingUp, Users, Truck, Building2, Layers,
   ChevronDown, Settings, Download, ChevronLeft, ChevronRight
@@ -31,6 +32,8 @@ const CustomCheckbox = ({ checked, onChange }) => {
 };
 
 const WarehouseReports = () => {
+  const location = useLocation();
+  const isYard = location.pathname.startsWith('/yard');
   const [timeFilter, setTimeFilter] = useState('This Month');
   const [branchFilter, setBranchFilter] = useState('All Branches');
   const [activeTab, setActiveTab] = useState('Revenue Trends');
@@ -213,14 +216,14 @@ const WarehouseReports = () => {
     { name: 'Driver Performance', icon: <Users size={16} /> },
     { name: 'Vehicle Utilization', icon: <Truck size={16} /> },
     { name: 'Customer Growth', icon: <Building2 size={16} /> },
-    { name: 'Warehouse Capacity', icon: <Layers size={16} /> }
+    { name: isYard ? 'Yard & Slot Capacity' : 'Warehouse Capacity', icon: <Layers size={16} /> }
   ];
 
   return (
     <div className="responsive-reports-container">
       {/* Page Header */}
       <div style={S.header}>
-        <h1 style={S.pageTitle}>Reports &amp; Analytics Center</h1>
+        <h1 style={S.pageTitle}>{isYard ? 'Yard Reports & Analytics Center' : 'Reports & Analytics Center'}</h1>
         <p style={S.pageSubtitle}>Generate, export, and visualize system-wide logistics performance metrics.</p>
       </div>
 

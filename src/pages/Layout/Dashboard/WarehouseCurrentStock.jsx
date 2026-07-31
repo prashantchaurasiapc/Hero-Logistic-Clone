@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Search, Download, Settings, Eye, CheckSquare, X, AlertCircle } from 'lucide-react';
 import './WarehouseDashboard.css';
 
 const WarehouseCurrentStock = () => {
+  const location = useLocation();
+  const isYard = location.pathname.startsWith('/yard');
   // Density and select rows
   const [density, setDensity] = useState('relaxed'); // default: relaxed in screenshot
   const [selectedRows, setSelectedRows] = useState([]);
@@ -22,12 +25,15 @@ const WarehouseCurrentStock = () => {
   // Column visibility checklist
   const [visibleColumns, setVisibleColumns] = useState({
     itemNumber: true,
-    barcode: false,
+    vin: true,
+    chassisNumber: false,
+    vehicleModel: true,
+    barcode: true,
     palletDim: false,
-    customer: false,
+    customer: true,
     zone: false,
-    holdingAreaBin: false,
-    status: false,
+    holdingAreaBin: true,
+    status: true,
     actions: true
   });
 
@@ -39,6 +45,9 @@ const WarehouseCurrentStock = () => {
   const [stockData, setStockData] = useState([
     {
       id: 'ITM-9011',
+      vin: '7YV1HP82A81920',
+      chassisNumber: 'CHS-9011-82',
+      vehicleModel: 'BMW X5 xDrive',
       barcode: 'BAR-9011',
       palletDim: '1x Pallet, 120x80x160cm',
       customer: 'BMW Group',
@@ -48,6 +57,9 @@ const WarehouseCurrentStock = () => {
     },
     {
       id: 'ITM-4491',
+      vin: '3YV1HP52X81254',
+      chassisNumber: 'CHS-4491-52',
+      vehicleModel: 'Mercedes GLE 450',
       barcode: 'BAR-4491',
       palletDim: '2x Pallets, 120x80x150cm',
       customer: 'Mercedes-Benz',
@@ -57,6 +69,9 @@ const WarehouseCurrentStock = () => {
     },
     {
       id: 'ITM-1022',
+      vin: '8ZV9HK21W92110',
+      chassisNumber: 'CHS-1022-21',
+      vehicleModel: 'Audi Q7 Quattro',
       barcode: 'BAR-1022',
       palletDim: '1x Pallet, 120x100x180cm',
       customer: 'Audi AG',
@@ -67,10 +82,18 @@ const WarehouseCurrentStock = () => {
   ]);
 
   const filteredData = stockData.filter(item => {
-    const query = searchQuery.toLowerCase();
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) return true;
     return (
       item.id.toLowerCase().includes(query) ||
+      (item.vin && item.vin.toLowerCase().includes(query)) ||
+      (item.chassisNumber && item.chassisNumber.toLowerCase().includes(query)) ||
+      (item.vehicleModel && item.vehicleModel.toLowerCase().includes(query)) ||
+      item.barcode.toLowerCase().includes(query) ||
       item.customer.toLowerCase().includes(query) ||
+      item.zone.toLowerCase().includes(query) ||
+      item.holdingAreaBin.toLowerCase().includes(query) ||
+      item.palletDim.toLowerCase().includes(query) ||
       item.status.toLowerCase().includes(query)
     );
   });
@@ -170,10 +193,59 @@ const WarehouseCurrentStock = () => {
 
   return (
     <div className="warehouse-dashboard">
-      {/* Header section matches WarehouseInbound perfectly */}
-      <div className="warehouse-header">
+      {/* Header section with Top Search Bar in line with Current Stock title */}
+      <div className="warehouse-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <div className="warehouse-header-titles">
-          <h1>Current Stock</h1>
+          <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#0f172a', margin: 0 }}>{isYard ? 'Yard Find & Search Stock' : 'Current Stock'}</h1>
+        </div>
+
+        {/* Top Header Search Bar */}
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <Search style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', width: '16px', height: '16px', pointerEvents: 'none' }} />
+          <input
+            type="text"
+            placeholder="Search by VIN, Chassis, Model, Bin Code..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            style={{
+              padding: '10px 40px 10px 42px',
+              fontSize: '13px',
+              fontWeight: '600',
+              borderRadius: '12px',
+              border: searchQuery ? '2px solid #ffd400' : '1.5px solid #cbd5e1',
+              width: '360px',
+              outline: 'none',
+              backgroundColor: '#ffffff',
+              color: '#0f172a',
+              boxShadow: searchQuery ? '0 0 0 4px rgba(255, 212, 0, 0.18)' : '0 1px 3px rgba(0,0,0,0.03)',
+              transition: 'all 0.15s ease'
+            }}
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              title="Clear search"
+              style={{
+                position: 'absolute',
+                right: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: '#f1f5f9',
+                border: 'none',
+                borderRadius: '50%',
+                width: '20px',
+                height: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: '#64748b',
+                padding: 0
+              }}
+            >
+              <X style={{ width: '13px', height: '13px' }} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -220,25 +292,11 @@ const WarehouseCurrentStock = () => {
           </div>
           
           <div className="flex items-center gap-3" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {/* Search Input */}
-            <div style={{ position: 'relative' }}>
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" style={{ position: 'absolute', left: '12px', top: '10px', color: '#94a3b8' }} />
-              <input
-                type="text"
-                placeholder="Search Item No, Customer..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                style={{
-                  padding: '8px 12px 8px 36px',
-                  fontSize: '12px',
-                  borderRadius: '10px',
-                  border: '1px solid #cbd5e1',
-                  width: '240px',
-                  outline: 'none',
-                  backgroundColor: '#ffffff'
-                }}
-              />
-            </div>
+            {searchQuery && (
+              <span style={{ fontSize: '11px', fontWeight: '700', color: '#b45309', backgroundColor: '#fffbeb', border: '1px solid #fef3c7', padding: '6px 12px', borderRadius: '8px', whiteSpace: 'nowrap' }}>
+                Filter Result: {filteredData.length} of {stockData.length} items
+              </span>
+            )}
 
             {/* Export Stock List Button */}
             <button 
@@ -380,6 +438,39 @@ const WarehouseCurrentStock = () => {
                   <span>Item Number</span>
                 </label>
 
+                {/* VIN */}
+                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', color: '#334155' }}>
+                  <input
+                    type="checkbox"
+                    checked={visibleColumns.vin}
+                    onChange={() => toggleColumn('vin')}
+                    style={{ width: '16px', height: '16px', borderRadius: '4px', border: '1px solid #cbd5e1', accentColor: '#3b82f6', cursor: 'pointer' }}
+                  />
+                  <span>VIN Code</span>
+                </label>
+
+                {/* Chassis Number */}
+                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', color: '#334155' }}>
+                  <input
+                    type="checkbox"
+                    checked={visibleColumns.chassisNumber}
+                    onChange={() => toggleColumn('chassisNumber')}
+                    style={{ width: '16px', height: '16px', borderRadius: '4px', border: '1px solid #cbd5e1', accentColor: '#3b82f6', cursor: 'pointer' }}
+                  />
+                  <span>Chassis Number</span>
+                </label>
+
+                {/* Vehicle Model */}
+                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', color: '#334155' }}>
+                  <input
+                    type="checkbox"
+                    checked={visibleColumns.vehicleModel}
+                    onChange={() => toggleColumn('vehicleModel')}
+                    style={{ width: '16px', height: '16px', borderRadius: '4px', border: '1px solid #cbd5e1', accentColor: '#3b82f6', cursor: 'pointer' }}
+                  />
+                  <span>Vehicle Model</span>
+                </label>
+
                 {/* Barcode */}
                 <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', color: '#334155' }}>
                   <input
@@ -432,7 +523,7 @@ const WarehouseCurrentStock = () => {
                     onChange={() => toggleColumn('holdingAreaBin')}
                     style={{ width: '16px', height: '16px', borderRadius: '4px', border: '1px solid #cbd5e1', accentColor: '#3b82f6', cursor: 'pointer' }}
                   />
-                  <span>Holding Area / Bin</span>
+                  <span>Storage Bin Code</span>
                 </label>
 
                 {/* Status */}
@@ -476,11 +567,14 @@ const WarehouseCurrentStock = () => {
                   />
                 </th>
                 {visibleColumns.itemNumber && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px', whiteSpace: 'nowrap' }}>Item Number</th>}
+                {visibleColumns.vin && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px', whiteSpace: 'nowrap' }}>VIN Code</th>}
+                {visibleColumns.chassisNumber && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px', whiteSpace: 'nowrap' }}>Chassis Number</th>}
+                {visibleColumns.vehicleModel && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px', whiteSpace: 'nowrap' }}>Vehicle Model</th>}
                 {visibleColumns.barcode && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px', whiteSpace: 'nowrap' }}>Barcode</th>}
                 {visibleColumns.palletDim && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px', whiteSpace: 'nowrap' }}>Pallet / Dim</th>}
                 {visibleColumns.customer && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px', whiteSpace: 'nowrap' }}>Customer</th>}
                 {visibleColumns.zone && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px', whiteSpace: 'nowrap' }}>Zone</th>}
-                {visibleColumns.holdingAreaBin && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px', whiteSpace: 'nowrap' }}>Holding Area / Bin</th>}
+                {visibleColumns.holdingAreaBin && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px', whiteSpace: 'nowrap' }}>Storage Bin Code</th>}
                 {visibleColumns.status && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px', whiteSpace: 'nowrap' }}>Status</th>}
                 {visibleColumns.actions && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px', whiteSpace: 'nowrap' }}>Actions</th>}
               </tr>
@@ -504,6 +598,21 @@ const WarehouseCurrentStock = () => {
                         {row.id}
                       </td>
                     )}
+                    {visibleColumns.vin && (
+                      <td className={`font-mono text-slate-900 font-bold whitespace-nowrap ${getPaddingClass()}`} style={{ fontWeight: '700', fontFamily: 'monospace', color: '#4f46e5' }}>
+                        {row.vin}
+                      </td>
+                    )}
+                    {visibleColumns.chassisNumber && (
+                      <td className={`font-mono text-slate-700 font-semibold whitespace-nowrap ${getPaddingClass()}`} style={{ color: '#475569' }}>
+                        {row.chassisNumber}
+                      </td>
+                    )}
+                    {visibleColumns.vehicleModel && (
+                      <td className={`whitespace-nowrap font-bold ${getPaddingClass()}`} style={{ color: '#0f172a', fontWeight: '700' }}>
+                        {row.vehicleModel}
+                      </td>
+                    )}
                     {visibleColumns.barcode && (
                       <td className={`whitespace-nowrap font-semibold ${getPaddingClass()}`} style={{ color: '#475569' }}>
                         {row.barcode}
@@ -525,7 +634,7 @@ const WarehouseCurrentStock = () => {
                       </td>
                     )}
                     {visibleColumns.holdingAreaBin && (
-                      <td className={`whitespace-nowrap font-semibold ${getPaddingClass()}`} style={{ color: '#475569' }}>
+                      <td className={`whitespace-nowrap font-extrabold ${getPaddingClass()}`} style={{ color: '#b45309', fontWeight: '800' }}>
                         {row.holdingAreaBin}
                       </td>
                     )}

@@ -1,0 +1,429 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Plus, Search, Mail, Phone, Building2, Shield,
+  Check, X, UserPlus, Edit3, Trash2, Eye, EyeOff,
+  LogIn, AlertTriangle, Filter, ChevronDown,
+} from 'lucide-react';
+
+/* ─── Role badge colors ─── */
+const ROLE_COLORS = {
+  'Super Admin':       'bg-purple-100 text-purple-700 border-purple-200',
+  'Company Admin':     'bg-blue-100 text-blue-700 border-blue-200',
+  'Sales Rep':         'bg-indigo-100 text-indigo-700 border-indigo-200',
+  'Dispatcher':        'bg-amber-100 text-amber-800 border-amber-200',
+  'Driver':            'bg-emerald-100 text-emerald-700 border-emerald-200',
+  'Warehouse Manager': 'bg-teal-100 text-teal-700 border-teal-200',
+  'Yard Attendant':    'bg-cyan-100 text-cyan-700 border-cyan-200',
+  'Accounts Manager':  'bg-rose-100 text-rose-700 border-rose-200',
+  'Customer':          'bg-violet-100 text-violet-700 border-violet-200',
+};
+
+const STATUS_COLORS = {
+  ACTIVE:    'bg-emerald-50 text-emerald-600 border-emerald-200',
+  SUSPENDED: 'bg-rose-50 text-rose-600 border-rose-200',
+  PENDING:   'bg-amber-50 text-amber-600 border-amber-200',
+};
+
+const AVATAR_COLORS = [
+  '#7c3aed','#1d4ed8','#d97706','#059669','#be185d',
+  '#0891b2','#dc2626','#4f46e5','#0369a1','#15803d',
+];
+
+const INITIAL_USERS = [
+  { id:'US-1001', name:'Alexander Wright', email:'alex@herologistics.com', phone:'+1 555-0101', role:'Super Admin',       company:'Hero Logistics Global',    status:'ACTIVE',    lastLogin:'Today, 10:45 AM', created:'01/10/2026' },
+  { id:'US-1002', name:'Robert Vance',     email:'robert@vance.com',      phone:'+1 555-0123', role:'Company Admin',     company:'Vance Refrigeration',      status:'ACTIVE',    lastLogin:'Today, 09:15 AM', created:'02/14/2026' },
+  { id:'US-1003', name:'Jim Halpert',      email:'jim@bluesky.com',       phone:'+1 555-0155', role:'Company Admin',     company:'Blue Sky Cargo',           status:'ACTIVE',    lastLogin:'Yesterday, 04:30 PM', created:'03/01/2026' },
+  { id:'US-1004', name:'Michael Scott',    email:'mscott@dundermifflin.com', phone:'+1 555-0199', role:'Company Admin',  company:'Dunder Mifflin Logistics',  status:'ACTIVE',    lastLogin:'Today, 08:20 AM', created:'01/15/2026' },
+  { id:'US-1005', name:'Sarah Mitchell',   email:'sarah.m@falcon.com',    phone:'+1 555-0244', role:'Dispatcher',        company:'Falcon Logistics LLC',     status:'ACTIVE',    lastLogin:'Today, 11:02 AM', created:'02/20/2026' },
+  { id:'US-1006', name:'Noah Williams',    email:'noah.w@falcon.com',     phone:'+1 555-0311', role:'Driver',            company:'Falcon Logistics LLC',     status:'ACTIVE',    lastLogin:'Today, 07:45 AM', created:'03/10/2026' },
+  { id:'US-1007', name:'Angela Martin',    email:'angela@schrute.com',    phone:'+1 555-0422', role:'Accounts Manager',  company:'Schrute Farms Delivery',   status:'ACTIVE',    lastLogin:'Yesterday, 05:10 PM', created:'04/05/2026' },
+  { id:'US-1008', name:'Oscar Martinez',   email:'oscar@greenmile.com',   phone:'+1 555-0533', role:'Warehouse Manager', company:'Green Last-Mile',          status:'ACTIVE',    lastLogin:'Today, 10:12 AM', created:'04/12/2026' },
+  { id:'US-1009', name:'Dwight Schrute',   email:'dwight@polarexpress.com', phone:'+1 555-0644', role:'Yard Attendant',  company:'Polar Express Cold Chain',  status:'SUSPENDED', lastLogin:'3 days ago',      created:'05/01/2026' },
+  { id:'US-1010', name:'Ryan Howard',      email:'ryan.h@herologistics.com', phone:'+1 555-0755', role:'Sales Rep',      company:'Hero Logistics Global',    status:'ACTIVE',    lastLogin:'Today, 09:50 AM', created:'01/20/2026' },
+  { id:'US-1011', name:'Jo Bennett',       email:'jo@sabre.com',          phone:'+1 555-0866', role:'Customer',          company:'Sabre Logistics',          status:'ACTIVE',    lastLogin:'Yesterday, 02:15 PM', created:'05/15/2026' },
+  { id:'US-1012', name:'Brennan Huff',     email:'brennan@prestige.com',  phone:'+1 555-0977', role:'Customer',          company:'Prestige Worldwide',       status:'PENDING',   lastLogin:'Never',           created:'07/20/2026' },
+];
+
+const ROLES = ['Company Admin','Sales Rep','Dispatcher','Driver','Warehouse Manager','Yard Attendant','Accounts Manager','Customer'];
+
+export default function AdminUsers() {
+  const navigate = useNavigate();
+  const [users, setUsers]     = useState(INITIAL_USERS);
+  const [search, setSearch]   = useState('');
+  const [roleFilter, setRoleFilter] = useState('All Roles');
+  const [showAddModal, setShowAddModal]   = useState(false);
+  const [showEditModal, setShowEditModal] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(null);
+  const [toast, setToast]     = useState('');
+  const [form, setForm]       = useState({ name:'', email:'', phone:'', role:'Company Admin', company:'', status:'ACTIVE' });
+
+  const notify = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
+
+  const openAdd = () => {
+    setForm({ name:'', email:'', phone:'', role:'Company Admin', company:'', status:'ACTIVE' });
+    setShowAddModal(true);
+  };
+
+  const openEdit = (user, e) => {
+    e.stopPropagation();
+    setForm({ name: user.name, email: user.email, phone: user.phone, role: user.role, company: user.company, status: user.status });
+    setShowEditModal(user);
+  };
+
+  const handleAddSubmit = (e) => {
+    e.preventDefault();
+    const newUser = {
+      id: `US-${Math.floor(1000 + Math.random() * 9000)}`,
+      ...form,
+      lastLogin: 'Never',
+      created: new Date().toLocaleDateString('en-US'),
+    };
+    setUsers(prev => [newUser, ...prev]);
+    setShowAddModal(false);
+    notify(`User "${form.name}" added!`);
+  };
+
+  const handleEditSubmit = (e) => {
+    e.preventDefault();
+    setUsers(prev => prev.map(u => u.id === showEditModal.id ? { ...u, ...form } : u));
+    setShowEditModal(null);
+    notify(`User "${form.name}" updated!`);
+  };
+
+  const handleDelete = () => {
+    setUsers(prev => prev.filter(u => u.id !== showDeleteModal.id));
+    notify(`User "${showDeleteModal.name}" deleted.`);
+    setShowDeleteModal(null);
+    setShowDetailModal(null);
+  };
+
+  const handleLoginAs = (user, e) => {
+    e.stopPropagation();
+    const routes = {
+      'Super Admin': '/admin/dashboard',
+      'Company Admin': '/company-admin/command-centre',
+      'Sales Rep': '/sales/dashboard',
+      'Dispatcher': '/dispatcher/command-center',
+      'Driver': '/driver/dashboard',
+      'Warehouse Manager': '/warehouse/dashboard',
+      'Yard Attendant': '/yard/dashboard',
+      'Accounts Manager': '/accounts/dashboard',
+      'Customer': '/customer/dashboard',
+    };
+    localStorage.setItem('hero_session', JSON.stringify({ name: user.name, email: user.email, role: user.role, company: user.company }));
+    notify(`Logging in as ${user.name}...`);
+    setTimeout(() => navigate(routes[user.role] || '/admin/dashboard'), 800);
+  };
+
+  const filtered = users.filter(u => {
+    const q = search.toLowerCase();
+    const matchQ = !q || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || u.company.toLowerCase().includes(q);
+    const matchR = roleFilter === 'All Roles' || u.role === roleFilter;
+    return matchQ && matchR;
+  });
+
+  const inputCls = "w-full border border-slate-200 focus:border-amber-400 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-800 bg-slate-50 focus:outline-none transition-all";
+  const labelCls = "block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5";
+
+  const FormModal = ({ title, onSubmit, onClose }) => (
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[99999] flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl my-auto">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+          <h2 className="font-black text-slate-900 text-lg flex items-center gap-2">
+            <UserPlus className="w-5 h-5 text-amber-500" /> {title}
+          </h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-700 cursor-pointer"><X className="w-5 h-5" /></button>
+        </div>
+        <form onSubmit={onSubmit} className="px-6 py-5 space-y-4">
+          <div className="grid grid-cols-1 gap-4">
+            <div>
+              <label className={labelCls}>Full Name *</label>
+              <input required className={inputCls} placeholder="e.g. John Smith" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+            </div>
+            <div>
+              <label className={labelCls}>Email *</label>
+              <input required type="email" className={inputCls} placeholder="john@company.com" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls}>Phone</label>
+                <input className={inputCls} placeholder="+1 555-0000" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
+              </div>
+              <div>
+                <label className={labelCls}>Status</label>
+                <select className={`${inputCls} cursor-pointer`} value={form.status} onChange={e => setForm({...form, status: e.target.value})}>
+                  <option value="ACTIVE">Active</option>
+                  <option value="SUSPENDED">Suspended</option>
+                  <option value="PENDING">Pending</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className={labelCls}>Role *</label>
+              <select required className={`${inputCls} cursor-pointer`} value={form.role} onChange={e => setForm({...form, role: e.target.value})}>
+                <option value="Super Admin">Super Admin</option>
+                {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>Company / Tenant</label>
+              <input className={inputCls} placeholder="e.g. Falcon Logistics LLC" value={form.company} onChange={e => setForm({...form, company: e.target.value})} />
+            </div>
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 cursor-pointer">Cancel</button>
+            <button type="submit" className="flex-1 py-2.5 bg-[#FFD400] hover:bg-[#f5c800] rounded-xl text-sm font-black text-black cursor-pointer shadow-sm transition-all">{title}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="flex-grow bg-[#F8FAFC] p-4 sm:p-6 overflow-y-auto w-full text-left font-sans min-h-screen">
+
+      {/* Toast */}
+      {toast && (
+        <div className="fixed bottom-5 right-5 bg-slate-900 text-white text-xs font-bold px-4 py-3 rounded-xl shadow-2xl z-[9999] flex items-center gap-2">
+          <Check className="w-4 h-4 text-emerald-400" /> {toast}
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
+        <div>
+          <h1 className="text-xl font-black text-slate-900">Users</h1>
+          <p className="text-xs text-slate-400 font-semibold mt-0.5">{users.length} platform users across all roles</p>
+        </div>
+        <button onClick={openAdd}
+          className="flex items-center gap-2 bg-[#FFD400] hover:bg-[#f5c800] text-black font-black text-xs px-5 py-2.5 rounded-xl shadow-sm transition-all cursor-pointer whitespace-nowrap self-start sm:self-auto">
+          <Plus className="w-4 h-4" /> Add New User
+        </button>
+      </div>
+
+      {/* Search + Filter */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            type="text" value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Search users by name, email, company..."
+            className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl bg-white text-sm font-semibold text-slate-700 focus:outline-none focus:border-amber-400 transition-all shadow-xs"
+          />
+        </div>
+        <select
+          value={roleFilter} onChange={e => setRoleFilter(e.target.value)}
+          className="border border-slate-200 rounded-xl px-4 py-2.5 bg-white text-sm font-bold text-slate-700 focus:outline-none focus:border-amber-400 cursor-pointer shadow-xs"
+        >
+          <option value="All Roles">All Roles</option>
+          <option value="Super Admin">Super Admin</option>
+          {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+        </select>
+      </div>
+
+      {/* ─── CARD GRID ─── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+
+        {filtered.map((user, idx) => {
+          const avatarColor = AVATAR_COLORS[idx % AVATAR_COLORS.length];
+          const initial = user.name.charAt(0).toUpperCase();
+          const roleCls = ROLE_COLORS[user.role] || 'bg-slate-100 text-slate-600 border-slate-200';
+          const statusCls = STATUS_COLORS[user.status] || STATUS_COLORS.PENDING;
+
+          return (
+            <div
+              key={user.id}
+              onClick={() => setShowDetailModal(user)}
+              className="bg-white rounded-2xl border border-slate-100 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer overflow-hidden group"
+            >
+              {/* Top color strip */}
+              <div className="h-1 w-full" style={{ background: avatarColor }} />
+
+              <div className="p-5">
+                {/* Avatar + Status */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-black text-xl flex-shrink-0 shadow-sm"
+                    style={{ background: avatarColor }}>
+                    {initial}
+                  </div>
+                  <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border uppercase tracking-wider ${statusCls}`}>
+                    {user.status}
+                  </span>
+                </div>
+
+                {/* Name + ID */}
+                <div className="mb-1">
+                  <div className="font-black text-slate-900 text-sm leading-tight truncate">{user.name}</div>
+                  <div className="text-[10px] text-slate-400 font-mono font-semibold mt-0.5">{user.id}</div>
+                </div>
+
+                {/* Role badge */}
+                <span className={`inline-flex items-center text-[9px] font-black px-2 py-0.5 rounded-full border uppercase tracking-wider mb-3 ${roleCls}`}>
+                  {user.role}
+                </span>
+
+                {/* Company */}
+                <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-semibold truncate mb-1">
+                  <Building2 className="w-3 h-3 flex-shrink-0 text-slate-400" />
+                  <span className="truncate">{user.company || '—'}</span>
+                </div>
+
+                {/* Email */}
+                <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium truncate mb-4">
+                  <Mail className="w-3 h-3 flex-shrink-0" />
+                  <span className="truncate">{user.email}</span>
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={(e) => handleLoginAs(user, e)}
+                    className="flex-1 flex items-center justify-center gap-1 text-[10px] font-black py-2 rounded-xl text-white transition-all cursor-pointer"
+                    style={{ background: avatarColor }}
+                    title="Login as this user"
+                  >
+                    <LogIn className="w-3 h-3" /> Login As
+                  </button>
+                  <button
+                    onClick={(e) => openEdit(user, e)}
+                    className="w-8 h-8 rounded-xl bg-sky-50 hover:bg-sky-100 border border-sky-200 flex items-center justify-center transition-all cursor-pointer"
+                    title="Edit"
+                  >
+                    <Edit3 className="w-3.5 h-3.5 text-sky-600" />
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setShowDeleteModal(user); }}
+                    className="w-8 h-8 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 flex items-center justify-center transition-all cursor-pointer"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        {/* ── Add New User Card ── */}
+        <div
+          onClick={openAdd}
+          className="bg-white rounded-2xl border-2 border-dashed border-slate-200 hover:border-amber-300 hover:bg-amber-50/20 transition-all cursor-pointer flex flex-col items-center justify-center gap-3 min-h-[240px] group"
+        >
+          <div className="w-16 h-16 rounded-2xl bg-amber-50 group-hover:bg-amber-100 border-2 border-dashed border-amber-200 group-hover:border-amber-400 flex items-center justify-center transition-all">
+            <Plus className="w-8 h-8 text-amber-400 group-hover:text-amber-600 transition-all" />
+          </div>
+          <div className="text-center px-4">
+            <div className="font-black text-slate-500 group-hover:text-amber-600 text-sm transition-all">New User</div>
+            <div className="text-[11px] text-slate-400 font-medium mt-0.5">Click here to add New User</div>
+          </div>
+        </div>
+
+      </div>
+
+      {filtered.length === 0 && (
+        <div className="text-center py-16 text-slate-400">
+          <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+            <Search className="w-6 h-6 text-slate-300" />
+          </div>
+          <div className="font-black text-slate-500">No users found</div>
+          <div className="text-xs font-medium mt-1">Try adjusting your search or filter</div>
+        </div>
+      )}
+
+      {/* ══ USER DETAIL MODAL ══ */}
+      {showDetailModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[99999] flex items-center justify-center p-4 overflow-y-auto" onClick={() => setShowDetailModal(null)}>
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl my-auto" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+              <h2 className="font-black text-slate-900 text-base">User Profile</h2>
+              <button onClick={() => setShowDetailModal(null)} className="text-slate-400 hover:text-slate-700 cursor-pointer"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="px-6 py-5">
+              {/* Avatar */}
+              <div className="flex items-center gap-4 mb-5">
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-sm"
+                  style={{ background: AVATAR_COLORS[users.findIndex(u => u.id === showDetailModal.id) % AVATAR_COLORS.length] }}>
+                  {showDetailModal.name.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <div className="font-black text-slate-900 text-base">{showDetailModal.name}</div>
+                  <div className="text-xs font-mono text-slate-400 font-semibold">{showDetailModal.id}</div>
+                  <span className={`inline-flex items-center text-[9px] font-black px-2 py-0.5 rounded-full border uppercase tracking-wider mt-1 ${ROLE_COLORS[showDetailModal.role] || ''}`}>
+                    {showDetailModal.role}
+                  </span>
+                </div>
+              </div>
+              {/* Details grid */}
+              <div className="space-y-3 text-sm">
+                {[
+                  { label: 'Email', value: showDetailModal.email, icon: <Mail className="w-3.5 h-3.5" /> },
+                  { label: 'Phone', value: showDetailModal.phone, icon: <Phone className="w-3.5 h-3.5" /> },
+                  { label: 'Company', value: showDetailModal.company, icon: <Building2 className="w-3.5 h-3.5" /> },
+                  { label: 'Status', value: showDetailModal.status, icon: <Shield className="w-3.5 h-3.5" /> },
+                  { label: 'Last Login', value: showDetailModal.lastLogin, icon: <LogIn className="w-3.5 h-3.5" /> },
+                  { label: 'Created', value: showDetailModal.created, icon: <Plus className="w-3.5 h-3.5" /> },
+                ].map(row => (
+                  <div key={row.label} className="flex items-center gap-3 py-2 border-b border-slate-50">
+                    <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 flex-shrink-0">{row.icon}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider">{row.label}</div>
+                      <div className="font-semibold text-slate-800 text-xs truncate">{row.value || '—'}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Actions */}
+              <div className="flex gap-2 mt-5">
+                <button onClick={(e) => handleLoginAs(showDetailModal, e)}
+                  className="flex-1 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black cursor-pointer flex items-center justify-center gap-1.5 transition-all">
+                  <LogIn className="w-3.5 h-3.5" /> Login As
+                </button>
+                <button onClick={(e) => { openEdit(showDetailModal, e); setShowDetailModal(null); }}
+                  className="flex-1 py-2.5 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-xs font-black cursor-pointer flex items-center justify-center gap-1.5 transition-all">
+                  <Edit3 className="w-3.5 h-3.5" /> Edit
+                </button>
+                <button onClick={() => setShowDeleteModal(showDetailModal)}
+                  className="py-2.5 px-4 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-xs font-black cursor-pointer flex items-center justify-center gap-1.5 transition-all">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ══ ADD MODAL ══ */}
+      {showAddModal && <FormModal title="Add New User" onSubmit={handleAddSubmit} onClose={() => setShowAddModal(false)} />}
+
+      {/* ══ EDIT MODAL ══ */}
+      {showEditModal && <FormModal title="Edit User" onSubmit={handleEditSubmit} onClose={() => setShowEditModal(null)} />}
+
+      {/* ══ DELETE CONFIRM ══ */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[99999] flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl text-center my-auto">
+            <div className="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Trash2 className="w-6 h-6 text-rose-500" />
+            </div>
+            <h3 className="font-black text-slate-900 text-lg mb-2">Delete User?</h3>
+            <div className="bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 mb-4">
+              <div className="font-black text-slate-900">{showDeleteModal.name}</div>
+              <div className="text-xs text-slate-400 mt-0.5">{showDeleteModal.role} · {showDeleteModal.id}</div>
+            </div>
+            <p className="text-xs text-rose-600 font-bold bg-rose-50 border border-rose-100 rounded-lg px-3 py-2 mb-5 flex items-center justify-center gap-2">
+              <AlertTriangle className="w-3.5 h-3.5" /> This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowDeleteModal(null)} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 cursor-pointer">Cancel</button>
+              <button onClick={handleDelete} className="flex-1 py-2.5 bg-rose-500 hover:bg-rose-600 rounded-xl text-sm font-black text-white cursor-pointer transition-all">Yes, Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}

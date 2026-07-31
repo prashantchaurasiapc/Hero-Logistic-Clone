@@ -1,413 +1,527 @@
 import React, { useState } from 'react';
-import { Shield, Truck, AlertTriangle, Heart, X, Phone, MessageSquare, Mic, HelpCircle, ArrowRight, Clock, Link, Check, Wifi } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import {
+  FiCheckCircle, FiCamera, FiAlertTriangle, FiFileText,
+  FiMessageSquare, FiCheck, FiX, FiMinus, FiHelpCircle, FiChevronRight
+} from 'react-icons/fi';
 
 export default function StartWork() {
-  const [sosModalOpen, setSosModalOpen] = useState(false);
-  const [hotlineOpen, setHotlineOpen] = useState(false);
-  const [toastMsg, setToastMsg] = useState('');
-  
-  // Start shift checklist states
-  const [tractor, setTractor] = useState('TX-ROAD88 (Freightliner Cascadia)');
-  const [trailer, setTrailer] = useState('TR-4022 (Flatbed 48ft)');
-  const [odometer, setOdometer] = useState('124500');
-  const [fuel, setFuel] = useState('85');
-  const [dvirChecked, setDvirChecked] = useState(false);
-  const [eldChecked, setEldChecked] = useState(false);
-  const [shiftActive, setShiftActive] = useState(false);
+  const navigate = useNavigate();
 
-  // SOS panel states
-  const [shareGps, setShareGps] = useState(true);
-  const [autoNotify, setAutoNotify] = useState(true);
+  // Toast notification state
+  const [toastMessage, setToastMessage] = useState('');
 
-  // Connection status toggle
-  const [isOnline, setIsOnline] = useState(true);
-  const [activeSosAlert, setActiveSosAlert] = useState(null);
+  // 20 Inspection Checklist Items state
+  const [items, setItems] = useState([
+    { id: 1, label: 'Brakes (service & park brake)', status: 'pass' },
+    { id: 2, label: 'Tyres – condition & pressure', status: 'pass' },
+    { id: 3, label: 'Lights – all working (head, tail, indicators, brake, reverse)', status: 'pass' },
+    { id: 4, label: 'Indicators / Hazard lights', status: 'pass' },
+    { id: 5, label: 'Steering & Suspension', status: 'pass' },
+    { id: 6, label: 'Windscreen / Windows / Mirrors', status: 'pass' },
+    { id: 7, label: 'Wipers / Washer', status: 'pass' },
+    { id: 8, label: 'Horn', status: 'pass' },
+    { id: 9, label: 'Seat belts / Airbag', status: 'pass' },
+    { id: 10, label: 'Fire extinguisher', status: 'pass' },
+    { id: 11, label: 'First aid kit', status: 'pass' },
+    { id: 12, label: 'Load securement equipment', status: 'pass' },
+    { id: 13, label: 'Fluid levels (engine oil, coolant, brake fluid)', status: 'pass' },
+    { id: 14, label: 'Fuel level sufficient for trip', status: 'pass' },
+    { id: 15, label: 'Leaks (oil, fuel, coolant, air)', status: 'pass' },
+    { id: 16, label: 'Body / Chassis / Coupling', status: 'pass' },
+    { id: 17, label: 'Load area clear & safe', status: 'pass' },
+    { id: 18, label: 'Fatigue / Fitness for driving', status: 'pass' },
+    { id: 19, label: 'Load secured / Straps & chains checked', status: 'na' },
+    { id: 20, label: 'Other (notes or additional checks)', status: 'unchecked' },
+  ]);
 
-  const triggerToast = (msg) => {
-    setToastMsg(msg);
-    setTimeout(() => setToastMsg(''), 4000);
+  const [notes, setNotes] = useState('');
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(''), 3500);
   };
 
-  const handleStartShift = (e) => {
+  const handleStatusChange = (id, newStatus) => {
+    setItems((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, status: newStatus } : item))
+    );
+  };
+
+  // Calculate overview counts
+  const passCount = items.filter((i) => i.status === 'pass').length;
+  const failCount = items.filter((i) => i.status === 'fail').length;
+  const naCount = items.filter((i) => i.status === 'na').length;
+  const uncheckedCount = items.filter((i) => i.status === 'unchecked').length;
+  const totalCount = items.length;
+  const completedCount = passCount + failCount + naCount;
+  const completionPercentage = Math.round((completedCount / totalCount) * 100);
+
+  const handleSubmit = (e) => {
     e.preventDefault();
-    if (!dvirChecked || !eldChecked) {
-      triggerToast('Please verify pre-trip DVIR and confirm regulatory ELD connection.');
-      return;
+    if (failCount > 0) {
+      showToast('⚠️ Fail items detected! Please submit defect report before driving.');
+    } else {
+      showToast('✅ Safety Checklist submitted successfully! All clear.');
     }
-    setShiftActive(true);
-    triggerToast('Shift started successfully. Odometer and ELD logged in.');
+  };
+
+  const handleSaveDraft = () => {
+    showToast('💾 Safety Checklist draft saved.');
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-screen text-left flex flex-col space-y-6 relative pb-28">
-      {toastMsg && (
-        <div className="fixed bottom-6 right-6 z-[120] bg-slate-900 text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-xl animate-fade-in">{toastMsg}</div>
+    <div className="flex-grow bg-[#f8fafc] p-4 lg:p-6 w-full text-left font-sans overflow-y-auto min-h-screen">
+      
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-5 right-5 z-50 bg-[#ffcc00] text-black font-extrabold text-xs px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2 animate-bounce">
+          <FiCheckCircle className="text-black text-base" />
+          <span>{toastMessage}</span>
+        </div>
       )}
 
-      {/* Connection status toggle */}
-      <div className="flex flex-col items-center gap-2 w-full">
-        <div className="w-full flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 p-3 sm:p-4 bg-white border border-gray-150 rounded-2xl shadow-sm">
-          <span className="text-sm font-bold text-gray-600 flex items-center gap-2 justify-center sm:justify-start">
-            <svg className="w-4 h-4 text-amber-500 rotate-45" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <polygon points="3 11 22 2 13 21 11 13 3 11" />
-            </svg>
-            Connection Status:
-          </span>
-          <button
-            onClick={() => {
-              setIsOnline(prev => !prev);
-              triggerToast(isOnline ? 'Connection switched to Offline Mode.' : 'Connection restored to Online Mode.');
-            }}
-            className={`px-4 py-1.5 rounded-full flex items-center justify-center gap-1.5 text-xs font-bold border cursor-pointer transition-all w-full sm:w-auto ${
-              isOnline
-                ? 'bg-[#E6F4EA] border-[#CEEAD6] text-[#137333]'
-                : 'bg-[#FEF7E0] border-[#FEEFC3] text-[#B06000]'
-            }`}
-          >
-            <span>{isOnline ? 'Online Mode' : 'Offline Mode'}</span>
-            <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-white text-[9px] ${isOnline ? 'bg-emerald-500' : 'bg-amber-500'}`}>
-              {isOnline ? '🌐' : '−'}
-            </span>
-          </button>
-        </div>
-
-        {/* Offline Banner */}
-        {!isOnline && (
-          <div className="w-full bg-[#FFFBEB] border border-[#FCD34D] px-4 py-3 rounded-2xl flex items-center gap-2 text-[#92400E] text-xs font-bold shadow-sm">
-            <span className="text-[#F59E0B] text-sm">⚠</span>
-            <span>Offline Active</span>
-            <span className="text-[#B45309]">|</span>
-            <span>0 items queued</span>
-          </div>
-        )}
-
-        {/* SOS ACTIVE Banner (Matching screenshot) */}
-        {activeSosAlert && (
-          <div className="w-full bg-[#FEE2E2] border border-[#FCA5A5] px-4 py-2 rounded-2xl flex items-center justify-between text-[#EF4444] text-xs font-bold shadow-sm">
-            <div className="flex items-center gap-2">
-              <svg className="w-4 h-4 text-[#EF4444] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                <line x1="12" y1="8" x2="12" y2="12"/>
-                <line x1="12" y1="16" x2="12.01" y2="16"/>
-              </svg>
-              <span>🚨 SOS ACTIVE: {activeSosAlert}</span>
-            </div>
-            <button
-              onClick={() => setActiveSosAlert(null)}
-              className="bg-[#EF4444] text-black font-extrabold px-3 py-1 rounded-full text-xs hover:bg-red-650 cursor-pointer shadow-sm"
-            >
-              Clear
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Header */}
-      <div className="bg-white border border-gray-150 rounded-3xl p-4 sm:p-6 flex justify-between items-center shadow-3xs gap-4">
+      {/* TOP HEADER BAR */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
         <div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-lg sm:text-xl font-black text-gray-900 tracking-tight leading-none">Driver Portal</h1>
-            <span className="text-lg sm:text-xl font-bold text-gray-400">•</span>
-            <span className="text-lg sm:text-xl font-black text-gray-800">start finish</span>
-          </div>
-          <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider mt-1.5">ELD & logistics operations controls.</p>
-        </div>
-        <div className="w-8 h-8 rounded-full bg-amber-50 border border-amber-100 flex items-center justify-center text-[#D97706] cursor-pointer shrink-0" title="ELD Info">
-          <Link className="w-4 h-4" />
-        </div>
-      </div>
-
-      {/* Shift status log Box */}
-      <div className="bg-white border border-gray-150 rounded-3xl p-4 sm:p-5 shadow-3xs flex justify-between items-center gap-4">
-        <div className="text-left">
-          <span className="text-[9px] font-black text-gray-400 tracking-wider block uppercase mb-1">SHIFT LOGGING SYSTEM</span>
-          <div className="flex items-center gap-2">
-            {shiftActive ? (
-              <span className="w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-emerald-600 shrink-0"></span>
-            ) : (
-              <span className="text-base leading-none" style={{filter: 'hue-rotate(200deg) saturate(0.6) brightness(0.85)'}}>🌙</span>
-            )}
-            <span className="text-xs font-bold text-gray-900">{shiftActive ? 'Shift Active (On Duty)' : 'Shift Inactive (Off Duty)'}</span>
-          </div>
-        </div>
-        <div className="w-9 h-9 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 shrink-0">
-          <Clock className="w-5 h-5" />
-        </div>
-      </div>
-
-      {/* Today's Assigned Manifest Card */}
-      <div className="bg-white border border-gray-150 rounded-3xl p-4 sm:p-6 shadow-3xs text-left space-y-4">
-        <div className="flex justify-between items-center pb-2 border-b border-gray-50">
-          <span className="text-[10px] font-black text-gray-900 tracking-wider block uppercase">TODAY'S ASSIGNED MANIFEST</span>
-        </div>
-
-        <div className="p-3 sm:p-4 border border-gray-150 rounded-2xl bg-white space-y-4">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-            <div>
-              <span className="text-[9px] font-bold text-gray-400 block uppercase">LOAD ID: LD-9411</span>
-              <h3 className="text-sm font-bold text-gray-900 mt-1">Automotive Components (Flatbed)</h3>
-            </div>
-            <span className="bg-amber-50 text-[#D97706] text-[8px] font-black px-2.5 py-0.5 rounded tracking-wide uppercase border border-amber-100 self-start sm:self-auto">
-              IN TRANSIT
+          <div className="flex items-center gap-2 mb-1">
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">15.2 Safety Checklist</h1>
+            <span className="bg-purple-100 text-purple-800 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-purple-200 uppercase">
+              Pre-Start
             </span>
           </div>
+          <p className="text-xs font-semibold text-slate-500">
+            Complete your daily safety checklist before hitting the road. Stay safe & keep moving.
+          </p>
+        </div>
 
-          <div className="text-xs font-bold text-gray-700">
-            <div className="flex items-center gap-1 flex-wrap">
-              <span>Route: Chicago IL</span>
-              <ArrowRight className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-              <span>Dallas TX</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4 text-[10px] text-gray-500 font-bold">
-            <div>
-              <span className="text-gray-400 font-semibold block uppercase">Customer:</span>
-              <span className="text-gray-900 mt-0.5 block">Global Retail Corp</span>
-            </div>
-            <div>
-              <span className="text-gray-400 font-semibold block uppercase">Trailer:</span>
-              <span className="text-gray-900 mt-0.5 block">-</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4 text-[10px] text-gray-500 font-bold pt-2 border-t border-gray-50">
-            <div>
-              <span className="text-gray-400 font-semibold block uppercase">Appt:</span>
-              <span className="text-gray-900 mt-0.5 block">16:00 PM (Priority: High)</span>
-            </div>
-            <div>
-              <span className="text-gray-400 font-semibold block uppercase">Status:</span>
-              <span className="text-[#D97706] mt-0.5 block">In Transit</span>
-            </div>
-          </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate('/driver/incident-reporting')}
+            className="bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 font-bold text-xs px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <FiAlertTriangle className="text-rose-600" />
+            <span>Report Defect</span>
+          </button>
         </div>
       </div>
 
-      {/* Start Shift Checklist Form */}
-      <div className="bg-white border border-gray-150 rounded-3xl p-4 sm:p-6 shadow-3xs text-left space-y-5">
-        <span className="text-[10px] font-black text-gray-900 tracking-wider block uppercase">START SHIFT CHECKLIST</span>
+      {/* MAIN 3-COLUMN LAYOUT */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         
-        <form onSubmit={handleStartShift} className="space-y-4">
-          <div>
-            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">SELECT TRACTOR / POWER UNIT</label>
-            <select
-              value={tractor}
-              onChange={e => setTractor(e.target.value)}
-              className="w-full px-4 py-2.5 border border-gray-250 rounded-xl text-xs font-bold text-gray-900 focus:outline-none bg-white cursor-pointer"
-            >
-              <option value="TX-ROAD88 (Freightliner Cascadia)">TX-ROAD88 (Freightliner Cascadia)</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">SELECT TRAILER UNIT</label>
-            <select
-              value={trailer}
-              onChange={e => setTrailer(e.target.value)}
-              className="w-full px-4 py-2.5 border border-gray-250 rounded-xl text-xs font-bold text-gray-900 focus:outline-none bg-white cursor-pointer"
-            >
-              <option value="TR-4022 (Flatbed 48ft)">TR-4022 (Flatbed 48ft)</option>
-            </select>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">INITIAL ODOMETER READING (MILES)</label>
-              <input 
-                type="text"
-                value={odometer}
-                onChange={e => setOdometer(e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-250 rounded-xl text-xs font-bold text-gray-900 focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">INITIAL FUEL LEVEL (%)</label>
-              <input 
-                type="text"
-                value={fuel}
-                onChange={e => setFuel(e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-250 rounded-xl text-xs font-bold text-gray-900 focus:outline-none"
-              />
+        {/* ================= COLUMN 1 (LEFT): LEGEND, PROGRESS & STATUS ================= */}
+        <div className="space-y-5">
+          
+          {/* LEGEND Card */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">LEGEND</h3>
+            <div className="space-y-2 text-xs font-bold">
+              <div className="flex items-center gap-2 text-slate-800">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                <span>Yes / Pass</span>
+              </div>
+              <div className="flex items-center gap-2 text-slate-800">
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                <span>No / Fail</span>
+              </div>
+              <div className="flex items-center gap-2 text-slate-800">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                <span>N/A / Not Applicable</span>
+              </div>
+              <div className="flex items-center gap-2 text-slate-800">
+                <span className="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
+                <span>Not Checked</span>
+              </div>
             </div>
           </div>
 
-          <div className="space-y-3 pt-2">
-            <div className="flex justify-between items-center py-2.5 border-b border-gray-50">
-              <span className="text-xs text-gray-800">Verify Pre-Trip DVIR completed</span>
-              <input 
-                type="checkbox"
-                checked={dvirChecked}
-                onChange={e => setDvirChecked(e.target.checked)}
-                className="rounded border-gray-300 text-emerald-500 focus:ring-emerald-400 w-4 h-4 cursor-pointer"
-              />
-            </div>
-            <div className="flex justify-between items-center py-2.5 border-b border-gray-50">
-              <span className="text-xs text-gray-800">Confirm Regulatory ELD connection</span>
-              <input 
-                type="checkbox"
-                checked={eldChecked}
-                onChange={e => setEldChecked(e.target.checked)}
-                className="rounded border-gray-300 text-emerald-500 focus:ring-emerald-400 w-4 h-4 cursor-pointer"
-              />
-            </div>
-          </div>
-
-          {/* GPS Telemetry Block */}
-          <div className="p-4 bg-gray-50 border border-gray-150 rounded-2xl flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
-            <div className="text-left">
-              <span className="text-[9px] font-bold text-gray-450 block uppercase">LIVE GPS TELEMETRY</span>
-              <span className="text-xs font-bold text-emerald-600 block mt-0.5 break-all">Verified ✓ (41.8781° N, 87.6298° W)</span>
-            </div>
-            <button 
-              type="button"
-              onClick={() => triggerToast('GPS coordinates reset and locked.')}
-              className="bg-emerald-700 text-white font-bold text-[9px] py-2 px-3 rounded-lg flex items-center justify-center cursor-pointer shadow-sm hover:bg-emerald-800 transition-colors w-full sm:w-auto"
-            >
-              Lock Reset
-            </button>
-          </div>
-
-          <button
-            type="submit"
-            className="w-full bg-[#10B981] hover:bg-emerald-600 text-white font-bold py-3.5 rounded-xl text-xs mt-3 cursor-pointer transition-colors shadow-sm text-center uppercase"
-          >
-            Confirm & Start Work Shift
-          </button>
-        </form>
-      </div>
-
-      {/* FLOAT FLOATING BUTTONS IN BOTTOM CORNER */}
-      <div className="fixed bottom-6 right-6 flex flex-col items-center gap-3 z-[100]">
-        {/* SOS button */}
-        <button 
-          onClick={() => setSosModalOpen(true)}
-          className="w-12 h-12 bg-white border border-red-200 hover:bg-red-50 text-red-500 rounded-full flex items-center justify-center font-bold text-xs shadow-lg cursor-pointer transition-all border-t-2"
-        >
-          SOS
-        </button>
-
-        {/* Chat / hotline button */}
-        <button 
-          onClick={() => setHotlineOpen(true)}
-          className="w-12 h-12 bg-[#FFD400] hover:bg-yellow-400 text-black rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all"
-        >
-          <MessageSquare className="w-5 h-5" />
-        </button>
-      </div>
-
-      {/* SOS EMERGENCY PANEL MODAL */}
-      {sosModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-[110] p-4">
-          <div className="bg-white rounded-3xl border border-gray-100 max-w-md w-full p-4 sm:p-6 shadow-xl text-left animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center mb-5 pb-2 border-b border-gray-50">
-              <h2 className="text-base font-bold text-gray-900">Emergency Dispatch SOS Panel</h2>
-              <button onClick={() => setSosModalOpen(false)} className="p-1.5 hover:bg-gray-100 rounded-full cursor-pointer"><X size={18} /></button>
+          {/* CHECKLIST PROGRESS Card */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs text-center">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">CHECKLIST PROGRESS</h3>
+            
+            <div className="relative w-28 h-28 mx-auto flex items-center justify-center mb-3">
+              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                <path
+                  className="text-slate-100"
+                  strokeWidth="3.5"
+                  stroke="currentColor"
+                  fill="none"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                />
+                <path
+                  className="text-emerald-500"
+                  strokeDasharray={`${completionPercentage}, 100`}
+                  strokeWidth="3.5"
+                  strokeLinecap="round"
+                  stroke="currentColor"
+                  fill="none"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                />
+              </svg>
+              <div className="absolute flex flex-col items-center justify-center">
+                <span className="text-lg font-black text-slate-900">{completedCount} / {totalCount}</span>
+                <span className="text-[11px] font-extrabold text-emerald-600">{completionPercentage}%</span>
+              </div>
             </div>
             
-            <p className="text-xs text-gray-500 leading-relaxed mb-5">
-              Triggering an emergency alerts the dispatch operations center immediately and logs active tracking.
-            </p>
+            <span className="text-xs font-bold text-slate-600 block">Completed</span>
+          </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { icon: <Shield className="w-5 h-5 text-red-500" />, label: 'Panic Button', color: 'bg-red-50/70 border-red-100 text-red-500', msg: 'Panic Alert dispatched!' },
-                { icon: <Truck className="w-5 h-5 text-amber-500" />, label: 'Breakdown', color: 'bg-[#FFFBEB] border-amber-200 text-[#D97706]', msg: 'Breakdown Alert dispatched!' },
-                { icon: <AlertTriangle className="w-5 h-5 text-red-500" />, label: 'Accident', color: 'bg-red-50/70 border-red-100 text-red-500', msg: 'Accident Alert dispatched!' },
-                { icon: <Heart className="w-5 h-5 text-red-500" />, label: 'Medical', color: 'bg-red-50/70 border-red-100 text-red-500', msg: 'Medical Emergency Alert dispatched!' },
-              ].map(({ icon, label, color, msg }) => (
+          {/* KEY ACTIONS Card */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">KEY ACTIONS</h3>
+            <div className="space-y-2">
+              <button
+                onClick={() => showToast('Displaying past safety checklist history.')}
+                className="w-full flex items-center gap-2.5 p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
+              >
+                <FiFileText className="text-slate-600" />
+                <span>View History</span>
+              </button>
+
+              <button
+                onClick={() => navigate('/driver/incident-reporting')}
+                className="w-full flex items-center gap-2.5 p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
+              >
+                <FiAlertTriangle className="text-rose-600" />
+                <span>Defect Report</span>
+              </button>
+
+              <button
+                onClick={() => navigate('/driver/contact-dispatch')}
+                className="w-full flex items-center gap-2.5 p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
+              >
+                <FiMessageSquare className="text-blue-600" />
+                <span>Message Dispatch</span>
+              </button>
+
+              <button
+                onClick={() => showToast('Photo uploader camera opened.')}
+                className="w-full flex items-center gap-2.5 p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
+              >
+                <FiCamera className="text-purple-600" />
+                <span>Upload Photo</span>
+              </button>
+            </div>
+          </div>
+
+          {/* STATUS Card */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">STATUS</h3>
+            <div className="text-xs space-y-1">
+              <div className="text-slate-500 font-medium">Last saved: <strong className="text-slate-800">29 May 2025, 06:10 AM</strong></div>
+              <div className="text-emerald-600 font-extrabold flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Synced
+              </div>
+              <div className="text-slate-500 font-medium mt-2 pt-2 border-t border-slate-100">
+                Next reminder: <strong className="text-slate-800">Tomorrow, 06:00 AM</strong>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* ================= COLUMN 2 & 3 (MIDDLE): 20-POINT CHECKLIST FORM ================= */}
+        <div className="lg:col-span-2 space-y-5">
+          
+          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
+            
+            {/* Header Notification Banner */}
+            <div className="bg-purple-50/70 border border-purple-100 rounded-xl p-3.5 mb-5 flex items-start gap-3 text-xs text-purple-950">
+              <FiHelpCircle className="text-purple-600 text-base mt-0.5 shrink-0" />
+              <div>
+                <strong className="font-extrabold block">Complete all required items before starting your day.</strong>
+                <span className="text-purple-700">This helps keep you, your vehicle & others safe.</span>
+              </div>
+            </div>
+
+            {/* Vehicle & Load Reference Summary */}
+            <div className="grid grid-cols-2 gap-4 bg-slate-50 border border-slate-100 rounded-xl p-3.5 mb-5 text-xs">
+              <div>
+                <span className="text-slate-400 font-bold text-[10px] uppercase block">Vehicle</span>
+                <span className="font-black text-slate-900">TRK-101 (MAN TGX 26.580)</span>
+              </div>
+              <div>
+                <span className="text-slate-400 font-bold text-[10px] uppercase block">Load / Reference</span>
+                <span className="font-black text-purple-700">LD-3987</span>
+              </div>
+              <div>
+                <span className="text-slate-400 font-bold text-[10px] uppercase block">Trailer</span>
+                <span className="font-black text-slate-900">TRL-205 (Car Carrier 4 Level)</span>
+              </div>
+              <div>
+                <span className="text-slate-400 font-bold text-[10px] uppercase block">Date / Time</span>
+                <span className="font-mono font-bold text-slate-800">29 May 2025, 06:15 AM</span>
+              </div>
+            </div>
+
+            {/* 20-Point Inspection Table */}
+            <div className="mb-5">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wide">VEHICLE & EQUIPMENT</h3>
+                <span className="text-xs font-extrabold text-indigo-600 font-mono bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100">
+                  {completedCount} / {totalCount}
+                </span>
+              </div>
+
+              <div className="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100 text-xs bg-white">
+                {items.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between py-2 px-2.5 sm:px-3 hover:bg-slate-50/80 transition-colors gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-1">
+                      <span className="w-6 h-6 rounded-md bg-indigo-50 text-indigo-600 font-extrabold text-[11px] flex items-center justify-center shrink-0">
+                        {item.id}
+                      </span>
+                      <span className="font-semibold text-slate-800 text-xs leading-tight min-w-0 break-words">
+                        {item.label}
+                      </span>
+                    </div>
+
+                    {/* Status Action Buttons (Matching height of label & badge - 24px / h-6) */}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {/* PASS Button */}
+                      <button
+                        type="button"
+                        onClick={() => handleStatusChange(item.id, 'pass')}
+                        className={`w-8 h-6 sm:w-9 sm:h-6 rounded-md flex items-center justify-center cursor-pointer transition-all focus:outline-none ${
+                          item.status === 'pass'
+                            ? 'bg-emerald-50 border border-emerald-500 text-emerald-600 font-black shadow-xs'
+                            : 'bg-emerald-50/40 hover:bg-emerald-100/60 text-emerald-600/70 border border-emerald-200/50'
+                        }`}
+                        title="Pass"
+                      >
+                        <FiCheck className="text-xs sm:text-sm stroke-[2.5]" />
+                      </button>
+
+                      {/* FAIL Button */}
+                      <button
+                        type="button"
+                        onClick={() => handleStatusChange(item.id, 'fail')}
+                        className={`w-8 h-6 sm:w-9 sm:h-6 rounded-md flex items-center justify-center cursor-pointer transition-all focus:outline-none ${
+                          item.status === 'fail'
+                            ? 'bg-rose-50 border border-rose-500 text-rose-600 font-black shadow-xs'
+                            : 'bg-rose-50/40 hover:bg-rose-100/60 text-rose-500/70 border border-rose-200/50'
+                        }`}
+                        title="Fail"
+                      >
+                        <FiX className="text-xs sm:text-sm stroke-[2.5]" />
+                      </button>
+
+                      {/* N/A Button */}
+                      <button
+                        type="button"
+                        onClick={() => handleStatusChange(item.id, 'na')}
+                        className={`w-8 h-6 sm:w-9 sm:h-6 rounded-md flex items-center justify-center cursor-pointer transition-all focus:outline-none ${
+                          item.status === 'na'
+                            ? 'bg-amber-50 border border-amber-500 text-amber-600 font-black shadow-xs'
+                            : 'bg-amber-50/40 hover:bg-amber-100/60 text-amber-600/70 border border-amber-200/50'
+                        }`}
+                        title="Not Applicable"
+                      >
+                        <FiMinus className="text-xs sm:text-sm stroke-[2.5]" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Notes & Photo Input */}
+            <div className="space-y-4 pt-2">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Add notes (optional)"
+                  className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-indigo-500"
+                />
                 <button
-                  key={label}
-                  onClick={() => {
-                    setActiveSosAlert(msg);
-                    triggerToast(`SOS ACTIVE: ${msg}`);
-                    setSosModalOpen(false);
-                  }}
-                  className={`p-3 sm:p-5 border rounded-2xl hover:opacity-90 transition-opacity flex flex-col items-center justify-center gap-2 cursor-pointer ${color}`}
+                  type="button"
+                  onClick={() => showToast('Camera photo capture triggered.')}
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 p-2.5 rounded-xl border border-slate-200 cursor-pointer"
+                  title="Upload Photo"
                 >
-                  {icon}
-                  <span className="text-xs font-medium">{label}</span>
+                  <FiCamera className="text-base" />
                 </button>
-              ))}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={handleSaveDraft}
+                  className="bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 font-bold text-xs py-3 rounded-xl shadow-xs transition-all cursor-pointer text-center"
+                >
+                  Save Draft
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  className="bg-[#ffcc00] hover:bg-[#e6b800] text-black font-black text-xs py-3 rounded-xl shadow-xs transition-all cursor-pointer text-center uppercase"
+                >
+                  Submit Checklist
+                </button>
+              </div>
             </div>
 
-            <div className="mt-5 pt-4 border-t border-gray-50 space-y-3">
-              <div className="flex justify-between items-center text-xs text-gray-800">
-                <span>Share Live GPS Tracking</span>
-                <input 
-                  type="checkbox"
-                  checked={shareGps}
-                  onChange={e => setShareGps(e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
-                />
+          </div>
+
+        </div>
+
+        {/* ================= COLUMN 4 (RIGHT): OVERVIEW, REQUIREMENTS & HISTORY ================= */}
+        <div className="space-y-5">
+          
+          {/* CHECKLIST OVERVIEW Card */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">CHECKLIST OVERVIEW</h3>
+            <div className="space-y-2 text-xs font-bold">
+              <div className="flex justify-between items-center text-emerald-600 bg-emerald-50/60 p-2 rounded-xl border border-emerald-100">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                  <span>Passed</span>
+                </div>
+                <span className="font-mono font-black">{passCount}</span>
               </div>
-              <div className="flex justify-between items-center text-xs text-gray-800">
-                <span>Auto-Notify Dispatch Center</span>
-                <input 
-                  type="checkbox"
-                  checked={autoNotify}
-                  onChange={e => setAutoNotify(e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
-                />
+
+              <div className="flex justify-between items-center text-rose-600 bg-rose-50/60 p-2 rounded-xl border border-rose-100">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                  <span>Failed</span>
+                </div>
+                <span className="font-mono font-black">{failCount}</span>
+              </div>
+
+              <div className="flex justify-between items-center text-amber-600 bg-amber-50/60 p-2 rounded-xl border border-amber-100">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                  <span>N/A</span>
+                </div>
+                <span className="font-mono font-black">{naCount}</span>
+              </div>
+
+              <div className="flex justify-between items-center text-slate-500 bg-slate-50 p-2 rounded-xl border border-slate-200/60">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
+                  <span>Not Checked</span>
+                </div>
+                <span className="font-mono font-black">{uncheckedCount}</span>
               </div>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* HOTLINE SHORTCUTS OVERLAY PANEL */}
-      {hotlineOpen && (
-        <div className="fixed inset-0 z-[110]" onClick={() => setHotlineOpen(false)}>
-          <div
-            className="absolute bottom-6 right-6 flex flex-col items-end gap-3"
-            onClick={e => e.stopPropagation()}
-          >
-            {/* The Hotline Card */}
-            <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-2xl w-52 text-left space-y-3">
-              <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest block pb-2 border-b border-gray-100">HOTLINE SHORTCUTS</span>
-              
-              <div className="space-y-3 text-sm text-gray-700">
-                <button 
-                  onClick={() => { triggerToast('Dialing dispatcher hotline...'); setHotlineOpen(false); }}
-                  className="w-full text-left hover:text-black transition-colors flex items-center gap-3"
-                >
-                  <Phone className="w-4 h-4 text-gray-400 shrink-0" />
-                  <span>Call Dispatch</span>
-                </button>
-                <button 
-                  onClick={() => { triggerToast('Opening dispatch message console...'); setHotlineOpen(false); }}
-                  className="w-full text-left hover:text-black transition-colors flex items-center gap-3"
-                >
-                  <MessageSquare className="w-4 h-4 text-gray-400 shrink-0" />
-                  <span>Message Dispatch</span>
-                </button>
-                <button 
-                  onClick={() => { triggerToast('Voice note recorder active.'); setHotlineOpen(false); }}
-                  className="w-full text-left hover:text-black transition-colors flex items-center gap-3"
-                >
-                  <Mic className="w-4 h-4 text-gray-400 shrink-0" />
-                  <span>Voice Note</span>
-                </button>
-                <button 
-                  onClick={() => { triggerToast('Speech to text active.'); setHotlineOpen(false); }}
-                  className="w-full text-left hover:text-black transition-colors flex items-center gap-3"
-                >
-                  <span className="w-4 h-4 text-gray-400 shrink-0 flex items-center justify-center text-xs">🎙</span>
-                  <span>Voice-to-Text</span>
-                </button>
+          {/* REQUIREMENTS Card */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">REQUIREMENTS</h3>
+            <div className="space-y-2 text-xs text-slate-700 font-medium">
+              <div className="flex items-start gap-2">
+                <FiCheck className="text-emerald-600 mt-0.5 shrink-0" />
+                <span>All 'No' items must be resolved before driving.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <FiCheck className="text-emerald-600 mt-0.5 shrink-0" />
+                <span>Report any defects immediately.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <FiCheck className="text-emerald-600 mt-0.5 shrink-0" />
+                <span>Keep your vehicle safe and roadworthy.</span>
               </div>
             </div>
-
-            {/* Circular Close X Button */}
-            <button 
-              onClick={() => setHotlineOpen(false)}
-              className="w-12 h-12 bg-[#FFD400] hover:bg-yellow-400 text-black rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all shrink-0"
-            >
-              <X className="w-5 h-5" strokeWidth={2.5} />
-            </button>
           </div>
+
+          {/* LAST 5 CHECKLISTS Card */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">LAST 5 CHECKLISTS</h3>
+              <button onClick={() => showToast('Opening full checklist log history...')} className="text-xs font-bold text-purple-600 hover:underline cursor-pointer">
+                View all
+              </button>
+            </div>
+
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between items-center p-2 bg-slate-50 rounded-xl border border-slate-100 font-bold">
+                <div>
+                  <span className="text-slate-800 block">29 May 2025, 06:15 AM</span>
+                  <span className="text-emerald-600 text-[10px]">Pass</span>
+                </div>
+                <span className="font-mono text-emerald-600">18 / 20</span>
+              </div>
+
+              <div className="flex justify-between items-center p-2 bg-slate-50 rounded-xl border border-slate-100 font-bold">
+                <div>
+                  <span className="text-slate-800 block">28 May 2025, 06:12 AM</span>
+                  <span className="text-emerald-600 text-[10px]">Pass</span>
+                </div>
+                <span className="font-mono text-emerald-600">20 / 20</span>
+              </div>
+
+              <div className="flex justify-between items-center p-2 bg-slate-50 rounded-xl border border-slate-100 font-bold">
+                <div>
+                  <span className="text-slate-800 block">27 May 2025, 06:10 AM</span>
+                  <span className="text-emerald-600 text-[10px]">Pass</span>
+                </div>
+                <span className="font-mono text-emerald-600">19 / 20</span>
+              </div>
+
+              <div className="flex justify-between items-center p-2 bg-slate-50 rounded-xl border border-slate-100 font-bold">
+                <div>
+                  <span className="text-slate-800 block">26 May 2025, 06:08 AM</span>
+                  <span className="text-emerald-600 text-[10px]">Pass</span>
+                </div>
+                <span className="font-mono text-emerald-600">20 / 20</span>
+              </div>
+
+              <div className="flex justify-between items-center p-2 bg-slate-50 rounded-xl border border-slate-100 font-bold">
+                <div>
+                  <span className="text-slate-800 block">25 May 2025, 06:11 AM</span>
+                  <span className="text-emerald-600 text-[10px]">Pass</span>
+                </div>
+                <span className="font-mono text-emerald-600">18 / 20</span>
+              </div>
+            </div>
+          </div>
+
+          {/* HELP & RESOURCES Card */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
+            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">HELP & RESOURCES</h3>
+            <div className="space-y-2">
+              <button
+                onClick={() => showToast('Opening Safety Procedures guide...')}
+                className="w-full flex items-center justify-between p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
+              >
+                <span>Safety Procedures</span>
+                <FiChevronRight className="text-slate-400" />
+              </button>
+
+              <button
+                onClick={() => showToast('Opening Vehicle Inspection Guide...')}
+                className="w-full flex items-center justify-between p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
+              >
+                <span>Vehicle Inspection Guide</span>
+                <FiChevronRight className="text-slate-400" />
+              </button>
+
+              <button
+                onClick={() => navigate('/driver/incident-reporting')}
+                className="w-full flex items-center justify-between p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
+              >
+                <span>Report an Incident</span>
+                <FiChevronRight className="text-slate-400" />
+              </button>
+
+              <button
+                onClick={() => navigate('/driver/contact-dispatch')}
+                className="w-full flex items-center justify-between p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-xs font-bold text-slate-800 transition-all cursor-pointer"
+              >
+                <span>Contact Support</span>
+                <FiChevronRight className="text-slate-400" />
+              </button>
+            </div>
+          </div>
+
         </div>
-      )}
+
+      </div>
 
     </div>
   );

@@ -43,6 +43,7 @@ export default function YardScanIn() {
   // Table State
   const [density, setDensity] = useState('RELAXED'); // COMPACT, DEFAULT, RELAXED
   const [showColumnDropdown, setShowColumnDropdown] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [columns, setColumns] = useState({
     itemId: false,
     desc: false,
@@ -55,6 +56,14 @@ export default function YardScanIn() {
     { id: 2, itemId: 'CTR-9104', desc: 'Refrigerated container (reefer)', status: 'Pending Spot', checked: false },
     { id: 3, itemId: 'CTR-0029', desc: 'Flat rack heavy asset container', status: 'Pending Spot', checked: false }
   ]);
+
+  const filteredItems = manifestItems.filter(item => {
+    const q = searchQuery.toLowerCase().trim();
+    return !q || 
+      item.itemId.toLowerCase().includes(q) || 
+      item.desc.toLowerCase().includes(q) || 
+      item.status.toLowerCase().includes(q);
+  });
 
   const [toast, setToast] = useState(null);
 
@@ -224,6 +233,14 @@ export default function YardScanIn() {
 
                 {/* Grid Density & Columns Control */}
                 <div className="yard-controls-row" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  {/* Quick Search Bar */}
+                  <input 
+                    type="text"
+                    placeholder="Quick search manifest..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{ padding: '6px 12px', fontSize: 11, fontWeight: '700', borderRadius: 8, border: '1px solid #cbd5e1', outline: 'none', color: '#0f172a', minWidth: 160 }}
+                  />
 
                   {/* Density tabs styled container */}
                   <div style={{
@@ -376,7 +393,14 @@ export default function YardScanIn() {
                     </tr>
                   </thead>
                   <tbody>
-                    {manifestItems.map((item) => (
+                    {filteredItems.length === 0 ? (
+                      <tr>
+                        <td colSpan="4" style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: 12, fontWeight: '700' }}>
+                          No manifest items found matching "{searchQuery}".
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredItems.map((item) => (
                       <tr
                         key={item.id}
                         style={{
@@ -415,7 +439,8 @@ export default function YardScanIn() {
                           </td>
                         )}
                       </tr>
-                    ))}
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>

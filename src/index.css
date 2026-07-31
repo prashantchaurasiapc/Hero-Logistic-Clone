@@ -64,6 +64,13 @@ body {
     scrollbar-width: thin;
     scrollbar-color: #e2e8f0 transparent;
   }
+
+  /* Global Button Focus Clean State - Prevents ugly black outline focus rings on click */
+  button:focus,
+  button:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+  }
 }
 
 /* Custom premium 3D & Glass styles */

@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
-import { Search, Settings, Download, Printer, X } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
+import { Search, Settings, Download, Printer, X, MoreVertical, Eye, FileText, RotateCcw, Info, History } from 'lucide-react';
 
 const WarehouseLabels = () => {
+  const location = useLocation();
+  const isYard = location.pathname.startsWith('/yard');
   const [density, setDensity] = useState('default'); // compact, default, relaxed
   const [isColumnsMenuOpen, setIsColumnsMenuOpen] = useState(false);
   const [selectedRows, setSelectedRows] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [toast, setToast] = useState(null);
+  const [activeActionMenuId, setActiveActionMenuId] = useState(null);
   
   // Columns visibility state
   const [visibleColumns, setVisibleColumns] = useState({
@@ -137,7 +141,7 @@ const WarehouseLabels = () => {
     <div style={S.container}>
       {/* Page Header */}
       <div style={S.header}>
-        <h1 style={S.pageTitle}>Warehouse &amp; Inventory &bull; Labels</h1>
+        <h1 style={S.pageTitle}>{isYard ? 'Yard Labels & Barcodes' : 'Warehouse & Inventory • Labels'}</h1>
         <p style={S.pageSubtitle}>Manage and generate asset barcode tags, print queue, and spooler logs.</p>
       </div>
 
@@ -399,62 +403,138 @@ const WarehouseLabels = () => {
 
                     {/* Actions Column */}
                     <td style={getPaddingStyle()}>
-                      <div style={S.actionsWrapper}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'relative' }}>
+                        {/* Primary Print Button */}
                         <button
                           onClick={() => handleActionClick('Print', row)}
                           style={{
-                            ...S.actionBtnPrint,
-                            border: activeAction.rowId === row.id && activeAction.type === 'Print' ? '2px solid #000000' : '1px solid #cbd5e1'
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            padding: '6px 14px',
+                            borderRadius: '8px',
+                            backgroundColor: '#ffcc00',
+                            color: '#000000',
+                            fontWeight: '800',
+                            fontSize: '11.5px',
+                            border: activeAction.rowId === row.id && activeAction.type === 'Print' ? '2px solid #000000' : '1px solid transparent',
+                            cursor: 'pointer',
+                            outline: 'none',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.06)'
                           }}
                         >
-                          Print
+                          <Printer size={13} />
+                          <span>Print</span>
                         </button>
-                        <button
-                          onClick={() => handleActionClick('Reprint', row)}
-                          style={{
-                            ...S.actionBtnGold,
-                            border: activeAction.rowId === row.id && activeAction.type === 'Reprint' ? '2px solid #000000' : '1px solid #fef08a'
-                          }}
-                        >
-                          Reprint
-                        </button>
-                        <button
-                          onClick={() => handleActionClick('Preview', row)}
-                          style={{
-                            ...S.actionBtnGold,
-                            border: activeAction.rowId === row.id && activeAction.type === 'Preview' ? '2px solid #000000' : '1px solid #fef08a'
-                          }}
-                        >
-                          Preview
-                        </button>
-                        <button
-                          onClick={() => handleActionClick('PDF', row)}
-                          style={{
-                            ...S.actionBtnGold,
-                            border: activeAction.rowId === row.id && activeAction.type === 'PDF' ? '2px solid #000000' : '1px solid #fef08a'
-                          }}
-                        >
-                          <Download size={11} />
-                          <span>PDF</span>
-                        </button>
-                        <button
-                          onClick={() => handleActionClick('Details', row)}
-                          style={{
-                            ...S.actionBtnGold,
-                            border: activeAction.rowId === row.id && activeAction.type === 'Details' ? '2px solid #000000' : '1px solid #fef08a'
-                          }}
-                        >
-                          Details
-                        </button>
-                        <button
-                          onClick={() => handleActionClick('History', row)}
-                          style={{
-                            ...S.actionBtnGold,
-                            border: activeAction.rowId === row.id && activeAction.type === 'History' ? '2px solid #b45309' : '1px solid #fef08a'
-                          }}
-                        >
-                          History
-                        </button>
+
+                        {/* 3-Dot Action Dropdown Menu Trigger */}
+                        <div style={{ position: 'relative', display: 'inline-block' }}>
+                          <button
+                            onClick={() => setActiveActionMenuId(activeActionMenuId === row.id ? null : row.id)}
+                            title="More Actions"
+                            style={{
+                              width: '30px',
+                              height: '30px',
+                              borderRadius: '8px',
+                              border: activeActionMenuId === row.id ? '2px solid #000000' : '1px solid #cbd5e1',
+                              backgroundColor: activeActionMenuId === row.id ? '#f1f5f9' : '#ffffff',
+                              color: '#334155',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'pointer',
+                              outline: 'none'
+                            }}
+                          >
+                            <MoreVertical size={14} />
+                          </button>
+
+                          {/* Interactive Dropdown Popup Menu */}
+                          {activeActionMenuId === row.id && (
+                            <>
+                              <div
+                                style={{ position: 'fixed', inset: 0, zIndex: 999 }}
+                                onClick={() => setActiveActionMenuId(null)}
+                              />
+                              <div style={{
+                                position: 'absolute',
+                                right: 0,
+                                top: 'calc(100% + 6px)',
+                                backgroundColor: '#ffffff',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: '12px',
+                                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                                padding: '6px',
+                                zIndex: 1000,
+                                minWidth: '170px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '2px',
+                                textAlign: 'left'
+                              }}>
+                                <div style={{ padding: '6px 10px 4px 10px', fontSize: '9.5px', fontWeight: '800', color: '#94a3b8', letterSpacing: '0.6px', textTransform: 'uppercase' }}>
+                                  ACTIONS
+                                </div>
+
+                                <button
+                                  className="wh-action-menu-item"
+                                  onClick={() => { setActiveActionMenuId(null); handleActionClick('Print', row); }}
+                                  style={S.menuItemBtn}
+                                >
+                                  <Printer size={13} style={{ color: '#b45309' }} />
+                                  <span>Print Label</span>
+                                </button>
+
+                                <button
+                                  className="wh-action-menu-item"
+                                  onClick={() => { setActiveActionMenuId(null); handleActionClick('Reprint', row); }}
+                                  style={S.menuItemBtn}
+                                >
+                                  <RotateCcw size={13} style={{ color: '#d97706' }} />
+                                  <span>Reprint Tag</span>
+                                </button>
+
+                                <button
+                                  className="wh-action-menu-item"
+                                  onClick={() => { setActiveActionMenuId(null); handleActionClick('Preview', row); }}
+                                  style={S.menuItemBtn}
+                                >
+                                  <Eye size={13} style={{ color: '#2563eb' }} />
+                                  <span>Preview Label</span>
+                                </button>
+
+                                <button
+                                  className="wh-action-menu-item"
+                                  onClick={() => { setActiveActionMenuId(null); handleActionClick('PDF', row); }}
+                                  style={S.menuItemBtn}
+                                >
+                                  <Download size={13} style={{ color: '#059669' }} />
+                                  <span>Download PDF</span>
+                                </button>
+
+                                <div style={{ height: '1px', backgroundColor: '#f1f5f9', margin: '3px 0' }} />
+
+                                <button
+                                  className="wh-action-menu-item"
+                                  onClick={() => { setActiveActionMenuId(null); handleActionClick('Details', row); }}
+                                  style={S.menuItemBtn}
+                                >
+                                  <Info size={13} style={{ color: '#475569' }} />
+                                  <span>View Details</span>
+                                </button>
+
+                                <button
+                                  className="wh-action-menu-item"
+                                  onClick={() => { setActiveActionMenuId(null); handleActionClick('History', row); }}
+                                  style={S.menuItemBtn}
+                                >
+                                  <History size={13} style={{ color: '#7c3aed' }} />
+                                  <span>Custody History Log</span>
+                                </button>
+                              </div>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </td>
                   </tr>
@@ -520,6 +600,9 @@ const WarehouseLabels = () => {
         @keyframes slideDrawer {
           from { transform: translateX(100%); }
           to { transform: translateX(0); }
+        }
+        .wh-action-menu-item:hover {
+          background-color: #f1f5f9 !important;
         }
       `}</style>
     </div>
@@ -862,6 +945,23 @@ const S = {
     transition: 'all 0.15s',
     outline: 'none',
     boxSizing: 'border-box'
+  },
+  menuItemBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    width: '100%',
+    padding: '8px 10px',
+    borderRadius: '8px',
+    border: 'none',
+    backgroundColor: 'transparent',
+    color: '#334155',
+    fontSize: '12px',
+    fontWeight: '700',
+    cursor: 'pointer',
+    textAlign: 'left',
+    outline: 'none',
+    transition: 'background-color 0.15s ease'
   },
   // Side Drawer Styles
   drawerOverlay: {

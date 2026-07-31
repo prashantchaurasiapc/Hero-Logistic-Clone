@@ -43,6 +43,7 @@ export default function YardLoadLane() {
   // Table & grid control state
   const [density, setDensity] = useState('RELAXED');
   const [showColumnDropdown, setShowColumnDropdown] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [columns, setColumns] = useState({
     desc: false,
     status: true
@@ -60,6 +61,11 @@ export default function YardLoadLane() {
     { id: 2, desc: 'Spot container CTR-0029 at gate 12', status: 'IN PROGRESS', checked: false },
     { id: 3, desc: 'Verify release code for TR-1102', status: 'PENDING', checked: false }
   ]);
+
+  const filteredTasks = tasks.filter(t => {
+    const q = searchQuery.toLowerCase().trim();
+    return !q || t.desc.toLowerCase().includes(q) || t.status.toLowerCase().includes(q);
+  });
 
   const toggleTaskCheckbox = (id) => {
     setTasks(prev => prev.map(t => t.id === id ? { ...t, checked: !t.checked } : t));
@@ -316,6 +322,14 @@ export default function YardLoadLane() {
 
                 {/* Grid Density & Columns Control */}
                 <div className="yard-controls-row" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  {/* Quick Search Bar */}
+                  <input 
+                    type="text"
+                    placeholder="Quick search tasks..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{ padding: '6px 12px', fontSize: 11, fontWeight: '700', borderRadius: 8, border: '1px solid #cbd5e1', outline: 'none', color: '#0f172a', minWidth: 160 }}
+                  />
 
                   {/* Density tabs styled container */}
                   <div style={{
@@ -456,7 +470,14 @@ export default function YardLoadLane() {
                     </tr>
                   </thead>
                   <tbody>
-                    {tasks.map((task) => (
+                    {filteredTasks.length === 0 ? (
+                      <tr>
+                        <td colSpan="3" style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: 12, fontWeight: '700' }}>
+                          No tasks found matching "{searchQuery}".
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredTasks.map((task) => (
                       <tr
                         key={task.id}
                         style={{
@@ -493,7 +514,8 @@ export default function YardLoadLane() {
                           </td>
                         )}
                       </tr>
-                    ))}
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>

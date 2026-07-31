@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
-import { Plus, Download, X, QrCode, Settings } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
+import { Plus, Download, X, QrCode, Settings, Search } from 'lucide-react';
 import './WarehouseDashboard.css';
 
 const WarehouseInbound = () => {
+  const location = useLocation();
+  const isYard = location.pathname.startsWith('/yard');
   const [yardMode, setYardMode] = useState('car'); // 'car' or 'freight'
   const [barcodeModal, setBarcodeModal] = useState(false);
   const [manualModal, setManualModal] = useState(false);
@@ -27,12 +30,22 @@ const WarehouseInbound = () => {
   ]);
 
   const [columnsMenuOpen, setColumnsMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [visibleColumns, setVisibleColumns] = useState({
     receiptId: true,
     carrierPartner: false,
     cargoSpecs: false,
     spottedLane: false,
     stagedActions: true
+  });
+
+  const filteredInbound = inboundData.filter(row => {
+    const q = searchQuery.toLowerCase().trim();
+    return !q || 
+      row.id.toLowerCase().includes(q) || 
+      (row.carrierPartner && row.carrierPartner.toLowerCase().includes(q)) ||
+      (row.cargoSpecs && row.cargoSpecs.toLowerCase().includes(q)) ||
+      (row.spottedLane && row.spottedLane.toLowerCase().includes(q));
   });
 
   const toggleColumn = (col) => {
@@ -103,7 +116,7 @@ const WarehouseInbound = () => {
       {/* Header section matches WarehouseDashboard perfectly */}
       <div className="warehouse-header">
         <div className="warehouse-header-titles">
-          <h1>Inbound</h1>
+          <h1>{isYard ? 'Yard Inbound Intake' : 'Inbound Staging & Intake'}</h1>
         </div>
       </div>
 
@@ -113,6 +126,18 @@ const WarehouseInbound = () => {
           <h3 className="section-title" style={{ margin: 0, fontSize: '15px', fontWeight: '800' }}>Inbound Staging Queue</h3>
           
           <div className="flex flex-wrap items-center gap-3" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px' }}>
+            {/* Quick Search Bar */}
+            <div className="relative flex-1 min-w-[240px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input 
+                type="text"
+                placeholder="Quick search receipts, SKU, lane..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs font-bold bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
+              />
+            </div>
+
             {/* Density Selector */}
             <div className="wh-segmented-control" style={{ padding: '2px', borderRadius: '8px' }}>
               {['COMPACT', 'DEFAULT', 'RELAXED'].map((mode) => {
@@ -261,7 +286,14 @@ const WarehouseInbound = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-800" style={{ fontSize: '13px' }}>
-              {inboundData.map((row) => {
+              {filteredInbound.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="py-8 text-center text-slate-400 font-bold">
+                    No inbound assets found matching "{searchQuery}".
+                  </td>
+                </tr>
+              ) : (
+                filteredInbound.map((row) => {
                 const isChecked = selectedRows.includes(row.id);
                 return (
                   <tr key={row.id} className="hover:bg-slate-50/50 transition-colors" style={{ borderBottom: '1px solid #f1f5f9' }}>
@@ -316,7 +348,7 @@ const WarehouseInbound = () => {
                     )}
                   </tr>
                 );
-              })}
+              }))}
             </tbody>
           </table>
         </div>

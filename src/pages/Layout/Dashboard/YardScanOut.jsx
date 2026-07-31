@@ -43,6 +43,7 @@ export default function YardScanOut() {
   // Table State
   const [density, setDensity] = useState('RELAXED'); // COMPACT, DEFAULT, RELAXED
   const [showColumnDropdown, setShowColumnDropdown] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [columns, setColumns] = useState({
     itemId: false,
     desc: false,
@@ -53,6 +54,14 @@ export default function YardScanOut() {
   const [manifestItems, setManifestItems] = useState([
     { id: 1, itemId: 'CTR-0018', desc: 'Red cargo container', status: 'Awaiting Release', checked: false }
   ]);
+
+  const filteredItems = manifestItems.filter(item => {
+    const q = searchQuery.toLowerCase().trim();
+    return !q || 
+      item.itemId.toLowerCase().includes(q) || 
+      item.desc.toLowerCase().includes(q) || 
+      item.status.toLowerCase().includes(q);
+  });
 
   const [toast, setToast] = useState(null);
 
@@ -215,6 +224,14 @@ export default function YardScanOut() {
 
                 {/* Grid Density & Columns Control */}
                 <div className="yard-controls-row" style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  {/* Quick Search Bar */}
+                  <input 
+                    type="text"
+                    placeholder="Quick search queue..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{ padding: '6px 12px', fontSize: 11, fontWeight: '700', borderRadius: 8, border: '1px solid #cbd5e1', outline: 'none', color: '#0f172a', minWidth: 160 }}
+                  />
 
                   {/* Density tabs styled container */}
                   <div style={{
@@ -367,7 +384,14 @@ export default function YardScanOut() {
                     </tr>
                   </thead>
                   <tbody>
-                    {manifestItems.map((item) => (
+                    {filteredItems.length === 0 ? (
+                      <tr>
+                        <td colSpan="4" style={{ padding: '20px', textAlign: 'center', color: '#94a3b8', fontSize: 12, fontWeight: '700' }}>
+                          No queue items found matching "{searchQuery}".
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredItems.map((item) => (
                       <tr
                         key={item.id}
                         style={{
@@ -406,7 +430,8 @@ export default function YardScanOut() {
                           </td>
                         )}
                       </tr>
-                    ))}
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>

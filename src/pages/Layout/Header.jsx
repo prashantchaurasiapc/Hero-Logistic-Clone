@@ -83,10 +83,12 @@ const Header = ({ onMenuClick }) => {
     { name: 'Live Tracking Monitor', path: '/company-admin/live-tracking', category: 'Operations', icon: MapPin },
     { name: 'Driver Roster Profiles', path: '/company-admin/drivers', category: 'Staff', icon: Users },
     { name: 'Fleet Vehicles Registry', path: '/company-admin/vehicles', category: 'Fleet', icon: Truck },
-    { name: 'Customer Accounts', path: '/company-admin/customers', category: 'CRM', icon: Users },
-    { name: 'Branches & Depots', path: '/company-admin/branches', category: 'Locations', icon: Shield },
+    { name: 'Customer Accounts & Pricing Matrix', path: '/company-admin/customers', category: 'CRM', icon: Users },
+    { name: 'Locations, Depots & Branches', path: '/company-admin/branches', category: 'Locations', icon: Shield },
     { name: 'Asset Inventory Ledger', path: '/company-admin/assets', category: 'Inventory', icon: Shield },
-    { name: 'Warehouse Holding Areas', path: '/company-admin/warehouse', category: 'Locations', icon: Shield },
+    { name: 'Warehouse & Inventory Stock', path: '/company-admin/warehouse', category: 'Warehouse', icon: Shield },
+    { name: 'Finance & Payroll Runs', path: '/company-admin/finance', category: 'Finance', icon: Settings },
+    { name: 'Documents & Knowledge Base', path: '/company-admin/knowledge-base', category: 'Documents', icon: Shield },
     { name: 'Messages & Chat Log', path: '/company-admin/messages', category: 'CRM', icon: MessageSquare }
   ];
 
@@ -147,20 +149,12 @@ const Header = ({ onMenuClick }) => {
   };
 
   const handleMessageClick = () => {
-    if (isDispatcherPath) {
-      navigate('/dispatcher/communication-depot');
-    } else {
-      navigate('/company-admin/messages');
-    }
+    navigate('/company-admin/messages');
   };
 
   const handleProfileSettingsClick = () => {
     setShowDropdown(false);
-    if (isDispatcherPath) {
-      navigate('/dispatcher/system-settings');
-    } else {
-      navigate('/company-admin/my-profile');
-    }
+    navigate('/company-admin/my-profile');
   };
 
   const filteredSearchItems = searchItems.filter(item => 

@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Search, Plus, MapPin, Printer, RefreshCw, FileText, AlertTriangle, ArrowRight, X } from 'lucide-react';
 import './WarehouseDashboard.css';
 
 const WarehouseMap = () => {
+  const location = useLocation();
+  const isYard = location.pathname.startsWith('/yard');
   // State for selected asset
   const [selectedAssetId, setSelectedAssetId] = useState('ITM-9011');
   const [searchQuery, setSearchQuery] = useState('');
@@ -226,7 +229,7 @@ const WarehouseMap = () => {
       {/* Header section matches design perfectly */}
       <div className="warehouse-header">
         <div className="warehouse-header-titles">
-          <h1>Warehouse/Map</h1>
+          <h1>{isYard ? 'Yard & Warehouse Map' : 'Warehouse/Map'}</h1>
         </div>
       </div>
 
@@ -352,7 +355,7 @@ const WarehouseMap = () => {
             {/* Header controls for map */}
             <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
               <h2 style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
-                Yard / Warehouse Allocation Map
+                {isYard ? 'Yard Staging & Allocation Map' : 'Yard / Warehouse Allocation Map'}
               </h2>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', fontSize: '11px', fontWeight: '700' }}>
                 <button 
@@ -1247,7 +1250,7 @@ const WarehouseMap = () => {
               {/* Modal Header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
-                  Full Warehouse Movement Register
+                  {isYard ? 'Full Yard Movement Register' : 'Full Warehouse Movement Register'}
                 </h2>
                 <button 
                   type="button"

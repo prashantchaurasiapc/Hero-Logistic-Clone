@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 
 const WarehouseScanning = () => {
+  const location = useLocation();
+  const isYard = location.pathname.startsWith('/yard');
   const [barcodeValue, setBarcodeValue] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
@@ -84,14 +87,14 @@ const WarehouseScanning = () => {
     <div style={S.container}>
       {/* Page Header */}
       <div style={S.header}>
-        <h1 style={S.pageTitle}>Warehouse &amp; Inventory &bull; Scanning</h1>
+        <h1 style={S.pageTitle}>{isYard ? 'Yard Barcode & QR Scan' : 'Warehouse & Inventory • Scanning'}</h1>
         <p style={S.pageSubtitle}>Log and register inbound/outbound stocks, verify pallets, and update movement logs.</p>
       </div>
 
       {/* Main Terminal Card */}
       <div style={S.card}>
         <div style={S.cardHeader}>
-          <h2 style={S.cardHeaderTitle}>Warehouse Scanning Terminal</h2>
+          <h2 style={S.cardHeaderTitle}>{isYard ? 'Yard Scanning Terminal' : 'Warehouse Scanning Terminal'}</h2>
           <p style={S.cardHeaderSubtitle}>Scan physical barcodes, register stock tags, and log movements.</p>
         </div>
 

@@ -56,8 +56,23 @@ const CustomerDashboard = () => {
 
       {/* =========== TOP HEADER =========== */}
       <div className="cp-header-wrapper">
-        <div className="cp-breadcrumb">
-          <span>Home</span> &rsaquo; <span>Customer Portal</span> &rsaquo; <span className="active">Dashboard</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+          <div className="cp-breadcrumb" style={{ margin: 0 }}>
+            <span>Home</span> &rsaquo; <span>Customer Portal</span> &rsaquo; <span className="active">Dashboard</span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <button className="cp-help-link" onClick={() => setShowSupportModal(true)}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+              </svg>
+              Need help?
+            </button>
+
+            <div className="cp-avatar-badge" title="Customer Avatar">AC</div>
+          </div>
         </div>
 
         <div className="cp-header-row">

@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
-import { Settings, Download } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
+import { Settings, Download, Search } from 'lucide-react';
 
 const WarehouseMovements = () => {
+  const location = useLocation();
+  const isYard = location.pathname.startsWith('/yard');
   const [density, setDensity] = useState('relaxed'); // compact, default, relaxed (relaxed active by default as per screenshot)
   const [isColumnsMenuOpen, setIsColumnsMenuOpen] = useState(false);
   const [selectedRows, setSelectedRows] = useState([]);
   const [toast, setToast] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Column visibility state
   const [visibleColumns, setVisibleColumns] = useState({
@@ -21,6 +25,15 @@ const WarehouseMovements = () => {
     { id: 'H-2', activity: 'Registered independent asset', staff: 'System', timestamp: '06/26/2026 09:15 AM' },
     { id: 'H-3', activity: 'Inwarded to Aisle 4 - Bin C', staff: 'Sarah R. (Clerk)', timestamp: '06/26/2026 10:45 AM' }
   ]);
+
+  const filteredMovements = movementsData.filter(row => {
+    const q = searchQuery.toLowerCase().trim();
+    return !q || 
+      row.id.toLowerCase().includes(q) || 
+      row.activity.toLowerCase().includes(q) ||
+      row.staff.toLowerCase().includes(q) ||
+      row.timestamp.toLowerCase().includes(q);
+  });
 
   const showToast = (msg) => {
     setToast(msg);
@@ -61,7 +74,7 @@ const WarehouseMovements = () => {
     <div style={S.container}>
       {/* Page Header */}
       <div style={S.header}>
-        <h1 style={S.pageTitle}>Warehouse &amp; Inventory &bull; Movements</h1>
+        <h1 style={S.pageTitle}>{isYard ? 'Yard Stock Movements' : 'Warehouse & Inventory • Movements'}</h1>
         <p style={S.pageSubtitle}>Log and monitor real-time stock transfers, aisle adjustments, and stowing movements.</p>
       </div>
 
@@ -72,6 +85,18 @@ const WarehouseMovements = () => {
           <h2 style={S.cardTitle}>Inventory Movements &amp; Custody Ledger</h2>
 
           <div style={S.cardHeaderActions}>
+            {/* Quick Search Bar */}
+            <div style={{ position: 'relative', minWidth: '220px' }}>
+              <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+              <input 
+                type="text"
+                placeholder="Quick search movements, staff, asset..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ width: '100%', padding: '7px 12px 7px 32px', fontSize: '11.5px', fontWeight: '700', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', color: '#0f172a' }}
+              />
+            </div>
+
             {/* Density Control */}
             <div style={S.densityPill}>
               {['COMPACT', 'DEFAULT', 'RELAXED'].map((mode) => {
@@ -189,7 +214,14 @@ const WarehouseMovements = () => {
               </tr>
             </thead>
             <tbody>
-              {movementsData.map((row) => {
+              {filteredMovements.length === 0 ? (
+                <tr>
+                  <td colSpan="5" style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '12px', fontWeight: '700' }}>
+                    No inventory movements found matching "{searchQuery}".
+                  </td>
+                </tr>
+              ) : (
+                filteredMovements.map((row) => {
                 const isChecked = selectedRows.includes(row.id);
                 return (
                   <tr key={row.id} style={isChecked ? S.trSelected : S.tr}>
@@ -218,7 +250,7 @@ const WarehouseMovements = () => {
                     )}
                   </tr>
                 );
-              })}
+              }))}
             </tbody>
           </table>
         </div>

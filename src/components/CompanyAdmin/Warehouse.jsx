@@ -44,7 +44,7 @@ const styles = `
   /* Warehouse List Card */
   .wh-list-card { background:#fff; border:1px solid #E2E8F0; border-radius:12px; overflow:hidden; }
   .wh-list-filters { padding:12px 16px; display:flex; flex-direction:column; gap:10px; border-bottom:1px solid #F1F5F9; }
-  @media(min-width:600px){ .wh-list-filters { flex-direction:row; align-items:center; flex-wrap:wrap; } }
+  @media(min-width:600px){ .wh-list-filters { flex-direction:row; align-items:center; flex-wrap:nowrap; overflow-x:auto; } }
   .wh-search-box { position:relative; flex:1; min-width:160px; }
   .wh-search-box input { width:100%; padding:9px 12px 9px 36px; border:1px solid #E2E8F0; border-radius:8px; font-size:13px; outline:none; color:#0F172A; box-sizing:border-box; }
   .wh-search-icon { position:absolute; left:10px; top:50%; transform:translateY(-50%); }
@@ -950,7 +950,7 @@ export default function Warehouse() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'nowrap', flexShrink: 0, alignItems: 'center' }}>
                 <select 
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
@@ -1003,31 +1003,31 @@ export default function Warehouse() {
                       <tr key={i} style={{ borderBottom: '1px solid #F8FAFC' }}
                         onMouseOver={e => e.currentTarget.style.background = '#FAFAFA'}
                         onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
-                        <td>
-                          <div style={{ display: 'flex', gap: 8 }}>
-                            <div style={{ marginTop: 2 }}><StarIcon fill={w.isStar ? '#4F46E5' : 'none'} color={w.isStar ? '#4F46E5' : '#CBD5E1'} /></div>
+                        <td style={{ padding: '14px 20px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div style={{ flexShrink: 0 }}><StarIcon fill={w.isStar ? '#4F46E5' : 'none'} color={w.isStar ? '#4F46E5' : '#CBD5E1'} /></div>
                             <div>
-                              <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', marginBottom: 2, maxWidth: 160 }}>{w.name}</div>
-                              <div style={{ fontSize: 10, color: '#64748B', maxWidth: 160, lineHeight: 1.4 }}>{w.addr}</div>
+                              <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', whiteSpace: 'nowrap' }}>{w.name}</div>
+                              <div style={{ fontSize: 10.5, color: '#64748B', whiteSpace: 'nowrap', marginTop: 2 }}>{w.addr}</div>
                             </div>
                           </div>
                         </td>
-                        <td><span onClick={() => handleWhClick(w)} style={{ fontSize: 13, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }}>{w.code}</span></td>
-                        <td><div style={{ fontSize: 12, color: '#475569', maxWidth: 100 }}>{w.branch}</div></td>
-                        <td><div style={{ fontSize: 12, color: '#475569' }}>{w.type}</div></td>
-                        <td><span className={`wh-badge ${w.status === 'Active' ? 'wh-badge-green' : 'wh-badge-gray'}`}>{w.status}</span></td>
-                        <td><div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>{w.stock}</div></td>
-                        <td><div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A' }}>{w.value}</div></td>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <td style={{ padding: '14px 20px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}><span onClick={() => handleWhClick(w)} style={{ fontSize: 13, fontWeight: 700, color: '#4F46E5', cursor: 'pointer', whiteSpace: 'nowrap' }}>{w.code}</span></td>
+                        <td style={{ padding: '14px 20px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}><div style={{ fontSize: 12.5, color: '#334155', fontWeight: 600, whiteSpace: 'nowrap' }}>{w.branch}</div></td>
+                        <td style={{ padding: '14px 20px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}><div style={{ fontSize: 12, color: '#475569', whiteSpace: 'nowrap' }}>{w.type}</div></td>
+                        <td style={{ padding: '14px 20px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}><span className={`wh-badge ${w.status === 'Active' ? 'wh-badge-green' : 'wh-badge-gray'}`} style={{ whiteSpace: 'nowrap' }}>{w.status}</span></td>
+                        <td style={{ padding: '14px 20px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}><div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap' }}>{w.stock}</div></td>
+                        <td style={{ padding: '14px 20px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}><div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', whiteSpace: 'nowrap' }}>{w.value}</div></td>
+                        <td style={{ padding: '14px 20px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' }}>
                             <div style={{ fontSize: 12, color: '#0F172A', fontWeight: 600 }}>{w.util}%</div>
                             <div style={{ width: 50, height: 5, background: '#EEF2FF', borderRadius: 4, overflow: 'hidden' }}>
                               <div style={{ width: `${w.util}%`, height: '100%', background: '#4F46E5', borderRadius: 4 }} />
                             </div>
                           </div>
                         </td>
-                        <td style={{ padding: '12px 16px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <td style={{ padding: '14px 20px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
                             <button 
                               onClick={() => handleWhClick(w)} 
                               title="View Warehouse Details" 

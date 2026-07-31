@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import './WarehouseDashboard.css';
 // === ICONS ===
 const BoxIcon = ({ color }) => (
@@ -111,6 +111,14 @@ const initialWarehouses = [
 
 export default function WarehouseDashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isYard = location.pathname.startsWith('/yard');
+  const portalTitle = isYard ? 'Yard Attendant' : 'Warehouse';
+  const dashboardTitle = isYard ? 'Yard Dashboard / List' : 'Warehouse Dashboard / List';
+  const subtitle = isYard
+    ? 'View all yard stock, staging areas and real-time operational summary.'
+    : 'View all warehouses, stock overview and real-time operational summary.';
+
   const [view, setView] = useState('list');
   const [selectedWh, setSelectedWh] = useState(null);
   const [showMoreActions, setShowMoreActions] = useState(false);
@@ -189,7 +197,7 @@ export default function WarehouseDashboard() {
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 24 }}>
           <div>
             <div style={{ fontSize: 12, fontWeight: 600, color: '#64748B', marginBottom: 8, display: 'flex', gap: 6 }}>
-              <span>Home</span> <span style={{ color: '#CBD5E1' }}>›</span> <span>Warehouse</span> <span style={{ color: '#CBD5E1' }}>›</span> <span>Warehouse List</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ color: '#0F172A' }}>Warehouse Details</span>
+              <span>Home</span> <span style={{ color: '#CBD5E1' }}>›</span> <span>{portalTitle}</span> <span style={{ color: '#CBD5E1' }}>›</span> <span>{portalTitle} List</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ color: '#0F172A' }}>{portalTitle} Details</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <h1 style={{ fontSize: 22, fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.5px' }}>9.2 Warehouse Details - {wh.name}</h1>
@@ -914,18 +922,18 @@ export default function WarehouseDashboard() {
       <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 24 }}>
         <div>
           <div style={{ fontSize: 12, fontWeight: 600, color: '#64748B', marginBottom: 8, display: 'flex', gap: 6 }}>
-            <span>Home</span> <span style={{ color: '#CBD5E1' }}>›</span> <span>Warehouse</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ color: '#0F172A' }}>Warehouse Dashboard</span>
+            <span>Home</span> <span style={{ color: '#CBD5E1' }}>›</span> <span>{portalTitle}</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ color: '#0F172A' }}>{dashboardTitle}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <h1 style={{ fontSize: 22, fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.5px' }}>9.1 Warehouse Dashboard / List</h1>
+            <h1 style={{ fontSize: 22, fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.5px' }}>{dashboardTitle}</h1>
             <div style={{ width: 14, height: 14, borderRadius: 4, border: '2px solid #8B5CF6' }}></div>
           </div>
-          <p style={{ fontSize: 13, color: '#64748B', margin: '6px 0 0 0', fontWeight: 500 }}>View all warehouses, stock overview and real-time operational summary.</p>
+          <p style={{ fontSize: 13, color: '#64748B', margin: '6px 0 0 0', fontWeight: 500 }}>{subtitle}</p>
         </div>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 18 }}>
           <button onClick={() => setView('add')} style={{ padding: '5px 12px', borderRadius: 4, fontSize: 11, fontWeight: 600, border: '1px solid #E2E8F0', background: '#fff', color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-            <span style={{ fontSize: 14, fontWeight: 700 }}>+</span> Add Warehouse
+            <span style={{ fontSize: 14, fontWeight: 700 }}>+</span> {isYard ? 'Add Yard' : 'Add Warehouse'}
           </button>
           <div style={{ position: 'relative' }}>
             <button onClick={() => setShowMoreActions(!showMoreActions)} style={{ padding: '5px 12px', borderRadius: 4, fontSize: 11, fontWeight: 600, border: '1px solid #E2E8F0', background: '#fff', color: '#334155', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
@@ -937,17 +945,17 @@ export default function WarehouseDashboard() {
             {showMoreActions && (
               <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: 8, width: 220, background: '#fff', border: '1px solid #E2E8F0', borderRadius: 8, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', zIndex: 50, padding: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <div onClick={handleExport} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', borderRadius: 6, transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#F1F5F9'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
-                  Export Warehouse List
+                  {isYard ? 'Export Yard List' : 'Export Warehouse List'}
                 </div>
-                <div onClick={() => { navigate('/warehouse/reports'); setShowMoreActions(false); }} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', borderRadius: 6, transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#F1F5F9'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
+                <div onClick={() => { navigate(isYard ? '/yard/activities' : '/warehouse/reports'); setShowMoreActions(false); }} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', borderRadius: 6, transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#F1F5F9'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
                   Generate Inventory Report
                 </div>
                 <div onClick={handleImport} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', borderRadius: 6, transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#F1F5F9'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
-                  Import Bulk Warehouses
+                  {isYard ? 'Import Bulk Yards' : 'Import Bulk Warehouses'}
                 </div>
                 <div style={{ height: 1, background: '#E2E8F0', margin: '4px 0' }}></div>
                 <div onClick={() => { navigate('/company-admin/company-settings'); setShowMoreActions(false); }} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#4F46E5', cursor: 'pointer', borderRadius: 6, transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
-                  Warehouse Settings
+                  {isYard ? 'Yard Settings' : 'Warehouse Settings'}
                 </div>
               </div>
             )}
@@ -964,16 +972,16 @@ export default function WarehouseDashboard() {
               <BoxIcon color="#8B5CF6" />
             </div>
             <div style={{ overflow: 'hidden' }}>
-              <div style={{ fontSize: 9, fontWeight: 800, color: '#64748B', letterSpacing: '0.2px', textTransform: 'uppercase', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>TOTAL WAREHOUSES</div>
+              <div style={{ fontSize: 9, fontWeight: 800, color: '#64748B', letterSpacing: '0.2px', textTransform: 'uppercase', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{isYard ? 'TOTAL YARDS' : 'TOTAL WAREHOUSES'}</div>
               <div style={{ fontSize: 17, fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>6</div>
-              <div style={{ fontSize: 9.5, color: '#94A3B8', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Active Warehouses</div>
+              <div style={{ fontSize: 9.5, color: '#94A3B8', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{isYard ? 'Active Yards' : 'Active Warehouses'}</div>
             </div>
           </div>
           <div onClick={() => {
             setView('list');
             document.getElementById('warehouse-list')?.scrollIntoView({ behavior: 'smooth' });
           }} style={{ marginTop: 'auto', fontSize: 10, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer', paddingTop: 4 }}>
-            View all warehouses <span style={{ fontSize: 12 }}>→</span>
+            {isYard ? 'View all yards' : 'View all warehouses'} <span style={{ fontSize: 12 }}>→</span>
           </div>
         </div>
 
@@ -986,10 +994,10 @@ export default function WarehouseDashboard() {
             <div style={{ overflow: 'hidden' }}>
               <div style={{ fontSize: 9, fontWeight: 800, color: '#64748B', letterSpacing: '0.2px', textTransform: 'uppercase', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>TOTAL INVENTORY VALUE</div>
               <div style={{ fontSize: 15, fontWeight: 900, color: '#0F172A', lineHeight: 1.1 }}>$1,256,850.00</div>
-              <div style={{ fontSize: 9.5, color: '#94A3B8', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Across all warehouses</div>
+              <div style={{ fontSize: 9.5, color: '#94A3B8', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{isYard ? 'Across all yards' : 'Across all warehouses'}</div>
             </div>
           </div>
-          <div onClick={() => navigate('/warehouse/current-stock')} style={{ marginTop: 'auto', fontSize: 10, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer', paddingTop: 4 }}>
+          <div onClick={() => navigate(isYard ? '/yard/current-stock' : '/warehouse/current-stock')} style={{ marginTop: 'auto', fontSize: 10, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer', paddingTop: 4 }}>
             View inventory <span style={{ fontSize: 12 }}>→</span>
           </div>
         </div>
@@ -1003,10 +1011,10 @@ export default function WarehouseDashboard() {
             <div style={{ overflow: 'hidden' }}>
               <div style={{ fontSize: 9, fontWeight: 800, color: '#64748B', letterSpacing: '0.2px', textTransform: 'uppercase', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>TOTAL STOCK ITEMS</div>
               <div style={{ fontSize: 17, fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>4,125</div>
-              <div style={{ fontSize: 9.5, color: '#94A3B8', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>All warehouses</div>
+              <div style={{ fontSize: 9.5, color: '#94A3B8', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{isYard ? 'All yards' : 'All warehouses'}</div>
             </div>
           </div>
-          <div onClick={() => navigate('/warehouse/current-stock')} style={{ marginTop: 'auto', fontSize: 10, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer', paddingTop: 4 }}>
+          <div onClick={() => navigate(isYard ? '/yard/current-stock' : '/warehouse/current-stock')} style={{ marginTop: 'auto', fontSize: 10, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer', paddingTop: 4 }}>
             View stock <span style={{ fontSize: 12 }}>→</span>
           </div>
         </div>
@@ -1023,7 +1031,7 @@ export default function WarehouseDashboard() {
               <div style={{ fontSize: 9.5, color: '#94A3B8', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Requires attention</div>
             </div>
           </div>
-          <div onClick={() => navigate('/warehouse/movements')} style={{ marginTop: 'auto', fontSize: 10, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer', paddingTop: 4 }}>
+          <div onClick={() => navigate(isYard ? '/yard/movements' : '/warehouse/movements')} style={{ marginTop: 'auto', fontSize: 10, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer', paddingTop: 4 }}>
             View tasks <span style={{ fontSize: 12 }}>→</span>
           </div>
         </div>
@@ -1040,7 +1048,7 @@ export default function WarehouseDashboard() {
               <div style={{ fontSize: 9.5, color: '#94A3B8', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>In transit / Expected</div>
             </div>
           </div>
-          <div onClick={() => navigate('/warehouse/inbound')} style={{ marginTop: 'auto', fontSize: 10, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer', paddingTop: 4 }}>
+          <div onClick={() => navigate(isYard ? '/yard/inbound' : '/warehouse/inbound')} style={{ marginTop: 'auto', fontSize: 10, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer', paddingTop: 4 }}>
             View shipments <span style={{ fontSize: 12 }}>→</span>
           </div>
         </div>
@@ -1057,7 +1065,7 @@ export default function WarehouseDashboard() {
               <div style={{ fontSize: 9.5, color: '#94A3B8', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Scheduled / In progress</div>
             </div>
           </div>
-          <div onClick={() => navigate('/warehouse/outbound')} style={{ marginTop: 'auto', fontSize: 10, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer', paddingTop: 4 }}>
+          <div onClick={() => navigate(isYard ? '/yard/outbound' : '/warehouse/outbound')} style={{ marginTop: 'auto', fontSize: 10, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 3, cursor: 'pointer', paddingTop: 4 }}>
             View shipments <span style={{ fontSize: 12 }}>→</span>
           </div>
         </div>
@@ -1069,17 +1077,17 @@ export default function WarehouseDashboard() {
         {/* WAREHOUSE LIST */}
         <div id="warehouse-list" style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, overflow: 'hidden' }}>
           <div style={{ padding: '20px 24px', borderBottom: '1px solid #F1F5F9' }}>
-            <h2 style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>WAREHOUSE LIST ({filteredWarehouses.length})</h2>
+            <h2 style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>{isYard ? 'YARD LIST' : 'WAREHOUSE LIST'} ({filteredWarehouses.length})</h2>
           </div>
 
-          <div style={{ padding: '16px 24px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12, borderBottom: '1px solid #F1F5F9' }}>
-            <div style={{ position: 'relative', flex: '1 1 200px' }}>
+          <div style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 10, overflowX: 'auto', borderBottom: '1px solid #F1F5F9', whiteSpace: 'nowrap' }}>
+            <div style={{ position: 'relative', flex: '1 1 180px', minWidth: 150 }}>
               <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }}><SearchIcon /></span>
               <input 
-                placeholder="Search warehouses..." 
+                placeholder={isYard ? 'Search yards...' : 'Search warehouses...'} 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ width: '100%', padding: '9px 12px 9px 36px', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: 13, outline: 'none', color: '#0F172A', boxSizing: 'border-box' }} 
+                style={{ width: '100%', padding: '8px 12px 8px 34px', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: 12.5, outline: 'none', color: '#0F172A', boxSizing: 'border-box' }} 
               />
             </div>
 
@@ -1087,7 +1095,7 @@ export default function WarehouseDashboard() {
             <select 
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              style={{ padding: '9px 32px 9px 12px', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: 13, fontWeight: 600, color: '#334155', appearance: 'none', background: '#fff url("data:image/svg+xml;utf8,<svg fill=\'%2364748B\' height=\'16\' viewBox=\'0 0 24 24\' width=\'16\' xmlns=\'http://www.w3.org/2000/svg\'><path d=\'M7 10l5 5 5-5z\'/></svg>") no-repeat right 8px center', outline: 'none', flex: '1 1 120px', minWidth: '120px', cursor: 'pointer' }}
+              style={{ padding: '8px 28px 8px 10px', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: 12.5, fontWeight: 600, color: '#334155', appearance: 'none', background: '#fff url("data:image/svg+xml;utf8,<svg fill=\'%2364748B\' height=\'16\' viewBox=\'0 0 24 24\' width=\'16\' xmlns=\'http://www.w3.org/2000/svg\'><path d=\'M7 10l5 5 5-5z\'/></svg>") no-repeat right 8px center', outline: 'none', flexShrink: 0, cursor: 'pointer' }}
             >
               {statusOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
             </select>
@@ -1095,7 +1103,7 @@ export default function WarehouseDashboard() {
             <select 
               value={branchFilter}
               onChange={(e) => setBranchFilter(e.target.value)}
-              style={{ padding: '9px 32px 9px 12px', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: 13, fontWeight: 600, color: '#334155', appearance: 'none', background: '#fff url("data:image/svg+xml;utf8,<svg fill=\'%2364748B\' height=\'16\' viewBox=\'0 0 24 24\' width=\'16\' xmlns=\'http://www.w3.org/2000/svg\'><path d=\'M7 10l5 5 5-5z\'/></svg>") no-repeat right 8px center', outline: 'none', flex: '1 1 120px', minWidth: '120px', cursor: 'pointer' }}
+              style={{ padding: '8px 28px 8px 10px', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: 12.5, fontWeight: 600, color: '#334155', appearance: 'none', background: '#fff url("data:image/svg+xml;utf8,<svg fill=\'%2364748B\' height=\'16\' viewBox=\'0 0 24 24\' width=\'16\' xmlns=\'http://www.w3.org/2000/svg\'><path d=\'M7 10l5 5 5-5z\'/></svg>") no-repeat right 8px center', outline: 'none', flexShrink: 0, cursor: 'pointer' }}
             >
               {branchOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
             </select>
@@ -1103,17 +1111,17 @@ export default function WarehouseDashboard() {
             <select 
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              style={{ padding: '9px 32px 9px 12px', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: 13, fontWeight: 600, color: '#334155', appearance: 'none', background: '#fff url("data:image/svg+xml;utf8,<svg fill=\'%2364748B\' height=\'16\' viewBox=\'0 0 24 24\' width=\'16\' xmlns=\'http://www.w3.org/2000/svg\'><path d=\'M7 10l5 5 5-5z\'/></svg>") no-repeat right 8px center', outline: 'none', flex: '1 1 120px', minWidth: '120px', cursor: 'pointer' }}
+              style={{ padding: '8px 28px 8px 10px', border: '1px solid #E2E8F0', borderRadius: 8, fontSize: 12.5, fontWeight: 600, color: '#334155', appearance: 'none', background: '#fff url("data:image/svg+xml;utf8,<svg fill=\'%2364748B\' height=\'16\' viewBox=\'0 0 24 24\' width=\'16\' xmlns=\'http://www.w3.org/2000/svg\'><path d=\'M7 10l5 5 5-5z\'/></svg>") no-repeat right 8px center', outline: 'none', flexShrink: 0, cursor: 'pointer' }}
             >
               {typeOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
             </select>
 
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <button onClick={resetFilters} title="Clear/Reset Filters" style={{ padding: '9px', border: '1px solid #E2E8F0', borderRadius: 8, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FilterIcon /></button>
-              <button onClick={handleExport} style={{ padding: '9px 14px', border: '1px solid #E2E8F0', borderRadius: 8, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#334155', whiteSpace: 'nowrap' }}>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+              <button onClick={resetFilters} title="Clear/Reset Filters" style={{ padding: '8px', border: '1px solid #E2E8F0', borderRadius: 8, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FilterIcon /></button>
+              <button onClick={handleExport} style={{ padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: 8, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 600, color: '#334155', whiteSpace: 'nowrap' }}>
                 <ExportIcon /> Export
               </button>
-              <button onClick={resetFilters} title="Reset Filters" style={{ padding: '9px', border: '1px solid #E2E8F0', borderRadius: 8, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><RefreshIcon /></button>
+              <button onClick={resetFilters} title="Reset Filters" style={{ padding: '8px', border: '1px solid #E2E8F0', borderRadius: 8, background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><RefreshIcon /></button>
             </div>
           </div>
 
@@ -1121,7 +1129,7 @@ export default function WarehouseDashboard() {
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
                 <tr style={{ background: '#fff', borderBottom: '1px solid #F1F5F9' }}>
-                  {['Warehouse Name', 'Code', 'Branch / Location', 'Type', 'Status', 'Stock Items', 'Inventory Value (AUD)', 'Utilization', 'Action'].map(h => (
+                  {[(isYard ? 'Yard Name' : 'Warehouse Name'), 'Code', 'Branch / Location', 'Type', 'Status', 'Stock Items', 'Inventory Value (AUD)', 'Utilization', 'Action'].map(h => (
                     <th key={h} style={{ padding: '16px 24px', fontSize: 11, fontWeight: 800, color: '#0F172A', whiteSpace: 'nowrap', textTransform: 'capitalize' }}>{h}</th>
                   ))}
                 </tr>
@@ -1130,59 +1138,59 @@ export default function WarehouseDashboard() {
                 {filteredWarehouses.length === 0 ? (
                   <tr>
                     <td colSpan="9" style={{ padding: '32px', textAlign: 'center', color: '#64748B', fontSize: 13, fontWeight: 600 }}>
-                      No warehouses found matching your filters.
+                      {isYard ? 'No yards found matching your filters.' : 'No warehouses found matching your filters.'}
                     </td>
                   </tr>
                 ) : (
                   filteredWarehouses.map((w, i) => (
                     <tr key={i} style={{ borderBottom: '1px solid #F8FAFC' }}>
-                      <td style={{ padding: '16px 24px', verticalAlign: 'top' }}>
-                        <div style={{ display: 'flex', gap: 8 }}>
-                          <div style={{ marginTop: 2 }}><StarIcon fill={w.isStar ? '#4F46E5' : 'none'} color={w.isStar ? '#4F46E5' : '#CBD5E1'} /></div>
+                      <td style={{ padding: '14px 20px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <div style={{ flexShrink: 0 }}><StarIcon fill={w.isStar ? '#4F46E5' : 'none'} color={w.isStar ? '#4F46E5' : '#CBD5E1'} /></div>
                           <div>
-                            <div style={{ fontSize: 13.5, fontWeight: 800, color: '#0F172A', marginBottom: 4, width: 140 }}>{w.name}</div>
-                            <div style={{ fontSize: 11, color: '#64748B', lineHeight: 1.4, width: 120 }}>{w.addr}</div>
+                            <div style={{ fontSize: 13.5, fontWeight: 800, color: '#0F172A', whiteSpace: 'nowrap' }}>{isYard && w.yardName ? w.yardName : w.name}</div>
+                            <div style={{ fontSize: 11, color: '#64748B', whiteSpace: 'nowrap', marginTop: 2 }}>{w.addr}</div>
                           </div>
                         </div>
                       </td>
-                      <td style={{ padding: '16px 24px', verticalAlign: 'top' }}>
-                        <span onClick={() => handleWhClick(w)} style={{ fontSize: 13, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }}>{w.code}</span>
+                      <td style={{ padding: '14px 20px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                        <span onClick={() => handleWhClick(w)} style={{ fontSize: 13, fontWeight: 700, color: '#4F46E5', cursor: 'pointer', whiteSpace: 'nowrap' }}>{w.code}</span>
                       </td>
-                      <td style={{ padding: '16px 24px', verticalAlign: 'top' }}>
-                        <div style={{ fontSize: 13, color: '#475569', fontWeight: 500, width: 80 }}>{w.branch}</div>
+                      <td style={{ padding: '14px 20px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                        <div style={{ fontSize: 13, color: '#334155', fontWeight: 600, whiteSpace: 'nowrap' }}>{w.branch}</div>
                       </td>
-                      <td style={{ padding: '16px 24px', verticalAlign: 'top' }}>
-                        <div style={{ fontSize: 13, color: '#475569' }}>{w.type}</div>
+                      <td style={{ padding: '14px 20px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                        <div style={{ fontSize: 13, color: '#475569', whiteSpace: 'nowrap' }}>{w.type}</div>
                       </td>
-                      <td style={{ padding: '16px 24px', verticalAlign: 'top' }}>
-                        <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 6, background: w.status === 'Active' ? '#F0FDF4' : '#F1F5F9', color: w.status === 'Active' ? '#16A34A' : '#64748B' }}>
+                      <td style={{ padding: '14px 20px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 6, background: w.status === 'Active' ? '#F0FDF4' : '#F1F5F9', color: w.status === 'Active' ? '#16A34A' : '#64748B', whiteSpace: 'nowrap' }}>
                           {w.status}
                         </span>
                       </td>
-                      <td style={{ padding: '16px 24px', verticalAlign: 'top' }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>{w.stock}</div>
+                      <td style={{ padding: '14px 20px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap' }}>{w.stock}</div>
                       </td>
-                      <td style={{ padding: '16px 24px', verticalAlign: 'top' }}>
-                        <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A' }}>{w.value}</div>
+                      <td style={{ padding: '14px 20px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', whiteSpace: 'nowrap' }}>{w.value}</div>
                       </td>
-                      <td style={{ padding: '16px 24px', verticalAlign: 'top' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <td style={{ padding: '14px 20px', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, whiteSpace: 'nowrap' }}>
                           <div style={{ fontSize: 13, color: '#0F172A', fontWeight: 600 }}>{w.util}%</div>
                           <div style={{ width: 60, height: 6, background: '#EEF2FF', borderRadius: 4, overflow: 'hidden' }}>
                             <div style={{ width: `${w.util}%`, height: '100%', background: '#4F46E5', borderRadius: 4 }}></div>
                           </div>
                         </div>
                       </td>
-                      <td style={{ padding: '16px 24px', verticalAlign: 'top', position: 'relative' }}>
-                        <div onClick={() => setOpenRowAction(openRowAction === i ? null : i)} style={{ color: '#94A3B8', fontWeight: 800, fontSize: 18, letterSpacing: '1px', cursor: 'pointer', userSelect: 'none' }}>...</div>
+                      <td style={{ padding: '14px 20px', verticalAlign: 'middle', position: 'relative', whiteSpace: 'nowrap' }}>
+                        <div onClick={() => setOpenRowAction(openRowAction === i ? null : i)} style={{ color: '#94A3B8', fontWeight: 800, fontSize: 18, letterSpacing: '1px', cursor: 'pointer', userSelect: 'none', display: 'inline-block', padding: '2px 8px' }}>...</div>
                         {openRowAction === i && (
                           <div style={{ position: 'absolute', top: '100%', right: 24, marginTop: -10, width: 180, background: '#fff', border: '1px solid #E2E8F0', borderRadius: 8, boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', zIndex: 100, padding: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
                             <div onClick={() => { handleWhClick(w); setOpenRowAction(null); }} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', borderRadius: 6 }} onMouseOver={e => e.currentTarget.style.background = '#F1F5F9'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>View Details</div>
-                            <div onClick={() => { navigate('/warehouse/current-stock'); setOpenRowAction(null); }} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', borderRadius: 6 }} onMouseOver={e => e.currentTarget.style.background = '#F1F5F9'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>Manage Inventory</div>
+                            <div onClick={() => { navigate(isYard ? '/yard/current-stock' : '/warehouse/current-stock'); setOpenRowAction(null); }} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', borderRadius: 6 }} onMouseOver={e => e.currentTarget.style.background = '#F1F5F9'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>Manage Inventory</div>
                             <div onClick={() => { 
                               setEditModal({ ...w, index: i });
                               setOpenRowAction(null); 
-                            }} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', borderRadius: 6 }} onMouseOver={e => e.currentTarget.style.background = '#F1F5F9'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>Edit Warehouse</div>
+                            }} style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#334155', cursor: 'pointer', borderRadius: 6 }} onMouseOver={e => e.currentTarget.style.background = '#F1F5F9'} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>{isYard ? 'Edit Yard' : 'Edit Warehouse'}</div>
                             <div style={{ height: 1, background: '#E2E8F0', margin: '4px 0' }}></div>
                             <div onClick={() => { 
                               if (window.confirm(`Are you sure you want to delete ${w.name}?`)) {
@@ -1205,7 +1213,7 @@ export default function WarehouseDashboard() {
 
           <div style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #F1F5F9' }}>
             <div style={{ fontSize: 13, color: '#64748B', fontWeight: 500 }}>
-              Showing {filteredWarehouses.length > 0 ? 1 : 0} to {filteredWarehouses.length} of {whList.length} warehouses
+              Showing {filteredWarehouses.length > 0 ? 1 : 0} to {filteredWarehouses.length} of {whList.length} {isYard ? 'yards' : 'warehouses'}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ display: 'flex', gap: 4 }}>
@@ -1224,89 +1232,89 @@ export default function WarehouseDashboard() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
           {/* Warehouse Alerts */}
-          <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '20px 24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h3 style={{ fontSize: 12, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>WAREHOUSE ALERTS</h3>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 2, cursor: 'pointer' }}>View All →</div>
+          <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '14px 18px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <h3 style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>{isYard ? 'YARD ALERTS' : 'WAREHOUSE ALERTS'}</h3>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 2, cursor: 'pointer' }}>View All →</div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              <div style={{ display: 'flex', gap: 12 }}>
-                <div style={{ flexShrink: 0, marginTop: 2 }}><AlertTriangleIcon color="#F97316" /></div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <div style={{ flexShrink: 0, marginTop: 1 }}><AlertTriangleIcon color="#F97316" /></div>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#EA580C', marginBottom: 2 }}>Low Stock Alert</div>
-                    <div style={{ fontSize: 11, color: '#94A3B8' }}>12 min ago</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#EA580C', marginBottom: 1 }}>Low Stock Alert</div>
+                    <div style={{ fontSize: 9.5, color: '#94A3B8' }}>12 min ago</div>
                   </div>
-                  <div style={{ fontSize: 11.5, color: '#64748B' }}>15 items below minimum stock level</div>
+                  <div style={{ fontSize: 10.5, color: '#64748B' }}>15 items below minimum stock level</div>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: 12 }}>
-                <div style={{ flexShrink: 0, marginTop: 2 }}><AlertTriangleIcon color="#F97316" /></div>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <div style={{ flexShrink: 0, marginTop: 1 }}><AlertTriangleIcon color="#F97316" /></div>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#EA580C', marginBottom: 2 }}>Stock Expiry Alert</div>
-                    <div style={{ fontSize: 11, color: '#94A3B8' }}>1 hr ago</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#EA580C', marginBottom: 1 }}>Stock Expiry Alert</div>
+                    <div style={{ fontSize: 9.5, color: '#94A3B8' }}>1 hr ago</div>
                   </div>
-                  <div style={{ fontSize: 11.5, color: '#64748B' }}>8 items expiring within 30 days</div>
+                  <div style={{ fontSize: 10.5, color: '#64748B' }}>8 items expiring within 30 days</div>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: 12 }}>
-                <div style={{ flexShrink: 0, marginTop: 2 }}><InfoIcon color="#4F46E5" /></div>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <div style={{ flexShrink: 0, marginTop: 1 }}><InfoIcon color="#4F46E5" /></div>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#4F46E5', marginBottom: 2 }}>Pick Tasks Overdue</div>
-                    <div style={{ fontSize: 11, color: '#94A3B8' }}>2 hrs ago</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#4F46E5', marginBottom: 1 }}>Pick Tasks Overdue</div>
+                    <div style={{ fontSize: 9.5, color: '#94A3B8' }}>2 hrs ago</div>
                   </div>
-                  <div style={{ fontSize: 11.5, color: '#64748B' }}>5 pick tasks are overdue</div>
+                  <div style={{ fontSize: 10.5, color: '#64748B' }}>5 pick tasks are overdue</div>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: 12 }}>
-                <div style={{ flexShrink: 0, marginTop: 2 }}><TruckIcon color="#4F46E5" /></div>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <div style={{ flexShrink: 0, marginTop: 1 }}><TruckIcon color="#4F46E5" /></div>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#4F46E5', marginBottom: 2 }}>Incoming Shipment</div>
-                    <div style={{ fontSize: 11, color: '#94A3B8' }}>3 hrs ago</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#4F46E5', marginBottom: 1 }}>Incoming Shipment</div>
+                    <div style={{ fontSize: 9.5, color: '#94A3B8' }}>3 hrs ago</div>
                   </div>
-                  <div style={{ fontSize: 11.5, color: '#64748B' }}>PO-55412 arriving today at WH-001</div>
+                  <div style={{ fontSize: 10.5, color: '#64748B' }}>PO-55412 arriving today at WH-001</div>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Warehouse Locations */}
-          <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '20px 24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h3 style={{ fontSize: 12, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>WAREHOUSE LOCATIONS</h3>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 2, cursor: 'pointer' }}>View All →</div>
+          <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '14px 18px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <h3 style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>{isYard ? 'YARD LOCATIONS' : 'WAREHOUSE LOCATIONS'}</h3>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', gap: 2, cursor: 'pointer' }}>View All →</div>
             </div>
 
-            <div style={{ display: 'flex', gap: 16 }}>
+            <div style={{ display: 'flex', gap: 12 }}>
               {/* Fake Map */}
-              <div style={{ width: 140, height: 110, background: '#BFDBFE', borderRadius: 8, position: 'relative', overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', bottom: 4, left: 6, fontSize: 9, fontWeight: 800, color: '#1E3A8A' }}>Google</div>
-                <div style={{ position: 'absolute', bottom: 4, right: 6, fontSize: 7, color: '#1E3A8A' }}>Map data ©2025 Google Terms</div>
+              <div style={{ width: 130, height: 95, background: '#BFDBFE', borderRadius: 8, position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
+                <div style={{ position: 'absolute', bottom: 4, left: 6, fontSize: 8, fontWeight: 800, color: '#1E3A8A' }}>Google</div>
+                <div style={{ position: 'absolute', bottom: 4, right: 6, fontSize: 6.5, color: '#1E3A8A' }}>Map data ©2025</div>
                 {/* Pins */}
-                <div style={{ position: 'absolute', top: '40%', left: '20%', width: 16, height: 16, background: '#4F46E5', borderRadius: '50% 50% 50% 0', transform: 'rotate(-45deg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontSize: 8, color: '#fff', transform: 'rotate(45deg)', fontWeight: 800 }}>1</span>
+                <div style={{ position: 'absolute', top: '40%', left: '20%', width: 14, height: 14, background: '#4F46E5', borderRadius: '50% 50% 50% 0', transform: 'rotate(-45deg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontSize: 7, color: '#fff', transform: 'rotate(45deg)', fontWeight: 800 }}>1</span>
                 </div>
-                <div style={{ position: 'absolute', top: '60%', left: '50%', width: 16, height: 16, background: '#4F46E5', borderRadius: '50% 50% 50% 0', transform: 'rotate(-45deg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontSize: 8, color: '#fff', transform: 'rotate(45deg)', fontWeight: 800 }}>2</span>
+                <div style={{ position: 'absolute', top: '60%', left: '50%', width: 14, height: 14, background: '#4F46E5', borderRadius: '50% 50% 50% 0', transform: 'rotate(-45deg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontSize: 7, color: '#fff', transform: 'rotate(45deg)', fontWeight: 800 }}>2</span>
                 </div>
-                <div style={{ position: 'absolute', top: '25%', left: '70%', width: 16, height: 16, background: '#4F46E5', borderRadius: '50% 50% 50% 0', transform: 'rotate(-45deg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontSize: 8, color: '#fff', transform: 'rotate(45deg)', fontWeight: 800 }}>3</span>
+                <div style={{ position: 'absolute', top: '25%', left: '70%', width: 14, height: 14, background: '#4F46E5', borderRadius: '50% 50% 50% 0', transform: 'rotate(-45deg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontSize: 7, color: '#fff', transform: 'rotate(45deg)', fontWeight: 800 }}>3</span>
                 </div>
               </div>
 
               {/* Legend */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, justifyContent: 'center' }}>
-                {['Sydney Head Office', 'Melbourne DC', 'Brisbane Warehouse', 'Perth Hub', 'Adelaide Facility', 'Auckland Warehouse'].map((name, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 800, color: '#fff' }}>{i + 1}</div>
-                    <div style={{ fontSize: 10, fontWeight: 600, color: '#0F172A' }}>{name}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, justifyContent: 'center' }}>
+                {(isYard ? ['Sydney Yard Facility', 'Melbourne Yard Depot', 'Brisbane Yard Hub', 'Perth Yard Hub', 'Adelaide Yard Facility', 'Auckland Yard Terminal'] : ['Sydney Head Office', 'Melbourne DC', 'Brisbane Warehouse', 'Perth Hub', 'Adelaide Facility', 'Auckland Warehouse']).map((name, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7.5, fontWeight: 800, color: '#fff' }}>{i + 1}</div>
+                    <div style={{ fontSize: 9.5, fontWeight: 600, color: '#0F172A', whiteSpace: 'nowrap' }}>{name}</div>
                   </div>
                 ))}
               </div>
@@ -1320,26 +1328,34 @@ export default function WarehouseDashboard() {
       <div className="responsive-bottom-grid">
 
         {/* INVENTORY SUMMARY */}
-        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h3 style={{ fontSize: 10.5, fontWeight: 800, color: '#0F172A', letterSpacing: '0.2px', textTransform: 'uppercase', margin: 0 }}>INVENTORY SUMMARY</h3>
-            <div style={{ fontSize: 9.5, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }}>View Report →</div>
+        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '14px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h3 style={{ fontSize: 10.5, fontWeight: 800, color: '#0F172A', letterSpacing: '0.3px', textTransform: 'uppercase', margin: 0, whiteSpace: 'nowrap' }}>INVENTORY SUMMARY</h3>
+            <div style={{ fontSize: 9.5, fontWeight: 700, color: '#4F46E5', cursor: 'pointer', whiteSpace: 'nowrap' }}>View Report →</div>
           </div>
-          <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-            <div style={{ width: 68, height: 68, borderRadius: '50%', background: 'conic-gradient(#10B981 0% 59.4%, #F59E0B 59.4% 74.4%, #8B5CF6 74.4% 84.8%, #3B82F6 84.8% 95.1%, #94A3B8 95.1% 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <div style={{ width: 50, height: 50, borderRadius: '50%', background: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontSize: 12, fontWeight: 900, color: '#0F172A', lineHeight: 1.1 }}>4,125</span>
-                <span style={{ fontSize: 7.5, color: '#64748B', textAlign: 'center', lineHeight: 1.1, marginTop: 1 }}>Total<br />Items</span>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            <div style={{ width: 60, height: 60, borderRadius: '50%', background: 'conic-gradient(#10B981 0% 59.4%, #F59E0B 59.4% 74.4%, #8B5CF6 74.4% 84.8%, #3B82F6 84.8% 95.1%, #94A3B8 95.1% 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontSize: 11.5, fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>4,125</span>
+                <span style={{ fontSize: 7, color: '#64748B', textAlign: 'center', lineHeight: 1, marginTop: 1 }}>Items</span>
               </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
-              {[{ c: '#10B981', t: 'Available', v: '2,450', p: '59.4%' }, { c: '#F59E0B', t: 'Reserved', v: '620', p: '15.0%' }, { c: '#8B5CF6', t: 'In Transit', v: '430', p: '10.4%' }, { c: '#3B82F6', t: 'On Order', v: '425', p: '10.3%' }, { c: '#94A3B8', t: 'Others', v: '200', p: '4.9%' }].map(x => (
-                <div key={x.t} style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: x.c }}></div>
-                    <div style={{ fontSize: 10.5, fontWeight: 700, color: '#0F172A' }}>{x.t}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5, flex: 1, minWidth: 0 }}>
+              {[
+                { c: '#10B981', t: 'Available', v: '2,450', p: '59%' },
+                { c: '#F59E0B', t: 'Reserved', v: '620', p: '15%' },
+                { c: '#8B5CF6', t: 'In Transit', v: '430', p: '10%' },
+                { c: '#3B82F6', t: 'On Order', v: '425', p: '10%' },
+                { c: '#94A3B8', t: 'Others', v: '200', p: '5%' }
+              ].map(x => (
+                <div key={x.t} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 9.5, whiteSpace: 'nowrap', gap: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0, overflow: 'hidden' }}>
+                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: x.c, flexShrink: 0 }}></div>
+                    <span style={{ fontWeight: 600, color: '#334155', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{x.t}</span>
                   </div>
-                  <div style={{ fontSize: 10.5, fontWeight: 800, color: '#0F172A', paddingLeft: 12 }}>{x.v} <span style={{ color: '#64748B', fontWeight: 500 }}>({x.p})</span></div>
+                  <div style={{ fontWeight: 800, color: '#0F172A', flexShrink: 0, whiteSpace: 'nowrap' }}>
+                    {x.v} <span style={{ color: '#94A3B8', fontWeight: 500, fontSize: 8.5 }}>({x.p})</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -1347,130 +1363,138 @@ export default function WarehouseDashboard() {
         </div>
 
         {/* STOCK MOVEMENTS */}
-        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-            <h3 style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0, lineHeight: 1.4 }}>STOCK MOVEMENTS<br />(THIS WEEK)</h3>
-            <div style={{ fontSize: 10, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }}>View Report →</div>
+        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '14px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h3 style={{ fontSize: 10.5, fontWeight: 800, color: '#0F172A', letterSpacing: '0.3px', textTransform: 'uppercase', margin: 0, whiteSpace: 'nowrap' }}>STOCK MOVEMENTS</h3>
+            <div style={{ fontSize: 9.5, fontWeight: 700, color: '#4F46E5', cursor: 'pointer', whiteSpace: 'nowrap' }}>View Report →</div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: '#334155' }}>
-                <span style={{ width: 20, height: 20, borderRadius: 6, background: '#F0FDF4', color: '#16A34A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>↓</span> Stock In
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', whiteSpace: 'nowrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10.5, fontWeight: 600, color: '#334155' }}>
+                <span style={{ width: 20, height: 20, borderRadius: 6, background: '#F0FDF4', color: '#16A34A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800 }}>↓</span>
+                <span>Stock In</span>
               </div>
-              <div style={{ fontSize: 11, fontWeight: 800, color: '#0F172A' }}>1,250 Items</div>
+              <div style={{ fontSize: 10.5, fontWeight: 800, color: '#0F172A' }}>1,250 Items</div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: '#334155' }}>
-                <span style={{ width: 20, height: 20, borderRadius: 6, background: '#FEF2F2', color: '#DC2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>↑</span> Stock Out
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', whiteSpace: 'nowrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10.5, fontWeight: 600, color: '#334155' }}>
+                <span style={{ width: 20, height: 20, borderRadius: 6, background: '#FEF2F2', color: '#DC2626', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800 }}>↑</span>
+                <span>Stock Out</span>
               </div>
-              <div style={{ fontSize: 11, fontWeight: 800, color: '#0F172A' }}>980 Items</div>
+              <div style={{ fontSize: 10.5, fontWeight: 800, color: '#0F172A' }}>980 Items</div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: '#334155' }}>
-                <span style={{ width: 20, height: 20, borderRadius: 6, background: '#EFF6FF', color: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>⇄</span> Transfers
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', whiteSpace: 'nowrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10.5, fontWeight: 600, color: '#334155' }}>
+                <span style={{ width: 20, height: 20, borderRadius: 6, background: '#EFF6FF', color: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800 }}>⇄</span>
+                <span>Transfers</span>
               </div>
-              <div style={{ fontSize: 11, fontWeight: 800, color: '#0F172A' }}>320 Items</div>
+              <div style={{ fontSize: 10.5, fontWeight: 800, color: '#0F172A' }}>320 Items</div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: '#334155' }}>
-                <span style={{ width: 20, height: 20, borderRadius: 6, background: '#F5F3FF', color: '#8B5CF6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>⚙</span> Adjustments
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', whiteSpace: 'nowrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10.5, fontWeight: 600, color: '#334155' }}>
+                <span style={{ width: 20, height: 20, borderRadius: 6, background: '#F5F3FF', color: '#8B5CF6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800 }}>⚙</span>
+                <span>Adjustments</span>
               </div>
-              <div style={{ fontSize: 11, fontWeight: 800, color: '#0F172A' }}>45 Items</div>
+              <div style={{ fontSize: 10.5, fontWeight: 800, color: '#0F172A' }}>45 Items</div>
             </div>
           </div>
         </div>
 
         {/* PENDING TASKS */}
-        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h3 style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>PENDING TASKS</h3>
-            <div style={{ fontSize: 10, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }}>View All →</div>
+        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '14px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h3 style={{ fontSize: 10.5, fontWeight: 800, color: '#0F172A', letterSpacing: '0.3px', textTransform: 'uppercase', margin: 0, whiteSpace: 'nowrap' }}>PENDING TASKS</h3>
+            <div style={{ fontSize: 9.5, fontWeight: 700, color: '#4F46E5', cursor: 'pointer', whiteSpace: 'nowrap' }}>View All →</div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, fontWeight: 600, color: '#0F172A' }}>
-                <span style={{ color: '#8B5CF6' }}>📋</span> Pick Tasks
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', whiteSpace: 'nowrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10.5, fontWeight: 600, color: '#0F172A' }}>
+                <span style={{ color: '#8B5CF6', fontSize: 12 }}>📋</span>
+                <span>Pick Tasks</span>
               </div>
-              <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A' }}>28</div>
+              <div style={{ fontSize: 11, fontWeight: 800, color: '#0F172A' }}>28</div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, fontWeight: 600, color: '#0F172A' }}>
-                <span style={{ color: '#8B5CF6' }}>⬇</span> Put Away Tasks
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', whiteSpace: 'nowrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10.5, fontWeight: 600, color: '#0F172A' }}>
+                <span style={{ color: '#8B5CF6', fontSize: 12 }}>⬇</span>
+                <span>Put Away Tasks</span>
               </div>
-              <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A' }}>16</div>
+              <div style={{ fontSize: 11, fontWeight: 800, color: '#0F172A' }}>16</div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, fontWeight: 600, color: '#0F172A' }}>
-                <span style={{ color: '#F97316' }}>⇄</span> Stock Transfers
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', whiteSpace: 'nowrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10.5, fontWeight: 600, color: '#0F172A' }}>
+                <span style={{ color: '#F97316', fontSize: 12 }}>⇄</span>
+                <span>Stock Transfers</span>
               </div>
-              <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A' }}>8</div>
+              <div style={{ fontSize: 11, fontWeight: 800, color: '#0F172A' }}>8</div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, fontWeight: 600, color: '#0F172A' }}>
-                <span style={{ color: '#3B82F6' }}>↻</span> Cycle Counts
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', whiteSpace: 'nowrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10.5, fontWeight: 600, color: '#0F172A' }}>
+                <span style={{ color: '#3B82F6', fontSize: 12 }}>↻</span>
+                <span>Cycle Counts</span>
               </div>
-              <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A' }}>5</div>
+              <div style={{ fontSize: 11, fontWeight: 800, color: '#0F172A' }}>5</div>
             </div>
           </div>
         </div>
 
         {/* QUICK ACTIONS */}
-        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '16px' }}>
-          <h3 style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: 16, margin: 0 }}>QUICK ACTIONS</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 16 }}>
-            <div onClick={() => setView('add')} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, fontWeight: 600, color: '#0F172A', cursor: 'pointer' }}>
-              <span style={{ color: '#4F46E5', fontSize: 14 }}>+</span> Add Warehouse
+        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '14px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <h3 style={{ fontSize: 10.5, fontWeight: 800, color: '#0F172A', letterSpacing: '0.3px', textTransform: 'uppercase', margin: '0 0 12px 0', whiteSpace: 'nowrap' }}>QUICK ACTIONS</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div onClick={() => setView('add')} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 10.5, fontWeight: 600, color: '#0F172A', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              <span style={{ color: '#4F46E5', fontSize: 13, fontWeight: 800 }}>+</span>
+              <span>{isYard ? 'Add Yard' : 'Add Warehouse'}</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, fontWeight: 600, color: '#0F172A', cursor: 'pointer' }}>
-              <span style={{ color: '#4F46E5', fontSize: 12 }}>📦</span> Manage Stock
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 10.5, fontWeight: 600, color: '#0F172A', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              <span style={{ color: '#4F46E5', fontSize: 12 }}>📦</span>
+              <span>Manage Stock</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, fontWeight: 600, color: '#0F172A', cursor: 'pointer' }}>
-              <span style={{ color: '#4F46E5', fontSize: 12 }}>✓</span> Create Pick Task
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 10.5, fontWeight: 600, color: '#0F172A', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              <span style={{ color: '#4F46E5', fontSize: 12 }}>✓</span>
+              <span>Create Pick Task</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, fontWeight: 600, color: '#0F172A', cursor: 'pointer' }}>
-              <span style={{ color: '#4F46E5', fontSize: 12 }}>⇄</span> Stock Transfer
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 10.5, fontWeight: 600, color: '#0F172A', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              <span style={{ color: '#4F46E5', fontSize: 12 }}>⇄</span>
+              <span>Stock Transfer</span>
             </div>
           </div>
         </div>
 
         {/* RECENT ACTIVITY */}
-        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h3 style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>RECENT ACTIVITY</h3>
-            <div style={{ fontSize: 10, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }}>View All →</div>
+        <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '14px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h3 style={{ fontSize: 10.5, fontWeight: 800, color: '#0F172A', letterSpacing: '0.3px', textTransform: 'uppercase', margin: 0, whiteSpace: 'nowrap' }}>RECENT ACTIVITY</h3>
+            <div style={{ fontSize: 9.5, fontWeight: 700, color: '#4F46E5', cursor: 'pointer', whiteSpace: 'nowrap' }}>View All →</div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#10B981', marginTop: 4, flexShrink: 0 }}></div>
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#0F172A', lineHeight: 1.3, marginBottom: 2 }}>Stock received at<br />WH-001</div>
-                <div style={{ fontSize: 9.5, color: '#64748B' }}>By James Patel</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981', marginTop: 4, flexShrink: 0 }}></div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Stock received at WH-001</div>
+                <div style={{ fontSize: 8.5, color: '#64748B', whiteSpace: 'nowrap' }}>James Patel &bull; 10 May</div>
               </div>
-              <div style={{ fontSize: 9, color: '#94A3B8', marginLeft: 'auto', whiteSpace: 'nowrap' }}>10 May 2025</div>
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#10B981', marginTop: 4, flexShrink: 0 }}></div>
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#0F172A', lineHeight: 1.3, marginBottom: 2 }}>Pick task completed<br />at WH-002</div>
-                <div style={{ fontSize: 9.5, color: '#64748B' }}>By Robert Taylor</div>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981', marginTop: 4, flexShrink: 0 }}></div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Pick task completed WH-002</div>
+                <div style={{ fontSize: 8.5, color: '#64748B', whiteSpace: 'nowrap' }}>Robert Taylor &bull; 10 May</div>
               </div>
-              <div style={{ fontSize: 9, color: '#94A3B8', marginLeft: 'auto', whiteSpace: 'nowrap' }}>10 May 2025</div>
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#F59E0B', marginTop: 4, flexShrink: 0 }}></div>
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#0F172A', lineHeight: 1.3, marginBottom: 2 }}>Stock transfer WH-<br />003 → WH-001</div>
-                <div style={{ fontSize: 9.5, color: '#64748B' }}>By Sarah Mitchell</div>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#F59E0B', marginTop: 4, flexShrink: 0 }}></div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Transfer WH-003 → WH-001</div>
+                <div style={{ fontSize: 8.5, color: '#64748B', whiteSpace: 'nowrap' }}>Sarah Mitchell &bull; 09 May</div>
               </div>
-              <div style={{ fontSize: 9, color: '#94A3B8', marginLeft: 'auto', whiteSpace: 'nowrap' }}>09 May 2025</div>
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#F97316', marginTop: 4, flexShrink: 0 }}></div>
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#0F172A', lineHeight: 1.3, marginBottom: 2 }}>Inventory adjusted<br />at WH-004</div>
-                <div style={{ fontSize: 9.5, color: '#64748B' }}>By James Patel</div>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#F97316', marginTop: 4, flexShrink: 0 }}></div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Inventory adjusted WH-004</div>
+                <div style={{ fontSize: 8.5, color: '#64748B', whiteSpace: 'nowrap' }}>James Patel &bull; 09 May</div>
               </div>
-              <div style={{ fontSize: 9, color: '#94A3B8', marginLeft: 'auto', whiteSpace: 'nowrap' }}>09 May 2025</div>
             </div>
           </div>
         </div>
@@ -1481,7 +1505,7 @@ export default function WarehouseDashboard() {
           <div style={{ width: 26, height: 26, borderRadius: 6, background: '#4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <CodeIcon />
           </div>
-          <h3 style={{ fontSize: 12, fontWeight: 900, color: '#312E81', letterSpacing: '0.5px', margin: 0 }}>DEVELOPER NOTES - WAREHOUSE DASHBOARD / LIST</h3>
+          <h3 style={{ fontSize: 12, fontWeight: 900, color: '#312E81', letterSpacing: '0.5px', margin: 0 }}>{isYard ? 'DEVELOPER NOTES - YARD DASHBOARD / LIST' : 'DEVELOPER NOTES - WAREHOUSE DASHBOARD / LIST'}</h3>
         </div>
 
         <div className="responsive-notes-grid">
@@ -1491,9 +1515,9 @@ export default function WarehouseDashboard() {
               <h4 style={{ fontSize: 9, fontWeight: 800, color: '#312E81', letterSpacing: '0.5px', margin: 0 }}>PURPOSE</h4>
             </div>
             <ul style={{ margin: 0, paddingLeft: 14, fontSize: 10, color: '#64748B', lineHeight: 1.5, display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <li>Central overview of all warehouses.</li>
+              <li>{isYard ? 'Central overview of all yards.' : 'Central overview of all warehouses.'}</li>
               <li>Real-time stock, tasks, alerts and activity.</li>
-              <li>Quick access to key warehouse functions.</li>
+              <li>{isYard ? 'Quick access to key yard functions.' : 'Quick access to key warehouse functions.'}</li>
             </ul>
           </div>
 
@@ -1503,9 +1527,9 @@ export default function WarehouseDashboard() {
               <h4 style={{ fontSize: 9, fontWeight: 800, color: '#312E81', letterSpacing: '0.5px', margin: 0 }}>KEY FEATURES</h4>
             </div>
             <ul style={{ margin: 0, paddingLeft: 14, fontSize: 10, color: '#64748B', lineHeight: 1.5, display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <li>Search, filter and view warehouses.</li>
+              <li>{isYard ? 'Search, filter and view yards.' : 'Search, filter and view warehouses.'}</li>
               <li>Stock and inventory summary widgets.</li>
-              <li>Map view of all warehouse locations.</li>
+              <li>{isYard ? 'Map view of all yard locations.' : 'Map view of all warehouse locations.'}</li>
               <li>Quick actions and recent activity feed.</li>
             </ul>
           </div>
@@ -1531,7 +1555,7 @@ export default function WarehouseDashboard() {
             <ul style={{ margin: 0, paddingLeft: 14, fontSize: 10, color: '#64748B', lineHeight: 1.5, display: 'flex', flexDirection: 'column', gap: 4 }}>
               <li>Super Admin: Full access.</li>
               <li>Admin/Manager: Full access.</li>
-              <li>Warehouse Staff: View assigned warehouse only.</li>
+              <li>{isYard ? 'Yard Attendant: View assigned yard only.' : 'Warehouse Staff: View assigned warehouse only.'}</li>
               <li>Dispatcher: View stock and tasks (read-only).</li>
             </ul>
           </div>
@@ -1542,7 +1566,7 @@ export default function WarehouseDashboard() {
               <h4 style={{ fontSize: 9, fontWeight: 800, color: '#312E81', letterSpacing: '0.5px', margin: 0 }}>DATA SOURCES</h4>
             </div>
             <ul style={{ margin: 0, paddingLeft: 14, fontSize: 10, color: '#64748B', lineHeight: 1.5, display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <li>Warehouses module.</li>
+              <li>{isYard ? 'Yards module.' : 'Warehouses module.'}</li>
               <li>Inventory & Stock module.</li>
               <li>Tasks & Pick/Pack module.</li>
               <li>Shipments & Purchase Orders.</li>

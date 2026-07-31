@@ -1938,7 +1938,7 @@ export default function Loads() {
             onClick={() => setShowAILoadBuilder(true)}
             className="flex-1 sm:flex-none justify-center flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-xl text-[11px] font-bold text-white transition-colors shadow-sm"
           >
-            <Sparkles className="w-3.5 h-3.5" /> AI LOAD
+            <Sparkles className="w-3.5 h-3.5 text-amber-300" /> AI LOADS / INBOX
           </button>
           <button
             onClick={() => setShowCreateForm(true)}

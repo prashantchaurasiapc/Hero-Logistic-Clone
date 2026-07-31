@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './WarehouseDashboard.css';
 import './YardDashboard.css';
 
@@ -87,6 +88,7 @@ const ClockIcon = () => (
 );
 
 export default function YardDashboard() {
+  const navigate = useNavigate();
   const [shiftActive, setShiftActive] = useState(false);
   const [secondsElapsed, setSecondsElapsed] = useState(0);
   const [startTime, setStartTime] = useState(null);
@@ -130,6 +132,7 @@ export default function YardDashboard() {
   const [selectedTask, setSelectedTask] = useState(null);
   const [noteTaskId, setNoteTaskId] = useState(null);
   const [noteText, setNoteText] = useState('');
+  const [taskSearch, setTaskSearch] = useState('');
 
   const [tasks, setTasks] = useState([
     {
@@ -519,6 +522,29 @@ export default function YardDashboard() {
             <AlertTriangleIcon />
           </button>
 
+          {/* Start Work / Finish Work button */}
+          <button
+            onClick={shiftActive ? handleFinishWork : handleStartWork}
+            style={{
+              backgroundColor: shiftActive ? '#ef4444' : '#10b981',
+              border: 'none',
+              borderRadius: 8,
+              padding: '8px 16px',
+              color: '#ffffff',
+              fontSize: 12,
+              fontWeight: '800',
+              cursor: 'pointer',
+              outline: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              boxShadow: shiftActive ? '0 2px 4px rgba(239, 68, 68, 0.25)' : '0 2px 4px rgba(16, 185, 129, 0.25)'
+            }}
+          >
+            <ClockIcon />
+            {shiftActive ? 'Finish Work (Clock Out)' : 'Start Work (Clock In)'}
+          </button>
+
           {/* Schedule button */}
           <button
             onClick={() => setShowScheduleModal(true)}
@@ -687,7 +713,7 @@ export default function YardDashboard() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 16, marginBottom: 20 }}>
         {/* Card 1: Move Asset */}
         <div
-          onClick={() => triggerToast('Select Move Asset from sidebar to relocate assets.')}
+          onClick={() => navigate('/yard/movements')}
           onMouseEnter={() => setHoveredActionCard('move-asset')}
           onMouseLeave={() => setHoveredActionCard(null)}
           style={getActionCardStyle('move-asset')}
@@ -704,7 +730,7 @@ export default function YardDashboard() {
 
         {/* Card 2: Scan In */}
         <div
-          onClick={() => { setScanType('Container'); setScannedId(''); setShowQrModal(true); }}
+          onClick={() => navigate('/yard/inbound')}
           onMouseEnter={() => setHoveredActionCard('scan-in')}
           onMouseLeave={() => setHoveredActionCard(null)}
           style={getActionCardStyle('scan-in')}
@@ -721,7 +747,7 @@ export default function YardDashboard() {
 
         {/* Card 3: Scan Out */}
         <div
-          onClick={() => { setScanType('Container'); setScannedId(''); setShowQrModal(true); }}
+          onClick={() => navigate('/yard/outbound')}
           onMouseEnter={() => setHoveredActionCard('scan-out')}
           onMouseLeave={() => setHoveredActionCard(null)}
           style={getActionCardStyle('scan-out')}
@@ -738,7 +764,7 @@ export default function YardDashboard() {
 
         {/* Card 4: Lane Assignment */}
         <div
-          onClick={() => setShowYardMapModal(true)}
+          onClick={() => navigate('/yard/load-lanes')}
           onMouseEnter={() => setHoveredActionCard('lane-assignment')}
           onMouseLeave={() => setHoveredActionCard(null)}
           style={getActionCardStyle('lane-assignment')}
@@ -755,13 +781,7 @@ export default function YardDashboard() {
 
         {/* Card 5: Report Issue */}
         <div
-          onClick={() => {
-            setIncidentType('Accident');
-            setIncidentLocation('');
-            setIncidentDescription('');
-            setIncidentSeverity('Medium');
-            setShowIncidentModal(true);
-          }}
+          onClick={() => navigate('/yard/report-issue')}
           onMouseEnter={() => setHoveredActionCard('report-issue')}
           onMouseLeave={() => setHoveredActionCard(null)}
           style={getActionCardStyle('report-issue')}
@@ -883,27 +903,40 @@ export default function YardDashboard() {
         {/* Section Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: 12, flexWrap: 'wrap', gap: 12 }}>
           <h2 style={{ fontSize: 15, fontWeight: '800', color: '#0f172a', margin: 0 }}>
-            Spotted Relocator Task Queue &bull; <span style={{ color: '#64748b', fontSize: 13, fontWeight: '700' }}>3 Tasks</span>
+            Spotted Relocator Task Queue &bull; <span style={{ color: '#64748b', fontSize: 13, fontWeight: '700' }}>{tasks.length} Tasks</span>
           </h2>
-          <button
-            onClick={() => setShowTasksModal(true)}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#b45309',
-              fontSize: 12,
-              fontWeight: '800',
-              cursor: 'pointer',
-              outline: 'none'
-            }}
-          >
-            View All Tasks
-          </button>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <input 
+              type="text"
+              placeholder="Quick search tasks..."
+              value={taskSearch}
+              onChange={(e) => setTaskSearch(e.target.value)}
+              style={{ padding: '6px 12px', fontSize: 11, fontWeight: '700', borderRadius: 8, border: '1px solid #cbd5e1', outline: 'none', color: '#0f172a', minWidth: 180 }}
+            />
+            <button
+              onClick={() => setShowTasksModal(true)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#b45309',
+                fontSize: 12,
+                fontWeight: '800',
+                cursor: 'pointer',
+                outline: 'none'
+              }}
+            >
+              View All Tasks
+            </button>
+          </div>
         </div>
 
         {/* Task Cards */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: 8 }}>
-          {tasks.map((task) => (
+          {tasks.filter(task => {
+            const q = taskSearch.toLowerCase().trim();
+            return !q || task.title.toLowerCase().includes(q) || task.desc.toLowerCase().includes(q) || task.unit.toLowerCase().includes(q);
+          }).map((task) => (
             <div
               key={task.id}
               style={{

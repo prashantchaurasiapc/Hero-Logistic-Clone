@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import './Login.css';
 import {
-  FiMail, FiLock, FiEye, FiShield,
+  FiMail, FiLock, FiEye, FiEyeOff, FiShield, FiLogIn,
   FiBarChart2, FiBriefcase, FiClipboard,
   FiTruck, FiBox, FiMap, FiFileText, FiShoppingCart, FiArrowLeft
 } from 'react-icons/fi';
@@ -29,6 +29,11 @@ const Login = () => {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [loggingInRole, setLoggingInRole] = useState('');
   const [logoSrc, setLogoSrc] = useState('/image.png');
+
+  // Input states
+  const [emailInput, setEmailInput] = useState('admin@hero.com');
+  const [passwordInput, setPasswordInput] = useState('123456');
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     const img = new Image();
@@ -74,7 +79,7 @@ const Login = () => {
       } else if (roleId === 'dispatcher') {
         navigate('/dispatcher/command-center');
       } else if (roleId === 'driver') {
-        navigate('/driver/jobs');
+        navigate('/driver/dashboard');
       } else if (roleId === 'warehouse') {
         navigate('/warehouse/dashboard');
       } else if (roleId === 'yard') {
@@ -91,10 +96,59 @@ const Login = () => {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    setLoggingInRole('Super Admin');
+    const lowerEmail = emailInput.toLowerCase();
+    let userRole = 'Super Admin';
+    let targetPath = '/admin/dashboard';
+
+    // Check localStorage user database first
+    const savedUsers = localStorage.getItem('hero_user_management_users');
+    if (savedUsers) {
+      try {
+        const users = JSON.parse(savedUsers);
+        const match = users.find(u => u.email.toLowerCase() === lowerEmail);
+        if (match) {
+          userRole = match.role;
+          localStorage.setItem('hero_session', JSON.stringify({
+            name: match.name,
+            email: match.email,
+            role: match.role,
+            company: match.company
+          }));
+        }
+      } catch (err) { console.error(err); }
+    }
+
+    // Role detection fallback logic based on keywords
+    if (lowerEmail.includes('driver')) {
+      targetPath = '/driver/dashboard';
+      userRole = 'Driver';
+    } else if (lowerEmail.includes('dispatch')) {
+      targetPath = '/dispatcher/command-center';
+      userRole = 'Dispatcher';
+    } else if (lowerEmail.includes('company')) {
+      targetPath = '/company-admin/command-centre';
+      userRole = 'Company Admin';
+    } else if (lowerEmail.includes('sales')) {
+      targetPath = '/sales/dashboard';
+      userRole = 'Sales Rep';
+    } else if (lowerEmail.includes('warehouse')) {
+      targetPath = '/warehouse/dashboard';
+      userRole = 'Warehouse Manager';
+    } else if (lowerEmail.includes('yard')) {
+      targetPath = '/yard/dashboard';
+      userRole = 'Yard Attendant';
+    } else if (lowerEmail.includes('account')) {
+      targetPath = '/accounts/dashboard';
+      userRole = 'Accounts Manager';
+    } else if (lowerEmail.includes('customer')) {
+      targetPath = '/customer/dashboard';
+      userRole = 'Customer';
+    }
+
+    setLoggingInRole(userRole);
     setIsAuthenticating(true);
     setTimeout(() => {
-      navigate('/admin/dashboard');
+      navigate(targetPath);
     }, 1600);
   };
 
@@ -222,7 +276,13 @@ const Login = () => {
                 <label>EMAIL ADDRESS</label>
                 <div className="input-wrapper">
                   <FiMail className="input-icon" />
-                  <input type="email" defaultValue="admin@hero.com" />
+                  <input
+                    type="email"
+                    required
+                    value={emailInput}
+                    onChange={(e) => setEmailInput(e.target.value)}
+                    placeholder="Enter email address..."
+                  />
                 </div>
               </div>
 
@@ -233,10 +293,25 @@ const Login = () => {
                 </div>
                 <div className="input-wrapper">
                   <FiLock className="input-icon" />
-                  <input type="password" defaultValue="123456" />
-                  <FiEye className="input-icon-right" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    value={passwordInput}
+                    onChange={(e) => setPasswordInput(e.target.value)}
+                    placeholder="Enter password..."
+                  />
+                  {showPassword ? (
+                    <FiEyeOff className="input-icon-right" onClick={() => setShowPassword(false)} />
+                  ) : (
+                    <FiEye className="input-icon-right" onClick={() => setShowPassword(true)} />
+                  )}
                 </div>
               </div>
+
+              <button type="submit" className="login-btn">
+                <FiLogIn size={18} />
+                <span>Sign In</span>
+              </button>
 
               <div className="divider">
                 <span>OR SIGN IN AS</span>

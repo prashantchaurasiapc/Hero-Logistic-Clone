@@ -24,6 +24,7 @@ export default function YardMoveItem() {
   const [destinationSpot, setDestinationSpot] = useState('A3');
   const [toast, setToast] = useState(null);
   const [isHovered, setIsHovered] = useState(false);
+  const [slotSearch, setSlotSearch] = useState('');
 
   const handleRelocate = (e) => {
     e.preventDefault();
@@ -307,6 +308,15 @@ export default function YardMoveItem() {
               </button>
             </div>
             <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {/* Quick Search Bar */}
+              <input 
+                type="text"
+                placeholder="Search bays (e.g. A1, TR-9410, CTR-009)..."
+                value={slotSearch}
+                onChange={(e) => setSlotSearch(e.target.value)}
+                style={{ padding: '8px 14px', fontSize: 12, fontWeight: '700', borderRadius: 10, border: '1px solid #cbd5e1', outline: 'none', color: '#0f172a' }}
+              />
+
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px', justifyContent: 'flex-start', alignItems: 'center', fontSize: 11.5, fontWeight: '600', color: '#475569' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#ffcc00' }}></span>
@@ -330,7 +340,10 @@ export default function YardMoveItem() {
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: 12, marginTop: 8 }}>
-                {yardSlots.map((slot) => (
+                {yardSlots.filter(slot => {
+                  const q = slotSearch.toLowerCase().trim();
+                  return !q || slot.id.toLowerCase().includes(q) || slot.val.toLowerCase().includes(q) || slot.type.toLowerCase().includes(q);
+                }).map((slot) => (
                   <div
                     key={slot.id}
                     onClick={() => handleSlotClick(slot)}

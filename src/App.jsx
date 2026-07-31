@@ -33,11 +33,12 @@ import GstPayg from './pages/Layout/Dashboard/GstPayg';
 import Pnl from './pages/Layout/Dashboard/Pnl';
 import VehicleCosts from './pages/Layout/Dashboard/VehicleCosts';
 import AccountsReports from './pages/Layout/Dashboard/AccountsReports';
+import CustomerPricing from './pages/Layout/Dashboard/CustomerPricing';
 import CustomerDashboard from './pages/Layout/Dashboard/CustomerDashboard';
 import SalesDashboard from './components/SalesDashboard/SalesDashboard';
 import CompanyAdminDashboard from './pages/Layout/Dashboard/CompanyAdminDashboard';
 import DispatcherDashboard from './pages/Layout/Dashboard/DispatcherDashboard';
-import DriverDashboard from './pages/Layout/Dashboard/DriverDashboard';
+import DriverDashboard from './components/DriverDashboard/DriverDashboard';
 import StartWorkFinish from './components/DriverDashboard/StartWorkFinish';
 import Jobs from './components/DriverDashboard/Jobs';
 import NearbyServices from './components/DriverDashboard/NearbyServices';
@@ -50,6 +51,14 @@ import ContactDispatch from './components/DriverDashboard/ContactDispatch';
 import LeaveManagement from './components/DriverDashboard/LeaveManagement';
 import IncidentReporting from './components/DriverDashboard/IncidentReporting';
 import MaintenanceRequest from './components/DriverDashboard/MaintenanceRequest';
+import JobDetails from './components/DriverDashboard/JobDetails';
+import ActiveRun from './components/DriverDashboard/ActiveRun';
+import PickupLoading from './components/DriverDashboard/PickupLoading';
+import DeliveryPOD from './components/DriverDashboard/DeliveryPOD';
+import DriverMessages from './components/DriverDashboard/Messages';
+import Timesheets from './components/DriverDashboard/Timesheets';
+import TrailerSwap from './components/DriverDashboard/TrailerSwap';
+import OfflineSyncQueue from './components/DriverDashboard/OfflineSyncQueue';
 import Login from './pages/Website/Login';
 import LandingPage from './pages/Website/Landingpage/LandingPage';
 import OnboardingWizard from './pages/Website/Landingpage/OnboardingWizard';
@@ -62,6 +71,9 @@ import './App.css';
 
 // Admin components
 import Companies from './components/SuperAdminDashboard/Companies';
+import UserManagement from './components/SuperAdminDashboard/UserManagement';
+import AdminUsers from './components/SuperAdminDashboard/AdminUsers';
+import RolesPermissions from './components/SuperAdminDashboard/RolesPermissions';
 import Subscriptions from './components/SuperAdminDashboard/Subcription';
 import MembershipPlans from './components/SuperAdminDashboard/MembershipPlans';
 import FeatureAccess from './components/SuperAdminDashboard/FeatureAccesss';
@@ -97,7 +109,10 @@ import Assets from './components/CompanyAdmin/Assets';
 import AssetDetails from './components/CompanyAdmin/AssetDetails';
 import CreateAsset from './components/CompanyAdmin/CreateAsset';
 import Warehouse from './components/CompanyAdmin/Warehouse';
+import StandalonePricing from './components/CompanyAdmin/Pricing';
+import StandalonePayroll from './components/CompanyAdmin/CompanyAdminPayroll';
 import Finance from './components/CompanyAdmin/Finance';
+import StandaloneDocuments from './components/CompanyAdmin/CompanyAdminDocuments';
 import Reports from './components/CompanyAdmin/Reports';
 import Messages from './components/CompanyAdmin/Messages';
 import MyTickets from './components/CompanyAdmin/MyTickets';
@@ -177,6 +192,9 @@ function App() {
         <Route path="/admin" element={<DashboardLayout role="super-admin" />}>
           <Route path="dashboard" element={<PlatformDashboard role="super-admin" />} />
           <Route path="companies" element={<Companies />} />
+          <Route path="user-management" element={<UserManagement />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="roles-permissions" element={<RolesPermissions />} />
           <Route path="subscriptions" element={<Subscriptions />} />
           <Route path="membership-plans" element={<MembershipPlans />} />
           <Route path="feature-access" element={<FeatureAccess />} />
@@ -207,16 +225,21 @@ function App() {
         <Route path="/company-admin" element={<DashboardLayout role="company-admin" />}>
           <Route path="command-centre" element={<CommandCentre />} />
           <Route path="loads" element={<Loads />} />
+          <Route path="load-inbox" element={<Loads />} />
           <Route path="live-tracking" element={<LiveTracking />} />
           <Route path="drivers" element={<Drivers />} />
           <Route path="vehicles" element={<Vehicles />} />
           <Route path="customers" element={<Customers />} />
           <Route path="branches" element={<Branches />} />
+          <Route path="locations" element={<Branches />} />
           <Route path="assets" element={<Assets />} />
           <Route path="assets/new" element={<CreateAsset />} />
           <Route path="assets/:id" element={<AssetDetails />} />
           <Route path="warehouse" element={<Warehouse />} />
+          <Route path="pricing" element={<StandalonePricing />} />
+          <Route path="payroll" element={<StandalonePayroll />} />
           <Route path="finance" element={<Finance />} />
+          <Route path="documents" element={<StandaloneDocuments />} />
           <Route path="reports" element={<Reports />} />
           <Route path="messages" element={<Messages />} />
           <Route path="my-tickets" element={<MyTickets />} />
@@ -228,68 +251,140 @@ function App() {
           <Route path="my-profile" element={<MyProfile />} />
           <Route path="safety-checklists" element={<SafetyChecklists />} />
           <Route path="delivery-issues" element={<DeliveryIssues />} />
+          <Route path="customer-pricing" element={<CustomerPricing />} />
+          <Route path="roles-permissions" element={<RolesPermissions />} />
         </Route>
 
-        {/* ===== DISPATCHER ===== */}
+        {/* ===== DISPATCHER PORTAL ===== */}
         <Route path="/dispatcher" element={<DashboardLayout role="dispatcher" />}>
+          <Route index element={<CommandCenter />} />
+          <Route path="dashboard" element={<CommandCenter />} />
+          <Route path="dispatch-dashboard" element={<CommandCenter />} />
           <Route path="command-center" element={<CommandCenter />} />
-          <Route path="loads" element={<DispatcherLoads />} />
+          <Route path="create-load" element={<DispatcherLoads />} />
           <Route path="load-inbox" element={<LoadInbox />} />
+          <Route path="active-loads" element={<DispatcherLoads />} />
+          <Route path="loads" element={<DispatcherLoads />} />
+          <Route path="planning-board" element={<TerminalWorkspace />} />
           <Route path="terminal-workspace" element={<TerminalWorkspace />} />
+          <Route path="live-gps-map" element={<FleetMonitor />} />
           <Route path="fleet-monitor" element={<FleetMonitor />} />
+          <Route path="drivers" element={<Drivers />} />
+          <Route path="vehicles" element={<Vehicles />} />
+          <Route path="customers" element={<Customers />} />
+          <Route path="warehouse" element={<Warehouse />} />
+          <Route path="workforce-availability" element={<RosterControl />} />
+          <Route path="roster-control" element={<RosterControl />} />
+          <Route path="messages" element={<CommunicationDepot />} />
+          <Route path="communication-depot" element={<CommunicationDepot />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="profile" element={<MyProfile />} />
           <Route path="fleet-assets" element={<FleetAssets />} />
           <Route path="asset-inventory" element={<AssetInventory />} />
-          <Route path="roster-control" element={<RosterControl />} />
-          <Route path="communication-depot" element={<CommunicationDepot />} />
           <Route path="system-settings" element={<SystemSettings />} />
+          {/* Backwards compatibility aliases */}
+          <Route path="live-tracking" element={<FleetMonitor />} />
+          <Route path="locations" element={<Branches />} />
+          <Route path="branches" element={<Branches />} />
+          <Route path="*" element={<CommandCenter />} />
         </Route>
 
         {/* ===== DRIVER ===== */}
         <Route path="/driver" element={<DashboardLayout role="driver" />}>
+          <Route index element={<DriverDashboard />} />
+          <Route path="dashboard" element={<DriverDashboard />} />
+          <Route path="active-run" element={<ActiveRun />} />
+          <Route path="start-trip" element={<ActiveRun />} />
+          <Route path="pickup-loading" element={<PickupLoading />} />
+          <Route path="delivery-pod" element={<DeliveryPOD />} />
+          <Route path="delivery" element={<DeliveryPOD />} />
+          <Route path="safety-checklist" element={<StartWorkFinish />} />
           <Route path="work-status" element={<StartWorkFinish />} />
+          <Route path="assigned-jobs" element={<Jobs />} />
           <Route path="jobs" element={<Jobs />} />
           <Route path="nearby-services" element={<NearbyServices />} />
           <Route path="notifications" element={<Notifications />} />
           <Route path="documents" element={<Documents />} />
           <Route path="create-draft-load" element={<CreateDraftLoad />} />
           <Route path="add-expense" element={<AddExpense />} />
+          <Route path="fuel-expenses" element={<AddExpense />} />
+          <Route path="messages" element={<DriverMessages />} />
+          <Route path="timesheets" element={<Timesheets />} />
+          <Route path="trailer-swap" element={<TrailerSwap />} />
+          <Route path="equipment-change" element={<TrailerSwap />} />
+          <Route path="offline-sync" element={<OfflineSyncQueue />} />
+          <Route path="offline-queue" element={<OfflineSyncQueue />} />
           <Route path="my-pay" element={<MyPay />} />
           <Route path="contact-dispatch" element={<ContactDispatch />} />
           <Route path="leave-management" element={<LeaveManagement />} />
           <Route path="incident-reporting" element={<IncidentReporting />} />
           <Route path="maintenance-request" element={<MaintenanceRequest />} />
+          <Route path="settings" element={<StartWorkFinish />} />
+          <Route path="job/:id" element={<JobDetails />} />
         </Route>
 
-        {/* ===== WAREHOUSE ===== */}
+        {/* ===== WAREHOUSE PORTAL ===== */}
         <Route path="/warehouse" element={<DashboardLayout role="warehouse" />}>
+          <Route index element={<WarehouseDashboard />} />
           <Route path="dashboard" element={<WarehouseDashboard />} />
           <Route path="inbound" element={<WarehouseInbound />} />
+          <Route path="receive" element={<WarehouseInbound />} />
           <Route path="outbound" element={<WarehouseOutbound />} />
           <Route path="current-stock" element={<WarehouseCurrentStock />} />
+          <Route path="find" element={<WarehouseCurrentStock />} />
           <Route path="map" element={<WarehouseMap />} />
-          <Route path="holding-areas" element={<HoldingAreas />} />
-          <Route path="load-lanes" element={<LoadLanes />} />
-          <Route path="scanning" element={<Scanning />} />
-          <Route path="labels" element={<Labels />} />
-          <Route path="movements" element={<Movements />} />
+          <Route path="holding-areas" element={<WarehouseHoldingAreas />} />
+          <Route path="stage" element={<WarehouseHoldingAreas />} />
+          <Route path="load-lanes" element={<WarehouseLoadLanes />} />
+          <Route path="scanning" element={<WarehouseScanning />} />
+          <Route path="qr-scan" element={<WarehouseScanning />} />
+          <Route path="labels" element={<WarehouseLabels />} />
+          <Route path="movements" element={<WarehouseMovements />} />
+          <Route path="move" element={<WarehouseMovements />} />
           <Route path="reports" element={<WarehouseReports />} />
+          <Route path="settings" element={<CompanySettings />} />
+          <Route path="*" element={<WarehouseDashboard />} />
         </Route>
 
-        {/* ===== YARD ATTENDANT ===== */}
+        {/* ===== YARD ATTENDANT PORTAL ===== */}
         <Route path="/yard" element={<DashboardLayout role="yard" />}>
-          <Route path="dashboard" element={<YardDashboard />} />
+          <Route index element={<WarehouseDashboard />} />
           <Route path="work-status" element={<YardWorkStatus />} />
-          <Route path="scan" element={<YardScan />} />
-          <Route path="move-item" element={<YardMoveItem />} />
-          <Route path="scan-in" element={<YardScanIn />} />
-          <Route path="scan-out" element={<YardScanOut />} />
-          <Route path="load-lane" element={<YardLoadLane />} />
+          <Route path="dashboard" element={<WarehouseDashboard />} />
+          <Route path="attendant-overview" element={<YardDashboard />} />
+          <Route path="inbound" element={<WarehouseInbound />} />
+          <Route path="receive" element={<WarehouseInbound />} />
+          <Route path="outbound" element={<WarehouseOutbound />} />
+          <Route path="current-stock" element={<WarehouseCurrentStock />} />
+          <Route path="find" element={<WarehouseCurrentStock />} />
+          <Route path="map" element={<WarehouseMap />} />
+          <Route path="holding-areas" element={<WarehouseHoldingAreas />} />
+          <Route path="stage" element={<WarehouseHoldingAreas />} />
+          <Route path="load-lanes" element={<WarehouseLoadLanes />} />
+          <Route path="vehicles" element={<Vehicles />} />
+          <Route path="locations" element={<Branches />} />
+          <Route path="loads" element={<Loads />} />
+          <Route path="activities" element={<WarehouseReports />} />
+          <Route path="scanning" element={<WarehouseScanning />} />
+          <Route path="qr-scan" element={<WarehouseScanning />} />
+          <Route path="labels" element={<WarehouseLabels />} />
+          <Route path="movements" element={<WarehouseMovements />} />
+          <Route path="move" element={<WarehouseMovements />} />
+          <Route path="reports" element={<WarehouseReports />} />
           <Route path="report-issue" element={<YardReportIssue />} />
+          {/* Backwards compatibility aliases */}
+          <Route path="scan" element={<WarehouseScanning />} />
+          <Route path="move-item" element={<WarehouseMovements />} />
+          <Route path="scan-in" element={<WarehouseInbound />} />
+          <Route path="scan-out" element={<WarehouseOutbound />} />
+          <Route path="load-lane" element={<WarehouseLoadLanes />} />
+          <Route path="*" element={<WarehouseDashboard />} />
         </Route>
 
         {/* ===== ACCOUNTS ===== */}
         <Route path="/accounts" element={<DashboardLayout role="accounts" />}>
           <Route path="dashboard" element={<AccountsDashboard />} />
+          <Route path="customer-pricing" element={<CustomerPricing />} />
           <Route path="invoice-review" element={<InvoiceReview />} />
           <Route path="sent-invoices" element={<SentInvoices />} />
           <Route path="payments" element={<Payments />} />
@@ -301,6 +396,7 @@ function App() {
           <Route path="pnl" element={<Pnl />} />
           <Route path="vehicle-costs" element={<VehicleCosts />} />
           <Route path="reports" element={<AccountsReports />} />
+          <Route path="settings" element={<AccountsDashboard />} />
         </Route>
 
         {/* ===== CUSTOMER ===== */}

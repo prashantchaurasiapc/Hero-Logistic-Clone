@@ -1,11 +1,18 @@
 import React, { useState } from 'react';
-import { Settings, Plus, X, ArrowRight, Check } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
+import { Settings, Plus, X, ArrowRight, Check, Search } from 'lucide-react';
 import './WarehouseDashboard.css';
 
 const WarehouseHoldingAreas = () => {
+  const location = useLocation();
+  const isYard = location.pathname.startsWith('/yard');
   // Density states ('compact' | 'default' | 'relaxed')
   const [leftDensity, setLeftDensity] = useState('relaxed');
   const [rightDensity, setRightDensity] = useState('relaxed');
+
+  // Search states for both tables
+  const [leftSearch, setLeftSearch] = useState('');
+  const [rightSearch, setRightSearch] = useState('');
 
   // Column visibility states
   const [leftVisibleColumns, setLeftVisibleColumns] = useState({
@@ -47,6 +54,16 @@ const WarehouseHoldingAreas = () => {
     { id: 'CAR-1', code: 'CAR-1', holdingArea: 'Holding Area A' },
     { id: 'CAR-2', code: 'CAR-2', holdingArea: 'Holding Area B' }
   ]);
+
+  const filteredHoldingAreas = holdingAreas.filter(h => {
+    const q = leftSearch.toLowerCase().trim();
+    return !q || h.name.toLowerCase().includes(q) || h.status.toLowerCase().includes(q);
+  });
+
+  const filteredAssets = assets.filter(a => {
+    const q = rightSearch.toLowerCase().trim();
+    return !q || a.code.toLowerCase().includes(q) || a.holdingArea.toLowerCase().includes(q);
+  });
 
   // Helpers to get density padding
   const getCellPadding = (density) => {
@@ -162,7 +179,7 @@ const WarehouseHoldingAreas = () => {
       {/* Header section matches WarehouseMap perfectly */}
       <div className="warehouse-header" style={{ marginBottom: '16px' }}>
         <div className="warehouse-header-titles" style={{ textAlign: 'left' }}>
-          <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#0f172a', margin: 0 }}>Holding Areas</h1>
+          <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#0f172a', margin: 0 }}>{isYard ? 'Yard Stage (Holding Areas)' : 'Holding Areas'}</h1>
         </div>
       </div>
 
@@ -182,8 +199,8 @@ const WarehouseHoldingAreas = () => {
         textAlign: 'left'
       }}>
         <div>
-          <h2 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: '0 0 4px 0' }}>Holding Area Management</h2>
-          <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>Manage intermediate holding zones and assigned staging assets.</p>
+          <h2 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: '0 0 4px 0' }}>{isYard ? 'Yard Stage Inventory & Holding Areas' : 'Holding Area Management'}</h2>
+          <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>{isYard ? 'Manage yard staging zones, holding slots, and assigned assets.' : 'Manage intermediate holding zones and assigned staging assets.'}</p>
         </div>
         <button
           onClick={() => setAddAreaModalOpen(true)}
@@ -225,7 +242,19 @@ const WarehouseHoldingAreas = () => {
             <h2 style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
               Holding Zones Status
             </h2>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center', flex: 1, justifyContent: 'flex-end' }}>
+              {/* Quick Search */}
+              <div style={{ position: 'relative', minWidth: '180px', flex: '1 1 180px' }}>
+                <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                <input 
+                  type="text"
+                  placeholder="Search zones..."
+                  value={leftSearch}
+                  onChange={(e) => setLeftSearch(e.target.value)}
+                  style={{ width: '100%', padding: '6px 12px 6px 30px', fontSize: '11px', fontWeight: '700', borderRadius: '8px', border: '1px solid #e2e8f0', outline: 'none' }}
+                />
+              </div>
+
               {/* Density control */}
               <div className="wh-segmented-control">
                 {['COMPACT', 'DEFAULT', 'RELAXED'].map((mode) => {
@@ -362,7 +391,14 @@ const WarehouseHoldingAreas = () => {
                 </tr>
               </thead>
               <tbody>
-                {holdingAreas.map(row => {
+                {filteredHoldingAreas.length === 0 ? (
+                  <tr>
+                    <td colSpan="4" style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '12px', fontWeight: '700' }}>
+                      No holding zones found matching "{leftSearch}".
+                    </td>
+                  </tr>
+                ) : (
+                  filteredHoldingAreas.map(row => {
                   const isChecked = leftSelectedRows.includes(row.name);
                   const currentCap = getCapacityCount(row.name);
                   return (
@@ -412,7 +448,7 @@ const WarehouseHoldingAreas = () => {
                       )}
                     </tr>
                   );
-                })}
+                }))}
               </tbody>
             </table>
           </div>
@@ -435,7 +471,19 @@ const WarehouseHoldingAreas = () => {
             <h2 style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
               Assets in Holding
             </h2>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center', flex: 1, justifyContent: 'flex-end' }}>
+              {/* Quick Search */}
+              <div style={{ position: 'relative', minWidth: '180px', flex: '1 1 180px' }}>
+                <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                <input 
+                  type="text"
+                  placeholder="Search assets..."
+                  value={rightSearch}
+                  onChange={(e) => setRightSearch(e.target.value)}
+                  style={{ width: '100%', padding: '6px 12px 6px 30px', fontSize: '11px', fontWeight: '700', borderRadius: '8px', border: '1px solid #e2e8f0', outline: 'none' }}
+                />
+              </div>
+
               {/* Density control */}
               <div className="wh-segmented-control">
                 {['COMPACT', 'DEFAULT', 'RELAXED'].map((mode) => {
@@ -588,7 +636,14 @@ const WarehouseHoldingAreas = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {assets.map(row => {
+                  {filteredAssets.length === 0 ? (
+                    <tr>
+                      <td colSpan="4" style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '12px', fontWeight: '700' }}>
+                        No holding assets found matching "{rightSearch}".
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredAssets.map(row => {
                     const isChecked = rightSelectedRows.includes(row.id);
                     // Split the holding area name for stacked display (e.g. "Holding Area\nB")
                     const nameParts = row.holdingArea.split(' Area ');
@@ -676,7 +731,7 @@ const WarehouseHoldingAreas = () => {
                         )}
                       </tr>
                     );
-                  })}
+                  }))}
                 </tbody>
               </table>
             )}
