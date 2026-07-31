@@ -1,979 +1,1572 @@
 import React, { useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { Settings, Plus, X, ArrowRight, Check, Search } from 'lucide-react';
-import './WarehouseDashboard.css';
+import { useLocation, useNavigate } from 'react-router-dom';
+import {
+  Search, Filter, Plus, ArrowRight, MoreVertical,
+  CheckCircle2, Clock, AlertTriangle, Box, Truck,
+  MapPin, Printer, RefreshCw, X, ChevronLeft, ChevronRight,
+  Download, Layers, SlidersHorizontal, ArrowUpRight, ChevronDown,
+  Info, Eye, Tag, AlertCircle
+} from 'lucide-react';
 
-const WarehouseHoldingAreas = () => {
+const initialStagingAreas = [
+  {
+    id: '1',
+    code: 'SA-01',
+    name: 'Stage Area 1',
+    subLocation: 'Main Yard - Front',
+    zone: 'Zone A',
+    lane: 'Lane 1',
+    status: 'Active',
+    capacity: 20,
+    occupancy: 80,
+    stagedItems: 16,
+    awaitingMove: 3,
+    oldestItem: '2h 15m'
+  },
+  {
+    id: '2',
+    code: 'SA-02',
+    name: 'Stage Area 2',
+    subLocation: 'Main Yard - North',
+    zone: 'Zone A',
+    lane: 'Lane 2',
+    status: 'Active',
+    capacity: 18,
+    occupancy: 67,
+    stagedItems: 12,
+    awaitingMove: 2,
+    oldestItem: '1h 05m'
+  },
+  {
+    id: '3',
+    code: 'SA-03',
+    name: 'Stage Area 3',
+    subLocation: 'Warehouse 1 - Rear',
+    zone: 'Zone B',
+    lane: 'Lane 3',
+    status: 'Active',
+    capacity: 25,
+    occupancy: 88,
+    stagedItems: 22,
+    awaitingMove: 6,
+    oldestItem: '3h 42m'
+  },
+  {
+    id: '4',
+    code: 'SA-04',
+    name: 'Stage Area 4',
+    subLocation: 'Warehouse 1 - Side',
+    zone: 'Zone B',
+    lane: 'Lane 4',
+    status: 'Active',
+    capacity: 15,
+    occupancy: 53,
+    stagedItems: 8,
+    awaitingMove: 0,
+    oldestItem: '45m'
+  },
+  {
+    id: '5',
+    code: 'SA-05',
+    name: 'Stage Area 5',
+    subLocation: 'Warehouse 2 - Front',
+    zone: 'Zone C',
+    lane: 'Lane 5',
+    status: 'Active',
+    capacity: 22,
+    occupancy: 91,
+    stagedItems: 20,
+    awaitingMove: 7,
+    oldestItem: '4h 10m'
+  },
+  {
+    id: '6',
+    code: 'SA-06',
+    name: 'Stage Area 6',
+    subLocation: 'Container Yard',
+    zone: 'Zone C',
+    lane: 'Lane 6',
+    status: 'Active',
+    capacity: 30,
+    occupancy: 63,
+    stagedItems: 19,
+    awaitingMove: 4,
+    oldestItem: '1h 20m'
+  },
+  {
+    id: '7',
+    code: 'SA-07',
+    name: 'Stage Area 7',
+    subLocation: 'Hazmat Staging',
+    zone: 'Zone D',
+    lane: 'Lane 5',
+    status: 'Active',
+    capacity: 10,
+    occupancy: 40,
+    stagedItems: 4,
+    awaitingMove: 0,
+    oldestItem: '20m'
+  },
+  {
+    id: '8',
+    code: 'SA-08',
+    name: 'Stage Area 8',
+    subLocation: 'Value Storage Hold',
+    zone: 'Zone D',
+    lane: 'Lane 2',
+    status: 'Inactive',
+    capacity: 10,
+    occupancy: 0,
+    stagedItems: 0,
+    awaitingMove: 0,
+    oldestItem: '-'
+  }
+];
+
+const recentStagedItems = [
+  {
+    id: 'st-1',
+    image: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=80&q=80',
+    title: 'Toyota Hilux SRS',
+    ref: 'VIN: JTDKB3...234567',
+    area: 'Stage Area 1',
+    time: '10:32 AM'
+  },
+  {
+    id: 'st-2',
+    image: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=80&q=80',
+    title: 'Pallet – Auto Parts',
+    ref: 'SKU: PAL-889900112233',
+    area: 'Stage Area 3',
+    time: '10:21 AM'
+  },
+  {
+    id: 'st-3',
+    image: 'https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?auto=format&fit=crop&w=80&q=80',
+    title: 'Honda Accord',
+    ref: 'VIN: 1HGCM82633A123456',
+    area: 'Stage Area 2',
+    time: '10:15 AM'
+  },
+  {
+    id: 'st-4',
+    image: 'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&w=80&q=80',
+    title: '40ft Container',
+    ref: 'CONT: HJCU1234567',
+    area: 'Stage Area 6',
+    time: '10:05 AM'
+  },
+  {
+    id: 'st-5',
+    image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=80&q=80',
+    title: 'Forklift – Toyota 2.5T',
+    ref: 'SKU: EQP-778899',
+    area: 'Stage Area 5',
+    time: '09:58 AM'
+  }
+];
+
+export default function WarehouseHoldingAreas() {
+  const navigate = useNavigate();
   const location = useLocation();
-  const isYard = location.pathname.startsWith('/yard');
-  // Density states ('compact' | 'default' | 'relaxed')
-  const [leftDensity, setLeftDensity] = useState('relaxed');
-  const [rightDensity, setRightDensity] = useState('relaxed');
 
-  // Search states for both tables
-  const [leftSearch, setLeftSearch] = useState('');
-  const [rightSearch, setRightSearch] = useState('');
+  const [areas, setAreas] = useState(initialStagingAreas);
+  const [activeTab, setActiveTab] = useState('All Staging Areas');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [zoneFilter, setZoneFilter] = useState('All');
+  const [laneFilter, setLaneFilter] = useState('All');
 
-  // Column visibility states
-  const [leftVisibleColumns, setLeftVisibleColumns] = useState({
-    holdingArea: true,
-    capacity: true,
-    status: true
-  });
-  const [rightVisibleColumns, setRightVisibleColumns] = useState({
-    assetCode: true,
-    holdingArea: true,
-    actions: true
-  });
-
-  // Dropdown menu states
-  const [leftColumnsOpen, setLeftColumnsOpen] = useState(false);
-  const [rightColumnsOpen, setRightColumnsOpen] = useState(false);
-
-  // Selection states
-  const [leftSelectedRows, setLeftSelectedRows] = useState([]);
-  const [rightSelectedRows, setRightSelectedRows] = useState([]);
-
-  // Modals state
+  const [createMoveModalOpen, setCreateMoveModalOpen] = useState(false);
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [addAreaModalOpen, setAddAreaModalOpen] = useState(false);
-  const [moveAssetModalOpen, setMoveAssetModalOpen] = useState(false);
+  const [activeStep, setActiveStep] = useState(1);
   const [newAreaName, setNewAreaName] = useState('');
-  const [selectedAssetId, setSelectedAssetId] = useState('');
-  const [targetHoldingArea, setTargetHoldingArea] = useState('Holding Area A');
+  const [newAreaCode, setNewAreaCode] = useState('');
+  const [newAreaZone, setNewAreaZone] = useState('');
+  const [newAreaLane, setNewAreaLane] = useState('');
+  const [newAreaCap, setNewAreaCap] = useState('');
+  const [newAreaUnit, setNewAreaUnit] = useState('Items');
+  const [newAreaDesc, setNewAreaDesc] = useState('');
+  const [isRestricted, setIsRestricted] = useState(false);
+  const [isTempControlled, setIsTempControlled] = useState(false);
 
-  // Toast notification state
-  const [toast, setToast] = useState({ open: false, message: '' });
+  const [selectedAreaForMove, setSelectedAreaForMove] = useState('Stage Area 1');
+  const [targetLane, setTargetLane] = useState('Lane 1');
+  const [toast, setToast] = useState(null);
 
-  // Data states
-  const [holdingAreas, setHoldingAreas] = useState([
-    { id: 'HA-1', name: 'Holding Area A', capacity: 50, status: 'AVAILABLE' },
-    { id: 'HA-2', name: 'Holding Area B', capacity: 50, status: 'AVAILABLE' }
-  ]);
-
-  const [assets, setAssets] = useState([
-    { id: 'CAR-1', code: 'CAR-1', holdingArea: 'Holding Area A' },
-    { id: 'CAR-2', code: 'CAR-2', holdingArea: 'Holding Area B' }
-  ]);
-
-  const filteredHoldingAreas = holdingAreas.filter(h => {
-    const q = leftSearch.toLowerCase().trim();
-    return !q || h.name.toLowerCase().includes(q) || h.status.toLowerCase().includes(q);
-  });
-
-  const filteredAssets = assets.filter(a => {
-    const q = rightSearch.toLowerCase().trim();
-    return !q || a.code.toLowerCase().includes(q) || a.holdingArea.toLowerCase().includes(q);
-  });
-
-  // Helpers to get density padding
-  const getCellPadding = (density) => {
-    if (density === 'compact') return '10px 16px';
-    if (density === 'default') return '14px 20px';
-    return '20px 24px'; // relaxed is default
+  const showToast = (msg, type = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
   };
 
-  // Toast trigger
-  const showToast = (message) => {
-    setToast({ open: true, message });
-    setTimeout(() => {
-      setToast(prev => prev.message === message ? { open: false, message: '' } : prev);
-    }, 4000);
-  };
-
-  // Selection Handlers - Left Table
-  const handleLeftRowSelect = (name) => {
-    if (leftSelectedRows.includes(name)) {
-      setLeftSelectedRows(leftSelectedRows.filter(x => x !== name));
-    } else {
-      setLeftSelectedRows([...leftSelectedRows, name]);
-    }
-  };
-
-  const handleLeftSelectAll = () => {
-    if (leftSelectedRows.length === holdingAreas.length) {
-      setLeftSelectedRows([]);
-    } else {
-      setLeftSelectedRows(holdingAreas.map(h => h.name));
-    }
-  };
-
-  // Selection Handlers - Right Table
-  const handleRightRowSelect = (id) => {
-    if (rightSelectedRows.includes(id)) {
-      setRightSelectedRows(rightSelectedRows.filter(x => x !== id));
-    } else {
-      setRightSelectedRows([...rightSelectedRows, id]);
-    }
-  };
-
-  const handleRightSelectAll = () => {
-    if (rightSelectedRows.length === assets.length) {
-      setRightSelectedRows([]);
-    } else {
-      setRightSelectedRows(assets.map(a => a.id));
-    }
-  };
-
-  // Action: Add Holding Area
-  const handleCreateHoldingArea = (e) => {
+  const handleCreateArea = (e) => {
     e.preventDefault();
     if (!newAreaName.trim()) return;
-
-    const nameExists = holdingAreas.some(
-      h => h.name.toLowerCase() === newAreaName.trim().toLowerCase()
-    );
-
-    if (nameExists) {
-      alert('A holding area with this name already exists.');
-      return;
-    }
-
     const newArea = {
-      id: `HA-${Date.now()}`,
+      id: String(Date.now()),
+      code: newAreaCode.trim() || `SA-0${areas.length + 1}`,
       name: newAreaName.trim(),
-      capacity: 50,
-      status: 'AVAILABLE'
+      subLocation: newAreaDesc.trim() || (newAreaZone ? `${newAreaZone} Staging` : 'Main Yard'),
+      zone: newAreaZone || 'Zone A',
+      lane: newAreaLane || 'Lane 1',
+      status: 'Active',
+      capacity: parseInt(newAreaCap) || 50,
+      occupancy: 0,
+      stagedItems: 0,
+      awaitingMove: 0,
+      oldestItem: '-'
     };
-
-    setHoldingAreas([...holdingAreas, newArea]);
-    setNewAreaName('');
+    setAreas([...areas, newArea]);
     setAddAreaModalOpen(false);
-    showToast(`Holding area "${newArea.name}" created successfully.`);
+    setNewAreaName('');
+    setNewAreaCode('');
+    setNewAreaZone('');
+    setNewAreaLane('');
+    setNewAreaCap('');
+    setNewAreaDesc('');
+    setIsRestricted(false);
+    setIsTempControlled(false);
+    showToast(`✓ Holding Area "${newArea.name}" created successfully!`);
   };
 
-  // Action: Move Asset
-  const handleMoveClick = (assetId) => {
-    setSelectedAssetId(assetId);
-    const currentAsset = assets.find(a => a.id === assetId);
-    if (currentAsset) {
-      setTargetHoldingArea(currentAsset.holdingArea);
-    }
-    setMoveAssetModalOpen(true);
+  const filteredAreas = areas.filter(area => {
+    // Tab filter
+    if (activeTab === 'Inactive Areas' && area.status !== 'Inactive') return false;
+    if (activeTab === 'All Staging Areas' && area.status === 'Inactive') return false;
+
+    // Dropdown & Search filters
+    const matchesSearch = !searchQuery ||
+      area.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      area.subLocation.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      area.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      area.zone.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      area.lane.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesStatus = statusFilter === 'All' || area.status === statusFilter;
+    const matchesZone = zoneFilter === 'All' || area.zone === zoneFilter;
+    const matchesLane = laneFilter === 'All' || area.lane === laneFilter;
+
+    return matchesSearch && matchesStatus && matchesZone && matchesLane;
+  });
+
+  const handleRefresh = () => {
+    showToast('Refreshed staging area inventory...');
+  };
+
+  const handleExport = () => {
+    showToast('Exporting staging area inventory report (CSV)...');
   };
 
   const handleConfirmMove = (e) => {
     e.preventDefault();
-    setAssets(assets.map(asset => {
-      if (asset.id === selectedAssetId) {
-        return { ...asset, holdingArea: targetHoldingArea };
-      }
-      return asset;
-    }));
-    setMoveAssetModalOpen(false);
-    showToast(`Asset ${selectedAssetId} relocated to ${targetHoldingArea}.`);
+    setCreateMoveModalOpen(false);
+    showToast(`✓ Move task created from ${selectedAreaForMove} to ${targetLane}!`);
   };
 
-  // Action: Remove Asset
-  const handleRemoveAsset = (assetId) => {
-    setAssets(assets.filter(a => a.id !== assetId));
-    showToast(`Asset ${assetId} flagged for removal from holding.`);
+  const handleConfirmAssign = (e) => {
+    e.preventDefault();
+    setAssignModalOpen(false);
+    showToast(`✓ ${selectedAreaForMove} assigned to ${targetLane}!`);
   };
 
-  // Calculate capacities
-  const getCapacityCount = (areaName) => {
-    return assets.filter(a => a.holdingArea === areaName).length;
+  const getOccupancyBarColor = (pct) => {
+    if (pct >= 90) return '#EF4444'; // Red
+    if (pct >= 80) return '#F59E0B'; // Amber
+    return '#22C55E'; // Green
   };
 
   return (
-    <div className="warehouse-dashboard" style={{ display: 'flex', flexDirection: 'column' }}>
-      {/* Header section matches WarehouseMap perfectly */}
-      <div className="warehouse-header" style={{ marginBottom: '16px' }}>
-        <div className="warehouse-header-titles" style={{ textAlign: 'left' }}>
-          <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#0f172a', margin: 0 }}>{isYard ? 'Yard Stage (Holding Areas)' : 'Holding Areas'}</h1>
-        </div>
-      </div>
+    <div className="wh-stage-container">
+      <style>{`
+        .wh-stage-container {
+          font-family: 'Inter', system-ui, -apple-system, sans-serif;
+          background: #F8FAFC;
+          min-height: 100vh;
+          color: #0F172A;
+          padding: 20px 24px;
+          box-sizing: border-box;
+        }
 
-      {/* Title & Description & Button header bar */}
-      <div style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: '16px',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        backgroundColor: '#ffffff',
-        padding: '20px 24px',
-        borderRadius: '16px',
-        border: '1px solid #f1f5f9',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
-        marginBottom: '24px',
-        textAlign: 'left'
-      }}>
+        /* HEADER ROW */
+        .wh-st-header-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 16px;
+          flex-wrap: wrap;
+          gap: 12px;
+        }
+        .wh-st-title {
+          font-size: 18px;
+          font-weight: 900;
+          color: #0F172A;
+          margin: 0;
+          text-transform: uppercase;
+          letter-spacing: -0.3px;
+        }
+        .wh-st-sub {
+          font-size: 12px;
+          color: #64748B;
+          margin-top: 2px;
+        }
+        .wh-st-actions-top {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .wh-btn-export-st {
+          height: 36px;
+          padding: 0 14px;
+          border-radius: 8px;
+          border: 1px solid #CBD5E1;
+          background: #FFFFFF;
+          font-size: 12px;
+          font-weight: 700;
+          color: #475569;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          transition: background 0.15s;
+        }
+        .wh-btn-export-st:hover { background: #F1F5F9; }
+
+        .wh-btn-refresh-st {
+          height: 36px;
+          padding: 0 18px;
+          border-radius: 8px;
+          border: none;
+          background: #FFD400;
+          font-size: 12px;
+          font-weight: 800;
+          color: #0F172A;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          box-shadow: 0 2px 6px rgba(255,212,0,0.3);
+        }
+
+        .wh-btn-add-st {
+          height: 36px;
+          padding: 0 16px;
+          border-radius: 8px;
+          border: 1px solid #CBD5E1;
+          background: #FFFFFF;
+          font-size: 12px;
+          font-weight: 800;
+          color: #0F172A;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          transition: all 0.15s;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }
+        .wh-btn-add-st:hover { background: #F8FAFC; border-color: #0F172A; }
+
+        /* STAT CARDS 4-GRID */
+        .wh-st-stats-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 12px;
+          margin-bottom: 16px;
+        }
+        .wh-st-stat-card {
+          background: #FFFFFF;
+          border: 1px solid #E2E8F0;
+          border-radius: 12px;
+          padding: 14px 16px;
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }
+        .wh-st-icon-box {
+          width: 42px;
+          height: 42px;
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+        .wh-st-icon-box.blue { background: #DBEAFE; color: #2563EB; }
+        .wh-st-icon-box.green { background: #DCFCE7; color: #16A34A; }
+        .wh-st-icon-box.amber { background: #FEF3C7; color: #D97706; }
+        .wh-st-icon-box.red { background: #FEE2E2; color: #DC2626; }
+
+        .wh-st-stat-num {
+          font-size: 22px;
+          font-weight: 900;
+          color: #0F172A;
+          line-height: 1;
+        }
+        .wh-st-stat-title {
+          font-size: 10px;
+          font-weight: 800;
+          color: #64748B;
+          text-transform: uppercase;
+          letter-spacing: 0.4px;
+          margin-bottom: 3px;
+        }
+        .wh-st-stat-sub {
+          font-size: 10.5px;
+          color: #94A3B8;
+        }
+
+        /* MASTER GRID LAYOUT */
+        .wh-st-master-grid {
+          display: flex;
+          gap: 14px;
+          align-items: flex-start;
+        }
+        .wh-st-left-col {
+          flex: 1;
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+        .wh-st-right-col {
+          width: 250px;
+          flex-shrink: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .wh-st-main-card {
+          background: #FFFFFF;
+          border: 1px solid #E2E8F0;
+          border-radius: 12px;
+          padding: 16px;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        }
+
+        /* TABS ROW */
+        .wh-st-tabs-row {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          border-bottom: 1px solid #E2E8F0;
+          margin-bottom: 14px;
+          padding-bottom: 2px;
+        }
+        .wh-st-tab-btn {
+          padding: 8px 14px;
+          font-size: 12px;
+          font-weight: 700;
+          color: #64748B;
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          border-bottom: 2px solid transparent;
+          transition: all 0.15s;
+        }
+        .wh-st-tab-btn.active {
+          color: #0F172A;
+          border-bottom-color: #FFD400;
+          font-weight: 800;
+        }
+
+        /* SEARCH & FILTERS ROW */
+        .wh-st-search-row {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-bottom: 14px;
+          flex-wrap: wrap;
+        }
+        .wh-st-search-wrap {
+          position: relative;
+          flex: 1;
+          min-width: 240px;
+        }
+        .wh-st-search-inp {
+          width: 100%;
+          height: 34px;
+          padding: 0 12px 0 34px;
+          border-radius: 8px;
+          border: 1px solid #CBD5E1;
+          background: #FFFFFF;
+          font-size: 11.5px;
+          font-weight: 600;
+          color: #0F172A;
+          outline: none;
+          box-sizing: border-box;
+        }
+        .wh-st-search-inp:focus { border-color: #FFD400; }
+        .wh-st-search-icon {
+          position: absolute;
+          left: 10px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #94A3B8;
+        }
+
+        .wh-st-filter-sel {
+          height: 34px;
+          padding: 0 8px;
+          border-radius: 8px;
+          border: 1px solid #CBD5E1;
+          background: #FFFFFF;
+          font-size: 11.5px;
+          font-weight: 600;
+          color: #0F172A;
+          outline: none;
+        }
+
+        /* TABLE */
+        .wh-st-table-wrap {
+          border: 1px solid #E2E8F0;
+          border-radius: 8px;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+        .wh-st-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 11.5px;
+          min-width: 850px;
+        }
+        .wh-st-table th {
+          padding: 10px 12px;
+          font-size: 9px;
+          font-weight: 800;
+          color: #64748B;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          background: #F8FAFC;
+          border-bottom: 1px solid #E2E8F0;
+          text-align: left;
+          white-space: nowrap;
+        }
+        .wh-st-table td {
+          padding: 10px 12px;
+          border-bottom: 1px solid #F1F5F9;
+          vertical-align: middle;
+          white-space: nowrap;
+        }
+        .wh-st-table tr:hover { background: #F8FAFC; }
+
+        .area-avatar-circle {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          background: #F1F5F9;
+          color: #475569;
+          font-size: 10px;
+          font-weight: 800;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          border: 1px solid #CBD5E1;
+        }
+
+        /* OCCUPANCY BAR */
+        .occ-bar-bg {
+          width: 60px;
+          height: 6px;
+          background: #E2E8F0;
+          border-radius: 3px;
+          overflow: hidden;
+        }
+        .occ-bar-fill {
+          height: 100%;
+          border-radius: 3px;
+        }
+
+        .badge-active {
+          background: #DCFCE7;
+          color: #15803D;
+          padding: 3px 8px;
+          border-radius: 6px;
+          font-size: 9.5px;
+          font-weight: 800;
+        }
+        .badge-inactive {
+          background: #F1F5F9;
+          color: #64748B;
+          padding: 3px 8px;
+          border-radius: 6px;
+          font-size: 9.5px;
+          font-weight: 800;
+        }
+
+        .btn-view-st {
+          height: 26px;
+          padding: 0 10px;
+          border-radius: 6px;
+          border: 1px solid #CBD5E1;
+          background: #FFFFFF;
+          font-size: 10.5px;
+          font-weight: 700;
+          color: #0F172A;
+          cursor: pointer;
+        }
+        .btn-view-st:hover { background: #F1F5F9; }
+
+        /* FOOTER & TIP */
+        .wh-st-table-footer {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-top: 12px;
+          padding-top: 10px;
+          font-size: 11px;
+          color: #64748B;
+        }
+
+        .wh-st-tip-bar {
+          margin-top: 14px;
+          padding: 10px 14px;
+          background: #EFF6FF;
+          border: 1px solid #BFDBFE;
+          border-radius: 8px;
+          font-size: 11px;
+          color: #1E40AF;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        /* RIGHT SIDEBAR */
+        .wh-st-side-card {
+          background: #FFFFFF;
+          border: 1px solid #E2E8F0;
+          border-radius: 12px;
+          padding: 14px;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }
+        .wh-st-side-title {
+          font-size: 10px;
+          font-weight: 900;
+          color: #0F172A;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin-bottom: 10px;
+          padding-bottom: 4px;
+          border-bottom: 1px solid #F1F5F9;
+        }
+
+        /* DONUT CHART */
+        .wh-donut-wrap { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+        .wh-donut-chart { position: relative; width: 70px; height: 70px; flex-shrink: 0; }
+        .wh-donut-center {
+          position: absolute; inset: 12px; background: #FFFFFF; border-radius: 50%;
+          display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .wh-legend-list { display: flex; flex-direction: column; gap: 4px; font-size: 10px; }
+        .wh-legend-item { display: flex; align-items: center; gap: 6px; }
+        .wh-legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+        /* TOP STAGING OCCUPANCY BARS */
+        .wh-occ-rank-row {
+          margin-bottom: 8px;
+          font-size: 10.5px;
+        }
+        .wh-occ-rank-header {
+          display: flex;
+          justify-content: space-between;
+          font-weight: 700;
+          color: #0F172A;
+          margin-bottom: 2px;
+        }
+        .wh-occ-rank-bg {
+          height: 6px;
+          background: #F1F5F9;
+          border-radius: 3px;
+          overflow: hidden;
+        }
+        .wh-occ-rank-fill { height: 100%; border-radius: 3px; }
+
+        /* RECENT ITEMS */
+        .wh-st-recent-item {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 6px 0;
+          border-bottom: 1px solid #F1F5F9;
+        }
+        .wh-st-recent-item:last-child { border-bottom: none; }
+        .wh-st-recent-thumb {
+          width: 34px;
+          height: 28px;
+          border-radius: 4px;
+          object-fit: cover;
+          border: 1px solid #E2E8F0;
+        }
+
+        /* QUICK ACTIONS */
+        .wh-qa-btn {
+          width: 100%;
+          padding: 7px 10px;
+          border-radius: 6px;
+          border: 1px solid #E2E8F0;
+          background: #F8FAFC;
+          font-size: 11px;
+          font-weight: 700;
+          color: #0F172A;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 6px;
+          transition: background 0.15s;
+        }
+        .wh-qa-btn:hover { background: #FFFFFF; border-color: #FFD400; }
+
+        /* MODAL */
+        .wh-modal-overlay {
+          position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5);
+          backdrop-filter: blur(4px); z-index: 99999; display: flex;
+          align-items: center; justify-content: center; padding: 16px;
+        }
+        .wh-modal-box {
+          background: #FFFFFF; border-radius: 12px; width: 100%; max-width: 440px;
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); overflow: hidden;
+        }
+
+        .wh-st-table-wrap::-webkit-scrollbar {
+          height: 6px;
+        }
+        .wh-st-table-wrap::-webkit-scrollbar-track {
+          background: #F1F5F9;
+        }
+        .wh-st-table-wrap::-webkit-scrollbar-thumb {
+          background: #CBD5E1;
+          border-radius: 4px;
+        }
+
+        @media (max-width: 1024px) {
+          .wh-st-stats-grid { grid-template-columns: repeat(2, 1fr); }
+          .wh-st-master-grid { flex-direction: column; width: 100%; }
+          .wh-st-right-col { width: 100%; }
+        }
+        @media (max-width: 640px) {
+          .wh-stage-container { padding: 10px; width: 100%; max-width: 100vw; box-sizing: border-box; }
+          .wh-st-master-grid { width: 100%; max-width: 100%; box-sizing: border-box; }
+          .wh-st-left-col { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; }
+          .wh-st-main-card { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; overflow: hidden; }
+          .wh-st-stats-grid { grid-template-columns: 1fr; }
+          .wh-st-header-row { flex-direction: column; align-items: flex-start; gap: 10px; }
+          .wh-st-actions-top { width: 100%; display: flex; flex-direction: column; gap: 6px; }
+          .wh-st-actions-top button { width: 100%; height: 38px; justify-content: center; }
+          .wh-modal-overlay {
+            padding: 8px !important;
+            align-items: center !important;
+          }
+          .wh-modal-box {
+            width: 100% !important;
+            max-width: 100% !important;
+            max-height: 90vh !important;
+            overflow-y: auto !important;
+            border-radius: 12px !important;
+          }
+          .wh-st-search-row { flex-direction: column; align-items: stretch; gap: 8px; }
+          .wh-st-search-wrap { width: 100%; min-width: 0; }
+          .wh-st-filter-sel { width: 100%; box-sizing: border-box; }
+          .wh-st-table-wrap { width: 100%; display: block; overflow-x: auto !important; -webkit-overflow-scrolling: touch; box-sizing: border-box; }
+          .wh-st-table { min-width: 850px; }
+          .wh-st-table th, .wh-st-table td { white-space: nowrap; }
+        }
+      `}</style>
+
+      {/* HEADER ROW */}
+      <div className="wh-st-header-row">
         <div>
-          <h2 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: '0 0 4px 0' }}>{isYard ? 'Yard Stage Inventory & Holding Areas' : 'Holding Area Management'}</h2>
-          <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>{isYard ? 'Manage yard staging zones, holding slots, and assigned assets.' : 'Manage intermediate holding zones and assigned staging assets.'}</p>
+          <h1 className="wh-st-title">STAGE (HOLDING AREAS)</h1>
+          <p className="wh-st-sub">View and manage all staging areas and items waiting to be moved to load lanes.</p>
         </div>
-        <button
-          onClick={() => setAddAreaModalOpen(true)}
-          className="btn btn-white-orange-wh"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '10px 18px',
-            fontSize: '12px',
-            fontWeight: '700',
-            borderRadius: '12px',
-            cursor: 'pointer',
-            whiteSpace: 'nowrap'
-          }}
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add Holding Area</span>
-        </button>
+
+        <div className="wh-st-actions-top">
+          <button className="wh-btn-export-st" onClick={handleExport}>
+            <Download size={14} />
+            <span>Export</span>
+          </button>
+          <button className="wh-btn-refresh-st" onClick={handleRefresh}>
+            <RefreshCw size={14} />
+            <span>Refresh</span>
+          </button>
+          <button className="wh-btn-add-st" onClick={() => setAddAreaModalOpen(true)}>
+            <Plus size={14} />
+            <span>Add Holding Area</span>
+          </button>
+        </div>
       </div>
 
-      {/* 2-Panel Layout Grid */}
-      <div className="responsive-two-panel-grid">
-        
-        {/* Left Panel: HOLDING ZONES STATUS */}
-        <div style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '24px',
-          border: '1px solid #f1f5f9',
-          padding: '24px',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
-          display: 'flex',
-          flexDirection: 'column',
-          height: '100%',
-          textAlign: 'left'
-        }}>
-          {/* Header controls for Left Table */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-            <h2 style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
-              Holding Zones Status
-            </h2>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center', flex: 1, justifyContent: 'flex-end' }}>
-              {/* Quick Search */}
-              <div style={{ position: 'relative', minWidth: '180px', flex: '1 1 180px' }}>
-                <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                <input 
-                  type="text"
-                  placeholder="Search zones..."
-                  value={leftSearch}
-                  onChange={(e) => setLeftSearch(e.target.value)}
-                  style={{ width: '100%', padding: '6px 12px 6px 30px', fontSize: '11px', fontWeight: '700', borderRadius: '8px', border: '1px solid #e2e8f0', outline: 'none' }}
-                />
-              </div>
-
-              {/* Density control */}
-              <div className="wh-segmented-control">
-                {['COMPACT', 'DEFAULT', 'RELAXED'].map((mode) => {
-                  const isActive = leftDensity === mode.toLowerCase();
-                  return (
-                    <button
-                      key={mode}
-                      onClick={() => setLeftDensity(mode.toLowerCase())}
-                      className="segmented-btn"
-                      style={{
-                        padding: '5px 12px',
-                        fontSize: '9px',
-                        borderRadius: '6px',
-                        backgroundColor: isActive ? '#ffd400' : 'transparent',
-                        color: isActive ? '#0f172a' : '#64748b',
-                        border: isActive ? '1px solid #000' : '1px solid transparent',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      {mode}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Column Visibility Selector */}
-              <div style={{ position: 'relative' }}>
-                <button
-                  className="btn btn-white-wh"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '8px 12px',
-                    fontSize: '10px',
-                    borderRadius: '8px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    border: leftColumnsOpen ? '1.5px solid #000000' : '1px solid #e2e8f0',
-                    color: leftColumnsOpen ? '#0f172a' : '#64748b',
-                    backgroundColor: '#ffffff',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap'
-                  }}
-                  onClick={() => setLeftColumnsOpen(!leftColumnsOpen)}
-                >
-                  <Settings className="h-3.5 w-3.5 text-slate-400" />
-                  <span>Columns</span>
-                </button>
-
-                {leftColumnsOpen && (
-                  <div style={{
-                    position: 'absolute',
-                    right: 0,
-                    top: 'calc(100% + 8px)',
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '16px',
-                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-                    padding: '16px',
-                    zIndex: 50,
-                    minWidth: '200px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '12px'
-                  }}>
-                    <div style={{ fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
-                      Column Visibility
-                    </div>
-                    
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', color: '#334155' }}>
-                      <input
-                        type="checkbox"
-                        checked={leftVisibleColumns.holdingArea}
-                        onChange={() => setLeftVisibleColumns(prev => ({ ...prev, holdingArea: !prev.holdingArea }))}
-                        style={{ width: '16px', height: '16px', borderRadius: '4px', border: '1px solid #cbd5e1', accentColor: '#3b82f6', cursor: 'pointer' }}
-                      />
-                      <span>Holding Area</span>
-                    </label>
-
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', color: '#334155' }}>
-                      <input
-                        type="checkbox"
-                        checked={leftVisibleColumns.capacity}
-                        onChange={() => setLeftVisibleColumns(prev => ({ ...prev, capacity: !prev.capacity }))}
-                        style={{ width: '16px', height: '16px', borderRadius: '4px', border: '1px solid #cbd5e1', accentColor: '#3b82f6', cursor: 'pointer' }}
-                      />
-                      <span>Capacity</span>
-                    </label>
-
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', color: '#334155' }}>
-                      <input
-                        type="checkbox"
-                        checked={leftVisibleColumns.status}
-                        onChange={() => setLeftVisibleColumns(prev => ({ ...prev, status: !prev.status }))}
-                        style={{ width: '16px', height: '16px', borderRadius: '4px', border: '1px solid #cbd5e1', accentColor: '#3b82f6', cursor: 'pointer' }}
-                      />
-                      <span>Status</span>
-                    </label>
-                  </div>
-                )}
-              </div>
-            </div>
+      {/* STAT CARDS 4-GRID */}
+      <div className="wh-st-stats-grid">
+        <div className="wh-st-stat-card">
+          <div className="wh-st-icon-box blue">
+            <Layers size={20} />
           </div>
-
-          {/* Left Table */}
-          <div style={{ border: '1px solid #e2e8f0', borderRadius: '16px', overflowX: 'auto', backgroundColor: '#ffffff' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc' }}>
-                  <th style={{ padding: '14px 20px', width: '40px', textAlign: 'center' }}>
-                    <input
-                      type="checkbox"
-                      checked={leftSelectedRows.length === holdingAreas.length && holdingAreas.length > 0}
-                      onChange={handleLeftSelectAll}
-                      style={{ cursor: 'pointer', width: '16px', height: '16px' }}
-                    />
-                  </th>
-                  {leftVisibleColumns.holdingArea && (
-                    <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
-                      Holding Area
-                    </th>
-                  )}
-                  {leftVisibleColumns.capacity && (
-                    <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
-                      Capacity
-                    </th>
-                  )}
-                  {leftVisibleColumns.status && (
-                    <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
-                      Status
-                    </th>
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {filteredHoldingAreas.length === 0 ? (
-                  <tr>
-                    <td colSpan="4" style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '12px', fontWeight: '700' }}>
-                      No holding zones found matching "{leftSearch}".
-                    </td>
-                  </tr>
-                ) : (
-                  filteredHoldingAreas.map(row => {
-                  const isChecked = leftSelectedRows.includes(row.name);
-                  const currentCap = getCapacityCount(row.name);
-                  return (
-                    <tr
-                      key={row.id}
-                      style={{
-                        borderBottom: '1px solid #f1f5f9',
-                        backgroundColor: isChecked ? '#fffbeb' : 'transparent',
-                        transition: 'background-color 0.15s'
-                      }}
-                    >
-                      <td style={{ padding: getCellPadding(leftDensity), textAlign: 'center' }}>
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => handleLeftRowSelect(row.name)}
-                          style={{ cursor: 'pointer', width: '16px', height: '16px' }}
-                        />
-                      </td>
-                      {leftVisibleColumns.holdingArea && (
-                        <td style={{ padding: getCellPadding(leftDensity), fontSize: '15px', fontWeight: '800', color: '#0f172a' }}>
-                          {row.name}
-                        </td>
-                      )}
-                      {leftVisibleColumns.capacity && (
-                        <td style={{ padding: getCellPadding(leftDensity), fontSize: '14px', fontWeight: '700', color: '#475569' }}>
-                          {currentCap} / {row.capacity}
-                        </td>
-                      )}
-                      {leftVisibleColumns.status && (
-                        <td style={{ padding: getCellPadding(leftDensity), whiteSpace: 'nowrap' }}>
-                          <span style={{
-                            fontSize: '9px',
-                            fontWeight: '800',
-                            color: '#64748b',
-                            backgroundColor: '#f1f5f9',
-                            border: '1.5px solid #e2e8f0',
-                            borderRadius: '9999px',
-                            padding: '4px 10px',
-                            letterSpacing: '0.05em',
-                            display: 'inline-block',
-                            whiteSpace: 'nowrap'
-                          }}>
-                            {row.status}
-                          </span>
-                        </td>
-                      )}
-                    </tr>
-                  );
-                }))}
-              </tbody>
-            </table>
+          <div>
+            <div className="wh-st-stat-title">TOTAL STAGING AREAS</div>
+            <div className="wh-st-stat-num">12</div>
+            <div className="wh-st-stat-sub">8 Active | 4 Inactive</div>
           </div>
         </div>
 
-        {/* Right Panel: ASSETS IN HOLDING */}
-        <div style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '24px',
-          border: '1px solid #f1f5f9',
-          padding: '24px',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
-          display: 'flex',
-          flexDirection: 'column',
-          height: '100%',
-          textAlign: 'left'
-        }}>
-          {/* Header controls for Right Table */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-            <h2 style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
-              Assets in Holding
-            </h2>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center', flex: 1, justifyContent: 'flex-end' }}>
-              {/* Quick Search */}
-              <div style={{ position: 'relative', minWidth: '180px', flex: '1 1 180px' }}>
-                <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                <input 
+        <div className="wh-st-stat-card">
+          <div className="wh-st-icon-box green">
+            <Box size={20} />
+          </div>
+          <div>
+            <div className="wh-st-stat-title">STAGED ITEMS</div>
+            <div className="wh-st-stat-num">146</div>
+            <div className="wh-st-stat-sub">Across all areas</div>
+          </div>
+        </div>
+
+        <div className="wh-st-stat-card">
+          <div className="wh-st-icon-box amber">
+            <Truck size={20} />
+          </div>
+          <div>
+            <div className="wh-st-stat-title">AWAITING MOVE</div>
+            <div className="wh-st-stat-num">32</div>
+            <div className="wh-st-stat-sub">Ready for load lane</div>
+          </div>
+        </div>
+
+        <div className="wh-st-stat-card">
+          <div className="wh-st-icon-box red">
+            <Clock size={20} />
+          </div>
+          <div>
+            <div className="wh-st-stat-title">OVERDUE ITEMS</div>
+            <div className="wh-st-stat-num">6</div>
+            <div className="wh-st-stat-sub">Exceeding time limit</div>
+          </div>
+        </div>
+      </div>
+
+      {/* MASTER GRID LAYOUT */}
+      <div className="wh-st-master-grid">
+
+        {/* LEFT COLUMN MAIN TABLE */}
+        <div className="wh-st-left-col">
+          <div className="wh-st-main-card">
+
+            {/* TABS ROW */}
+            <div className="wh-st-tabs-row">
+              {['All Staging Areas', 'By Zone', 'By Load Lane', 'Inactive Areas'].map(tab => (
+                <button
+                  key={tab}
+                  className={`wh-st-tab-btn ${activeTab === tab ? 'active' : ''}`}
+                  onClick={() => setActiveTab(tab)}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+
+            {/* SEARCH & FILTERS ROW */}
+            <div className="wh-st-search-row">
+              <div className="wh-st-search-wrap">
+                <Search size={14} className="wh-st-search-icon" />
+                <input
                   type="text"
-                  placeholder="Search assets..."
-                  value={rightSearch}
-                  onChange={(e) => setRightSearch(e.target.value)}
-                  style={{ width: '100%', padding: '6px 12px 6px 30px', fontSize: '11px', fontWeight: '700', borderRadius: '8px', border: '1px solid #e2e8f0', outline: 'none' }}
+                  placeholder="Search staging areas, items, VIN, SKU, or ref no..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="wh-st-search-inp"
                 />
               </div>
 
-              {/* Density control */}
-              <div className="wh-segmented-control">
-                {['COMPACT', 'DEFAULT', 'RELAXED'].map((mode) => {
-                  const isActive = rightDensity === mode.toLowerCase();
-                  return (
-                    <button
-                      key={mode}
-                      onClick={() => setRightDensity(mode.toLowerCase())}
-                      className="segmented-btn"
-                      style={{
-                        padding: '5px 12px',
-                        fontSize: '9px',
-                        borderRadius: '6px',
-                        backgroundColor: isActive ? '#ffd400' : 'transparent',
-                        color: isActive ? '#0f172a' : '#64748b',
-                        border: isActive ? '1px solid #000' : '1px solid transparent',
-                        whiteSpace: 'nowrap'
-                      }}
-                    >
-                      {mode}
-                    </button>
-                  );
-                })}
-              </div>
+              <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="wh-st-filter-sel">
+                <option value="All">All Status</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
 
-              {/* Column Visibility Selector */}
-              <div style={{ position: 'relative' }}>
-                <button
-                  className="btn btn-white-wh"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '8px 12px',
-                    fontSize: '10px',
-                    borderRadius: '8px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    border: rightColumnsOpen ? '1.5px solid #000000' : '1px solid #e2e8f0',
-                    color: rightColumnsOpen ? '#0f172a' : '#64748b',
-                    backgroundColor: '#ffffff',
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap'
-                  }}
-                  onClick={() => setRightColumnsOpen(!rightColumnsOpen)}
-                >
-                  <Settings className="h-3.5 w-3.5 text-slate-400" />
-                  <span>Columns</span>
-                </button>
+              <select value={zoneFilter} onChange={e => setZoneFilter(e.target.value)} className="wh-st-filter-sel">
+                <option value="All">All Zones</option>
+                <option value="Zone A">Zone A</option>
+                <option value="Zone B">Zone B</option>
+                <option value="Zone C">Zone C</option>
+                <option value="Zone D">Zone D</option>
+              </select>
 
-                {rightColumnsOpen && (
-                  <div style={{
-                    position: 'absolute',
-                    right: 0,
-                    top: 'calc(100% + 8px)',
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '16px',
-                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-                    padding: '16px',
-                    zIndex: 50,
-                    minWidth: '200px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '12px'
-                  }}>
-                    <div style={{ fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
-                      Column Visibility
-                    </div>
-                    
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', color: '#334155' }}>
-                      <input
-                        type="checkbox"
-                        checked={rightVisibleColumns.assetCode}
-                        onChange={() => setRightVisibleColumns(prev => ({ ...prev, assetCode: !prev.assetCode }))}
-                        style={{ width: '16px', height: '16px', borderRadius: '4px', border: '1px solid #cbd5e1', accentColor: '#3b82f6', cursor: 'pointer' }}
-                      />
-                      <span>Asset Code</span>
-                    </label>
+              <select value={laneFilter} onChange={e => setLaneFilter(e.target.value)} className="wh-st-filter-sel">
+                <option value="All">All Load Lanes</option>
+                <option value="Lane 1">Lane 1</option>
+                <option value="Lane 2">Lane 2</option>
+                <option value="Lane 3">Lane 3</option>
+                <option value="Lane 4">Lane 4</option>
+                <option value="Lane 5">Lane 5</option>
+                <option value="Lane 6">Lane 6</option>
+              </select>
 
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', color: '#334155' }}>
-                      <input
-                        type="checkbox"
-                        checked={rightVisibleColumns.holdingArea}
-                        onChange={() => setRightVisibleColumns(prev => ({ ...prev, holdingArea: !prev.holdingArea }))}
-                        style={{ width: '16px', height: '16px', borderRadius: '4px', border: '1px solid #cbd5e1', accentColor: '#3b82f6', cursor: 'pointer' }}
-                      />
-                      <span>Holding Area</span>
-                    </label>
-
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', color: '#334155' }}>
-                      <input
-                        type="checkbox"
-                        checked={rightVisibleColumns.actions}
-                        onChange={() => setRightVisibleColumns(prev => ({ ...prev, actions: !prev.actions }))}
-                        style={{ width: '16px', height: '16px', borderRadius: '4px', border: '1px solid #cbd5e1', accentColor: '#3b82f6', cursor: 'pointer' }}
-                      />
-                      <span>Actions</span>
-                    </label>
-                  </div>
-                )}
-              </div>
+              <button className="wh-btn-export-st" style={{ height: '34px' }}>
+                <Filter size={13} />
+                <span>Filters</span>
+              </button>
             </div>
-          </div>
 
-          {/* Right Table */}
-          <div style={{ border: '1px solid #e2e8f0', borderRadius: '16px', overflowX: 'auto', backgroundColor: '#ffffff', minHeight: '142px', display: 'flex', flexDirection: 'column' }}>
-            {assets.length === 0 ? (
-              <div style={{
-                flex: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '40px',
-                fontSize: '12px',
-                fontWeight: '800',
-                color: '#64748b',
-                letterSpacing: '0.05em',
-                textTransform: 'uppercase'
-              }}>
-                NO RECORDS RESOLVED.
-              </div>
-            ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            {/* TABLE */}
+            <div className="wh-st-table-wrap">
+              <table className="wh-st-table">
                 <thead>
-                  <tr style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc' }}>
-                    <th style={{ padding: '14px 20px', width: '40px', textAlign: 'center' }}>
-                      <input
-                        type="checkbox"
-                        checked={rightSelectedRows.length === assets.length && assets.length > 0}
-                        onChange={handleRightSelectAll}
-                        style={{ cursor: 'pointer', width: '16px', height: '16px' }}
-                      />
-                    </th>
-                    {rightVisibleColumns.assetCode && (
-                      <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
-                        Asset Code
-                      </th>
-                    )}
-                    {rightVisibleColumns.holdingArea && (
-                      <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
-                        Holding Area
-                      </th>
-                    )}
-                    {rightVisibleColumns.actions && (
-                      <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
-                        Actions
-                      </th>
-                    )}
+                  <tr>
+                    <th>STAGING AREA</th>
+                    <th>ZONE</th>
+                    <th>LOAD LANE (NEXT)</th>
+                    <th>STATUS</th>
+                    <th>CAPACITY</th>
+                    <th>OCCUPANCY</th>
+                    <th>STAGED ITEMS</th>
+                    <th>AWAITING MOVE</th>
+                    <th>OLDEST ITEM</th>
+                    <th style={{ textAlign: 'right' }}>ACTIONS</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredAssets.length === 0 ? (
+                  {filteredAreas.length === 0 ? (
                     <tr>
-                      <td colSpan="4" style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '12px', fontWeight: '700' }}>
-                        No holding assets found matching "{rightSearch}".
+                      <td colSpan="10" style={{ textAlign: 'center', padding: '24px', color: '#94A3B8' }}>
+                        No staging areas found matching search or filters.
                       </td>
                     </tr>
                   ) : (
-                    filteredAssets.map(row => {
-                    const isChecked = rightSelectedRows.includes(row.id);
-                    // Split the holding area name for stacked display (e.g. "Holding Area\nB")
-                    const nameParts = row.holdingArea.split(' Area ');
-                    const stackedName = nameParts.length === 2 ? (
-                      <div style={{ color: '#b45309', fontWeight: '700', lineHeight: '1.2' }}>
-                        <div>Holding Area</div>
-                        <div style={{ fontSize: '11px', marginTop: '2px' }}>{nameParts[1]}</div>
-                      </div>
-                    ) : (
-                      <div style={{ color: '#b45309', fontWeight: '700' }}>{row.holdingArea}</div>
-                    );
-
-                    return (
-                      <tr
-                        key={row.id}
-                        style={{
-                          borderBottom: '1px solid #f1f5f9',
-                          backgroundColor: isChecked ? '#fffbeb' : 'transparent',
-                          transition: 'background-color 0.15s'
-                        }}
-                      >
-                        <td style={{ padding: getCellPadding(rightDensity), textAlign: 'center' }}>
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => handleRightRowSelect(row.id)}
-                            style={{ cursor: 'pointer', width: '16px', height: '16px' }}
-                          />
-                        </td>
-                        {rightVisibleColumns.assetCode && (
-                          <td style={{ padding: getCellPadding(rightDensity), fontSize: '14px', fontWeight: '800', color: '#0f172a' }}>
-                            {row.code}
-                          </td>
-                        )}
-                        {rightVisibleColumns.holdingArea && (
-                          <td style={{ padding: getCellPadding(rightDensity) }}>
-                            {stackedName}
-                          </td>
-                        )}
-                        {rightVisibleColumns.actions && (
-                          <td style={{ padding: getCellPadding(rightDensity) }}>
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                              <button
-                                onClick={() => handleMoveClick(row.id)}
-                                style={{
-                                  backgroundColor: '#ffffff',
-                                  border: '1px solid #cbd5e1',
-                                  borderRadius: '10px',
-                                  padding: '6px 14px',
-                                  fontSize: '11px',
-                                  fontWeight: '700',
-                                  color: '#3b82f6',
-                                  cursor: 'pointer',
-                                  boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
-                                }}
-                              >
-                                Move Item
-                              </button>
-                              <button
-                                onClick={() => handleRemoveAsset(row.id)}
-                                style={{
-                                  backgroundColor: '#ffffff',
-                                  border: '1px solid #fde68a',
-                                  borderRadius: '10px',
-                                  padding: '6px 14px',
-                                  fontSize: '11px',
-                                  fontWeight: '700',
-                                  color: '#b45309',
-                                  cursor: 'pointer',
-                                  boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
-                                  outline: 'none',
-                                  transition: 'all 0.15s'
-                                }}
-                                onFocus={(e) => {
-                                  e.target.style.outline = '2px solid #000';
-                                }}
-                                onBlur={(e) => {
-                                  e.target.style.outline = 'none';
-                                }}
-                              >
-                                Remove Item
-                              </button>
+                    filteredAreas.map(area => (
+                      <tr key={area.id}>
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <div className="area-avatar-circle">{area.code}</div>
+                            <div>
+                              <div className="font-extrabold text-slate-900">{area.name}</div>
+                              <div className="text-[9.5px] text-slate-500 font-medium">{area.subLocation}</div>
                             </div>
-                          </td>
-                        )}
+                          </div>
+                        </td>
+                        <td className="font-semibold text-slate-700">{area.zone}</td>
+                        <td className="font-bold text-slate-900">{area.lane}</td>
+                        <td>
+                          <span className={area.status === 'Active' ? 'badge-active' : 'badge-inactive'}>
+                            {area.status}
+                          </span>
+                        </td>
+                        <td className="font-bold text-slate-800">{area.capacity}</td>
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <div className="occ-bar-bg">
+                              <div
+                                className="occ-bar-fill"
+                                style={{
+                                  width: `${area.occupancy}%`,
+                                  background: getOccupancyBarColor(area.occupancy)
+                                }}
+                              />
+                            </div>
+                            <span className="font-bold text-xs">{area.occupancy}%</span>
+                          </div>
+                        </td>
+                        <td className="font-bold text-slate-900">{area.stagedItems}</td>
+                        <td>
+                          {area.awaitingMove > 0 ? (
+                            <span className="font-bold text-amber-600">{area.awaitingMove}</span>
+                          ) : (
+                            <span className="text-slate-400">0</span>
+                          )}
+                        </td>
+                        <td className="font-medium text-slate-700">{area.oldestItem}</td>
+                        <td style={{ textAlign: 'right' }}>
+                          <div className="flex items-center justify-end gap-1">
+                            <button className="btn-view-st" onClick={() => alert(`Viewing ${area.name} staging inventory`)}>
+                              View
+                            </button>
+                            <button className="p-1 text-slate-400 hover:text-slate-900" onClick={() => alert(`Options for ${area.name}`)}>
+                              <MoreVertical size={14} />
+                            </button>
+                          </div>
+                        </td>
                       </tr>
-                    );
-                  }))}
+                    ))
+                  )}
                 </tbody>
               </table>
-            )}
+            </div>
+
+            {/* TABLE FOOTER */}
+            <div className="wh-st-table-footer">
+              <div>Showing 1 to {filteredAreas.length} of 12 staging areas</div>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1">
+                  <button className="w-6 h-6 rounded border border-slate-300 flex items-center justify-center"><ChevronLeft size={14} /></button>
+                  <button className="w-6 h-6 rounded bg-amber-400 font-bold text-xs flex items-center justify-center">1</button>
+                  <button className="w-6 h-6 rounded border border-slate-300 font-semibold text-xs flex items-center justify-center">2</button>
+                  <button className="w-6 h-6 rounded border border-slate-300 flex items-center justify-center"><ChevronRight size={14} /></button>
+                </div>
+                <select className="wh-st-filter-sel" style={{ height: '26px' }}>
+                  <option>10 / page</option>
+                  <option>25 / page</option>
+                </select>
+              </div>
+            </div>
+
+            {/* BOTTOM TIP */}
+            <div className="wh-st-tip-bar">
+              <Info size={14} className="flex-shrink-0 text-blue-600" />
+              <span className="flex-1">
+                <strong>Tip:</strong> Items can be moved from staging areas to the assigned load lane when ready for dispatch.
+              </span>
+              <span className="font-bold underline cursor-pointer hover:text-blue-800" onClick={() => alert('Opening staging documentation...')}>
+                Learn more
+              </span>
+            </div>
+
           </div>
+        </div>
+
+        {/* RIGHT SIDEBAR */}
+        <div className="wh-st-right-col">
+
+          {/* STAGING SUMMARY */}
+          <div className="wh-st-side-card">
+            <div className="flex justify-between items-center mb-1">
+              <div className="wh-st-side-title" style={{ margin: 0, padding: 0, border: 'none' }}>
+                STAGING SUMMARY
+              </div>
+              <span className="text-[10px] font-bold text-blue-600 cursor-pointer hover:underline">View report</span>
+            </div>
+
+            <div className="wh-donut-wrap" style={{ marginTop: 8 }}>
+              <div className="wh-donut-chart">
+                <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
+                  {/* Ready for Move 22% */}
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="#22C55E" strokeWidth="4" strokeDasharray="22 100" />
+                  {/* Waiting > 2h 19% */}
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="#F59E0B" strokeWidth="4" strokeDasharray="19 100" strokeDashoffset="-22" />
+                  {/* Waiting < 2h 55% */}
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="#3B82F6" strokeWidth="4" strokeDasharray="55 100" strokeDashoffset="-41" />
+                  {/* Overdue 4% */}
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="#EF4444" strokeWidth="4" strokeDasharray="4 100" strokeDashoffset="-96" />
+                </svg>
+                <div className="wh-donut-center">
+                  <span style={{ fontSize: '13px', fontWeight: 900 }}>146</span>
+                  <span style={{ fontSize: '7px', color: '#64748B' }}>Total</span>
+                </div>
+              </div>
+
+              <div className="wh-legend-list">
+                <div className="wh-legend-item">
+                  <div className="wh-legend-dot" style={{ background: '#22C55E' }} />
+                  <span>Ready for Move <strong>32 (22%)</strong></span>
+                </div>
+                <div className="wh-legend-item">
+                  <div className="wh-legend-dot" style={{ background: '#F59E0B' }} />
+                  <span>Waiting &gt; 2h <strong>28 (19%)</strong></span>
+                </div>
+                <div className="wh-legend-item">
+                  <div className="wh-legend-dot" style={{ background: '#3B82F6' }} />
+                  <span>Waiting &lt; 2h <strong>80 (55%)</strong></span>
+                </div>
+                <div className="wh-legend-item">
+                  <div className="wh-legend-dot" style={{ background: '#EF4444' }} />
+                  <span>Overdue <strong>6 (4%)</strong></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* TOP STAGING AREAS BY OCCUPANCY */}
+          <div className="wh-st-side-card">
+            <div className="wh-st-side-title">TOP STAGING AREAS BY OCCUPANCY</div>
+
+            <div style={{ marginTop: 8 }}>
+              <div className="wh-occ-rank-row">
+                <div className="wh-occ-rank-header">
+                  <span>1. Stage Area 5</span>
+                  <span className="text-red-600">91%</span>
+                </div>
+                <div className="wh-occ-rank-bg">
+                  <div className="wh-occ-rank-fill" style={{ width: '91%', background: '#EF4444' }} />
+                </div>
+              </div>
+
+              <div className="wh-occ-rank-row">
+                <div className="wh-occ-rank-header">
+                  <span>2. Stage Area 3</span>
+                  <span className="text-amber-600">88%</span>
+                </div>
+                <div className="wh-occ-rank-bg">
+                  <div className="wh-occ-rank-fill" style={{ width: '88%', background: '#F59E0B' }} />
+                </div>
+              </div>
+
+              <div className="wh-occ-rank-row">
+                <div className="wh-occ-rank-header">
+                  <span>3. Stage Area 1</span>
+                  <span className="text-green-600">80%</span>
+                </div>
+                <div className="wh-occ-rank-bg">
+                  <div className="wh-occ-rank-fill" style={{ width: '80%', background: '#22C55E' }} />
+                </div>
+              </div>
+
+              <div className="wh-occ-rank-row">
+                <div className="wh-occ-rank-header">
+                  <span>4. Stage Area 2</span>
+                  <span className="text-green-600">67%</span>
+                </div>
+                <div className="wh-occ-rank-bg">
+                  <div className="wh-occ-rank-fill" style={{ width: '67%', background: '#22C55E' }} />
+                </div>
+              </div>
+
+              <div className="wh-occ-rank-row">
+                <div className="wh-occ-rank-header">
+                  <span>5. Stage Area 6</span>
+                  <span className="text-green-600">63%</span>
+                </div>
+                <div className="wh-occ-rank-bg">
+                  <div className="wh-occ-rank-fill" style={{ width: '63%', background: '#22C55E' }} />
+                </div>
+              </div>
+
+              <div className="text-[10px] font-bold text-blue-600 cursor-pointer mt-2 hover:underline">
+                View all staging areas
+              </div>
+            </div>
+          </div>
+
+          {/* RECENTLY STAGED ITEMS */}
+          <div className="wh-st-side-card">
+            <div className="flex justify-between items-center mb-1">
+              <div className="wh-st-side-title" style={{ margin: 0, padding: 0, border: 'none' }}>
+                RECENTLY STAGED ITEMS
+              </div>
+              <span className="text-[10px] font-bold text-blue-600 cursor-pointer hover:underline">View all</span>
+            </div>
+
+            <div style={{ marginTop: 8 }}>
+              {recentStagedItems.map(item => (
+                <div key={item.id} className="wh-st-recent-item">
+                  <img src={item.image} alt={item.title} className="wh-st-recent-thumb" />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="font-extrabold text-slate-900 text-xs truncate">{item.title}</div>
+                    <div className="text-[9px] text-slate-500 font-mono truncate">{item.ref}</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div className="text-[9.5px] font-bold text-slate-700">{item.area}</div>
+                    <div className="text-[9px] text-blue-600 font-bold">{item.time}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* QUICK ACTIONS */}
+          <div className="wh-st-side-card">
+            <div className="wh-st-side-title">QUICK ACTIONS</div>
+
+            <button className="wh-qa-btn" onClick={() => setCreateMoveModalOpen(true)}>
+              <Truck size={14} className="text-amber-500" />
+              <span>Create Move</span>
+            </button>
+
+            <button className="wh-qa-btn" onClick={() => setAssignModalOpen(true)}>
+              <ArrowRight size={14} className="text-blue-500" />
+              <span>Assign to Load Lane</span>
+            </button>
+
+            <button className="wh-qa-btn" onClick={() => alert('Printing staging labels...')}>
+              <Printer size={14} className="text-slate-500" />
+              <span>Print Labels</span>
+            </button>
+
+            <button className="wh-qa-btn" onClick={() => navigate('/warehouse/find-stock')}>
+              <Search size={14} className="text-purple-500" />
+              <span>Find Stock</span>
+            </button>
+          </div>
+
         </div>
 
       </div>
 
-      {/* Modal: Add Holding Area Zone */}
-      {addAreaModalOpen && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.45)',
-          backdropFilter: 'blur(4px)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 9999
-        }} onClick={() => setAddAreaModalOpen(false)}>
-          <form
-            onSubmit={handleCreateHoldingArea}
-            style={{
-              backgroundColor: '#ffffff',
-              borderRadius: '24px',
-              width: '100%',
-              maxWidth: '520px',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-              overflow: 'hidden',
-              padding: '28px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '20px',
-              animation: 'scaleIn 0.2s ease-out'
-            }} onClick={e => e.stopPropagation()}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', margin: 0 }}>Add Holding Area Zone</h2>
-              <button
-                type="button"
-                onClick={() => setAddAreaModalOpen(false)}
-                style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}
-              >
-                <X className="w-5 h-5" />
-              </button>
+      {/* CREATE MOVE MODAL */}
+      {createMoveModalOpen && (
+        <div className="wh-modal-overlay" onClick={() => setCreateMoveModalOpen(false)}>
+          <div className="wh-modal-box" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center p-4 border-b border-slate-200">
+              <h3 className="font-extrabold text-sm text-slate-900">Create Staging Move Task</h3>
+              <button onClick={() => setCreateMoveModalOpen(false)}><X size={16} className="text-slate-400" /></button>
             </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'left' }}>
-              <label style={{ fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Holding Zone Name
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. Holding Area C"
-                value={newAreaName}
-                onChange={e => setNewAreaName(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '14px 16px',
-                  fontSize: '14px',
-                  color: '#0f172a',
-                  backgroundColor: '#ffffff',
-                  border: '1.5px solid #e2e8f0',
-                  borderRadius: '12px',
-                  outline: 'none'
-                }}
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              style={{
-                width: '100%',
-                backgroundColor: '#ffd400',
-                color: '#0f172a',
-                border: 'none',
-                borderRadius: '12px',
-                padding: '14px',
-                fontSize: '13px',
-                fontWeight: '800',
-                cursor: 'pointer',
-                textAlign: 'center',
-                boxShadow: '0 4px 12px rgba(255, 212, 0, 0.3)'
-              }}
-            >
-              Create Holding Area
-            </button>
-          </form>
-        </div>
-      )}
-
-      {/* Modal: Relocate Asset Location */}
-      {moveAssetModalOpen && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.4)',
-          backdropFilter: 'blur(4px)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 9999
-        }} onClick={() => setMoveAssetModalOpen(false)}>
-          <form
-            onSubmit={handleConfirmMove}
-            style={{
-              backgroundColor: '#ffffff',
-              borderRadius: '24px',
-              width: '100%',
-              maxWidth: '480px',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-              overflow: 'hidden',
-              padding: '28px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '20px',
-              animation: 'scaleIn 0.2s ease-out'
-            }} onClick={e => e.stopPropagation()}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', margin: 0 }}>Relocate Asset Location</h2>
-              <button
-                type="button"
-                onClick={() => setMoveAssetModalOpen(false)}
-                style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'left' }}>
-              <label style={{ fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Select Target Location Spot
-              </label>
-              <div style={{ position: 'relative' }}>
+            <form onSubmit={handleConfirmMove} className="p-4 flex flex-col gap-3">
+              <div>
+                <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">From Staging Area *</label>
                 <select
-                  value={targetHoldingArea}
-                  onChange={e => setTargetHoldingArea(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '14px 16px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#0f172a',
-                    backgroundColor: '#ffffff',
-                    border: '1.5px solid #e2e8f0',
-                    borderRadius: '12px',
-                    outline: 'none',
-                    appearance: 'none',
-                    cursor: 'pointer'
-                  }}
+                  value={selectedAreaForMove}
+                  onChange={e => setSelectedAreaForMove(e.target.value)}
+                  className="w-full h-8 px-2 border border-slate-300 rounded text-xs font-semibold outline-none"
                 >
-                  {holdingAreas.map(h => (
-                    <option key={h.id} value={h.name}>{h.name}</option>
+                  {areas.map(a => (
+                    <option key={a.id} value={a.name}>{a.name} ({a.subLocation})</option>
                   ))}
                 </select>
-                <div style={{
-                  position: 'absolute',
-                  right: '16px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  pointerEvents: 'none',
-                  color: '#64748b',
-                  fontSize: '12px'
-                }}>▼</div>
               </div>
-            </div>
-
-            <button
-              type="submit"
-              style={{
-                width: '100%',
-                backgroundColor: '#ffd400',
-                color: '#0f172a',
-                border: 'none',
-                borderRadius: '12px',
-                padding: '14px',
-                fontSize: '13px',
-                fontWeight: '800',
-                cursor: 'pointer',
-                textAlign: 'center',
-                boxShadow: '0 4px 12px rgba(255, 212, 0, 0.3)'
-              }}
-            >
-              Confirm Location Move
-            </button>
-          </form>
+              <div>
+                <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">Target Load Lane *</label>
+                <select
+                  value={targetLane}
+                  onChange={e => setTargetLane(e.target.value)}
+                  className="w-full h-8 px-2 border border-slate-300 rounded text-xs font-semibold outline-none"
+                >
+                  <option value="Lane 1">Lane 1 (Main Yard)</option>
+                  <option value="Lane 2">Lane 2 (Main Yard)</option>
+                  <option value="Lane 3">Lane 3 (Warehouse 1)</option>
+                  <option value="Lane 5">Lane 5 (DG Staging)</option>
+                </select>
+              </div>
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                <button type="button" className="px-3 py-1.5 border border-slate-300 rounded text-xs font-bold text-slate-600" onClick={() => setCreateMoveModalOpen(false)}>Cancel</button>
+                <button type="submit" className="px-4 py-1.5 bg-amber-400 rounded text-xs font-extrabold text-slate-900">Create Move Task</button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
-      {/* Floating Toast Notification */}
-      {toast.open && (
+      {/* ASSIGN TO LOAD LANE MODAL */}
+      {assignModalOpen && (
+        <div className="wh-modal-overlay" onClick={() => setAssignModalOpen(false)}>
+          <div className="wh-modal-box" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center p-4 border-b border-slate-200">
+              <h3 className="font-extrabold text-sm text-slate-900">Assign Staging Area to Lane</h3>
+              <button onClick={() => setAssignModalOpen(false)}><X size={16} className="text-slate-400" /></button>
+            </div>
+            <form onSubmit={handleConfirmAssign} className="p-4 flex flex-col gap-3">
+              <div>
+                <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">Staging Area *</label>
+                <select
+                  value={selectedAreaForMove}
+                  onChange={e => setSelectedAreaForMove(e.target.value)}
+                  className="w-full h-8 px-2 border border-slate-300 rounded text-xs font-semibold outline-none"
+                >
+                  {areas.map(a => (
+                    <option key={a.id} value={a.name}>{a.name} ({a.zone})</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">Destination Load Lane *</label>
+                <select
+                  value={targetLane}
+                  onChange={e => setTargetLane(e.target.value)}
+                  className="w-full h-8 px-2 border border-slate-300 rounded text-xs font-semibold outline-none"
+                >
+                  <option value="Lane 1">Lane 1</option>
+                  <option value="Lane 2">Lane 2</option>
+                  <option value="Lane 3">Lane 3</option>
+                  <option value="Lane 4">Lane 4</option>
+                  <option value="Lane 5">Lane 5</option>
+                  <option value="Lane 6">Lane 6</option>
+                </select>
+              </div>
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                <button type="button" className="px-3 py-1.5 border border-slate-300 rounded text-xs font-bold text-slate-600" onClick={() => setAssignModalOpen(false)}>Cancel</button>
+                <button type="submit" className="px-4 py-1.5 bg-amber-400 rounded text-xs font-extrabold text-slate-900">Confirm Assignment</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ADD HOLDING AREA MODAL (NARROW COMPACT WIDTH) */}
+      {addAreaModalOpen && (
+        <div className="wh-modal-overlay" onClick={() => setAddAreaModalOpen(false)}>
+          <div className="wh-modal-box" style={{ maxWidth: 500, padding: 0 }} onClick={e => e.stopPropagation()}>
+            
+            {/* MODAL HEADER */}
+            <div className="flex justify-between items-center px-4 py-3 border-b border-slate-200">
+              <h3 className="font-black text-sm text-slate-900">Add New Holding Area</h3>
+              <button onClick={() => setAddAreaModalOpen(false)} className="p-1 rounded-md text-slate-400 hover:text-slate-800">
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* MODAL BODY (2-COLUMN GRID) */}
+            <form onSubmit={handleCreateArea} className="grid grid-cols-1 md:grid-cols-12">
+              
+              {/* LEFT STEPPER PANEL (5 COLS - ~175px WIDTH, HIDDEN ON MOBILE) */}
+              <div className="hidden md:flex md:col-span-5 p-3 bg-slate-50 border-r border-slate-200 flex-col justify-between select-none">
+                <div>
+                  <div className="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-4">
+                    HOW TO ADD A HOLDING AREA
+                  </div>
+
+                  {/* STEP 1 */}
+                  <div
+                    onClick={() => setActiveStep(1)}
+                    className={`flex gap-3 mb-4 cursor-pointer p-2 rounded-lg transition-all ${activeStep === 1 ? 'bg-amber-50 border border-amber-200/80 shadow-sm' : 'hover:bg-slate-100/80'}`}
+                  >
+                    <div className={`w-6 h-6 rounded-full font-extrabold text-xs flex items-center justify-center flex-shrink-0 transition-all ${activeStep === 1 ? 'bg-amber-400 text-slate-900 shadow-sm' : 'border border-slate-300 text-slate-500 bg-white'}`}>
+                      1
+                    </div>
+                    <div>
+                      <div className={`font-extrabold text-xs transition-colors ${activeStep === 1 ? 'text-amber-700' : 'text-slate-800'}`}>Basic Information</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5 leading-snug">
+                        Provide an area name and area code to uniquely identify this staging spot.
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* STEP 2 */}
+                  <div
+                    onClick={() => setActiveStep(2)}
+                    className={`flex gap-3 mb-4 cursor-pointer p-2 rounded-lg transition-all ${activeStep === 2 ? 'bg-amber-50 border border-amber-200/80 shadow-sm' : 'hover:bg-slate-100/80'}`}
+                  >
+                    <div className={`w-6 h-6 rounded-full font-extrabold text-xs flex items-center justify-center flex-shrink-0 transition-all ${activeStep === 2 ? 'bg-amber-400 text-slate-900 shadow-sm' : 'border border-slate-300 text-slate-500 bg-white'}`}>
+                      2
+                    </div>
+                    <div>
+                      <div className={`font-extrabold text-xs transition-colors ${activeStep === 2 ? 'text-amber-700' : 'text-slate-800'}`}>Set Capacity</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5 leading-snug">
+                        Define the maximum capacity for items that can be held in this area.
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* STEP 3 */}
+                  <div
+                    onClick={() => setActiveStep(3)}
+                    className={`flex gap-3 mb-4 cursor-pointer p-2 rounded-lg transition-all ${activeStep === 3 ? 'bg-amber-50 border border-amber-200/80 shadow-sm' : 'hover:bg-slate-100/80'}`}
+                  >
+                    <div className={`w-6 h-6 rounded-full font-extrabold text-xs flex items-center justify-center flex-shrink-0 transition-all ${activeStep === 3 ? 'bg-amber-400 text-slate-900 shadow-sm' : 'border border-slate-300 text-slate-500 bg-white'}`}>
+                      3
+                    </div>
+                    <div>
+                      <div className={`font-extrabold text-xs transition-colors ${activeStep === 3 ? 'text-amber-700' : 'text-slate-800'}`}>Optional Settings</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5 leading-snug">
+                        Add a description and mark if this is a restricted or temperature controlled area.
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* STEP 4 */}
+                  <div
+                    onClick={() => setActiveStep(4)}
+                    className={`flex gap-3 mb-4 cursor-pointer p-2 rounded-lg transition-all ${activeStep === 4 ? 'bg-amber-50 border border-amber-200/80 shadow-sm' : 'hover:bg-slate-100/80'}`}
+                  >
+                    <div className={`w-6 h-6 rounded-full font-extrabold text-xs flex items-center justify-center flex-shrink-0 transition-all ${activeStep === 4 ? 'bg-amber-400 text-slate-900 shadow-sm' : 'border border-slate-300 text-slate-500 bg-white'}`}>
+                      4
+                    </div>
+                    <div>
+                      <div className={`font-extrabold text-xs transition-colors ${activeStep === 4 ? 'text-amber-700' : 'text-slate-800'}`}>Save</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5 leading-snug">
+                        Click Save Area to create the holding area. It will be available immediately.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* HELP NOTE BOX AT BOTTOM */}
+                <div className="p-2.5 bg-blue-50/80 border border-blue-200/80 rounded-lg flex items-start gap-2 text-[10.5px] text-blue-900">
+                  <Info size={14} className="flex-shrink-0 text-blue-600 mt-0.5" />
+                  <span className="leading-snug">
+                    Holding areas help you organize inventory before items are moved to load lanes for dispatch.
+                  </span>
+                </div>
+              </div>
+
+              {/* RIGHT FORM FIELDS PANEL (12 COLS ON MOBILE, 7 COLS ON DESKTOP) */}
+              <div className="col-span-12 md:col-span-7 p-4 flex flex-col justify-between">
+                <div className="space-y-4">
+                  
+                  {/* AREA DETAILS SECTION */}
+                  <div>
+                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">
+                      AREA DETAILS
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                      <div>
+                        <label className="text-[10.5px] font-extrabold text-slate-700 block mb-1">Area Name <span className="text-red-500">*</span></label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. Stage Area 9"
+                          value={newAreaName}
+                          onChange={e => setNewAreaName(e.target.value)}
+                          className="w-full h-8 px-2.5 border border-slate-300 rounded-md text-xs font-medium outline-none focus:border-amber-400"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10.5px] font-extrabold text-slate-700 block mb-1">Area Code <span className="text-red-500">*</span></label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. SA-09"
+                          value={newAreaCode}
+                          onChange={e => setNewAreaCode(e.target.value)}
+                          className="w-full h-8 px-2.5 border border-slate-300 rounded-md text-xs font-medium outline-none focus:border-amber-400"
+                        />
+                        <span className="text-[9.5px] text-slate-400 block mt-0.5">Unique code to identify this area</span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[10.5px] font-extrabold text-slate-700 block mb-1">Zone <span className="text-red-500">*</span></label>
+                        <select
+                          required
+                          value={newAreaZone}
+                          onChange={e => setNewAreaZone(e.target.value)}
+                          className="w-full h-8 px-2 border border-slate-300 rounded-md text-xs font-medium outline-none focus:border-amber-400"
+                        >
+                          <option value="">Select Zone</option>
+                          <option value="Zone A">Zone A</option>
+                          <option value="Zone B">Zone B</option>
+                          <option value="Zone C">Zone C</option>
+                          <option value="Zone D">Zone D</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[10.5px] font-extrabold text-slate-700 flex items-center justify-between mb-1">
+                          <span>Next Load Lane (Default)</span>
+                          <Info size={11} className="text-slate-400" />
+                        </label>
+                        <select
+                          value={newAreaLane}
+                          onChange={e => setNewAreaLane(e.target.value)}
+                          className="w-full h-8 px-2 border border-slate-300 rounded-md text-xs font-medium outline-none focus:border-amber-400"
+                        >
+                          <option value="">Select Load Lane</option>
+                          <option value="Lane 1">Lane 1</option>
+                          <option value="Lane 2">Lane 2</option>
+                          <option value="Lane 3">Lane 3</option>
+                          <option value="Lane 4">Lane 4</option>
+                          <option value="Lane 5">Lane 5</option>
+                          <option value="Lane 6">Lane 6</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* CAPACITY SECTION */}
+                  <div>
+                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">
+                      CAPACITY
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[10.5px] font-extrabold text-slate-700 block mb-1">Maximum Capacity <span className="text-red-500">*</span></label>
+                        <input
+                          type="number"
+                          required
+                          placeholder="e.g. 50"
+                          value={newAreaCap}
+                          onChange={e => setNewAreaCap(e.target.value)}
+                          className="w-full h-8 px-2.5 border border-slate-300 rounded-md text-xs font-medium outline-none focus:border-amber-400"
+                        />
+                        <span className="text-[9.5px] text-slate-400 block mt-0.5">Total items this area can hold</span>
+                      </div>
+                      <div>
+                        <label className="text-[10.5px] font-extrabold text-slate-700 block mb-1">Unit Type</label>
+                        <select
+                          value={newAreaUnit}
+                          onChange={e => setNewAreaUnit(e.target.value)}
+                          className="w-full h-8 px-2 border border-slate-300 rounded-md text-xs font-medium outline-none focus:border-amber-400"
+                        >
+                          <option value="Items">Items</option>
+                          <option value="Pallets">Pallets</option>
+                          <option value="Containers">Containers</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ADDITIONAL SETTINGS (OPTIONAL) SECTION */}
+                  <div>
+                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">
+                      ADDITIONAL SETTINGS (OPTIONAL)
+                    </div>
+
+                    <div className="mb-3">
+                      <label className="text-[10.5px] font-extrabold text-slate-700 block mb-1">Description</label>
+                      <textarea
+                        rows={2}
+                        placeholder="Enter description (optional)"
+                        value={newAreaDesc}
+                        onChange={e => setNewAreaDesc(e.target.value)}
+                        className="w-full p-2 border border-slate-300 rounded-md text-xs font-medium outline-none focus:border-amber-400 resize-none"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <label className="flex items-start gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={isRestricted}
+                          onChange={e => setIsRestricted(e.target.checked)}
+                          className="mt-0.5 w-4 h-4 rounded border-slate-300 accent-amber-400 cursor-pointer"
+                        />
+                        <div>
+                          <div className="text-xs font-bold text-slate-800">Restricted Area</div>
+                          <div className="text-[9.5px] text-slate-400">Only authorized staff can use this area</div>
+                        </div>
+                      </label>
+
+                      <label className="flex items-start gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={isTempControlled}
+                          onChange={e => setIsTempControlled(e.target.checked)}
+                          className="mt-0.5 w-4 h-4 rounded border-slate-300 accent-amber-400 cursor-pointer"
+                        />
+                        <div>
+                          <div className="text-xs font-bold text-slate-800">Temperature Controlled</div>
+                          <div className="text-[9.5px] text-slate-400">This area requires temperature control</div>
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* FOOTER BUTTONS */}
+                <div className="flex justify-end gap-2 pt-4 border-t border-slate-200 mt-4">
+                  <button
+                    type="button"
+                    onClick={() => setAddAreaModalOpen(false)}
+                    className="px-4 py-1.5 border border-slate-300 rounded-md text-xs font-bold text-slate-700 hover:bg-slate-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-1.5 bg-amber-400 hover:bg-amber-500 rounded-md text-xs font-black text-slate-900 shadow-sm"
+                  >
+                    Save Area
+                  </button>
+                </div>
+
+              </div>
+
+            </form>
+
+          </div>
+        </div>
+      )}
+      {toast && (
         <div style={{
-          position: 'fixed',
-          bottom: '24px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          backgroundColor: '#e6fbf2',
-          border: '1.5px solid #a7f3d0',
-          borderRadius: '16px',
-          padding: '14px 20px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-          zIndex: 10000,
-          animation: 'fadeIn 0.2s ease-out'
+          position: 'fixed', bottom: 24, right: 24,
+          background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 10,
+          padding: '12px 18px', display: 'flex', items: 'center', gap: 10,
+          zIndex: 99998, boxShadow: '0 8px 24px rgba(0,0,0,0.08)'
         }}>
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
-            <circle cx="10" cy="10" r="9" stroke="#10b981" strokeWidth="2" />
-            <path d="M6 10L9 13L14 7" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <span style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b' }}>
-            {toast.message}
-          </span>
-          <button
-            onClick={() => setToast({ open: false, message: '' })}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: '#64748b',
-              display: 'flex',
-              alignItems: 'center',
-              padding: '2px',
-              marginLeft: '8px'
-            }}
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <CheckCircle2 size={16} className="text-green-600" />
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#065F46' }}>{toast.msg}</span>
         </div>
       )}
 
     </div>
   );
-};
-
-export default WarehouseHoldingAreas;
+}

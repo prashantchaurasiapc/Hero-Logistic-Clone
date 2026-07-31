@@ -1,469 +1,1664 @@
-import React, { useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { Plus, Download, X, QrCode, Settings, Search } from 'lucide-react';
-import './WarehouseDashboard.css';
+import React, { useState, useRef } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { 
+  Calendar, QrCode, Upload, Plus, Trash2, Edit2, CheckCircle2, 
+  MapPin, FileText, Camera, Paperclip, ChevronDown, X, Info, FileSpreadsheet, Download, File, Image
+} from 'lucide-react';
 
-const WarehouseInbound = () => {
+export default function WarehouseInbound() {
   const location = useLocation();
+  const navigate = useNavigate();
   const isYard = location.pathname.startsWith('/yard');
-  const [yardMode, setYardMode] = useState('car'); // 'car' or 'freight'
-  const [barcodeModal, setBarcodeModal] = useState(false);
-  const [manualModal, setManualModal] = useState(false);
 
-  // Barcode / Scanner Simulator state
-  const [scanMode, setScanMode] = useState('Scan by 1D Barcode tag');
-  const [scanInput, setScanInput] = useState('');
+  const docInputRef = useRef(null);
+  const photoInputRef = useRef(null);
 
-  // Manual Ingestion state
-  const [manualForm, setManualForm] = useState({
-    sku: '', palletCount: '1', weight: '', dimensions: '',
-    barcode: '', zone: 'Zone A (Dry)', aisle: 'Aisle 1 - Bin B',
-    customer: '', destination: ''
-  });
+  // Inbound Details state
+  const [inboundType, setInboundType] = useState('Purchase / Supplier Delivery');
+  const [inboundNo, setInboundNo] = useState('GR-1038');
+  const [supplier, setSupplier] = useState('ABC Motors');
+  const [refNote, setRefNote] = useState('DEL-887654');
+  const [transportType, setTransportType] = useState('Truck');
+  const [driver, setDriver] = useState('John Smith');
+  const [vehicleTrailer, setVehicleTrailer] = useState('TRK-101 / TRL-309');
+  const [dateTime, setDateTime] = useState('21/07/2026 10:20 AM');
+  const [notes, setNotes] = useState('');
 
-  // Table density and rows
-  const [density, setDensity] = useState('default'); // compact, default, relaxed
-  const [selectedRows, setSelectedRows] = useState([]);
-  const [inboundData, setInboundData] = useState([
-    { id: 'INB-9022', carrierPartner: 'DHL Express', cargoSpecs: '1x Pallet, 350kg', spottedLane: 'Lane A1' },
-    { id: 'INB-9023', carrierPartner: 'FedEx Logistics', cargoSpecs: '2x Pallets, 720kg', spottedLane: 'Lane A2' }
+  // Location state
+  const [receivingDepot, setReceivingDepot] = useState('Sydney Depot');
+  const [warehouseYard, setWarehouseYard] = useState('Main Yard');
+  const [zone, setZone] = useState('Zone A');
+  const [row, setRow] = useState('Row 4');
+  const [bay, setBay] = useState('Bay 12');
+  const [stagingArea, setStagingArea] = useState('Staging Area 1');
+
+  // Item Entry state
+  const [entryTab, setEntryTab] = useState('manual');
+  const [itemType, setItemType] = useState('Vehicle (Car Carrying)');
+  const [searchVinRego, setSearchVinRego] = useState('');
+  
+  const [vin, setVin] = useState('JTDBE32K203456789');
+  const [regoPlate, setRegoPlate] = useState('ABC123');
+  const [make, setMake] = useState('Toyota');
+  const [model, setModel] = useState('Camry');
+  const [year, setYear] = useState('2023');
+  const [colour, setColour] = useState('White');
+  const [condition, setCondition] = useState('Good');
+  const [fuelType, setFuelType] = useState('Petrol');
+  const [requirePhotos, setRequirePhotos] = useState(true);
+  const [damageNoted, setDamageNoted] = useState(false);
+
+  // Items List
+  const [itemsToReceive, setItemsToReceive] = useState([
+    {
+      id: '1',
+      type: 'Vehicle',
+      title: 'Toyota Camry',
+      vin: 'JTDBE32K203456789',
+      rego: 'ABC123',
+      location: 'Zone A / Row 4 / Bay 12 / Staging 1',
+      condition: 'Good',
+      damage: 'No Damage',
+      image: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?auto=format&fit=crop&w=400&q=80'
+    },
+    {
+      id: '2',
+      type: 'Vehicle',
+      title: 'Mazda 3',
+      vin: 'JM0BL10F200123456',
+      rego: 'DEF456',
+      location: 'Zone A / Row 4 / Bay 12 / Staging 1',
+      condition: 'Good',
+      damage: 'No Damage',
+      image: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=400&q=80'
+    },
+    {
+      id: '3',
+      type: 'Vehicle',
+      title: 'Honda Accord',
+      vin: '1HGCM82633A123456',
+      rego: 'GHI789',
+      location: 'Zone A / Row 4 / Bay 12 / Staging 1',
+      condition: 'Good',
+      damage: 'No Damage',
+      image: 'https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?auto=format&fit=crop&w=400&q=80'
+    },
+    {
+      id: '4',
+      type: 'Vehicle',
+      title: 'Toyota RAV4',
+      vin: 'JTMBFREV40J123456',
+      rego: 'JKL012',
+      location: 'Zone A / Row 4 / Bay 12 / Staging 1',
+      condition: 'Good',
+      damage: 'No Damage',
+      image: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=400&q=80'
+    }
   ]);
 
-  const [columnsMenuOpen, setColumnsMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [visibleColumns, setVisibleColumns] = useState({
-    receiptId: true,
-    carrierPartner: false,
-    cargoSpecs: false,
-    spottedLane: false,
-    stagedActions: true
-  });
+  // Section 5 Documents & Photos Working State
+  const [uploadedDocs, setUploadedDocs] = useState([
+    { id: 'd1', name: 'Delivery_Note_DEL887654.pdf', size: '1.2 MB', time: '10:20 AM' }
+  ]);
+  const [uploadedPhotos, setUploadedPhotos] = useState([
+    { id: 'p1', name: 'Front_Bumper_Check.jpg', size: '2.4 MB', url: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?auto=format&fit=crop&w=200&q=80' }
+  ]);
 
-  const filteredInbound = inboundData.filter(row => {
-    const q = searchQuery.toLowerCase().trim();
-    return !q || 
-      row.id.toLowerCase().includes(q) || 
-      (row.carrierPartner && row.carrierPartner.toLowerCase().includes(q)) ||
-      (row.cargoSpecs && row.cargoSpecs.toLowerCase().includes(q)) ||
-      (row.spottedLane && row.spottedLane.toLowerCase().includes(q));
-  });
+  // Modal States
+  const [importModalOpen, setImportModalOpen] = useState(false);
+  const [editItemModalOpen, setEditItemModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [cameraModalOpen, setCameraModalOpen] = useState(false);
 
-  const toggleColumn = (col) => {
-    setVisibleColumns(prev => ({ ...prev, [col]: !prev[col] }));
-  };
-
-  const handleExport = () => {
-    const headers = ['Receipt ID', 'Spotted Lane', 'Status'];
-    const rows = inboundData.map(row => [row.id, row.spottedLane, 'Pending Scan-In']);
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "inbound_staging_queue.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const handleBarcodeScan = () => {
-    if (!scanInput.trim()) return;
-    alert('Scan decoded: ' + scanInput);
-    setScanInput('');
-    setBarcodeModal(false);
-  };
-
-  const handleManualIngest = (e) => {
+  const handleAddItem = (e) => {
     e.preventDefault();
-    alert('Asset ingested successfully.');
-    setManualForm({ sku: '', palletCount: '1', weight: '', dimensions: '', barcode: '', zone: 'Zone A (Dry)', aisle: 'Aisle 1 - Bin B', customer: '', destination: '' });
-    setManualModal(false);
+    if (!vin.trim()) return;
+    const newItem = {
+      id: String(Date.now()),
+      type: itemType.includes('Vehicle') ? 'Vehicle' : 'Item',
+      title: `${make || 'Custom'} ${model || 'Item'}`,
+      vin: vin,
+      rego: regoPlate || 'PENDING',
+      location: `${zone} / ${row} / ${bay} / ${stagingArea}`,
+      condition: condition,
+      damage: damageNoted ? 'Damage Noted' : 'No Damage',
+      image: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?auto=format&fit=crop&w=400&q=80'
+    };
+    setItemsToReceive([...itemsToReceive, newItem]);
+    alert(`Item ${newItem.title} (${newItem.vin}) added to receive list!`);
   };
 
-  const handleScanInRow = (rowId) => {
-    setScanInput(rowId);
-    setBarcodeModal(true);
+  const handleRemoveItem = (id) => {
+    setItemsToReceive(itemsToReceive.filter(item => item.id !== id));
   };
 
-  const handlePrintLabel = (rowId) => {
-    alert(`Label printed successfully for ${rowId}`);
+  const handleOpenEditItem = (item) => {
+    setEditingItem({ ...item });
+    setEditItemModalOpen(true);
   };
 
-  const handleRowSelect = (id) => {
-    if (selectedRows.includes(id)) {
-      setSelectedRows(selectedRows.filter(r => r !== id));
-    } else {
-      setSelectedRows([...selectedRows, id]);
-    }
+  const handleSaveEditedItem = (e) => {
+    e.preventDefault();
+    if (!editingItem) return;
+    setItemsToReceive(itemsToReceive.map(it => it.id === editingItem.id ? editingItem : it));
+    setEditItemModalOpen(false);
+    setEditingItem(null);
   };
 
-  const handleAllSelect = () => {
-    if (selectedRows.length === inboundData.length) {
-      setSelectedRows([]);
-    } else {
-      setSelectedRows(inboundData.map(r => r.id));
-    }
+  const handleDocFileUpload = (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    const newDocs = files.map((f, i) => ({
+      id: String(Date.now() + i),
+      name: f.name,
+      size: `${(f.size / (1024 * 1024)).toFixed(1)} MB`,
+      time: 'Just now'
+    }));
+    setUploadedDocs([...uploadedDocs, ...newDocs]);
   };
 
-  const getPaddingClass = () => {
-    if (density === 'compact') return 'py-2 px-6';
-    if (density === 'relaxed') return 'py-5 px-6';
-    return 'py-3.5 px-6'; // default
+  const handlePhotoFileUpload = (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    const newPhotos = files.map((f, i) => ({
+      id: String(Date.now() + i),
+      name: f.name,
+      size: `${(f.size / (1024 * 1024)).toFixed(1)} MB`,
+      url: URL.createObjectURL(f)
+    }));
+    setUploadedPhotos([...uploadedPhotos, ...newPhotos]);
+  };
+
+  const handleSimulateCameraCapture = () => {
+    const captured = {
+      id: String(Date.now()),
+      name: `Inspection_Photo_${uploadedPhotos.length + 1}.jpg`,
+      size: '1.8 MB',
+      url: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=300&q=80'
+    };
+    setUploadedPhotos([...uploadedPhotos, captured]);
+    setCameraModalOpen(false);
+    alert('Photo captured & attached successfully!');
+  };
+
+  const handleSimulateCSVImport = () => {
+    const importedData = [
+      {
+        id: String(Date.now() + 1),
+        type: 'Vehicle',
+        title: 'Nissan X-Trail',
+        vin: 'JN1TCNT31U0098765',
+        rego: 'MNO345',
+        location: `${zone} / ${row} / ${bay}`,
+        condition: 'Good',
+        damage: 'No Damage',
+        image: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=400&q=80'
+      },
+      {
+        id: String(Date.now() + 2),
+        type: 'Vehicle',
+        title: 'Hyundai Tucson',
+        vin: 'KM8J33A45JU112233',
+        rego: 'PQR678',
+        location: `${zone} / ${row} / ${bay}`,
+        condition: 'Good',
+        damage: 'No Damage',
+        image: 'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&w=400&q=80'
+      }
+    ];
+    setItemsToReceive([...itemsToReceive, ...importedData]);
+    setImportModalOpen(false);
+    alert('Successfully imported 2 items from CSV manifest!');
+  };
+
+  const handleReceiveComplete = () => {
+    alert(`Inbound Receipt ${inboundNo} confirmed & received successfully! Total ${itemsToReceive.length} items logged.`);
+    navigate(isYard ? '/yard/current-stock' : '/warehouse/find-stock');
   };
 
   return (
-    <div className="warehouse-dashboard">
-      {/* Header section matches WarehouseDashboard perfectly */}
-      <div className="warehouse-header">
-        <div className="warehouse-header-titles">
-          <h1>{isYard ? 'Yard Inbound Intake' : 'Inbound Staging & Intake'}</h1>
-        </div>
-      </div>
+    <div className="wh-receive-container">
+      
+      {/* EMBEDDED DIRECT STYLING */}
+      <style>{`
+        .wh-receive-container {
+          min-height: 100vh;
+          background-color: #F8FAFC;
+          color: #0F172A;
+          font-family: 'Inter', system-ui, -apple-system, sans-serif;
+          padding: 16px 20px;
+          box-sizing: border-box;
+        }
 
-      {/* Inbound Staging Queue Table Card */}
-      <div className="warehouse-bottom-section" style={{ textAlign: 'left' }}>
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-4" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 className="section-title" style={{ margin: 0, fontSize: '15px', fontWeight: '800' }}>Inbound Staging Queue</h3>
+        /* Header Bar Inside Left Col */
+        .wh-rcv-header-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 12px;
+          flex-wrap: wrap;
+          gap: 10px;
+        }
+
+        .wh-rcv-title {
+          font-size: 18px;
+          font-weight: 900;
+          color: #0F172A;
+          margin: 0;
+          text-transform: uppercase;
+          letter-spacing: -0.3px;
+        }
+
+        .wh-rcv-sub {
+          font-size: 11px;
+          color: #64748B;
+          margin-top: 1px;
+        }
+
+        .wh-rcv-top-btns {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .wh-btn-cancel-rcv {
+          height: 34px;
+          padding: 0 14px;
+          border-radius: 6px;
+          border: 1px solid #CBD5E1;
+          background: #FFFFFF;
+          font-size: 11.5px;
+          font-weight: 700;
+          color: #475569;
+          cursor: pointer;
+        }
+
+        .wh-btn-draft-rcv {
+          height: 34px;
+          padding: 0 14px;
+          border-radius: 6px;
+          border: 1px solid #0F172A;
+          background: #FFFFFF;
+          font-size: 11.5px;
+          font-weight: 700;
+          color: #0F172A;
+          cursor: pointer;
+        }
+
+        .wh-btn-submit-rcv {
+          height: 34px;
+          padding: 0 18px;
+          border-radius: 6px;
+          border: none;
+          background: #FFD400;
+          font-size: 11.5px;
+          font-weight: 800;
+          color: #0F172A;
+          cursor: pointer;
+          box-shadow: 0 2px 6px rgba(255, 212, 0, 0.3);
+        }
+
+        /* Master Flex Layout */
+        .wh-rcv-master-grid {
+          display: flex;
+          gap: 14px;
+          align-items: flex-start;
+        }
+
+        /* Left Main Column */
+        .wh-rcv-left-col {
+          flex: 1;
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        /* TOP 3 CARDS ROW */
+        .wh-rcv-top-cards-row {
+          display: flex;
+          gap: 12px;
+          align-items: flex-start;
+          width: 100%;
+        }
+
+        .wh-card-1 {
+          flex: 1.35;
+          min-width: 0;
+          background: #FFFFFF;
+          border: 1px solid #E2E8F0;
+          border-radius: 10px;
+          padding: 12px 14px;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+          display: flex;
+          flex-direction: column;
+          height: fit-content;
+        }
+
+        .wh-card-2 {
+          flex: 1;
+          min-width: 0;
+          background: #FFFFFF;
+          border: 1px solid #E2E8F0;
+          border-radius: 10px;
+          padding: 12px 14px;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+          display: flex;
+          flex-direction: column;
+          height: fit-content;
+        }
+
+        .wh-card-3 {
+          flex: 1.3;
+          min-width: 0;
+          background: #FFFFFF;
+          border: 1px solid #E2E8F0;
+          border-radius: 10px;
+          padding: 12px 14px;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+          display: flex;
+          flex-direction: column;
+          height: fit-content;
+        }
+
+        .card-num-title {
+          font-size: 10.5px;
+          font-weight: 900;
+          color: #0F172A;
+          text-transform: uppercase;
+          letter-spacing: 0.4px;
+          margin-bottom: 8px;
+          padding-bottom: 4px;
+          border-bottom: 1px solid #F1F5F9;
+        }
+
+        /* Form Controls */
+        .rcv-form-grid-2 {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 6px;
+        }
+
+        .rcv-form-group {
+          display: flex;
+          flex-direction: column;
+          gap: 1px;
+          margin-bottom: 4px;
+        }
+
+        .rcv-form-group label {
+          font-size: 9px;
+          font-weight: 800;
+          color: #64748B;
+          text-transform: uppercase;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .rcv-form-group input,
+        .rcv-form-group select,
+        .rcv-form-group textarea {
+          height: 30px;
+          border-radius: 6px;
+          border: 1px solid #CBD5E1;
+          padding: 0 6px;
+          font-size: 11px;
+          font-weight: 600;
+          color: #0F172A;
+          outline: none;
+          background: #FFFFFF;
+          box-sizing: border-box;
+          text-overflow: ellipsis;
+        }
+
+        .rcv-form-group textarea {
+          height: 36px;
+          padding: 4px 6px;
+          resize: none;
+        }
+
+        /* Location Preview Box */
+        .loc-preview-box {
+          background: #FEFCE8;
+          border: 1px solid #FEF08A;
+          border-radius: 6px;
+          padding: 6px 8px;
+          margin-top: 4px;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 10px;
+          font-weight: 700;
+          color: #854D0E;
+          line-height: 1.3;
+        }
+
+        /* Item Entry Modes */
+        .item-entry-tabs {
+          display: flex;
+          background: #F1F5F9;
+          padding: 2px;
+          border-radius: 6px;
+          gap: 2px;
+          margin-bottom: 6px;
+        }
+
+        .item-entry-tabs button {
+          flex: 1;
+          height: 24px;
+          border-radius: 4px;
+          border: none;
+          font-size: 8.5px;
+          font-weight: 800;
+          color: #64748B;
+          cursor: pointer;
+          background: transparent;
+          white-space: nowrap;
+          padding: 0 2px;
+        }
+
+        .item-entry-tabs button.active {
+          background: #FFD400;
+          color: #0F172A;
+          font-weight: 800;
+        }
+
+        .yellow-sub-heading {
+          font-size: 9.5px;
+          font-weight: 800;
+          color: #D97706;
+          margin: 2px 0 4px 0;
+        }
+
+        .or-divider {
+          text-align: center;
+          font-size: 9px;
+          font-weight: 800;
+          color: #94A3B8;
+          margin: 2px 0;
+        }
+
+        .btn-add-item-list {
+          height: 30px;
+          width: 100%;
+          border-radius: 6px;
+          border: none;
+          background: #FFD400;
+          font-size: 11px;
+          font-weight: 800;
+          color: #0F172A;
+          cursor: pointer;
+          margin-top: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+        }
+
+        /* Table Section */
+        .wh-rcv-table-card {
+          background: #FFFFFF;
+          border: 1px solid #E2E8F0;
+          border-radius: 10px;
+          padding: 14px;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+          overflow: hidden;
+        }
+
+        .table-card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 8px;
+        }
+
+        .table-actions-top {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          font-size: 10.5px;
+          font-weight: 700;
+        }
+
+        .action-link {
+          color: #3B82F6;
+          cursor: pointer;
+          text-decoration: none;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+
+        .wh-rcv-table-responsive {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .rcv-data-table {
+          width: 100%;
+          border-collapse: collapse;
+          text-align: left;
+          font-size: 11px;
+          min-width: 600px;
+        }
+
+        .rcv-data-table th {
+          padding: 8px 12px;
+          font-size: 9px;
+          font-weight: 800;
+          color: #64748B;
+          text-transform: uppercase;
+          background: #F8FAFC;
+          border-bottom: 1px solid #E2E8F0;
+          white-space: nowrap;
+        }
+
+        .rcv-data-table td {
+          padding: 8px 12px;
+          border-bottom: 1px solid #F1F5F9;
+          vertical-align: middle;
+          white-space: nowrap;
+        }
+
+        .tbl-item-cell {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .tbl-thumb {
+          width: 36px;
+          height: 28px;
+          border-radius: 4px;
+          object-fit: cover;
+          border: 1px solid #E2E8F0;
+        }
+
+        .tbl-vin-badge {
+          font-size: 9px;
+          font-weight: 800;
+          padding: 1px 5px;
+          border-radius: 4px;
+          background: #DBEAFE;
+          color: #1D4ED8;
+          margin-left: 4px;
+        }
+
+        .tbl-select {
+          height: 26px;
+          padding: 0 6px;
+          border-radius: 4px;
+          border: 1px solid #CBD5E1;
+          font-size: 10.5px;
+          font-weight: 600;
+          outline: none;
+        }
+
+        .action-btns-group {
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          gap: 6px;
+        }
+
+        .tbl-action-icon-btn {
+          background: transparent;
+          border: none;
+          color: #64748B;
+          cursor: pointer;
+          padding: 4px;
+          border-radius: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.15s ease;
+        }
+
+        .tbl-action-icon-btn.edit:hover { background: #FEF3C7; color: #D97706; }
+        .tbl-action-icon-btn.delete:hover { background: #FEE2E2; color: #EF4444; }
+
+        .table-card-footer {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-top: 8px;
+          padding-top: 8px;
+          border-top: 1px solid #F1F5F9;
+        }
+
+        .btn-add-another {
+          height: 28px;
+          padding: 0 12px;
+          border-radius: 5px;
+          border: 1px solid #E2E8F0;
+          background: #FFFFFF;
+          font-size: 10.5px;
+          font-weight: 700;
+          color: #0F172A;
+          cursor: pointer;
+        }
+
+        /* Documents & Photos Section */
+        .wh-rcv-docs-card {
+          background: #FFFFFF;
+          border: 1px solid #E2E8F0;
+          border-radius: 10px;
+          padding: 14px;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+        }
+
+        .dropzones-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+        }
+
+        .dropzone-box {
+          border: 2px dashed #CBD5E1;
+          border-radius: 8px;
+          padding: 16px;
+          text-align: center;
+          background: #F8FAFC;
+          cursor: pointer;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+          transition: all 0.15s ease;
+        }
+
+        .dropzone-box:hover {
+          border-color: #FFD400;
+          background: #FFFFFF;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .dropzone-icon { color: #64748B; }
+        .drop-title { font-size: 11px; font-weight: 700; color: #0F172A; }
+        .drop-sub { font-size: 9px; color: #94A3B8; }
+
+        .uploaded-files-list {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          margin-top: 10px;
+        }
+
+        .uploaded-file-item {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 6px 10px;
+          border-radius: 6px;
+          background: #F1F5F9;
+          border: 1px solid #E2E8F0;
+          font-size: 10.5px;
+        }
+
+        .file-item-left {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .file-item-name { font-weight: 700; color: #0F172A; }
+        .file-item-size { font-size: 9px; color: #64748B; }
+
+        .file-item-remove-btn {
+          background: transparent;
+          border: none;
+          color: #94A3B8;
+          cursor: pointer;
+          padding: 2px;
+        }
+
+        .file-item-remove-btn:hover { color: #EF4444; }
+
+        /* Right Side Summary Column - Aligned to Top line */
+        .wh-rcv-right-col {
+          width: 265px;
+          flex-shrink: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .summary-card {
+          background: #FFFFFF;
+          border: 1px solid #E2E8F0;
+          border-radius: 10px;
+          padding: 12px;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+        }
+
+        .summary-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          font-size: 10.5px;
+          padding: 4px 0;
+          border-bottom: 1px solid #F1F5F9;
+        }
+
+        .summary-label { color: #64748B; font-weight: 600; }
+        .summary-val { font-weight: 800; color: #0F172A; }
+
+        .summary-badge-receiving {
+          padding: 2px 6px;
+          border-radius: 4px;
+          font-size: 9px;
+          font-weight: 800;
+          background: #FEF3C7;
+          color: #B45309;
+        }
+
+        .side-item-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 5px 6px;
+          border-radius: 6px;
+          background: #F8FAFC;
+          margin-bottom: 5px;
+          border: 1px solid #F1F5F9;
+        }
+
+        .side-item-thumb {
+          width: 34px;
+          height: 26px;
+          border-radius: 4px;
+          object-fit: cover;
+        }
+
+        .side-item-info { flex: 1; display: flex; flex-direction: column; }
+        .side-item-title { font-size: 10.5px; font-weight: 800; color: #0F172A; }
+        .side-item-vin { font-size: 8.5px; color: #64748B; font-family: monospace; }
+
+        .side-remove-btn {
+          background: transparent;
+          border: none;
+          color: #94A3B8;
+          cursor: pointer;
+        }
+
+        .chk-item {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 10.5px;
+          font-weight: 700;
+          color: #0F172A;
+          padding: 4px 0;
+        }
+
+        .chk-icon-green { color: #10B981; }
+        .chk-icon-gray { color: #CBD5E1; }
+
+        .dev-notes-list {
+          font-size: 10px;
+          color: #64748B;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          line-height: 1.3;
+        }
+
+        /* Modal Popup Styles */
+        .wh-modal-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(15, 23, 42, 0.5);
+          backdrop-filter: blur(4px);
+          z-index: 99999;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 16px;
+        }
+
+        .wh-modal-box {
+          background: #FFFFFF;
+          border-radius: 12px;
+          width: 100%;
+          max-width: 480px;
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .wh-modal-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 14px 18px;
+          border-bottom: 1px solid #E2E8F0;
+        }
+
+        .wh-modal-header h3 { font-size: 14px; font-weight: 800; color: #0F172A; margin: 0; }
+        .wh-modal-header button { background: transparent; border: none; color: #94A3B8; cursor: pointer; }
+
+        .wh-modal-body { padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+
+        .wh-modal-footer {
+          display: flex;
+          justify-content: flex-end;
+          gap: 10px;
+          padding: 14px 18px;
+          background: #F8FAFC;
+          border-top: 1px solid #E2E8F0;
+        }
+
+        /* MOBILE RESPONSIVE MEDIA QUERIES */
+        @media (max-width: 1024px) {
+          .wh-rcv-master-grid { flex-direction: column; width: 100%; }
+          .wh-rcv-top-cards-row { flex-direction: column; width: 100%; }
+          .wh-card-1, .wh-card-2, .wh-card-3 { width: 100%; flex: auto; box-sizing: border-box; }
+          .wh-rcv-right-col { width: 100%; box-sizing: border-box; }
+        }
+
+        @media (max-width: 640px) {
+          .wh-receive-container { padding: 10px; overflow-x: hidden; width: 100%; box-sizing: border-box; }
+          .wh-rcv-left-col { width: 100%; max-width: 100%; box-sizing: border-box; }
+          .rcv-form-grid-2 { grid-template-columns: 1fr !important; }
+          .dropzones-grid { grid-template-columns: 1fr !important; width: 100%; }
+          .dropzone-box { width: 100%; box-sizing: border-box; padding: 12px 8px; }
+          .wh-rcv-header-row {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+            width: 100%;
+          }
+          .wh-rcv-top-btns {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+          }
+          .wh-rcv-top-btns button {
+            width: 100%;
+            height: 38px;
+            justify-content: center;
+            padding: 0 12px;
+            font-size: 12px;
+          }
+          .wh-rcv-table-card, .wh-rcv-docs-card {
+            padding: 10px;
+            width: 100%;
+            box-sizing: border-box;
+          }
+          .table-card-footer {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+            width: 100%;
+          }
+          .btn-add-another {
+            width: 100%;
+          }
+        }
+      `}</style>
+
+      {/* Hidden inputs for real file uploads */}
+      <input 
+        type="file" 
+        ref={docInputRef} 
+        style={{ display: 'none' }} 
+        multiple 
+        accept=".pdf,.jpg,.png,.doc,.docx"
+        onChange={handleDocFileUpload} 
+      />
+      <input 
+        type="file" 
+        ref={photoInputRef} 
+        style={{ display: 'none' }} 
+        multiple 
+        accept="image/*"
+        onChange={handlePhotoFileUpload} 
+      />
+
+      {/* ── MASTER FLEX LAYOUT (LEFT MAIN + EXACT TOP ALIGNED RIGHT COLUMN) ── */}
+      <div className="wh-rcv-master-grid">
+        
+        {/* LEFT MAIN COLUMN */}
+        <div className="wh-rcv-left-col">
           
-          <div className="flex flex-wrap items-center gap-3" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px' }}>
-            {/* Quick Search Bar */}
-            <div className="relative flex-1 min-w-[240px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input 
-                type="text"
-                placeholder="Quick search receipts, SKU, lane..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs font-bold bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
-              />
+          {/* HEADER ROW INSIDE LEFT COL */}
+          <div className="wh-rcv-header-row">
+            <div>
+              <h1 className="wh-rcv-title">RECEIVE (INBOUND)</h1>
+              <p className="wh-rcv-sub">Record and confirm incoming stock/items into the depot.</p>
             </div>
 
-            {/* Density Selector */}
-            <div className="wh-segmented-control" style={{ padding: '2px', borderRadius: '8px' }}>
-              {['COMPACT', 'DEFAULT', 'RELAXED'].map((mode) => {
-                const isActive = density === mode.toLowerCase();
-                return (
-                  <button
-                    key={mode}
-                    onClick={() => setDensity(mode.toLowerCase())}
-                    className="segmented-btn"
-                    style={{
-                      padding: '5px 12px',
-                      fontSize: '9px',
-                      borderRadius: '6px',
-                      backgroundColor: isActive ? '#ffd400' : 'transparent',
-                      color: isActive ? '#0f172a' : '#64748b',
-                      border: isActive ? '1px solid #000' : '1px solid transparent',
-                      whiteSpace: 'nowrap'
-                    }}
-                  >
-                    {mode}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Columns button */}
-            <div style={{ position: 'relative' }}>
-              <button 
-                className="btn btn-white-wh" 
-                style={{
-                  padding: '6px 12px',
-                  fontSize: '10px',
-                  borderRadius: '8px',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                  border: columnsMenuOpen ? '1.5px solid #000000' : '1px solid #e2e8f0',
-                  color: columnsMenuOpen ? '#0f172a' : '#64748b',
-                  backgroundColor: '#ffffff',
-                  whiteSpace: 'nowrap'
-                }}
-                onClick={() => setColumnsMenuOpen(!columnsMenuOpen)}
-              >
-                <Settings className="h-3.5 w-3.5 text-slate-400" />
-                <span>Columns</span>
-              </button>
-
-              {columnsMenuOpen && (
-                <div style={{
-                  position: 'absolute',
-                  right: 0,
-                  top: 'calc(100% + 8px)',
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '16px',
-                  boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-                  padding: '16px',
-                  zIndex: 50,
-                  minWidth: '220px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '12px'
-                }}>
-                  <div style={{ fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
-                    Column Visibility
-                  </div>
-                  
-                  {/* Receipt ID */}
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', color: '#334155' }}>
-                    <input
-                      type="checkbox"
-                      checked={visibleColumns.receiptId}
-                      onChange={() => toggleColumn('receiptId')}
-                      style={{ width: '16px', height: '16px', borderRadius: '4px', border: '1px solid #cbd5e1', accentColor: '#3b82f6', cursor: 'pointer' }}
-                    />
-                    <span>Receipt ID</span>
-                  </label>
-
-                  {/* Carrier Partner */}
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', color: '#334155' }}>
-                    <input
-                      type="checkbox"
-                      checked={visibleColumns.carrierPartner}
-                      onChange={() => toggleColumn('carrierPartner')}
-                      style={{ width: '16px', height: '16px', borderRadius: '4px', border: '1px solid #cbd5e1', accentColor: '#3b82f6', cursor: 'pointer' }}
-                    />
-                    <span>Carrier Partner</span>
-                  </label>
-
-                  {/* Inbound Cargo Specs */}
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', color: '#334155' }}>
-                    <input
-                      type="checkbox"
-                      checked={visibleColumns.cargoSpecs}
-                      onChange={() => toggleColumn('cargoSpecs')}
-                      style={{ width: '16px', height: '16px', borderRadius: '4px', border: '1px solid #cbd5e1', accentColor: '#3b82f6', cursor: 'pointer' }}
-                    />
-                    <span>Inbound Cargo Specs</span>
-                  </label>
-
-                  {/* Spotted Lane */}
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', color: '#334155' }}>
-                    <input
-                      type="checkbox"
-                      checked={visibleColumns.spottedLane}
-                      onChange={() => toggleColumn('spottedLane')}
-                      style={{ width: '16px', height: '16px', borderRadius: '4px', border: '1px solid #cbd5e1', accentColor: '#3b82f6', cursor: 'pointer' }}
-                    />
-                    <span>Spotted Lane</span>
-                  </label>
-
-                  {/* Staged Actions */}
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', color: '#334155' }}>
-                    <input
-                      type="checkbox"
-                      checked={visibleColumns.stagedActions}
-                      onChange={() => toggleColumn('stagedActions')}
-                      style={{ width: '16px', height: '16px', borderRadius: '4px', border: '1px solid #cbd5e1', accentColor: '#3b82f6', cursor: 'pointer' }}
-                    />
-                    <span>Staged Actions</span>
-                  </label>
-                </div>
-              )}
+            <div className="wh-rcv-top-btns">
+              <button className="wh-btn-cancel-rcv" onClick={() => navigate(-1)}>Cancel</button>
+              <button className="wh-btn-draft-rcv" onClick={() => alert('Saved as Draft!')}>Save as Draft</button>
+              <button className="wh-btn-submit-rcv" onClick={handleReceiveComplete}>Receive Items</button>
             </div>
           </div>
+
+          {/* TOP 3 CARDS ROW */}
+          <div className="wh-rcv-top-cards-row">
+            
+            {/* CARD 1: INBOUND DETAILS */}
+            <div className="wh-card-1">
+              <div className="card-num-title">1. INBOUND DETAILS</div>
+              
+              <div className="rcv-form-grid-2">
+                <div className="rcv-form-group">
+                  <label title="INBOUND TYPE *">INBOUND TYPE *</label>
+                  <select value={inboundType} onChange={e => setInboundType(e.target.value)}>
+                    <option value="Purchase / Supplier Delivery">Purchase / Supplier Delivery</option>
+                    <option value="Customer Return">Customer Return</option>
+                    <option value="Inter-Depot Transfer">Inter-Depot Transfer</option>
+                  </select>
+                </div>
+
+                <div className="rcv-form-group">
+                  <label title="INBOUND NO.">INBOUND NO.</label>
+                  <input type="text" value={inboundNo} onChange={e => setInboundNo(e.target.value)} />
+                </div>
+              </div>
+
+              <div className="rcv-form-grid-2">
+                <div className="rcv-form-group">
+                  <label title="SUPPLIER / FROM *">SUPPLIER / FROM *</label>
+                  <select value={supplier} onChange={e => setSupplier(e.target.value)}>
+                    <option value="ABC Motors">ABC Motors</option>
+                    <option value="XYZ Imports">XYZ Imports</option>
+                    <option value="National Fleet">National Fleet</option>
+                  </select>
+                </div>
+
+                <div className="rcv-form-group">
+                  <label title="REFERENCE / DELIVERY NOTE">REFERENCE / DELIVERY NOTE</label>
+                  <input type="text" value={refNote} onChange={e => setRefNote(e.target.value)} />
+                </div>
+              </div>
+
+              <div className="rcv-form-grid-2">
+                <div className="rcv-form-group">
+                  <label title="TRANSPORT TYPE">TRANSPORT TYPE</label>
+                  <select value={transportType} onChange={e => setTransportType(e.target.value)}>
+                    <option value="Truck">Truck</option>
+                    <option value="Train">Train</option>
+                    <option value="Ship">Ship</option>
+                  </select>
+                </div>
+                <div className="rcv-form-group">
+                  <label title="DRIVER">DRIVER</label>
+                  <select value={driver} onChange={e => setDriver(e.target.value)}>
+                    <option value="John Smith">John Smith</option>
+                    <option value="Michael Scott">Michael Scott</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="rcv-form-grid-2">
+                <div className="rcv-form-group">
+                  <label title="VEHICLE / TRAILER">VEHICLE / TRAILER</label>
+                  <input type="text" value={vehicleTrailer} onChange={e => setVehicleTrailer(e.target.value)} />
+                </div>
+                <div className="rcv-form-group">
+                  <label title="DATE / TIME *">DATE / TIME *</label>
+                  <input type="text" value={dateTime} onChange={e => setDateTime(e.target.value)} />
+                </div>
+              </div>
+
+              <div className="rcv-form-group">
+                <label title="NOTES">NOTES</label>
+                <textarea placeholder="Enter notes (optional)" value={notes} onChange={e => setNotes(e.target.value)} />
+              </div>
+            </div>
+
+            {/* CARD 2: LOCATION */}
+            <div className="wh-card-2">
+              <div className="card-num-title">2. LOCATION</div>
+
+              <div className="rcv-form-group">
+                <label title="RECEIVING DEPOT *">RECEIVING DEPOT *</label>
+                <select value={receivingDepot} onChange={e => setReceivingDepot(e.target.value)}>
+                  <option value="Sydney Depot">Sydney Depot</option>
+                  <option value="Melbourne Yard">Melbourne Yard</option>
+                  <option value="Brisbane Hub">Brisbane Hub</option>
+                </select>
+              </div>
+
+              <div className="rcv-form-group">
+                <label title="WAREHOUSE / YARD *">WAREHOUSE / YARD *</label>
+                <select value={warehouseYard} onChange={e => setWarehouseYard(e.target.value)}>
+                  <option value="Main Yard">Main Yard</option>
+                  <option value="Yard B">Yard B</option>
+                  <option value="Warehouse 1">Warehouse 1</option>
+                </select>
+              </div>
+
+              <div className="rcv-form-group">
+                <label title="ZONE *">ZONE *</label>
+                <select value={zone} onChange={e => setZone(e.target.value)}>
+                  <option value="Zone A">Zone A</option>
+                  <option value="Zone B">Zone B</option>
+                  <option value="DG Zone">DG Zone</option>
+                </select>
+              </div>
+
+              <div className="rcv-form-grid-2">
+                <div className="rcv-form-group">
+                  <label title="ROW">ROW</label>
+                  <select value={row} onChange={e => setRow(e.target.value)}>
+                    <option value="Row 4">Row 4</option>
+                    <option value="Row 1">Row 1</option>
+                    <option value="Row 2">Row 2</option>
+                  </select>
+                </div>
+                <div className="rcv-form-group">
+                  <label title="BAY">BAY</label>
+                  <select value={bay} onChange={e => setBay(e.target.value)}>
+                    <option value="Bay 12">Bay 12</option>
+                    <option value="Bay 03">Bay 03</option>
+                    <option value="Bay 05">Bay 05</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="rcv-form-group">
+                <label title="STAGING AREA (OPTIONAL)">STAGING AREA (OPTIONAL)</label>
+                <select value={stagingArea} onChange={e => setStagingArea(e.target.value)}>
+                  <option value="Staging Area 1">Staging Area 1</option>
+                  <option value="Load Lane 3">Load Lane 3</option>
+                  <option value="Load Lane 4">Load Lane 4</option>
+                </select>
+              </div>
+
+              <div className="loc-preview-box">
+                <MapPin size={14} style={{ shrink: 0 }} />
+                <span>Location Preview: {receivingDepot} &gt; {warehouseYard} &gt; {zone} &gt; {row} &gt; {bay}</span>
+              </div>
+            </div>
+
+            {/* CARD 3: ITEM ENTRY */}
+            <div className="wh-card-3">
+              <div className="card-num-title">3. ITEM ENTRY</div>
+
+              <div className="item-entry-tabs">
+                <button className={entryTab === 'manual' ? 'active' : ''} onClick={() => setEntryTab('manual')}>Add Manually</button>
+                <button className={entryTab === 'scan' ? 'active' : ''} onClick={() => setEntryTab('scan')}>Scan Barcode / QR</button>
+                <button className={entryTab === 'upload' ? 'active' : ''} onClick={() => setImportModalOpen(true)}>Upload (CSV)</button>
+              </div>
+
+              <div className="rcv-form-group">
+                <label title="ITEM TYPE *">ITEM TYPE *</label>
+                <select value={itemType} onChange={e => setItemType(e.target.value)}>
+                  <option value="Vehicle (Car Carrying)">Vehicle (Car Carrying)</option>
+                  <option value="Pallet (General Freight)">Pallet (General Freight)</option>
+                  <option value="Carton">Carton</option>
+                  <option value="DG Item">DG Item</option>
+                </select>
+              </div>
+
+              <div className="rcv-form-group">
+                <label title="SEARCH ITEM">SEARCH ITEM</label>
+                <input 
+                  type="text" 
+                  placeholder="Scan or enter VIN / Rego" 
+                  value={searchVinRego}
+                  onChange={e => setSearchVinRego(e.target.value)}
+                />
+              </div>
+
+              <div className="or-divider">── OR ──</div>
+
+              <div className="yellow-sub-heading">Enter Details Manually</div>
+
+              <form onSubmit={handleAddItem}>
+                <div className="rcv-form-grid-2">
+                  <div className="rcv-form-group">
+                    <label title="VIN *">VIN *</label>
+                    <input type="text" value={vin} onChange={e => setVin(e.target.value)} />
+                  </div>
+                  <div className="rcv-form-group">
+                    <label title="REGO / PLATE *">REGO / PLATE *</label>
+                    <input type="text" value={regoPlate} onChange={e => setRegoPlate(e.target.value)} />
+                  </div>
+                </div>
+
+                <div className="rcv-form-grid-2">
+                  <div className="rcv-form-group">
+                    <label title="MAKE *">MAKE *</label>
+                    <input type="text" value={make} onChange={e => setMake(e.target.value)} />
+                  </div>
+                  <div className="rcv-form-group">
+                    <label title="MODEL *">MODEL *</label>
+                    <input type="text" value={model} onChange={e => setModel(e.target.value)} />
+                  </div>
+                </div>
+
+                <div className="rcv-form-grid-2">
+                  <div className="rcv-form-group">
+                    <label title="YEAR">YEAR</label>
+                    <select value={year} onChange={e => setYear(e.target.value)}>
+                      <option value="2023">2023</option>
+                      <option value="2024">2024</option>
+                      <option value="2022">2022</option>
+                    </select>
+                  </div>
+                  <div className="rcv-form-group">
+                    <label title="COLOUR">COLOUR</label>
+                    <input type="text" value={colour} onChange={e => setColour(e.target.value)} />
+                  </div>
+                </div>
+
+                <div className="rcv-form-grid-2">
+                  <div className="rcv-form-group">
+                    <label title="CONDITION">CONDITION</label>
+                    <select value={condition} onChange={e => setCondition(e.target.value)}>
+                      <option value="Good">Good</option>
+                      <option value="Minor Scratch">Minor Scratch</option>
+                      <option value="Damaged">Damaged</option>
+                    </select>
+                  </div>
+                  <div className="rcv-form-group">
+                    <label title="FUEL TYPE">FUEL TYPE</label>
+                    <select value={fuelType} onChange={e => setFuelType(e.target.value)}>
+                      <option value="Petrol">Petrol</option>
+                      <option value="Diesel">Diesel</option>
+                      <option value="Electric">Electric</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 mt-1 mb-1 text-[9.5px] font-bold text-slate-700">
+                  <label className="flex items-center gap-1 cursor-pointer">
+                    <input type="checkbox" checked={requirePhotos} onChange={e => setRequirePhotos(e.target.checked)} />
+                    <span>Require Photos</span>
+                  </label>
+                  <label className="flex items-center gap-1 cursor-pointer">
+                    <input type="checkbox" checked={damageNoted} onChange={e => setDamageNoted(e.target.checked)} />
+                    <span>Damage Noted</span>
+                  </label>
+                </div>
+
+                <button type="submit" className="btn-add-item-list">
+                  <Plus size={14} />
+                  <span>+ Add Item to List</span>
+                </button>
+              </form>
+
+            </div>
+
+          </div>
+
+          {/* CARD 4: ITEMS TO RECEIVE TABLE */}
+          <div className="wh-rcv-table-card">
+            <div className="table-card-header">
+              <div className="card-num-title" style={{ margin: 0, border: 'none', padding: 0 }}>
+                4. ITEMS TO RECEIVE
+              </div>
+              <div className="table-actions-top">
+                <span className="action-link" onClick={() => setImportModalOpen(true)}>
+                  <Upload size={14} />
+                  <span>Import Items</span>
+                </span>
+                <span className="action-link" style={{ color: '#EF4444' }} onClick={() => setItemsToReceive([])}>
+                  Clear All
+                </span>
+              </div>
+            </div>
+
+            <div className="wh-rcv-table-responsive">
+              <table className="rcv-data-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Item Type</th>
+                    <th>Description / VIN / Rego</th>
+                    <th>Location</th>
+                    <th>Condition</th>
+                    <th>Damage</th>
+                    <th style={{ textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {itemsToReceive.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" style={{ textAlign: 'center', padding: '20px', color: '#94A3B8' }}>
+                        No items added to receive queue yet. Use Item Entry form above or click Import Items.
+                      </td>
+                    </tr>
+                  ) : (
+                    itemsToReceive.map((item, index) => (
+                      <tr key={item.id}>
+                        <td>{index + 1}</td>
+                        <td>
+                          <div className="tbl-item-cell">
+                            <img src={item.image} alt={item.title} className="tbl-thumb" />
+                            <span className="font-bold">{item.type}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div>
+                            <strong className="text-slate-900">{item.title}</strong>
+                            <span className="tbl-vin-badge">{item.rego}</span>
+                            <div className="text-[9.5px] text-slate-500 font-mono mt-0.5">VIN: {item.vin}</div>
+                          </div>
+                        </td>
+                        <td className="font-semibold text-slate-700">{item.location}</td>
+                        <td>
+                          <select className="tbl-select" value={item.condition} onChange={e => {
+                            const updated = [...itemsToReceive];
+                            updated[index].condition = e.target.value;
+                            setItemsToReceive(updated);
+                          }}>
+                            <option value="Good">Good</option>
+                            <option value="Scratched">Scratched</option>
+                            <option value="Damaged">Damaged</option>
+                          </select>
+                        </td>
+                        <td>
+                          <select className="tbl-select" value={item.damage} onChange={e => {
+                            const updated = [...itemsToReceive];
+                            updated[index].damage = e.target.value;
+                            setItemsToReceive(updated);
+                          }}>
+                            <option value="No Damage">No Damage</option>
+                            <option value="Minor Damage">Minor Damage</option>
+                            <option value="Major Damage">Major Damage</option>
+                          </select>
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          <div className="action-btns-group">
+                            <button 
+                              className="tbl-action-icon-btn edit" 
+                              onClick={() => handleOpenEditItem(item)}
+                              title="Edit Item"
+                            >
+                              <Edit2 size={14} />
+                            </button>
+                            <button 
+                              className="tbl-action-icon-btn delete" 
+                              onClick={() => handleRemoveItem(item.id)}
+                              title="Delete Item"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="table-card-footer">
+              <button className="btn-add-another" onClick={() => alert('Form ready to add another item!')}>
+                + Add Another Item
+              </button>
+              <div className="text-xs font-bold text-slate-700">
+                Total Items: <strong>{itemsToReceive.length}</strong>
+              </div>
+            </div>
+          </div>
+
+          {/* CARD 5: DOCUMENTS & PHOTOS */}
+          <div className="wh-rcv-docs-card">
+            <div className="card-num-title">5. DOCUMENTS & PHOTOS</div>
+
+            <div className="dropzones-grid">
+              {/* Dropzone 1: Attachments */}
+              <div>
+                <div 
+                  className="dropzone-box" 
+                  onClick={() => docInputRef.current && docInputRef.current.click()}
+                >
+                  <Paperclip size={22} className="dropzone-icon" />
+                  <span className="drop-title">Attachments (e.g. Delivery Note, Invoice)</span>
+                  <span className="drop-sub">Click to select or drop files PDF, JPG, PNG (Max 10MB)</span>
+                </div>
+
+                {uploadedDocs.length > 0 && (
+                  <div className="uploaded-files-list">
+                    {uploadedDocs.map(doc => (
+                      <div key={doc.id} className="uploaded-file-item">
+                        <div className="file-item-left">
+                          <File size={14} className="text-blue-600" />
+                          <div className="flex flex-col">
+                            <span className="file-item-name">{doc.name}</span>
+                            <span className="file-item-size">{doc.size} • {doc.time}</span>
+                          </div>
+                        </div>
+                        <button 
+                          className="file-item-remove-btn" 
+                          onClick={() => setUploadedDocs(uploadedDocs.filter(d => d.id !== doc.id))}
+                          title="Remove File"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Dropzone 2: Photos */}
+              <div>
+                <div className="dropzone-box">
+                  <Camera size={22} className="dropzone-icon" />
+                  <span className="drop-title">Photos (Items / Condition)</span>
+                  <span className="drop-sub">Capture or upload photos. You can add multiple photos.</span>
+                  
+                  <div className="flex gap-2 mt-2">
+                    <button 
+                      type="button" 
+                      className="wh-btn-cancel-rcv" 
+                      style={{ height: '26px', fontSize: '10px', padding: '0 8px' }}
+                      onClick={() => photoInputRef.current && photoInputRef.current.click()}
+                    >
+                      📁 Browse Gallery
+                    </button>
+                    <button 
+                      type="button" 
+                      className="wh-btn-draft-rcv" 
+                      style={{ height: '26px', fontSize: '10px', padding: '0 8px' }}
+                      onClick={() => setCameraModalOpen(true)}
+                    >
+                      📷 Take Photo
+                    </button>
+                  </div>
+                </div>
+
+                {uploadedPhotos.length > 0 && (
+                  <div className="uploaded-files-list">
+                    {uploadedPhotos.map(photo => (
+                      <div key={photo.id} className="uploaded-file-item">
+                        <div className="file-item-left">
+                          <img src={photo.url} alt={photo.name} style={{ width: '28px', height: '22px', borderRadius: '4px', objectFit: 'cover' }} />
+                          <div className="flex flex-col">
+                            <span className="file-item-name">{photo.name}</span>
+                            <span className="file-item-size">{photo.size}</span>
+                          </div>
+                        </div>
+                        <button 
+                          className="file-item-remove-btn" 
+                          onClick={() => setUploadedPhotos(uploadedPhotos.filter(p => p.id !== photo.id))}
+                          title="Remove Photo"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
         </div>
 
-         {/* Custom Table matching design */}
-        <div className="overflow-x-auto w-full border border-slate-200 rounded-2xl bg-white" style={{ border: '1px solid #e2e8f0', borderRadius: '16px', overflowX: 'auto' }}>
-          <table className="min-w-full divide-y divide-slate-200 text-left text-xs" style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead className="bg-slate-50 text-[10px] font-bold text-slate-400 uppercase tracking-wide" style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-              <tr>
-                <th className="px-6 py-4 w-12 text-center" style={{ width: '48px', padding: '14px 24px', textAlign: 'center' }}>
-                  <input
-                    type="checkbox"
-                    checked={selectedRows.length === inboundData.length && inboundData.length > 0}
-                    onChange={handleAllSelect}
-                    className="w-4 h-4 rounded border-slate-300 text-amber-500 focus:ring-amber-500 cursor-pointer"
-                    style={{ cursor: 'pointer' }}
-                  />
-                </th>
-                {visibleColumns.receiptId && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px', whiteSpace: 'nowrap' }}>Receipt ID</th>}
-                {visibleColumns.carrierPartner && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px', whiteSpace: 'nowrap' }}>Carrier Partner</th>}
-                {visibleColumns.cargoSpecs && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px', whiteSpace: 'nowrap' }}>Inbound Cargo Specs</th>}
-                {visibleColumns.spottedLane && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px', whiteSpace: 'nowrap' }}>Spotted Lane</th>}
-                {visibleColumns.stagedActions && <th className="px-6 py-4 font-extrabold" style={{ padding: '14px 24px', color: '#475569', fontSize: '10px', whiteSpace: 'nowrap' }}>Staged Actions</th>}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-800" style={{ fontSize: '13px' }}>
-              {filteredInbound.length === 0 ? (
-                <tr>
-                  <td colSpan="6" className="py-8 text-center text-slate-400 font-bold">
-                    No inbound assets found matching "{searchQuery}".
-                  </td>
-                </tr>
+        {/* RIGHT SIDE SUMMARY COLUMN (ALIGNED TO VERY TOP) */}
+        <div className="wh-rcv-right-col">
+          
+          {/* INBOUND SUMMARY CARD */}
+          <div className="summary-card">
+            <div className="card-num-title" style={{ marginBottom: '6px' }}>INBOUND SUMMARY</div>
+            
+            <div className="summary-row">
+              <span className="summary-label">Inbound No.</span>
+              <span className="summary-val">{inboundNo}</span>
+            </div>
+
+            <div className="summary-row">
+              <span className="summary-label">Supplier</span>
+              <span className="summary-val">{supplier}</span>
+            </div>
+
+            <div className="summary-row">
+              <span className="summary-label">Date / Time</span>
+              <span className="summary-val">{dateTime}</span>
+            </div>
+
+            <div className="summary-row">
+              <span className="summary-label">Items</span>
+              <span className="summary-val">{itemsToReceive.length}</span>
+            </div>
+
+            <div className="summary-row" style={{ borderBottom: 'none' }}>
+              <span className="summary-label">Status</span>
+              <span className="summary-badge-receiving">Receiving</span>
+            </div>
+          </div>
+
+          {/* ITEMS TO RECEIVE LIST */}
+          <div className="summary-card">
+            <div className="flex justify-between items-center mb-2">
+              <div className="card-num-title" style={{ margin: 0, padding: 0, border: 'none' }}>
+                ITEMS TO RECEIVE ({itemsToReceive.length})
+              </div>
+              <span className="action-link" style={{ fontSize: '10px' }}>Edit All</span>
+            </div>
+
+            {itemsToReceive.map(item => (
+              <div key={item.id} className="side-item-row">
+                <img src={item.image} alt={item.title} className="side-item-thumb" />
+                <div className="side-item-info">
+                  <span className="side-item-title">{item.title}</span>
+                  <span className="side-item-vin">VIN: {item.vin}</span>
+                  <span className="text-[8.5px] font-bold text-amber-600">{item.rego}</span>
+                </div>
+                <button className="side-remove-btn" onClick={() => handleRemoveItem(item.id)}>
+                  <X size={13} />
+                </button>
+              </div>
+            ))}
+
+            <button className="btn-add-another" style={{ width: '100%', marginTop: '4px' }}>
+              + Add Another Item
+            </button>
+          </div>
+
+          {/* RECEIVE CHECKLIST */}
+          <div className="summary-card">
+            <div className="card-num-title" style={{ marginBottom: '6px' }}>RECEIVE CHECKLIST</div>
+
+            <div className="chk-item">
+              <CheckCircle2 size={14} className="chk-icon-green" />
+              <span>Items count verified</span>
+            </div>
+
+            <div className="chk-item">
+              <CheckCircle2 size={14} className="chk-icon-green" />
+              <span>Condition checked</span>
+            </div>
+
+            <div className="chk-item">
+              {uploadedDocs.length > 0 ? (
+                <CheckCircle2 size={14} className="chk-icon-green" />
               ) : (
-                filteredInbound.map((row) => {
-                const isChecked = selectedRows.includes(row.id);
-                return (
-                  <tr key={row.id} className="hover:bg-slate-50/50 transition-colors" style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td className="px-6 text-center whitespace-nowrap" style={{ padding: '14px 24px', textAlign: 'center' }}>
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => handleRowSelect(row.id)}
-                        className="w-4 h-4 rounded border-slate-300 text-amber-500 focus:ring-amber-500 cursor-pointer"
-                        style={{ cursor: 'pointer' }}
-                      />
-                    </td>
-                    {visibleColumns.receiptId && (
-                      <td className={`font-mono text-slate-900 font-extrabold whitespace-nowrap ${getPaddingClass()}`} style={{ fontWeight: '800', fontFamily: 'monospace', color: '#0f172a' }}>
-                        {row.id}
-                      </td>
-                    )}
-                    {visibleColumns.carrierPartner && (
-                      <td className={`whitespace-nowrap font-semibold ${getPaddingClass()}`} style={{ color: '#475569', fontWeight: '600' }}>
-                        {row.carrierPartner}
-                      </td>
-                    )}
-                    {visibleColumns.cargoSpecs && (
-                      <td className={`whitespace-nowrap font-semibold ${getPaddingClass()}`} style={{ color: '#475569', fontWeight: '600' }}>
-                        {row.cargoSpecs}
-                      </td>
-                    )}
-                    {visibleColumns.spottedLane && (
-                      <td className={`whitespace-nowrap font-extrabold ${getPaddingClass()}`} style={{ color: '#d97706', fontWeight: '800' }}>
-                        {row.spottedLane}
-                      </td>
-                    )}
-                    {visibleColumns.stagedActions && (
-                      <td className={`whitespace-nowrap ${getPaddingClass()}`}>
-                        <div className="flex gap-2" style={{ display: 'flex', gap: '8px' }}>
-                          <button
-                            onClick={() => handleScanInRow(row.id)}
-                            className="btn btn-white-wh"
-                            style={{ padding: '6px 12px', fontSize: '12px', borderRadius: '8px', fontWeight: '700' }}
-                          >
-                            Scan In
-                          </button>
-                          <button
-                            onClick={() => handlePrintLabel(row.id)}
-                            className="btn btn-white-orange-wh"
-                            style={{ padding: '6px 12px', fontSize: '12px', borderRadius: '8px', fontWeight: '700' }}
-                          >
-                            Print Label
-                          </button>
-                        </div>
-                      </td>
-                    )}
-                  </tr>
-                );
-              }))}
-            </tbody>
-          </table>
+                <CheckCircle2 size={14} className="chk-icon-gray" />
+              )}
+              <span style={{ color: uploadedDocs.length > 0 ? '#0F172A' : '#64748B' }}>Documents verified</span>
+            </div>
+
+            <div className="chk-item">
+              {uploadedPhotos.length > 0 ? (
+                <CheckCircle2 size={14} className="chk-icon-green" />
+              ) : (
+                <CheckCircle2 size={14} className="chk-icon-gray" />
+              )}
+              <span style={{ color: uploadedPhotos.length > 0 ? '#0F172A' : '#64748B' }}>Photos captured</span>
+            </div>
+          </div>
+
+          {/* DEVELOPER NOTES */}
+          <div className="summary-card" style={{ background: '#F8FAFC' }}>
+            <div className="card-num-title" style={{ marginBottom: '6px' }}>DEVELOPER NOTES</div>
+
+            <div className="dev-notes-list">
+              <div>• All fields with * are required.</div>
+              <div>• Location hierarchy is company configurable.</div>
+              <div>• Scan barcode/QR for quick item entry.</div>
+              <div>• VIN validation for vehicle items.</div>
+              <div>• Support bulk upload via CSV template.</div>
+              <div>• Offline support: data saved to local queue.</div>
+            </div>
+          </div>
+
         </div>
+
       </div>
 
-      {/* Barcode/QR Scanner Simulator Modal */}
-      {barcodeModal && (
-        <div className="wh-modal-overlay" onClick={() => setBarcodeModal(false)}>
-          <div className="wh-modal" onClick={e => e.stopPropagation()}>
+      {/* ── IMPORT ITEMS MODAL ── */}
+      {importModalOpen && (
+        <div className="wh-modal-overlay" onClick={() => setImportModalOpen(false)}>
+          <div className="wh-modal-box" onClick={e => e.stopPropagation()}>
             <div className="wh-modal-header">
-              <h2>Barcode/QR Scanner Simulator</h2>
-              <button className="wh-modal-close" onClick={() => setBarcodeModal(false)}>
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                <FileSpreadsheet size={18} className="text-blue-600" />
+                <h3>Import Bulk Inbound Items (CSV / Excel)</h3>
+              </div>
+              <button onClick={() => setImportModalOpen(false)}><X size={16} /></button>
             </div>
+
             <div className="wh-modal-body">
-              <label className="wh-label">SCANNER MODE ACTION</label>
-              <select
-                value={scanMode}
-                onChange={e => setScanMode(e.target.value)}
-                className="wh-select"
-              >
-                <option>Scan by 1D Barcode tag</option>
-                <option>Scan by QR Code</option>
-                <option>Scan by NFC Tag</option>
-              </select>
+              <p className="text-xs text-slate-600">
+                Upload your CSV manifest or Excel spreadsheet containing item details (VIN, Rego, Make, Model, Condition).
+              </p>
 
-              <label className="wh-label">SCAN DECODER INPUT</label>
-              <input
-                type="text"
-                placeholder="Scan Barcode (e.g. BAR-9011283)"
-                value={scanInput}
-                onChange={e => setScanInput(e.target.value)}
-                className="wh-input"
-              />
+              <div className="dropzone-box" style={{ padding: '24px', background: '#F8FAFC' }}>
+                <Upload size={28} className="text-blue-500 mb-1" />
+                <span className="drop-title">Select CSV File to Upload</span>
+                <span className="drop-sub">Supported formats: .csv, .xlsx, .xls</span>
+              </div>
 
-              <button className="wh-btn-submit" onClick={handleBarcodeScan}>
-                Simulate Scan Decoder Trigger
-              </button>
+              <div className="flex justify-between items-center text-xs font-bold text-blue-600 cursor-pointer pt-1">
+                <span className="flex items-center gap-1"><Download size={14} /> Download Sample CSV Template</span>
+              </div>
+            </div>
+
+            <div className="wh-modal-footer">
+              <button className="wh-btn-cancel-rcv" onClick={() => setImportModalOpen(false)}>Cancel</button>
+              <button className="wh-btn-submit-rcv" onClick={handleSimulateCSVImport}>Import Sample CSV Items</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Manual Asset Ingestion Modal */}
-      {manualModal && (
-        <div className="wh-modal-overlay" onClick={() => setManualModal(false)}>
-          <div className="wh-modal" onClick={e => e.stopPropagation()}>
+      {/* ── CAMERA / PHOTO CAPTURE MODAL ── */}
+      {cameraModalOpen && (
+        <div className="wh-modal-overlay" onClick={() => setCameraModalOpen(false)}>
+          <div className="wh-modal-box" onClick={e => e.stopPropagation()}>
             <div className="wh-modal-header">
-              <h2>Manual Asset Ingestion</h2>
-              <button className="wh-modal-close" onClick={() => setManualModal(false)}>
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                <Camera size={18} className="text-amber-500" />
+                <h3>Live Camera Photo Capture</h3>
+              </div>
+              <button onClick={() => setCameraModalOpen(false)}><X size={16} /></button>
             </div>
-            <form className="wh-modal-body" onSubmit={handleManualIngest}>
-              <label className="wh-label">CARGO SKU / ITEM NUMBER</label>
-              <input type="text" placeholder="e.g. PLT-AUTO-19" value={manualForm.sku} onChange={e => setManualForm({...manualForm, sku: e.target.value})} className="wh-input" />
 
-              <div className="wh-row-3">
-                <div>
-                  <label className="wh-label">PALLET COUNT</label>
-                  <input type="text" value={manualForm.palletCount} onChange={e => setManualForm({...manualForm, palletCount: e.target.value})} className="wh-input" />
+            <div className="wh-modal-body" style={{ alignItems: 'center', textAlign: 'center' }}>
+              <div style={{
+                width: '200px', height: '140px', background: '#0F172A', borderRadius: '10px',
+                display: 'flex', alignItems: 'center', justifyCenter: 'center', flexDirection: 'column', color: '#FFF',
+                padding: '20px'
+              }}>
+                <Camera size={36} className="text-amber-400 mb-2" />
+                <span style={{ fontSize: '11px', color: '#94A3B8' }}>Camera Viewfinder Ready</span>
+              </div>
+              <p className="text-xs font-bold text-slate-700">Point camera at asset/vehicle condition or damage spot.</p>
+            </div>
+
+            <div className="wh-modal-footer">
+              <button className="wh-btn-cancel-rcv" onClick={() => setCameraModalOpen(false)}>Cancel</button>
+              <button className="wh-btn-submit-rcv" onClick={handleSimulateCameraCapture}>Snap & Attach Photo</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── EDIT ITEM MODAL ── */}
+      {editItemModalOpen && editingItem && (
+        <div className="wh-modal-overlay" onClick={() => setEditItemModalOpen(false)}>
+          <div className="wh-modal-box" onClick={e => e.stopPropagation()}>
+            <div className="wh-modal-header">
+              <h3>Edit Inbound Item: {editingItem.title}</h3>
+              <button onClick={() => setEditItemModalOpen(false)}><X size={16} /></button>
+            </div>
+
+            <form onSubmit={handleSaveEditedItem} className="wh-modal-body">
+              <div className="rcv-form-group">
+                <label>Item Description / Model</label>
+                <input 
+                  type="text" 
+                  value={editingItem.title} 
+                  onChange={e => setEditingItem({ ...editingItem, title: e.target.value })} 
+                />
+              </div>
+
+              <div className="rcv-form-grid-2">
+                <div className="rcv-form-group">
+                  <label>VIN Number</label>
+                  <input 
+                    type="text" 
+                    value={editingItem.vin} 
+                    onChange={e => setEditingItem({ ...editingItem, vin: e.target.value })} 
+                  />
                 </div>
-                <div>
-                  <label className="wh-label">TOTAL WEIGHT</label>
-                  <input type="text" placeholder="e.g. 14,200 lbs" value={manualForm.weight} onChange={e => setManualForm({...manualForm, weight: e.target.value})} className="wh-input" />
-                </div>
-                <div>
-                  <label className="wh-label">DIMENSIONS</label>
-                  <input type="text" placeholder="e.g. 1.2m x 1.2m x 1.5m" value={manualForm.dimensions} onChange={e => setManualForm({...manualForm, dimensions: e.target.value})} className="wh-input" />
+                <div className="rcv-form-group">
+                  <label>Rego / Plate</label>
+                  <input 
+                    type="text" 
+                    value={editingItem.rego} 
+                    onChange={e => setEditingItem({ ...editingItem, rego: e.target.value })} 
+                  />
                 </div>
               </div>
 
-              <label className="wh-label">BARCODE / QR TAG</label>
-              <input type="text" placeholder="e.g. BAR-9011283" value={manualForm.barcode} onChange={e => setManualForm({...manualForm, barcode: e.target.value})} className="wh-input" />
-
-              <div className="wh-row-2">
-                <div>
-                  <label className="wh-label">WAREHOUSE ZONE</label>
-                  <select value={manualForm.zone} onChange={e => setManualForm({...manualForm, zone: e.target.value})} className="wh-select">
-                    <option>Zone A (Dry)</option>
-                    <option>Zone B (Cold)</option>
-                    <option>Zone C (Hazmat)</option>
+              <div className="rcv-form-grid-2">
+                <div className="rcv-form-group">
+                  <label>Condition</label>
+                  <select 
+                    value={editingItem.condition} 
+                    onChange={e => setEditingItem({ ...editingItem, condition: e.target.value })}
+                  >
+                    <option value="Good">Good</option>
+                    <option value="Scratched">Scratched</option>
+                    <option value="Damaged">Damaged</option>
                   </select>
                 </div>
-                <div>
-                  <label className="wh-label">AISLE / BIN SPOT</label>
-                  <select value={manualForm.aisle} onChange={e => setManualForm({...manualForm, aisle: e.target.value})} className="wh-select">
-                    <option>Aisle 1 - Bin B</option>
-                    <option>Aisle 2 - Bin A</option>
-                    <option>Aisle 3 - Bin C</option>
+
+                <div className="rcv-form-group">
+                  <label>Damage Status</label>
+                  <select 
+                    value={editingItem.damage} 
+                    onChange={e => setEditingItem({ ...editingItem, damage: e.target.value })}
+                  >
+                    <option value="No Damage">No Damage</option>
+                    <option value="Minor Damage">Minor Damage</option>
+                    <option value="Major Damage">Major Damage</option>
                   </select>
                 </div>
               </div>
 
-              <div className="wh-row-2">
-                <div>
-                  <label className="wh-label">BILLING CUSTOMER</label>
-                  <input type="text" placeholder="e.g. Toyota Australia" value={manualForm.customer} onChange={e => setManualForm({...manualForm, customer: e.target.value})} className="wh-input" />
-                </div>
-                <div>
-                  <label className="wh-label">DESTINATION DELIVERY</label>
-                  <input type="text" placeholder="e.g. Brisbane Port" value={manualForm.destination} onChange={e => setManualForm({...manualForm, destination: e.target.value})} className="wh-input" />
-                </div>
+              <div className="rcv-form-group">
+                <label>Target Location</label>
+                <input 
+                  type="text" 
+                  value={editingItem.location} 
+                  onChange={e => setEditingItem({ ...editingItem, location: e.target.value })} 
+                />
               </div>
 
-              <button className="wh-btn-submit" type="submit">
-                Ingest Asset (Independent of loads)
-              </button>
+              <div className="wh-modal-footer" style={{ padding: '12px 0 0 0', background: 'transparent', borderTop: 'none' }}>
+                <button type="button" className="wh-btn-cancel-rcv" onClick={() => setEditItemModalOpen(false)}>Cancel</button>
+                <button type="submit" className="wh-btn-submit-rcv">Save Changes</button>
+              </div>
             </form>
           </div>
         </div>
       )}
+
     </div>
   );
-};
-
-export default WarehouseInbound;
+}

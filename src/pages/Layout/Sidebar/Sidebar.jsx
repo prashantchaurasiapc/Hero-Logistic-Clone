@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import './Sidebar.css';
 import {
@@ -11,7 +11,8 @@ import {
   FiInbox, FiZap, FiSend, FiClock,
   FiBell, FiFileText, FiPlus, FiCalendar,
   FiAlertCircle, FiBriefcase, FiLogIn, FiLogOut as FiLogOutIcon,
-  FiPackage, FiMaximize, FiCheckCircle, FiRefreshCw, FiCloudOff
+  FiPackage, FiMaximize, FiCheckCircle, FiRefreshCw, FiCloudOff,
+  FiSliders
 } from 'react-icons/fi';
 import { BsQrCodeScan } from 'react-icons/bs';
 
@@ -94,7 +95,7 @@ const roleConfigs = {
       { icon: <FiDollarSign />, label: 'Finance', path: '/company-admin/finance' },
       { icon: <FiFileText />, label: 'Documents', path: '/company-admin/documents' },
       { icon: <FiNavigation />, label: 'Live Tracking', path: '/company-admin/live-tracking' },
-      { icon: <FiBarChart2 />, label: 'Reports', path: '/company-admin/reports' },
+      { icon: <FiBarChart2 />, label: 'Reports & Analytics', path: '/company-admin/reports' },
       { icon: <FiMessageSquare />, label: 'Messages', path: '/company-admin/messages', badge: '8' },
     ],
     subMenus: [
@@ -134,7 +135,7 @@ const roleConfigs = {
       { icon: <FiHome />, label: 'Yard / Warehouse', path: '/dispatcher/warehouse' },
       { icon: <FiClipboard />, label: 'Workforce Availability', path: '/dispatcher/workforce-availability' },
       { icon: <FiMessageSquare />, label: 'Messages', path: '/dispatcher/messages' },
-      { icon: <FiBarChart2 />, label: 'Reports', path: '/dispatcher/reports' },
+      { icon: <FiBarChart2 />, label: 'Reports & Analytics', path: '/dispatcher/reports' },
     ],
     extraItems: [
       { icon: <FiUser />, label: 'Profile', path: '/dispatcher/profile' },
@@ -169,18 +170,37 @@ const roleConfigs = {
     basePath: '/warehouse',
     userName: 'James Patel',
     userRole: 'WAREHOUSE MANAGER',
+    hasSubMenus: true,
     menuItems: [
-      { icon: <FiGrid />, label: 'Warehouse Dashboard', path: '/warehouse/dashboard' },
-      { icon: <FiLogIn />, label: 'Receive (Inbound Intake)', path: '/warehouse/inbound' },
-      { icon: <FiSearch />, label: 'Find & Search Stock', path: '/warehouse/current-stock' },
-      { icon: <FiActivity />, label: 'Move Stock (Relocate)', path: '/warehouse/movements' },
-      { icon: <FiBox />, label: 'Stage (Holding Areas)', path: '/warehouse/holding-areas' },
-      { icon: <FiLayers />, label: 'Load Lanes Allocation', path: '/warehouse/load-lanes' },
-      { icon: <FiMapPin />, label: 'Warehouse & Yard Map', path: '/warehouse/map' },
-      { icon: <BsQrCodeScan />, label: 'QR Code & Barcode Scan', path: '/warehouse/scanning' },
-      { icon: <FiLogOutIcon />, label: 'Outbound Dispatch', path: '/warehouse/outbound' },
-      { icon: <FiTag />, label: 'Labels & Barcodes', path: '/warehouse/labels' },
-      { icon: <FiFileText />, label: 'Reports & Analytics', path: '/warehouse/reports' },
+      { icon: <FiHome />, label: 'Dashboard', path: '/warehouse/dashboard' },
+      { icon: <FiSearch />, label: 'Find Stock', path: '/warehouse/find-stock' },
+      { icon: <FiLogIn />, label: 'Receive (Inbound)', path: '/warehouse/receive-inbound' },
+      { icon: <FiRefreshCw />, label: 'Move / Transfer', path: '/warehouse/move-transfer' },
+      { icon: <FiTruck />, label: 'Load Lanes', path: '/warehouse/load-lanes' },
+      { icon: <FiTruck />, label: 'Dispatch Ready', path: '/warehouse/dispatch-ready' },
+      { icon: <FiClock />, label: 'Stage (Holding Areas)', path: '/warehouse/holding-areas' },
+      { icon: <FiClock />, label: 'Movement History', path: '/warehouse/movement-history' },
+      { icon: <FiMessageSquare />, label: 'Messages', path: '/warehouse/messages' },
+      { icon: <FiClock />, label: 'My Shift', path: '/warehouse/my-shift' },
+      { icon: <FiMapPin />, label: 'Warehouse & Yard Map', path: '/warehouse/warehouse-yard-map' },
+      { icon: <FiBarChart2 />, label: 'Reports & Analytics', path: '/warehouse/reports' },
+    ],
+    subMenus: [
+      {
+        key: 'tools',
+        icon: <FiSliders />,
+        label: 'Tools',
+        items: [
+          { label: 'Labels & Barcodes', path: '/warehouse/tools/labels' },
+          { label: 'Print Documents', path: '/warehouse/tools/print-documents' },
+          { label: 'QR Scanner', path: '/warehouse/tools/qr-scanner' },
+          { label: 'Import / Export', path: '/warehouse/tools/import-export' },
+          { label: 'Batch Printing', path: '/warehouse/tools/batch-printing' },
+        ],
+      },
+    ],
+    extraItems: [
+      { icon: <FiUser />, label: 'Profile', path: '/warehouse/profile' },
     ],
   },
 
@@ -205,6 +225,7 @@ const roleConfigs = {
       { icon: <FiMapPin />, label: 'Yard & Warehouse Map', path: '/yard/map' },
       { icon: <FiLogOutIcon />, label: 'Outbound Dispatch', path: '/yard/outbound' },
       { icon: <FiTag />, label: 'Labels & Barcodes', path: '/yard/labels' },
+      { icon: <FiBarChart2 />, label: 'Reports & Analytics', path: '/yard/reports' },
       { icon: <FiAlertTriangle />, label: 'Report Issue', path: '/yard/report-issue' },
     ],
   },
@@ -254,8 +275,57 @@ const roleConfigs = {
    ============================================================ */
 const Sidebar = ({ role, isOpen, onClose }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const config = roleConfigs[role];
+
+  // Helper to check if path matches current location robustly
+  const isPathActive = (itemPath) => {
+    if (!itemPath || !config) return false;
+    const current = location.pathname.toLowerCase().replace(/\/$/, '');
+    const target = itemPath.toLowerCase().replace(/\/$/, '');
+
+    if (current === target) return true;
+
+    // Check all dashboard alias routes for dispatcher, company-admin, warehouse, etc.
+    const isDashboardTarget = 
+      target.endsWith('/dashboard') || 
+      target.endsWith('/command-centre') || 
+      target.endsWith('/command-center');
+
+    const isCurrentDashboardAlias = 
+      current === config.basePath.toLowerCase() ||
+      current.endsWith('/dashboard') ||
+      current.endsWith('/dispatch-dashboard') ||
+      current.endsWith('/command-centre') ||
+      current.endsWith('/command-center');
+
+    if (isDashboardTarget && isCurrentDashboardAlias) {
+      return true;
+    }
+
+    // Match sub-routes (e.g. /warehouse/tools/labels matching /warehouse/tools)
+    if (target !== config.basePath.toLowerCase() && current.startsWith(target + '/')) {
+      return true;
+    }
+
+    return false;
+  };
+
   const [openSubMenus, setOpenSubMenus] = useState({});
+
+  // Auto-expand submenus when a child link is active
+  useEffect(() => {
+    if (config?.subMenus) {
+      const updated = { ...openSubMenus };
+      config.subMenus.forEach(sub => {
+        const hasActiveChild = sub.items.some(item => isPathActive(item.path));
+        if (hasActiveChild) {
+          updated[sub.key] = true;
+        }
+      });
+      setOpenSubMenus(updated);
+    }
+  }, [location.pathname, role]);
 
   const handleNavClick = () => {
     if (onClose) onClose();
@@ -330,62 +400,79 @@ const Sidebar = ({ role, isOpen, onClose }) => {
 
       <nav className="sidebar-nav">
         <ul>
-          {config.menuItems.map((item, index) => (
-            <li key={index}>
-              <NavLink
-                to={item.path}
-                className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-                onClick={handleNavClick}
-              >
-                <span className="nav-icon">{item.icon}</span>
-                <span className="nav-label">{item.label}</span>
-                {item.badge && <span className={item.badge === 'AI' ? 'menu-badge-ai' : 'menu-badge'}>{item.badge}</span>}
-              </NavLink>
-            </li>
-          ))}
+          {config.menuItems.map((item, index) => {
+            const active = isPathActive(item.path);
+            return (
+              <li key={index}>
+                <NavLink
+                  to={item.path}
+                  className={`nav-item ${active ? 'active' : ''}`}
+                  onClick={handleNavClick}
+                >
+                  <span className="nav-icon">{item.icon}</span>
+                  <span className="nav-label">{item.label}</span>
+                  {item.badge && <span className={item.badge === 'AI' ? 'menu-badge-ai' : 'menu-badge'}>{item.badge}</span>}
+                </NavLink>
+              </li>
+            );
+          })}
 
-          {/* Submenus (Company Admin) */}
-          {config.subMenus?.map((sub) => (
-            <li key={sub.key}>
-              <div
-                className={`nav-item submenu-toggle ${openSubMenus[sub.key] ? 'open' : ''}`}
-                onClick={() => toggleSubMenu(sub.key)}
-              >
-                <span className="nav-icon">{sub.icon}</span>
-                <span className="nav-label">{sub.label}</span>
-                {openSubMenus[sub.key] ? <FiChevronUp className="chevron" /> : <FiChevronDown className="chevron" />}
-              </div>
-              {openSubMenus[sub.key] && (
-                <ul className="submenu">
-                  {sub.items.map((subItem, i) => (
-                    <li key={i}>
-                      <NavLink
-                        to={subItem.path}
-                        className={({ isActive }) => `submenu-item ${isActive ? 'active' : ''}`}
-                        onClick={handleNavClick}
-                      >
-                        {subItem.label}
-                      </NavLink>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </li>
-          ))}
+          {/* Submenus (Company Admin / Warehouse Tools) */}
+          {config.subMenus?.map((sub) => {
+            const hasActiveChild = sub.items.some(item => isPathActive(item.path));
+            return (
+              <React.Fragment key={sub.key}>
+                {sub.header && (
+                  <div className="sidebar-section-header">{sub.header}</div>
+                )}
+                <li>
+                  <div
+                    className={`nav-item submenu-toggle ${openSubMenus[sub.key] ? 'open' : ''} ${hasActiveChild ? 'parent-active' : ''}`}
+                    onClick={() => toggleSubMenu(sub.key)}
+                  >
+                    <span className="nav-icon">{sub.icon}</span>
+                    <span className="nav-label">{sub.label}</span>
+                    {openSubMenus[sub.key] ? <FiChevronUp className="chevron" /> : <FiChevronDown className="chevron" />}
+                  </div>
+                  {openSubMenus[sub.key] && (
+                    <ul className="submenu">
+                      {sub.items.map((subItem, i) => {
+                        const subActive = isPathActive(subItem.path);
+                        return (
+                          <li key={i}>
+                            <NavLink
+                              to={subItem.path}
+                              className={`submenu-item ${subActive ? 'active' : ''}`}
+                              onClick={handleNavClick}
+                            >
+                              {subItem.label}
+                            </NavLink>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </li>
+              </React.Fragment>
+            );
+          })}
 
           {/* Extra items after submenus (Company Admin) */}
-          {config.extraItems?.map((item, index) => (
-            <li key={`extra-${index}`}>
-              <NavLink
-                to={item.path}
-                className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-                onClick={handleNavClick}
-              >
-                <span className="nav-icon">{item.icon}</span>
-                <span className="nav-label">{item.label}</span>
-              </NavLink>
-            </li>
-          ))}
+          {config.extraItems?.map((item, index) => {
+            const extraActive = isPathActive(item.path);
+            return (
+              <li key={`extra-${index}`}>
+                <NavLink
+                  to={item.path}
+                  className={`nav-item ${extraActive ? 'active' : ''}`}
+                  onClick={handleNavClick}
+                >
+                  <span className="nav-icon">{item.icon}</span>
+                  <span className="nav-label">{item.label}</span>
+                </NavLink>
+              </li>
+            );
+          })}
         </ul>
       </nav>
 

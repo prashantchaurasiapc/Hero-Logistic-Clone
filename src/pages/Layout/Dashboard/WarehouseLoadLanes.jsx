@@ -1,1085 +1,1178 @@
 import React, { useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { Settings, Plus, X, ArrowRight, Check, Download, Search } from 'lucide-react';
-import './WarehouseDashboard.css';
+import { useLocation, useNavigate } from 'react-router-dom';
+import {
+  Search, Filter, Plus, ArrowRight, MoreVertical,
+  CheckCircle2, Clock, AlertTriangle, Box, Truck,
+  MapPin, Printer, RefreshCw, X, ChevronLeft, ChevronRight,
+  Layers, SlidersHorizontal, ArrowUpDown
+} from 'lucide-react';
 
-const WarehouseLoadLanes = () => {
+const initialLanes = [
+  {
+    id: '1',
+    name: 'Lane 1',
+    area: 'Main Yard',
+    status: 'Ready to Dispatch',
+    loadsCount: 2,
+    loadRef: 'LD-3985',
+    subRef: 'ABC123456',
+    vehicle: 'TRK-101 / TRL-309',
+    vehicleType: 'Car Carrier',
+    driver: 'John Smith',
+    estDispatch: '21/07/2026 11:00 AM'
+  },
+  {
+    id: '2',
+    name: 'Lane 2',
+    area: 'Main Yard',
+    status: 'In Progress',
+    loadsCount: 2,
+    loadRef: 'LD-3986',
+    subRef: 'DEF456789',
+    vehicle: 'TRK-102 / TRL-310',
+    vehicleType: 'Car Carrier',
+    driver: 'Mark Davis',
+    estDispatch: '21/07/2026 01:30 PM'
+  },
+  {
+    id: '3',
+    name: 'Lane 3',
+    area: 'Main Yard',
+    status: 'In Progress',
+    loadsCount: 1,
+    loadRef: 'LD-3984',
+    subRef: 'GHI789012',
+    vehicle: 'TRK-103 / TRL-311',
+    vehicleType: 'Car Carrier',
+    driver: 'Peter Brown',
+    estDispatch: '21/07/2026 02:00 PM'
+  },
+  {
+    id: '4',
+    name: 'Lane 4',
+    area: 'Overflow Yard',
+    status: 'Ready to Dispatch',
+    loadsCount: 1,
+    loadRef: 'LD-3987',
+    subRef: 'JKL012345',
+    vehicle: 'TRK-104 / TRL-312',
+    vehicleType: 'Car Carrier',
+    driver: 'Michael Lee',
+    estDispatch: '22/07/2026 08:30 AM'
+  },
+  {
+    id: '5',
+    name: 'Lane 5',
+    area: 'DG Staging Area',
+    status: 'Hold',
+    loadsCount: 1,
+    loadRef: 'LD-3990',
+    subRef: 'UN1203',
+    vehicle: 'TRK-105 / TRL-313',
+    vehicleType: 'General Freight',
+    driver: '-',
+    estDispatch: '-'
+  },
+  {
+    id: '6',
+    name: 'Lane 6',
+    area: 'Container Bay',
+    status: 'In Progress',
+    loadsCount: 2,
+    loadRef: 'LD-3991',
+    subRef: 'CONT-76890',
+    vehicle: 'TRK-201 / TRL-408',
+    vehicleType: 'Container',
+    driver: 'Ravi Patel',
+    estDispatch: '22/07/2026 10:00 AM'
+  },
+  {
+    id: '7',
+    name: 'Lane 7',
+    area: 'Machinery Bay',
+    status: 'Empty',
+    loadsCount: 0,
+    loadRef: '-',
+    subRef: '-',
+    vehicle: '-',
+    vehicleType: '',
+    driver: '-',
+    estDispatch: '-'
+  },
+  {
+    id: '8',
+    name: 'Lane 8',
+    area: 'Returns Lane',
+    status: 'Empty',
+    loadsCount: 0,
+    loadRef: '-',
+    subRef: '-',
+    vehicle: '-',
+    vehicleType: '',
+    driver: '-',
+    estDispatch: '-'
+  }
+];
+
+export default function WarehouseLoadLanes() {
+  const navigate = useNavigate();
   const location = useLocation();
   const isYard = location.pathname.startsWith('/yard');
-  // Density states ('compact' | 'default' | 'relaxed')
-  const [leftDensity, setLeftDensity] = useState('default');
-  const [rightDensity, setRightDensity] = useState('default');
 
-  // Search states for both tables
-  const [leftSearch, setLeftSearch] = useState('');
-  const [rightSearch, setRightSearch] = useState('');
-
-  // Column visibility states
-  const [leftVisibleColumns, setLeftVisibleColumns] = useState({
-    loadLane: true,
-    assignedAssets: true,
-    laneStatus: true
-  });
-  const [rightVisibleColumns, setRightVisibleColumns] = useState({
-    assetCode: true,
-    assignedLane: false,
-    status: false,
-    actions: true
-  });
-
-  // Dropdown menu states
-  const [leftColumnsOpen, setLeftColumnsOpen] = useState(false);
-  const [rightColumnsOpen, setRightColumnsOpen] = useState(false);
-
-  // Selection states
-  const [leftSelectedRows, setLeftSelectedRows] = useState([]);
-  const [rightSelectedRows, setRightSelectedRows] = useState([]);
-
-  // Modals state
-  const [addLaneModalOpen, setAddLaneModalOpen] = useState(false);
-  const [assignAssetModalOpen, setAssignAssetModalOpen] = useState(false);
+  const [lanes, setLanes] = useState(initialLanes);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
   const [newLaneName, setNewLaneName] = useState('');
-  const [selectedAssetId, setSelectedAssetId] = useState('');
-  const [targetLane, setTargetLane] = useState('Lane A1');
+  const [newLaneArea, setNewLaneArea] = useState('Main Yard');
+  const [moveModalOpen, setMoveModalOpen] = useState(false);
+  const [selectedLaneToMove, setSelectedLaneToMove] = useState('Lane 1');
+  const [toast, setToast] = useState(null);
 
-  // Toast notification state
-  const [toast, setToast] = useState({ open: false, message: '' });
+  const showToast = (msg, type = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
+  };
 
-  // Data states
-  const [loadLanes, setLoadLanes] = useState([
-    { id: 'LL-1', name: 'Lane A1', status: 'LOADING' },
-    { id: 'LL-2', name: 'Lane A2', status: 'LOADING' },
-    { id: 'LL-3', name: 'Lane C3', status: 'LOADING' }
-  ]);
+  const filteredLanes = lanes.filter(lane => {
+    const matchesSearch = !searchQuery ||
+      lane.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lane.area.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lane.loadRef.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lane.driver.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lane.vehicle.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesStatus = statusFilter === 'All' || lane.status === statusFilter;
 
-  const [queueingAssets, setQueueingAssets] = useState([
-    { id: 'QA-1', code: 'VIN-7YV1HP82A81920', lane: 'Lane A1', status: 'QUEUEING' },
-    { id: 'QA-2', code: 'VIN-3YV1HP52X81254', lane: 'Lane A2', status: 'QUEUEING' },
-    { id: 'QA-3', code: 'VIN-8ZV9HK21W92110', lane: 'Lane C3', status: 'QUEUEING' }
-  ]);
-
-  const filteredLoadLanes = loadLanes.filter(l => {
-    const q = leftSearch.toLowerCase().trim();
-    return !q || l.name.toLowerCase().includes(q) || l.status.toLowerCase().includes(q);
+    return matchesSearch && matchesStatus;
   });
 
-  const filteredAssets = queueingAssets.filter(a => {
-    const q = rightSearch.toLowerCase().trim();
-    return !q || a.code.toLowerCase().includes(q) || (a.lane && a.lane.toLowerCase().includes(q));
-  });
-
-  // Helpers to get density padding
-  const getCellPadding = (density) => {
-    if (density === 'compact') return '10px 16px';
-    if (density === 'default') return '14px 20px';
-    return '20px 24px'; // relaxed
-  };
-
-  // Toast trigger
-  const showToast = (message) => {
-    setToast({ open: true, message });
-    setTimeout(() => {
-      setToast(prev => prev.message === message ? { open: false, message: '' } : prev);
-    }, 4000);
-  };
-
-  // Selection Handlers - Left Table
-  const handleLeftRowSelect = (name) => {
-    if (leftSelectedRows.includes(name)) {
-      setLeftSelectedRows(leftSelectedRows.filter(x => x !== name));
-    } else {
-      setLeftSelectedRows([...leftSelectedRows, name]);
-    }
-  };
-
-  const handleLeftSelectAll = () => {
-    if (leftSelectedRows.length === loadLanes.length) {
-      setLeftSelectedRows([]);
-    } else {
-      setLeftSelectedRows(loadLanes.map(l => l.name));
-    }
-  };
-
-  // Selection Handlers - Right Table
-  const handleRightRowSelect = (id) => {
-    if (rightSelectedRows.includes(id)) {
-      setRightSelectedRows(rightSelectedRows.filter(x => x !== id));
-    } else {
-      setRightSelectedRows([...rightSelectedRows, id]);
-    }
-  };
-
-  const handleRightSelectAll = () => {
-    if (rightSelectedRows.length === queueingAssets.length) {
-      setRightSelectedRows([]);
-    } else {
-      setRightSelectedRows(queueingAssets.map(a => a.id));
-    }
-  };
-
-  // Action: Add Load Lane Spot
-  const handleCreateLoadLane = (e) => {
+  const handleCreateLane = (e) => {
     e.preventDefault();
     if (!newLaneName.trim()) return;
-
-    const nameExists = loadLanes.some(
-      l => l.name.toLowerCase() === newLaneName.trim().toLowerCase()
-    );
-
-    if (nameExists) {
-      alert('A load lane with this name already exists.');
-      return;
-    }
-
     const newLane = {
-      id: `LL-${Date.now()}`,
-      name: newLaneName.trim(),
-      status: 'LOADING'
+      id: String(Date.now()),
+      name: newLaneName,
+      area: newLaneArea,
+      status: 'Empty',
+      loadsCount: 0,
+      loadRef: '-',
+      subRef: '-',
+      vehicle: '-',
+      vehicleType: '',
+      driver: '-',
+      estDispatch: '-'
     };
-
-    setLoadLanes([...loadLanes, newLane]);
+    setLanes([...lanes, newLane]);
     setNewLaneName('');
-    setAddLaneModalOpen(false);
-    showToast(`Load lane "${newLane.name}" created successfully.`);
+    setCreateModalOpen(false);
+    showToast(`✓ New Load Lane "${newLane.name}" created successfully!`);
   };
 
-  // Action: Assign Asset to Lane
-  const handleAssignClick = (assetId) => {
-    setSelectedAssetId(assetId);
-    const currentAsset = queueingAssets.find(a => a.id === assetId);
-    if (currentAsset && currentAsset.lane) {
-      setTargetLane(currentAsset.lane);
-    } else {
-      setTargetLane(loadLanes[0]?.name || '');
-    }
-    setAssignAssetModalOpen(true);
-  };
-
-  const handleConfirmAssign = (e) => {
+  const handleMoveItems = (e) => {
     e.preventDefault();
-    const asset = queueingAssets.find(a => a.id === selectedAssetId);
-    setQueueingAssets(queueingAssets.map(a => {
-      if (a.id === selectedAssetId) {
-        return { ...a, lane: targetLane };
-      }
-      return a;
-    }));
-    setAssignAssetModalOpen(false);
-    showToast(`Asset ${asset?.code} assigned to ${targetLane}.`);
+    setMoveModalOpen(false);
+    showToast(`✓ Items reassigned to ${selectedLaneToMove} successfully!`);
   };
 
-  // Action: Remove Asset from Lane
-  const handleRemoveFromLane = (assetId) => {
-    const asset = queueingAssets.find(a => a.id === assetId);
-    setQueueingAssets(queueingAssets.map(a => {
-      if (a.id === assetId) {
-        return { ...a, lane: '' };
-      }
-      return a;
-    }));
-    showToast(`Asset ${asset?.code} removed from load lane.`);
-  };
-
-  // Calculate dynamic asset unit count per lane
-  const getAssignedAssetCount = (laneName) => {
-    return queueingAssets.filter(a => a.lane === laneName).length;
-  };
-
-  // CSV Export Left selected lanes
-  const handleExportSelectedLanes = () => {
-    const selected = loadLanes.filter(l => leftSelectedRows.includes(l.name));
-    const headers = ['Load Lane', 'Assigned Assets', 'Lane Status'];
-    const rows = selected.map(l => [
-      l.name,
-      `${getAssignedAssetCount(l.name)} Units`,
-      l.status
-    ]);
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "selected_load_lanes.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const getStatusBadgeClass = (status) => {
+    switch (status) {
+      case 'Ready to Dispatch':
+        return 'badge-ready';
+      case 'In Progress':
+        return 'badge-progress';
+      case 'Hold':
+        return 'badge-hold';
+      case 'Empty':
+        return 'badge-empty';
+      default:
+        return 'badge-empty';
+    }
   };
 
   return (
-    <div className="warehouse-dashboard" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Header section matches WarehouseMap perfectly */}
-      <div className="warehouse-header" style={{ marginBottom: '16px' }}>
-        <div className="warehouse-header-titles" style={{ textAlign: 'left' }}>
-          <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#0f172a', margin: 0 }}>{isYard ? 'Yard Load Lanes Allocation' : 'Load Lanes'}</h1>
-        </div>
-      </div>
+    <div className="wh-load-lanes-container">
+      <style>{`
+        .wh-load-lanes-container {
+          font-family: 'Inter', system-ui, -apple-system, sans-serif;
+          background: #F8FAFC;
+          min-height: 100vh;
+          color: #0F172A;
+          padding: 20px 24px;
+          box-sizing: border-box;
+        }
 
-      {/* Title & Description & Button header bar */}
-      <div style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: '16px',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        backgroundColor: '#ffffff',
-        padding: '20px 24px',
-        borderRadius: '16px',
-        border: '1px solid #f1f5f9',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
-        marginBottom: '24px',
-        textAlign: 'left'
-      }}>
+        /* ── HEADER ── */
+        .wh-ll-header-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 16px;
+          flex-wrap: wrap;
+          gap: 12px;
+        }
+        .wh-ll-title {
+          font-size: 18px;
+          font-weight: 900;
+          color: #0F172A;
+          margin: 0;
+          text-transform: uppercase;
+          letter-spacing: -0.3px;
+        }
+        .wh-ll-sub {
+          font-size: 12px;
+          color: #64748B;
+          margin-top: 2px;
+        }
+        .wh-btn-create-lane {
+          height: 36px;
+          padding: 0 16px;
+          border-radius: 8px;
+          border: none;
+          background: #FFD400;
+          font-size: 12px;
+          font-weight: 800;
+          color: #0F172A;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          box-shadow: 0 2px 6px rgba(255,212,0,0.3);
+          transition: background 0.15s;
+        }
+        .wh-btn-create-lane:hover { background: #E6C000; }
+
+        /* ── STAT CARDS 4-GRID ── */
+        .wh-ll-stats-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 12px;
+          margin-bottom: 16px;
+        }
+        .wh-ll-stat-card {
+          background: #FFFFFF;
+          border: 1px solid #E2E8F0;
+          border-radius: 12px;
+          padding: 14px 16px;
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }
+        .wh-stat-icon-box {
+          width: 42px;
+          height: 42px;
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+        .wh-stat-icon-box.purple { background: #F3E8FF; color: #7E22CE; }
+        .wh-stat-icon-box.amber { background: #FEF3C7; color: #D97706; }
+        .wh-stat-icon-box.blue { background: #DBEAFE; color: #2563EB; }
+        .wh-stat-icon-box.red { background: #FEE2E2; color: #DC2626; }
+
+        .wh-stat-num {
+          font-size: 22px;
+          font-weight: 900;
+          color: #0F172A;
+          line-height: 1;
+        }
+        .wh-stat-title {
+          font-size: 10px;
+          font-weight: 800;
+          color: #64748B;
+          text-transform: uppercase;
+          letter-spacing: 0.4px;
+          margin-bottom: 3px;
+        }
+        .wh-stat-sub {
+          font-size: 10.5px;
+          color: #94A3B8;
+        }
+
+        /* ── MASTER LAYOUT (LEFT + RIGHT) ── */
+        .wh-ll-master-grid {
+          display: flex;
+          gap: 14px;
+          align-items: flex-start;
+        }
+        .wh-ll-left-col {
+          flex: 1;
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+        .wh-ll-right-col {
+          width: 250px;
+          flex-shrink: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        /* ── MAIN CARD ── */
+        .wh-ll-main-card {
+          background: #FFFFFF;
+          border: 1px solid #E2E8F0;
+          border-radius: 12px;
+          padding: 16px;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        }
+
+        /* ── CONTROLS BAR ── */
+        .wh-ll-controls-bar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 14px;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+        .wh-ll-search-wrap {
+          position: relative;
+          flex: 1;
+          min-width: 240px;
+        }
+        .wh-ll-search-inp {
+          width: 100%;
+          height: 34px;
+          padding: 0 12px 0 34px;
+          border-radius: 8px;
+          border: 1px solid #CBD5E1;
+          background: #FFFFFF;
+          font-size: 11.5px;
+          font-weight: 600;
+          color: #0F172A;
+          outline: none;
+          box-sizing: border-box;
+        }
+        .wh-ll-search-inp:focus { border-color: #FFD400; }
+        .wh-ll-search-icon {
+          position: absolute;
+          left: 10px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #94A3B8;
+        }
+
+        .wh-ll-filter-group {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .wh-btn-filter {
+          height: 34px;
+          padding: 0 12px;
+          border-radius: 8px;
+          border: 1px solid #CBD5E1;
+          background: #FFFFFF;
+          font-size: 11.5px;
+          font-weight: 700;
+          color: #475569;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .wh-btn-filter:hover { background: #F8FAFC; }
+
+        .wh-group-by-select {
+          height: 34px;
+          padding: 0 8px;
+          border-radius: 8px;
+          border: 1px solid #CBD5E1;
+          background: #FFFFFF;
+          font-size: 11.5px;
+          font-weight: 600;
+          color: #0F172A;
+          outline: none;
+        }
+
+        /* ── TABLE ── */
+        .wh-ll-table-wrap {
+          border: 1px solid #E2E8F0;
+          border-radius: 8px;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+        .wh-ll-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 11.5px;
+          min-width: 800px;
+        }
+        .wh-ll-table th {
+          padding: 10px 12px;
+          font-size: 9px;
+          font-weight: 800;
+          color: #64748B;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          background: #F8FAFC;
+          border-bottom: 1px solid #E2E8F0;
+          text-align: left;
+          white-space: nowrap;
+        }
+        .wh-ll-table td {
+          padding: 10px 12px;
+          border-bottom: 1px solid #F1F5F9;
+          vertical-align: middle;
+          white-space: nowrap;
+        }
+        .wh-ll-table tr:hover { background: #F8FAFC; }
+
+        .lane-name-text {
+          font-size: 12px;
+          font-weight: 800;
+          color: #0F172A;
+        }
+        .lane-area-text {
+          font-size: 9.5px;
+          color: #64748B;
+        }
+
+        /* BADGES */
+        .badge-ready {
+          background: #DCFCE7;
+          color: #15803D;
+          padding: 3px 8px;
+          border-radius: 6px;
+          font-size: 9.5px;
+          font-weight: 800;
+          white-space: nowrap;
+          display: inline-block;
+        }
+        .badge-progress {
+          background: #DBEAFE;
+          color: #1D4ED8;
+          padding: 3px 8px;
+          border-radius: 6px;
+          font-size: 9.5px;
+          font-weight: 800;
+          white-space: nowrap;
+          display: inline-block;
+        }
+        .badge-hold {
+          background: #FEF3C7;
+          color: #B45309;
+          padding: 3px 8px;
+          border-radius: 6px;
+          font-size: 9.5px;
+          font-weight: 800;
+          white-space: nowrap;
+          display: inline-block;
+        }
+        .badge-empty {
+          background: #F1F5F9;
+          color: #64748B;
+          padding: 3px 8px;
+          border-radius: 6px;
+          font-size: 9.5px;
+          font-weight: 800;
+          white-space: nowrap;
+          display: inline-block;
+        }
+
+        .btn-view-lane {
+          height: 26px;
+          padding: 0 10px;
+          border-radius: 6px;
+          border: 1px solid #CBD5E1;
+          background: #FFFFFF;
+          font-size: 10.5px;
+          font-weight: 700;
+          color: #0F172A;
+          cursor: pointer;
+        }
+        .btn-view-lane:hover { background: #F1F5F9; }
+
+        .btn-more-lane {
+          background: transparent;
+          border: none;
+          color: #94A3B8;
+          cursor: pointer;
+          padding: 4px;
+        }
+        .btn-more-lane:hover { color: #0F172A; }
+
+        /* PAGINATION FOOTER */
+        .wh-ll-table-footer {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-top: 12px;
+          padding-top: 10px;
+          font-size: 11px;
+          color: #64748B;
+        }
+        .wh-ll-pager {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .wh-pager-btn {
+          width: 26px;
+          height: 26px;
+          border-radius: 6px;
+          border: 1px solid #CBD5E1;
+          background: #FFFFFF;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          color: #0F172A;
+        }
+        .wh-pager-btn.active {
+          background: #FFD400;
+          border-color: #FFD400;
+          font-weight: 800;
+        }
+
+        /* ── RIGHT SIDEBAR CARDS ── */
+        .wh-side-card {
+          background: #FFFFFF;
+          border: 1px solid #E2E8F0;
+          border-radius: 12px;
+          padding: 14px;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }
+        .wh-side-title {
+          font-size: 10px;
+          font-weight: 900;
+          color: #0F172A;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin-bottom: 10px;
+          padding-bottom: 4px;
+          border-bottom: 1px solid #F1F5F9;
+        }
+
+        /* DONUT CHART SIMULATION */
+        .wh-donut-wrap {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 10px;
+        }
+        .wh-donut-chart {
+          position: relative;
+          width: 70px;
+          height: 70px;
+          flex-shrink: 0;
+        }
+        .wh-donut-center {
+          position: absolute;
+          inset: 12px;
+          background: #FFFFFF;
+          border-radius: 50%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .wh-legend-list {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          font-size: 10px;
+        }
+        .wh-legend-item {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .wh-legend-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+        }
+
+        .wh-side-link {
+          font-size: 10.5px;
+          font-weight: 700;
+          color: #2563EB;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          margin-top: 6px;
+        }
+
+        /* UPCOMING DISPATCHES */
+        .wh-disp-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 6px 0;
+          border-bottom: 1px solid #F1F5F9;
+          font-size: 10.5px;
+        }
+        .wh-disp-row:last-child { border-bottom: none; }
+        .wh-disp-load { font-weight: 800; color: #0F172A; }
+        .wh-disp-lane { color: #64748B; font-size: 9.5px; }
+        .wh-disp-time { color: #2563EB; font-weight: 700; font-size: 9.5px; }
+
+        /* QUICK ACTIONS */
+        .wh-qa-btn {
+          width: 100%;
+          padding: 7px 10px;
+          border-radius: 6px;
+          border: 1px solid #E2E8F0;
+          background: #F8FAFC;
+          font-size: 11px;
+          font-weight: 700;
+          color: #0F172A;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 6px;
+          transition: background 0.15s;
+        }
+        .wh-qa-btn:hover { background: #FFFFFF; border-color: #FFD400; }
+
+        /* HELP */
+        .wh-help-text {
+          font-size: 10px;
+          color: #64748B;
+          line-height: 1.4;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        /* MODAL */
+        .wh-modal-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(15, 23, 42, 0.5);
+          backdrop-filter: blur(4px);
+          z-index: 99999;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 16px;
+        }
+        .wh-modal-box {
+          background: #FFFFFF;
+          border-radius: 12px;
+          width: 100%;
+          max-width: 440px;
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+          overflow: hidden;
+        }
+        .wh-modal-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 14px 18px;
+          border-bottom: 1px solid #E2E8F0;
+        }
+        .wh-modal-body { padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+        .wh-modal-footer {
+          display: flex;
+          justify-content: flex-end;
+          gap: 10px;
+          padding: 12px 18px;
+          background: #F8FAFC;
+          border-top: 1px solid #E2E8F0;
+        }
+
+        .wh-ll-table-wrap::-webkit-scrollbar {
+          height: 6px;
+        }
+        .wh-ll-table-wrap::-webkit-scrollbar-track {
+          background: #F1F5F9;
+        }
+        .wh-ll-table-wrap::-webkit-scrollbar-thumb {
+          background: #CBD5E1;
+          border-radius: 4px;
+        }
+
+        @media (max-width: 1024px) {
+          .wh-ll-stats-grid { grid-template-columns: repeat(2, 1fr); }
+          .wh-ll-master-grid { flex-direction: column; width: 100%; }
+          .wh-ll-right-col { width: 100%; }
+        }
+        @media (max-width: 640px) {
+          .wh-load-lanes-container { padding: 10px; width: 100%; max-width: 100vw; box-sizing: border-box; }
+          .wh-ll-master-grid { width: 100%; max-width: 100%; box-sizing: border-box; }
+          .wh-ll-left-col { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; }
+          .wh-ll-main-card { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; overflow: hidden; }
+          .wh-ll-stats-grid { grid-template-columns: 1fr; }
+          .wh-ll-header-row { flex-direction: column; align-items: flex-start; gap: 10px; }
+          .wh-btn-create-lane { width: 100%; height: 38px; justify-content: center; }
+          .wh-ll-controls-bar { flex-direction: column; align-items: stretch; gap: 10px; }
+          .wh-ll-search-wrap { width: 100%; min-width: 0; }
+          .wh-ll-filter-group { width: 100%; justify-content: space-between; }
+          .wh-ll-table-wrap { width: 100%; display: block; overflow-x: auto !important; -webkit-overflow-scrolling: touch; box-sizing: border-box; }
+          .wh-ll-table { min-width: 800px; }
+          .wh-ll-table th, .wh-ll-table td { white-space: nowrap; }
+        }
+      `}</style>
+
+      {/* PAGE HEADER */}
+      <div className="wh-ll-header-row">
         <div>
-          <h2 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: '0 0 4px 0' }}>{isYard ? 'Yard Load Lane Management' : 'Load Lane Management'}</h2>
-          <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>{isYard ? 'Manage outbound yard dispatch loading queues and trailer spotting.' : 'Manage outbound dispatch loading queues and lane spotting.'}</p>
+          <h1 className="wh-ll-title">LOAD LANES (STAGING)</h1>
+          <p className="wh-ll-sub">Manage staging areas and monitor loads/items waiting for dispatch.</p>
         </div>
-        <button
-          onClick={() => setAddLaneModalOpen(true)}
-          className="btn btn-white-orange-wh"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '10px 18px',
-            fontSize: '12px',
-            fontWeight: '700',
-            borderRadius: '12px',
-            cursor: 'pointer',
-            whiteSpace: 'nowrap'
-          }}
-        >
-          <Plus className="w-4 h-4" />
-          <span>Add Load Lane</span>
+        <button className="wh-btn-create-lane" onClick={() => setCreateModalOpen(true)}>
+          <Plus size={14} />
+          <span>Create Load Lane</span>
         </button>
       </div>
 
-      {/* 2-Panel Layout Grid */}
-      <div className="responsive-two-panel-grid">
-        
-        {/* Left Panel: ACTIVE LOAD LANES */}
-        <div style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '24px',
-          border: '1px solid #f1f5f9',
-          padding: '24px',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
-          display: 'flex',
-          flexDirection: 'column',
-          height: '100%',
-          textAlign: 'left'
-        }}>
-          {/* Header controls for Left Table */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', minHeight: '38px' }}>
-            {leftSelectedRows.length > 0 ? (
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                backgroundColor: '#fef3c7',
-                border: '1px solid #fde68a',
-                borderRadius: '12px',
-                padding: '6px 14px'
-              }}>
-                <span style={{ fontSize: '11px', fontWeight: '800', color: '#b45309', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  {leftSelectedRows.length} SELECTED
-                </span>
-                <button 
-                  onClick={handleExportSelectedLanes}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #fde68a',
-                    borderRadius: '8px',
-                    padding: '4px 10px',
-                    fontSize: '11px',
-                    fontWeight: '700',
-                    color: '#b45309',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>CSV Export</span>
-                </button>
-              </div>
-            ) : (
-              <h2 style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
-                Active Load Lanes
-              </h2>
-            )}
-
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center', marginLeft: 'auto', flex: 1, justifyContent: 'flex-end' }}>
-              {/* Quick Search */}
-              <div style={{ position: 'relative', minWidth: '180px', flex: '1 1 180px' }}>
-                <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                <input 
-                  type="text"
-                  placeholder="Search lanes..."
-                  value={leftSearch}
-                  onChange={(e) => setLeftSearch(e.target.value)}
-                  style={{ width: '100%', padding: '6px 12px 6px 30px', fontSize: '11px', fontWeight: '700', borderRadius: '8px', border: '1px solid #e2e8f0', outline: 'none' }}
-                />
-              </div>
-
-              {/* Density control */}
-              <div className="wh-segmented-control">
-                {['COMPACT', 'DEFAULT', 'RELAXED'].map((mode) => {
-                  const isActive = leftDensity === mode.toLowerCase();
-                  return (
-                    <button
-                      key={mode}
-                      onClick={() => setLeftDensity(mode.toLowerCase())}
-                      className="segmented-btn"
-                      style={{
-                        padding: '5px 12px',
-                        fontSize: '9px',
-                        borderRadius: '6px',
-                        backgroundColor: isActive ? '#ffd400' : 'transparent',
-                        color: isActive ? '#0f172a' : '#64748b',
-                        border: isActive ? '1px solid #000' : '1px solid transparent'
-                      }}
-                    >
-                      {mode}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Column Visibility Selector */}
-              <div style={{ position: 'relative' }}>
-                <button
-                  className="btn btn-white-wh"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '8px 12px',
-                    fontSize: '10px',
-                    borderRadius: '8px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    border: leftColumnsOpen ? '1.5px solid #000000' : '1px solid #e2e8f0',
-                    color: leftColumnsOpen ? '#0f172a' : '#64748b',
-                    backgroundColor: '#ffffff',
-                    cursor: 'pointer'
-                  }}
-                  onClick={() => setLeftColumnsOpen(!leftColumnsOpen)}
-                >
-                  <Settings className="h-3.5 w-3.5 text-slate-400" />
-                  <span>Columns</span>
-                </button>
-
-                {leftColumnsOpen && (
-                  <div style={{
-                    position: 'absolute',
-                    right: 0,
-                    top: 'calc(100% + 8px)',
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '16px',
-                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-                    padding: '16px',
-                    zIndex: 50,
-                    minWidth: '200px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '12px'
-                  }}>
-                    <div style={{ fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
-                      Column Visibility
-                    </div>
-                    
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', color: '#334155' }}>
-                      <input
-                        type="checkbox"
-                        checked={leftVisibleColumns.loadLane}
-                        onChange={() => setLeftVisibleColumns(prev => ({ ...prev, loadLane: !prev.loadLane }))}
-                        style={{ width: '16px', height: '16px', borderRadius: '4px', border: '1px solid #cbd5e1', accentColor: '#3b82f6', cursor: 'pointer' }}
-                      />
-                      <span>Load Lane</span>
-                    </label>
-
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', color: '#334155' }}>
-                      <input
-                        type="checkbox"
-                        checked={leftVisibleColumns.assignedAssets}
-                        onChange={() => setLeftVisibleColumns(prev => ({ ...prev, assignedAssets: !prev.assignedAssets }))}
-                        style={{ width: '16px', height: '16px', borderRadius: '4px', border: '1px solid #cbd5e1', accentColor: '#3b82f6', cursor: 'pointer' }}
-                      />
-                      <span>Assigned Assets</span>
-                    </label>
-
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', color: '#334155' }}>
-                      <input
-                        type="checkbox"
-                        checked={leftVisibleColumns.laneStatus}
-                        onChange={() => setLeftVisibleColumns(prev => ({ ...prev, laneStatus: !prev.laneStatus }))}
-                        style={{ width: '16px', height: '16px', borderRadius: '4px', border: '1px solid #cbd5e1', accentColor: '#3b82f6', cursor: 'pointer' }}
-                      />
-                      <span>Lane Status</span>
-                    </label>
-                  </div>
-                )}
-              </div>
-            </div>
+      {/* STAT CARDS ROW */}
+      <div className="wh-ll-stats-grid">
+        <div className="wh-ll-stat-card">
+          <div className="wh-stat-icon-box purple">
+            <Layers size={20} />
           </div>
-
-          {/* Left Table */}
-          <div style={{ border: '1px solid #e2e8f0', borderRadius: '16px', overflowX: 'auto', backgroundColor: '#ffffff' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc' }}>
-                  <th style={{ padding: '14px 20px', width: '40px', textAlign: 'center' }}>
-                    <input
-                      type="checkbox"
-                      checked={leftSelectedRows.length === loadLanes.length && loadLanes.length > 0}
-                      onChange={handleLeftSelectAll}
-                      style={{ cursor: 'pointer', width: '16px', height: '16px' }}
-                    />
-                  </th>
-                  {leftVisibleColumns.loadLane && (
-                    <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
-                      Load Lane
-                    </th>
-                  )}
-                  {leftVisibleColumns.assignedAssets && (
-                    <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
-                      Assigned Assets
-                    </th>
-                  )}
-                  {leftVisibleColumns.laneStatus && (
-                    <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
-                      Lane Status
-                    </th>
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {filteredLoadLanes.length === 0 ? (
-                  <tr>
-                    <td colSpan="4" style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '12px', fontWeight: '700' }}>
-                      No load lanes found matching "{leftSearch}".
-                    </td>
-                  </tr>
-                ) : (
-                  filteredLoadLanes.map(row => {
-                  const isChecked = leftSelectedRows.includes(row.name);
-                  const assignedCount = getAssignedAssetCount(row.name);
-                  return (
-                    <tr
-                      key={row.id}
-                      style={{
-                        borderBottom: '1px solid #f1f5f9',
-                        backgroundColor: isChecked ? '#fffbeb' : 'transparent',
-                        transition: 'background-color 0.15s'
-                      }}
-                    >
-                      <td style={{ padding: getCellPadding(leftDensity), textAlign: 'center' }}>
-                        {isChecked ? (
-                          <div
-                            onClick={() => handleLeftRowSelect(row.name)}
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              width: '20px',
-                              height: '20px',
-                              borderRadius: '6px',
-                              backgroundColor: '#ffd400',
-                              border: '1.5px solid #000',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            <Check className="w-3.5 h-3.5 text-black" strokeWidth={3} />
-                          </div>
-                        ) : (
-                          <input
-                            type="checkbox"
-                            checked={false}
-                            onChange={() => handleLeftRowSelect(row.name)}
-                            style={{ cursor: 'pointer', width: '16px', height: '16px' }}
-                          />
-                        )}
-                      </td>
-                      {leftVisibleColumns.loadLane && (
-                        <td style={{ padding: getCellPadding(leftDensity), fontSize: '15px', fontWeight: '800', color: '#0f172a', whiteSpace: 'nowrap' }}>
-                          {row.name}
-                        </td>
-                      )}
-                      {leftVisibleColumns.assignedAssets && (
-                        <td style={{ padding: getCellPadding(leftDensity), fontSize: '14px', fontWeight: '700', color: '#b45309', whiteSpace: 'nowrap' }}>
-                          {assignedCount} Units
-                        </td>
-                      )}
-                      {leftVisibleColumns.laneStatus && (
-                        <td style={{ padding: getCellPadding(leftDensity), whiteSpace: 'nowrap' }}>
-                          <span style={{
-                            fontSize: '9px',
-                            fontWeight: '800',
-                            color: '#64748b',
-                            backgroundColor: '#f1f5f9',
-                            border: '1.5px solid #e2e8f0',
-                            borderRadius: '9999px',
-                            padding: '4px 10px',
-                            letterSpacing: '0.05em',
-                            display: 'inline-block',
-                            whiteSpace: 'nowrap'
-                          }}>
-                            {row.status}
-                          </span>
-                        </td>
-                      )}
-                    </tr>
-                  );
-                }))}
-              </tbody>
-            </table>
+          <div>
+            <div className="wh-stat-title">TOTAL LOAD LANES</div>
+            <div className="wh-stat-num">8</div>
+            <div className="wh-stat-sub">Active lanes</div>
           </div>
         </div>
 
-        {/* Right Panel: QUEUEING ASSETS */}
-        <div style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '24px',
-          border: '1px solid #f1f5f9',
-          padding: '24px',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
-          display: 'flex',
-          flexDirection: 'column',
-          height: '100%',
-          textAlign: 'left'
-        }}>
-          {/* Header controls for Right Table */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', minHeight: '38px' }}>
-            <h2 style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
-              Queueing Assets
-            </h2>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center', flex: 1, justifyContent: 'flex-end' }}>
-              {/* Quick Search */}
-              <div style={{ position: 'relative', minWidth: '180px', flex: '1 1 180px' }}>
-                <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                <input 
+        <div className="wh-ll-stat-card">
+          <div className="wh-stat-icon-box amber">
+            <Truck size={20} />
+          </div>
+          <div>
+            <div className="wh-stat-title">LOADS IN PROGRESS</div>
+            <div className="wh-stat-num">11</div>
+            <div className="wh-stat-sub">Across all lanes</div>
+          </div>
+        </div>
+
+        <div className="wh-ll-stat-card">
+          <div className="wh-stat-icon-box blue">
+            <Box size={20} />
+          </div>
+          <div>
+            <div className="wh-stat-title">READY TO DISPATCH</div>
+            <div className="wh-stat-num">7</div>
+            <div className="wh-stat-sub">Waiting for pickup</div>
+          </div>
+        </div>
+
+        <div className="wh-ll-stat-card">
+          <div className="wh-stat-icon-box red">
+            <AlertTriangle size={20} />
+          </div>
+          <div>
+            <div className="wh-stat-title">OVERDUE / HOLD</div>
+            <div className="wh-stat-num">2</div>
+            <div className="wh-stat-sub">Requires attention</div>
+          </div>
+        </div>
+      </div>
+
+      {/* MASTER GRID LAYOUT */}
+      <div className="wh-ll-master-grid">
+
+        {/* LEFT COLUMN MAIN TABLE */}
+        <div className="wh-ll-left-col">
+          <div className="wh-ll-main-card">
+
+            {/* CONTROLS BAR */}
+            <div className="wh-ll-controls-bar">
+              <div className="wh-ll-search-wrap">
+                <Search size={14} className="wh-ll-search-icon" />
+                <input
                   type="text"
-                  placeholder="Search assets..."
-                  value={rightSearch}
-                  onChange={(e) => setRightSearch(e.target.value)}
-                  style={{ width: '100%', padding: '6px 12px 6px 30px', fontSize: '11px', fontWeight: '700', borderRadius: '8px', border: '1px solid #e2e8f0', outline: 'none' }}
+                  placeholder="Search lane, load no., trailer, driver, customer, reference..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="wh-ll-search-inp"
                 />
               </div>
 
-              {/* Density control */}
-              <div className="wh-segmented-control">
-                {['COMPACT', 'DEFAULT', 'RELAXED'].map((mode) => {
-                  const isActive = rightDensity === mode.toLowerCase();
-                  return (
-                    <button
-                      key={mode}
-                      onClick={() => setRightDensity(mode.toLowerCase())}
-                      className="segmented-btn"
-                      style={{
-                        padding: '5px 12px',
-                        fontSize: '9px',
-                        borderRadius: '6px',
-                        backgroundColor: isActive ? '#ffd400' : 'transparent',
-                        color: isActive ? '#0f172a' : '#64748b',
-                        border: isActive ? '1px solid #000' : '1px solid transparent'
-                      }}
-                    >
-                      {mode}
-                    </button>
-                  );
-                })}
+              <div className="wh-ll-filter-group">
+                <div style={{ position: 'relative' }}>
+                  <button className="wh-btn-filter" onClick={() => setShowFilterDropdown(!showFilterDropdown)}>
+                    <Filter size={13} />
+                    <span>Filter: {statusFilter}</span>
+                  </button>
+
+                  {showFilterDropdown && (
+                    <div style={{
+                      position: 'absolute', right: 0, top: 'calc(100% + 4px)',
+                      background: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: '8px',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)', padding: '6px', zIndex: 100, minWidth: '150px'
+                    }}>
+                      {['All', 'Ready to Dispatch', 'In Progress', 'Hold', 'Empty'].map(st => (
+                        <div
+                          key={st}
+                          style={{
+                            padding: '6px 10px', fontSize: '11px', fontWeight: 600,
+                            cursor: 'pointer', borderRadius: '4px',
+                            background: statusFilter === st ? '#FEF3C7' : 'transparent',
+                            color: statusFilter === st ? '#D97706' : '#0F172A'
+                          }}
+                          onClick={() => { setStatusFilter(st); setShowFilterDropdown(false); }}
+                        >
+                          {st}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <span style={{ fontSize: '11px', color: '#64748B', fontWeight: 700 }}>Group by:</span>
+                <select className="wh-group-by-select">
+                  <option value="Status">Status</option>
+                  <option value="Area">Area</option>
+                </select>
+              </div>
+            </div>
+
+            {/* TABLE */}
+            <div className="wh-ll-table-wrap">
+              <table className="wh-ll-table">
+                <thead>
+                  <tr>
+                    <th>LANE / AREA</th>
+                    <th>STATUS</th>
+                    <th>LOADS</th>
+                    <th>CURRENT LOAD / REFERENCE</th>
+                    <th>TRAILER / VEHICLE</th>
+                    <th>DRIVER</th>
+                    <th>EST. DISPATCH</th>
+                    <th style={{ textAlign: 'right' }}>ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredLanes.length === 0 ? (
+                    <tr>
+                      <td colSpan="8" style={{ textAlign: 'center', padding: '24px', color: '#94A3B8' }}>
+                        No load lanes found matching search or filter.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredLanes.map(lane => (
+                      <tr key={lane.id}>
+                        <td>
+                          <div>
+                            <div className="lane-name-text">{lane.name}</div>
+                            <div className="lane-area-text">{lane.area}</div>
+                          </div>
+                        </td>
+                        <td>
+                          <span className={getStatusBadgeClass(lane.status)}>
+                            {lane.status}
+                          </span>
+                        </td>
+                        <td className="font-bold text-slate-900">{lane.loadsCount}</td>
+                        <td>
+                          {lane.loadRef !== '-' ? (
+                            <div>
+                              <div className="font-bold text-slate-900">{lane.loadRef}</div>
+                              <div className="text-[9.5px] text-slate-500 font-mono">{lane.subRef}</div>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400">-</span>
+                          )}
+                        </td>
+                        <td>
+                          {lane.vehicle !== '-' ? (
+                            <div>
+                              <div className="font-semibold text-slate-800">{lane.vehicle}</div>
+                              <div className="text-[9.5px] text-slate-500">{lane.vehicleType}</div>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400">-</span>
+                          )}
+                        </td>
+                        <td>
+                          {lane.driver !== '-' ? (
+                            <span 
+                              className="font-semibold text-slate-900 cursor-pointer hover:underline"
+                              onClick={() => alert(`Driver Details for ${lane.driver}`)}
+                            >
+                              {lane.driver}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">-</span>
+                          )}
+                        </td>
+                        <td className="font-medium text-slate-700">{lane.estDispatch}</td>
+                        <td style={{ textAlign: 'right' }}>
+                          <div className="flex items-center justify-end gap-1">
+                            <button className="btn-view-lane" onClick={() => alert(`Viewing details for ${lane.name}`)}>
+                              View
+                            </button>
+                            <button className="btn-more-lane" onClick={() => alert(`Lane options for ${lane.name}`)}>
+                              <MoreVertical size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* TABLE FOOTER */}
+            <div className="wh-ll-table-footer">
+              <div>
+                Rows per page: <strong>10</strong>
+              </div>
+              <div>
+                1–{filteredLanes.length} of {lanes.length}
+              </div>
+              <div className="wh-ll-pager">
+                <button className="wh-pager-btn"><ChevronLeft size={14} /></button>
+                <button className="wh-pager-btn active">1</button>
+                <button className="wh-pager-btn"><ChevronRight size={14} /></button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* RIGHT SIDEBAR */}
+        <div className="wh-ll-right-col">
+
+          {/* LANE SUMMARY */}
+          <div className="wh-side-card">
+            <div className="wh-side-title">LANE SUMMARY</div>
+
+            <div className="wh-donut-wrap">
+              <div className="wh-donut-chart">
+                <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
+                  {/* Ready 37% */}
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="#22C55E" strokeWidth="4" strokeDasharray="33 100" />
+                  {/* In Progress 37% */}
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="#3B82F6" strokeWidth="4" strokeDasharray="33 100" strokeDashoffset="-33" />
+                  {/* Hold 12% */}
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="#F59E0B" strokeWidth="4" strokeDasharray="12 100" strokeDashoffset="-66" />
+                  {/* Empty 25% */}
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="#94A3B8" strokeWidth="4" strokeDasharray="22 100" strokeDashoffset="-78" />
+                </svg>
+                <div className="wh-donut-center">
+                  <span style={{ fontSize: '13px', fontWeight: 900 }}>8</span>
+                  <span style={{ fontSize: '7px', color: '#64748B' }}>Lanes</span>
+                </div>
               </div>
 
-              {/* Column Visibility Selector */}
-              <div style={{ position: 'relative' }}>
-                <button
-                  className="btn btn-white-wh"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '8px 12px',
-                    fontSize: '10px',
-                    borderRadius: '8px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    border: rightColumnsOpen ? '1.5px solid #000000' : '1px solid #e2e8f0',
-                    color: rightColumnsOpen ? '#0f172a' : '#64748b',
-                    backgroundColor: '#ffffff',
-                    cursor: 'pointer'
-                  }}
-                  onClick={() => setRightColumnsOpen(!rightColumnsOpen)}
-                >
-                  <Settings className="h-3.5 w-3.5 text-slate-400" />
-                  <span>Columns</span>
-                </button>
+              <div className="wh-legend-list">
+                <div className="wh-legend-item">
+                  <div className="wh-legend-dot" style={{ background: '#22C55E' }} />
+                  <span>Ready <strong>3 (37%)</strong></span>
+                </div>
+                <div className="wh-legend-item">
+                  <div className="wh-legend-dot" style={{ background: '#3B82F6' }} />
+                  <span>In Progress <strong>3 (37%)</strong></span>
+                </div>
+                <div className="wh-legend-item">
+                  <div className="wh-legend-dot" style={{ background: '#F59E0B' }} />
+                  <span>Hold <strong>1 (12%)</strong></span>
+                </div>
+                <div className="wh-legend-item">
+                  <div className="wh-legend-dot" style={{ background: '#94A3B8' }} />
+                  <span>Empty <strong>2 (25%)</strong></span>
+                </div>
+              </div>
+            </div>
 
-                {rightColumnsOpen && (
-                  <div style={{
-                    position: 'absolute',
-                    right: 0,
-                    top: 'calc(100% + 8px)',
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '16px',
-                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-                    padding: '16px',
-                    zIndex: 50,
-                    minWidth: '200px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '12px'
-                  }}>
-                    <div style={{ fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
-                      Column Visibility
-                    </div>
-                    
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', color: '#334155' }}>
-                      <input
-                        type="checkbox"
-                        checked={rightVisibleColumns.assetCode}
-                        onChange={() => setRightVisibleColumns(prev => ({ ...prev, assetCode: !prev.assetCode }))}
-                        style={{ width: '16px', height: '16px', borderRadius: '4px', border: '1px solid #cbd5e1', accentColor: '#3b82f6', cursor: 'pointer' }}
-                      />
-                      <span>Asset Code</span>
-                    </label>
+            <div 
+              className="wh-side-link"
+              onClick={() => navigate(isYard ? '/yard/map' : '/warehouse/warehouse-yard-map')}
+            >
+              <MapPin size={12} />
+              <span>View lane map</span>
+            </div>
+          </div>
 
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', color: '#334155' }}>
-                      <input
-                        type="checkbox"
-                        checked={rightVisibleColumns.assignedLane}
-                        onChange={() => setRightVisibleColumns(prev => ({ ...prev, assignedLane: !prev.assignedLane }))}
-                        style={{ width: '16px', height: '16px', borderRadius: '4px', border: '1px solid #cbd5e1', accentColor: '#3b82f6', cursor: 'pointer' }}
-                      />
-                      <span>Assigned Lane</span>
-                    </label>
+          {/* UPCOMING DISPATCHES */}
+          <div className="wh-side-card">
+            <div className="flex justify-between items-center mb-1">
+              <div className="wh-side-title" style={{ margin: 0, padding: 0, border: 'none' }}>
+                UPCOMING DISPATCHES
+              </div>
+              <span className="wh-side-link" style={{ fontSize: '9.5px', marginTop: 0 }}>View all</span>
+            </div>
 
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', color: '#334155' }}>
-                      <input
-                        type="checkbox"
-                        checked={rightVisibleColumns.status}
-                        onChange={() => setRightVisibleColumns(prev => ({ ...prev, status: !prev.status }))}
-                        style={{ width: '16px', height: '16px', borderRadius: '4px', border: '1px solid #cbd5e1', accentColor: '#3b82f6', cursor: 'pointer' }}
-                      />
-                      <span>Status</span>
-                    </label>
+            <div style={{ marginTop: '8px' }}>
+              <div className="wh-disp-row">
+                <div>
+                  <div className="wh-disp-load">LD-3985</div>
+                  <div className="wh-disp-lane">Lane 1</div>
+                </div>
+                <div className="wh-disp-time">21/07 11:00 AM</div>
+              </div>
 
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '13px', fontWeight: '700', color: '#334155' }}>
-                      <input
-                        type="checkbox"
-                        checked={rightVisibleColumns.actions}
-                        onChange={() => setRightVisibleColumns(prev => ({ ...prev, actions: !prev.actions }))}
-                        style={{ width: '16px', height: '16px', borderRadius: '4px', border: '1px solid #cbd5e1', accentColor: '#3b82f6', cursor: 'pointer' }}
-                      />
-                      <span>Actions</span>
-                    </label>
-                  </div>
-                )}
+              <div className="wh-disp-row">
+                <div>
+                  <div className="wh-disp-load">LD-3986</div>
+                  <div className="wh-disp-lane">Lane 2</div>
+                </div>
+                <div className="wh-disp-time">21/07 01:30 PM</div>
+              </div>
+
+              <div className="wh-disp-row">
+                <div>
+                  <div className="wh-disp-load">LD-3984</div>
+                  <div className="wh-disp-lane">Lane 3</div>
+                </div>
+                <div className="wh-disp-time">21/07 02:00 PM</div>
+              </div>
+
+              <div className="wh-disp-row">
+                <div>
+                  <div className="wh-disp-load">LD-3987</div>
+                  <div className="wh-disp-lane">Lane 4</div>
+                </div>
+                <div className="wh-disp-time">22/07 08:30 AM</div>
+              </div>
+
+              <div className="wh-disp-row">
+                <div>
+                  <div className="wh-disp-load">LD-3991</div>
+                  <div className="wh-disp-lane">Lane 6</div>
+                </div>
+                <div className="wh-disp-time">22/07 10:00 AM</div>
               </div>
             </div>
           </div>
 
-          {/* Right Table */}
-          <div style={{ border: '1px solid #e2e8f0', borderRadius: '16px', overflowX: 'auto', backgroundColor: '#ffffff', minHeight: '142px', display: 'flex', flexDirection: 'column' }}>
-            {queueingAssets.length === 0 ? (
-              <div style={{
-                flex: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '40px',
-                fontSize: '12px',
-                fontWeight: '800',
-                color: '#64748b',
-                letterSpacing: '0.05em',
-                textTransform: 'uppercase'
-              }}>
-                NO RECORDS RESOLVED.
-              </div>
-            ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid #e2e8f0', backgroundColor: '#f8fafc' }}>
-                    <th style={{ padding: '14px 20px', width: '40px', textAlign: 'center' }}>
-                      <input
-                        type="checkbox"
-                        checked={rightSelectedRows.length === queueingAssets.length && queueingAssets.length > 0}
-                        onChange={handleRightSelectAll}
-                        style={{ cursor: 'pointer', width: '16px', height: '16px' }}
-                      />
-                    </th>
-                    {rightVisibleColumns.assetCode && (
-                      <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
-                        Asset Code
-                      </th>
-                    )}
-                    {rightVisibleColumns.assignedLane && (
-                      <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
-                        Assigned Lane
-                      </th>
-                    )}
-                    {rightVisibleColumns.status && (
-                      <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
-                        Status
-                      </th>
-                    )}
-                    {rightVisibleColumns.actions && (
-                      <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
-                        Actions
-                      </th>
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredAssets.length === 0 ? (
-                    <tr>
-                      <td colSpan="5" style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontSize: '12px', fontWeight: '700' }}>
-                        No queueing assets found matching "{rightSearch}".
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredAssets.map(row => {
-                    const isChecked = rightSelectedRows.includes(row.id);
-                    return (
-                      <tr
-                        key={row.id}
-                        style={{
-                          borderBottom: '1px solid #f1f5f9',
-                          backgroundColor: isChecked ? '#fffbeb' : 'transparent',
-                          transition: 'background-color 0.15s'
-                        }}
-                      >
-                        <td style={{ padding: getCellPadding(rightDensity), textAlign: 'center' }}>
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => handleRightRowSelect(row.id)}
-                            style={{ cursor: 'pointer', width: '16px', height: '16px' }}
-                          />
-                        </td>
-                        {rightVisibleColumns.assetCode && (
-                          <td style={{ padding: getCellPadding(rightDensity), fontSize: '13px', fontWeight: '800', color: '#0f172a', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
-                            {row.code}
-                          </td>
-                        )}
-                        {rightVisibleColumns.assignedLane && (
-                          <td style={{ padding: getCellPadding(rightDensity), fontSize: '13px', fontWeight: '700', color: '#475569', whiteSpace: 'nowrap' }}>
-                            {row.lane || <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>Unassigned</span>}
-                          </td>
-                        )}
-                        {rightVisibleColumns.status && (
-                          <td style={{ padding: getCellPadding(rightDensity), whiteSpace: 'nowrap' }}>
-                            <span style={{
-                              fontSize: '9px',
-                              fontWeight: '800',
-                              color: '#64748b',
-                              backgroundColor: '#f1f5f9',
-                              border: '1.5px solid #e2e8f0',
-                              borderRadius: '9999px',
-                              padding: '4px 10px',
-                              letterSpacing: '0.05em',
-                              display: 'inline-block',
-                              whiteSpace: 'nowrap'
-                            }}>
-                              {row.status}
-                            </span>
-                          </td>
-                        )}
-                        {rightVisibleColumns.actions && (
-                          <td style={{ padding: getCellPadding(rightDensity), whiteSpace: 'nowrap' }}>
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                              <button
-                                onClick={() => handleAssignClick(row.id)}
-                                style={{
-                                  backgroundColor: '#ffffff',
-                                  border: '1px solid #cbd5e1',
-                                  borderRadius: '10px',
-                                  padding: '6px 14px',
-                                  fontSize: '11px',
-                                  fontWeight: '700',
-                                  color: '#0f172a',
-                                  cursor: 'pointer',
-                                  boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
-                                  whiteSpace: 'nowrap'
-                                }}
-                              >
-                                Assign to Load Lane
-                              </button>
-                              <button
-                                onClick={() => handleRemoveFromLane(row.id)}
-                                style={{
-                                  backgroundColor: '#ffffff',
-                                  border: '1px solid #fde68a',
-                                  borderRadius: '10px',
-                                  padding: '6px 14px',
-                                  fontSize: '11px',
-                                  fontWeight: '700',
-                                  color: '#b45309',
-                                  cursor: 'pointer',
-                                  boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
-                                  outline: 'none',
-                                  transition: 'all 0.15s',
-                                  whiteSpace: 'nowrap'
-                                }}
-                                onFocus={(e) => {
-                                  e.target.style.outline = '2px solid #000';
-                                }}
-                                onBlur={(e) => {
-                                  e.target.style.outline = 'none';
-                                }}
-                              >
-                                Remove from Load Lane
-                              </button>
-                            </div>
-                          </td>
-                        )}
-                      </tr>
-                    );
-                  }))}
-                </tbody>
-              </table>
-            )}
+          {/* QUICK ACTIONS */}
+          <div className="wh-side-card">
+            <div className="wh-side-title">QUICK ACTIONS</div>
+
+            <button className="wh-qa-btn" onClick={() => setCreateModalOpen(true)}>
+              <Plus size={14} className="text-amber-500" />
+              <span>Create Load Lane</span>
+            </button>
+
+            <button className="wh-qa-btn" onClick={() => setMoveModalOpen(true)}>
+              <ArrowRight size={14} className="text-blue-500" />
+              <span>Move Items to Lane</span>
+            </button>
+
+            <button className="wh-qa-btn" onClick={() => navigate('/warehouse/dispatch-ready')}>
+              <Truck size={14} className="text-green-500" />
+              <span>View Dispatch Ready</span>
+            </button>
+
+            <button className="wh-qa-btn" onClick={() => alert('Printing Lane Report...')}>
+              <Printer size={14} className="text-slate-500" />
+              <span>Print Lane Report</span>
+            </button>
           </div>
+
+          {/* HELP */}
+          <div className="wh-side-card" style={{ background: '#F8FAFC' }}>
+            <div className="wh-side-title">HELP</div>
+
+            <div className="wh-help-text">
+              <div>• Use lanes to stage loads/items before dispatch.</div>
+              <div>• Keep lanes organised for quick loading.</div>
+              <div>• Drag and drop loads to reorder if needed.</div>
+              <div>• Overdue items will appear in Hold status.</div>
+            </div>
+          </div>
+
         </div>
 
       </div>
 
-      {/* Modal: Add Load Lane Spot */}
-      {addLaneModalOpen && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.45)',
-          backdropFilter: 'blur(4px)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 9999
-        }} onClick={() => setAddLaneModalOpen(false)}>
-          <form
-            onSubmit={handleCreateLoadLane}
-            style={{
-              backgroundColor: '#ffffff',
-              borderRadius: '24px',
-              width: '100%',
-              maxWidth: '520px',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-              overflow: 'hidden',
-              padding: '28px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '20px',
-              animation: 'scaleIn 0.2s ease-out'
-            }} onClick={e => e.stopPropagation()}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', margin: 0 }}>Add Load Lane Spot</h2>
-              <button
-                type="button"
-                onClick={() => setAddLaneModalOpen(false)}
-                style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}
-              >
-                <X className="w-5 h-5" />
-              </button>
+      {/* CREATE LANE MODAL */}
+      {createModalOpen && (
+        <div className="wh-modal-overlay" onClick={() => setCreateModalOpen(false)}>
+          <div className="wh-modal-box" onClick={e => e.stopPropagation()}>
+            <div className="wh-modal-header">
+              <h3 className="font-extrabold text-sm text-slate-900">Create New Load Lane</h3>
+              <button onClick={() => setCreateModalOpen(false)}><X size={16} className="text-slate-400" /></button>
             </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'left' }}>
-              <label style={{ fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Load Lane Name
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. Lane B1"
-                value={newLaneName}
-                onChange={e => setNewLaneName(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '14px 16px',
-                  fontSize: '14px',
-                  color: '#0f172a',
-                  backgroundColor: '#ffffff',
-                  border: '1.5px solid #e2e8f0',
-                  borderRadius: '12px',
-                  outline: 'none'
-                }}
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              style={{
-                width: '100%',
-                backgroundColor: '#ffd400',
-                color: '#0f172a',
-                border: 'none',
-                borderRadius: '12px',
-                padding: '14px',
-                fontSize: '13px',
-                fontWeight: '800',
-                cursor: 'pointer',
-                textAlign: 'center',
-                boxShadow: '0 4px 12px rgba(255, 212, 0, 0.3)'
-              }}
-            >
-              Create Load Lane
-            </button>
-          </form>
+            <form onSubmit={handleCreateLane} className="wh-modal-body">
+              <div>
+                <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">Lane Name *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Lane 9"
+                  value={newLaneName}
+                  onChange={e => setNewLaneName(e.target.value)}
+                  className="w-full h-8 px-2 border border-slate-300 rounded text-xs font-semibold outline-none"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">Assigned Area *</label>
+                <select
+                  value={newLaneArea}
+                  onChange={e => setNewLaneArea(e.target.value)}
+                  className="w-full h-8 px-2 border border-slate-300 rounded text-xs font-semibold outline-none"
+                >
+                  <option value="Main Yard">Main Yard</option>
+                  <option value="Overflow Yard">Overflow Yard</option>
+                  <option value="DG Staging Area">DG Staging Area</option>
+                  <option value="Container Bay">Container Bay</option>
+                  <option value="Returns Lane">Returns Lane</option>
+                </select>
+              </div>
+              <div className="wh-modal-footer">
+                <button type="button" className="px-3 py-1.5 border border-slate-300 rounded text-xs font-bold text-slate-600" onClick={() => setCreateModalOpen(false)}>Cancel</button>
+                <button type="submit" className="px-4 py-1.5 bg-amber-400 rounded text-xs font-extrabold text-slate-900">Create Lane</button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
-      {/* Modal: Relocate Asset Lane (Assign Asset to Load Lane) */}
-      {assignAssetModalOpen && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.4)',
-          backdropFilter: 'blur(4px)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 9999
-        }} onClick={() => setAssignAssetModalOpen(false)}>
-          <form
-            onSubmit={handleConfirmAssign}
-            style={{
-              backgroundColor: '#ffffff',
-              borderRadius: '24px',
-              width: '100%',
-              maxWidth: '480px',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-              overflow: 'hidden',
-              padding: '28px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '20px',
-              animation: 'scaleIn 0.2s ease-out'
-            }} onClick={e => e.stopPropagation()}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', margin: 0 }}>Relocate Asset Location</h2>
-              <button
-                type="button"
-                onClick={() => setAssignAssetModalOpen(false)}
-                style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}
-              >
-                <X className="w-5 h-5" />
-              </button>
+      {/* MOVE ITEMS MODAL */}
+      {moveModalOpen && (
+        <div className="wh-modal-overlay" onClick={() => setMoveModalOpen(false)}>
+          <div className="wh-modal-box" onClick={e => e.stopPropagation()}>
+            <div className="wh-modal-header">
+              <h3 className="font-extrabold text-sm text-slate-900">Move Items to Lane</h3>
+              <button onClick={() => setMoveModalOpen(false)}><X size={16} className="text-slate-400" /></button>
             </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'left' }}>
-              <label style={{ fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Select Target Location Spot
-              </label>
-              <div style={{ position: 'relative' }}>
+            <form onSubmit={handleMoveItems} className="wh-modal-body">
+              <div>
+                <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">Target Load Lane *</label>
                 <select
-                  value={targetLane}
-                  onChange={e => setTargetLane(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '14px 16px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#0f172a',
-                    backgroundColor: '#ffffff',
-                    border: '1.5px solid #e2e8f0',
-                    borderRadius: '12px',
-                    outline: 'none',
-                    appearance: 'none',
-                    cursor: 'pointer'
-                  }}
+                  value={selectedLaneToMove}
+                  onChange={e => setSelectedLaneToMove(e.target.value)}
+                  className="w-full h-8 px-2 border border-slate-300 rounded text-xs font-semibold outline-none"
                 >
-                  {loadLanes.map(l => (
-                    <option key={l.id} value={l.name}>{l.name}</option>
+                  {lanes.map(l => (
+                    <option key={l.id} value={l.name}>{l.name} ({l.area})</option>
                   ))}
                 </select>
-                <div style={{
-                  position: 'absolute',
-                  right: '16px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  pointerEvents: 'none',
-                  color: '#64748b',
-                  fontSize: '12px'
-                }}>▼</div>
               </div>
-            </div>
-
-            <button
-              type="submit"
-              style={{
-                width: '100%',
-                backgroundColor: '#ffd400',
-                color: '#0f172a',
-                border: 'none',
-                borderRadius: '12px',
-                padding: '14px',
-                fontSize: '13px',
-                fontWeight: '800',
-                cursor: 'pointer',
-                textAlign: 'center',
-                boxShadow: '0 4px 12px rgba(255, 212, 0, 0.3)'
-              }}
-            >
-              Confirm Location Move
-            </button>
-          </form>
+              <div className="wh-modal-footer">
+                <button type="button" className="px-3 py-1.5 border border-slate-300 rounded text-xs font-bold text-slate-600" onClick={() => setMoveModalOpen(false)}>Cancel</button>
+                <button type="submit" className="px-4 py-1.5 bg-amber-400 rounded text-xs font-extrabold text-slate-900">Move Items</button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
-      {/* Floating Toast Notification */}
-      {toast.open && (
+      {/* TOAST NOTIFICATION */}
+      {toast && (
         <div style={{
-          position: 'fixed',
-          bottom: '24px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          backgroundColor: '#e6fbf2',
-          border: '1.5px solid #a7f3d0',
-          borderRadius: '16px',
-          padding: '14px 20px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-          zIndex: 10000,
-          animation: 'fadeIn 0.2s ease-out'
+          position: 'fixed', bottom: 24, right: 24,
+          background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 10,
+          padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 10,
+          zIndex: 99998, boxShadow: '0 8px 24px rgba(0,0,0,0.08)'
         }}>
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
-            <circle cx="10" cy="10" r="9" stroke="#10b981" strokeWidth="2" />
-            <path d="M6 10L9 13L14 7" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <span style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b' }}>
-            {toast.message}
-          </span>
-          <button
-            onClick={() => setToast({ open: false, message: '' })}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: '#64748b',
-              display: 'flex',
-              alignItems: 'center',
-              padding: '2px',
-              marginLeft: '8px'
-            }}
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <CheckCircle2 size={16} className="text-green-600" />
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#065F46' }}>{toast.msg}</span>
         </div>
       )}
 
     </div>
   );
-};
-
-export default WarehouseLoadLanes;
+}

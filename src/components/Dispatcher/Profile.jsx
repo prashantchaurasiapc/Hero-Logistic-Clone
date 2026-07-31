@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { 
   User, Phone, Mail, MapPin, Settings, Globe, Clock, Calendar as CalendarIcon,
   Shield, Check, Monitor, Smartphone, Tablet, Link2, ChevronRight, 
-  Lock, Edit3, Grid, CalendarDays, Truck, Map, MessageSquare, History, Bell, Building
+  Lock, Edit3, Grid, CalendarDays, Truck, Map, MessageSquare, History, Bell
 } from 'lucide-react';
 
-export default function MyProfile() {
+export default function Profile() {
   const [toast, setToast] = useState(null);
   const showToast = (msg) => {
     setToast(msg);
@@ -14,14 +14,12 @@ export default function MyProfile() {
 
   // Editable Profile State Variables
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const [fullName, setFullName] = useState('Alex Morgan');
-  const [mobileNumber, setMobileNumber] = useState('+61 488 999 000');
-  const [emailAddress, setEmailAddress] = useState('alex.morgan@herologistics.com.au');
-  const [dob, setDob] = useState('12 Aug 1985');
-  const [address, setAddress] = useState('100 Barangaroo Avenue, Sydney NSW 2000, Australia');
-  const [emergencyContact, setEmergencyContact] = useState('Sarah Morgan (Spouse) +61 411 333 444');
-  const [companyName, setCompanyName] = useState('Hero Logistics Solutions Pty Ltd');
-  const [abn, setAbn] = useState('98 123 456 789');
+  const [fullName, setFullName] = useState('John Smith');
+  const [mobileNumber, setMobileNumber] = useState('+61 412 345 678');
+  const [emailAddress, setEmailAddress] = useState('john.smith@herols.com.au');
+  const [dob, setDob] = useState('15 Mar 1988');
+  const [address, setAddress] = useState('12 George Street, Sydney NSW 2000, Australia');
+  const [emergencyContact, setEmergencyContact] = useState('Emma Smith (Wife) +61 433 222 111');
 
   // Temporary Edit Form State Variables
   const [tempFullName, setTempFullName] = useState('');
@@ -30,8 +28,6 @@ export default function MyProfile() {
   const [tempDob, setTempDob] = useState('');
   const [tempAddress, setTempAddress] = useState('');
   const [tempEmergency, setTempEmergency] = useState('');
-  const [tempCompany, setTempCompany] = useState('');
-  const [tempAbn, setTempAbn] = useState('');
 
   const openEditModal = () => {
     setTempFullName(fullName);
@@ -40,8 +36,6 @@ export default function MyProfile() {
     setTempDob(dob);
     setTempAddress(address);
     setTempEmergency(emergencyContact);
-    setTempCompany(companyName);
-    setTempAbn(abn);
     setEditModalOpen(true);
   };
 
@@ -53,10 +47,8 @@ export default function MyProfile() {
     setDob(tempDob);
     setAddress(tempAddress);
     setEmergencyContact(tempEmergency);
-    setCompanyName(tempCompany);
-    setAbn(tempAbn);
     setEditModalOpen(false);
-    showToast('✓ Admin Profile updated successfully!');
+    showToast('✓ Profile updated successfully!');
   };
 
   return (
@@ -82,7 +74,7 @@ export default function MyProfile() {
           align-items: center; justify-content: center; padding: 16px;
         }
         .wh-modal-box {
-          background: #FFFFFF; border-radius: 12px; max-width: 520px;
+          background: #FFFFFF; border-radius: 12px; max-width: 500px;
           width: 100%; border: 1px solid #E2E8F0; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
           overflow: hidden; display: flex; flex-direction: column;
         }
@@ -98,14 +90,14 @@ export default function MyProfile() {
       {/* Header */}
       <div className="mb-6 flex justify-between items-start">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Company Admin Profile</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Dispatcher Profile</h1>
           <div className="flex items-center text-[11px] text-slate-500 mt-1 gap-1.5 font-medium">
-            <span>Company Admin</span>
+            <span>Home</span>
             <ChevronRight size={10} />
-            <span className="text-slate-800">My Profile</span>
+            <span className="text-slate-800">Profile</span>
           </div>
         </div>
-        <button className="flex items-center gap-1.5 px-4 py-2 bg-amber-500 text-slate-900 rounded-lg text-xs font-bold hover:bg-amber-400 shadow-sm" onClick={openEditModal}>
+        <button className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 shadow-sm shadow-blue-200" onClick={openEditModal}>
           <Edit3 size={14} /> Edit Profile
         </button>
       </div>
@@ -119,7 +111,7 @@ export default function MyProfile() {
           <div className="bg-white rounded-[20px] border border-slate-200 p-6 shadow-sm flex flex-col items-center">
             <div className="relative mb-4">
               <img 
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256&h=256" 
+                src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=256&h=256" 
                 alt={fullName} 
                 className="w-24 h-24 rounded-full object-cover border-2 border-white shadow-md"
               />
@@ -127,11 +119,11 @@ export default function MyProfile() {
             </div>
             
             <h2 className="text-xl font-bold text-slate-900">{fullName}</h2>
-            <span className="text-xs font-bold text-amber-700 bg-amber-100 px-3 py-0.5 rounded-full mt-1.5 border border-amber-200">Company Owner / Admin</span>
+            <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full mt-1.5">Online</span>
             
             <div className="text-center mt-4">
-              <p className="text-[13px] font-semibold text-slate-800">{companyName}</p>
-              <p className="text-[10px] text-slate-500 bg-slate-50 px-2.5 py-1 rounded-md mt-1.5 border border-slate-100 font-mono">ABN: {abn}</p>
+              <p className="text-[13px] font-semibold text-slate-800">Senior Dispatcher</p>
+              <p className="text-[10px] text-slate-500 bg-slate-50 px-2.5 py-1 rounded-md mt-1.5 border border-slate-100">Employee ID: DSP-0007</p>
             </div>
 
             <div className="w-full mt-6 space-y-3 pt-6 border-t border-slate-100">
@@ -150,26 +142,26 @@ export default function MyProfile() {
             </div>
           </div>
 
-          {/* Company Summary */}
+          {/* Working Hours */}
           <div className="bg-white rounded-[20px] border border-slate-200 p-5 shadow-sm">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                <Building size={14} className="text-amber-500" /> Company Details
+              <h3 className="text-xs font-bold text-slate-900">
+                Working Hours
               </h3>
-              <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">Verified</span>
+              <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">In Office</span>
             </div>
             <div className="space-y-3 text-[11px]">
               <div className="flex justify-between">
-                <span className="text-slate-500">Plan</span>
-                <span className="font-extrabold text-amber-600">Enterprise Logistics</span>
+                <span className="text-slate-500">Start Time</span>
+                <span className="font-semibold text-slate-800">07:00 AM</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Active Fleet</span>
-                <span className="font-semibold text-slate-800">42 Vehicles</span>
+                <span className="text-slate-500">Finish Time</span>
+                <span className="font-semibold text-slate-800">03:30 PM</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Active Drivers</span>
-                <span className="font-semibold text-slate-800">38 Drivers</span>
+                <span className="text-slate-500">Break Duration</span>
+                <span className="font-semibold text-slate-800">30 mins</span>
               </div>
             </div>
           </div>
@@ -177,13 +169,13 @@ export default function MyProfile() {
           {/* Preferences */}
           <div className="bg-white rounded-[20px] border border-slate-200 p-5 shadow-sm">
             <h3 className="text-xs font-bold text-slate-900 flex items-center gap-2 mb-4">
-              <Settings size={14} className="text-slate-400" /> System Preferences
+              <Settings size={14} className="text-slate-400" /> Preferences
             </h3>
             <div className="space-y-4 text-[11px]">
-              <div className="flex justify-between items-center cursor-pointer group" onClick={() => showToast('Opening Notifications Settings...')}>
+              <div className="flex justify-between items-center cursor-pointer group" onClick={() => showToast('Opening Notification Settings...')}>
                 <div className="flex items-center gap-2 text-slate-600 group-hover:text-slate-900">
                   <Bell size={13} className="text-slate-400" />
-                  <span className="font-medium">Admin Alerts</span>
+                  <span className="font-medium">Notifications</span>
                 </div>
                 <ChevronRight size={14} className="text-slate-400 group-hover:text-slate-600" />
               </div>
@@ -193,7 +185,7 @@ export default function MyProfile() {
                   <span className="font-medium">Language</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="font-semibold text-slate-800">English (AU)</span>
+                  <span className="font-semibold text-slate-800">English</span>
                   <ChevronRight size={14} className="text-slate-400" />
                 </div>
               </div>
@@ -218,8 +210,8 @@ export default function MyProfile() {
           {/* Personal Information */}
           <div className="bg-white rounded-[20px] border border-slate-200 p-6 shadow-sm">
             <h3 className="text-[13px] font-bold text-slate-900 flex items-center gap-2 mb-5">
-              <div className="p-1.5 bg-amber-50 rounded-lg text-amber-600"><User size={16} /></div>
-              Administrator Personal Details
+              <div className="p-1.5 bg-blue-50 rounded-lg text-blue-600"><User size={16} /></div>
+              Personal Information
             </h3>
             
             <div className="grid grid-cols-2 gap-y-5 gap-x-4 text-[11px]">
@@ -253,49 +245,49 @@ export default function MyProfile() {
           {/* Role & Permissions */}
           <div className="bg-white rounded-[20px] border border-slate-200 p-6 shadow-sm">
             <h3 className="text-[13px] font-bold text-slate-900 flex items-center gap-2 mb-5">
-              <div className="p-1.5 bg-amber-50 rounded-lg text-amber-600"><Shield size={16} /></div>
-              Administrator Access & Authority
+              <div className="p-1.5 bg-blue-50 rounded-lg text-blue-600"><Shield size={16} /></div>
+              Role & Permissions
             </h3>
             
             <div className="grid grid-cols-3 gap-4 text-[11px] mb-5">
               <div>
                 <p className="text-slate-500 font-medium mb-1">Role</p>
-                <p className="font-bold text-slate-900">Company Admin</p>
+                <p className="font-semibold text-slate-900">Dispatcher</p>
               </div>
               <div>
                 <p className="text-slate-500 font-medium mb-1">Access Level</p>
-                <p className="font-bold text-emerald-600">Full System</p>
+                <p className="font-semibold text-slate-900">Branch Level</p>
               </div>
               <div>
-                <p className="text-slate-500 font-medium mb-1">Headquarters</p>
-                <p className="font-bold text-slate-900">Sydney HQ</p>
+                <p className="text-slate-500 font-medium mb-1">Branch</p>
+                <p className="font-semibold text-slate-900">Sydney Branch</p>
               </div>
             </div>
 
             <div className="mb-4">
-              <p className="text-slate-500 font-medium text-[11px] mb-2.5">Global Admin Authorities</p>
+              <p className="text-slate-500 font-medium text-[11px] mb-2.5">Permissions Granted</p>
               <div className="flex flex-wrap gap-2">
-                {['User Management', 'Billing & Payroll', 'Fleet & Depot Access', 'Compliance & Audits', 'Branch Management', 'API & Integrations', 'System Analytics'].map((perm, i) => (
-                  <span key={i} className="px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-md text-[10px] font-bold">
-                    ✓ {perm}
+                {['Create Load', 'Assign Loads', 'View All Loads', 'Driver Management', 'Vehicle / Trailer Management', 'Yard / Warehouse', 'Reports', 'Messages'].map((perm, i) => (
+                  <span key={i} className="px-2.5 py-1 bg-blue-50 text-blue-600 border border-blue-100 rounded-md text-[10px] font-semibold">
+                    {perm}
                   </span>
                 ))}
               </div>
             </div>
           </div>
 
-          {/* Recent Audit Log */}
+          {/* Recent Activity */}
           <div className="bg-white rounded-[20px] border border-slate-200 p-6 shadow-sm">
             <h3 className="text-[13px] font-bold text-slate-900 flex items-center gap-2 mb-5">
-              <div className="p-1.5 bg-amber-50 rounded-lg text-amber-600"><History size={16} /></div>
-              Recent System Audit Log
+              <div className="p-1.5 bg-blue-50 rounded-lg text-blue-600"><History size={16} /></div>
+              Recent Activity
             </h3>
             
             <div className="overflow-x-auto">
               <table className="w-full text-left text-[10px]">
                 <thead>
                   <tr className="text-slate-500 border-b border-slate-100 font-medium">
-                    <th className="pb-2 font-medium">Action</th>
+                    <th className="pb-2 font-medium">Activity</th>
                     <th className="pb-2 font-medium">Description</th>
                     <th className="pb-2 font-medium">IP Address</th>
                     <th className="pb-2 font-medium">Date & Time</th>
@@ -303,16 +295,16 @@ export default function MyProfile() {
                 </thead>
                 <tbody className="text-slate-800">
                   <tr className="border-b border-slate-50">
-                    <td className="py-2.5 font-bold text-emerald-700">Admin Login</td>
-                    <td className="py-2.5">Logged in to Company Admin Portal</td>
-                    <td className="py-2.5 text-slate-500 font-mono">203.26.45.12</td>
-                    <td className="py-2.5 text-slate-500">31 Jul 2026, 05:45 PM</td>
+                    <td className="py-2.5 font-medium">Login</td>
+                    <td className="py-2.5">Logged in to Dispatch Portal</td>
+                    <td className="py-2.5 text-slate-500">203.26.45.12</td>
+                    <td className="py-2.5 text-slate-500">22 May 2026, 08:32 AM</td>
                   </tr>
                   <tr className="border-b border-slate-50">
-                    <td className="py-2.5 font-bold text-amber-700">Settings Update</td>
-                    <td className="py-2.5">Updated Depot Rate Card</td>
-                    <td className="py-2.5 text-slate-500 font-mono">203.26.45.12</td>
-                    <td className="py-2.5 text-slate-500">31 Jul 2026, 02:15 PM</td>
+                    <td className="py-2.5 font-medium">Create Load</td>
+                    <td className="py-2.5">Created Load LD-10563</td>
+                    <td className="py-2.5 text-slate-500">203.26.45.12</td>
+                    <td className="py-2.5 text-slate-500">22 May 2026, 08:15 AM</td>
                   </tr>
                 </tbody>
               </table>
@@ -324,37 +316,37 @@ export default function MyProfile() {
         {/* RIGHT COLUMN */}
         <div className="lg:col-span-4 space-y-6">
           
-          {/* Security */}
+          {/* Account & Security */}
           <div className="bg-white rounded-[20px] border border-slate-200 p-6 shadow-sm">
             <h3 className="text-[13px] font-bold text-slate-900 flex items-center gap-2 mb-5">
-              <div className="p-1.5 bg-amber-50 rounded-lg text-amber-600"><Lock size={16} /></div>
-              Account Security
+              <div className="p-1.5 bg-blue-50 rounded-lg text-blue-600"><Lock size={16} /></div>
+              Account & Security
             </h3>
             
             <div className="space-y-4 text-[11px]">
               <div className="flex justify-between items-center pb-3 border-b border-slate-50">
                 <span className="text-slate-500 font-medium">Username</span>
-                <span className="font-bold text-slate-900">alex.morgan.admin</span>
+                <span className="font-semibold text-slate-900">john.smith</span>
               </div>
               <div className="flex justify-between items-center pb-3 border-b border-slate-50">
                 <span className="text-slate-500 font-medium">Password</span>
                 <div className="flex items-center gap-3">
                   <span className="text-slate-400 text-[14px]">••••••••</span>
-                  <button className="text-amber-600 font-bold hover:underline" onClick={() => showToast('Opening Security Settings...')}>Change</button>
+                  <button className="text-blue-600 font-semibold hover:underline" onClick={() => showToast('Opening Security Panel...')}>Change</button>
                 </div>
               </div>
               <div className="flex justify-between items-center pb-3 border-b border-slate-50">
-                <span className="text-slate-500 font-medium">2-Factor Auth</span>
-                <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 font-extrabold text-[9px]">Active</span>
+                <span className="text-slate-500 font-medium">2FA</span>
+                <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 font-bold text-[9px]">Enabled</span>
               </div>
             </div>
           </div>
 
-          {/* Active Devices */}
+          {/* Devices */}
           <div className="bg-white rounded-[20px] border border-slate-200 p-6 shadow-sm">
             <h3 className="text-[13px] font-bold text-slate-900 flex items-center gap-2 mb-5">
-              <div className="p-1.5 bg-amber-50 rounded-lg text-amber-600"><Monitor size={16} /></div>
-              Active Sessions
+              <div className="p-1.5 bg-blue-50 rounded-lg text-blue-600"><Monitor size={16} /></div>
+              Devices
             </h3>
             
             <div className="space-y-4">
@@ -363,7 +355,7 @@ export default function MyProfile() {
                   <Monitor size={18} className="text-slate-400" />
                   <div>
                     <p className="text-[11px] font-bold text-slate-900 flex items-center gap-2">
-                      Windows PC • Chrome <span className="text-[9px] text-emerald-600 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded font-bold">Active Now</span>
+                      Windows • Chrome <span className="text-[9px] text-emerald-600 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded">Active</span>
                     </p>
                     <p className="text-[10px] text-slate-500">Sydney, Australia</p>
                   </div>
@@ -374,7 +366,7 @@ export default function MyProfile() {
                 <div className="flex items-center gap-3">
                   <Smartphone size={18} className="text-slate-400" />
                   <div>
-                    <p className="text-[11px] font-bold text-slate-900">MacBook Pro • Safari</p>
+                    <p className="text-[11px] font-bold text-slate-900">iPhone 14 • iOS</p>
                     <p className="text-[10px] text-slate-500">Sydney, Australia</p>
                   </div>
                 </div>
@@ -382,26 +374,27 @@ export default function MyProfile() {
             </div>
           </div>
 
-          {/* Quick Admin Actions */}
+          {/* Shortcuts */}
           <div className="bg-white rounded-[20px] border border-slate-200 p-6 shadow-sm">
             <h3 className="text-[13px] font-bold text-slate-900 flex items-center gap-2 mb-5">
-              <div className="p-1.5 bg-amber-50 rounded-lg text-amber-600"><Link2 size={16} /></div>
-              Quick Management Shortcuts
+              <div className="p-1.5 bg-blue-50 rounded-lg text-blue-600"><Link2 size={16} /></div>
+              Shortcuts
             </h3>
             
             <div className="space-y-2">
               {[
-                { icon: Building, label: 'Company Settings' },
-                { icon: Shield, label: 'Driver Compliance' },
-                { icon: Truck, label: 'Fleet Overview' },
-                { icon: MessageSquare, label: 'Support & Tickets' }
+                { icon: Grid, label: 'Dispatch Dashboard' },
+                { icon: CalendarDays, label: 'Planning Board' },
+                { icon: Truck, label: 'Active Loads' },
+                { icon: Map, label: 'Live GPS Map' },
+                { icon: MessageSquare, label: 'Messages' }
               ].map((item, idx) => (
                 <div key={idx} className="flex justify-between items-center p-2 hover:bg-slate-50 rounded-lg cursor-pointer group transition-colors">
-                  <div className="flex items-center gap-3 text-slate-600 group-hover:text-amber-600">
+                  <div className="flex items-center gap-3 text-slate-600 group-hover:text-blue-600">
                     <item.icon size={14} />
-                    <span className="text-[11px] font-bold">{item.label}</span>
+                    <span className="text-[11px] font-semibold">{item.label}</span>
                   </div>
-                  <ChevronRight size={14} className="text-slate-400 group-hover:text-amber-600" />
+                  <ChevronRight size={14} className="text-slate-400 group-hover:text-blue-600" />
                 </div>
               ))}
             </div>
@@ -415,7 +408,7 @@ export default function MyProfile() {
         <div className="wh-modal-overlay" onClick={() => setEditModalOpen(false)}>
           <div className="wh-modal-box" onClick={e => e.stopPropagation()}>
             <div className="p-4 border-b border-slate-100 flex justify-between items-center">
-              <span className="wh-modal-title">Edit Company Admin Profile</span>
+              <span className="wh-modal-title">Edit Dispatcher Profile</span>
               <button onClick={() => setEditModalOpen(false)} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
             </div>
             
@@ -429,29 +422,6 @@ export default function MyProfile() {
                   onChange={e => setTempFullName(e.target.value)}
                   className="wh-light-form-input"
                 />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="wh-light-form-lbl">Company Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={tempCompany}
-                    onChange={e => setTempCompany(e.target.value)}
-                    className="wh-light-form-input"
-                  />
-                </div>
-                <div>
-                  <label className="wh-light-form-lbl">ABN</label>
-                  <input
-                    type="text"
-                    required
-                    value={tempAbn}
-                    onChange={e => setTempAbn(e.target.value)}
-                    className="wh-light-form-input font-mono"
-                  />
-                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -520,7 +490,7 @@ export default function MyProfile() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 bg-amber-500 rounded text-xs font-extrabold text-slate-900 hover:bg-amber-400 shadow-sm"
+                  className="px-4 py-1.5 bg-blue-600 rounded text-xs font-bold text-white hover:bg-blue-700 shadow-sm"
                 >
                   Save Changes
                 </button>
@@ -535,7 +505,7 @@ export default function MyProfile() {
         <div style={{
           position: 'fixed', bottom: 24, right: 24,
           background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 8,
-          padding: '12px 18px', display: 'flex', items: 'center', gap: 10,
+          padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 10,
           zIndex: 99998, boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
           fontSize: 12, fontWeight: 800, color: '#065F46'
         }}>

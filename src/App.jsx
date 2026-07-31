@@ -135,6 +135,7 @@ import AssetInventory from './components/Dispatcher/AssetInventory';
 import RosterControl from './components/Dispatcher/RosterControl';
 import CommunicationDepot from './components/Dispatcher/CommunicationDepot';
 import SystemSettings from './components/Dispatcher/SystemSettings';
+import DispatcherProfile from './components/Dispatcher/Profile';
 
 // Driver placeholders
 // WorkStatus now uses the real StartWorkFinish component (imported above)
@@ -162,7 +163,7 @@ const Movements = WarehouseMovements;
 // Pnl is imported at the top of the file
 // VehicleCosts is imported at the top of the file
 // AccountsReports is imported at the top of the file
-import AccountsProfile from './components/Accounts/profile';
+import AccountsProfile from './components/Accounts/Profile';
 import MyLoads from './pages/Layout/Dashboard/MyLoads';
 import TrackDelivery from './pages/Layout/Dashboard/TrackDelivery';
 import CustomerDocuments from './pages/Layout/Dashboard/CustomerDocuments';
@@ -174,7 +175,8 @@ import CustomerDispatcherChat from './pages/Layout/Dashboard/CustomerDispatcherC
 import CustomerSupport from './pages/Layout/Dashboard/CustomerSupport';
 import CustomerSettings from './pages/Layout/Dashboard/CustomerSettings';
 
-import CustomerPortal from './components/CustomerPortal/CustomerPortal';
+import Tools from './components/WareHouseDashboard/Tools';
+import WarehouseProfile from './components/WareHouseDashboard/Profile';
 
 /* ============================================================
    APP ROUTES
@@ -187,7 +189,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/onboarding" element={<OnboardingWizard />} />
-        <Route path="/customer-portal" element={<CustomerPortal />} />
+        <Route path="/customer-portal" element={<Navigate to="/customer/dashboard" replace />} />
 
         {/* ===== SUPER ADMIN ===== */}
         <Route path="/admin" element={<DashboardLayout role="super-admin" />}>
@@ -279,7 +281,7 @@ function App() {
           <Route path="messages" element={<CommunicationDepot />} />
           <Route path="communication-depot" element={<CommunicationDepot />} />
           <Route path="reports" element={<Reports />} />
-          <Route path="profile" element={<MyProfile />} />
+          <Route path="profile" element={<DispatcherProfile />} />
           <Route path="fleet-assets" element={<FleetAssets />} />
           <Route path="asset-inventory" element={<AssetInventory />} />
           <Route path="system-settings" element={<SystemSettings />} />
@@ -328,21 +330,31 @@ function App() {
         <Route path="/warehouse" element={<DashboardLayout role="warehouse" />}>
           <Route index element={<WarehouseDashboard />} />
           <Route path="dashboard" element={<WarehouseDashboard />} />
-          <Route path="inbound" element={<WarehouseInbound />} />
-          <Route path="receive" element={<WarehouseInbound />} />
-          <Route path="outbound" element={<WarehouseOutbound />} />
+          <Route path="find-stock" element={<WarehouseCurrentStock />} />
           <Route path="current-stock" element={<WarehouseCurrentStock />} />
           <Route path="find" element={<WarehouseCurrentStock />} />
+          <Route path="receive-inbound" element={<WarehouseInbound />} />
+          <Route path="inbound" element={<WarehouseInbound />} />
+          <Route path="receive" element={<WarehouseInbound />} />
+          <Route path="move-transfer" element={<WarehouseMovements />} />
+          <Route path="movement-history" element={<WarehouseMovements />} />
+          <Route path="movements" element={<WarehouseMovements />} />
+          <Route path="move" element={<WarehouseMovements />} />
+          <Route path="load-lanes" element={<WarehouseLoadLanes />} />
+          <Route path="dispatch-ready" element={<WarehouseOutbound />} />
+          <Route path="outbound" element={<WarehouseOutbound />} />
+          <Route path="messages" element={<Messages />} />
+          <Route path="my-shift" element={<StartWorkFinish />} />
+          <Route path="warehouse-yard-map" element={<WarehouseMap />} />
           <Route path="map" element={<WarehouseMap />} />
           <Route path="holding-areas" element={<WarehouseHoldingAreas />} />
           <Route path="stage" element={<WarehouseHoldingAreas />} />
-          <Route path="load-lanes" element={<WarehouseLoadLanes />} />
           <Route path="scanning" element={<WarehouseScanning />} />
-          <Route path="qr-scan" element={<WarehouseScanning />} />
           <Route path="labels" element={<WarehouseLabels />} />
-          <Route path="movements" element={<WarehouseMovements />} />
-          <Route path="move" element={<WarehouseMovements />} />
           <Route path="reports" element={<WarehouseReports />} />
+          <Route path="tools" element={<Tools />} />
+          <Route path="tools/:tab" element={<Tools />} />
+          <Route path="profile" element={<WarehouseProfile />} />
           <Route path="settings" element={<CompanySettings />} />
           <Route path="*" element={<WarehouseDashboard />} />
         </Route>

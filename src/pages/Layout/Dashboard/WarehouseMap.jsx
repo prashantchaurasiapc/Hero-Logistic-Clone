@@ -1,1605 +1,1127 @@
 import React, { useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { Search, Plus, MapPin, Printer, RefreshCw, FileText, AlertTriangle, ArrowRight, X } from 'lucide-react';
-import './WarehouseDashboard.css';
+import { useLocation, useNavigate } from 'react-router-dom';
+import {
+  Search, Plus, MapPin, Printer, RefreshCw, FileText, AlertTriangle, ArrowRight, X,
+  Layers, Box, Truck, ShieldCheck, Snowflake, Lock, Wrench, Users, ZoomIn, ZoomOut,
+  Maximize2, CheckCircle2, ChevronRight, Download, Filter, Info, ChevronDown
+} from 'lucide-react';
 
-const WarehouseMap = () => {
+export default function WarehouseMap() {
+  const navigate = useNavigate();
   const location = useLocation();
-  const isYard = location.pathname.startsWith('/yard');
-  // State for selected asset
-  const [selectedAssetId, setSelectedAssetId] = useState('ITM-9011');
-  const [searchQuery, setSearchQuery] = useState('');
 
-  // Modals state
-  const [locationModalOpen, setLocationModalOpen] = useState(false);
-  const [holdingModalOpen, setHoldingModalOpen] = useState(false);
-  const [loadLaneModalOpen, setLoadLaneModalOpen] = useState(false);
-  const [relocateModalOpen, setRelocateModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('WAREHOUSE'); // 'WAREHOUSE' | 'YARD'
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [legendsModalOpen, setLegendsModalOpen] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(100);
+  const [toast, setToast] = useState(null);
 
-  // Success toast state
-  const [toast, setToast] = useState({ open: false, message: '', type: 'success' });
-  const [movementModalOpen, setMovementModalOpen] = useState(false);
-  const [movementPage, setMovementPage] = useState(1);
-  const [rowDensity, setRowDensity] = useState('relaxed'); // 'compact' | 'default' | 'relaxed'
-  const [selectedMovements, setSelectedMovements] = useState([]);
+  const showToast = (msg, type = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
+  };
 
-  // Form states
-  const [newLocationName, setNewLocationName] = useState('');
-  const [newLocationClassification, setNewLocationClassification] = useState('Storage Bay / Aisle');
-  const [newHoldingName, setNewHoldingName] = useState('');
-  const [newLaneName, setNewLaneName] = useState('');
-  const [targetLocationSpot, setTargetLocationSpot] = useState('Bay 1 (Bay)');
+  const handleRefresh = () => {
+    showToast('Refreshed real-time warehouse map status...');
+  };
 
-  // Mock Asset Data
-  const [assets, setAssets] = useState([
-    {
-      id: 'ITM-9011',
-      status: 'MISSING',
-      pallets: '15 Pallets',
-      weight: '14,200 lbs',
-      dimensions: '1.2m x 1.2m x 1.5m',
-      location: 'Zone A (Dry)',
-      zone: 'Zone A (Dry)',
-      barcode: 'BAR-9011283',
-      customer: 'Global Retail Corp',
-      destination: 'Chicago HQ Terminal'
-    },
-    {
-      id: 'ITM-4491',
-      status: 'STAGED',
-      pallets: '8 Pallets',
-      weight: '4,500 lbs',
-      dimensions: '1.0m x 1.2m x 1.4m',
-      location: 'Aisle 2 - Bin A',
-      zone: 'Zone B (Cold)',
-      barcode: 'BAR-4491024',
-      customer: 'Logistics Solutions Inc',
-      destination: 'Detroit Depot'
-    },
-    {
-      id: 'ITM-1022',
-      status: 'INWARDED',
-      pallets: '6 Pallets',
-      weight: '9,800 lbs',
-      dimensions: '1.2m x 1.0m x 1.6m',
-      location: 'Aisle 1 - Bin B',
-      zone: 'Zone A (Dry)',
-      barcode: 'BAR-1022987',
-      customer: 'FastGoods LLC',
-      destination: 'New York Hub'
+  const handleLocationClick = (locName, type, details) => {
+    setSelectedLocation({ name: locName, type, details });
+  };
+
+  // Helper to render rack slot grids
+  const renderRackSlots = (total, occupied, staging, full) => {
+    const slots = [];
+    for (let i = 0; i < total; i++) {
+      let color = '#22C55E'; // Green available
+      if (i < full) color = '#EF4444'; // Red full
+      else if (i < full + staging) color = '#F59E0B'; // Amber staging
+      else if (i < full + staging + occupied) color = '#3B82F6'; // Blue in use
+      slots.push(
+        <div
+          key={i}
+          style={{
+            width: '100%',
+            height: 8,
+            borderRadius: 2,
+            background: color,
+            opacity: 0.85
+          }}
+        />
+      );
     }
-  ]);
-
-  // Allocation slots
-  const [slots, setSlots] = useState([
-    { type: 'HOLDING AREA', name: 'Holding Area A', occupiedBy: null },
-    { type: 'HOLDING AREA', name: 'Holding Area B', occupiedBy: null },
-    { type: 'LOAD LANE', name: 'Lane A1', occupiedBy: null },
-    { type: 'LOAD LANE', name: 'Lane A2', occupiedBy: null },
-    { type: 'LOAD LANE', name: 'Lane C3', occupiedBy: null },
-    { type: 'AISLE/BIN', name: 'Aisle 1 - Bin B', occupiedBy: 'ITM-1022' },
-    { type: 'AISLE/BIN', name: 'Aisle 2 - Bin A', occupiedBy: 'ITM-4491' },
-    { type: 'AISLE/BIN', name: 'Aisle 4 - Bin C', occupiedBy: null },
-  ]);
-
-  const filteredAssets = assets.filter(asset => 
-    asset.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    asset.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    asset.barcode.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const selectedAsset = assets.find(a => a.id === selectedAssetId) || assets[0];
-
-  // Helper to show custom success toast matching screenshots
-  const showToast = (message, type = 'success') => {
-    setToast({ open: true, message, type });
-    setTimeout(() => {
-      setToast(prev => prev.message === message ? { open: false, message: '', type: 'success' } : prev);
-    }, 4000);
-  };
-
-  // Actions
-  const handleAssignToLoadLane = () => {
-    // Show toast message exactly like screenshot 3:
-    showToast('Asset assigned to load lane Lane C3 queue.');
-  };
-
-  const handlePrintLabel = () => {
-    // Show toast message exactly like screenshot 4:
-    showToast(`Printed Zebra barcode tag: ${selectedAsset.barcode}`);
-  };
-
-  const handleReprint = () => {
-    // Show toast message exactly like screenshot 5:
-    showToast(`Reprinted Zebra barcode tag: ${selectedAsset.barcode}`);
-  };
-
-  const handleViewAssetHistory = () => {
-    setMovementModalOpen(true);
-  };
-
-  const handleReportMissing = () => {
-    setAssets(assets.map(a => {
-      if (a.id === selectedAssetId) {
-        return { ...a, status: 'MISSING' };
-      }
-      return a;
-    }));
-    // Show error incident toast as in Screenshot 5
-    showToast(`Asset ${selectedAsset?.id || 'undefined'} reported missing! Incident ticket dispatched to supervisor.`, 'error');
-  };
-
-  // Move Actions
-  const handleMoveItemClick = () => {
-    // Opens custom relocate modal as in Screenshot 1
-    setRelocateModalOpen(true);
-  };
-
-  // Submits the relocation modal
-  const handleConfirmLocationMove = (e) => {
-    if (e) e.preventDefault();
-    
-    // Update Slots Occupancy
-    setSlots(slots.map(s => {
-      // If slot name matches target location spot name (strip out the classification suffix in parentheses)
-      const cleanTargetName = targetLocationSpot.split(' (')[0];
-      if (s.name === cleanTargetName) {
-        return { ...s, occupiedBy: selectedAssetId };
-      }
-      if (s.occupiedBy === selectedAssetId) {
-        return { ...s, occupiedBy: null };
-      }
-      return s;
-    }));
-
-    // Update Asset Location
-    setAssets(assets.map(a => {
-      if (a.id === selectedAssetId) {
-        return { ...a, location: targetLocationSpot.split(' (')[0] };
-      }
-      return a;
-    }));
-
-    setRelocateModalOpen(false);
-    showToast(`Asset relocated to spot: ${targetLocationSpot.split(' (')[0]}`);
-  };
-
-  const handleMoveToHolding = () => {
-    const targetSpot = 'Zone A (Dry)';
-    
-    // Update asset location state
-    setAssets(assets.map(a => {
-      if (a.id === selectedAssetId) {
-        return { ...a, location: targetSpot };
-      }
-      return a;
-    }));
-
-    // Show toast exactly like screenshot 2
-    showToast(`Asset moved to holding area: ${targetSpot}.`);
-  };
-
-  const handleMoveToLoadLane = () => {
-    const targetSpot = 'Lane C3';
-    
-    // Update asset location state
-    setAssets(assets.map(a => {
-      if (a.id === selectedAssetId) {
-        return { ...a, location: targetSpot };
-      }
-      return a;
-    }));
-
-    // Show toast exactly like screenshot 3
-    showToast(`Asset assigned to load lane ${targetSpot} queue.`);
-  };
-
-  // Add Location Submit
-  const handleSaveLocation = (e) => {
-    e.preventDefault();
-    if (!newLocationName) return;
-    setSlots([...slots, { type: 'AISLE/BIN', name: newLocationName, occupiedBy: null }]);
-    setLocationModalOpen(false);
-    setNewLocationName('');
-    alert(`Successfully added new location: ${newLocationName}`);
-  };
-
-  // Add Holding Submit
-  const handleSaveHolding = (e) => {
-    e.preventDefault();
-    if (!newHoldingName) return;
-    setSlots([...slots, { type: 'HOLDING AREA', name: newHoldingName, occupiedBy: null }]);
-    setHoldingModalOpen(false);
-    setNewHoldingName('');
-    alert(`Successfully added new holding area: ${newHoldingName}`);
-  };
-
-  // Add Lane Submit
-  const handleSaveLane = (e) => {
-    e.preventDefault();
-    if (!newLaneName) return;
-    setSlots([...slots, { type: 'LOAD LANE', name: newLaneName, occupiedBy: null }]);
-    setLoadLaneModalOpen(false);
-    setNewLaneName('');
-    alert(`Successfully added new load lane: ${newLaneName}`);
+    return slots;
   };
 
   return (
-    <div className="warehouse-dashboard" style={{ display: 'flex', flexDirection: 'column' }}>
-      {/* Header section matches design perfectly */}
-      <div className="warehouse-header">
-        <div className="warehouse-header-titles">
-          <h1>{isYard ? 'Yard & Warehouse Map' : 'Warehouse/Map'}</h1>
+    <div className="wh-map-container">
+      <style>{`
+        .wh-map-container {
+          font-family: 'Inter', system-ui, -apple-system, sans-serif;
+          background: #F8FAFC;
+          min-height: 100vh;
+          color: #0F172A;
+          padding: 20px 24px;
+          box-sizing: border-box;
+        }
+
+        /* HEADER ROW */
+        .wh-map-header-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 16px;
+          flex-wrap: wrap;
+          gap: 12px;
+        }
+        .wh-map-title {
+          font-size: 18px;
+          font-weight: 900;
+          color: #0F172A;
+          margin: 0;
+          text-transform: uppercase;
+          letter-spacing: -0.3px;
+        }
+        .wh-map-sub {
+          font-size: 12px;
+          color: #64748B;
+          margin-top: 2px;
+        }
+        .wh-map-actions-top {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .wh-btn-legends {
+          height: 36px;
+          padding: 0 14px;
+          border-radius: 8px;
+          border: 1px solid #CBD5E1;
+          background: #FFFFFF;
+          font-size: 12px;
+          font-weight: 700;
+          color: #475569;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          transition: background 0.15s;
+        }
+        .wh-btn-legends:hover { background: #F1F5F9; }
+
+        .wh-btn-refresh-map {
+          height: 36px;
+          padding: 0 18px;
+          border-radius: 8px;
+          border: none;
+          background: #FFD400;
+          font-size: 12px;
+          font-weight: 800;
+          color: #0F172A;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          box-shadow: 0 2px 6px rgba(255,212,0,0.3);
+        }
+
+        /* MASTER LAYOUT */
+        .wh-map-master-grid {
+          display: flex;
+          gap: 14px;
+          align-items: flex-start;
+        }
+        .wh-map-left-col {
+          flex: 1;
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+        .wh-map-right-col {
+          width: 250px;
+          flex-shrink: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        /* MODE TABS */
+        .wh-map-mode-tabs {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          margin-bottom: 12px;
+          border-bottom: 1px solid #E2E8F0;
+        }
+        .wh-mode-tab {
+          padding: 8px 16px;
+          font-size: 12px;
+          font-weight: 800;
+          color: #64748B;
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          border-bottom: 2px solid transparent;
+        }
+        .wh-mode-tab.active {
+          color: #0F172A;
+          border-bottom-color: #FFD400;
+        }
+
+        /* MAP CANVAS BOARD */
+        .wh-map-canvas-card {
+          background: #FFFFFF;
+          border: 1px solid #CBD5E1;
+          border-radius: 14px;
+          padding: 18px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+          position: relative;
+        }
+
+        /* ZOOM CONTROLS */
+        .wh-map-zoom-tools {
+          position: absolute;
+          top: 14px;
+          left: 14px;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          z-index: 10;
+        }
+        .wh-zoom-btn {
+          width: 28px;
+          height: 28px;
+          border-radius: 6px;
+          border: 1px solid #CBD5E1;
+          background: #FFFFFF;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          color: #0F172A;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        /* MAP SECTIONS */
+        .wh-map-top-ops {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 10px;
+          margin-bottom: 14px;
+          padding-left: 36px;
+        }
+        .wh-op-box {
+          background: #F8FAFC;
+          border: 1px solid #E2E8F0;
+          border-radius: 10px;
+          padding: 10px 12px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          cursor: pointer;
+          transition: border-color 0.15s;
+        }
+        .wh-op-box:hover { border-color: #FFD400; }
+        .wh-op-title { font-size: 10px; font-weight: 800; color: #64748B; text-transform: uppercase; }
+        .wh-op-num { font-size: 16px; font-weight: 900; color: #0F172A; }
+
+        /* MIDDLE RACKS & ZONES GRID */
+        .wh-map-mid-grid {
+          display: flex;
+          gap: 10px;
+          margin-bottom: 14px;
+        }
+        .wh-cold-box {
+          width: 100px;
+          background: #EFF6FF;
+          border: 1.5px dashed #3B82F6;
+          border-radius: 10px;
+          padding: 12px 8px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          cursor: pointer;
+        }
+
+        .wh-zones-flex {
+          flex: 1;
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 8px;
+        }
+        .wh-zone-card {
+          background: #FFFFFF;
+          border: 1px solid #E2E8F0;
+          border-radius: 10px;
+          padding: 10px;
+          cursor: pointer;
+        }
+        .wh-zone-title { font-size: 11px; font-weight: 900; color: #0F172A; text-align: center; }
+        .wh-zone-cap { font-size: 9.5px; font-weight: 700; color: #D97706; text-align: center; margin-bottom: 6px; }
+
+        .wh-rack-slots-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 3px;
+        }
+
+        /* LOAD LANES SIDE ROW */
+        .wh-lanes-panel {
+          width: 130px;
+          background: #F8FAFC;
+          border: 1px solid #E2E8F0;
+          border-radius: 10px;
+          padding: 10px;
+        }
+        .wh-lanes-title { font-size: 9.5px; font-weight: 900; color: #0F172A; text-transform: uppercase; margin-bottom: 8px; }
+        .wh-lane-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 4px 0;
+          border-bottom: 1px solid #F1F5F9;
+          font-size: 9.5px;
+        }
+        .wh-lane-item:last-child { border-bottom: none; }
+
+        /* BOTTOM FACILITY CARDS */
+        .wh-map-bot-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 10px;
+          margin-bottom: 16px;
+        }
+        .wh-fac-card {
+          background: #F8FAFC;
+          border: 1px solid #E2E8F0;
+          border-radius: 10px;
+          padding: 10px 12px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          cursor: pointer;
+        }
+
+        /* YARD BOTTOM CANVAS */
+        .wh-yard-canvas-sec {
+          background: #F1F5F9;
+          border: 1px dashed #CBD5E1;
+          border-radius: 12px;
+          padding: 14px;
+        }
+        .wh-yard-title { font-size: 11px; font-weight: 900; color: #0F172A; text-transform: uppercase; margin-bottom: 10px; }
+
+        .wh-yard-storage-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 8px;
+          margin-bottom: 10px;
+        }
+        .wh-yard-park-box {
+          background: #FFFFFF;
+          border: 1px solid #CBD5E1;
+          border-radius: 8px;
+          padding: 10px;
+          cursor: pointer;
+        }
+
+        .wh-gate-lanes-bar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 8px 16px;
+          background: #FFFFFF;
+          border-radius: 8px;
+          font-size: 10px;
+          font-weight: 800;
+        }
+
+        /* BOTTOM TIP */
+        .wh-map-tip-bar {
+          margin-top: 10px;
+          padding: 8px 12px;
+          background: #EFF6FF;
+          border: 1px solid #BFDBFE;
+          border-radius: 8px;
+          font-size: 11px;
+          color: #1E40AF;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        /* RIGHT SIDEBAR */
+        .wh-map-side-card {
+          background: #FFFFFF;
+          border: 1px solid #E2E8F0;
+          border-radius: 12px;
+          padding: 14px;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }
+        .wh-map-side-title {
+          font-size: 10px;
+          font-weight: 900;
+          color: #0F172A;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin-bottom: 10px;
+          padding-bottom: 4px;
+          border-bottom: 1px solid #F1F5F9;
+        }
+
+        /* DONUT CHART */
+        .wh-donut-wrap { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+        .wh-donut-chart { position: relative; width: 70px; height: 70px; flex-shrink: 0; }
+        .wh-donut-center {
+          position: absolute; inset: 12px; background: #FFFFFF; border-radius: 50%;
+          display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .wh-legend-list { display: flex; flex-direction: column; gap: 3px; font-size: 9.5px; }
+        .wh-legend-item { display: flex; align-items: center; gap: 6px; }
+        .wh-legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+        /* YARD SUMMARY ROWS */
+        .wh-ys-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 5px 0;
+          border-bottom: 1px solid #F1F5F9;
+          font-size: 10.5px;
+        }
+        .wh-ys-row:last-child { border-bottom: none; }
+
+        /* MAP LEGEND LIST */
+        .wh-leg-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 6px;
+          font-size: 9.5px;
+          font-weight: 700;
+          color: #475569;
+        }
+
+        /* QUICK ACTIONS GRID */
+        .wh-qa-circle-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 8px;
+        }
+        .wh-qa-circle-btn {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+          padding: 10px 4px;
+          border-radius: 10px;
+          border: 1px solid #E2E8F0;
+          background: #F8FAFC;
+          font-size: 10px;
+          font-weight: 700;
+          color: #0F172A;
+          cursor: pointer;
+          transition: background 0.15s;
+        }
+        .wh-qa-circle-btn:hover { background: #FFFFFF; border-color: #FFD400; }
+
+        /* MODAL */
+        .wh-modal-overlay {
+          position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5);
+          backdrop-filter: blur(4px); z-index: 99999; display: flex;
+          align-items: center; justify-content: center; padding: 16px;
+        }
+        .wh-modal-box {
+          background: #FFFFFF; border-radius: 12px; width: 100%; max-width: 440px;
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); overflow: hidden;
+        }
+
+        @media (max-width: 1024px) {
+          .wh-map-top-ops { grid-template-columns: repeat(2, 1fr); padding-left: 0; }
+          .wh-map-master-grid { flex-direction: column; }
+          .wh-map-right-col { width: 100%; }
+        }
+        @media (max-width: 640px) {
+          .wh-map-mid-grid { flex-direction: column; }
+          .wh-zones-flex { grid-template-columns: repeat(2, 1fr); }
+          .wh-yard-storage-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+      `}</style>
+
+      {/* HEADER ROW */}
+      <div className="wh-map-header-row">
+        <div>
+          <h1 className="wh-map-title">WAREHOUSE & YARD MAP</h1>
+          <p className="wh-map-sub">Real-time overview of locations, inventory, and yard status.</p>
+        </div>
+
+        <div className="wh-map-actions-top">
+          <button className="wh-btn-legends" onClick={() => setLegendsModalOpen(true)}>
+            <Layers size={14} />
+            <span>Legends</span>
+          </button>
+          <button className="wh-btn-refresh-map" onClick={handleRefresh}>
+            <RefreshCw size={14} />
+            <span>Refresh</span>
+          </button>
         </div>
       </div>
 
-      {/* 3-Panel Main Layout Grid */}
-      <div className="responsive-map-layout">
-        
-        {/* Left Panel: Independent Assets */}
-        <div style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '24px',
-          border: '1px solid #f1f5f9',
-          padding: '24px',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          height: '100%',
-          textAlign: 'left'
-        }}>
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h2 style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
-                Independent Assets
-              </h2>
-              <span style={{
-                fontSize: '11px',
-                fontWeight: '700',
-                color: '#b45309',
-                backgroundColor: '#fffbeb',
-                padding: '3px 8px',
-                borderRadius: '9999px',
-                border: '1px solid #fef3c7'
-              }}>
-                {assets.length} Units
-              </span>
-            </div>
+      {/* MASTER GRID LAYOUT */}
+      <div className="wh-map-master-grid">
 
-            {/* Search Box */}
-            <div style={{ position: 'relative', marginBottom: '16px' }}>
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" style={{ position: 'absolute', left: '12px', top: '10px', color: '#94a3b8', width: '16px', height: '16px' }} />
-              <input
-                type="text"
-                placeholder="Search Item No, Barcode..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                style={{
-                  padding: '8px 12px 8px 36px',
-                  fontSize: '12px',
-                  borderRadius: '10px',
-                  border: '1px solid #cbd5e1',
-                  width: '100%',
-                  outline: 'none',
-                  backgroundColor: '#ffffff'
-                }}
-              />
-            </div>
+        {/* LEFT COLUMN MAP BOARD */}
+        <div className="wh-map-left-col">
 
-            {/* Assets List */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {filteredAssets.map(asset => {
-                const isSelected = asset.id === selectedAssetId;
-                const statusColor = asset.status === 'MISSING' ? '#64748b' : 
-                                    asset.status === 'STAGED' ? '#3b82f6' : '#10b981';
-                return (
-                  <div
-                    key={asset.id}
-                    onClick={() => setSelectedAssetId(asset.id)}
-                    style={{
-                      border: isSelected ? '1.5px solid #ffd400' : '1px solid #e2e8f0',
-                      borderRadius: '16px',
-                      padding: '16px',
-                      cursor: 'pointer',
-                      backgroundColor: isSelected ? '#fffbeb' : '#ffffff',
-                      transition: 'all 0.2s',
-                      boxShadow: isSelected ? '0 4px 12px rgba(255, 212, 0, 0.08)' : 'none'
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a' }}>{asset.id}</span>
-                      <span style={{
-                        fontSize: '9px',
-                        fontWeight: '800',
-                        color: statusColor,
-                        backgroundColor: '#f8fafc',
-                        border: `1.5px solid #e2e8f0`,
-                        borderRadius: '6px',
-                        padding: '2px 6px',
-                        letterSpacing: '0.05em'
-                      }}>
-                        {asset.status}
-                      </span>
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#64748b', fontWeight: '500' }}>
-                      <span>{asset.pallets} • {asset.weight}</span>
-                      <span style={{ color: '#b45309', fontWeight: '700' }}>{asset.location}</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+          {/* MODE TABS */}
+          <div className="wh-map-mode-tabs">
+            <button
+              className={`wh-mode-tab ${activeTab === 'WAREHOUSE' ? 'active' : ''}`}
+              onClick={() => setActiveTab('WAREHOUSE')}
+            >
+              WAREHOUSE
+            </button>
+            <button
+              className={`wh-mode-tab ${activeTab === 'YARD' ? 'active' : ''}`}
+              onClick={() => setActiveTab('YARD')}
+            >
+              YARD
+            </button>
           </div>
 
-          <div style={{ fontSize: '11px', color: '#64748b', textAlign: 'center', marginTop: '20px', borderTop: '1px solid #f1f5f9', paddingTop: '12px' }}>
-            * Assets exist independently of load bookings.
-          </div>
-        </div>
+          {/* MAP CANVAS BOARD */}
+          <div className="wh-map-canvas-card">
 
-        {/* Middle Panel: Allocation Map Grid */}
-        <div style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '24px',
-          border: '1px solid #f1f5f9',
-          padding: '24px',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          height: '100%',
-          textAlign: 'left'
-        }}>
-          <div>
-            {/* Header controls for map */}
-            <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-              <h2 style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
-                {isYard ? 'Yard Staging & Allocation Map' : 'Yard / Warehouse Allocation Map'}
-              </h2>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', fontSize: '11px', fontWeight: '700' }}>
-                <button 
-                  onClick={() => setLocationModalOpen(true)} 
-                  style={{ background: 'none', border: 'none', color: '#b45309', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}
-                >
-                  + Add Location
-                </button>
-                <button 
-                  onClick={() => setHoldingModalOpen(true)} 
-                  style={{ background: 'none', border: 'none', color: '#b45309', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}
-                >
-                  + Add Holding
-                </button>
-                <button 
-                  onClick={() => setLoadLaneModalOpen(true)} 
-                  style={{ background: 'none', border: 'none', color: '#b45309', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}
-                >
-                  + Add Load Lane
-                </button>
-              </div>
+            {/* ZOOM TOOLS */}
+            <div className="wh-map-zoom-tools">
+              <button className="wh-zoom-btn" onClick={() => setZoomLevel(prev => Math.min(150, prev + 10))} title="Zoom In">
+                <ZoomIn size={14} />
+              </button>
+              <button className="wh-zoom-btn" onClick={() => setZoomLevel(prev => Math.max(70, prev - 10))} title="Zoom Out">
+                <ZoomOut size={14} />
+              </button>
+              <button className="wh-zoom-btn" onClick={() => setZoomLevel(100)} title="Reset View">
+                <Maximize2 size={14} />
+              </button>
             </div>
 
-            {/* Map Dotted Grid Background */}
-            <div className="responsive-map-grid" style={{
-              backgroundImage: 'radial-gradient(#cbd5e1 1.5px, transparent 1.5px)',
-              backgroundSize: '16px 16px',
-              backgroundColor: '#f8fafc',
-              border: '1px dashed #cbd5e1',
-              borderRadius: '20px',
-              padding: '20px'
-            }}>
-              {slots.map((slot, index) => (
-                <div
-                  key={index}
-                  style={{
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '16px',
-                    padding: '16px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
-                  }}
-                >
+            <div style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top left', transition: 'transform 0.2s' }}>
+
+              {/* TOP OPERATIONAL AREAS */}
+              <div className="wh-map-top-ops">
+                <div className="wh-op-box" onClick={() => handleLocationClick('Receiving Area', 'Inbound', '2 In Progress')}>
+                  <Box size={18} className="text-blue-600" />
                   <div>
-                    <span style={{
-                      fontSize: '8px',
-                      fontWeight: '800',
-                      color: '#94a3b8',
-                      letterSpacing: '0.05em'
-                    }}>
-                      {slot.type}
-                    </span>
-                    <h4 style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a', margin: '4px 0 0 0' }}>
-                      {slot.name}
-                    </h4>
-                  </div>
-
-                  <div style={{ marginTop: '12px' }}>
-                    {slot.occupiedBy ? (
-                      <div style={{
-                        backgroundColor: '#fffbeb',
-                        border: '1px solid #fde68a',
-                        borderRadius: '8px',
-                        padding: '4px 8px',
-                        fontSize: '11px',
-                        fontWeight: '700',
-                        color: '#b45309',
-                        display: 'inline-block'
-                      }}>
-                        {slot.occupiedBy}
-                      </div>
-                    ) : (
-                      <span style={{ fontSize: '10px', color: '#94a3b8' }}>- Empty Spot</span>
-                    )}
+                    <div className="wh-op-title">RECEIVING AREA</div>
+                    <div className="wh-op-num">2 <span className="text-[10px] text-slate-500 font-normal">In Progress</span></div>
                   </div>
                 </div>
-              ))}
+
+                <div className="wh-op-box" onClick={() => handleLocationClick('QC Inspection', 'Quality Check', '1 In Progress')}>
+                  <ShieldCheck size={18} className="text-teal-600" />
+                  <div>
+                    <div className="wh-op-title">QC INSPECTION</div>
+                    <div className="wh-op-num">1 <span className="text-[10px] text-slate-500 font-normal">In Progress</span></div>
+                  </div>
+                </div>
+
+                <div className="wh-op-box" onClick={() => handleLocationClick('Staging Area', 'Staging', '18 Items')}>
+                  <Layers size={18} className="text-purple-600" />
+                  <div>
+                    <div className="wh-op-title">STAGING AREA</div>
+                    <div className="wh-op-num">18 <span className="text-[10px] text-slate-500 font-normal">Items</span></div>
+                  </div>
+                </div>
+
+                <div className="wh-op-box" onClick={() => handleLocationClick('Dispatch Area', 'Outbound', '24 Items')}>
+                  <Truck size={18} className="text-green-600" />
+                  <div>
+                    <div className="wh-op-title">DISPATCH AREA</div>
+                    <div className="wh-op-num">24 <span className="text-[10px] text-slate-500 font-normal">Items</span></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* MIDDLE RACKS & COLD STORAGE */}
+              <div className="wh-map-mid-grid">
+
+                {/* COLD STORAGE */}
+                <div className="wh-cold-box" onClick={() => handleLocationClick('Cold Storage', 'Cold Chain', '12 Items')}>
+                  <Snowflake size={20} className="text-blue-500 mb-1" />
+                  <div className="text-[10px] font-extrabold text-blue-700 uppercase">COLD STORAGE</div>
+                  <div className="text-sm font-black text-slate-900 mt-1">12 <span className="text-[9px] text-slate-500 font-normal">Items</span></div>
+                </div>
+
+                {/* ZONES A-D */}
+                <div className="wh-zones-flex">
+                  <div className="wh-zone-card" onClick={() => handleLocationClick('Zone A', 'Dry Storage', '85% Capacity')}>
+                    <div className="wh-zone-title">ZONE A</div>
+                    <div className="wh-zone-cap">85% Capacity</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                      <div className="flex flex-col gap-1">
+                        <div className="h-2.5 rounded-xs bg-red-500" />
+                        <div className="h-2.5 rounded-xs bg-red-500" />
+                        <div className="h-2.5 rounded-xs bg-amber-500" />
+                        <div className="h-2.5 rounded-xs bg-amber-500" />
+                        <div className="h-2.5 rounded-xs bg-blue-500" />
+                        <div className="h-2.5 rounded-xs bg-blue-500" />
+                        <div className="h-2.5 rounded-xs bg-green-500" />
+                        <div className="h-2.5 rounded-xs bg-green-500" />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <div className="h-2.5 rounded-xs bg-red-500" />
+                        <div className="h-2.5 rounded-xs bg-red-500" />
+                        <div className="h-2.5 rounded-xs bg-amber-500" />
+                        <div className="h-2.5 rounded-xs bg-blue-500" />
+                        <div className="h-2.5 rounded-xs bg-blue-500" />
+                        <div className="h-2.5 rounded-xs bg-blue-500" />
+                        <div className="h-2.5 rounded-xs bg-green-500" />
+                        <div className="h-2.5 rounded-xs bg-green-500" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="wh-zone-card" onClick={() => handleLocationClick('Zone B', 'Dry Storage', '62% Capacity')}>
+                    <div className="wh-zone-title">ZONE B</div>
+                    <div className="wh-zone-cap">62% Capacity</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                      <div className="flex flex-col gap-1">
+                        <div className="h-2.5 rounded-xs bg-red-500" />
+                        <div className="h-2.5 rounded-xs bg-amber-500" />
+                        <div className="h-2.5 rounded-xs bg-amber-500" />
+                        <div className="h-2.5 rounded-xs bg-blue-500" />
+                        <div className="h-2.5 rounded-xs bg-blue-500" />
+                        <div className="h-2.5 rounded-xs bg-blue-500" />
+                        <div className="h-2.5 rounded-xs bg-green-500" />
+                        <div className="h-2.5 rounded-xs bg-green-500" />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <div className="h-2.5 rounded-xs bg-red-500" />
+                        <div className="h-2.5 rounded-xs bg-amber-500" />
+                        <div className="h-2.5 rounded-xs bg-blue-500" />
+                        <div className="h-2.5 rounded-xs bg-blue-500" />
+                        <div className="h-2.5 rounded-xs bg-blue-500" />
+                        <div className="h-2.5 rounded-xs bg-green-500" />
+                        <div className="h-2.5 rounded-xs bg-green-500" />
+                        <div className="h-2.5 rounded-xs bg-green-500" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="wh-zone-card" onClick={() => handleLocationClick('Zone C', 'Dry Storage', '74% Capacity')}>
+                    <div className="wh-zone-title">ZONE C</div>
+                    <div className="wh-zone-cap">74% Capacity</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                      <div className="flex flex-col gap-1">
+                        <div className="h-2.5 rounded-xs bg-red-500" />
+                        <div className="h-2.5 rounded-xs bg-red-500" />
+                        <div className="h-2.5 rounded-xs bg-amber-500" />
+                        <div className="h-2.5 rounded-xs bg-blue-500" />
+                        <div className="h-2.5 rounded-xs bg-blue-500" />
+                        <div className="h-2.5 rounded-xs bg-blue-500" />
+                        <div className="h-2.5 rounded-xs bg-green-500" />
+                        <div className="h-2.5 rounded-xs bg-green-500" />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <div className="h-2.5 rounded-xs bg-red-500" />
+                        <div className="h-2.5 rounded-xs bg-amber-500" />
+                        <div className="h-2.5 rounded-xs bg-blue-500" />
+                        <div className="h-2.5 rounded-xs bg-blue-500" />
+                        <div className="h-2.5 rounded-xs bg-blue-500" />
+                        <div className="h-2.5 rounded-xs bg-green-500" />
+                        <div className="h-2.5 rounded-xs bg-green-500" />
+                        <div className="h-2.5 rounded-xs bg-green-500" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="wh-zone-card" onClick={() => handleLocationClick('Zone D', 'High Bay', '91% Capacity')}>
+                    <div className="wh-zone-title">ZONE D</div>
+                    <div className="wh-zone-cap text-red-600">91% Capacity</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                      <div className="flex flex-col gap-1">
+                        <div className="h-2.5 rounded-xs bg-red-500" />
+                        <div className="h-2.5 rounded-xs bg-red-500" />
+                        <div className="h-2.5 rounded-xs bg-red-500" />
+                        <div className="h-2.5 rounded-xs bg-red-500" />
+                        <div className="h-2.5 rounded-xs bg-red-500" />
+                        <div className="h-2.5 rounded-xs bg-amber-500" />
+                        <div className="h-2.5 rounded-xs bg-blue-500" />
+                        <div className="h-2.5 rounded-xs bg-blue-500" />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <div className="h-2.5 rounded-xs bg-red-500" />
+                        <div className="h-2.5 rounded-xs bg-red-500" />
+                        <div className="h-2.5 rounded-xs bg-red-500" />
+                        <div className="h-2.5 rounded-xs bg-red-500" />
+                        <div className="h-2.5 rounded-xs bg-amber-500" />
+                        <div className="h-2.5 rounded-xs bg-blue-500" />
+                        <div className="h-2.5 rounded-xs bg-green-500" />
+                        <div className="h-2.5 rounded-xs bg-green-500" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* LOAD LANES SIDE ROW */}
+                <div className="wh-lanes-panel" style={{ width: 140 }}>
+                  <div className="wh-lanes-title">LOAD LANES</div>
+                  
+                  <div className="wh-lane-item flex justify-between items-center py-1">
+                    <div>
+                      <div className="font-bold text-slate-900 text-[10px]">LANE 1</div>
+                      <div className="text-[8.5px] font-extrabold text-green-600 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" /> Ready
+                      </div>
+                    </div>
+                    <span className="text-green-600 font-extrabold text-xs">6 / 8</span>
+                  </div>
+
+                  <div className="wh-lane-item flex justify-between items-center py-1">
+                    <div>
+                      <div className="font-bold text-slate-900 text-[10px]">LANE 2</div>
+                      <div className="text-[8.5px] font-extrabold text-green-600 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" /> Ready
+                      </div>
+                    </div>
+                    <span className="text-green-600 font-extrabold text-xs">5 / 8</span>
+                  </div>
+
+                  <div className="wh-lane-item flex justify-between items-center py-1">
+                    <div>
+                      <div className="font-bold text-slate-900 text-[10px]">LANE 3</div>
+                      <div className="text-[8.5px] font-extrabold text-amber-600 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" /> Staging
+                      </div>
+                    </div>
+                    <span className="text-amber-600 font-extrabold text-xs">7 / 8</span>
+                  </div>
+
+                  <div className="wh-lane-item flex justify-between items-center py-1">
+                    <div>
+                      <div className="font-bold text-slate-900 text-[10px]">LANE 4</div>
+                      <div className="text-[8.5px] font-extrabold text-green-600 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" /> Ready
+                      </div>
+                    </div>
+                    <span className="text-green-600 font-extrabold text-xs">4 / 8</span>
+                  </div>
+
+                  <div className="wh-lane-item flex justify-between items-center py-1">
+                    <div>
+                      <div className="font-bold text-slate-900 text-[10px]">LANE 5</div>
+                      <div className="text-[8.5px] font-extrabold text-red-600 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" /> Full
+                      </div>
+                    </div>
+                    <span className="text-red-600 font-extrabold text-xs">8 / 8</span>
+                  </div>
+
+                  <div className="wh-lane-item flex justify-between items-center py-1">
+                    <div>
+                      <div className="font-bold text-slate-900 text-[10px]">LANE 6</div>
+                      <div className="text-[8.5px] font-bold text-slate-400 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-slate-300 inline-block" /> Empty
+                      </div>
+                    </div>
+                    <span className="text-slate-400 font-bold text-xs">0 / 8</span>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* BOTTOM FACILITY CARDS */}
+              <div className="wh-map-bot-grid">
+                <div className="wh-fac-card" onClick={() => handleLocationClick('Hazmat Storage', 'Dangerous Goods', '8 Items')}>
+                  <AlertTriangle size={16} className="text-red-500" />
+                  <div>
+                    <div className="text-[9.5px] font-extrabold text-slate-500 uppercase">HAZMAT STORAGE</div>
+                    <div className="text-xs font-black text-slate-900">8 Items</div>
+                  </div>
+                </div>
+
+                <div className="wh-fac-card" onClick={() => handleLocationClick('Value Storage', 'Secure Hold', '6 Items')}>
+                  <Lock size={16} className="text-amber-500" />
+                  <div>
+                    <div className="text-[9.5px] font-extrabold text-slate-500 uppercase">VALUE STORAGE</div>
+                    <div className="text-xs font-black text-slate-900">6 Items</div>
+                  </div>
+                </div>
+
+                <div className="wh-fac-card" onClick={() => handleLocationClick('Workshop', 'Maintenance', '1 In Progress')}>
+                  <Wrench size={16} className="text-teal-500" />
+                  <div>
+                    <div className="text-[9.5px] font-extrabold text-slate-500 uppercase">WORKSHOP</div>
+                    <div className="text-xs font-black text-slate-900">1 In Progress</div>
+                  </div>
+                </div>
+
+                <div className="wh-fac-card" onClick={() => handleLocationClick('Office', 'Administration', '3 Staff')}>
+                  <Users size={16} className="text-slate-500" />
+                  <div>
+                    <div className="text-[9.5px] font-extrabold text-slate-500 uppercase">OFFICE</div>
+                    <div className="text-xs font-black text-slate-900">3 Staff</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* YARD BOTTOM CANVAS */}
+              <div className="wh-yard-canvas-sec" style={{ position: 'relative', background: '#F8FAFC', border: '1px dashed #CBD5E1', borderRadius: '14px', padding: '16px' }}>
+                <div style={{ position: 'absolute', top: '-10px', left: '50%', transform: 'translateX(-50%)', background: '#FFFFFF', padding: '0 12px', fontSize: '10px', fontWeight: '900', color: '#64748B', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                  YARD
+                </div>
+
+                <div className="wh-yard-storage-grid">
+                  {/* CARD 1: VEHICLE STORAGE */}
+                  <div className="wh-yard-park-box" onClick={() => handleLocationClick('Vehicle Storage', 'Yard Parking', '34 Vehicles')} style={{ border: '1px solid #BFDBFE', background: '#FFFFFF' }}>
+                    <div className="flex justify-between items-center mb-1">
+                      <div className="flex items-center gap-1.5">
+                        <Truck size={14} className="text-blue-600" />
+                        <span className="text-[10px] font-extrabold text-blue-700 uppercase">VEHICLE STORAGE</span>
+                      </div>
+                    </div>
+                    <div className="text-xs font-black text-slate-900 mb-2">34 <span className="text-[9px] text-slate-500 font-normal">Vehicles</span></div>
+                    {/* 3x8 Car Slots Grid */}
+                    <div className="grid grid-cols-8 gap-1">
+                      {Array.from({ length: 24 }).map((_, i) => (
+                        <div key={i} className="h-4 rounded border border-blue-200 bg-blue-50 flex items-center justify-center text-[9px] text-blue-600">
+                          🚘
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* CARD 2: CONTAINER YARD */}
+                  <div className="wh-yard-park-box" onClick={() => handleLocationClick('Container Yard', 'Yard Stacking', '18 Containers')} style={{ border: '1px solid #FDE68A', background: '#FFFFFF' }}>
+                    <div className="flex justify-between items-center mb-1">
+                      <div className="flex items-center gap-1.5">
+                        <Box size={14} className="text-amber-600" />
+                        <span className="text-[10px] font-extrabold text-amber-700 uppercase">CONTAINER YARD</span>
+                      </div>
+                    </div>
+                    <div className="text-xs font-black text-slate-900 mb-2">18 <span className="text-[9px] text-slate-500 font-normal">Containers</span></div>
+                    {/* 2x5 Container Grid */}
+                    <div className="grid grid-cols-5 gap-1.5">
+                      {Array.from({ length: 10 }).map((_, i) => (
+                        <div key={i} className={`h-6 rounded border flex flex-col justify-center px-1 ${i < 6 ? 'bg-amber-100 border-amber-300 text-amber-800' : 'bg-slate-50 border-slate-200 text-slate-400'}`}>
+                          <div className="h-0.5 bg-current w-full my-0.5 opacity-40" />
+                          <div className="h-0.5 bg-current w-full my-0.5 opacity-40" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* CARD 3: EQUIPMENT PARKING */}
+                  <div className="wh-yard-park-box" onClick={() => handleLocationClick('Equipment Parking', 'Yard Staging', '7 Equipment')} style={{ border: '1px solid #E9D5FF', background: '#FFFFFF' }}>
+                    <div className="flex justify-between items-center mb-1">
+                      <div className="flex items-center gap-1.5">
+                        <Wrench size={14} className="text-purple-600" />
+                        <span className="text-[10px] font-extrabold text-purple-700 uppercase">EQUIPMENT PARKING</span>
+                      </div>
+                    </div>
+                    <div className="text-xs font-black text-slate-900 mb-2">7 <span className="text-[9px] text-slate-500 font-normal">Equipment</span></div>
+                    {/* 2x5 Equipment Grid */}
+                    <div className="grid grid-cols-5 gap-1.5">
+                      {Array.from({ length: 10 }).map((_, i) => (
+                        <div key={i} className={`h-6 rounded border flex items-center justify-center text-[11px] ${i < 7 ? 'bg-purple-100 border-purple-300 text-purple-700' : 'bg-slate-50 border-slate-200 text-slate-300'}`}>
+                          🚜
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* CARD 4: EMPTY PARK */}
+                  <div className="wh-yard-park-box" onClick={() => handleLocationClick('Empty Park', 'Trailer Bay', '12 Trailers')} style={{ border: '1px solid #CBD5E1', background: '#FFFFFF' }}>
+                    <div className="flex justify-between items-center mb-1">
+                      <div className="flex items-center gap-1.5">
+                        <Truck size={14} className="text-slate-600" />
+                        <span className="text-[10px] font-extrabold text-slate-700 uppercase">EMPTY PARK</span>
+                      </div>
+                    </div>
+                    <div className="text-xs font-black text-slate-900 mb-2">12 <span className="text-[9px] text-slate-500 font-normal">Trailers</span></div>
+                    {/* 2x4 Trailer Bay Grid */}
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {Array.from({ length: 8 }).map((_, i) => (
+                        <div key={i} className="h-6 rounded border border-slate-300 bg-slate-100 flex items-center justify-center text-[10px] text-slate-600 font-bold">
+                          🚚
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* ACCESS ROAD & GATE SYSTEM */}
+                <div className="wh-gate-lanes-bar" style={{ marginTop: '12px', background: '#F1F5F9', border: '1px solid #CBD5E1', padding: '8px 12px', borderRadius: '10px' }}>
+                  <div className="flex items-center gap-2">
+                    <span className="px-3 py-1 bg-green-100 border border-green-300 text-green-700 font-black rounded-md text-[10px] flex items-center gap-1">
+                      IN GATE ⬆
+                    </span>
+                  </div>
+
+                  <div className="flex-1 flex justify-center items-center gap-4 text-slate-400 font-bold text-xs tracking-widest">
+                    <span>←</span><span>←</span><span>←</span><span>MAIN ACCESS ROAD</span><span>←</span><span>←</span><span>←</span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="px-3 py-1 bg-red-100 border border-red-300 text-red-700 font-black rounded-md text-[10px] flex items-center gap-1">
+                      OUT GATE ⬇
+                    </span>
+                  </div>
+                </div>
+              </div>
+
             </div>
-          </div>
 
-          {/* Bottom Actions Bar */}
-          <div style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            justifyContent: 'center',
-            gap: '16px',
-            marginTop: '24px',
-            borderTop: '1px solid #f1f5f9',
-            paddingTop: '16px'
-          }}>
-            <button
-              onClick={handleMoveItemClick}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                backgroundColor: '#ffffff',
-                border: '1.5px solid #cbd5e1',
-                borderRadius: '12px',
-                padding: '10px 18px',
-                fontSize: '11px',
-                fontWeight: '700',
-                color: '#0f172a',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              <ArrowRight className="w-4 h-4" />
-              <span>Move Item</span>
-            </button>
+            {/* TIP */}
+            <div className="wh-map-tip-bar">
+              <Info size={14} className="flex-shrink-0 text-blue-600" />
+              <span>Click on any location on the map to view more details and items.</span>
+            </div>
 
-            <button
-              onClick={handleMoveToHolding}
-              style={{
-                backgroundColor: '#ffffff',
-                border: '1.5px solid #fde68a',
-                borderRadius: '12px',
-                padding: '10px 18px',
-                fontSize: '11px',
-                fontWeight: '700',
-                color: '#b45309',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              Move to Holding Area
-            </button>
-
-            <button
-              onClick={handleMoveToLoadLane}
-              style={{
-                backgroundColor: '#ffffff',
-                border: '1.5px solid #fde68a',
-                borderRadius: '12px',
-                padding: '10px 18px',
-                fontSize: '11px',
-                fontWeight: '700',
-                color: '#b45309',
-                cursor: 'pointer',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              Move to Load Lane
-            </button>
           </div>
         </div>
 
-        {/* Right Panel: Active Stock Detail */}
-        <div style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '24px',
-          border: '1px solid #f1f5f9',
-          padding: '24px',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          height: '100%',
-          textAlign: 'left'
-        }}>
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <span style={{ fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Active Stock Detail
-              </span>
-              <span style={{
-                fontSize: '9px',
-                fontWeight: '800',
-                color: selectedAsset.status === 'MISSING' ? '#ef4444' : '#10b981',
-                backgroundColor: selectedAsset.status === 'MISSING' ? '#fef2f2' : '#ecfdf5',
-                border: '1px solid transparent',
-                borderRadius: '6px',
-                padding: '2px 6px',
-                letterSpacing: '0.05em'
-              }}>
-                {selectedAsset.status}
-              </span>
+        {/* RIGHT SIDEBAR */}
+        <div className="wh-map-right-col">
+
+          {/* LOCATION SUMMARY */}
+          <div className="wh-map-side-card">
+            <div className="flex justify-between items-center mb-1">
+              <div className="wh-map-side-title" style={{ margin: 0, padding: 0, border: 'none' }}>
+                LOCATION SUMMARY
+              </div>
+              <span className="text-[10px] font-bold text-blue-600 cursor-pointer hover:underline">View report</span>
             </div>
 
-            <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', margin: '0 0 16px 0' }}>
-              {selectedAsset.id}
-            </h3>
-
-            {/* Details Grid */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '16px 12px',
-              borderBottom: '1px solid #f1f5f9',
-              paddingBottom: '16px',
-              marginBottom: '16px'
-            }}>
-              <div>
-                <span style={{ fontSize: '9px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Pallet Count
-                </span>
-                <div style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a', marginTop: '4px' }}>
-                  {selectedAsset.pallets}
+            <div className="wh-donut-wrap" style={{ marginTop: 8 }}>
+              <div className="wh-donut-chart">
+                <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
+                  {/* Available 60% */}
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="#22C55E" strokeWidth="4" strokeDasharray="60 100" />
+                  {/* In Use 19% */}
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="#3B82F6" strokeWidth="4" strokeDasharray="19 100" strokeDashoffset="-60" />
+                  {/* On Hold 11% */}
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="#F59E0B" strokeWidth="4" strokeDasharray="11 100" strokeDashoffset="-79" />
+                  {/* Damaged 5% */}
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="#EF4444" strokeWidth="4" strokeDasharray="5 100" strokeDashoffset="-90" />
+                </svg>
+                <div className="wh-donut-center">
+                  <span style={{ fontSize: '13px', fontWeight: 900 }}>186</span>
+                  <span style={{ fontSize: '7px', color: '#64748B' }}>Total</span>
                 </div>
               </div>
 
-              <div style={{ display: 'none' }}></div> {/* spacer */}
-
-              <div>
-                <span style={{ fontSize: '9px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Weight
-                </span>
-                <div style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a', marginTop: '4px' }}>
-                  {selectedAsset.weight}
+              <div className="wh-legend-list">
+                <div className="wh-legend-item">
+                  <div className="wh-legend-dot" style={{ background: '#22C55E' }} />
+                  <span>Available <strong>112 (60%)</strong></span>
                 </div>
-              </div>
-
-              <div>
-                <span style={{ fontSize: '9px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Dimensions
-                </span>
-                <div style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a', marginTop: '4px' }}>
-                  {selectedAsset.dimensions}
+                <div className="wh-legend-item">
+                  <div className="wh-legend-dot" style={{ background: '#3B82F6' }} />
+                  <span>In Use <strong>36 (19%)</strong></span>
                 </div>
-              </div>
-
-              <div>
-                <span style={{ fontSize: '9px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Aisle/Bin Location
-                </span>
-                <div style={{ fontSize: '13px', fontWeight: '800', color: '#b45309', marginTop: '4px' }}>
-                  {selectedAsset.location}
+                <div className="wh-legend-item">
+                  <div className="wh-legend-dot" style={{ background: '#F59E0B' }} />
+                  <span>On Hold <strong>20 (11%)</strong></span>
                 </div>
-              </div>
-
-              <div>
-                <span style={{ fontSize: '9px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Zone
-                </span>
-                <div style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a', marginTop: '4px' }}>
-                  {selectedAsset.zone}
+                <div className="wh-legend-item">
+                  <div className="wh-legend-dot" style={{ background: '#EF4444' }} />
+                  <span>Damaged <strong>10 (5%)</strong></span>
                 </div>
-              </div>
-
-              <div style={{ gridColumn: 'span 2' }}>
-                <span style={{ fontSize: '9px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Barcode / QR
-                </span>
-                <div style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a', marginTop: '4px', fontFamily: 'monospace' }}>
-                  {selectedAsset.barcode}
-                </div>
-              </div>
-
-              <div style={{ gridColumn: 'span 2' }}>
-                <span style={{ fontSize: '9px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Customer Account
-                </span>
-                <div style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a', marginTop: '4px' }}>
-                  {selectedAsset.customer}
-                </div>
-              </div>
-
-              <div style={{ gridColumn: 'span 2' }}>
-                <span style={{ fontSize: '9px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Destination Delivery
-                </span>
-                <div style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a', marginTop: '4px' }}>
-                  {selectedAsset.destination}
+                <div className="wh-legend-item">
+                  <div className="wh-legend-dot" style={{ background: '#94A3B8' }} />
+                  <span>Other <strong>8 (5%)</strong></span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Action buttons inside right panel matching screenshot */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <button
-              onClick={handleAssignToLoadLane}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                width: '100%',
-                backgroundColor: '#ffffff',
-                border: '1.5px solid #cbd5e1',
-                borderRadius: '12px',
-                padding: '10px',
-                fontSize: '12px',
-                fontWeight: '700',
-                color: '#0f172a',
-                cursor: 'pointer'
-              }}
-            >
-              <MapPin className="w-4 h-4" />
-              <span>Assign to Load Lane</span>
-            </button>
-
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button
-                onClick={handlePrintLabel}
-                style={{
-                  flex: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px',
-                  backgroundColor: '#ffffff',
-                  border: '1.5px solid #cbd5e1',
-                  borderRadius: '12px',
-                  padding: '10px',
-                  fontSize: '11px',
-                  fontWeight: '700',
-                  color: '#0f172a',
-                  cursor: 'pointer'
-                }}
-              >
-                <Printer className="w-3.5 h-3.5" />
-                <span>Print Label</span>
-              </button>
-
-              <button
-                onClick={handleReprint}
-                style={{
-                  flex: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px',
-                  backgroundColor: '#ffffff',
-                  border: '1.5px solid #cbd5e1',
-                  borderRadius: '12px',
-                  padding: '10px',
-                  fontSize: '11px',
-                  fontWeight: '700',
-                  color: '#0f172a',
-                  cursor: 'pointer'
-                }}
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span>Reprint</span>
-              </button>
+          {/* YARD SUMMARY */}
+          <div className="wh-map-side-card">
+            <div className="flex justify-between items-center mb-1">
+              <div className="wh-map-side-title" style={{ margin: 0, padding: 0, border: 'none' }}>
+                YARD SUMMARY
+              </div>
+              <span className="text-[10px] font-bold text-blue-600 cursor-pointer hover:underline">View report</span>
             </div>
 
-            <button
-              onClick={handleViewAssetHistory}
-              style={{
-                width: '100%',
-                backgroundColor: '#ffffff',
-                border: '1px solid transparent',
-                fontSize: '11px',
-                fontWeight: '700',
-                color: '#64748b',
-                cursor: 'pointer',
-                padding: '6px'
-              }}
-            >
-              View Asset History
-            </button>
+            <div style={{ marginTop: 8 }}>
+              <div className="wh-ys-row">
+                <div className="flex items-center gap-1.5 font-bold text-slate-800">
+                  <span>🚙 Vehicles</span>
+                </div>
+                <div>
+                  <span className="font-extrabold text-slate-900">34</span>
+                  <span className="text-[9.5px] text-blue-600 font-bold ml-1.5">12 In Transit</span>
+                </div>
+              </div>
 
-            <button
-              onClick={handleReportMissing}
-              style={{
-                width: '100%',
-                backgroundColor: '#fef2f2',
-                border: 'none',
-                borderRadius: '12px',
-                padding: '10px',
-                fontSize: '11px',
-                fontWeight: '700',
-                color: '#ef4444',
-                cursor: 'pointer'
-              }}
-            >
-              Report Missing Item
-            </button>
+              <div className="wh-ys-row">
+                <div className="flex items-center gap-1.5 font-bold text-slate-800">
+                  <span>📦 Containers</span>
+                </div>
+                <div>
+                  <span className="font-extrabold text-slate-900">18</span>
+                  <span className="text-[9.5px] text-blue-600 font-bold ml-1.5">6 In Transit</span>
+                </div>
+              </div>
 
-            <button
-              onClick={() => setMovementModalOpen(true)}
-              style={{
-                width: '100%',
-                backgroundColor: '#ffd400',
-                color: '#0f172a',
-                border: 'none',
-                borderRadius: '12px',
-                padding: '12px',
-                fontSize: '12px',
-                fontWeight: '800',
-                cursor: 'pointer',
-                textAlign: 'center',
-                boxShadow: '0 4px 12px rgba(255, 212, 0, 0.2)',
-                marginTop: '4px'
-              }}
-            >
-              View Movement History
-            </button>
+              <div className="wh-ys-row">
+                <div className="flex items-center gap-1.5 font-bold text-slate-800">
+                  <span>🚚 Trailers</span>
+                </div>
+                <div>
+                  <span className="font-extrabold text-slate-900">12</span>
+                  <span className="text-[9.5px] text-blue-600 font-bold ml-1.5">4 In Use</span>
+                </div>
+              </div>
+
+              <div className="wh-ys-row">
+                <div className="flex items-center gap-1.5 font-bold text-slate-800">
+                  <span>🚜 Equipment</span>
+                </div>
+                <div>
+                  <span className="font-extrabold text-slate-900">7</span>
+                  <span className="text-[9.5px] text-blue-600 font-bold ml-1.5">2 In Use</span>
+                </div>
+              </div>
+            </div>
           </div>
+
+          {/* MAP LEGEND */}
+          <div className="wh-map-side-card">
+            <div className="wh-map-side-title">MAP LEGEND</div>
+
+            <div className="wh-leg-grid">
+              <div className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
+                <span>Available</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                <span>In Use</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                <span>Staging</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
+                <span>On Hold</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
+                <span>Full</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-slate-300" />
+                <span>Empty</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-purple-500" />
+                <span>Maintenance</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-teal-500" />
+                <span>Restricted</span>
+              </div>
+            </div>
+          </div>
+
+          {/* QUICK ACTIONS */}
+          <div className="wh-map-side-card">
+            <div className="wh-map-side-title">QUICK ACTIONS</div>
+
+            <div className="wh-qa-circle-grid">
+              <button className="wh-qa-circle-btn" onClick={() => navigate('/warehouse/receive-inbound')}>
+                <Box size={16} className="text-amber-500" />
+                <span>Receive Stock</span>
+              </button>
+
+              <button className="wh-qa-circle-btn" onClick={() => navigate('/warehouse/move-transfer')}>
+                <ArrowRight size={16} className="text-blue-500" />
+                <span>Move / Transfer</span>
+              </button>
+
+              <button className="wh-qa-circle-btn" onClick={() => navigate('/warehouse/load-lanes')}>
+                <Plus size={16} className="text-green-500" />
+                <span>Create Lane</span>
+              </button>
+
+              <button className="wh-qa-circle-btn" onClick={() => navigate('/warehouse/find-stock')}>
+                <Search size={16} className="text-purple-500" />
+                <span>Find Stock</span>
+              </button>
+            </div>
+          </div>
+
         </div>
 
       </div>
 
-      {/* Modal 1: Add New Bay */}
-      {locationModalOpen && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.4)',
-          backdropFilter: 'blur(4px)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 9999
-        }} onClick={() => setLocationModalOpen(false)}>
-          <form 
-            onSubmit={handleSaveLocation}
-            style={{
-              backgroundColor: '#ffffff',
-              borderRadius: '24px',
-              width: '100%',
-              maxWidth: '520px',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-              overflow: 'hidden',
-              padding: '28px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '20px',
-              animation: 'scaleIn 0.2s ease-out'
-            }} onClick={e => e.stopPropagation()}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', margin: 0 }}>Add New Bay</h2>
-              <button 
-                type="button"
-                onClick={() => setLocationModalOpen(false)}
-                style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}
-              >
-                <X className="w-5 h-5" />
-              </button>
+      {/* LOCATION DETAILS MODAL */}
+      {selectedLocation && (
+        <div className="wh-modal-overlay" onClick={() => setSelectedLocation(null)}>
+          <div className="wh-modal-box" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center p-4 border-b border-slate-200">
+              <h3 className="font-extrabold text-sm text-slate-900">{selectedLocation.name} Details</h3>
+              <button onClick={() => setSelectedLocation(null)}><X size={16} className="text-slate-400" /></button>
             </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'left' }}>
-              <label style={{ fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Location Name
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. Bay 4"
-                value={newLocationName}
-                onChange={e => setNewLocationName(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '14px 16px',
-                  fontSize: '14px',
-                  color: '#0f172a',
-                  backgroundColor: '#ffffff',
-                  border: '1.5px solid #e2e8f0',
-                  borderRadius: '12px',
-                  outline: 'none'
-                }}
-                required
-              />
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'left' }}>
-              <label style={{ fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Location Classification
-              </label>
-              <div style={{ position: 'relative' }}>
-                <select
-                  value={newLocationClassification}
-                  onChange={e => setNewLocationClassification(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '14px 16px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#0f172a',
-                    backgroundColor: '#ffffff',
-                    border: '1.5px solid #e2e8f0',
-                    borderRadius: '12px',
-                    outline: 'none',
-                    appearance: 'none',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <option value="Storage Bay / Aisle">Storage Bay / Aisle</option>
-                  <option value="Inbound Dock">Inbound Dock</option>
-                  <option value="Outbound Dock">Outbound Dock</option>
-                </select>
-                <div style={{
-                  position: 'absolute',
-                  right: '16px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  pointerEvents: 'none',
-                  color: '#64748b',
-                  fontSize: '12px'
-                }}>▼</div>
+            <div className="p-4 flex flex-col gap-3 text-xs">
+              <div className="flex justify-between pb-2 border-b border-slate-100">
+                <span className="text-slate-500">Classification:</span>
+                <span className="font-bold text-slate-900">{selectedLocation.type}</span>
               </div>
-            </div>
-
-            <button
-              type="submit"
-              style={{
-                width: '100%',
-                backgroundColor: '#ffd400',
-                color: '#0f172a',
-                border: 'none',
-                borderRadius: '12px',
-                padding: '14px',
-                fontSize: '13px',
-                fontWeight: '800',
-                cursor: 'pointer',
-                textAlign: 'center',
-                boxShadow: '0 4px 12px rgba(255, 212, 0, 0.3)'
-              }}
-            >
-              Save Location
-            </button>
-          </form>
-        </div>
-      )}
-
-      {/* Modal 2: Add Holding Area Zone */}
-      {holdingModalOpen && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.4)',
-          backdropFilter: 'blur(4px)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 9999
-        }} onClick={() => setHoldingModalOpen(false)}>
-          <form 
-            onSubmit={handleSaveHolding}
-            style={{
-              backgroundColor: '#ffffff',
-              borderRadius: '24px',
-              width: '100%',
-              maxWidth: '520px',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-              overflow: 'hidden',
-              padding: '28px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '20px',
-              animation: 'scaleIn 0.2s ease-out'
-            }} onClick={e => e.stopPropagation()}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', margin: 0 }}>Add Holding Area Zone</h2>
-              <button 
-                type="button"
-                onClick={() => setHoldingModalOpen(false)}
-                style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'left' }}>
-              <label style={{ fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Holding Zone Name
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. Holding Area C"
-                value={newHoldingName}
-                onChange={e => setNewHoldingName(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '14px 16px',
-                  fontSize: '14px',
-                  color: '#0f172a',
-                  backgroundColor: '#ffffff',
-                  border: '1.5px solid #e2e8f0',
-                  borderRadius: '12px',
-                  outline: 'none'
-                }}
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              style={{
-                width: '100%',
-                backgroundColor: '#ffd400',
-                color: '#0f172a',
-                border: 'none',
-                borderRadius: '12px',
-                padding: '14px',
-                fontSize: '13px',
-                fontWeight: '800',
-                cursor: 'pointer',
-                textAlign: 'center',
-                boxShadow: '0 4px 12px rgba(255, 212, 0, 0.3)'
-              }}
-            >
-              Create Holding Area
-            </button>
-          </form>
-        </div>
-      )}
-
-      {/* Modal 3: Add Load Lane Spot */}
-      {loadLaneModalOpen && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.4)',
-          backdropFilter: 'blur(4px)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 9999
-        }} onClick={() => setLoadLaneModalOpen(false)}>
-          <form 
-            onSubmit={handleSaveLane}
-            style={{
-              backgroundColor: '#ffffff',
-              borderRadius: '24px',
-              width: '100%',
-              maxWidth: '520px',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-              overflow: 'hidden',
-              padding: '28px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '20px',
-              animation: 'scaleIn 0.2s ease-out'
-            }} onClick={e => e.stopPropagation()}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', margin: 0 }}>Add Load Lane Spot</h2>
-              <button 
-                type="button"
-                onClick={() => setLoadLaneModalOpen(false)}
-                style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'left' }}>
-              <label style={{ fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Load Lane Name
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. Lane B1"
-                value={newLaneName}
-                onChange={e => setNewLaneName(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '14px 16px',
-                  fontSize: '14px',
-                  color: '#0f172a',
-                  backgroundColor: '#ffffff',
-                  border: '1.5px solid #e2e8f0',
-                  borderRadius: '12px',
-                  outline: 'none'
-                }}
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              style={{
-                width: '100%',
-                backgroundColor: '#ffd400',
-                color: '#0f172a',
-                border: 'none',
-                borderRadius: '12px',
-                padding: '14px',
-                fontSize: '13px',
-                fontWeight: '800',
-                cursor: 'pointer',
-                textAlign: 'center',
-                boxShadow: '0 4px 12px rgba(255, 212, 0, 0.3)'
-              }}
-            >
-                          Create Load Lane
-            </button>
-          </form>
-        </div>
-      )}
-
-      {/* Modal 4: Relocate Asset Location (Screenshot 1) */}
-      {relocateModalOpen && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.4)',
-          backdropFilter: 'blur(4px)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 9999
-        }} onClick={() => setRelocateModalOpen(false)}>
-          <form 
-            onSubmit={handleConfirmLocationMove}
-            style={{
-              backgroundColor: '#ffffff',
-              borderRadius: '24px',
-              width: '100%',
-              maxWidth: '480px',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-              overflow: 'hidden',
-              padding: '28px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '20px',
-              animation: 'scaleIn 0.2s ease-out'
-            }} onClick={e => e.stopPropagation()}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', margin: 0 }}>Relocate Asset Location</h2>
-              <button 
-                type="button"
-                onClick={() => setRelocateModalOpen(false)}
-                style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'left' }}>
-              <label style={{ fontSize: '10px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Select Target Location Spot
-              </label>
-              <div style={{ position: 'relative' }}>
-                <select
-                  value={targetLocationSpot}
-                  onChange={e => setTargetLocationSpot(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '14px 16px',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#0f172a',
-                    backgroundColor: '#ffffff',
-                    border: '1.5px solid #e2e8f0',
-                    borderRadius: '12px',
-                    outline: 'none',
-                    appearance: 'none',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <option value="Bay 1 (Bay)">Bay 1 (Bay)</option>
-                  <option value="Bay 2 (Bay)">Bay 2 (Bay)</option>
-                  <option value="Lane A1 (Lane)">Lane A1 (Lane)</option>
-                  <option value="Lane C3 (Lane)">Lane C3 (Lane)</option>
-                  <option value="Holding Area A (Holding Zone)">Holding Area A (Holding Zone)</option>
-                  <option value="Holding Area B (Holding Zone)">Holding Area B (Holding Zone)</option>
-                </select>
-                <div style={{
-                  position: 'absolute',
-                  right: '16px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  pointerEvents: 'none',
-                  color: '#64748b',
-                  fontSize: '12px'
-                }}>▼</div>
+              <div className="flex justify-between pb-2 border-b border-slate-100">
+                <span className="text-slate-500">Current Status:</span>
+                <span className="font-bold text-amber-600">{selectedLocation.details}</span>
               </div>
-            </div>
-
-            <button
-              type="submit"
-              style={{
-                width: '100%',
-                backgroundColor: '#ffd400',
-                color: '#0f172a',
-                border: 'none',
-                borderRadius: '12px',
-                padding: '14px',
-                fontSize: '13px',
-                fontWeight: '800',
-                cursor: 'pointer',
-                textAlign: 'center',
-                boxShadow: '0 4px 12px rgba(255, 212, 0, 0.3)'
-              }}
-            >
-              Confirm Location Move
-            </button>
-          </form>
-        </div>
-      )}
-
-      {/* Modal 5: Full Warehouse Movement Register (Screenshots 1, 2, 3, 4) */}
-      {movementModalOpen && (() => {
-        const movementsData = [
-          // Page 1
-          { id: 1, code: '', action: 'FLAGGED MISSING', timestamp: '15/7/2026, 6:31:19 pm' },
-          { id: 2, code: '', action: 'Assigned load lane routing: Lane C3', timestamp: '15/7/2026, 6:31:16 pm' },
-          { id: 3, code: '', action: 'Assigned load lane routing: Lane C3', timestamp: '15/7/2026, 6:18:56 pm' },
-          { id: 4, code: '', action: 'Moved to holding area: Zone A (Dry)', timestamp: '15/7/2026, 6:18:30 pm' },
-          { id: 5, code: '', action: 'Moved to load lane: Lane A1', timestamp: '15/7/2026, 6:18:26 pm' },
-          // Page 2
-          { id: 6, code: '', action: 'Moved to holding area: Zone A (Dry)', timestamp: '15/7/2026, 6:18:23 pm' },
-          { id: 7, code: '', action: 'Moved to holding area: Zone A (Dry)', timestamp: '15/7/2026, 6:18:20 pm' },
-          { id: 8, code: '', action: 'Assigned load lane routing: Lane C3', timestamp: '15/7/2026, 6:15:23 pm' },
-          { id: 9, code: '', action: 'FLAGGED MISSING', timestamp: '15/7/2026, 6:15:13 pm' },
-          { id: 10, code: 'FR-1', action: 'Moved to holding area: Zone A (Dry)', timestamp: '15/7/2026, 6:03:15 pm' },
-          // Page 3
-          { id: 11, code: 'FR-1', action: 'FLAGGED MISSING', timestamp: '15/7/2026, 5:53:46 pm' },
-          { id: 12, code: 'FR-1', action: 'Moved to holding area: Zone A (Dry)', timestamp: '15/7/2026, 5:52:59 pm' },
-          { id: 13, code: 'FR-1', action: 'Assigned load lane routing: Lane C3', timestamp: '15/7/2026, 5:52:52 pm' },
-          { id: 14, code: 'FR-1', action: 'Moved to holding area: Zone A (Dry)', timestamp: '15/7/2026, 5:52:50 pm' },
-          { id: 15, code: 'FR-1', action: 'Assigned load lane routing: Lane C3', timestamp: '15/7/2026, 5:52:48 pm' },
-          // Page 4
-          { id: 16, code: 'FR-1', action: 'Moved to holding area: Zone B (Cold)', timestamp: '15/7/2026, 5:50:10 pm' },
-          { id: 17, code: 'ITM-9011', action: 'Printed Zebra barcode tag: BAR-9011283', timestamp: '15/7/2026, 5:48:15 pm' },
-          { id: 18, code: 'ITM-4491', action: 'Reprinted Zebra barcode tag: BAR-4491024', timestamp: '15/7/2026, 5:45:00 pm' },
-          { id: 19, code: 'ITM-1022', action: 'Inwarded to Aisle 1 - Bin B', timestamp: '15/7/2026, 5:30:22 pm' },
-          { id: 20, code: 'ITM-1022', action: 'Received Shipment', timestamp: '15/7/2026, 5:00:00 pm' }
-        ];
-
-        const PAGE_SIZE = 5;
-        const totalPages = Math.ceil(movementsData.length / PAGE_SIZE);
-        const currentMovements = movementsData.slice((movementPage - 1) * PAGE_SIZE, movementPage * PAGE_SIZE);
-        
-        const isAllPageSelected = currentMovements.every(item => selectedMovements.includes(item.id));
-        const toggleSelectAllPage = () => {
-          const pageIds = currentMovements.map(item => item.id);
-          if (isAllPageSelected) {
-            setSelectedMovements(selectedMovements.filter(id => !pageIds.includes(id)));
-          } else {
-            const newSelection = [...selectedMovements];
-            pageIds.forEach(id => {
-              if (!newSelection.includes(id)) newSelection.push(id);
-            });
-            setSelectedMovements(newSelection);
-          }
-        };
-
-        const toggleMovementSelection = (id) => {
-          if (selectedMovements.includes(id)) {
-            setSelectedMovements(selectedMovements.filter(x => x !== id));
-          } else {
-            setSelectedMovements([...selectedMovements, id]);
-          }
-        };
-
-        // Row cell padding depending on rowDensity
-        const getRowPadding = () => {
-          if (rowDensity === 'compact') return '6px 12px';
-          if (rowDensity === 'default') return '12px 18px';
-          return '18px 24px';
-        };
-
-        return (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(15, 23, 42, 0.4)',
-            backdropFilter: 'blur(4px)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 9999
-          }} onClick={() => setMovementModalOpen(false)}>
-            <div style={{
-              backgroundColor: '#ffffff',
-              borderRadius: '24px',
-              width: '100%',
-              maxWidth: '640px',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-              padding: '28px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '16px',
-              animation: 'scaleIn 0.2s ease-out'
-            }} onClick={e => e.stopPropagation()}>
-              
-              {/* Modal Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
-                  {isYard ? 'Full Yard Movement Register' : 'Full Warehouse Movement Register'}
-                </h2>
-                <button 
-                  type="button"
-                  onClick={() => setMovementModalOpen(false)}
-                  style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}
-                >
-                  <X className="w-5 h-5" />
-                </button>
+              <p className="text-slate-600 font-semibold">
+                Real-time sensor & barcode scan tracking enabled for this zone.
+              </p>
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                <button className="px-3 py-1.5 border border-slate-300 rounded text-xs font-bold text-slate-600" onClick={() => setSelectedLocation(null)}>Close</button>
+                <button className="px-4 py-1.5 bg-amber-400 rounded text-xs font-extrabold text-slate-900" onClick={() => { setSelectedLocation(null); navigate('/warehouse/find-stock'); }}>Inspect Items</button>
               </div>
-
-              {/* Selection Bar & Control Options */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {selectedMovements.length > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'center', animation: 'fadeIn 0.15s ease-out' }}>
-                    <span style={{
-                      backgroundColor: '#fffbeb',
-                      color: '#d97706',
-                      border: '1px solid #fde68a',
-                      fontWeight: '800',
-                      padding: '4px 12px',
-                      borderRadius: '9999px',
-                      fontSize: '11px',
-                      letterSpacing: '0.02em'
-                    }}>
-                      {selectedMovements.length} SELECTED
-                    </span>
-                    <button
-                      onClick={() => {
-                        alert(`Exported ${selectedMovements.length} items to CSV format.`);
-                        setSelectedMovements([]);
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        backgroundColor: '#fffbeb',
-                        color: '#b45309',
-                        border: '1.5px solid #fcd34d',
-                        borderRadius: '12px',
-                        padding: '6px 14px',
-                        fontSize: '11px',
-                        fontWeight: '700',
-                        cursor: 'pointer',
-                        marginLeft: '12px'
-                      }}
-                    >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                        <polyline points="7 10 12 15 17 10"/>
-                        <line x1="12" y1="15" x2="12" y2="3"/>
-                      </svg>
-                      <span>CSV Export</span>
-                    </button>
-                  </div>
-                )}
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ backgroundColor: '#f1f5f9', padding: '4px', borderRadius: '9999px', display: 'flex', gap: '2px' }}>
-                    {['COMPACT', 'DEFAULT', 'RELAXED'].map(density => {
-                      const isActive = rowDensity === density.toLowerCase();
-                      return (
-                        <button
-                          key={density}
-                          type="button"
-                          onClick={() => setRowDensity(density.toLowerCase())}
-                          style={{
-                            backgroundColor: isActive ? '#ffd400' : 'transparent',
-                            color: isActive ? '#0f172a' : '#64748b',
-                            border: 'none',
-                            borderRadius: '9999px',
-                            padding: '6px 14px',
-                            fontSize: '11px',
-                            fontWeight: isActive ? '800' : '700',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s'
-                          }}
-                        >
-                          {density}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <button
-                    type="button"
-                    style={{
-                      backgroundColor: '#ffffff',
-                      border: '1.5px solid #e2e8f0',
-                      color: '#64748b',
-                      padding: '8px 16px',
-                      borderRadius: '12px',
-                      fontWeight: '700',
-                      fontSize: '12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="3"/>
-                      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                    </svg>
-                    <span>COLUMNS</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Data Table */}
-              <div style={{
-                border: '1px solid #e2e8f0',
-                borderRadius: '20px',
-                overflow: 'hidden',
-                backgroundColor: '#ffffff'
-              }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1.5px solid #e2e8f0', backgroundColor: '#f8fafc' }}>
-                      <th style={{ padding: '14px 20px', width: '40px' }}>
-                        <div 
-                          onClick={toggleSelectAllPage}
-                          style={{
-                            width: '18px',
-                            height: '18px',
-                            border: isAllPageSelected ? '2px solid #b45309' : '2px solid #94a3b8',
-                            borderRadius: '4px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            backgroundColor: isAllPageSelected ? '#ffd400' : 'transparent'
-                          }}
-                        >
-                          {isAllPageSelected && (
-                            <svg width="10" height="8" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M1.5 4L4 6.5L8.5 1.5" stroke="#0f172a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                          )}
-                        </div>
-                      </th>
-                      <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        Asset Code
-                      </th>
-                      <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        Action Logged
-                      </th>
-                      <th style={{ padding: '14px 20px', fontSize: '10px', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right' }}>
-                        Timestamp
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {currentMovements.map(item => {
-                      const isChecked = selectedMovements.includes(item.id);
-                      
-                      // Split timestamp for stacked styling
-                      const parts = item.timestamp.split(' ');
-                      const datePart = parts[0];
-                      const timePart = parts[1];
-                      const ampmPart = parts[2];
-
-                      return (
-                        <tr 
-                          key={item.id} 
-                          style={{ 
-                            borderBottom: '1px solid #e2e8f0', 
-                            backgroundColor: isChecked ? '#fffbeb' : '#ffffff',
-                            transition: 'background-color 0.15s'
-                          }}
-                        >
-                          <td style={{ padding: getRowPadding() }}>
-                            <div 
-                              onClick={() => toggleMovementSelection(item.id)}
-                              style={{
-                                width: '18px',
-                                height: '18px',
-                                border: isChecked ? '2px solid #b45309' : '2px solid #cbd5e1',
-                                borderRadius: '4px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor: 'pointer',
-                                backgroundColor: isChecked ? '#ffd400' : 'transparent',
-                                transition: 'all 0.1s'
-                              }}
-                            >
-                              {isChecked && (
-                                <svg width="10" height="8" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                  <path d="M1.5 4L4 6.5L8.5 1.5" stroke="#0f172a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                                </svg>
-                              )}
-                            </div>
-                          </td>
-                          <td style={{ padding: getRowPadding(), fontSize: '13px', fontWeight: '800', color: '#0f172a' }}>
-                            {item.code || ''}
-                          </td>
-                          <td style={{ padding: getRowPadding(), fontSize: '14px', fontWeight: '800', color: '#475569' }}>
-                            {item.action}
-                          </td>
-                          <td style={{ padding: getRowPadding() }}>
-                            <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '700', textAlign: 'right', lineHeight: '1.2' }}>
-                              <div>{datePart} {timePart}</div>
-                              <div style={{ fontSize: '9px', color: '#94a3b8', marginTop: '2px', textTransform: 'lowercase' }}>{ampmPart}</div>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Modal Pagination Footer */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
-                <span style={{ fontSize: '12px', fontWeight: '700', color: '#475569' }}>
-                  Showing <span style={{ fontWeight: '800', color: '#0f172a' }}>{(movementPage - 1) * PAGE_SIZE + 1} to {Math.min(movementPage * PAGE_SIZE, movementsData.length)}</span> of <span style={{ fontWeight: '800', color: '#0f172a' }}>{movementsData.length}</span> items
-                </span>
-
-                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                  {/* Prev page */}
-                  <button
-                    onClick={() => setMovementPage(p => Math.max(1, p - 1))}
-                    disabled={movementPage === 1}
-                    style={{
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '10px',
-                      backgroundColor: '#ffffff',
-                      color: movementPage === 1 ? '#cbd5e1' : '#64748b',
-                      width: '32px',
-                      height: '32px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: movementPage === 1 ? 'not-allowed' : 'pointer'
-                    }}
-                  >
-                    ‹
-                  </button>
-
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
-                    const isPageActive = movementPage === page;
-                    return (
-                      <button
-                        key={page}
-                        onClick={() => setMovementPage(page)}
-                        style={{
-                          border: 'none',
-                          borderRadius: '10px',
-                          backgroundColor: isPageActive ? '#ffd400' : 'transparent',
-                          color: isPageActive ? '#0f172a' : '#64748b',
-                          fontWeight: isPageActive ? '800' : '700',
-                          fontSize: '12px',
-                          width: '32px',
-                          height: '32px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        {page}
-                      </button>
-                    );
-                  })}
-
-                  {/* Next page */}
-                  <button
-                    onClick={() => setMovementPage(p => Math.min(totalPages, p + 1))}
-                    disabled={movementPage === totalPages}
-                    style={{
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '10px',
-                      backgroundColor: '#ffffff',
-                      color: movementPage === totalPages ? '#cbd5e1' : '#64748b',
-                      width: '32px',
-                      height: '32px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: movementPage === totalPages ? 'not-allowed' : 'pointer'
-                    }}
-                  >
-                    ›
-                  </button>
-                </div>
-              </div>
-
             </div>
           </div>
-        );
-      })()}
+        </div>
+      )}
 
-      {/* Floating Toast (Success or Error) (Screenshots 2, 3, 4, 5) */}
-      {toast.open && (() => {
-        const isError = toast.type === 'error';
-        return (
-          <div style={{
-            position: 'fixed',
-            bottom: '24px',
-            right: '24px',
-            backgroundColor: isError ? '#fef2f2' : '#e6fbf2',
-            border: isError ? '1.5px solid #fca5a5' : '1.5px solid #a7f3d0',
-            borderRadius: '16px',
-            padding: '14px 20px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-            zIndex: 10000,
-            animation: 'fadeIn 0.2s ease-out'
-          }}>
-            {isError ? (
-              /* Circular Danger exclamation icon matching Screenshot 5 */
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
-                <circle cx="10" cy="10" r="9" stroke="#ef4444" strokeWidth="2" />
-                <path d="M10 6V11" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" />
-                <circle cx="10" cy="14" r="1.25" fill="#ef4444" />
-              </svg>
-            ) : (
-              /* Circular Checkmark icon matching Screenshots 2, 3, 4 */
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
-                <circle cx="10" cy="10" r="9" stroke="#10b981" strokeWidth="2" />
-                <path d="M6 10L9 13L14 7" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            )}
-            <span style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b' }}>
-              {toast.message}
-            </span>
-            <button
-              onClick={() => setToast({ open: false, message: '', type: 'success' })}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                color: '#64748b',
-                display: 'flex',
-                alignItems: 'center',
-                padding: '2px',
-                marginLeft: '8px'
-              }}
-            >
-              <X className="w-4 h-4" />
-            </button>
+      {/* LEGENDS MODAL */}
+      {legendsModalOpen && (
+        <div className="wh-modal-overlay" onClick={() => setLegendsModalOpen(false)}>
+          <div className="wh-modal-box" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center p-4 border-b border-slate-200">
+              <h3 className="font-extrabold text-sm text-slate-900">Map Legend Guide</h3>
+              <button onClick={() => setLegendsModalOpen(false)}><X size={16} className="text-slate-400" /></button>
+            </div>
+            <div className="p-4 flex flex-col gap-2 text-xs">
+              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-green-500" /><span>Green - Available / Ready Spot</span></div>
+              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-blue-500" /><span>Blue - In Use / Occupied Slot</span></div>
+              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-amber-500" /><span>Amber - Staging / In Progress</span></div>
+              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-red-500" /><span>Red - Full / Unavailable Zone</span></div>
+            </div>
           </div>
-        );
-      })()}
+        </div>
+      )}
+
+      {/* TOAST NOTIFICATION */}
+      {toast && (
+        <div style={{
+          position: 'fixed', bottom: 24, right: 24,
+          background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 10,
+          padding: '12px 18px', display: 'flex', items: 'center', gap: 10,
+          zIndex: 99998, boxShadow: '0 8px 24px rgba(0,0,0,0.08)'
+        }}>
+          <CheckCircle2 size={16} className="text-green-600" />
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#065F46' }}>{toast.msg}</span>
+        </div>
+      )}
 
     </div>
   );
-};
-
-export default WarehouseMap;
+}
