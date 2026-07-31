@@ -1976,10 +1976,9 @@ export default function Loads() {
           </div>
 
           {/* Filter Container */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm mb-4">
-            {/* Filter Row 1 */}
-            <div className="flex flex-wrap items-center gap-2 mb-3">
-              <div className="relative flex-1 min-w-[140px]">
+          <div className="bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 shadow-sm mb-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:flex xl:flex-wrap items-center gap-2">
+              <div className="col-span-2 sm:col-span-1 xl:flex-1 xl:min-w-[140px] relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                 <input
                   type="text"
@@ -1989,10 +1988,10 @@ export default function Loads() {
                   className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:border-indigo-500"
                 />
               </div>
-              <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setCurrentPage(1); }} className="flex-1 min-w-[110px] px-2 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500" title="From Date"/>
-              <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setCurrentPage(1); }} className="flex-1 min-w-[110px] px-2 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500" title="To Date"/>
+              <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setCurrentPage(1); }} className="w-full xl:w-auto xl:flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500" title="From Date"/>
+              <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setCurrentPage(1); }} className="w-full xl:w-auto xl:flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500" title="To Date"/>
               
-              <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setCurrentPage(1); }} className="flex-1 min-w-[110px] px-2 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none bg-no-repeat bg-[right_8px_center] bg-[length:12px]" style={{backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%2394a3b8\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")'}}>
+              <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setCurrentPage(1); }} className="w-full xl:w-auto xl:flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer truncate">
                 <option>All Status</option>
                 <option value="ACTIVE">Active</option>
                 <option value="PLANNED">Planned</option>
@@ -2001,37 +2000,34 @@ export default function Loads() {
                 <option value="CANCELLED">Cancelled</option>
               </select>
 
-              <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setCurrentPage(1); }} className="flex-1 min-w-[110px] px-2 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none bg-no-repeat bg-[right_8px_center] bg-[length:12px]" style={{backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%2394a3b8\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")'}}>
+              <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setCurrentPage(1); }} className="w-full xl:w-auto xl:flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer truncate">
                 <option>All Types</option>
                 <option value="General Freight">General Freight</option>
                 <option value="Car Carrying">Car Carrying</option>
                 <option value="Dangerous Goods">Dangerous Goods</option>
               </select>
 
-              <select value={customerFilter} onChange={e => { setCustomerFilter(e.target.value); setCurrentPage(1); }} className="flex-1 min-w-[110px] px-2 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none bg-no-repeat bg-[right_8px_center] bg-[length:12px]" style={{backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%2394a3b8\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")'}}>
+              <select value={customerFilter} onChange={e => { setCustomerFilter(e.target.value); setCurrentPage(1); }} className="w-full xl:w-auto xl:flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer truncate">
                 <option>All Customer</option>
                 {[...new Set(LOADS.map(l => l.customer).filter(Boolean))].map(c => <option key={c} value={c}>{c}</option>)}
               </select>
-            </div>
 
-            {/* Filter Row 2 */}
-            <div className="flex flex-wrap items-center gap-2">
-              <select value={driverFilter} onChange={e => { setDriverFilter(e.target.value); setCurrentPage(1); }} className="flex-1 min-w-[110px] px-2 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none bg-no-repeat bg-[right_8px_center] bg-[length:12px]" style={{backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%2394a3b8\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")'}}>
+              <select value={driverFilter} onChange={e => { setDriverFilter(e.target.value); setCurrentPage(1); }} className="w-full xl:w-auto xl:flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer truncate">
                 <option>All Drivers</option>
                 {[...new Set(LOADS.map(l => l.driver).filter(Boolean))].map(d => <option key={d} value={d}>{d}</option>)}
               </select>
               
-              <select value={vehicleFilter} onChange={e => { setVehicleFilter(e.target.value); setCurrentPage(1); }} className="flex-1 min-w-[110px] px-2 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none bg-no-repeat bg-[right_8px_center] bg-[length:12px]" style={{backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%2394a3b8\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")'}}>
+              <select value={vehicleFilter} onChange={e => { setVehicleFilter(e.target.value); setCurrentPage(1); }} className="w-full xl:w-auto xl:flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer truncate">
                 <option>All Vehicles</option>
                 {[...new Set(LOADS.map(l => l.truck).filter(Boolean).map(t => t.split(' | ')[0]))].map(v => <option key={v} value={v}>{v}</option>)}
               </select>
 
-              <select value={locationFilter} onChange={e => { setLocationFilter(e.target.value); setCurrentPage(1); }} className="flex-1 min-w-[110px] px-2 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none bg-no-repeat bg-[right_8px_center] bg-[length:12px]" style={{backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%2394a3b8\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")'}}>
+              <select value={locationFilter} onChange={e => { setLocationFilter(e.target.value); setCurrentPage(1); }} className="w-full xl:w-auto xl:flex-1 px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer truncate">
                 <option>All Locations</option>
                 {[...new Set([...LOADS.map(l => l.from), ...LOADS.map(l => l.to)].filter(Boolean))].map(loc => <option key={loc} value={loc}>{loc}</option>)}
               </select>
 
-              <button className="flex-1 sm:flex-none justify-center px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 hover:bg-slate-50 flex items-center gap-1.5 whitespace-nowrap">
+              <button className="col-span-2 sm:col-span-1 xl:w-auto px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-[11px] font-semibold text-slate-600 hover:bg-slate-50 flex items-center justify-center gap-1.5 whitespace-nowrap">
                 <Filter className="w-3.5 h-3.5" /> More Filters
               </button>
             </div>
@@ -2057,8 +2053,8 @@ export default function Loads() {
 
           {/* TABLE */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-4">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left" style={{ minWidth: 900 }}>
+            <div className="overflow-x-auto w-full">
+              <table className="w-full text-left min-w-[900px]" style={{ minWidth: 900 }}>
                 <thead>
                   <tr className="bg-white border-b border-slate-100">
                     <th className="px-4 py-3 w-8">
@@ -2077,7 +2073,7 @@ export default function Loads() {
                 <tbody className="divide-y divide-slate-100">
                   {paged.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-4 py-12 text-center text-slate-500 text-[12px] font-semibold">No loads found matching filters.</td>
+                      <td colSpan={10} className="px-4 py-12 text-center text-slate-500 text-[12px] font-semibold whitespace-nowrap">No loads found matching filters.</td>
                     </tr>
                   ) : null}
                   {paged.map((load, i) => {
@@ -2090,7 +2086,7 @@ export default function Loads() {
                         className={`transition-colors group cursor-pointer ${isSelected ? 'bg-indigo-50/40' : 'hover:bg-blue-50/30'}`}
                       >
                         {/* Checkbox */}
-                        <td className="px-4 py-4" onClick={e => e.stopPropagation()}>
+                        <td className="px-4 py-4 whitespace-nowrap" onClick={e => e.stopPropagation()}>
                           <input
                             type="checkbox"
                             checked={isSelected}
@@ -2100,85 +2096,85 @@ export default function Loads() {
                         </td>
 
                         {/* LOAD REF */}
-                        <td className="px-3 py-4 min-w-[140px]">
+                        <td className="px-3 py-4 min-w-[140px] whitespace-nowrap">
                           <div className="flex items-center gap-2">
                             <Star className={`w-4 h-4 ${load.starred ? 'fill-amber-400 text-amber-400' : 'text-slate-300'} cursor-pointer hover:text-amber-400 transition-colors`} />
-                            <span className="text-[12px] font-semibold text-blue-700 hover:underline cursor-pointer">{load.id}</span>
+                            <span className="text-[12px] font-semibold text-blue-700 hover:underline cursor-pointer whitespace-nowrap">{load.id}</span>
                           </div>
                         </td>
 
                         {/* STATUS */}
-                        <td className="px-3 py-4 min-w-[120px]">
+                        <td className="px-3 py-4 min-w-[120px] whitespace-nowrap">
                           <div className="flex flex-col items-start gap-1">
-                            <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${st.badge}`}>
+                            <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider whitespace-nowrap ${st.badge}`}>
                               {load.status}
                             </div>
-                            <span className={`text-[11px] font-medium ${st.sub}`}>{load.statusSub}</span>
+                            <span className={`text-[11px] font-medium whitespace-nowrap ${st.sub}`}>{load.statusSub}</span>
                           </div>
                         </td>
 
                         {/* LOAD TYPE */}
-                        <td className="px-3 py-4 min-w-[140px]">
+                        <td className="px-3 py-4 min-w-[140px] whitespace-nowrap">
                           <div className="flex items-center gap-2">
                             <div className="w-6 h-6 rounded bg-blue-50 flex items-center justify-center shrink-0">
                               {load.typeIcon}
                             </div>
-                            <span className="text-[12px] font-medium text-slate-700">{load.type}</span>
+                            <span className="text-[12px] font-medium text-slate-700 whitespace-nowrap">{load.type}</span>
                           </div>
                         </td>
 
                         {/* CUSTOMER */}
-                        <td className="px-3 py-4 min-w-[140px]">
-                          <span className="text-[12px] font-semibold text-slate-900">{load.customer}</span>
+                        <td className="px-3 py-4 min-w-[140px] whitespace-nowrap">
+                          <span className="text-[12px] font-semibold text-slate-900 whitespace-nowrap">{load.customer}</span>
                         </td>
 
                         {/* ROUTE */}
-                        <td className="px-3 py-4 min-w-[120px]">
+                        <td className="px-3 py-4 min-w-[120px] whitespace-nowrap">
                           <div className="flex flex-col">
-                            <span className="text-[12px] font-semibold text-blue-700">{load.from}</span>
-                            <span className="text-[11px] font-medium text-slate-600 flex items-center gap-1">
+                            <span className="text-[12px] font-semibold text-blue-700 whitespace-nowrap">{load.from}</span>
+                            <span className="text-[11px] font-medium text-slate-600 flex items-center gap-1 whitespace-nowrap">
                                → {load.to}
                             </span>
-                            <span className="text-[10px] font-medium text-slate-400 mt-0.5">{load.stops} Stops</span>
+                            <span className="text-[10px] font-medium text-slate-400 mt-0.5 whitespace-nowrap">{load.stops} Stops</span>
                           </div>
                         </td>
 
                         {/* DRIVER / TRUCK */}
-                        <td className="px-3 py-4 min-w-[180px]">
+                        <td className="px-3 py-4 min-w-[180px] whitespace-nowrap">
                           {load.driver ? (
                             <div className="flex items-center gap-2.5">
                               <img src={load.avatar} alt={load.driver} className="w-8 h-8 rounded-full border border-slate-200 object-cover shrink-0" />
                               <div className="flex flex-col">
-                                <span className="text-[12px] font-bold text-slate-900 leading-tight">{load.driver}</span>
-                                <span className="text-[10px] font-medium text-slate-500 leading-tight">{load.truck}</span>
+                                <span className="text-[12px] font-bold text-slate-900 leading-tight whitespace-nowrap">{load.driver}</span>
+                                <span className="text-[10px] font-medium text-slate-500 leading-tight whitespace-nowrap">{load.truck}</span>
                                 <div className="flex items-center gap-1 mt-0.5">
                                     <span className={`w-1.5 h-1.5 rounded-full ${load.driverBadge === 'On The Road' ? 'bg-emerald-500' : 'bg-blue-500'}`}></span>
-                                    <span className={`text-[10px] font-medium ${load.driverStatus}`}>{load.driverBadge}</span>
+                                    <span className={`text-[10px] font-medium whitespace-nowrap ${load.driverStatus}`}>{load.driverBadge}</span>
                                 </div>
                               </div>
                             </div>
                           ) : (
-                            <span className="text-[12px] font-bold text-slate-500 italic">Not Assigned</span>
+                            <span className="text-[12px] font-bold text-slate-500 italic whitespace-nowrap">Not Assigned</span>
                           )}
                         </td>
 
                         {/* PICKUP DATE */}
-                        <td className="px-3 py-4 min-w-[120px]">
+                        <td className="px-3 py-4 min-w-[120px] whitespace-nowrap">
                           <div className="flex flex-col">
-                            <span className="text-[12px] font-bold text-slate-700">{load.date ? load.date.split('-').reverse().join('/') : '08/07/2025'}</span>
-                            <span className="text-[10px] font-medium text-slate-500 mt-0.5">09:00 AM</span>
+                            <span className="text-[12px] font-bold text-slate-700 whitespace-nowrap">{load.date ? load.date.split('-').reverse().join('/') : '08/07/2025'}</span>
+                            <span className="text-[10px] font-medium text-slate-500 mt-0.5 whitespace-nowrap">09:00 AM</span>
                           </div>
                         </td>
 
                         {/* ETA / DELIVERY */}
-                        <td className="px-3 py-4 min-w-[120px]">
-                          <span className="text-[12px] font-medium text-slate-700">-</span>
+                        <td className="px-3 py-4 min-w-[120px] whitespace-nowrap">
+                          <span className="text-[12px] font-medium text-slate-700 whitespace-nowrap">-</span>
                         </td>
 
                         {/* PROGRESS */}
-                        <td className="px-3 py-4 min-w-[120px]">
+                        <td className="px-3 py-4 min-w-[120px] whitespace-nowrap">
                           <div className="flex flex-col gap-1.5 mt-1">
-                            <span className="text-[10px] font-bold text-slate-700 leading-none">0%</span>
+                            <span className="text-[10px] font-bold text-slate-700 leading-none whitespace-nowrap">0%</span>
                             <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                               <div className="h-full bg-indigo-500 w-0"></div>
                             </div>
@@ -2186,11 +2182,11 @@ export default function Loads() {
                         </td>
 
                         {/* ACTIONS */}
-                        <td className="px-3 py-4 min-w-[140px]">
+                        <td className="px-3 py-4 min-w-[140px] whitespace-nowrap">
                           <div className="flex items-center gap-1">
                             <button className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 border border-indigo-100 hover:bg-indigo-100 rounded-lg transition-colors">
                               <Eye className="w-3.5 h-3.5 text-indigo-600" />
-                              <span className="text-[11px] font-bold text-indigo-600">View</span>
+                              <span className="text-[11px] font-bold text-indigo-600 whitespace-nowrap">View</span>
                             </button>
                             <button className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors">
                               <MoreVertical className="w-4 h-4" />
