@@ -258,9 +258,9 @@ export default function Expenses() {
 
       {/* Filter Bar */}
       <div className="px-4 sm:px-8 mb-6 flex-shrink-0">
-        <div className="bg-white rounded-xl p-4 border border-slate-200/60 shadow-sm flex flex-col xl:flex-row items-center justify-between gap-4">
+        <div className="bg-white rounded-xl p-4 border border-slate-200/60 shadow-sm flex items-center gap-3 overflow-x-auto scrollbar-hide flex-nowrap w-full">
           {/* Search Box */}
-          <div className="relative w-full xl:w-80">
+          <div className="relative shrink-0 min-w-[240px] xl:w-80">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input 
               type="text" 
@@ -271,12 +271,12 @@ export default function Expenses() {
             />
           </div>
 
-          {/* Select Dropdowns */}
-          <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
+          {/* Select Dropdowns - Forced Single Line */}
+          <div className="flex flex-nowrap items-center gap-3 shrink-0">
             <select 
               value={selectedCategory} 
               onChange={(e) => { setSelectedCategory(e.target.value); setCurrentPage(1); }}
-              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:outline-none focus:border-blue-500"
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:outline-none focus:border-blue-500 shrink-0"
             >
               <option value="All">All Categories</option>
               <option value="Fuel">Fuel</option>
@@ -293,7 +293,7 @@ export default function Expenses() {
             <select 
               value={selectedEmployee} 
               onChange={(e) => { setSelectedEmployee(e.target.value); setCurrentPage(1); }}
-              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:outline-none focus:border-blue-500"
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:outline-none focus:border-blue-500 shrink-0"
             >
               <option value="All">All Employees</option>
               <option value="John Smith">John Smith</option>
@@ -306,7 +306,7 @@ export default function Expenses() {
             <select 
               value={selectedStatus} 
               onChange={(e) => { setSelectedStatus(e.target.value); setCurrentPage(1); }}
-              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:outline-none focus:border-blue-500"
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:outline-none focus:border-blue-500 shrink-0"
             >
               <option value="All">All Status</option>
               <option value="Pending Approval">Pending Approval</option>
@@ -318,7 +318,7 @@ export default function Expenses() {
             <select 
               value={selectedPaymentStatus} 
               onChange={(e) => { setSelectedPaymentStatus(e.target.value); setCurrentPage(1); }}
-              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:outline-none focus:border-blue-500"
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:outline-none focus:border-blue-500 shrink-0"
             >
               <option value="All">All Payment Status</option>
               <option value="Unpaid">Unpaid</option>
@@ -327,12 +327,12 @@ export default function Expenses() {
             </select>
 
             {/* Date Range Selector */}
-            <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 cursor-pointer hover:bg-slate-100">
+            <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 shrink-0 whitespace-nowrap">
               <Calendar size={14} className="text-slate-400" />
               <span>{dateRange}</span>
             </div>
 
-            <button className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 shadow-sm">
+            <button className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 shadow-sm shrink-0 whitespace-nowrap">
               <Filter size={14} className="text-slate-400" /> Filters
             </button>
           </div>
@@ -346,29 +346,31 @@ export default function Expenses() {
           {/* Table Card */}
           <div className="bg-white rounded-xl shadow-sm border border-slate-200/60 overflow-hidden flex flex-col">
             {/* Tabs & Top Actions Bar */}
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between px-6 pt-4 pb-2 border-b border-slate-200 gap-4">
-              {/* Tabs */}
-              <div className="flex gap-6 overflow-x-auto scrollbar-hide">
-                {[
-                  { name: 'All Expenses', count: 42 },
-                  { name: 'Pending Approval', count: 9 },
-                  { name: 'Approved', count: 30 },
-                  { name: 'Reimbursed', count: 28 },
-                  { name: 'Overdue', count: 2 },
-                  { name: 'Cancelled', count: 0 },
-                ].map(tab => (
-                  <button 
-                    key={tab.name}
-                    onClick={() => { setActiveTab(tab.name); setCurrentPage(1); }}
-                    className={`pb-3 border-b-2 text-xs font-bold whitespace-nowrap transition-colors ${activeTab === tab.name ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
-                  >
-                    {tab.name} ({tab.count})
-                  </button>
-                ))}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-6 pt-4 border-b border-slate-200 gap-4 w-full">
+              {/* Tabs Scroll Container */}
+              <div className="overflow-x-auto scrollbar-hide w-full sm:w-auto flex-1 min-w-0">
+                <div className="flex items-center gap-6 min-w-max">
+                  {[
+                    { name: 'All Expenses', count: 42 },
+                    { name: 'Pending Approval', count: 9 },
+                    { name: 'Approved', count: 30 },
+                    { name: 'Reimbursed', count: 28 },
+                    { name: 'Overdue', count: 2 },
+                    { name: 'Cancelled', count: 0 },
+                  ].map(tab => (
+                    <button 
+                      key={tab.name}
+                      onClick={() => { setActiveTab(tab.name); setCurrentPage(1); }}
+                      className={`pb-3 border-b-2 text-xs font-bold whitespace-nowrap shrink-0 transition-colors ${activeTab === tab.name ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
+                    >
+                      {tab.name} ({tab.count})
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-2 flex-shrink-0 pb-2 md:pb-0">
+              <div className="flex items-center gap-2 pb-3 shrink-0">
                 <button 
                   onClick={() => { setToastMessage('Export started...'); setTimeout(() => setToastMessage(null), 3000); }}
                   className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 shadow-sm"
@@ -516,19 +518,19 @@ export default function Expenses() {
             </div>
           </div>
 
-          {/* Bottom Grid: Category Breakdown & Recent Expenses */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Bottom Grid: Category Breakdown, Recent Expenses & Quick Actions (3 Columns) */}
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
             {/* Category Breakdown Bar Chart */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200/60 p-6 flex flex-col">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200/60 p-6 flex flex-col justify-between">
               <h3 className="text-xs font-bold text-slate-900 mb-4">Category Breakdown (This Period)</h3>
-              <div className="h-48 w-full">
+              <div className="h-44 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={barChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 600 }} />
                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} tickFormatter={(v) => `$${v/1000}k`} />
                     <RechartsTooltip formatter={(value) => formatCurrency(value)} />
-                    <Bar dataKey="amount" radius={[4, 4, 0, 0]} barSize={24}>
+                    <Bar dataKey="amount" radius={[4, 4, 0, 0]} barSize={20}>
                       {barChartData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.fill} />
                       ))}
@@ -545,17 +547,17 @@ export default function Expenses() {
                   <h3 className="text-xs font-bold text-slate-900">Recent Expenses</h3>
                   <button className="text-[11px] text-blue-600 font-bold hover:underline">View all</button>
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-2.5">
                   {[
                     { title: 'Fuel - Truck 12', emp: 'John Smith', date: '24 May 2026', amount: '$199.00', status: 'Pending Approval', statusColor: 'bg-amber-50 text-amber-600', iconBg: 'bg-blue-50 text-blue-600' },
                     { title: 'Toll - M7', emp: 'Michael Brown', date: '24 May 2026', amount: '$14.00', status: 'Pending Approval', statusColor: 'bg-amber-50 text-amber-600', iconBg: 'bg-teal-50 text-teal-600' },
                     { title: 'Tyre Repair', emp: 'John Smith', date: '23 May 2026', amount: '$275.00', status: 'Approved', statusColor: 'bg-emerald-50 text-emerald-600', iconBg: 'bg-purple-50 text-purple-600' },
                     { title: 'Office Supplies', emp: 'Sarah Jones', date: '23 May 2026', amount: '$50.00', status: 'Approved', statusColor: 'bg-emerald-50 text-emerald-600', iconBg: 'bg-amber-50 text-amber-600' },
                   ].map((item, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs ${item.iconBg}`}>
-                          <FileText size={14} />
+                    <div key={idx} className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-50 transition-colors">
+                      <div className="flex items-center gap-2.5">
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs ${item.iconBg}`}>
+                          <FileText size={13} />
                         </div>
                         <div>
                           <p className="text-xs font-bold text-slate-900">{item.title}</p>
@@ -564,13 +566,32 @@ export default function Expenses() {
                       </div>
                       <div className="text-right">
                         <p className="text-xs font-bold text-slate-900">{item.amount}</p>
-                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${item.statusColor}`}>
+                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${item.statusColor}`}>
                           {item.status}
                         </span>
                       </div>
                     </div>
                   ))}
                 </div>
+              </div>
+            </div>
+
+            {/* Quick Actions Card */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200/60 p-6 flex flex-col justify-between">
+              <h3 className="text-xs font-bold text-slate-900 mb-4">Quick Actions</h3>
+              <div className="flex flex-col gap-2.5">
+                <button 
+                  onClick={() => { setToastMessage('Create New Expense triggered.'); setTimeout(() => setToastMessage(null), 3000); }}
+                  className="w-full h-9 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm"
+                >
+                  <Plus size={14} /> New Expense
+                </button>
+                <button className="w-full h-9 flex items-center justify-center gap-2 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-[11px] font-bold transition-colors">
+                  <Download size={14} className="text-slate-400"/> Import Expenses
+                </button>
+                <button className="w-full h-9 flex items-center justify-center gap-2 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-[11px] font-bold transition-colors">
+                  <ShieldCheck size={14} className="text-slate-400"/> Expense Settings
+                </button>
               </div>
             </div>
           </div>
@@ -668,26 +689,8 @@ export default function Expenses() {
               <UploadCloud size={14} className="text-slate-400"/> Upload Receipt
             </button>
           </div>
-
-          {/* Quick Actions Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200/60 p-6 flex flex-col">
-            <h3 className="text-xs font-bold text-slate-900 mb-4">Quick Actions</h3>
-            <div className="flex flex-col gap-2">
-              <button 
-                onClick={() => { setToastMessage('Create New Expense triggered.'); setTimeout(() => setToastMessage(null), 3000); }}
-                className="w-full h-9 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm"
-              >
-                <Plus size={14} /> New Expense
-              </button>
-              <button className="w-full h-9 flex items-center justify-center gap-2 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-[11px] font-bold transition-colors">
-                <Download size={14} className="text-slate-400"/> Import Expenses
-              </button>
-              <button className="w-full h-9 flex items-center justify-center gap-2 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-[11px] font-bold transition-colors">
-                <ShieldCheck size={14} className="text-slate-400"/> Expense Settings
-              </button>
-            </div>
-          </div>
         </div>
+
       </div>
     </div>
   );

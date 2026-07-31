@@ -18,6 +18,23 @@ export default function AccountsReports() {
   const [starredReports, setStarredReports] = useState([1, 6]); // Default starred reports IDs
   const [toastMessage, setToastMessage] = useState(null);
 
+  // Modal States
+  const [activeRunModal, setActiveRunModal] = useState(null); // Report object to run
+  const [showCustomModal, setShowCustomModal] = useState(false);
+  const [customTitle, setCustomTitle] = useState('');
+  const [customCategory, setCustomCategory] = useState('Financial');
+  const [runPeriod, setRunPeriod] = useState('May 2026');
+  const [runFormat, setRunFormat] = useState('PDF');
+
+  // Dynamic Recent Reports state so newly run reports appear live in table!
+  const [recentReportsList, setRecentReportsList] = useState([
+    { id: 1, name: 'P&L Statement - May 2026', category: 'Financial', period: 'May 2026', user: 'John Smith', date: '31 May 2026, 8:45 AM', format: 'PDF', formatColor: 'bg-rose-50 text-rose-600 border-rose-100' },
+    { id: 2, name: 'GST Summary - Q4 FY 2025/26', category: 'Compliance', period: 'Apr - Jun 2026', user: 'John Smith', date: '30 May 2026, 4:20 PM', format: 'Excel', formatColor: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
+    { id: 3, name: 'Accounts Receivable Aging', category: 'Financial', period: 'As at 31 May 2026', user: 'Sarah Johnson', date: '30 May 2026, 10:10 AM', format: 'PDF', formatColor: 'bg-rose-50 text-rose-600 border-rose-100' },
+    { id: 4, name: 'Payroll Summary - May 2026', category: 'Payroll', period: 'May 2026', user: 'John Smith', date: '29 May 2026, 3:30 PM', format: 'Excel', formatColor: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
+    { id: 5, name: 'Vehicle Cost Report - May 2026', category: 'Vehicle & Assets', period: 'May 2026', user: 'Michael Brown', date: '29 May 2026, 9:15 AM', format: 'PDF', formatColor: 'bg-rose-50 text-rose-600 border-rose-100' },
+  ]);
+
   // Scheduled Reports Toggles State
   const [scheduledReports, setScheduledReports] = useState([
     { id: 1, name: 'P&L Statement', freq: 'Monthly • 1st day of each month', active: true },
@@ -506,7 +523,7 @@ export default function AccountsReports() {
             <p className="text-[11px] text-slate-500 font-medium mb-4">Create reports tailored to your business needs.</p>
 
             <button 
-              onClick={() => { setToastMessage('Custom report builder launched'); setTimeout(() => setToastMessage(null), 3000); }}
+              onClick={() => setShowCustomModal(true)}
               className="w-full h-9 flex items-center justify-center gap-1.5 border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg text-xs font-bold transition-colors shadow-sm"
             >
               <Plus size={14} /> Create Custom Report
@@ -516,6 +533,150 @@ export default function AccountsReports() {
         </div>
 
       </div>
+
+      {/* --- RUN REPORT MODAL --- */}
+      {activeRunModal && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-md p-6 flex flex-col gap-4 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <FileText size={16} className="text-blue-600" />
+                Run {activeRunModal.name}
+              </h3>
+              <button onClick={() => setActiveRunModal(null)} className="text-slate-400 hover:text-slate-600 font-bold text-sm">✕</button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Select Period</label>
+                <select 
+                  value={runPeriod} 
+                  onChange={(e) => setRunPeriod(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 bg-slate-50"
+                >
+                  <option value="May 2026">May 2026</option>
+                  <option value="Apr 2026">Apr 2026</option>
+                  <option value="Q4 FY 2025/26">Q4 FY 2025/26</option>
+                  <option value="FY 2025/26">FY 2025/26</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Output Format</label>
+                <select 
+                  value={runFormat} 
+                  onChange={(e) => setRunFormat(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 bg-slate-50"
+                >
+                  <option value="PDF">PDF Document</option>
+                  <option value="Excel">Excel Spreadsheet (.xlsx)</option>
+                  <option value="CSV">Comma Separated Values (.csv)</option>
+                </select>
+              </div>
+
+              <div className="p-3 bg-slate-50 border border-slate-200/60 rounded-lg text-[11px] text-slate-600">
+                <p className="font-semibold mb-1">Report Details:</p>
+                <p>{activeRunModal.desc}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-3 mt-2">
+              <button 
+                onClick={() => setActiveRunModal(null)}
+                className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => {
+                  const newReport = {
+                    id: Date.now(),
+                    name: `${activeRunModal.name} - ${runPeriod}`,
+                    category: activeRunModal.category,
+                    period: runPeriod,
+                    user: 'John Smith',
+                    date: 'Just now',
+                    format: runFormat,
+                    formatColor: runFormat === 'PDF' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                  };
+                  setRecentReportsList([newReport, ...recentReportsList]);
+                  setActiveRunModal(null);
+                  setToastMessage(`Generated ${newReport.name} successfully!`);
+                  setTimeout(() => setToastMessage(null), 3000);
+                }}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-sm"
+              >
+                Generate Report
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- CREATE CUSTOM REPORT MODAL --- */}
+      {showCustomModal && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-md p-6 flex flex-col gap-4 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Plus size={16} className="text-blue-600" />
+                Create Custom Report
+              </h3>
+              <button onClick={() => setShowCustomModal(false)} className="text-slate-400 hover:text-slate-600 font-bold text-sm">✕</button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Report Title</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. Custom Fleet & Fuel Analysis"
+                  value={customTitle}
+                  onChange={(e) => setCustomTitle(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 bg-slate-50 focus:outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Category</label>
+                <select 
+                  value={customCategory} 
+                  onChange={(e) => setCustomCategory(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 bg-slate-50"
+                >
+                  <option value="Financial">Financial</option>
+                  <option value="Compliance">Compliance</option>
+                  <option value="Operations">Operations</option>
+                  <option value="Payroll">Payroll</option>
+                  <option value="Vehicle & Assets">Vehicle & Assets</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-3 mt-2">
+              <button 
+                onClick={() => setShowCustomModal(false)}
+                className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => {
+                  if (!customTitle.trim()) return;
+                  setShowCustomModal(false);
+                  setCustomTitle('');
+                  setToastMessage(`Custom report "${customTitle}" created!`);
+                  setTimeout(() => setToastMessage(null), 3000);
+                }}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-sm"
+              >
+                Save Custom Report
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

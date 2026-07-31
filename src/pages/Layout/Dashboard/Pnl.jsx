@@ -121,7 +121,7 @@ export default function Pnl() {
     // Screenshot: Freight Income 13.9% is Green. Driver Costs 10.8% is Red.
     // We can pass a flag `isExpense` to flip the color.
     return (
-      <tr className={`border-b ${isTotal ? 'border-blue-100 bg-blue-50/20 font-bold text-blue-600' : 'border-slate-100 hover:bg-slate-50'} transition-colors`}>
+      <tr className={`border-b whitespace-nowrap ${isTotal ? 'border-blue-100 bg-blue-50/20 font-bold text-blue-600' : 'border-slate-100 hover:bg-slate-50'} transition-colors`}>
         <td className={`px-4 py-3 text-xs ${isTotal ? 'font-bold' : 'font-medium text-slate-700'}`}>{label}</td>
         <td className="px-4 py-3 text-xs text-right font-semibold">{formatCurrency(curr)}</td>
         <td className="px-4 py-3 text-xs text-right font-medium text-slate-500">{formatCurrency(comp)}</td>
@@ -139,7 +139,7 @@ export default function Pnl() {
     const changeAbs = curr - comp;
     const changePct = calcChange(curr, comp);
     return (
-      <tr className={`border-b ${isTotal ? 'border-slate-200 bg-slate-50 font-bold text-blue-600' : 'border-slate-100 hover:bg-slate-50'} transition-colors`}>
+      <tr className={`border-b whitespace-nowrap ${isTotal ? 'border-slate-200 bg-slate-50 font-bold text-blue-600' : 'border-slate-100 hover:bg-slate-50'} transition-colors`}>
         <td className={`px-4 py-3 text-xs ${isTotal ? 'font-bold' : 'font-medium text-slate-700'}`}>{label}</td>
         <td className="px-4 py-3 text-xs text-right font-semibold">{formatCurrency(curr)}</td>
         <td className="px-4 py-3 text-xs text-right font-medium text-slate-500">{formatCurrency(comp)}</td>
@@ -271,14 +271,14 @@ export default function Pnl() {
 
                 {/* Table */}
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
+                  <table className="w-full text-left border-collapse whitespace-nowrap min-w-[600px]">
                     <thead>
                       <tr className="border-b-2 border-slate-200">
-                        <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider w-1/3">Category</th>
-                        <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">{period}<br/><span className="lowercase font-medium">(This Period)</span></th>
-                        <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">{comparison}<br/><span className="lowercase font-medium">(Last Period)</span></th>
-                        <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">$ Change</th>
-                        {showPercentage && <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">% Change</th>}
+                        <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider min-w-[180px]">Category</th>
+                        <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right min-w-[110px]">{period}<br/><span className="lowercase font-medium">(This Period)</span></th>
+                        <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right min-w-[110px]">{comparison}<br/><span className="lowercase font-medium">(Last Period)</span></th>
+                        <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right min-w-[100px]">$ Change</th>
+                        {showPercentage && <th className="px-4 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right min-w-[90px]">% Change</th>}
                       </tr>
                     </thead>
                     <tbody>
@@ -290,7 +290,7 @@ export default function Pnl() {
                       <TableRow label="Total Revenue" curr={currRev} comp={compRev} isTotal={true} />
                       
                       {/* Cost of Sales */}
-                      <tr><td colSpan={showPercentage ? 5 : 4} className="px-4 py-3 text-xs font-bold text-slate-900 bg-slate-50 mt-2 block w-full">Cost of Sales</td></tr>
+                      <tr><td colSpan={showPercentage ? 5 : 4} className="px-4 py-3 text-xs font-bold text-slate-900 bg-slate-50">Cost of Sales</td></tr>
                       <ExpenseRow label="Driver Costs" curr={currentData.cogs.driver} comp={compData.cogs.driver} />
                       <ExpenseRow label="Fuel Costs" curr={currentData.cogs.fuel} comp={compData.cogs.fuel} />
                       <ExpenseRow label="Contractor Costs" curr={currentData.cogs.contractor} comp={compData.cogs.contractor} />
@@ -309,7 +309,7 @@ export default function Pnl() {
                       </tr>
 
                       {/* Operating Expenses */}
-                      <tr><td colSpan={showPercentage ? 5 : 4} className="px-4 py-3 text-xs font-bold text-slate-900 bg-slate-50 mt-2 block w-full">Operating Expenses</td></tr>
+                      <tr><td colSpan={showPercentage ? 5 : 4} className="px-4 py-3 text-xs font-bold text-slate-900 bg-slate-50">Operating Expenses</td></tr>
                       <ExpenseRow label="Administration Expenses" curr={currentData.opex.admin} comp={compData.opex.admin} />
                       <ExpenseRow label="Marketing Expenses" curr={currentData.opex.marketing} comp={compData.opex.marketing} />
                       <ExpenseRow label="Depreciation" curr={currentData.opex.depreciation} comp={compData.opex.depreciation} />
