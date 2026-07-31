@@ -950,7 +950,7 @@ export default function DispatcherLoads() {
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap w-full sm:w-auto justify-end">
-          <button 
+          <button
             onClick={() => triggerToast('Exporting active loads manifest (CSV/PDF)...')}
             className="px-3.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2 shadow-2xs cursor-pointer"
           >
@@ -958,7 +958,7 @@ export default function DispatcherLoads() {
             <span>Export</span>
           </button>
 
-          <button 
+          <button
             onClick={() => triggerToast('Opening table column customize modal...')}
             className="px-3.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2 shadow-2xs cursor-pointer"
           >
@@ -966,7 +966,7 @@ export default function DispatcherLoads() {
             <span>Columns</span>
           </button>
 
-          <button 
+          <button
             onClick={() => setIsCreateModalOpen(true)}
             className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs flex items-center cursor-pointer active:scale-95 transition-transform"
           >
@@ -1005,8 +1005,8 @@ export default function DispatcherLoads() {
                 key={tab}
                 onClick={() => setActiveStatusTab(tab)}
                 className={`text-xs font-semibold transition-colors whitespace-nowrap cursor-pointer ${activeStatusTab === tab
-                    ? 'text-blue-600 border-b-2 border-blue-600 pb-2 -mb-[9px]'
-                    : 'text-slate-500 hover:text-slate-800'
+                  ? 'text-blue-600 border-b-2 border-blue-600 pb-2 -mb-[9px]'
+                  : 'text-slate-500 hover:text-slate-800'
                   }`}
               >
                 {tab}
@@ -1292,8 +1292,8 @@ export default function DispatcherLoads() {
                 key={tab}
                 onClick={() => setActiveDetailsTab(tab.split(' ')[0])}
                 className={`transition-colors whitespace-nowrap cursor-pointer ${activeDetailsTab === tab.split(' ')[0]
-                    ? 'text-blue-600 border-b-2 border-blue-600 pb-2 -mb-[9px]'
-                    : 'text-slate-500 hover:text-slate-800'
+                  ? 'text-blue-600 border-b-2 border-blue-600 pb-2 -mb-[9px]'
+                  : 'text-slate-500 hover:text-slate-800'
                   }`}
               >
                 {tab}
@@ -1388,8 +1388,8 @@ export default function DispatcherLoads() {
                     return (
                       <div key={idx} className="flex flex-col items-center z-10 space-y-1">
                         <div className={`w-7 h-7 rounded-full flex items-center justify-center ${step.state === 'done' ? 'bg-emerald-500 text-white' :
-                            step.state === 'active' ? 'bg-blue-600 text-white ring-4 ring-blue-100 shadow-md' :
-                              'bg-white border-2 border-slate-200 text-slate-300'
+                          step.state === 'active' ? 'bg-blue-600 text-white ring-4 ring-blue-100 shadow-md' :
+                            'bg-white border-2 border-slate-200 text-slate-300'
                           }`}>
                           <IconComp className="w-3.5 h-3.5" />
                         </div>

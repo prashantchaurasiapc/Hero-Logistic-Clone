@@ -153,8 +153,8 @@ export default function VehicleCosts() {
       </div>
 
       {/* Filters Row */}
-      <div className="px-8 flex items-center gap-3 mb-6 flex-wrap">
-        <div className="relative flex-1 min-w-[200px] max-w-xs">
+      <div className="px-4 sm:px-8 flex items-center gap-3 mb-6 overflow-x-auto scrollbar-hide flex-nowrap">
+        <div className="relative flex-1 min-w-[200px] max-w-xs shrink-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
           <input 
             type="text" 
@@ -168,7 +168,7 @@ export default function VehicleCosts() {
         <select 
           value={vehicleTypeFilter}
           onChange={(e) => { setVehicleTypeFilter(e.target.value); setCurrentPage(1); }}
-          className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 font-medium focus:outline-none"
+          className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 font-medium focus:outline-none shrink-0"
         >
           <option value="All Vehicle Types">All Vehicle Types</option>
           <option value="Truck">Truck</option>
@@ -178,7 +178,7 @@ export default function VehicleCosts() {
         <select 
           value={vehicleFilter}
           onChange={(e) => { setVehicleFilter(e.target.value); setCurrentPage(1); }}
-          className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 font-medium focus:outline-none"
+          className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 font-medium focus:outline-none shrink-0"
         >
           <option value="All Vehicles">All Vehicles</option>
           {uniqueVehicleNames.map(name => (
@@ -186,22 +186,22 @@ export default function VehicleCosts() {
           ))}
         </select>
         
-        <div className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 font-medium cursor-pointer hover:bg-slate-50">
+        <div className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 font-medium cursor-pointer hover:bg-slate-50 shrink-0 whitespace-nowrap">
           <span>1 May 2026 – 31 May 2026</span>
           <Calendar size={14} className="text-slate-400 ml-2" />
         </div>
         
-        <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 font-medium hover:bg-slate-50 transition-colors">
+        <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 font-medium hover:bg-slate-50 transition-colors shrink-0 whitespace-nowrap">
           <Filter size={16} className="text-slate-500" /> Filters
         </button>
         
-        <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 font-medium hover:bg-slate-50 transition-colors">
+        <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 font-medium hover:bg-slate-50 transition-colors shrink-0 whitespace-nowrap">
           <Download size={16} className="text-slate-500" /> Export
         </button>
       </div>
 
       {/* Main Content Grid */}
-      <div className="px-8 pb-8 grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
+      <div className="px-4 sm:px-8 pb-8 grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
         
         {/* LEFT COLUMN (Spans 2) */}
         <div className="lg:col-span-2 flex flex-col gap-6">
@@ -209,7 +209,7 @@ export default function VehicleCosts() {
           {/* Table Card */}
           <div className="bg-white rounded-xl shadow-sm border border-slate-200/60 overflow-hidden flex flex-col">
             {/* Tabs */}
-            <div className="flex px-6 pt-2 border-b border-slate-200 gap-8">
+            <div className="flex px-6 pt-2 border-b border-slate-200 gap-8 overflow-x-auto scrollbar-hide">
               {['Vehicle Summary', 'Transactions', 'Upcoming Costs', 'Service History'].map(tab => (
                 <button 
                   key={tab}
@@ -225,18 +225,18 @@ export default function VehicleCosts() {
             <div className="flex-1 overflow-x-auto min-h-[300px]">
               {activeTab === 'Vehicle Summary' ? (
                 <>
-                  <table className="w-full text-left border-collapse">
+                  <table className="w-full text-left border-collapse whitespace-nowrap min-w-[800px]">
                     <thead>
                       <tr className="border-b border-slate-200 bg-white">
-                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider sticky top-0 bg-white">Vehicle</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider sticky top-0 bg-white">Type</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider sticky top-0 bg-white">Rego / ID</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right sticky top-0 bg-white">Total Cost (Ex GST)</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right sticky top-0 bg-white">Total Cost (Inc GST)</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right sticky top-0 bg-white">Cost / km</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right sticky top-0 bg-white">Cost / day</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right sticky top-0 bg-white">vs Apr 2026</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center sticky top-0 bg-white">Action</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider sticky top-0 bg-white min-w-[200px]">Vehicle</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider sticky top-0 bg-white min-w-[80px]">Type</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider sticky top-0 bg-white min-w-[100px]">Rego / ID</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right sticky top-0 bg-white min-w-[130px]">Total Cost (Ex GST)</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right sticky top-0 bg-white min-w-[130px]">Total Cost (Inc GST)</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right sticky top-0 bg-white min-w-[90px]">Cost / km</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right sticky top-0 bg-white min-w-[90px]">Cost / day</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right sticky top-0 bg-white min-w-[100px]">vs Apr 2026</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center sticky top-0 bg-white min-w-[80px]">Action</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -249,7 +249,7 @@ export default function VehicleCosts() {
                           const totalEx = v.fuel + v.maintenance + v.tyres + v.insurance + v.other;
                           const totalInc = totalEx * 1.1;
                           return (
-                            <tr key={v.id} className="hover:bg-slate-50/50 transition-colors">
+                            <tr key={v.id} className="hover:bg-slate-50/50 transition-colors whitespace-nowrap">
                               <td className="px-6 py-3">
                                 <div className="flex items-center gap-3">
                                   <img src={v.img} alt={v.name} className="w-10 h-10 rounded-lg object-cover bg-slate-100" />
