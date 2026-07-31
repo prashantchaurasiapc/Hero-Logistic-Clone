@@ -279,6 +279,8 @@ export default function WarehouseMovements() {
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [importSelected, setImportSelected] = useState([]);
   const [importSearch, setImportSearch] = useState('');
+  const [editingItem, setEditingItem] = useState(null);
+  const [formSearchQuery, setFormSearchQuery] = useState('');
   
   // ── HISTORY VIEW STATES ──
   const [historySearch, setHistorySearch] = useState('');
@@ -368,6 +370,30 @@ export default function WarehouseMovements() {
       setSelectedFormItem(null);
       showToast('All items cleared from move list.');
     }
+  };
+
+  const handleAddAnotherDefaultItem = () => {
+    const newId = String(Date.now());
+    const count = formItems.length + 1;
+    const newItem = {
+      id: newId,
+      image: 'https://images.unsplash.com/photo-1549317661-bd32c8ce0729?auto=format&fit=crop&w=120&q=80',
+      title: `Vehicle Item #${count}`,
+      vin: `VIN${Math.floor(1000000000000000 + Math.random() * 9000000000000000)}`,
+      rego: `REG${Math.floor(100 + Math.random() * 900)}`,
+      type: 'Vehicle',
+      subtype: 'Car Carrying',
+      fromZone: 'Zone A',
+      fromRow: 'Row 4 / Bay 12',
+      fromPos: `Position ${String(count).padStart(2, '0')}`,
+      toZone: 'Zone B',
+      toRow: 'Row 2 / Bay 05',
+      toPos: `Position ${String(count + 2).padStart(2, '0')}`,
+      condition: 'Good',
+    };
+    setFormItems(prev => [...prev, newItem]);
+    setSelectedFormItem(newItem);
+    showToast(`✓ Added Item #${count} to list.`);
   };
 
   const handleCreateTransfer = () => {
@@ -1230,7 +1256,7 @@ export default function WarehouseMovements() {
           align-items: flex-start;
         }
         .mvt-left { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
-        .mvt-right { width: 230px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; }
+        .mvt-right { width: 270px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; }
 
         .mvt-card {
           background: #FFFFFF;
@@ -1282,13 +1308,75 @@ export default function WarehouseMovements() {
           color: #0F172A; font-size: 11px; font-weight: 500; padding: 8px 10px; resize: none; height: 56px;
         }
 
-        .mvt-table-wrap { border: 1px solid #E2E8F0; border-radius: 8px; overflow-x: auto; }
-        .mvt-table { width: 100%; border-collapse: collapse; font-size: 11.5px; min-width: 700px; }
-        .mvt-table th { padding: 9px 12px; font-size: 9px; font-weight: 800; color: #64748B; text-transform: uppercase; background: #F8FAFC; border-bottom: 1px solid #E2E8F0; text-align: left; }
-        .mvt-table td { padding: 9px 12px; border-bottom: 1px solid #F1F5F9; vertical-align: middle; }
+        .mvt-table-wrap { border: 1px solid #E2E8F0; border-radius: 8px; overflow-x: auto; background: #FFFFFF; width: 100%; }
+        .mvt-table { width: 100%; border-collapse: collapse; font-size: 11px; table-layout: auto; }
+        .mvt-table th { padding: 8px 6px; font-size: 8.5px; font-weight: 800; color: #64748B; text-transform: uppercase; background: #F8FAFC; border-bottom: 1px solid #E2E8F0; text-align: left; letter-spacing: 0.3px; }
+        .mvt-table td { padding: 8px 6px; border-bottom: 1px solid #F1F5F9; vertical-align: middle; }
+        .mvt-table tr:hover { background: #F8FAFC; }
+        .mvt-row-selected { background: #FEF3C7 !important; }
 
-        .mvt-right-card { background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
-        .mvt-right-card-title { font-size: 9.5px; font-weight: 900; color: #0F172A; text-transform: uppercase; padding: 10px 14px 4px 14px; }
+        /* Search Bar */
+        .mvt-search-bar-wrap { position: relative; display: flex; align-items: center; flex: 1; max-width: 280px; }
+        .mvt-search-bar-input { width: 100%; height: 32px; padding: 0 28px 0 28px; border-radius: 6px; border: 1px solid #CBD5E1; background: #FFFFFF; font-size: 11px; font-weight: 500; color: #0F172A; outline: none; }
+        .mvt-search-bar-input:focus { border-color: #F59E0B; }
+        .mvt-search-icon-left { position: absolute; left: 8px; color: #94A3B8; pointer-events: none; }
+        .mvt-qr-icon-right { position: absolute; right: 8px; color: #94A3B8; cursor: pointer; }
+
+        /* Header Buttons */
+        .mvt-btn-import-list { display: flex; align-items: center; gap: 5px; height: 32px; padding: 0 10px; border-radius: 6px; border: 1px solid #FCD34D; background: #FEF3C7; color: #B45309; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+        .mvt-btn-import-list:hover { background: #FDE68A; }
+        .mvt-btn-clear-all { height: 32px; padding: 0 10px; border-radius: 6px; border: 1px solid #FCA5A5; background: #FEF2F2; color: #DC2626; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+        .mvt-btn-clear-all:hover { background: #FEE2E2; }
+
+        /* Table Badges & Sub-elements */
+        .mvt-rego-tag { display: inline-block; background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; font-size: 9px; font-weight: 800; padding: 1px 5px; border-radius: 4px; margin-top: 2px; letter-spacing: 0.4px; }
+        .mvt-subtype-badge { display: inline-flex; align-items: center; background: #F8FAFC; color: #475569; border: 1px solid #E2E8F0; font-size: 9px; font-weight: 700; padding: 1.5px 6px; border-radius: 10px; margin-top: 2px; width: fit-content; }
+
+        /* From Location stack */
+        .mvt-loc-stack { display: flex; flex-direction: column; gap: 1px; }
+        .mvt-loc-main { font-size: 11px; font-weight: 800; color: #0F172A; }
+        .mvt-loc-sub { font-size: 9.5px; color: #64748B; font-weight: 500; }
+
+        /* Arrow Column */
+        .mvt-arrow-cell { text-align: center; padding: 0 2px; }
+        .mvt-arrow-icon { color: #D97706; font-weight: bold; margin: 0 auto; }
+
+        /* To Location Stacked Select Boxes */
+        .mvt-to-select-stack { display: flex; flex-direction: column; gap: 3px; width: 110px; }
+        .mvt-select-box { width: 100%; height: 24px; padding: 0 16px 0 6px; border-radius: 4px; border: 1px solid #CBD5E1; background: #FFFFFF; font-size: 10px; font-weight: 600; color: #0F172A; outline: none; cursor: pointer; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%64748B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 4px center; }
+        .mvt-select-box:focus { border-color: #F59E0B; }
+
+        /* Condition Select Box */
+        .mvt-condition-select { height: 26px; padding: 0 18px 0 6px; border-radius: 4px; border: 1px solid #CBD5E1; background: #FFFFFF; font-size: 10.5px; font-weight: 600; color: #0F172A; outline: none; cursor: pointer; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%64748B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 4px center; }
+
+        /* Table Footer */
+        .mvt-table-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 10px; margin-top: 10px; border-top: 1px solid #F1F5F9; }
+        .mvt-btn-add-another { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 6px; border: 1px solid #CBD5E1; background: #FFFFFF; font-size: 11px; font-weight: 700; color: #0F172A; cursor: pointer; transition: all 0.15s; }
+        .mvt-btn-add-another:hover { background: #F8FAFC; border-color: #0F172A; }
+        .mvt-total-counter { font-size: 12px; font-weight: 700; color: #475569; }
+
+        .mvt-right-card { background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .mvt-right-card-title { font-size: 9px; font-weight: 900; color: #64748B; text-transform: uppercase; letter-spacing: 0.6px; padding: 12px 14px 8px 14px; border-bottom: 1px solid #F1F5F9; display: flex; align-items: center; justify-content: space-between; }
+        .mvt-preview-img { width: 100%; height: 110px; object-fit: cover; }
+        .mvt-preview-body { padding: 10px 14px 12px 14px; }
+        .mvt-preview-name { font-size: 13px; font-weight: 800; color: #0F172A; margin-bottom: 3px; }
+        .mvt-preview-vin { font-size: 10px; font-family: monospace; color: #64748B; margin-bottom: 8px; }
+        .mvt-preview-badge { display: inline-block; background: #DBEAFE; color: #1D4ED8; font-size: 9px; font-weight: 800; padding: 2px 7px; border-radius: 20px; margin-right: 4px; }
+        .mvt-preview-badge-green { display: inline-block; background: #DCFCE7; color: #166534; font-size: 9px; font-weight: 800; padding: 2px 7px; border-radius: 20px; }
+        .mvt-preview-loc-label { font-size: 8.5px; font-weight: 700; color: #64748B; text-transform: uppercase; margin-top: 10px; margin-bottom: 2px; letter-spacing: 0.4px; }
+        .mvt-preview-loc-val { font-size: 11.5px; font-weight: 800; color: #0F172A; }
+        .mvt-loc-guide { display: grid; grid-template-columns: 1fr auto 1fr; gap: 4px; align-items: center; padding: 10px 14px; }
+        .mvt-loc-node { background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 6px 4px; text-align: center; }
+        .mvt-loc-node-icon { font-size: 14px; color: #475569; margin-bottom: 2px; }
+        .mvt-loc-node-label { font-size: 8px; font-weight: 700; color: #64748B; }
+        .mvt-loc-arrow { color: #94A3B8; font-size: 10px; text-align: center; }
+        .mvt-movement-item { padding: 8px 14px; border-bottom: 1px solid #F1F5F9; }
+        .mvt-movement-item:last-child { border-bottom: none; }
+        .mvt-movement-date { font-size: 9.5px; font-weight: 700; color: #64748B; margin-bottom: 1px; }
+        .mvt-movement-label { font-size: 11px; font-weight: 800; color: #0F172A; }
+        .mvt-movement-detail { font-size: 10px; color: #64748B; font-weight: 500; }
+        .mvt-help-item { display: flex; align-items: flex-start; gap: 6px; padding: 5px 14px; font-size: 10px; color: #475569; line-height: 1.4; }
+        .mvt-help-dot { width: 5px; height: 5px; border-radius: 50%; background: #CBD5E1; flex-shrink: 0; margin-top: 4px; }
       `}</style>
 
       {/* PAGE TITLE + ACTIONS */}
@@ -1387,25 +1475,35 @@ export default function WarehouseMovements() {
 
           {/* 3. ITEMS TO MOVE */}
           <div className="mvt-card">
-            <div className="flex justify-between items-center mb-2">
+            <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
               <div className="mvt-sec-label" style={{ margin: 0, padding: 0, border: 'none' }}>
                 3. ITEMS TO MOVE ({formItems.length})
               </div>
+
+              {/* Search Bar matching Screenshot 2 input */}
+              <div className="mvt-search-bar-wrap">
+                <Search size={14} className="mvt-search-icon-left" />
+                <input
+                  type="text"
+                  placeholder="Scan barcode / VIN / Enter item details"
+                  value={formSearchQuery}
+                  onChange={e => setFormSearchQuery(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && scanInput) handleAddFormItem();
+                  }}
+                  className="mvt-search-bar-input"
+                />
+                <QrCode size={14} className="mvt-qr-icon-right" onClick={handleAddFormItem} title="Scan / Add" />
+              </div>
+
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1 bg-slate-100 px-2 py-1 rounded border border-slate-300">
-                  <QrCode size={13} className="text-slate-500" />
-                  <input
-                    type="text"
-                    placeholder="Scan barcode / VIN"
-                    value={scanInput}
-                    onChange={e => setScanInput(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleAddFormItem()}
-                    className="bg-transparent text-xs font-medium outline-none w-36"
-                  />
-                  <button onClick={handleAddFormItem} className="text-amber-500 font-bold">+</button>
-                </div>
-                <button onClick={() => setImportModalOpen(true)} className="px-2 py-1 bg-white border border-slate-300 rounded text-xs font-bold text-amber-600">Import</button>
-                <button onClick={handleClearAllForm} className="px-2 py-1 bg-white border border-red-300 rounded text-xs font-bold text-red-600">Clear All</button>
+                <button onClick={() => setImportModalOpen(true)} className="mvt-btn-import-list">
+                  <Download size={13} />
+                  <span>Import from List</span>
+                </button>
+                <button onClick={handleClearAllForm} className="mvt-btn-clear-all">
+                  Clear All
+                </button>
               </div>
             </div>
 
@@ -1413,39 +1511,200 @@ export default function WarehouseMovements() {
               <table className="mvt-table">
                 <thead>
                   <tr>
-                    <th>#</th>
+                    <th style={{ width: '32px' }}>#</th>
                     <th>ITEM / DESCRIPTION</th>
                     <th>TYPE</th>
                     <th>FROM LOCATION</th>
+                    <th style={{ width: '28px', textAlign: 'center' }}></th>
                     <th>TO LOCATION</th>
                     <th>CONDITION</th>
-                    <th style={{ textAlign: 'right' }}>ACTIONS</th>
+                    <th style={{ textAlign: 'center', width: '64px' }}>ACTIONS</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {formItems.map((item, idx) => (
-                    <tr key={item.id} onClick={() => setSelectedFormItem(item)}>
-                      <td>{idx + 1}</td>
-                      <td>
-                        <div className="flex items-center gap-2">
-                          <img src={item.image} alt={item.title} style={{ width: 36, height: 28, borderRadius: 4, objectFit: 'cover' }} />
-                          <div>
-                            <div className="font-extrabold text-slate-900">{item.title}</div>
-                            <div className="text-[9.5px] text-slate-500 font-mono">VIN: {item.vin}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td><span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100">{item.type}</span></td>
-                      <td className="font-semibold text-slate-700">{item.fromZone} / {item.fromRow}</td>
-                      <td><span className="font-bold text-amber-600">{item.toZone} / {item.toRow}</span></td>
-                      <td className="font-semibold text-slate-800">{item.condition}</td>
-                      <td style={{ textAlign: 'right' }}>
-                        <button onClick={() => handleRemoveFormItem(item.id)} className="text-red-500"><Trash2 size={13} /></button>
+                  {formItems.filter(i => {
+                    if (!formSearchQuery.trim()) return true;
+                    const q = formSearchQuery.toLowerCase();
+                    return (
+                      i.title.toLowerCase().includes(q) ||
+                      i.vin.toLowerCase().includes(q) ||
+                      (i.rego && i.rego.toLowerCase().includes(q)) ||
+                      i.fromZone.toLowerCase().includes(q) ||
+                      i.toZone.toLowerCase().includes(q)
+                    );
+                  }).length === 0 ? (
+                    <tr>
+                      <td colSpan="8" style={{ textAlign: 'center', padding: '24px', color: '#94A3B8' }}>
+                        No items found matching your search.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    formItems
+                      .filter(i => {
+                        if (!formSearchQuery.trim()) return true;
+                        const q = formSearchQuery.toLowerCase();
+                        return (
+                          i.title.toLowerCase().includes(q) ||
+                          i.vin.toLowerCase().includes(q) ||
+                          (i.rego && i.rego.toLowerCase().includes(q)) ||
+                          i.fromZone.toLowerCase().includes(q) ||
+                          i.toZone.toLowerCase().includes(q)
+                        );
+                      })
+                      .map((item, idx) => (
+                        <tr 
+                          key={item.id} 
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setEditingItem(item);
+                          }}
+                          className="hover:bg-amber-50 cursor-pointer transition-colors"
+                          title="Click to view & edit item details in popup"
+                        >
+                          {/* # */}
+                          <td className="font-bold text-slate-500">{idx + 1}</td>
+
+                          {/* ITEM / DESCRIPTION */}
+                          <td>
+                            <div className="flex items-center gap-2.5">
+                              <img 
+                                src={item.image} 
+                                alt={item.title} 
+                                style={{ width: 44, height: 34, borderRadius: 6, objectFit: 'cover', border: '1px solid #E2E8F0', flexShrink: 0 }} 
+                              />
+                              <div>
+                                <div className="font-extrabold text-slate-900 text-[12.5px]">{item.title}</div>
+                                <div className="text-[10px] text-slate-500 font-mono">VIN: {item.vin}</div>
+                                <div className="mvt-rego-tag">{item.rego}</div>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* TYPE */}
+                          <td>
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-1.5 font-bold text-slate-800 text-xs">
+                                <Truck size={13} className="text-slate-600" />
+                                <span>{item.type}</span>
+                              </div>
+                              <div className="mvt-subtype-badge">{item.subtype || 'Car Carrying'}</div>
+                            </div>
+                          </td>
+
+                          {/* FROM LOCATION */}
+                          <td>
+                            <div className="mvt-loc-stack">
+                              <div className="mvt-loc-main">{item.fromZone}</div>
+                              <div className="mvt-loc-sub">{item.fromRow}</div>
+                              <div className="mvt-loc-sub">{item.fromPos}</div>
+                            </div>
+                          </td>
+
+                          {/* ARROW */}
+                          <td className="mvt-arrow-cell">
+                            <ArrowRight size={15} className="mvt-arrow-icon" />
+                          </td>
+
+                          {/* TO LOCATION (STACKED SELECT DROPDOWNS) */}
+                          <td>
+                            <div className="mvt-to-select-stack" onClick={e => e.stopPropagation()}>
+                              <select 
+                                value={item.toZone} 
+                                onChange={e => handleUpdateFormField(idx, 'toZone', e.target.value)} 
+                                className="mvt-select-box"
+                              >
+                                <option value="Zone A">Zone A</option>
+                                <option value="Zone B">Zone B</option>
+                                <option value="Zone C">Zone C</option>
+                                <option value="Zone D">Zone D</option>
+                                <option value="Warehouse 1">Warehouse 1</option>
+                              </select>
+
+                              <select 
+                                value={item.toRow} 
+                                onChange={e => handleUpdateFormField(idx, 'toRow', e.target.value)} 
+                                className="mvt-select-box"
+                              >
+                                <option value="Row 1 / Bay 03">Row 1 / Bay 03</option>
+                                <option value="Row 2 / Bay 05">Row 2 / Bay 05</option>
+                                <option value="Row 3 / Bay 07">Row 3 / Bay 07</option>
+                                <option value="Row 4 / Bay 12">Row 4 / Bay 12</option>
+                              </select>
+
+                              <select 
+                                value={item.toPos} 
+                                onChange={e => handleUpdateFormField(idx, 'toPos', e.target.value)} 
+                                className="mvt-select-box"
+                              >
+                                <option value="Position 01">Position 01</option>
+                                <option value="Position 02">Position 02</option>
+                                <option value="Position 03">Position 03</option>
+                                <option value="Position 04">Position 04</option>
+                                <option value="Position 05">Position 05</option>
+                                <option value="Position 06">Position 06</option>
+                              </select>
+                            </div>
+                          </td>
+
+                          {/* CONDITION */}
+                          <td>
+                            <select 
+                              value={item.condition} 
+                              onChange={e => handleUpdateFormField(idx, 'condition', e.target.value)} 
+                              className="mvt-condition-select"
+                              onClick={e => e.stopPropagation()}
+                            >
+                              <option value="Good">Good</option>
+                              <option value="Fair">Fair</option>
+                              <option value="Damaged">Damaged</option>
+                              <option value="Inspection Required">Needs Inspection</option>
+                            </select>
+                          </td>
+
+                          {/* ACTIONS */}
+                          <td style={{ textAlign: 'center' }}>
+                            <div className="flex items-center justify-center gap-1" onClick={e => e.stopPropagation()}>
+                              <button 
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setEditingItem(item);
+                                }} 
+                                className="p-1 hover:bg-slate-100 rounded text-slate-600 hover:text-slate-900 transition-colors"
+                                title="Edit Item Details"
+                              >
+                                <Edit2 size={13} />
+                              </button>
+                              <button 
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleRemoveFormItem(item.id);
+                                }} 
+                                className="p-1 hover:bg-red-50 rounded text-red-500 hover:text-red-700 transition-colors"
+                                title="Remove Item"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                  )}
                 </tbody>
               </table>
+            </div>
+
+            {/* Footer matching Screenshot 2 */}
+            <div className="mvt-table-footer">
+              <button onClick={handleAddAnotherDefaultItem} className="mvt-btn-add-another">
+                <Plus size={14} />
+                <span>Add Another Item</span>
+              </button>
+              <div className="mvt-total-counter">
+                Total Items: <strong>{formItems.length}</strong>
+              </div>
             </div>
           </div>
 
@@ -1482,20 +1741,316 @@ export default function WarehouseMovements() {
 
         {/* RIGHT SIDEBAR PREVIEW */}
         <div className="mvt-right">
+
+          {/* SELECTED ITEM PREVIEW */}
           <div className="mvt-right-card">
-            <div className="mvt-right-card-title">SELECTED ITEM PREVIEW</div>
+            <div className="mvt-right-card-title">
+              <span>Selected Item Preview</span>
+              {selectedFormItem && (
+                <Maximize2 size={12} style={{ color: '#94A3B8', cursor: 'pointer' }} />
+              )}
+            </div>
             {selectedFormItem ? (
-              <div className="p-3">
-                <img src={selectedFormItem.image} alt={selectedFormItem.title} style={{ width: '100%', height: 90, objectFit: 'cover', borderRadius: 6 }} />
-                <div className="mt-2 font-extrabold text-slate-900 text-xs">{selectedFormItem.title}</div>
-                <div className="text-[10px] text-slate-500 font-mono">VIN: {selectedFormItem.vin}</div>
-                <div className="mt-2 text-[10px] font-bold text-amber-600">Current: {selectedFormItem.fromZone} ({selectedFormItem.fromRow})</div>
+              <>
+                <img
+                  src={selectedFormItem.image}
+                  alt={selectedFormItem.title}
+                  className="mvt-preview-img"
+                />
+                <div className="mvt-preview-body">
+                  <div className="mvt-preview-name">{selectedFormItem.title}</div>
+                  <div className="mvt-preview-vin">VIN: {selectedFormItem.vin}</div>
+                  <div style={{ marginBottom: 8 }}>
+                    <span className="mvt-preview-badge">{selectedFormItem.rego}</span>
+                    <span className="mvt-preview-badge" style={{ background: '#FEF3C7', color: '#92400E' }}>{selectedFormItem.subtype}</span>
+                    <span className="mvt-preview-badge-green">In Storage</span>
+                  </div>
+                  <div className="mvt-preview-loc-label">Current Location</div>
+                  <div className="mvt-preview-loc-val">{selectedFormItem.fromZone}</div>
+                  <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600 }}>{selectedFormItem.fromRow} / {selectedFormItem.fromPos}</div>
+                </div>
+              </>
+            ) : (
+              <div style={{ padding: '24px 14px', textAlign: 'center', color: '#94A3B8' }}>
+                <Box size={28} style={{ margin: '0 auto 8px', opacity: 0.4 }} />
+                <div style={{ fontSize: 11, fontWeight: 600 }}>Click a row to preview item details here</div>
               </div>
-            ) : null}
+            )}
           </div>
+
+          {/* LOCATION GUIDE */}
+          <div className="mvt-right-card">
+            <div className="mvt-right-card-title"><span>Location Guide</span></div>
+            <div className="mvt-loc-guide">
+              <div className="mvt-loc-node">
+                <div style={{ fontSize: 12, textAlign: 'center', marginBottom: 2 }}>🏭</div>
+                <div className="mvt-loc-node-label">Depot</div>
+              </div>
+              <div className="mvt-loc-arrow">→</div>
+              <div className="mvt-loc-node">
+                <div style={{ fontSize: 12, textAlign: 'center', marginBottom: 2 }}>📦</div>
+                <div className="mvt-loc-node-label">Zone</div>
+              </div>
+            </div>
+            <div className="mvt-loc-guide" style={{ paddingTop: 0 }}>
+              <div className="mvt-loc-node">
+                <div style={{ fontSize: 12, textAlign: 'center', marginBottom: 2 }}>🔢</div>
+                <div className="mvt-loc-node-label">Row</div>
+              </div>
+              <div className="mvt-loc-arrow">→</div>
+              <div className="mvt-loc-node">
+                <div style={{ fontSize: 12, textAlign: 'center', marginBottom: 2 }}>🗂️</div>
+                <div className="mvt-loc-node-label">Bay</div>
+              </div>
+            </div>
+            <div style={{ padding: '0 14px 10px 14px' }}>
+              <div className="mvt-loc-node" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '5px 10px' }}>
+                <span style={{ fontSize: 12 }}>📍</span>
+                <div className="mvt-loc-node-label" style={{ marginBottom: 0 }}>Position</div>
+              </div>
+            </div>
+          </div>
+
+          {/* RECENT MOVEMENTS */}
+          <div className="mvt-right-card">
+            <div className="mvt-right-card-title">
+              <span>Recent Movements (This Item)</span>
+            </div>
+            {recentMovements.map((mv, i) => (
+              <div key={i} className="mvt-movement-item">
+                <div className="mvt-movement-date">{mv.date}</div>
+                <div className="mvt-movement-label">{mv.label}</div>
+                <div className="mvt-movement-detail">{mv.detail}</div>
+              </div>
+            ))}
+            <div style={{ padding: '8px 14px 10px' }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: '#2563EB', cursor: 'pointer' }}>View full history →</span>
+            </div>
+          </div>
+
+          {/* HELP */}
+          <div className="mvt-right-card">
+            <div className="mvt-right-card-title"><span>Help</span></div>
+            <div style={{ padding: '4px 0 8px' }}>
+              <div className="mvt-help-item">
+                <div className="mvt-help-dot" />
+                <span>Moving within depot updates the item location.</span>
+              </div>
+              <div className="mvt-help-item">
+                <div className="mvt-help-dot" />
+                <span>Transfer to another depot will create a transfer job.</span>
+              </div>
+              <div className="mvt-help-item">
+                <div className="mvt-help-dot" />
+                <span>Ensure items are safely secured before moving.</span>
+              </div>
+            </div>
+          </div>
+
         </div>
 
       </div>
+
+      {/* IMPORT MODAL */}
+      {importModalOpen && (
+        <div className="wh-modal-overlay" onClick={() => setImportModalOpen(false)}>
+          <div className="wh-modal-box" style={{ maxWidth: 540 }} onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center p-4 border-b border-slate-200">
+              <h3 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
+                <Download size={16} className="text-amber-500" />
+                Import Items from Inventory / Manifest
+              </h3>
+              <button onClick={() => setImportModalOpen(false)}><X size={16} className="text-slate-400" /></button>
+            </div>
+            <div className="p-4 flex flex-col gap-3">
+              <input
+                type="text"
+                placeholder="Filter manifest items by title, VIN, rego..."
+                value={importSearch}
+                onChange={e => setImportSearch(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-amber-400 font-medium"
+              />
+              <div className="max-h-64 overflow-y-auto flex flex-col gap-2 pr-1">
+                {IMPORT_MANIFEST
+                  .filter(m => !importSearch || m.title.toLowerCase().includes(importSearch.toLowerCase()) || m.vin.toLowerCase().includes(importSearch.toLowerCase()))
+                  .map(m => {
+                    const isSel = importSelected.includes(m.id);
+                    const alreadyAdded = formItems.some(i => i.vin === m.vin);
+                    return (
+                      <div
+                        key={m.id}
+                        onClick={() => {
+                          if (alreadyAdded) return;
+                          setImportSelected(prev => isSel ? prev.filter(x => x !== m.id) : [...prev, m.id]);
+                        }}
+                        className={`p-2.5 border rounded-lg flex items-center justify-between cursor-pointer transition-colors ${alreadyAdded ? 'bg-slate-50 opacity-60 border-slate-200' : isSel ? 'bg-amber-50 border-amber-400' : 'bg-white border-slate-200 hover:bg-slate-50'}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <img src={m.image} alt={m.title} className="w-10 h-8 rounded object-cover border border-slate-200" />
+                          <div>
+                            <div className="font-extrabold text-xs text-slate-900">{m.title}</div>
+                            <div className="text-[10px] text-slate-500 font-mono">VIN: {m.vin} • REGO: {m.rego}</div>
+                          </div>
+                        </div>
+                        {alreadyAdded ? (
+                          <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded">In Move List</span>
+                        ) : (
+                          <input type="checkbox" checked={isSel} readOnly className="accent-amber-500" />
+                        )}
+                      </div>
+                    );
+                  })}
+              </div>
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                <button onClick={() => setImportModalOpen(false)} className="px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-50">Cancel</button>
+                <button onClick={handleConfirmImport} className="px-4 py-1.5 bg-amber-400 text-slate-900 font-extrabold rounded-lg text-xs hover:bg-amber-500 shadow-sm">Import Selected ({importSelected.length})</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT ITEM MODAL POPUP */}
+      {editingItem && (
+        <div className="wh-modal-overlay" style={{ zIndex: 999999 }} onClick={() => setEditingItem(null)}>
+          <div className="wh-modal-box" style={{ maxWidth: 540, borderRadius: 12, overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }} onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center px-5 py-3.5 border-b border-slate-200 bg-slate-50">
+              <h3 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
+                <Edit2 size={16} className="text-amber-500" />
+                Item Details & Movement Settings
+              </h3>
+              <button onClick={() => setEditingItem(null)} className="p-1 text-slate-400 hover:text-slate-600 font-bold"><X size={16} /></button>
+            </div>
+            
+            {/* Header Preview Card */}
+            <div className="p-4 bg-slate-100/70 border-b border-slate-200 flex items-center gap-4">
+              <img src={editingItem.image} alt={editingItem.title} className="w-16 h-12 rounded-lg object-cover border border-slate-300 shadow-sm" />
+              <div>
+                <h4 className="font-extrabold text-sm text-slate-900">{editingItem.title}</h4>
+                <div className="text-[11px] text-slate-500 font-mono mt-0.5">VIN: {editingItem.vin}</div>
+                <div className="flex items-center gap-1.5 mt-1">
+                  <span className="text-[9.5px] font-bold px-2 py-0.5 bg-blue-100 text-blue-700 rounded">{editingItem.rego}</span>
+                  <span className="text-[9.5px] font-bold px-2 py-0.5 bg-amber-100 text-amber-800 rounded">{editingItem.subtype || 'Car Carrying'}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-5 flex flex-col gap-3.5 text-xs bg-white">
+              <div className="flex flex-col gap-1">
+                <label className="font-extrabold text-slate-700 uppercase text-[9.5px]">Item Title</label>
+                <input
+                  type="text"
+                  value={editingItem.title}
+                  onChange={e => setEditingItem({ ...editingItem, title: e.target.value })}
+                  className="px-3 py-1.5 border border-slate-300 rounded-md text-xs font-bold outline-none focus:border-amber-400"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="font-extrabold text-slate-700 uppercase text-[9.5px]">VIN</label>
+                  <input
+                    type="text"
+                    value={editingItem.vin}
+                    onChange={e => setEditingItem({ ...editingItem, vin: e.target.value })}
+                    className="px-3 py-1.5 border border-slate-300 rounded-md text-xs font-mono outline-none focus:border-amber-400"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="font-extrabold text-slate-700 uppercase text-[9.5px]">License Plate / REGO</label>
+                  <input
+                    type="text"
+                    value={editingItem.rego}
+                    onChange={e => setEditingItem({ ...editingItem, rego: e.target.value })}
+                    className="px-3 py-1.5 border border-slate-300 rounded-md text-xs font-bold outline-none focus:border-amber-400"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="font-extrabold text-slate-700 uppercase text-[9.5px]">Item Type</label>
+                  <input
+                    type="text"
+                    value={editingItem.type}
+                    onChange={e => setEditingItem({ ...editingItem, type: e.target.value })}
+                    className="px-3 py-1.5 border border-slate-300 rounded-md text-xs font-bold outline-none focus:border-amber-400"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="font-extrabold text-slate-700 uppercase text-[9.5px]">Subtype / Category</label>
+                  <input
+                    type="text"
+                    value={editingItem.subtype}
+                    onChange={e => setEditingItem({ ...editingItem, subtype: e.target.value })}
+                    className="px-3 py-1.5 border border-slate-300 rounded-md text-xs font-bold outline-none focus:border-amber-400"
+                  />
+                </div>
+              </div>
+
+              {/* TO LOCATION & CONDITION */}
+              <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100">
+                <div className="flex flex-col gap-1">
+                  <label className="font-extrabold text-slate-700 uppercase text-[9.5px]">Destination Zone</label>
+                  <select
+                    value={editingItem.toZone}
+                    onChange={e => setEditingItem({ ...editingItem, toZone: e.target.value })}
+                    className="px-3 py-1.5 border border-slate-300 rounded-md text-xs font-semibold outline-none focus:border-amber-400"
+                  >
+                    <option value="Zone A">Zone A</option>
+                    <option value="Zone B">Zone B</option>
+                    <option value="Zone C">Zone C</option>
+                    <option value="Zone D">Zone D</option>
+                    <option value="Warehouse 1">Warehouse 1</option>
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="font-extrabold text-slate-700 uppercase text-[9.5px]">Condition</label>
+                  <select
+                    value={editingItem.condition}
+                    onChange={e => setEditingItem({ ...editingItem, condition: e.target.value })}
+                    className="px-3 py-1.5 border border-slate-300 rounded-md text-xs font-semibold outline-none focus:border-amber-400"
+                  >
+                    <option value="Good">Good</option>
+                    <option value="Fair">Fair</option>
+                    <option value="Damaged">Damaged</option>
+                    <option value="Inspection Required">Needs Inspection</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center pt-3 border-t border-slate-100">
+                <button 
+                  onClick={() => {
+                    handleRemoveFormItem(editingItem.id);
+                    setEditingItem(null);
+                  }}
+                  className="px-3 py-1.5 bg-red-50 text-red-600 border border-red-200 rounded-md text-xs font-bold hover:bg-red-100 transition-colors"
+                >
+                  Remove Item
+                </button>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => setEditingItem(null)} 
+                    className="px-3.5 py-1.5 border border-slate-300 rounded-md text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      setFormItems(prev => prev.map(i => i.id === editingItem.id ? editingItem : i));
+                      if (selectedFormItem?.id === editingItem.id) setSelectedFormItem(editingItem);
+                      setEditingItem(null);
+                      showToast('✓ Item details updated!');
+                    }}
+                    className="px-4 py-1.5 bg-amber-400 text-slate-900 font-extrabold rounded-md text-xs hover:bg-amber-500 shadow-sm transition-colors"
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* TOAST NOTIFICATION */}
       {toast && (

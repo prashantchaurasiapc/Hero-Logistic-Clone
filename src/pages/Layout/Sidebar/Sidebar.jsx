@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import './Sidebar.css';
 import {
@@ -277,17 +277,55 @@ const Sidebar = ({ role, isOpen, onClose }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const config = roleConfigs[role];
-  const [openSubMenus, setOpenSubMenus] = useState(() => {
-    const initial = {};
+
+  // Helper to check if path matches current location robustly
+  const isPathActive = (itemPath) => {
+    if (!itemPath || !config) return false;
+    const current = location.pathname.toLowerCase().replace(/\/$/, '');
+    const target = itemPath.toLowerCase().replace(/\/$/, '');
+
+    if (current === target) return true;
+
+    // Check all dashboard alias routes for dispatcher, company-admin, warehouse, etc.
+    const isDashboardTarget = 
+      target.endsWith('/dashboard') || 
+      target.endsWith('/command-centre') || 
+      target.endsWith('/command-center');
+
+    const isCurrentDashboardAlias = 
+      current === config.basePath.toLowerCase() ||
+      current.endsWith('/dashboard') ||
+      current.endsWith('/dispatch-dashboard') ||
+      current.endsWith('/command-centre') ||
+      current.endsWith('/command-center');
+
+    if (isDashboardTarget && isCurrentDashboardAlias) {
+      return true;
+    }
+
+    // Match sub-routes (e.g. /warehouse/tools/labels matching /warehouse/tools)
+    if (target !== config.basePath.toLowerCase() && current.startsWith(target + '/')) {
+      return true;
+    }
+
+    return false;
+  };
+
+  const [openSubMenus, setOpenSubMenus] = useState({});
+
+  // Auto-expand submenus when a child link is active
+  useEffect(() => {
     if (config?.subMenus) {
+      const updated = { ...openSubMenus };
       config.subMenus.forEach(sub => {
-        if (sub.items.some(item => location.pathname.startsWith(item.path))) {
-          initial[sub.key] = true;
+        const hasActiveChild = sub.items.some(item => isPathActive(item.path));
+        if (hasActiveChild) {
+          updated[sub.key] = true;
         }
       });
+      setOpenSubMenus(updated);
     }
-    return initial;
-  });
+  }, [location.pathname, role]);
 
   const handleNavClick = () => {
     if (onClose) onClose();
@@ -362,67 +400,79 @@ const Sidebar = ({ role, isOpen, onClose }) => {
 
       <nav className="sidebar-nav">
         <ul>
-          {config.menuItems.map((item, index) => (
-            <li key={index}>
-              <NavLink
-                to={item.path}
-                className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-                onClick={handleNavClick}
-              >
-                <span className="nav-icon">{item.icon}</span>
-                <span className="nav-label">{item.label}</span>
-                {item.badge && <span className={item.badge === 'AI' ? 'menu-badge-ai' : 'menu-badge'}>{item.badge}</span>}
-              </NavLink>
-            </li>
-          ))}
+          {config.menuItems.map((item, index) => {
+            const active = isPathActive(item.path);
+            return (
+              <li key={index}>
+                <NavLink
+                  to={item.path}
+                  className={`nav-item ${active ? 'active' : ''}`}
+                  onClick={handleNavClick}
+                >
+                  <span className="nav-icon">{item.icon}</span>
+                  <span className="nav-label">{item.label}</span>
+                  {item.badge && <span className={item.badge === 'AI' ? 'menu-badge-ai' : 'menu-badge'}>{item.badge}</span>}
+                </NavLink>
+              </li>
+            );
+          })}
 
           {/* Submenus (Company Admin / Warehouse Tools) */}
-          {config.subMenus?.map((sub) => (
-            <React.Fragment key={sub.key}>
-              {sub.header && (
-                <div className="sidebar-section-header">{sub.header}</div>
-              )}
-              <li>
-                <div
-                  className={`nav-item submenu-toggle ${openSubMenus[sub.key] ? 'open' : ''}`}
-                  onClick={() => toggleSubMenu(sub.key)}
-                >
-                  <span className="nav-icon">{sub.icon}</span>
-                  <span className="nav-label">{sub.label}</span>
-                  {openSubMenus[sub.key] ? <FiChevronUp className="chevron" /> : <FiChevronDown className="chevron" />}
-                </div>
-                {openSubMenus[sub.key] && (
-                  <ul className="submenu">
-                    {sub.items.map((subItem, i) => (
-                      <li key={i}>
-                        <NavLink
-                          to={subItem.path}
-                          className={({ isActive }) => `submenu-item ${isActive ? 'active' : ''}`}
-                          onClick={handleNavClick}
-                        >
-                          {subItem.label}
-                        </NavLink>
-                      </li>
-                    ))}
-                  </ul>
+          {config.subMenus?.map((sub) => {
+            const hasActiveChild = sub.items.some(item => isPathActive(item.path));
+            return (
+              <React.Fragment key={sub.key}>
+                {sub.header && (
+                  <div className="sidebar-section-header">{sub.header}</div>
                 )}
-              </li>
-            </React.Fragment>
-          ))}
+                <li>
+                  <div
+                    className={`nav-item submenu-toggle ${openSubMenus[sub.key] ? 'open' : ''} ${hasActiveChild ? 'parent-active' : ''}`}
+                    onClick={() => toggleSubMenu(sub.key)}
+                  >
+                    <span className="nav-icon">{sub.icon}</span>
+                    <span className="nav-label">{sub.label}</span>
+                    {openSubMenus[sub.key] ? <FiChevronUp className="chevron" /> : <FiChevronDown className="chevron" />}
+                  </div>
+                  {openSubMenus[sub.key] && (
+                    <ul className="submenu">
+                      {sub.items.map((subItem, i) => {
+                        const subActive = isPathActive(subItem.path);
+                        return (
+                          <li key={i}>
+                            <NavLink
+                              to={subItem.path}
+                              className={`submenu-item ${subActive ? 'active' : ''}`}
+                              onClick={handleNavClick}
+                            >
+                              {subItem.label}
+                            </NavLink>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </li>
+              </React.Fragment>
+            );
+          })}
 
           {/* Extra items after submenus (Company Admin) */}
-          {config.extraItems?.map((item, index) => (
-            <li key={`extra-${index}`}>
-              <NavLink
-                to={item.path}
-                className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-                onClick={handleNavClick}
-              >
-                <span className="nav-icon">{item.icon}</span>
-                <span className="nav-label">{item.label}</span>
-              </NavLink>
-            </li>
-          ))}
+          {config.extraItems?.map((item, index) => {
+            const extraActive = isPathActive(item.path);
+            return (
+              <li key={`extra-${index}`}>
+                <NavLink
+                  to={item.path}
+                  className={`nav-item ${extraActive ? 'active' : ''}`}
+                  onClick={handleNavClick}
+                >
+                  <span className="nav-icon">{item.icon}</span>
+                  <span className="nav-label">{item.label}</span>
+                </NavLink>
+              </li>
+            );
+          })}
         </ul>
       </nav>
 
