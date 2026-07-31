@@ -327,21 +327,29 @@ function App() {
         <Route path="/warehouse" element={<DashboardLayout role="warehouse" />}>
           <Route index element={<WarehouseDashboard />} />
           <Route path="dashboard" element={<WarehouseDashboard />} />
-          <Route path="inbound" element={<WarehouseInbound />} />
-          <Route path="receive" element={<WarehouseInbound />} />
-          <Route path="outbound" element={<WarehouseOutbound />} />
+          <Route path="find-stock" element={<WarehouseCurrentStock />} />
           <Route path="current-stock" element={<WarehouseCurrentStock />} />
           <Route path="find" element={<WarehouseCurrentStock />} />
+          <Route path="receive-inbound" element={<WarehouseInbound />} />
+          <Route path="inbound" element={<WarehouseInbound />} />
+          <Route path="receive" element={<WarehouseInbound />} />
+          <Route path="move-transfer" element={<WarehouseMovements />} />
+          <Route path="movement-history" element={<WarehouseMovements />} />
+          <Route path="movements" element={<WarehouseMovements />} />
+          <Route path="move" element={<WarehouseMovements />} />
+          <Route path="load-lanes" element={<WarehouseLoadLanes />} />
+          <Route path="dispatch-ready" element={<WarehouseOutbound />} />
+          <Route path="outbound" element={<WarehouseOutbound />} />
+          <Route path="messages" element={<Messages />} />
+          <Route path="my-shift" element={<StartWorkFinish />} />
+          <Route path="warehouse-yard-map" element={<WarehouseMap />} />
           <Route path="map" element={<WarehouseMap />} />
           <Route path="holding-areas" element={<WarehouseHoldingAreas />} />
           <Route path="stage" element={<WarehouseHoldingAreas />} />
-          <Route path="load-lanes" element={<WarehouseLoadLanes />} />
           <Route path="scanning" element={<WarehouseScanning />} />
-          <Route path="qr-scan" element={<WarehouseScanning />} />
           <Route path="labels" element={<WarehouseLabels />} />
-          <Route path="movements" element={<WarehouseMovements />} />
-          <Route path="move" element={<WarehouseMovements />} />
           <Route path="reports" element={<WarehouseReports />} />
+          <Route path="profile" element={<MyProfile />} />
           <Route path="settings" element={<CompanySettings />} />
           <Route path="*" element={<WarehouseDashboard />} />
         </Route>
