@@ -1,342 +1,1113 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Target, Layers, Maximize2, Search, Phone, Check, Clock, MapPin, Bell, Plus, Minus, X 
+  Search, Plus, MapPin, Navigation, Bell, ArrowRight, User, ArrowLeft, ArrowUpRight, 
+  FileText, ChevronRight, MoreVertical, X, Calendar, 
+  ChevronDown, Globe, RotateCcw, Filter, Phone, Mail, Compass, Eye, Check, Clock, Truck, Box,
+  Maximize2, Activity, Share2, Send, History, RefreshCw, ChevronLeft,
+  Users, Container, Settings, Zap, Target, Info, Download, SlidersHorizontal, MessageSquare, ExternalLink,
+  RefreshCcw, FileCheck, Layers, Package, Flag, AlertTriangle, CheckCircle2, Circle
 } from 'lucide-react';
+import L from 'leaflet';
 
 export default function FleetMonitor() {
-  const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedVehicleId, setSelectedVehicleId] = useState('TRK-102');
+  const [driverSearchQuery, setDriverSearchQuery] = useState('');
+  const [topSearchQuery, setTopSearchQuery] = useState('');
+  const [activeDriverTab, setActiveDriverTab] = useState('All 18');
+  const [selectedDriverId, setSelectedDriverId] = useState('DRV-101');
+  const [activeDetailsTab, setActiveDetailsTab] = useState('Route & Stops');
+  const [mapMode, setMapMode] = useState('Map');
   const [toastMsg, setToastMsg] = useState('');
 
-  // Fleet Mock Data matching the screenshot exactly
-  const [fleetVehicles, setFleetVehicles] = useState([
-    {
-      id: 'TRK-102',
-      driver: 'Jack Taylor',
-      status: 'MOVING',
-      statusColor: 'bg-emerald-50 text-emerald-600 border-emerald-100/50',
-      speed: '45 km/h',
-      location: 'Hume Highway, Goulburn',
-      eta: '45 mins away',
-      etaColor: 'text-slate-400',
-      phone: '0412 888 221',
-      truckX: 184,
-      truckY: 187,
-      pathD: 'M 90 120 Q 180 187 262 262'
-    },
-    {
-      id: 'VAN-08',
-      driver: 'Liam Smith',
-      status: 'STOPPED',
-      statusColor: 'bg-slate-50 text-slate-500 border-slate-200',
-      speed: '0 km/h',
-      location: 'Albury Stopover',
-      eta: 'Delayed away',
-      etaColor: 'text-red-500 font-extrabold',
-      phone: '0412 555 998',
-      truckX: 90,
-      truckY: 120,
-      pathD: 'M 90 120 Q 180 187 262 262'
-    },
-    {
-      id: 'VAN-14',
-      driver: 'Oliver Brown',
-      status: 'LOADING',
-      statusColor: 'bg-amber-50 text-amber-600 border-amber-100/50',
-      speed: '0 km/h',
-      location: 'Warehouse A, Sydney',
-      eta: 'Pending away',
-      etaColor: 'text-slate-400',
-      phone: '0412 777 441',
-      truckX: 262,
-      truckY: 262,
-      pathD: 'M 90 120 Q 180 187 262 262'
-    }
-  ]);
+  // Top Filter States
+  const [branchFilter, setBranchFilter] = useState('All Branches');
+  const [driverFilter, setDriverFilter] = useState('All Drivers');
+  const [statusFilter, setStatusFilter] = useState('All Statuses');
+  const [loadStatusFilter, setLoadStatusFilter] = useState('All Loads');
+
+  // Leaflet Map Ref
+  const mapContainerRef = useRef(null);
+  const mapRef = useRef(null);
 
   const triggerToast = (msg) => {
     setToastMsg(msg);
-    setTimeout(() => setToastMsg(''), 3000);
+    setTimeout(() => setToastMsg(''), 3500);
   };
 
-  const handleSelectCard = (id) => {
-    setSelectedVehicleId(id);
-    triggerToast(`Focused on vehicle ${id}`);
-  };
+  // Drivers Data matching reference screenshots
+  const driversList = [
+    {
+      id: 'DRV-101',
+      name: 'John Doe',
+      status: 'In Transit',
+      statusStyle: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      statusDot: 'bg-emerald-500',
+      loadId: 'LD-10583',
+      speed: '82 km/h',
+      heading: 'NE',
+      lastUpdate: '5m ago',
+      toDest: '145 km',
+      customer: 'BMW Australia',
+      routeFrom: 'Melbourne',
+      routeTo: 'Geelong',
+      lat: -37.8136,
+      lng: 144.9631,
+      badgeColor: '#10b981',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150'
+    },
+    {
+      id: 'DRV-102',
+      name: 'Chris Lee',
+      status: 'In Transit',
+      statusStyle: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      statusDot: 'bg-emerald-500',
+      loadId: 'LD-10578',
+      speed: '76 km/h',
+      heading: 'SW',
+      lastUpdate: '2m ago',
+      toDest: '310 km',
+      customer: 'Pickles Auctions',
+      routeFrom: 'Sydney',
+      routeTo: 'Melbourne',
+      lat: -37.9716,
+      lng: 144.7188,
+      badgeColor: '#10b981',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150'
+    },
+    {
+      id: 'DRV-103',
+      name: 'Michael Tan',
+      status: 'En Route',
+      statusStyle: 'bg-blue-50 text-blue-700 border-blue-200',
+      statusDot: 'bg-blue-500',
+      loadId: 'LD-10581',
+      speed: '71 km/h',
+      heading: 'S',
+      lastUpdate: '1m ago',
+      toDest: '520 km',
+      customer: 'Toyota Finance',
+      routeFrom: 'Brisbane',
+      routeTo: 'Sydney',
+      lat: -27.4698,
+      lng: 153.0251,
+      badgeColor: '#2563eb',
+      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=150'
+    },
+    {
+      id: 'DRV-104',
+      name: 'Daniel Craig',
+      status: 'At Pickup',
+      statusStyle: 'bg-amber-50 text-amber-700 border-amber-200',
+      statusDot: 'bg-amber-500',
+      loadId: 'LD-10576',
+      speed: '0 km/h',
+      heading: 'N',
+      lastUpdate: '8m ago',
+      toDest: '680 km',
+      customer: 'JB Hi-Fi',
+      routeFrom: 'Adelaide',
+      routeTo: 'Townsville',
+      lat: -32.9283,
+      lng: 151.7817,
+      badgeColor: '#f59e0b',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150'
+    },
+    {
+      id: 'DRV-105',
+      name: 'David Brown',
+      status: 'Delayed',
+      statusStyle: 'bg-rose-50 text-rose-700 border-rose-200',
+      statusDot: 'bg-rose-500',
+      loadId: 'LD-10579',
+      speed: '45 km/h',
+      heading: 'NW',
+      lastUpdate: '18m ago',
+      toDest: '210 km',
+      customer: 'Hertz Australia',
+      routeFrom: 'Gold Coast',
+      routeTo: 'Sydney',
+      isDelay: true,
+      etaDelay: 'ETA +45m',
+      lat: -34.4278,
+      lng: 150.8931,
+      badgeColor: '#ef4444',
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=150'
+    },
+    {
+      id: 'DRV-106',
+      name: 'Sarah Connor',
+      status: 'In Transit',
+      statusStyle: 'bg-purple-50 text-purple-700 border-purple-200',
+      statusDot: 'bg-purple-500',
+      loadId: 'LD-10577',
+      speed: '64 km/h',
+      heading: 'E',
+      lastUpdate: '3m ago',
+      toDest: '410 km',
+      customer: 'Woolworths DC',
+      routeFrom: 'Adelaide',
+      routeTo: 'Brisbane',
+      lat: -34.0278,
+      lng: 151.1531,
+      badgeColor: '#a855f7',
+      avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=150'
+    },
+    {
+      id: 'DRV-107',
+      name: 'Ben Hall',
+      status: 'Offline',
+      statusStyle: 'bg-slate-100 text-slate-700 border-slate-200',
+      statusDot: 'bg-slate-400',
+      loadId: 'No Active Load',
+      speed: '0 km/h',
+      heading: '-',
+      lastUpdate: '20m ago',
+      toDest: '-',
+      customer: 'None',
+      routeFrom: '-',
+      routeTo: '-',
+      lat: -33.8688,
+      lng: 151.2093,
+      badgeColor: '#94a3b8',
+      avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=150'
+    }
+  ];
 
-  const activeVehicle = fleetVehicles.find(v => v.id === selectedVehicleId) || fleetVehicles[0];
+  // Currently selected driver object
+  const selectedDriver = driversList.find(d => d.id === selectedDriverId) || driversList[0];
 
-  const filteredVehicles = fleetVehicles.filter(v =>
-    v.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    v.driver.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    v.location.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filtered driver list
+  const filteredDrivers = driversList.filter(d => {
+    const matchesQuery = d.name.toLowerCase().includes(driverSearchQuery.toLowerCase()) ||
+                         d.loadId.toLowerCase().includes(driverSearchQuery.toLowerCase()) ||
+                         d.routeFrom.toLowerCase().includes(driverSearchQuery.toLowerCase()) ||
+                         d.routeTo.toLowerCase().includes(driverSearchQuery.toLowerCase());
+    
+    if (activeDriverTab.includes('On Duty')) return d.status === 'In Transit' || d.status === 'En Route' || d.status === 'At Pickup';
+    if (activeDriverTab.includes('Delayed')) return d.status === 'Delayed';
+    if (activeDriverTab.includes('Offline')) return d.status === 'Offline';
+    return matchesQuery;
+  });
+
+  // On-Road Summary Loads Table Data
+  const summaryLoads = [
+    {
+      loadId: 'LD-10583',
+      driver: 'John Doe',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
+      status: 'In Transit',
+      statusStyle: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      route: 'Melbourne → Geelong',
+      vehicle: 'MAN TGX 26.580 (TR-01)',
+      lastUpdate: '5m ago',
+      etaNext: '09:30 AM',
+      etaDelivery: '05:00 PM',
+      progressStep: '2/4'
+    },
+    {
+      loadId: 'LD-10578',
+      driver: 'Chris Lee',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150',
+      status: 'In Transit',
+      statusStyle: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      route: 'Sydney → Melbourne',
+      vehicle: 'Volvo FH16 750 (TR-02)',
+      lastUpdate: '2m ago',
+      etaNext: '12:00 PM',
+      etaDelivery: 'Tomorrow 08:00 AM',
+      progressStep: '3/5'
+    },
+    {
+      loadId: 'LD-10581',
+      driver: 'Michael Tan',
+      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=150',
+      status: 'En Route',
+      statusStyle: 'bg-blue-50 text-blue-700 border-blue-200',
+      route: 'Brisbane → Sydney',
+      vehicle: 'Scania R650 (TR-03)',
+      lastUpdate: '1m ago',
+      etaNext: '03:00 PM',
+      etaDelivery: 'Tomorrow 07:00 AM',
+      progressStep: '1/4'
+    },
+    {
+      loadId: 'LD-10579',
+      driver: 'David Brown',
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=150',
+      status: 'Delayed',
+      statusStyle: 'bg-rose-50 text-rose-700 border-rose-200',
+      route: 'Gold Coast → Sydney',
+      vehicle: 'MAN TGX 26.580 (TR-01)',
+      lastUpdate: '18m ago',
+      etaNext: '03:45 PM (ETA +45m)',
+      etaDelivery: 'Tomorrow 09:00 AM',
+      progressStep: '2/5'
+    },
+    {
+      loadId: 'LD-10576',
+      driver: 'Daniel Craig',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150',
+      status: 'At Pickup',
+      statusStyle: 'bg-amber-50 text-amber-700 border-amber-200',
+      route: 'Adelaide → Townsville',
+      vehicle: 'Volvo FH16 750 (TR-02)',
+      lastUpdate: '8m ago',
+      etaNext: '10:00 AM',
+      etaDelivery: '24 May 06:00 PM',
+      progressStep: '1/4'
+    }
+  ];
+
+  // Leaflet Map Initialization
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+    if (mapRef.current) {
+      mapRef.current.remove();
+      mapRef.current = null;
+    }
+
+    const map = L.map(mapContainerRef.current, {
+      center: [-31.0000, 147.0000],
+      zoom: 5.5,
+      zoomControl: false
+    });
+    mapRef.current = map;
+
+    const tileUrl = mapMode === 'Satellite' 
+      ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+      : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+
+    L.tileLayer(tileUrl, {
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    // Render Driver Box Callout Markers on Australia Map
+    driversList.forEach((drv) => {
+      const isSelected = drv.id === selectedDriverId;
+      const htmlContent = `
+        <div style="
+          background-color: ${drv.badgeColor}; 
+          color: white; 
+          border-radius: 8px; 
+          padding: 4px 8px; 
+          font-weight: 700; 
+          font-size: 10.5px; 
+          line-height: 1.2;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+          border: ${isSelected ? '2.5px solid white' : '1px solid rgba(255,255,255,0.4)'};
+          transform: ${isSelected ? 'scale(1.08)' : 'scale(1)'};
+          transition: all 0.2s ease;
+          cursor: pointer;
+          white-space: nowrap;
+          text-align: center;
+        ">
+          <div>${drv.name}</div>
+          <div style="font-size: 9px; opacity: 0.9; font-weight: 600;">${drv.loadId}</div>
+          <div style="font-size: 8.5px; opacity: 0.85;">${drv.isDelay ? drv.etaDelay : drv.speed}</div>
+        </div>
+      `;
+
+      const customDivIcon = L.divIcon({
+        className: 'custom-driver-map-box',
+        html: htmlContent,
+        iconSize: [95, 42],
+        iconAnchor: [47, 21]
+      });
+
+      const marker = L.marker([drv.lat, drv.lng], { icon: customDivIcon }).addTo(map);
+      marker.on('click', () => {
+        setSelectedDriverId(drv.id);
+        triggerToast(`Focused map on ${drv.name} (${drv.loadId})`);
+      });
+    });
+
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
+  }, [selectedDriverId, mapMode]);
 
   return (
-    <div className="w-full min-h-screen bg-[#F8FAFC] px-8 py-8 space-y-6 text-left font-sans antialiased text-slate-800">
+    <div className="w-full min-h-screen bg-[#F8FAFC] p-4 sm:p-6 space-y-4 text-left font-sans antialiased text-slate-800">
+      
       {/* Toast Notification */}
       {toastMsg && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-xl animate-fade-in">
-          {toastMsg}
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-4 py-2.5 rounded-xl text-xs font-semibold shadow-xl flex items-center gap-2 animate-fade-in">
+          <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{toastMsg}</span>
         </div>
       )}
 
-      {/* PAGE HEADER */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 text-left">
-        <div className="flex items-center gap-3">
-          {/* Target Radar Icon */}
-          <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-pink-500 shadow-3xs shrink-0">
-            <Target className="w-6 h-6" />
+      {/* ============================================================
+         1. TOP HEADER ROW
+         ============================================================ */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div>
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Live GPS Map</h1>
+          <p className="text-xs text-slate-500 font-medium mt-0.5">Track drivers in real-time, view routes and manage on-road activity.</p>
+        </div>
+      </div>
+
+      {/* ============================================================
+         2. TOP FILTER & ACTIONS BAR
+         ============================================================ */}
+      <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex flex-wrap items-end justify-between gap-2.5">
+        <div className="flex flex-wrap items-end gap-2 flex-1">
+          
+          {/* Branch */}
+          <div className="min-w-[110px]">
+            <label className="text-[10.5px] font-semibold text-slate-500 mb-1 block">Branch</label>
+            <select 
+              value={branchFilter}
+              onChange={(e) => setBranchFilter(e.target.value)}
+              className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-2xs"
+            >
+              <option value="All Branches">All Branches</option>
+              <option value="Sydney Depot">Sydney Depot</option>
+              <option value="Melbourne Depot">Melbourne Depot</option>
+            </select>
           </div>
-          <div>
-            <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
-              Dispatcher Portal <span className="text-slate-400 text-xl mx-1">•</span> Fleet Monitor
-            </h1>
-            <p className="text-[13px] text-slate-500 mt-1 font-medium">
-              Live Network • Sydney Central Depot
-            </p>
+
+          {/* Driver */}
+          <div className="min-w-[110px]">
+            <label className="text-[10.5px] font-semibold text-slate-500 mb-1 block">Driver</label>
+            <select 
+              value={driverFilter}
+              onChange={(e) => setDriverFilter(e.target.value)}
+              className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-2xs"
+            >
+              <option value="All Drivers">All Drivers</option>
+              <option value="John Doe">John Doe</option>
+              <option value="Chris Lee">Chris Lee</option>
+              <option value="Michael Tan">Michael Tan</option>
+            </select>
           </div>
+
+          {/* Status */}
+          <div className="min-w-[110px]">
+            <label className="text-[10.5px] font-semibold text-slate-500 mb-1 block">Status</label>
+            <select 
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-2xs"
+            >
+              <option value="All Statuses">All Statuses</option>
+              <option value="In Transit">In Transit</option>
+              <option value="En Route">En Route</option>
+              <option value="At Pickup">At Pickup</option>
+            </select>
+          </div>
+
+          {/* Load Status */}
+          <div className="min-w-[110px]">
+            <label className="text-[10.5px] font-semibold text-slate-500 mb-1 block">Load Status</label>
+            <select 
+              value={loadStatusFilter}
+              onChange={(e) => setLoadStatusFilter(e.target.value)}
+              className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-2xs"
+            >
+              <option value="All Loads">All Loads</option>
+              <option value="Assigned">Assigned</option>
+              <option value="Unassigned">Unassigned</option>
+            </select>
+          </div>
+
+          {/* Top Search Input */}
+          <div className="relative min-w-[200px] flex-1">
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+            <input 
+              type="text"
+              placeholder="Search by driver, load ID, vehicle, rego..."
+              value={topSearchQuery}
+              onChange={(e) => setTopSearchQuery(e.target.value)}
+              className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-2xs"
+            />
+          </div>
+
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto self-start md:self-auto select-none">
-          {/* Layers Button */}
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2">
           <button 
-            onClick={() => triggerToast('Toggling map overlay layers...')}
-            className="px-5 py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-705 font-extrabold text-xs rounded-xl cursor-pointer transition-all shadow-3xs flex items-center gap-2 tracking-wider"
+            onClick={() => triggerToast('Opening advanced filter drawer...')}
+            className="px-3 py-1.5 border border-slate-200 hover:bg-slate-50 rounded-lg text-xs font-semibold text-slate-600 flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
           >
-            <Layers className="w-4 h-4 text-slate-500" /> LAYERS
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            <span>More Filters</span>
           </button>
-          
-          {/* Full Screen Button */}
+
           <button 
-            onClick={() => triggerToast('Entering full screen map mode...')}
-            className="bg-[#0B0F17] hover:bg-slate-800 text-[#FFD400] font-extrabold text-xs py-3 px-6 rounded-xl transition-all shadow-sm cursor-pointer whitespace-nowrap tracking-wider flex items-center gap-2"
+            onClick={() => triggerToast(`Sending live location request to ${selectedDriver.name}...`)}
+            className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs flex items-center gap-1.5 cursor-pointer"
           >
-            <Maximize2 className="w-4 h-4" /> FULL SCREEN
+            <Send className="w-3.5 h-3.5" />
+            <span>Send Location to Driver</span>
+          </button>
+
+          <button 
+            onClick={() => triggerToast('Refreshed GPS telemetry')}
+            className="p-1.5 border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 rounded-lg cursor-pointer shadow-2xs"
+            title="Refresh GPS"
+          >
+            <RefreshCw className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      {/* TWO-COLUMN GRID CONTENT */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      {/* ============================================================
+         3. MAIN 3-COLUMN LAYOUT (PROPORTIONED: Left 3 cols, Center 5 cols, Right 4 cols)
+         ============================================================ */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
         
-        {/* Left List Card panel (4 cols) */}
-        <div className="lg:col-span-4 bg-white rounded-[24px] border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.015)] space-y-5 text-left">
+        {/* ------------------------------------------------------------
+           LEFT COLUMN: DRIVERS PANEL (lg:col-span-3)
+           ------------------------------------------------------------ */}
+        <div className="lg:col-span-3 bg-white rounded-xl border border-slate-200/80 shadow-2xs p-4 space-y-3">
           
-          {/* Search Input */}
+          <div className="flex justify-between items-center">
+            <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider">DRIVERS (18)</h2>
+          </div>
+
+          {/* Search Driver */}
           <div className="relative w-full">
-            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-indigo-650" />
-            <input
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+            <input 
               type="text"
-              placeholder="Search driver or vehicle..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-brand-500 focus:border-brand-500 shadow-3xs transition-all"
+              placeholder="Search driver or load ID..."
+              value={driverSearchQuery}
+              onChange={(e) => setDriverSearchQuery(e.target.value)}
+              className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
 
-          {/* KPI Stats Row */}
-          <div className="grid grid-cols-2 gap-4 select-none">
-            {/* Active Units */}
-            <div className="p-4 bg-emerald-50/40 border border-emerald-100/30 rounded-2xl text-left">
-              <span className="text-[8px] font-black text-emerald-600 uppercase tracking-widest block leading-none">
-                ACTIVE UNITS
-              </span>
-              <span className="text-2xl font-black text-emerald-600 block mt-1.5 leading-none">
-                24
-              </span>
-            </div>
-
-            {/* Incidents */}
-            <div className="p-4 bg-rose-50/40 border border-rose-100/30 rounded-2xl text-left">
-              <span className="text-[8px] font-black text-rose-500 uppercase tracking-widest block leading-none">
-                INCIDENTS
-              </span>
-              <span className="text-2xl font-black text-rose-500 block mt-1.5 leading-none">
-                03
-              </span>
-            </div>
+          {/* Driver Status Tabs */}
+          <div className="flex items-center justify-between border-b border-slate-200 pb-2 text-[11px] font-semibold text-slate-500 overflow-x-auto">
+            {['All 18', 'On Duty 12', 'Delayed 3', 'Offline 3'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveDriverTab(tab)}
+                className={`transition-colors whitespace-nowrap cursor-pointer ${
+                  activeDriverTab === tab ? 'text-blue-600 border-b-2 border-blue-600 pb-2 -mb-[9px]' : 'hover:text-slate-800'
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
           </div>
 
-          {/* Interactive Vehicles List */}
-          <div className="space-y-4">
-            {filteredVehicles.map((vehicle) => {
-              const isSelected = vehicle.id === selectedVehicleId;
+          {/* Driver Cards List */}
+          <div className="space-y-2.5 max-h-[580px] overflow-y-auto pr-1">
+            {filteredDrivers.map((drv) => {
+              const isSelected = drv.id === selectedDriverId;
               return (
-                <div 
-                  key={vehicle.id}
-                  onClick={() => handleSelectCard(vehicle.id)}
-                  className={`p-4 border rounded-[18px] flex flex-col justify-between gap-3.5 cursor-pointer transition-all select-none ${
+                <div
+                  key={drv.id}
+                  onClick={() => setSelectedDriverId(drv.id)}
+                  className={`p-3 rounded-xl border transition-all cursor-pointer text-left space-y-2 ${
                     isSelected 
-                      ? 'border-l-4 border-l-amber-500 border-y-slate-200 border-r-slate-200 bg-white shadow-[0_4px_25px_rgb(0,0,0,0.035)]' 
-                      : 'border-slate-100 bg-white hover:border-slate-200 hover:shadow-3xs'
+                      ? 'bg-blue-50/70 border-blue-300 shadow-2xs font-medium' 
+                      : 'bg-white border-slate-200 hover:border-slate-300'
                   }`}
                 >
-                  {/* Top card row */}
-                  <div className="flex justify-between items-center gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center shrink-0 text-sm">
-                        🚚
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2.5">
+                      <div className="relative">
+                        <img 
+                          src={drv.avatar} 
+                          alt={drv.name} 
+                          className="w-8 h-8 rounded-full object-cover border border-slate-200"
+                        />
+                        <span className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white ${drv.statusDot}`} />
                       </div>
-                      <div className="text-left">
-                        <span className="text-xs font-bold text-slate-800 block leading-tight">{vehicle.id}</span>
-                        <span className="text-[10px] text-slate-400 font-semibold block mt-0.5 leading-none">
-                          {vehicle.driver}
-                        </span>
+                      <div>
+                        <h4 className="text-xs font-bold text-slate-900 leading-none">{drv.name}</h4>
+                        <span className="text-[10px] font-semibold text-slate-400 block mt-0.5">{drv.loadId}</span>
                       </div>
                     </div>
-                    <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider border ${vehicle.statusColor}`}>
-                      {vehicle.status}
+
+                    <span className={`px-2 py-0.5 rounded text-[9.5px] font-bold border ${drv.statusStyle}`}>
+                      {drv.status}
                     </span>
                   </div>
 
-                  {/* Bottom details row */}
-                  <div className="flex justify-between items-center gap-2 text-[10px] text-slate-500 font-semibold">
-                    <div className="flex items-center gap-1 shrink-0">
-                      <span className="text-rose-500 font-bold shrink-0">♥</span>
-                      <span>{vehicle.speed}</span>
-                      <span className="text-slate-300 mx-0.5">•</span>
-                      <span className="max-w-[110px] truncate">{vehicle.location}</span>
-                    </div>
-
-                    <div className={`flex items-center gap-1 shrink-0 ${vehicle.etaColor}`}>
-                      <Clock className="w-3 h-3 text-slate-400" />
-                      <span className="text-[9px] font-black uppercase tracking-wider">{vehicle.eta}</span>
-                    </div>
+                  <div className="flex justify-between items-center text-[11px] font-semibold text-slate-700 pt-1 border-t border-slate-100">
+                    <span>{drv.routeFrom} → {drv.routeTo}</span>
+                    <span className="text-[9.5px] text-slate-400 font-semibold">{drv.lastUpdate}</span>
                   </div>
+
+                  {drv.isDelay && (
+                    <div className="flex items-center gap-1 text-[10px] font-bold text-rose-600 bg-rose-50 p-1 rounded">
+                      <AlertTriangle className="w-3 h-3 shrink-0" />
+                      <span>{drv.etaDelay}</span>
+                    </div>
+                  )}
                 </div>
               );
             })}
           </div>
 
+          <button 
+            onClick={() => triggerToast('Viewing all 18 registered drivers...')}
+            className="w-full py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+          >
+            View all drivers
+          </button>
+
         </div>
 
-        {/* Right Map Panel (8 cols) */}
-        <div className="lg:col-span-8 bg-slate-100 border border-slate-200/60 rounded-[24px] shadow-sm min-h-[520px] relative flex flex-col justify-between overflow-hidden bg-[radial-gradient(#e2e8f0_1.5px,transparent_1.5px)] [background-size:18px_18px]">
+        {/* ------------------------------------------------------------
+           CENTER COLUMN: INTERACTIVE MAP & ON-ROAD SUMMARY (lg:col-span-5)
+           Adjusted Height & Spacing as requested!
+           ------------------------------------------------------------ */}
+        <div className="lg:col-span-5 space-y-4">
           
-          {/* Top floating bars */}
-          <div className="p-3 sm:p-6 flex justify-between items-start w-full relative z-10 pointer-events-none">
-            {/* Focus Area pill */}
-            <div className="bg-white px-2.5 py-1.5 sm:px-4 sm:py-2.5 rounded-xl border border-slate-100 shadow-sm flex items-center gap-2 sm:gap-3 pointer-events-auto select-none">
-              <div className="text-left">
-                <span className="text-[7px] sm:text-[8px] font-black text-slate-400 uppercase tracking-widest block leading-none">
-                  FOCUS AREA
-                </span>
-                <span className="text-[10px] sm:text-xs font-extrabold text-slate-900 block mt-1 leading-none whitespace-nowrap">
-                  SYDNEY CENTRAL DEPOT
-                </span>
-              </div>
-              <div className="flex items-end gap-0.5 h-4 sm:h-6 shrink-0">
-                <span className="w-1 h-2.5 sm:w-1.5 sm:h-3 bg-emerald-500 rounded-sm"></span>
-                <span className="w-1 h-4 sm:w-1.5 sm:h-5 bg-emerald-500 rounded-sm"></span>
-                <span className="w-1 h-3 sm:w-1.5 sm:h-4 bg-emerald-500 rounded-sm"></span>
+          {/* Map Card Container (Height Reduced to 340px for compact clean view) */}
+          <div className="bg-white rounded-xl border border-slate-200/80 shadow-2xs overflow-hidden relative">
+            
+            {/* Top Map Bar: Mode Toggle */}
+            <div className="p-2.5 border-b border-slate-100 flex justify-between items-center bg-white relative z-20">
+              <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg text-xs font-semibold">
+                <button 
+                  onClick={() => setMapMode('Map')}
+                  className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
+                    mapMode === 'Map' ? 'bg-white text-slate-900 shadow-2xs font-bold' : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  Map
+                </button>
+                <button 
+                  onClick={() => setMapMode('Satellite')}
+                  className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
+                    mapMode === 'Satellite' ? 'bg-white text-slate-900 shadow-2xs font-bold' : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  Satellite
+                </button>
               </div>
             </div>
 
-            {/* Map Zoom Controls */}
-            <div className="flex flex-col sm:flex-row items-center gap-2 pointer-events-auto select-none">
-              <button 
-                onClick={() => triggerToast('Notification layers opened...')}
-                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white text-amber-500 flex items-center justify-center border border-slate-200 shadow-3xs cursor-pointer"
-              >
-                <Bell className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              </button>
-              <button 
-                onClick={() => triggerToast('Zooming in...')}
-                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white text-slate-600 font-bold flex items-center justify-center border border-slate-200 shadow-3xs cursor-pointer text-sm"
-              >
-                <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              </button>
-              <button 
-                onClick={() => triggerToast('Zooming out...')}
-                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white text-slate-600 font-bold flex items-center justify-center border border-slate-200 shadow-3xs cursor-pointer text-sm"
-              >
-                <Minus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              </button>
-            </div>
-          </div>
+            {/* Main Map Canvas Area (340px compact height) */}
+            <div className="h-[340px] w-full relative">
+              <div ref={mapContainerRef} className="w-full h-full" />
 
-          {/* SVG Map Path Graphics */}
-          <svg className="absolute inset-0 w-full h-full" style={{ pointerEvents: 'none' }}>
-            {/* Yellow Curved Path */}
-            <path 
-              d={activeVehicle.pathD} 
-              fill="none" 
-              stroke="#FFA000" 
-              strokeWidth="2.5" 
-              strokeDasharray="6 4"
-              className="transition-all duration-300"
-            />
-            {/* Origin Dot (Green) */}
-            <circle cx="90" cy="120" r="5" fill="#10B981" stroke="#fff" strokeWidth="2" />
-            {/* Destination Dot (Orange) */}
-            <circle cx="262" cy="262" r="5" fill="#F59E0B" stroke="#fff" strokeWidth="2" />
-          </svg>
+              {/* Left Overlay Control Toolbar */}
+              <div className="absolute left-3 top-3 z-[400] bg-white/95 backdrop-blur-xs rounded-xl border border-slate-200 shadow-lg p-1 space-y-0.5 w-34 text-left">
+                <button 
+                  onClick={() => triggerToast(`Tracking driver ${selectedDriver.name}...`)}
+                  className="w-full px-2 py-1 rounded-lg text-[10px] font-semibold text-slate-700 hover:bg-slate-100 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Target className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Track Driver</span>
+                </button>
 
-          {/* Floating Truck Indicator */}
-          <div 
-            className="absolute w-8 h-8 rounded-full bg-slate-900 border-2 border-white flex items-center justify-center text-xs shadow-md transition-all duration-500 ease-out select-none"
-            style={{ 
-              left: `${activeVehicle.truckX - 16}px`, 
-              top: `${activeVehicle.truckY - 16}px`, 
-              pointerEvents: 'none' 
-            }}
-          >
-            🚚
-          </div>
+                <button 
+                  onClick={() => triggerToast('Live Map View Active')}
+                  className="w-full px-2 py-1 rounded-lg text-[10px] font-bold bg-blue-50 text-blue-600 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Globe className="w-3.5 h-3.5 text-blue-600" />
+                  <span>View Live Map</span>
+                </button>
 
-          {/* Bottom selected vehicle card info (Floating panel) */}
-          <div className="p-6 w-full relative z-10">
-            <div className="bg-white p-5 rounded-[20px] border border-slate-100 shadow-[0_12px_40px_rgb(0,0,0,0.06)] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-left">
-              
-              <div className="flex items-center gap-3.5">
-                <div className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center shrink-0 text-sm">
-                  🚚
+                <button 
+                  onClick={() => triggerToast('Opening route overview...')}
+                  className="w-full px-2 py-1 rounded-lg text-[10px] font-semibold text-slate-700 hover:bg-slate-100 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Compass className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Open Route</span>
+                </button>
+
+                <button 
+                  onClick={() => triggerToast('Fetching GPS breadcrumb history...')}
+                  className="w-full px-2 py-1 rounded-lg text-[10px] font-semibold text-slate-700 hover:bg-slate-100 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <History className="w-3.5 h-3.5 text-purple-600" />
+                  <span>View History</span>
+                </button>
+
+                <button 
+                  onClick={() => triggerToast('GPS refreshed...')}
+                  className="w-full px-2 py-1 rounded-lg text-[10px] font-semibold text-slate-700 hover:bg-slate-100 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <RefreshCw className="w-3.5 h-3.5 text-sky-600" />
+                  <span>Refresh GPS</span>
+                </button>
+
+                <button 
+                  onClick={() => triggerToast('Toggling live traffic overlay...')}
+                  className="w-full px-2 py-1 rounded-lg text-[10px] font-semibold text-slate-700 hover:bg-slate-100 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Activity className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Traffic Overlay</span>
+                </button>
+
+                <button 
+                  onClick={() => triggerToast('Opening geofence zones...')}
+                  className="w-full px-2 py-1 rounded-lg text-[10px] font-semibold text-slate-700 hover:bg-slate-100 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <MapPin className="w-3.5 h-3.5 text-rose-600" />
+                  <span>Geofences</span>
+                </button>
+
+                <button 
+                  onClick={() => triggerToast('Fetching weather radar...')}
+                  className="w-full px-2 py-1 rounded-lg text-[10px] font-semibold text-slate-700 hover:bg-slate-100 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Globe className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>Weather</span>
+                </button>
+
+                <button 
+                  onClick={() => triggerToast('Entering fullscreen map mode...')}
+                  className="w-full px-2 py-1 rounded-lg text-[10px] font-semibold text-slate-700 hover:bg-slate-100 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Maximize2 className="w-3.5 h-3.5 text-slate-600" />
+                  <span>Full Screen</span>
+                </button>
+              </div>
+
+              {/* Bottom Right Map Status Legend Box */}
+              <div className="absolute right-3 bottom-3 z-[400] bg-white/95 backdrop-blur-xs rounded-xl border border-slate-200 shadow-lg p-2.5 w-32 text-left space-y-1">
+                <span className="text-[9.5px] font-bold text-slate-500 uppercase tracking-wider block border-b border-slate-100 pb-1">STATUS LEGEND</span>
+                <div className="space-y-0.5 text-[9.5px] font-bold text-slate-700">
+                  <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500" /><span>In Transit</span></div>
+                  <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-blue-600" /><span>En Route</span></div>
+                  <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-500" /><span>At Pickup</span></div>
+                  <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-purple-500" /><span>At Delivery</span></div>
+                  <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-rose-500" /><span>Delayed</span></div>
+                  <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-slate-400" /><span>Offline</span></div>
                 </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-slate-800 leading-tight">{activeVehicle.driver}</span>
-                    <span className="text-[10px] text-slate-400 font-bold">{activeVehicle.id}</span>
-                  </div>
-                  <span className="text-xs text-slate-500 font-semibold block mt-1 flex items-center gap-1 select-none">
-                    <MapPin className="w-3.5 h-3.5 text-red-500" />
-                    {activeVehicle.location}
+              </div>
+
+            </div>
+
+          </div>
+
+          {/* Bottom On-Road Summary Table Card */}
+          <div className="bg-white rounded-xl border border-slate-200/80 shadow-2xs p-4 space-y-3">
+            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">ON ROAD SUMMARY</h3>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider bg-slate-50/50">
+                    <th className="py-2 px-2">Load ID</th>
+                    <th className="py-2 px-2">Driver</th>
+                    <th className="py-2 px-2">Status</th>
+                    <th className="py-2 px-2">Route</th>
+                    <th className="py-2 px-2">Vehicle / Trailer</th>
+                    <th className="py-2 px-2">Last Update</th>
+                    <th className="py-2 px-2">ETA Next Stop</th>
+                    <th className="py-2 px-2">ETA Delivery</th>
+                    <th className="py-2 px-2">Progress</th>
+                    <th className="py-2 px-2 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-xs font-medium">
+                  {summaryLoads.map((row) => (
+                    <tr key={row.loadId} className="hover:bg-slate-50 transition-colors">
+                      <td className="py-2 px-2 font-bold text-blue-600 whitespace-nowrap">{row.loadId}</td>
+                      <td className="py-2 px-2 whitespace-nowrap">
+                        <div className="flex items-center gap-1.5">
+                          <img src={row.avatar} alt={row.driver} className="w-5 h-5 rounded-full object-cover" />
+                          <span className="font-semibold text-slate-800">{row.driver}</span>
+                        </div>
+                      </td>
+                      <td className="py-2 px-2 whitespace-nowrap">
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${row.statusStyle}`}>
+                          {row.status}
+                        </span>
+                      </td>
+                      <td className="py-2 px-2 text-slate-700 font-semibold whitespace-nowrap">{row.route}</td>
+                      <td className="py-2 px-2 text-slate-600 text-[11px] whitespace-nowrap">{row.vehicle}</td>
+                      <td className="py-2 px-2 text-slate-500 text-[11px] whitespace-nowrap">{row.lastUpdate}</td>
+                      <td className="py-2 px-2 text-slate-700 text-[11px] font-bold whitespace-nowrap">{row.etaNext}</td>
+                      <td className="py-2 px-2 text-slate-700 text-[11px] whitespace-nowrap">{row.etaDelivery}</td>
+                      <td className="py-2 px-2 text-slate-500 font-bold whitespace-nowrap">{row.progressStep}</td>
+                      <td className="py-2 px-2 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1 text-slate-500">
+                          <button onClick={() => triggerToast(`Calling ${row.driver}...`)} className="p-1 hover:bg-slate-100 rounded cursor-pointer"><Phone className="w-3 h-3" /></button>
+                          <button onClick={() => triggerToast(`Viewing ${row.loadId}...`)} className="p-1 hover:bg-slate-100 rounded cursor-pointer"><Eye className="w-3 h-3" /></button>
+                          <button onClick={() => triggerToast(`Menu for ${row.loadId}`)} className="p-1 hover:bg-slate-100 rounded cursor-pointer"><MoreVertical className="w-3 h-3" /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex justify-end pt-1">
+              <button 
+                onClick={() => triggerToast('Navigating to full Active Loads list...')}
+                className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer"
+              >
+                <span>View full list →</span>
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* ------------------------------------------------------------
+           RIGHT COLUMN: SELECTED DRIVER DETAIL PANEL (lg:col-span-4)
+           Expanded width & Spacing for clean non-squished presentation!
+           ------------------------------------------------------------ */}
+        <div className="lg:col-span-4 bg-white rounded-xl border border-slate-200/80 shadow-2xs p-5 space-y-4 text-left">
+          
+          {/* Header Title */}
+          <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">SELECTED DRIVER</h3>
+            <button className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer">
+              <X className="w-4.5 h-4.5" />
+            </button>
+          </div>
+
+          {/* Driver Header Box */}
+          <div className="flex items-start justify-between gap-4 pb-2">
+            <div className="flex items-start gap-3.5 min-w-0">
+              {/* Avatar with Green Dot */}
+              <div className="relative shrink-0">
+                <img 
+                  src={selectedDriver.avatar} 
+                  alt={selectedDriver.name} 
+                  className="w-12 h-12 rounded-full object-cover border border-slate-200"
+                />
+                <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-white" />
+              </div>
+
+              {/* Driver Text Info */}
+              <div className="space-y-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h4 className="text-sm font-bold text-slate-900 leading-tight whitespace-nowrap">{selectedDriver.name}</h4>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${selectedDriver.statusStyle}`}>
+                    {selectedDriver.status}
                   </span>
+                </div>
 
-                  {/* Sub Badges row */}
-                  <div className="flex flex-wrap gap-2 mt-2 select-none">
-                    <span className="px-2.5 py-0.5 border border-blue-200 text-blue-600 rounded-full text-[9px] font-black tracking-wider uppercase flex items-center gap-1 bg-blue-50/10">
-                      <Phone className="w-2.5 h-2.5" /> MOBILE 0412
-                    </span>
-                    <span className="px-2.5 py-0.5 border border-emerald-250 text-emerald-600 rounded-full text-[9px] font-black tracking-wider uppercase flex items-center gap-1 bg-emerald-50/10">
-                      <Check className="w-2.5 h-2.5" /> ACTIVE
-                    </span>
+                {/* Load ID Gray Badge */}
+                <div className="inline-block px-2.5 py-0.5 bg-slate-100 text-slate-700 text-xs font-bold rounded-md">
+                  {selectedDriver.loadId}
+                </div>
+
+                <div className="text-xs font-semibold text-slate-500 truncate">{selectedDriver.customer}</div>
+                <div className="text-xs font-semibold text-slate-700">{selectedDriver.routeFrom} → {selectedDriver.routeTo}</div>
+              </div>
+            </div>
+
+            {/* Top Right Message & Call Icon Buttons */}
+            <div className="flex items-center gap-2 shrink-0">
+              <button 
+                onClick={() => triggerToast(`Messaging ${selectedDriver.name}...`)}
+                className="w-8.5 h-8.5 rounded-lg bg-slate-50 border border-slate-200 hover:bg-slate-100 flex items-center justify-center text-slate-600 cursor-pointer shadow-2xs"
+              >
+                <MessageSquare className="w-4 h-4" />
+              </button>
+              <button 
+                onClick={() => triggerToast(`Calling ${selectedDriver.name}...`)}
+                className="w-8.5 h-8.5 rounded-lg bg-slate-50 border border-slate-200 hover:bg-slate-100 flex items-center justify-center text-slate-600 cursor-pointer shadow-2xs"
+              >
+                <Phone className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Metrics Grid Row (Speed, Heading, Last Update, To Destination) */}
+          <div className="grid grid-cols-4 gap-3 text-center py-3 border-y border-slate-100">
+            <div>
+              <span className="text-xs font-extrabold text-slate-900 block">{selectedDriver.speed}</span>
+              <span className="text-[10.5px] text-slate-400 font-semibold block mt-0.5">Speed</span>
+            </div>
+            <div>
+              <span className="text-xs font-extrabold text-slate-900 block">{selectedDriver.heading}</span>
+              <span className="text-[10.5px] text-slate-400 font-semibold block mt-0.5">Heading</span>
+            </div>
+            <div>
+              <span className="text-xs font-extrabold text-slate-900 block">{selectedDriver.lastUpdate}</span>
+              <span className="text-[10.5px] text-slate-400 font-semibold block mt-0.5">Last Update</span>
+            </div>
+            <div>
+              <span className="text-xs font-extrabold text-slate-900 block">{selectedDriver.toDest}</span>
+              <span className="text-[10.5px] text-slate-400 font-semibold block mt-0.5">To Destination</span>
+            </div>
+          </div>
+
+          {/* Sub-tabs Navigation */}
+          <div className="flex items-center gap-4.5 border-b border-slate-200 pb-2 text-xs font-semibold text-slate-500 overflow-x-auto">
+            {['Route & Stops', 'Load Info', 'Vehicle', 'Documents', 'Notes'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveDetailsTab(tab)}
+                className={`transition-colors whitespace-nowrap cursor-pointer ${
+                  activeDetailsTab === tab 
+                    ? 'text-blue-600 border-b-2 border-blue-600 pb-2 -mb-[9px] font-bold' 
+                    : 'hover:text-slate-800'
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+
+          {/* Tab 1: Route & Stops */}
+          {activeDetailsTab === 'Route & Stops' && (
+            <div className="space-y-4 pt-1 animate-fadeIn">
+              <div className="relative pl-6 space-y-4.5">
+                {/* Connecting Vertical Line */}
+                <div className="absolute left-[7px] top-2 bottom-2 w-0.5 bg-slate-200" />
+
+                {/* Stop 1 */}
+                <div className="relative flex justify-between items-start">
+                  <span className="absolute -left-[23px] top-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white z-10" />
+                  <div>
+                    <h5 className="text-xs font-bold text-slate-900">Melbourne Depot</h5>
+                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">Departed: 23 May 2026, 08:00 AM</p>
                   </div>
+                  <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0">
+                    <Check className="w-3 h-3 stroke-[3]" />
+                  </div>
+                </div>
+
+                {/* Stop 2 */}
+                <div className="relative flex justify-between items-start">
+                  <span className="absolute -left-[23px] top-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white z-10" />
+                  <div>
+                    <h5 className="text-xs font-bold text-slate-900">Pickles Auctions</h5>
+                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">23 May 2026, 09:30 AM</p>
+                  </div>
+                  <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded border border-emerald-200">
+                    Completed
+                  </span>
+                </div>
+
+                {/* Stop 3 */}
+                <div className="relative flex justify-between items-start">
+                  <span className="absolute -left-[23px] top-0.5 w-3.5 h-3.5 rounded-full bg-blue-600 border-2 border-white ring-4 ring-blue-100 z-10" />
+                  <div>
+                    <h5 className="text-xs font-bold text-slate-900">BMW Australia</h5>
+                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">23 May 2026, 05:00 PM</p>
+                  </div>
+                  <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded border border-blue-200">
+                    In Transit
+                  </span>
+                </div>
+
+                {/* Stop 4 */}
+                <div className="relative flex justify-between items-start">
+                  <span className="absolute -left-[23px] top-0.5 w-3.5 h-3.5 rounded-full bg-slate-300 border-2 border-white z-10" />
+                  <div>
+                    <h5 className="text-xs font-bold text-slate-900">Geelong Customer</h5>
+                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">23 May 2026, 05:45 PM</p>
+                  </div>
+                  <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-[10px] font-bold rounded border border-slate-200">
+                    Pending
+                  </span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2.5 self-stretch sm:self-auto select-none">
-                <button 
-                  onClick={() => {
-                    navigate('/dispatcher/communication-depot', { 
-                      state: { selectedDriverName: activeVehicle.driver } 
-                    });
-                  }}
-                  className="flex-1 sm:flex-initial bg-[#FFA000] hover:bg-[#FF9000] text-black font-extrabold text-xs py-2.5 px-6 rounded-xl transition-all shadow-3xs cursor-pointer uppercase tracking-wider"
-                >
-                  COMM
-                </button>
-                <button 
-                  onClick={() => triggerToast('Closing floating panel details...')}
-                  className="w-9 h-9 rounded-full border border-slate-200 text-slate-400 hover:border-slate-400 flex items-center justify-center cursor-pointer hover:bg-slate-50 shrink-0"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+              {/* View Full Route Button */}
+              <button 
+                onClick={() => triggerToast('Opening full interactive route map...')}
+                className="w-full py-2.5 bg-white hover:bg-slate-50 border border-slate-200 text-blue-600 font-bold rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer shadow-2xs transition-colors"
+              >
+                <Maximize2 className="w-3.5 h-3.5" />
+                <span>View Full Route</span>
+              </button>
+            </div>
+          )}
+
+          {/* Tab 2: Load Info */}
+          {activeDetailsTab === 'Load Info' && (
+            <div className="space-y-3 pt-1 animate-fadeIn">
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs">
+                <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                  <span className="font-extrabold text-blue-700">{selectedDriver.loadId}</span>
+                  <span className="px-2 py-0.5 bg-blue-100 text-blue-800 font-bold rounded text-[10px]">Car Carrying</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-[11px]">
+                  <div>
+                    <span className="text-slate-400 font-medium block">Customer</span>
+                    <span className="font-bold text-slate-800">{selectedDriver.customer || 'BMW Australia'}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-medium block">Rate</span>
+                    <span className="font-bold text-emerald-600">$3,850.00</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-medium block">Route</span>
+                    <span className="font-bold text-slate-800">{selectedDriver.routeFrom} ➔ {selectedDriver.routeTo}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-medium block">Cargo Weight</span>
+                    <span className="font-bold text-slate-800">24,500 kg</span>
+                  </div>
+                </div>
+              </div>
+              <div className="p-3 bg-indigo-50/50 border border-indigo-100 rounded-xl text-[11px] space-y-1">
+                <span className="font-bold text-indigo-900 block">Dispatch Notes:</span>
+                <p className="text-indigo-700 font-medium">Priority delivery. Contact site manager 30 mins prior to arrival.</p>
+              </div>
+            </div>
+          )}
+
+          {/* Tab 3: Vehicle */}
+          {activeDetailsTab === 'Vehicle' && (
+            <div className="space-y-3 pt-1 animate-fadeIn">
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs">
+                <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                  <span className="font-bold text-slate-900">TRK-309 | Scania R580</span>
+                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-bold rounded text-[10px]">Optimal</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2.5 text-[11px]">
+                  <div>
+                    <span className="text-slate-400 font-medium block">Speed & Heading</span>
+                    <span className="font-bold text-slate-800">{selectedDriver.speed} ({selectedDriver.heading})</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-medium block">Fuel Level</span>
+                    <span className="font-bold text-emerald-600">82% (Full Tank)</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-medium block">Odometer</span>
+                    <span className="font-bold text-slate-800">184,320 km</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-medium block">Engine Temp</span>
+                    <span className="font-bold text-slate-800">88°C (Normal)</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center justify-between p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs">
+                <span className="font-bold text-emerald-800">Maintenance Status</span>
+                <span className="text-[11px] font-semibold text-emerald-700">Next service in 4,200 km</span>
+              </div>
+            </div>
+          )}
+
+          {/* Tab 4: Documents */}
+          {activeDetailsTab === 'Documents' && (
+            <div className="space-y-2 pt-1 animate-fadeIn text-xs">
+              <div className="flex items-center justify-between p-2.5 bg-white border border-slate-200 rounded-xl hover:border-blue-300 transition-colors">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                    <FileText className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-slate-800 block">Bill of Lading (BOL-1092)</span>
+                    <span className="text-[10px] text-slate-400">PDF • Signed & Verified</span>
+                  </div>
+                </div>
+                <button onClick={() => triggerToast('Downloading BOL document...')} className="text-blue-600 hover:text-blue-800 text-[11px] font-bold">Download</button>
               </div>
 
+              <div className="flex items-center justify-between p-2.5 bg-white border border-slate-200 rounded-xl hover:border-blue-300 transition-colors">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                    <FileCheck className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-slate-800 block">Consignment Note</span>
+                    <span className="text-[10px] text-slate-400">CN-8810 • 850 KB</span>
+                  </div>
+                </div>
+                <button onClick={() => triggerToast('Viewing Consignment Note...')} className="text-blue-600 hover:text-blue-800 text-[11px] font-bold">View</button>
+              </div>
+
+              <div className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                    <Clock className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-slate-800 block">Proof of Delivery (POD)</span>
+                    <span className="text-[10px] text-amber-600 font-semibold">Pending Delivery Confirmation</span>
+                  </div>
+                </div>
+              </div>
             </div>
+          )}
+
+          {/* Tab 5: Notes */}
+          {activeDetailsTab === 'Notes' && (
+            <div className="space-y-3 pt-1 animate-fadeIn text-xs">
+              <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-slate-800">Dispatcher Note</span>
+                  <span className="text-[10px] text-slate-400">09:30 AM today</span>
+                </div>
+                <p className="text-[11.5px] text-slate-600 leading-snug">Driver notified regarding site access rules at Geelong customer facility.</p>
+              </div>
+
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-slate-800">Driver Check-in Log</span>
+                  <span className="text-[10px] text-slate-400">08:00 AM today</span>
+                </div>
+                <p className="text-[11.5px] text-slate-600 leading-snug">Departed Melbourne Depot. All seals verified and secure.</p>
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <input 
+                  type="text" 
+                  placeholder="Type a new dispatcher note..."
+                  className="flex-1 px-3 py-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-blue-500"
+                />
+                <button 
+                  onClick={() => triggerToast('Note saved successfully!')} 
+                  className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-2xs"
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* LATEST EVENTS Section */}
+          <div className="space-y-3 pt-2 border-t border-slate-100">
+            <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">LATEST EVENTS</h4>
+            
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                  <span className="font-semibold text-slate-800">Departed Melbourne Depot</span>
+                </div>
+                <span className="text-[10px] text-slate-400 font-medium">23 May 2026, 08:00 AM</span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                  <span className="font-semibold text-slate-800">Arrived at Pickles Auctions</span>
+                </div>
+                <span className="text-[10px] text-slate-400 font-medium">23 May 2026, 09:15 AM</span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                  <span className="font-semibold text-slate-800">Departed Pickles Auctions</span>
+                </div>
+                <span className="text-[10px] text-slate-400 font-medium">23 May 2026, 09:45 AM</span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <span className="text-blue-600 font-extrabold shrink-0">...</span>
+                  <span className="font-semibold text-slate-800">On the way to BMW Australia</span>
+                </div>
+                <span className="text-[10px] text-slate-400 font-medium">23 May 2026, 11:05 AM</span>
+              </div>
+            </div>
+
+            {/* View GPS History Button */}
+            <button 
+              onClick={() => triggerToast('Fetching complete GPS telemetry log...')}
+              className="w-full py-2.5 bg-white hover:bg-slate-50 border border-slate-200 text-blue-600 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs transition-colors"
+            >
+              <span>View GPS History</span>
+            </button>
           </div>
 
         </div>

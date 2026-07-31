@@ -125,7 +125,6 @@ const roleConfigs = {
     menuItems: [
       { icon: <FiGrid />, label: 'Dispatch Dashboard', path: '/dispatcher/dashboard' },
       { icon: <FiPlus />, label: 'Create Load', path: '/dispatcher/create-load' },
-      { icon: <FiInbox />, label: 'Load Inbox', path: '/dispatcher/load-inbox', badge: 'AI' },
       { icon: <FiBox />, label: 'Active Loads', path: '/dispatcher/active-loads' },
       { icon: <FiLayers />, label: 'Planning Board', path: '/dispatcher/planning-board' },
       { icon: <FiNavigation />, label: 'Live GPS Map', path: '/dispatcher/live-gps-map' },
