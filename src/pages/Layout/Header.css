@@ -277,47 +277,147 @@
   color: #b91c1c;
 }
 
-/* Responsive styling for Header */
+/* ─── Responsive styling for Header ─────────────────────────────────────── */
+
+/* Tablet (≤ 768px) */
 @media (max-width: 768px) {
   .header {
     padding: 0 12px;
+    height: 60px;
   }
-  
+
   .search-bar {
-    padding: 6px 10px;
+    padding: 7px 12px;
     max-width: 100%;
   }
 
   .search-input {
-    font-size: 12px;
+    font-size: 13px;
   }
-  
+
   .dispatcher-title-container {
     display: none;
   }
-  
+
   .header-right {
-    gap: 8px;
+    gap: 10px;
   }
-  
+
   .header-center {
     flex: 1;
-    margin: 0 6px;
+    margin: 0 8px;
+  }
+
+  .icon-btn-container {
+    padding: 5px;
+  }
+}
+
+/* Mobile (≤ 640px) — collapsible search mode */
+@media (max-width: 640px) {
+  .header {
+    padding: 0 10px;
+    height: 56px;
+    gap: 0;
+  }
+
+  /* Hide left section when mobile search is open */
+  .header-left--hidden {
+    display: none !important;
+  }
+
+  /* Hide right section when mobile search is open */
+  .header-right--hidden {
+    display: none !important;
+  }
+
+  /* When mobile search is active the header becomes a search bar */
+  .header.mobile-search-active {
+    gap: 8px;
+  }
+
+  /* Full-width search row that appears when tapping the search icon */
+  .mobile-search-expanded {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    animation: slideInSearch 0.18s ease;
+  }
+
+  .search-bar--mobile-full {
+    flex: 1;
+    max-width: 100%;
+    padding: 7px 12px;
+    border-radius: 14px;
+  }
+
+  /* X button next to expanded search */
+  .mobile-search-close-btn {
+    background: #f1f5f9;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .mobile-search-close-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
+  .header-center {
+    margin: 0;
+  }
+
+  .icon-group {
+    gap: 4px;
   }
 
   .icon-btn-container {
     padding: 4px;
   }
+
+  /* Keep notification dropdown right-edge safe */
+  .absolute.right-0.top-\[50px\] {
+    right: -8px;
+    width: 290px;
+  }
 }
 
-@media (max-width: 480px) {
-  .header-center {
-    margin: 0 4px;
+/* Very small phones (≤ 380px) */
+@media (max-width: 380px) {
+  .header {
+    padding: 0 8px;
   }
+
+  .avatar-circle-sm {
+    width: 30px;
+    height: 30px;
+    font-size: 11px;
+  }
+
   .search-icon-right {
     display: none;
   }
-  .icon-group {
-    gap: 6px;
+}
+
+/* Slide-in animation for mobile search bar */
+@keyframes slideInSearch {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
+

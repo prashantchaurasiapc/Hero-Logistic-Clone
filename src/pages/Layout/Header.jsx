@@ -5,6 +5,7 @@ import {
   Menu, Search, Bell, MessageSquare, ChevronDown, User, LogOut, X, 
   MapPin, Shield, Truck, Users, LayoutDashboard, Settings
 } from 'lucide-react';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 const Header = ({ onMenuClick }) => {
   const location = useLocation();
@@ -75,6 +76,10 @@ const Header = ({ onMenuClick }) => {
   // Command Palette Quick Search state
   const [showSearchPalette, setShowSearchPalette] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Mobile search expanded state
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const isMobile = useMediaQuery('(max-width: 640px)');
   
   // Available links for Spotlight Search
   const searchItems = [
@@ -170,8 +175,9 @@ const Header = ({ onMenuClick }) => {
 
   return (
     <>
-      <header className="header">
-        <div className="header-left">
+      <header className={`header${mobileSearchOpen ? ' mobile-search-active' : ''}`}>
+        {/* Left: Menu button (hidden when mobile search open) */}
+        <div className={`header-left${mobileSearchOpen ? ' header-left--hidden' : ''}`}>
           <button className="menu-btn" onClick={() => onMenuClick ? onMenuClick() : navigate('/company-admin/command-centre')}>
             <Menu className="w-5 h-5 text-slate-500" />
           </button>
@@ -182,22 +188,58 @@ const Header = ({ onMenuClick }) => {
             </div>
           )}
         </div>
-        
-        <div className="header-center">
-          <div className="search-bar" onClick={() => setShowSearchPalette(true)}>
-            <Search className="search-icon w-4 h-4" />
-            <input 
-              type="text" 
-              placeholder="Quick Search... (Ctrl+K)" 
-              className="search-input cursor-pointer" 
-              readOnly 
-            />
-            <Search className="search-icon-right w-4 h-4" />
+
+        {/* Center: Search bar – full on desktop, expandable on mobile */}
+        {isMobile ? (
+          mobileSearchOpen ? (
+            /* Expanded mobile search */
+            <div className="mobile-search-expanded">
+              <div className="search-bar search-bar--mobile-full" onClick={() => setShowSearchPalette(true)}>
+                <Search className="search-icon w-4 h-4" />
+                <input
+                  type="text"
+                  placeholder="Quick Search..."
+                  className="search-input cursor-pointer"
+                  readOnly
+                  autoFocus
+                />
+              </div>
+              <button
+                className="mobile-search-close-btn"
+                onClick={() => setMobileSearchOpen(false)}
+                aria-label="Close search"
+              >
+                <X size={18} />
+              </button>
+            </div>
+          ) : null
+        ) : (
+          /* Desktop full search bar – left icon removed */
+          <div className="header-center">
+            <div className="search-bar" onClick={() => setShowSearchPalette(true)}>
+              <input
+                type="text"
+                placeholder="Quick Search... (Ctrl+K)"
+                className="search-input cursor-pointer"
+                readOnly
+              />
+              <Search className="search-icon-right w-4 h-4" />
+            </div>
           </div>
-        </div>
+        )}
+
         
-        <div className="header-right">
+        <div className={`header-right${mobileSearchOpen ? ' header-right--hidden' : ''}`}>
           <div className="icon-group">
+            {/* Mobile Search Icon – only on small screens when search not expanded */}
+            {isMobile && !mobileSearchOpen && (
+              <div className="icon-btn-container" onClick={() => setMobileSearchOpen(true)} aria-label="Open search">
+                <div className="icon-btn">
+                  <Search className="w-5 h-5" />
+                </div>
+              </div>
+            )}
+
             {/* Notification Button */}
             <div className="icon-btn-container" ref={notificationRef} onClick={() => setShowNotifications(!showNotifications)}>
               <div className="icon-btn">
