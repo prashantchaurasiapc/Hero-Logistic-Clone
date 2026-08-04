@@ -300,6 +300,282 @@ function DraftModal({ draft, onClose, onApprove, onReject }) {
   );
 }
 
+/* ─── CREATE MANUAL LOAD MODAL ─────────────────────────────── */
+function CreateManualLoadModal({ onClose, onCreate }) {
+  const [ref, setRef] = useState(`PO-${Math.floor(10000 + Math.random() * 90000)}`);
+  const [customer, setCustomer] = useState('FreightCo');
+  const [urgent, setUrgent] = useState(false);
+  const [driver, setDriver] = useState('Michael Chen');
+  const [from, setFrom] = useState('Melbourne VIC');
+  const [to, setTo] = useState('Brisbane QLD');
+  const [pickupDate, setPickupDate] = useState('30 Jul 2025, 08:00 AM');
+  const [deliveryDate, setDeliveryDate] = useState('31 Jul 2025, 05:00 PM');
+  const [vehicle, setVehicle] = useState('TRK-101 · Volvo FH540');
+  const [trailer, setTrailer] = useState('TRL-201 · Car Carrier 4-Level');
+  const [rego, setRego] = useState('ABC999');
+  const [vin, setVin] = useState('1FA6P8CF0H599999');
+  const [model, setModel] = useState('2024 Ford Mustang GT');
+  const [colour, setColour] = useState('Red');
+  const [notes, setNotes] = useState('Call driver 30 mins before arrival. Gate code #1234.');
+
+  // Close on Escape key
+  useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const newId = `DRAFT-${Math.floor(1093 + Math.random() * 90)}`;
+    const driverInitials = driver.split(' ').map(n => n[0]).join('').slice(0, 2);
+
+    const newLoad = {
+      id: newId,
+      ref,
+      source: 'portal',
+      sourceLabel: customer,
+      sourceIcon: Globe,
+      sourceColor: { color: '#4f46e5', bg: '#eef2ff', border: '#c7d2fe' },
+      time: 'Just now',
+      urgent,
+      confidence: 'High',
+      driver,
+      avatar: driverInitials,
+      avatarColor: '#2563eb',
+      driverPhone: '+61 422 111 222',
+      driverLicence: 'MC Class',
+      vehicle,
+      trailer,
+      volume: '1 Vehicle',
+      from,
+      to,
+      pickupDate,
+      deliveryDate,
+      accentColor: urgent ? '#ef4444' : '#6366f1',
+      notes,
+      manifests: [
+        { rego, vin, model, colour, conf: 'High' }
+      ]
+    };
+
+    onCreate(newLoad);
+  };
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9999,
+        background: 'rgba(15,23,42,0.7)', backdropFilter: 'blur(4px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px',
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: '#fff', borderRadius: '20px',
+          boxShadow: '0 25px 60px rgba(0,0,0,0.3)',
+          width: '100%', maxWidth: '720px',
+          maxHeight: '90vh', overflow: 'hidden',
+          display: 'flex', flexDirection: 'column',
+          border: '1px solid #e2e8f0',
+          fontFamily: 'Inter, system-ui, sans-serif',
+        }}
+      >
+        {/* Header */}
+        <div style={{ background: '#0f172a', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ width: 42, height: 42, borderRadius: 14, background: '#facc15', color: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900 }}>
+              <Plus size={22} strokeWidth={3} />
+            </div>
+            <div>
+              <h2 style={{ color: '#fff', fontWeight: 900, fontSize: 18, margin: 0 }}>Create New Manual Load</h2>
+              <p style={{ color: '#94a3b8', fontSize: 12, margin: '2px 0 0 0' }}>Manually register &amp; dispatch a new load without leaving inbox</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: '#94a3b8', borderRadius: 10, padding: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; e.currentTarget.style.color = '#fff'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#94a3b8'; }}
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <form onSubmit={handleSubmit} style={{ overflowY: 'auto', flex: 1, padding: '24px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+          
+          {/* Row 1: Ref & Customer & Urgency */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr 1fr', gap: 12 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 10, fontWeight: 900, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>PO / Ref No. *</label>
+              <input
+                required
+                value={ref}
+                onChange={e => setRef(e.target.value)}
+                style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 13, fontWeight: 700, outline: 'none', boxSizing: 'border-box' }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 10, fontWeight: 900, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Shipper / Customer *</label>
+              <select
+                value={customer}
+                onChange={e => setCustomer(e.target.value)}
+                style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 13, fontWeight: 700, outline: 'none', boxSizing: 'border-box', background: '#fff' }}
+              >
+                <option>FreightCo</option>
+                <option>Speedy Logistics</option>
+                <option>ABC Motors Pty Ltd</option>
+                <option>Apex Transport</option>
+                <option>BlueWave Lines</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 10, fontWeight: 900, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Priority</label>
+              <button
+                type="button"
+                onClick={() => setUrgent(!urgent)}
+                style={{
+                  width: '100%', padding: '9px 12px', borderRadius: 10, cursor: 'pointer', fontSize: 12, fontWeight: 900,
+                  background: urgent ? '#fef2f2' : '#f8fafc',
+                  color: urgent ? '#dc2626' : '#64748b',
+                  border: `1.5px solid ${urgent ? '#fecaca' : '#e2e8f0'}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, boxSizing: 'border-box'
+                }}
+              >
+                <AlertTriangle size={14} color={urgent ? '#dc2626' : '#94a3b8'} />
+                {urgent ? '⚡ URGENT' : 'Normal'}
+              </button>
+            </div>
+          </div>
+
+          {/* Row 2: Origin & Destination */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 14, padding: 14 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 10, fontWeight: 900, color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Origin (Pickup) *</label>
+              <input
+                required
+                value={from}
+                onChange={e => setFrom(e.target.value)}
+                placeholder="City, State"
+                style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #cbd5e1', borderRadius: 10, fontSize: 13, fontWeight: 700, outline: 'none', boxSizing: 'border-box', marginBottom: 8 }}
+              />
+              <input
+                value={pickupDate}
+                onChange={e => setPickupDate(e.target.value)}
+                placeholder="Pickup Date & Time"
+                style={{ width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 11, fontWeight: 600, color: '#64748b', boxSizing: 'border-box' }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 10, fontWeight: 900, color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Destination (Delivery) *</label>
+              <input
+                required
+                value={to}
+                onChange={e => setTo(e.target.value)}
+                placeholder="City, State"
+                style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #cbd5e1', borderRadius: 10, fontSize: 13, fontWeight: 700, outline: 'none', boxSizing: 'border-box', marginBottom: 8 }}
+              />
+              <input
+                value={deliveryDate}
+                onChange={e => setDeliveryDate(e.target.value)}
+                placeholder="Delivery Date & Time"
+                style={{ width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 11, fontWeight: 600, color: '#64748b', boxSizing: 'border-box' }}
+              />
+            </div>
+          </div>
+
+          {/* Row 3: Driver & Fleet */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 10, fontWeight: 900, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Assigned Driver *</label>
+              <select
+                value={driver}
+                onChange={e => setDriver(e.target.value)}
+                style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 13, fontWeight: 700, outline: 'none', boxSizing: 'border-box', background: '#fff' }}
+              >
+                <option>Michael Chen</option>
+                <option>Sarah Connor</option>
+                <option>James Park</option>
+                <option>David Wilson</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 10, fontWeight: 900, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Vehicle / Truck *</label>
+              <select
+                value={vehicle}
+                onChange={e => setVehicle(e.target.value)}
+                style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 13, fontWeight: 700, outline: 'none', boxSizing: 'border-box', background: '#fff' }}
+              >
+                <option>TRK-101 · Volvo FH540</option>
+                <option>TRK-117 · Scania T500</option>
+                <option>TRK-104 · Kenworth T680</option>
+                <option>TRK-108 · Freightliner</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Row 4: Cargo Manifest */}
+          <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 14, padding: 14 }}>
+            <p style={{ fontSize: 10, fontWeight: 900, color: '#1d4ed8', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 10px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Package size={14} /> Cargo Item / Vehicle Manifest
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr 1.5fr 1fr', gap: 8 }}>
+              <div>
+                <label style={{ fontSize: 9, fontWeight: 900, color: '#64748b' }}>REGO</label>
+                <input value={rego} onChange={e => setRego(e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: 12, fontWeight: 700, boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 9, fontWeight: 900, color: '#64748b' }}>VIN / CHASSIS</label>
+                <input value={vin} onChange={e => setVin(e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: 11, fontFamily: 'monospace', fontWeight: 700, boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 9, fontWeight: 900, color: '#64748b' }}>MODEL</label>
+                <input value={model} onChange={e => setModel(e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: 12, fontWeight: 700, boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 9, fontWeight: 900, color: '#64748b' }}>COLOUR</label>
+                <input value={colour} onChange={e => setColour(e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: 12, fontWeight: 700, boxSizing: 'border-box' }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Row 5: Notes */}
+          <div>
+            <label style={{ display: 'block', fontSize: 10, fontWeight: 900, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Special Delivery Instructions &amp; Gate Codes</label>
+            <textarea
+              rows={2}
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              placeholder="Call driver 30 mins before arrival. Gate code #1234..."
+              style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 12, fontWeight: 600, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }}
+            />
+          </div>
+
+          {/* Buttons */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10, marginTop: 8 }}>
+            <button
+              type="button"
+              onClick={onClose}
+              style={{ padding: '10px 18px', background: '#fff', border: '1.5px solid #e2e8f0', color: '#475569', fontWeight: 700, borderRadius: 12, cursor: 'pointer', fontSize: 13 }}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 24px', background: '#16a34a', color: '#fff', fontWeight: 900, borderRadius: 12, cursor: 'pointer', fontSize: 13, border: 'none', boxShadow: '0 4px 14px rgba(22,163,74,0.35)' }}
+            >
+              <Zap size={16} fill="#fbbf24" color="#fbbf24" /> Create &amp; Dispatch Load
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 /* ─── MAIN ──────────────────────────────────────────────────── */
 export default function LoadInbox() {
   const navigate = useNavigate();
@@ -307,6 +583,7 @@ export default function LoadInbox() {
   const [tab, setTab]                   = useState('ALL');
   const [data, setData]                 = useState(DRAFTS);
   const [selected, setSelected]         = useState(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [toast, setToast]               = useState(null);
 
   const showToast = (msg, type = 'success') => {
@@ -321,6 +598,12 @@ export default function LoadInbox() {
   const handleReject = (id) => {
     setData(prev => prev.filter(d => d.id !== id));
     showToast(`Load ${id} rejected.`, 'error');
+  };
+
+  const handleCreateManualLoad = (newLoad) => {
+    setData(prev => [newLoad, ...prev]);
+    setShowCreateModal(false);
+    showToast(`Manual Load ${newLoad.id} created & dispatched!`, 'success');
   };
 
   const filtered = data.filter(d => {
@@ -345,19 +628,27 @@ export default function LoadInbox() {
 
       {/* TOAST */}
       {toast && (
-        <div style={{ position: 'fixed', top: 20, right: 20, zIndex: 1000, padding: '12px 20px', borderRadius: 14, background: toast.type === 'success' ? '#16a34a' : '#dc2626', color: '#fff', fontWeight: 700, fontSize: 13, boxShadow: '0 8px 24px rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ position: 'fixed', top: 20, right: 20, zIndex: 10000, padding: '12px 20px', borderRadius: 14, background: toast.type === 'success' ? '#16a34a' : '#dc2626', color: '#fff', fontWeight: 700, fontSize: 13, boxShadow: '0 8px 24px rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', gap: 8 }}>
           {toast.type === 'success' ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
           {toast.msg}
         </div>
       )}
 
-      {/* MODAL */}
+      {/* DRAFT REVIEW MODAL */}
       {selected && (
         <DraftModal
           draft={selected}
           onClose={() => setSelected(null)}
           onApprove={handleApprove}
           onReject={handleReject}
+        />
+      )}
+
+      {/* CREATE MANUAL LOAD MODAL */}
+      {showCreateModal && (
+        <CreateManualLoadModal
+          onClose={() => setShowCreateModal(false)}
+          onCreate={handleCreateManualLoad}
         />
       )}
 
@@ -396,7 +687,7 @@ export default function LoadInbox() {
             <RefreshCw size={16} />
           </button>
           <button
-            onClick={() => navigate('/dispatcher/loads')}
+            onClick={() => setShowCreateModal(true)}
             style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 20px', background: '#facc15', color: '#0f172a', fontWeight: 800, fontSize: 13, borderRadius: 12, cursor: 'pointer', border: 'none', boxShadow: '0 2px 8px rgba(250,204,21,0.4)', transition: 'all 0.15s' }}
             onMouseEnter={e => { e.currentTarget.style.background = '#eab308'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
             onMouseLeave={e => { e.currentTarget.style.background = '#facc15'; e.currentTarget.style.transform = 'translateY(0)'; }}

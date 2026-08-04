@@ -82,22 +82,31 @@ const roleConfigs = {
     hasSubMenus: true,
     menuItems: [
       { icon: <FiGrid />, label: 'Command Centre', path: '/company-admin/command-centre' },
-      { icon: <FiUsers />, label: 'Customers', path: '/company-admin/customers' },
-      { icon: <FiBox />, label: 'Loads', path: '/company-admin/loads' },
-
+      {
+        key: 'company-loads-menu',
+        icon: <FiBox />,
+        label: 'Loads',
+        path: '/company-admin/loads',
+        items: [
+          { label: 'All Loads', path: '/company-admin/loads' },
+          { label: 'Load Inbox', path: '/company-admin/load-inbox' },
+          { label: 'Customers', path: '/company-admin/customers' },
+        ]
+      },
+      { icon: <FiNavigation />, label: 'Live Tracking', path: '/company-admin/live-tracking' },
       { icon: <FiUsers />, label: 'Drivers', path: '/company-admin/drivers' },
       { icon: <FiTruck />, label: 'Vehicles', path: '/company-admin/vehicles' },
+      { icon: <FiMapPin />, label: 'Branches', path: '/company-admin/branches' },
       { icon: <FiLayers />, label: 'Assets', path: '/company-admin/assets' },
       { icon: <FiHome />, label: 'Warehouse', path: '/company-admin/warehouse' },
-      { icon: <FiMapPin />, label: 'Locations', path: '/company-admin/locations' },
       { icon: <FiTag />, label: 'Pricing', path: '/company-admin/pricing' },
       { icon: <FiDollarSign />, label: 'Payroll', path: '/company-admin/payroll' },
       { icon: <FiDollarSign />, label: 'Finance', path: '/company-admin/finance' },
       { icon: <FiFileText />, label: 'Documents', path: '/company-admin/documents' },
-      { icon: <FiNavigation />, label: 'Live Tracking', path: '/company-admin/live-tracking' },
       { icon: <FiBarChart2 />, label: 'Reports & Analytics', path: '/company-admin/reports' },
       { icon: <FiMessageSquare />, label: 'Messages', path: '/company-admin/messages', badge: '8' },
     ],
+
     subMenus: [
       {
         key: 'support',
@@ -265,7 +274,6 @@ const roleConfigs = {
       { icon: <FiFileText />, label: 'Documents & PODs', path: '/customer/documents-pods' },
       { icon: <FiMessageSquare />, label: 'Messages & Support', path: '/customer/messages-support' },
       { icon: <FiUser />, label: 'Account & Users', path: '/customer/account-users' },
-      { icon: <FiSettings />, label: 'Settings', path: '/customer/settings' },
     ],
   },
 };
@@ -303,6 +311,12 @@ const Sidebar = ({ role, isOpen, onClose }) => {
       return true;
     }
 
+    // Check alias for branches/locations
+    if ((target.endsWith('/branches') || target.endsWith('/locations')) &&
+        (current.endsWith('/branches') || current.endsWith('/locations'))) {
+      return true;
+    }
+
     // Match sub-routes (e.g. /warehouse/tools/labels matching /warehouse/tools)
     if (target !== config.basePath.toLowerCase() && current.startsWith(target + '/')) {
       return true;
@@ -315,14 +329,33 @@ const Sidebar = ({ role, isOpen, onClose }) => {
 
   // Auto-expand submenus when a child link is active
   useEffect(() => {
-    if (config?.subMenus) {
-      const updated = { ...openSubMenus };
-      config.subMenus.forEach(sub => {
-        const hasActiveChild = sub.items.some(item => isPathActive(item.path));
-        if (hasActiveChild) {
-          updated[sub.key] = true;
+    const updated = { ...openSubMenus };
+    let changed = false;
+
+    if (config?.menuItems) {
+      config.menuItems.forEach((item, index) => {
+        if (item.items) {
+          const key = item.key || `menu-${index}`;
+          const hasActiveChild = item.items.some(sub => isPathActive(sub.path));
+          if (hasActiveChild && !updated[key]) {
+            updated[key] = true;
+            changed = true;
+          }
         }
       });
+    }
+
+    if (config?.subMenus) {
+      config.subMenus.forEach(sub => {
+        const hasActiveChild = sub.items.some(item => isPathActive(item.path));
+        if (hasActiveChild && !updated[sub.key]) {
+          updated[sub.key] = true;
+          changed = true;
+        }
+      });
+    }
+
+    if (changed) {
       setOpenSubMenus(updated);
     }
   }, [location.pathname, role]);
@@ -401,6 +434,45 @@ const Sidebar = ({ role, isOpen, onClose }) => {
       <nav className="sidebar-nav">
         <ul>
           {config.menuItems.map((item, index) => {
+            const itemKey = item.key || `menu-${index}`;
+            const hasItems = Boolean(item.items && item.items.length > 0);
+
+            if (hasItems) {
+              const hasActiveChild = item.items.some(sub => isPathActive(sub.path));
+              const isOpen = openSubMenus[itemKey] ?? hasActiveChild;
+
+              return (
+                <li key={itemKey}>
+                  <div
+                    className={`nav-item submenu-toggle ${isOpen ? 'open' : ''} ${hasActiveChild ? 'parent-active' : ''}`}
+                    onClick={() => toggleSubMenu(itemKey)}
+                  >
+                    <span className="nav-icon">{item.icon}</span>
+                    <span className="nav-label">{item.label}</span>
+                    {isOpen ? <FiChevronUp className="chevron" /> : <FiChevronDown className="chevron" />}
+                  </div>
+                  {isOpen && (
+                    <ul className="submenu">
+                      {item.items.map((subItem, i) => {
+                        const subActive = isPathActive(subItem.path);
+                        return (
+                          <li key={i}>
+                            <NavLink
+                              to={subItem.path}
+                              className={`submenu-item ${subActive ? 'active' : ''}`}
+                              onClick={handleNavClick}
+                            >
+                              {subItem.label}
+                            </NavLink>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </li>
+              );
+            }
+
             const active = isPathActive(item.path);
             return (
               <li key={index}>

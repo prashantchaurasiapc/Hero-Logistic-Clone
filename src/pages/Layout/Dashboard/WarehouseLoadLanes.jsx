@@ -4,7 +4,8 @@ import {
   Search, Filter, Plus, ArrowRight, MoreVertical,
   CheckCircle2, Clock, AlertTriangle, Box, Truck,
   MapPin, Printer, RefreshCw, X, ChevronLeft, ChevronRight,
-  Layers, SlidersHorizontal, ArrowUpDown
+  Layers, SlidersHorizontal, ArrowUpDown, Eye, Tag, UserCheck,
+  ShieldAlert, FileText, Trash2, ArrowUpRight, Check, User
 } from 'lucide-react';
 
 const initialLanes = [
@@ -130,6 +131,13 @@ export default function WarehouseLoadLanes() {
   const [selectedLaneToMove, setSelectedLaneToMove] = useState('Lane 1');
   const [toast, setToast] = useState(null);
 
+  const [viewLaneModal, setViewLaneModal] = useState(null);
+  const [actionMenuLaneId, setActionMenuLaneId] = useState(null);
+  const [assignDriverModal, setAssignDriverModal] = useState(null);
+  const [editStatusModal, setEditStatusModal] = useState(null);
+  const [driverInput, setDriverInput] = useState('');
+  const [vehicleInput, setVehicleInput] = useState('');
+
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3500);
@@ -176,6 +184,27 @@ export default function WarehouseLoadLanes() {
     showToast(`✓ Items reassigned to ${selectedLaneToMove} successfully!`);
   };
 
+  const handleAssignDriver = (e) => {
+    e.preventDefault();
+    if (!assignDriverModal) return;
+    setLanes(lanes.map(l => l.id === assignDriverModal.id ? {
+      ...l,
+      driver: driverInput || 'Assigned Driver',
+      vehicle: vehicleInput || 'TRK-880 / TRL-102'
+    } : l));
+    showToast(`✓ Driver & Vehicle updated for ${assignDriverModal.name}!`);
+    setAssignDriverModal(null);
+    setDriverInput('');
+    setVehicleInput('');
+  };
+
+  const handleUpdateStatus = (newStatus) => {
+    if (!editStatusModal) return;
+    setLanes(lanes.map(l => l.id === editStatusModal.id ? { ...l, status: newStatus } : l));
+    showToast(`✓ Status updated to "${newStatus}" for ${editStatusModal.name}`);
+    setEditStatusModal(null);
+  };
+
   const getStatusBadgeClass = (status) => {
     switch (status) {
       case 'Ready to Dispatch':
@@ -192,12 +221,36 @@ export default function WarehouseLoadLanes() {
   };
 
   return (
-    <div className="wh-load-lanes-container">
+    <div className="wh-load-lanes-container" onClick={() => setActionMenuLaneId(null)}>
       <style>{`
         .wh-load-lanes-container {
           font-family: 'Inter', system-ui, -apple-system, sans-serif;
           background: #F8FAFC;
           min-height: 100vh;
+          color: #0F172A;
+          padding: 20px 24px;
+          box-sizing: border-box;
+        }
+
+        .wh-dropdown-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 10px;
+          font-size: 11.5px;
+          font-weight: 700;
+          color: #1E293B;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.12s ease;
+        }
+        .wh-dropdown-item:hover {
+          background: #F1F5F9;
+        }
+        .wh-dropdown-item.danger:hover {
+          background: #FEE2E2;
+          color: #DC2626;
+        }
           color: #0F172A;
           padding: 20px 24px;
           box-sizing: border-box;
@@ -905,14 +958,118 @@ export default function WarehouseLoadLanes() {
                           )}
                         </td>
                         <td className="font-medium text-slate-700">{lane.estDispatch}</td>
-                        <td style={{ textAlign: 'right' }}>
+                        <td style={{ textAlign: 'right', position: 'relative' }}>
                           <div className="flex items-center justify-end gap-1">
-                            <button className="btn-view-lane" onClick={() => alert(`Viewing details for ${lane.name}`)}>
+                            <button
+                              className="btn-view-lane"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setViewLaneModal(lane);
+                              }}
+                            >
                               View
                             </button>
-                            <button className="btn-more-lane" onClick={() => alert(`Lane options for ${lane.name}`)}>
+                            <button
+                              className="btn-more-lane"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActionMenuLaneId(actionMenuLaneId === lane.id ? null : lane.id);
+                              }}
+                            >
                               <MoreVertical size={14} />
                             </button>
+
+                            {/* 3-DOT ACTION MENU POPUP */}
+                            {actionMenuLaneId === lane.id && (
+                              <div
+                                style={{
+                                  position: 'absolute',
+                                  right: 0,
+                                  top: 'calc(100% + 4px)',
+                                  background: '#FFFFFF',
+                                  border: '1px solid #CBD5E1',
+                                  borderRadius: '10px',
+                                  boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)',
+                                  padding: '6px',
+                                  zIndex: 1000,
+                                  minWidth: '185px',
+                                  textAlign: 'left'
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <div
+                                  className="wh-dropdown-item"
+                                  onClick={() => {
+                                    setViewLaneModal(lane);
+                                    setActionMenuLaneId(null);
+                                  }}
+                                >
+                                  <Eye size={13} className="text-blue-600" />
+                                  <span>View Lane Details</span>
+                                </div>
+
+                                <div
+                                  className="wh-dropdown-item"
+                                  onClick={() => {
+                                    setAssignDriverModal(lane);
+                                    setDriverInput(lane.driver !== '-' ? lane.driver : '');
+                                    setVehicleInput(lane.vehicle !== '-' ? lane.vehicle : '');
+                                    setActionMenuLaneId(null);
+                                  }}
+                                >
+                                  <UserCheck size={13} className="text-emerald-600" />
+                                  <span>Assign Driver & Vehicle</span>
+                                </div>
+
+                                <div
+                                  className="wh-dropdown-item"
+                                  onClick={() => {
+                                    setEditStatusModal(lane);
+                                    setActionMenuLaneId(null);
+                                  }}
+                                >
+                                  <Tag size={13} className="text-amber-600" />
+                                  <span>Update Lane Status</span>
+                                </div>
+
+                                <div
+                                  className="wh-dropdown-item"
+                                  onClick={() => {
+                                    setSelectedLaneToMove(lane.name);
+                                    setMoveModalOpen(true);
+                                    setActionMenuLaneId(null);
+                                  }}
+                                >
+                                  <ArrowRight size={13} className="text-purple-600" />
+                                  <span>Move Items Here</span>
+                                </div>
+
+                                <div
+                                  className="wh-dropdown-item"
+                                  onClick={() => {
+                                    showToast(`🖨️ Manifest printed for ${lane.name}`);
+                                    setActionMenuLaneId(null);
+                                  }}
+                                >
+                                  <Printer size={13} className="text-slate-600" />
+                                  <span>Print Lane Manifest</span>
+                                </div>
+
+                                <div style={{ height: '1px', background: '#F1F5F9', margin: '4px 0' }} />
+
+                                <div
+                                  className="wh-dropdown-item danger"
+                                  onClick={() => {
+                                    setLanes(lanes.map(l => l.id === lane.id ? { ...l, status: 'Empty', loadRef: '-', subRef: '-', driver: '-', vehicle: '-', estDispatch: '-' } : l));
+                                    showToast(`Cleared & released ${lane.name}`);
+                                    setActionMenuLaneId(null);
+                                  }}
+                                >
+                                  <Trash2 size={13} className="text-red-500" />
+                                  <span>Clear / Release Lane</span>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -1126,6 +1283,224 @@ export default function WarehouseLoadLanes() {
                 <button type="submit" className="px-4 py-1.5 bg-amber-400 rounded text-xs font-extrabold text-slate-900">Create Lane</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* VIEW LANE DETAILS MODAL */}
+      {viewLaneModal && (
+        <div className="wh-modal-overlay" onClick={() => setViewLaneModal(null)}>
+          <div className="wh-modal-box" style={{ maxWidth: '560px' }} onClick={e => e.stopPropagation()}>
+            <div className="wh-modal-header" style={{ background: '#0F172A', color: '#FFFFFF', padding: '14px 18px' }}>
+              <div className="flex items-center gap-3">
+                <div style={{ background: '#FFD400', color: '#0F172A', fontWeight: 900, fontSize: '13px', padding: '4px 10px', borderRadius: '6px' }}>
+                  {viewLaneModal.name}
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm text-white" style={{ margin: 0 }}>{viewLaneModal.area}</h3>
+                  <div className="text-[10px] text-slate-400 font-medium">Lane Details & Staged Dispatch Info</div>
+                </div>
+              </div>
+              <button onClick={() => setViewLaneModal(null)} className="p-1 hover:bg-slate-800 rounded">
+                <X size={18} className="text-slate-400" />
+              </button>
+            </div>
+
+            <div style={{ padding: '18px', display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '80vh', overflowY: 'auto' }}>
+
+              {/* STATUS & CARRIER HEADER CARD */}
+              <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '10px', padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div className="text-[10px] font-extrabold text-slate-500 uppercase">Status</div>
+                  <span className={getStatusBadgeClass(viewLaneModal.status)} style={{ display: 'inline-block', marginTop: '4px' }}>
+                    {viewLaneModal.status}
+                  </span>
+                </div>
+                <div>
+                  <div className="text-[10px] font-extrabold text-slate-500 uppercase text-right">Est. Dispatch</div>
+                  <div className="text-xs font-bold text-slate-900 mt-1">{viewLaneModal.estDispatch}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] font-extrabold text-slate-500 uppercase text-right">Loads Staged</div>
+                  <div className="text-sm font-black text-slate-900 text-right mt-1">{viewLaneModal.loadsCount}</div>
+                </div>
+              </div>
+
+              {/* GRID INFO */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                
+                {/* LOAD REF CARD */}
+                <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '12px' }}>
+                  <div className="flex items-center gap-1.5 mb-2 text-blue-600 font-extrabold text-xs">
+                    <Box size={14} />
+                    <span>LOAD & REFERENCE</span>
+                  </div>
+                  <div className="text-sm font-black text-slate-900">{viewLaneModal.loadRef}</div>
+                  <div className="text-[10.5px] text-slate-500 font-mono mt-0.5">Sub-Ref: {viewLaneModal.subRef}</div>
+                  <div className="mt-3 pt-2 border-t border-slate-100 flex justify-between text-[11px]">
+                    <span className="text-slate-500">Staging Status:</span>
+                    <span className="font-bold text-slate-800">Verified & Sealed</span>
+                  </div>
+                </div>
+
+                {/* TRANSPORT & DRIVER CARD */}
+                <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '12px' }}>
+                  <div className="flex items-center gap-1.5 mb-2 text-emerald-600 font-extrabold text-xs">
+                    <Truck size={14} />
+                    <span>DRIVER & VEHICLE</span>
+                  </div>
+                  <div className="text-xs font-bold text-slate-900">{viewLaneModal.driver !== '-' ? viewLaneModal.driver : 'Unassigned'}</div>
+                  <div className="text-[10.5px] text-slate-600 mt-0.5">{viewLaneModal.vehicle !== '-' ? viewLaneModal.vehicle : 'Vehicle pending'}</div>
+                  <div className="text-[9.5px] text-slate-400">{viewLaneModal.vehicleType}</div>
+                </div>
+
+              </div>
+
+              {/* CARGO STAGED ITEMS SUMMARY */}
+              <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '12px' }}>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-extrabold text-slate-900 uppercase">Staged Cargo & Items</span>
+                  <span className="text-[10px] font-bold text-slate-500">3 Items Staged</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div style={{ padding: '8px 10px', background: '#F8FAFC', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px' }}>
+                    <div className="flex items-center gap-2">
+                      <Box size={14} className="text-amber-500" />
+                      <div>
+                        <div className="font-bold text-slate-900">Toyota Hilux SRS #01</div>
+                        <div className="text-[9.5px] text-slate-500 font-mono">VIN: JTDKB3...9901</div>
+                      </div>
+                    </div>
+                    <span className="badge-ready">Ready</span>
+                  </div>
+
+                  <div style={{ padding: '8px 10px', background: '#F8FAFC', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px' }}>
+                    <div className="flex items-center gap-2">
+                      <Box size={14} className="text-amber-500" />
+                      <div>
+                        <div className="font-bold text-slate-900">Pallet - Auto Spare Parts (4x)</div>
+                        <div className="text-[9.5px] text-slate-500 font-mono">SKU: PAL-778811</div>
+                      </div>
+                    </div>
+                    <span className="badge-ready">Ready</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* QUICK ACTIONS INSIDE VIEW MODAL */}
+              <div className="flex items-center gap-2 pt-2 border-t border-slate-200">
+                <button
+                  className="flex-1 py-2 bg-amber-400 hover:bg-amber-500 text-slate-900 rounded-lg font-extrabold text-xs flex items-center justify-center gap-1.5 transition"
+                  onClick={() => {
+                    setAssignDriverModal(viewLaneModal);
+                    setDriverInput(viewLaneModal.driver !== '-' ? viewLaneModal.driver : '');
+                    setVehicleInput(viewLaneModal.vehicle !== '-' ? viewLaneModal.vehicle : '');
+                    setViewLaneModal(null);
+                  }}
+                >
+                  <UserCheck size={14} />
+                  <span>Assign / Update Driver</span>
+                </button>
+
+                <button
+                  className="px-3 py-2 border border-slate-300 hover:bg-slate-100 text-slate-700 rounded-lg font-bold text-xs flex items-center gap-1.5 transition"
+                  onClick={() => {
+                    showToast(`🖨️ Printing manifest for ${viewLaneModal.name}`);
+                  }}
+                >
+                  <Printer size={14} />
+                  <span>Print</span>
+                </button>
+
+                <button
+                  className="px-4 py-2 border border-slate-300 hover:bg-slate-100 text-slate-600 rounded-lg font-bold text-xs transition"
+                  onClick={() => setViewLaneModal(null)}
+                >
+                  Close
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ASSIGN DRIVER MODAL */}
+      {assignDriverModal && (
+        <div className="wh-modal-overlay" onClick={() => setAssignDriverModal(null)}>
+          <div className="wh-modal-box" onClick={e => e.stopPropagation()}>
+            <div className="wh-modal-header">
+              <h3 className="font-extrabold text-sm text-slate-900">Assign Driver & Vehicle ({assignDriverModal.name})</h3>
+              <button onClick={() => setAssignDriverModal(null)}><X size={16} className="text-slate-400" /></button>
+            </div>
+            <form onSubmit={handleAssignDriver} className="wh-modal-body">
+              <div>
+                <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">Driver Name *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. John Smith"
+                  value={driverInput}
+                  onChange={e => setDriverInput(e.target.value)}
+                  className="w-full h-8 px-2 border border-slate-300 rounded text-xs font-semibold outline-none"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-extrabold text-slate-500 uppercase block mb-1">Vehicle / Trailer *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. TRK-101 / TRL-309"
+                  value={vehicleInput}
+                  onChange={e => setVehicleInput(e.target.value)}
+                  className="w-full h-8 px-2 border border-slate-300 rounded text-xs font-semibold outline-none"
+                  required
+                />
+              </div>
+              <div className="wh-modal-footer">
+                <button type="button" className="px-3 py-1.5 border border-slate-300 rounded text-xs font-bold text-slate-600" onClick={() => setAssignDriverModal(null)}>Cancel</button>
+                <button type="submit" className="px-4 py-1.5 bg-amber-400 rounded text-xs font-extrabold text-slate-900">Save Assignment</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* UPDATE STATUS MODAL */}
+      {editStatusModal && (
+        <div className="wh-modal-overlay" onClick={() => setEditStatusModal(null)}>
+          <div className="wh-modal-box" onClick={e => e.stopPropagation()}>
+            <div className="wh-modal-header">
+              <h3 className="font-extrabold text-sm text-slate-900">Update Status for {editStatusModal.name}</h3>
+              <button onClick={() => setEditStatusModal(null)}><X size={16} className="text-slate-400" /></button>
+            </div>
+            <div className="wh-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {['Ready to Dispatch', 'In Progress', 'Hold', 'Empty'].map(st => (
+                <button
+                  key={st}
+                  type="button"
+                  style={{
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    border: editStatusModal.status === st ? '2px solid #FFD400' : '1px solid #CBD5E1',
+                    background: editStatusModal.status === st ? '#FEF3C7' : '#FFFFFF',
+                    fontSize: '12px',
+                    fontWeight: 800,
+                    color: '#0F172A',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => handleUpdateStatus(st)}
+                >
+                  <span>{st}</span>
+                  {editStatusModal.status === st && <Check size={16} className="text-amber-600" />}
+                </button>
+              ))}
+              <div className="wh-modal-footer" style={{ marginTop: '10px' }}>
+                <button type="button" className="px-4 py-1.5 border border-slate-300 rounded text-xs font-bold text-slate-600" onClick={() => setEditStatusModal(null)}>Cancel</button>
+              </div>
+            </div>
           </div>
         </div>
       )}

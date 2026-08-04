@@ -3,7 +3,7 @@ import {
   FileText, Calendar, Clock, Download, RefreshCw, Search, Filter, RotateCcw, 
   Star, ChevronRight, ChevronLeft, TrendingUp, DollarSign, Scale, Users, 
   UserCheck, Receipt, PieChart, Truck, Building, FileSpreadsheet, Plus, 
-  Share2, MoreVertical, CheckCircle2, SlidersHorizontal
+  Share2, MoreVertical, CheckCircle2, SlidersHorizontal, Eye, Printer, Trash2, X
 } from 'lucide-react';
 
 export default function AccountsReports() {
@@ -25,6 +25,8 @@ export default function AccountsReports() {
   const [customCategory, setCustomCategory] = useState('Financial');
   const [runPeriod, setRunPeriod] = useState('May 2026');
   const [runFormat, setRunFormat] = useState('PDF');
+  const [actionMenuId, setActionMenuId] = useState(null);
+  const [viewReportModal, setViewReportModal] = useState(null);
 
   // Dynamic Recent Reports state so newly run reports appear live in table!
   const [recentReportsList, setRecentReportsList] = useState([
@@ -172,38 +174,39 @@ export default function AccountsReports() {
       </div>
 
       {/* Top KPI Cards Grid */}
-      <div className="px-4 sm:px-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4 mb-6 py-2 flex-shrink-0">
+      <div className="px-4 sm:px-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3.5 mb-5 py-1 flex-shrink-0">
         {kpis.map((kpi, index) => (
-          <div key={index} className="bg-white rounded-xl p-4 shadow-sm border border-slate-200/60 flex flex-col justify-between w-full">
-            <div className="flex items-start justify-between mb-4">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${kpi.bg}`}>
-                {kpi.icon}
+          <div key={index} className="bg-white rounded-xl p-3.5 shadow-sm border border-slate-200/70 flex flex-col justify-between w-full hover:border-slate-300 transition-all">
+            <div className="flex items-center gap-3 mb-2.5">
+              <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${kpi.bg}`}>
+                {React.cloneElement(kpi.icon, { size: 18 })}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[9.5px] font-extrabold text-slate-500 uppercase tracking-wider leading-tight truncate" title={kpi.title}>{kpi.title}</p>
+                <div className="text-base sm:text-lg font-black text-slate-900 leading-none mt-1 truncate">{kpi.value}</div>
               </div>
             </div>
-            <div>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 truncate">{kpi.title}</p>
-              <div className="text-xl font-black text-slate-900 mb-2">{kpi.value}</div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-[11px] font-medium">
-                  {kpi.trend ? (
-                    <>
-                      <span className="flex items-center gap-0.5 text-emerald-600 font-bold">
-                        <TrendingUp size={12} />
-                        {kpi.trend}
-                      </span>
-                      <span className="text-slate-400 text-[10px]">{kpi.trendLabel}</span>
-                    </>
-                  ) : (
-                    <span className="text-slate-400 text-[10px] truncate">{kpi.sub}</span>
-                  )}
-                </div>
-                <button 
-                  onClick={() => { setToastMessage(`Action triggered for ${kpi.title}`); setTimeout(() => setToastMessage(null), 3000); }}
-                  className="text-[10px] text-blue-600 font-bold hover:underline shrink-0"
-                >
-                  {kpi.link}
-                </button>
+
+            <div className="flex items-center justify-between gap-1 pt-2 border-t border-slate-100">
+              <div className="flex items-center gap-1 text-[10px] font-medium min-w-0">
+                {kpi.trend ? (
+                  <>
+                    <span className="flex items-center gap-0.5 text-emerald-600 font-bold shrink-0">
+                      <TrendingUp size={11} />
+                      {kpi.trend}
+                    </span>
+                    <span className="text-slate-400 text-[9px] truncate">{kpi.trendLabel}</span>
+                  </>
+                ) : (
+                  <span className="text-slate-400 text-[9px] truncate">{kpi.sub}</span>
+                )}
               </div>
+              <button 
+                onClick={() => { setToastMessage(`Action triggered for ${kpi.title}`); setTimeout(() => setToastMessage(null), 3000); }}
+                className="text-[10px] text-blue-600 font-bold hover:underline shrink-0 ml-auto"
+              >
+                {kpi.link}
+              </button>
             </div>
           </div>
         ))}
@@ -304,29 +307,29 @@ export default function AccountsReports() {
           {/* 12 Reports Cards Grid (3 Columns) */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {filteredReportCards.map(report => (
-              <div key={report.id} className="bg-white rounded-xl shadow-sm border border-slate-200/60 p-5 flex flex-col justify-between hover:shadow-md transition-shadow">
+              <div key={report.id} className="bg-white rounded-xl shadow-sm border border-slate-200/70 p-4 flex flex-col justify-between hover:shadow-md transition-all hover:border-slate-300">
                 <div>
                   {/* Card Top: Icon & Star */}
-                  <div className="flex items-start justify-between mb-3">
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${report.iconBg}`}>
-                      {report.icon}
+                  <div className="flex items-start justify-between mb-2.5">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${report.iconBg}`}>
+                      {React.cloneElement(report.icon, { size: 16 })}
                     </div>
                     <button 
                       onClick={() => toggleStar(report.id)}
-                      className="text-slate-300 hover:text-amber-400 transition-colors"
+                      className="text-slate-300 hover:text-amber-400 transition-colors p-1"
                     >
-                      <Star size={16} className={starredReports.includes(report.id) ? "fill-amber-400 text-amber-400" : ""} />
+                      <Star size={15} className={starredReports.includes(report.id) ? "fill-amber-400 text-amber-400" : ""} />
                     </button>
                   </div>
 
                   {/* Title & Desc */}
-                  <h3 className="text-xs font-bold text-slate-900 mb-1">{report.name}</h3>
-                  <p className="text-[11px] text-slate-500 font-medium leading-relaxed mb-4">{report.desc}</p>
+                  <h3 className="text-xs font-extrabold text-slate-900 mb-0.5">{report.name}</h3>
+                  <p className="text-[11px] text-slate-500 font-medium leading-normal mb-3">{report.desc}</p>
                 </div>
 
                 {/* Card Bottom: Tags & Action */}
                 <div>
-                  <div className="flex items-center gap-1.5 mb-4">
+                  <div className="flex items-center gap-1.5 mb-3">
                     {report.tags.map(tag => (
                       <span key={tag} className="px-2 py-0.5 bg-slate-100 rounded text-[9px] font-bold text-slate-600">
                         {tag}
@@ -353,7 +356,7 @@ export default function AccountsReports() {
           </div>
 
           {/* Recent Reports Table Card */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200/60 overflow-hidden flex flex-col mt-2">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200/60 overflow-hidden flex flex-col mt-2" onClick={() => setActionMenuId(null)}>
             {/* Table Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
               <h3 className="text-xs font-bold text-slate-900">Recent Reports</h3>
@@ -377,9 +380,11 @@ export default function AccountsReports() {
                 <tbody className="divide-y divide-slate-100">
                   {paginatedRecentReports.map(item => (
                     <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="px-4 py-3 text-xs font-bold text-slate-900 flex items-center gap-2">
-                        <FileText size={14} className="text-slate-400" />
-                        {item.name}
+                      <td className="px-4 py-3 text-xs font-bold text-slate-900">
+                        <div className="flex items-center gap-2">
+                          <FileText size={14} className="text-slate-400 shrink-0" />
+                          <span className="truncate max-w-[220px]">{item.name}</span>
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-[11px] font-medium text-slate-600">{item.category}</td>
                       <td className="px-4 py-3 text-[11px] font-medium text-slate-600">{item.period}</td>
@@ -390,11 +395,89 @@ export default function AccountsReports() {
                           {item.format}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <button onClick={() => setToastMessage(`Downloading ${item.name}`)} className="p-1 text-slate-400 hover:text-slate-600"><Download size={13} /></button>
-                          <button onClick={() => setToastMessage(`Sharing ${item.name}`)} className="p-1 text-slate-400 hover:text-slate-600"><Share2 size={13} /></button>
-                          <button className="p-1 text-slate-400 hover:text-slate-600"><MoreVertical size={13} /></button>
+                      <td className="px-4 py-3 text-center" style={{ position: 'relative' }}>
+                        <div className="flex items-center justify-center gap-1">
+                          {/* Download */}
+                          <button
+                            title="Download Report"
+                            onClick={(e) => { e.stopPropagation(); setToastMessage(`⬇️ Downloading "${item.name}" (${item.format})...`); setTimeout(() => setToastMessage(null), 2500); }}
+                            className="p-1.5 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all"
+                          >
+                            <Download size={13} />
+                          </button>
+
+                          {/* Share */}
+                          <button
+                            title="Share Report"
+                            onClick={(e) => { e.stopPropagation(); setToastMessage(`📤 Share link copied for "${item.name}"`); setTimeout(() => setToastMessage(null), 2500); }}
+                            className="p-1.5 rounded-md text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all"
+                          >
+                            <Share2 size={13} />
+                          </button>
+
+                          {/* 3-dot menu */}
+                          <button
+                            title="More Options"
+                            onClick={(e) => { e.stopPropagation(); setActionMenuId(actionMenuId === item.id ? null : item.id); }}
+                            className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all"
+                          >
+                            <MoreVertical size={13} />
+                          </button>
+
+                          {/* Dropdown Menu */}
+                          {actionMenuId === item.id && (
+                            <div
+                              style={{
+                                position: 'absolute', right: 8, top: 'calc(100% - 4px)',
+                                background: '#FFFFFF', border: '1px solid #E2E8F0',
+                                borderRadius: '10px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)',
+                                padding: '6px', zIndex: 9999, minWidth: '175px', textAlign: 'left'
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                className="w-full flex items-center gap-2.5 px-3 py-2 text-[11.5px] font-semibold text-slate-700 rounded-md hover:bg-slate-50 transition-colors"
+                                onClick={() => { setViewReportModal(item); setActionMenuId(null); }}
+                              >
+                                <Eye size={13} className="text-blue-500" /> View Report Details
+                              </button>
+
+                              <button
+                                className="w-full flex items-center gap-2.5 px-3 py-2 text-[11.5px] font-semibold text-slate-700 rounded-md hover:bg-slate-50 transition-colors"
+                                onClick={() => { setToastMessage(`⬇️ Downloading "${item.name}"...`); setTimeout(() => setToastMessage(null), 2500); setActionMenuId(null); }}
+                              >
+                                <Download size={13} className="text-slate-500" /> Download ({item.format})
+                              </button>
+
+                              <button
+                                className="w-full flex items-center gap-2.5 px-3 py-2 text-[11.5px] font-semibold text-slate-700 rounded-md hover:bg-slate-50 transition-colors"
+                                onClick={() => { setToastMessage(`🖨️ Sending "${item.name}" to printer...`); setTimeout(() => setToastMessage(null), 2500); setActionMenuId(null); }}
+                              >
+                                <Printer size={13} className="text-slate-500" /> Print Report
+                              </button>
+
+                              <button
+                                className="w-full flex items-center gap-2.5 px-3 py-2 text-[11.5px] font-semibold text-slate-700 rounded-md hover:bg-slate-50 transition-colors"
+                                onClick={() => { setToastMessage(`📤 Share link copied for "${item.name}"`); setTimeout(() => setToastMessage(null), 2500); setActionMenuId(null); }}
+                              >
+                                <Share2 size={13} className="text-emerald-500" /> Copy Share Link
+                              </button>
+
+                              <div style={{ height: '1px', background: '#F1F5F9', margin: '4px 0' }} />
+
+                              <button
+                                className="w-full flex items-center gap-2.5 px-3 py-2 text-[11.5px] font-semibold text-red-600 rounded-md hover:bg-red-50 transition-colors"
+                                onClick={() => {
+                                  setRecentReportsList(recentReportsList.filter(r => r.id !== item.id));
+                                  setToastMessage(`🗑️ "${item.name}" removed from history`);
+                                  setTimeout(() => setToastMessage(null), 2500);
+                                  setActionMenuId(null);
+                                }}
+                              >
+                                <Trash2 size={13} className="text-red-500" /> Remove from History
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -671,6 +754,103 @@ export default function AccountsReports() {
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-sm"
               >
                 Save Custom Report
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* VIEW REPORT DETAILS MODAL */}
+      {viewReportModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setViewReportModal(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-900">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                  <FileText size={16} className="text-blue-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white leading-tight">{viewReportModal.name}</h3>
+                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">{viewReportModal.category}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setViewReportModal(null)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 transition-all"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-5 flex flex-col gap-4">
+
+              {/* Report Info Grid */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                  <p className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider mb-1">Period</p>
+                  <p className="text-xs font-bold text-slate-900">{viewReportModal.period}</p>
+                </div>
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                  <p className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider mb-1">Format</p>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold border inline-block ${viewReportModal.formatColor}`}>
+                    {viewReportModal.format}
+                  </span>
+                </div>
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                  <p className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider mb-1">Generated By</p>
+                  <p className="text-xs font-bold text-slate-900">{viewReportModal.user}</p>
+                </div>
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                  <p className="text-[9.5px] font-extrabold text-slate-400 uppercase tracking-wider mb-1">Generated On</p>
+                  <p className="text-xs font-bold text-slate-900">{viewReportModal.date}</p>
+                </div>
+              </div>
+
+              {/* Category badge */}
+              <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-100 rounded-lg">
+                <FileText size={14} className="text-blue-500 shrink-0" />
+                <div>
+                  <p className="text-[10px] font-bold text-blue-800">Report Category: <span className="text-blue-600">{viewReportModal.category}</span></p>
+                  <p className="text-[9.5px] text-blue-400 mt-0.5">This report covers data for the selected period and is available for download.</p>
+                </div>
+              </div>
+
+              {/* Actions Row */}
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  className="flex-1 flex items-center justify-center gap-2 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm"
+                  onClick={() => { setToastMessage(`⬇️ Downloading "${viewReportModal.name}"...`); setTimeout(() => setToastMessage(null), 2500); setViewReportModal(null); }}
+                >
+                  <Download size={13} /> Download {viewReportModal.format}
+                </button>
+                <button
+                  className="px-4 py-2 flex items-center gap-2 border border-slate-200 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-50 transition-colors"
+                  onClick={() => { setToastMessage(`🖨️ Sending "${viewReportModal.name}" to printer...`); setTimeout(() => setToastMessage(null), 2500); }}
+                >
+                  <Printer size={13} /> Print
+                </button>
+                <button
+                  className="px-4 py-2 flex items-center gap-2 border border-slate-200 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-50 transition-colors"
+                  onClick={() => { setToastMessage(`📤 Share link copied!`); setTimeout(() => setToastMessage(null), 2500); }}
+                >
+                  <Share2 size={13} /> Share
+                </button>
+              </div>
+
+              <button
+                onClick={() => setViewReportModal(null)}
+                className="text-[11px] text-slate-400 font-medium text-center hover:text-slate-600 transition-colors"
+              >
+                Close
               </button>
             </div>
           </div>

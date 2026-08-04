@@ -31,6 +31,8 @@ export default function DispatcherLoads() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(isCreateLoadPage);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingLoad, setEditingLoad] = useState(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [viewingLoad, setViewingLoad] = useState(null);
 
   useEffect(() => {
     if (location.pathname.includes('create-load')) {
@@ -403,6 +405,14 @@ export default function DispatcherLoads() {
     setEditingLoad({ ...load });
     setIsEditModalOpen(true);
     setOpenActionMenuId(null);
+  };
+
+  const handleViewLoadClick = (load) => {
+    setSelectedLoadId(load.id);
+    setViewingLoad(load);
+    setIsViewModalOpen(true);
+    setOpenActionMenuId(null);
+    triggerToast(`Viewing details for Load ${load.id}`);
   };
 
   const handleEditLoadSave = (e) => {
@@ -785,6 +795,198 @@ export default function DispatcherLoads() {
       )}
 
       {/* ============================================================
+         VIEW LOAD DETAILS MODAL
+         ============================================================ */}
+      {isViewModalOpen && viewingLoad && (
+        <div className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in-95 text-left">
+            {/* Header */}
+            <div className="p-4 sm:p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 rounded-t-2xl">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
+                  <Eye className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-slate-900">{viewingLoad.id}</h2>
+                    <span className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold border ${viewingLoad.statusStyle}`}>
+                      {viewingLoad.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 font-medium">Customer: <strong className="text-slate-800">{viewingLoad.customer}</strong></p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsViewModalOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body Details */}
+            <div className="p-4 sm:p-5 space-y-4 text-xs">
+              {/* Route Banner */}
+              <div className="p-3.5 bg-gradient-to-r from-blue-50 to-indigo-50/60 border border-blue-100 rounded-xl flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600">Origin</span>
+                  <p className="text-sm font-extrabold text-slate-900">{viewingLoad.routeFrom}</p>
+                </div>
+                <div className="flex flex-col items-center">
+                  <div className="flex items-center gap-1 text-blue-600">
+                    <span className="w-8 sm:w-12 h-0.5 bg-blue-300" />
+                    <Truck className="w-4 h-4" />
+                    <span className="w-8 sm:w-12 h-0.5 bg-blue-300" />
+                  </div>
+                  <span className="text-[10px] text-slate-500 font-semibold mt-1">Required: {viewingLoad.reqDate}</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600">Destination</span>
+                  <p className="text-sm font-extrabold text-slate-900">{viewingLoad.routeTo}</p>
+                </div>
+              </div>
+
+              {/* 2-Column Info: Driver & Vehicle */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Driver Box */}
+                <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl space-y-2">
+                  <h3 className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">Driver Information</h3>
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={viewingLoad.driverAvatar}
+                      alt={viewingLoad.driver}
+                      className="w-10 h-10 rounded-full object-cover border border-slate-200 shrink-0"
+                    />
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900">{viewingLoad.driver}</h4>
+                      <span className="text-[10px] text-slate-500 font-medium block">{viewingLoad.driverRole}</span>
+                      <span className="text-[10px] text-blue-600 font-semibold block">{viewingLoad.driverPhone}</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 pt-2 border-t border-slate-200/60">
+                    <button
+                      onClick={() => triggerToast(`Messaging driver ${viewingLoad.driver}...`)}
+                      className="flex-1 py-1 px-2 bg-white border border-slate-200 hover:bg-slate-100 rounded text-[10px] font-bold text-slate-700 flex items-center justify-center gap-1 cursor-pointer"
+                    >
+                      <MessageSquare className="w-3 h-3 text-blue-600" />
+                      <span>Message</span>
+                    </button>
+                    <button
+                      onClick={() => triggerToast(`Calling driver ${viewingLoad.driver}...`)}
+                      className="flex-1 py-1 px-2 bg-white border border-slate-200 hover:bg-slate-100 rounded text-[10px] font-bold text-slate-700 flex items-center justify-center gap-1 cursor-pointer"
+                    >
+                      <Phone className="w-3 h-3 text-emerald-600" />
+                      <span>Call</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Vehicle Box */}
+                <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl space-y-2">
+                  <h3 className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">Vehicle & Trailer</h3>
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={viewingLoad.truckPhoto}
+                      alt={viewingLoad.vehicle}
+                      className="w-12 h-10 rounded object-cover border border-slate-200 shrink-0"
+                    />
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900">{viewingLoad.vehicle}</h4>
+                      <span className="text-[10px] text-slate-500 font-medium block">{viewingLoad.trailer}</span>
+                      <span className="text-[10px] font-bold text-slate-700 block">Rego: {viewingLoad.rego}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 text-[10px]">
+                    <span className="text-slate-500 font-medium">Compliance:</span>
+                    <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 font-bold">Compliant & Active</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Progress Stepper Timeline */}
+              <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl space-y-2">
+                <h3 className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">Progress Timeline</h3>
+                <div className="flex items-center justify-between relative py-2 overflow-x-auto">
+                  <div className="absolute left-6 right-6 top-5 -translate-y-1/2 h-0.5 bg-slate-200 z-0" />
+                  <div
+                    className="absolute left-6 top-5 -translate-y-1/2 h-0.5 bg-emerald-500 z-0 transition-all duration-500"
+                    style={{ width: `${((viewingLoad.activeDotsCount || 3) / 5) * 80}%` }}
+                  />
+                  {[
+                    { title: 'Accepted', date: '21 May, 08:30 AM', state: 'done' },
+                    { title: 'En Route', date: '21 May, 09:10 AM', state: 'done' },
+                    { title: 'At Pickup', date: '21 May, 10:05 AM', state: 'done' },
+                    { title: 'Loaded', date: '21 May, 11:45 AM', state: 'done' },
+                    { title: 'In Transit', date: '21 May', state: viewingLoad.status === 'In Transit' ? 'active' : 'pending' },
+                    { title: 'Delivered', date: '', state: 'pending' }
+                  ].map((step, idx) => (
+                    <div key={idx} className="flex flex-col items-center z-10 space-y-1 min-w-[55px]">
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                        step.state === 'done' ? 'bg-emerald-500 text-white' :
+                        step.state === 'active' ? 'bg-blue-600 text-white ring-4 ring-blue-100 shadow-xs' :
+                        'bg-white border-2 border-slate-200 text-slate-300'
+                      }`}>
+                        {step.state === 'done' ? <Check className="w-3.5 h-3.5" /> : idx + 1}
+                      </div>
+                      <span className={`text-[10px] font-bold ${step.state === 'active' ? 'text-blue-600' : 'text-slate-700'}`}>{step.title}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Manifest Summary */}
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                  <span className="text-[10px] text-slate-500 font-bold block uppercase">Stops</span>
+                  <span className="text-base font-extrabold text-slate-900">{viewingLoad.stopsCount || 2} Stops</span>
+                </div>
+                <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                  <span className="text-[10px] text-slate-500 font-bold block uppercase">Items / Cargo</span>
+                  <span className="text-base font-extrabold text-slate-900">{viewingLoad.itemsCount || 5} Units</span>
+                </div>
+                <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                  <span className="text-[10px] text-slate-500 font-bold block uppercase">ETA</span>
+                  <span className="text-base font-extrabold text-emerald-600">{viewingLoad.reqTime}</span>
+                </div>
+              </div>
+
+              {/* Footer Actions */}
+              <div className="flex justify-between items-center pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsViewModalOpen(false);
+                    handleEditLoadClick(viewingLoad);
+                  }}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Edit3 className="w-4 h-4 text-blue-600" />
+                  <span>Edit Load</span>
+                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => triggerToast(`Printing Manifest for Load ${viewingLoad.id}...`)}
+                    className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 font-semibold flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Download className="w-4 h-4 text-slate-500" />
+                    <span>Print Manifest</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsViewModalOpen(false)}
+                    className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold shadow-xs cursor-pointer"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================
          1. TOP HEADER ROW
          ============================================================ */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
@@ -1134,8 +1336,7 @@ export default function DispatcherLoads() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              setSelectedLoadId(item.id);
-                              triggerToast(`Viewing details for Load ${item.id}`);
+                              handleViewLoadClick(item);
                             }}
                             title="View Load Details"
                             className="p-1.5 hover:bg-blue-100 text-slate-500 hover:text-blue-600 rounded-md transition-colors cursor-pointer"
@@ -1170,10 +1371,7 @@ export default function DispatcherLoads() {
                               <span>Edit Load</span>
                             </button>
                             <button
-                              onClick={() => {
-                                setSelectedLoadId(item.id);
-                                setOpenActionMenuId(null);
-                              }}
+                              onClick={() => handleViewLoadClick(item)}
                               className="w-full px-3 py-1.5 hover:bg-slate-50 text-slate-700 font-semibold flex items-center gap-2 cursor-pointer"
                             >
                               <Eye className="w-3.5 h-3.5 text-emerald-600" />

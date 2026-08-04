@@ -23,9 +23,10 @@ const MyLoads = () => {
   const [showMoreActionsMain, setShowMoreActionsMain] = useState(false);
   const [showMoreActionsDetails, setShowMoreActionsDetails] = useState(false);
 
-  // 3-Dots Action Menu & Delete Modal State
+  // 3-Dots Action Menu, Delete & Edit Modal State
   const [activeActionMenuId, setActiveActionMenuId] = useState(null);
   const [deletingLoadId, setDeletingLoadId] = useState(null);
+  const [editingLoad, setEditingLoad] = useState(null);   // holds copy of load being edited
 
   React.useEffect(() => {
     const handleClickOutside = () => setActiveActionMenuId(null);
@@ -41,6 +42,18 @@ const MyLoads = () => {
   const handleConfirmDelete = (loadId) => {
     setActiveActionMenuId(null);
     setDeletingLoadId(loadId);
+  };
+
+  const handleOpenEdit = (row) => {
+    setActiveActionMenuId(null);
+    setEditingLoad({ ...row });
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingLoad) return;
+    setLoadsList(prev => prev.map(l => l.id === editingLoad.id ? { ...editingLoad } : l));
+    showToast(`Load ${editingLoad.id} updated successfully!`);
+    setEditingLoad(null);
   };
 
   const handleExecuteDelete = () => {
@@ -608,7 +621,7 @@ const MyLoads = () => {
                               </svg>
                             </button>
 
-                            {/* Dropdown Menu Popup - ONLY Delete Option */}
+                            {/* Dropdown Menu Popup - Edit + Delete */}
                             {activeActionMenuId === row.id && (
                               <div
                                 style={{
@@ -620,12 +633,43 @@ const MyLoads = () => {
                                   border: '1px solid #cbd5e1',
                                   borderRadius: 8,
                                   boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-                                  minWidth: 120,
+                                  minWidth: 145,
                                   padding: '4px 0',
                                   textAlign: 'left'
                                 }}
                                 onClick={(e) => e.stopPropagation()}
                               >
+                                {/* Edit Option */}
+                                <button
+                                  onClick={() => handleOpenEdit(row)}
+                                  style={{
+                                    width: '100%',
+                                    padding: '8px 14px',
+                                    background: 'none',
+                                    border: 'none',
+                                    textAlign: 'left',
+                                    fontSize: 12,
+                                    fontWeight: '600',
+                                    color: '#2563eb',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 8
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'}
+                                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                >
+                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                  </svg>
+                                  Edit Load
+                                </button>
+
+                                {/* Divider */}
+                                <div style={{ height: 1, background: '#f1f5f9', margin: '2px 0' }} />
+
+                                {/* Delete Option */}
                                 <button
                                   onClick={() => handleConfirmDelete(row.id)}
                                   style={{
@@ -1798,6 +1842,153 @@ const MyLoads = () => {
                 style={{ padding: '8px 18px', borderRadius: 6, border: 'none', background: '#dc2626', color: '#fff', fontWeight: '700', fontSize: 12, cursor: 'pointer' }}
               >
                 Delete Load
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ✏️ EDIT LOAD MODAL */}
+      {editingLoad && (
+        <div className="cp-modal-overlay" onClick={() => setEditingLoad(null)}>
+          <div
+            className="cp-modal-content"
+            style={{ maxWidth: 520, borderRadius: 14, padding: 0, overflow: 'hidden' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div style={{ padding: '16px 20px', background: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(37,99,235,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#f1f5f9' }}>Edit Load — {editingLoad.id}</h3>
+                  <p style={{ margin: 0, fontSize: 10.5, color: '#94a3b8' }}>Ref: {editingLoad.ref}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setEditingLoad(null)}
+                style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: 4, borderRadius: 6 }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+              </button>
+            </div>
+
+            {/* Form Body */}
+            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+              {/* Route */}
+              <div>
+                <label style={{ display: 'block', fontSize: 10.5, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 5 }}>Route</label>
+                <input
+                  type="text"
+                  value={editingLoad.route}
+                  onChange={(e) => setEditingLoad({ ...editingLoad, route: e.target.value })}
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: 7, fontSize: 13, color: '#0f172a', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                  placeholder="e.g. Melbourne VIC → Sydney NSW"
+                />
+              </div>
+
+              {/* 2-col row: Type + Status */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 10.5, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 5 }}>Load Type</label>
+                  <select
+                    value={editingLoad.type}
+                    onChange={(e) => setEditingLoad({ ...editingLoad, type: e.target.value })}
+                    style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: 7, fontSize: 12.5, color: '#0f172a', outline: 'none', cursor: 'pointer', background: '#fff', fontFamily: 'inherit' }}
+                  >
+                    <option>Car Carrier</option>
+                    <option>General Freight</option>
+                    <option>Dangerous Goods</option>
+                    <option>Warehousing / 3PL</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 10.5, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 5 }}>Status</label>
+                  <select
+                    value={editingLoad.status}
+                    onChange={(e) => setEditingLoad({ ...editingLoad, status: e.target.value })}
+                    style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: 7, fontSize: 12.5, color: '#0f172a', outline: 'none', cursor: 'pointer', background: '#fff', fontFamily: 'inherit' }}
+                  >
+                    <option>Scheduled</option>
+                    <option>Confirmed</option>
+                    <option>Dispatched</option>
+                    <option>At Pickup</option>
+                    <option>In Transit</option>
+                    <option>Arrived</option>
+                    <option>Cancelled</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Driver */}
+              <div>
+                <label style={{ display: 'block', fontSize: 10.5, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 5 }}>Driver</label>
+                <input
+                  type="text"
+                  value={editingLoad.driver}
+                  onChange={(e) => setEditingLoad({ ...editingLoad, driver: e.target.value })}
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: 7, fontSize: 13, color: '#0f172a', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                  placeholder="Driver name or 'Unassigned'"
+                />
+              </div>
+
+              {/* 2-col row: Pickup + Delivery */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 10.5, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 5 }}>Pickup Date</label>
+                  <input
+                    type="text"
+                    value={editingLoad.pickup}
+                    onChange={(e) => setEditingLoad({ ...editingLoad, pickup: e.target.value })}
+                    style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: 7, fontSize: 13, color: '#0f172a', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                    placeholder="e.g. 30 May 2025"
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 10.5, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 5 }}>Delivery Date</label>
+                  <input
+                    type="text"
+                    value={editingLoad.delivery}
+                    onChange={(e) => setEditingLoad({ ...editingLoad, delivery: e.target.value })}
+                    style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: 7, fontSize: 13, color: '#0f172a', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                    placeholder="e.g. 31 May 2025"
+                  />
+                </div>
+              </div>
+
+              {/* ETA */}
+              <div>
+                <label style={{ display: 'block', fontSize: 10.5, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 5 }}>ETA / Delivered</label>
+                <input
+                  type="text"
+                  value={editingLoad.eta}
+                  onChange={(e) => setEditingLoad({ ...editingLoad, eta: e.target.value })}
+                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: 7, fontSize: 13, color: '#0f172a', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                  placeholder="e.g. ETA: 02:30 PM or Arrived"
+                />
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div style={{ padding: '12px 20px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', gap: 10, justifyContent: 'flex-end', alignItems: 'center' }}>
+              <button
+                onClick={() => setEditingLoad(null)}
+                style={{ padding: '8px 16px', borderRadius: 6, border: '1px solid #cbd5e1', background: '#fff', color: '#475569', fontWeight: '600', fontSize: 12, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                style={{ padding: '8.5px 22px', borderRadius: 6, border: 'none', background: '#2563eb', color: '#fff', fontWeight: '700', fontSize: 12.5, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 3px 10px rgba(37,99,235,0.25)' }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
+                Save Changes
               </button>
             </div>
           </div>

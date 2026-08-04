@@ -439,89 +439,193 @@ export default function TerminalWorkspace() {
         )}
       </div>
 
-      {/* Create Load Modal */}
+      {/* Create Load Modal - Premium Redesign */}
       {isCreateLoadModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh]">
-            <div className="flex justify-between items-center p-5 border-b border-slate-200">
-              <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <Plus size={18} className="text-blue-600" /> Create New Load
-              </h2>
-              <button 
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          style={{ background: 'rgba(15,23,42,0.65)', backdropFilter: 'blur(6px)' }}
+          onClick={(e) => { if (e.target === e.currentTarget) setIsCreateLoadModalOpen(false); }}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full flex flex-col overflow-hidden"
+            style={{ maxWidth: 680, maxHeight: '92vh', animation: 'modalPop 0.22s cubic-bezier(.4,1.6,.6,1) both' }}
+          >
+            {/* Modal Header */}
+            <div style={{ background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 60%, #60a5fa 100%)' }} className="px-6 py-5 flex items-center justify-between flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shadow-inner">
+                  <Plus size={22} className="text-white" />
+                </div>
+                <div>
+                  <h2 className="text-white font-bold text-lg leading-tight">Create New Load</h2>
+                  <p className="text-blue-100 text-xs mt-0.5">Fill in the details to schedule a new dispatch load</p>
+                </div>
+              </div>
+              <button
                 onClick={() => setIsCreateLoadModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1.5 rounded-full transition-colors"
+                className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors text-white"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
-            
-            <div className="flex-1 overflow-y-auto p-5 custom-scrollbar">
-              <form className="space-y-6">
-                <div className="grid grid-cols-2 gap-5">
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-5" style={{ background: '#f8fafc' }}>
+
+              {/* Section: Customer & Load */}
+              <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-6 h-6 rounded-md bg-blue-100 flex items-center justify-center">
+                    <User size={13} className="text-blue-600" />
+                  </div>
+                  <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">Customer & Load Type</span>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-700">Customer</label>
-                    <input type="text" className="w-full h-10 px-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" placeholder="e.g. BMW Australia" />
+                    <label className="text-xs font-semibold text-slate-600">Customer <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      className="w-full h-10 px-3 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                      placeholder="e.g. BMW Australia"
+                    />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-700">Load Type</label>
-                    <select className="w-full h-10 px-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
+                    <label className="text-xs font-semibold text-slate-600">Load Type <span className="text-red-500">*</span></label>
+                    <select className="w-full h-10 px-3 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all">
                       <option>Car Carrying</option>
                       <option>General Freight</option>
                       <option>Refrigerated</option>
+                      <option>Oversized Load</option>
+                      <option>Hazardous Goods</option>
                     </select>
                   </div>
                 </div>
+              </div>
 
-                <div className="grid grid-cols-2 gap-5">
+              {/* Section: Route */}
+              <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-6 h-6 rounded-md bg-emerald-100 flex items-center justify-center">
+                    <Navigation size={13} className="text-emerald-600" />
+                  </div>
+                  <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">Route Details</span>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-700">Pickup Location</label>
-                    <input type="text" className="w-full h-10 px-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" placeholder="e.g. Sydney" />
+                    <label className="text-xs font-semibold text-slate-600">
+                      <span className="inline-flex items-center gap-1"><MapPin size={11} className="text-emerald-500" /> Pickup Location <span className="text-red-500">*</span></span>
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full h-10 px-3 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all"
+                      placeholder="e.g. Sydney"
+                    />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-700">Dropoff Location</label>
-                    <input type="text" className="w-full h-10 px-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" placeholder="e.g. Melbourne" />
+                    <label className="text-xs font-semibold text-slate-600">
+                      <span className="inline-flex items-center gap-1"><MapPin size={11} className="text-rose-500" /> Dropoff Location <span className="text-red-500">*</span></span>
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full h-10 px-3 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100 transition-all"
+                      placeholder="e.g. Melbourne"
+                    />
                   </div>
                 </div>
+              </div>
 
-                <div className="grid grid-cols-2 gap-5">
+              {/* Section: Schedule */}
+              <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-6 h-6 rounded-md bg-amber-100 flex items-center justify-center">
+                    <Clock size={13} className="text-amber-600" />
+                  </div>
+                  <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">Schedule</span>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-700">Start Time</label>
-                    <input type="time" className="w-full h-10 px-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+                    <label className="text-xs font-semibold text-slate-600">Start Time <span className="text-red-500">*</span></label>
+                    <input
+                      type="time"
+                      className="w-full h-10 px-3 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition-all"
+                    />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-700">End Time</label>
-                    <input type="time" className="w-full h-10 px-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+                    <label className="text-xs font-semibold text-slate-600">End Time <span className="text-red-500">*</span></label>
+                    <input
+                      type="time"
+                      className="w-full h-10 px-3 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition-all"
+                    />
                   </div>
                 </div>
+              </div>
 
+              {/* Section: Driver Assignment */}
+              <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-6 h-6 rounded-md bg-violet-100 flex items-center justify-center">
+                    <Truck size={13} className="text-violet-600" />
+                  </div>
+                  <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">Driver Assignment</span>
+                  <span className="ml-auto text-[10px] font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">Optional</span>
+                </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-700">Assign Driver (Optional)</label>
-                  <select className="w-full h-10 px-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white">
-                    <option>Leave Unassigned</option>
-                    <option>John Doe</option>
-                    <option>Chris Lee</option>
-                    <option>Michael Tan</option>
-                    <option>Daniel Craig</option>
+                  <label className="text-xs font-semibold text-slate-600">Assign Driver</label>
+                  <select className="w-full h-10 px-3 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition-all">
+                    <option value="">— Leave Unassigned —</option>
+                    <option>John Doe · Volvo FH16 750 · On Duty</option>
+                    <option>Chris Lee · Volvo FH16 750 · En Route</option>
+                    <option>Michael Tan · Scania R500 · On Duty</option>
+                    <option>Daniel Craig · Available</option>
                   </select>
                 </div>
-              </form>
+              </div>
+
+              {/* Notes */}
+              <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-6 h-6 rounded-md bg-slate-100 flex items-center justify-center">
+                    <FileText size={13} className="text-slate-500" />
+                  </div>
+                  <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">Internal Notes</span>
+                  <span className="ml-auto text-[10px] font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">Optional</span>
+                </div>
+                <textarea
+                  rows={3}
+                  className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all resize-none"
+                  placeholder="Any special instructions or notes for this load..."
+                />
+              </div>
+
             </div>
 
-            <div className="p-5 border-t border-slate-200 flex justify-end gap-3 shrink-0 bg-slate-50 rounded-b-xl">
-              <button 
-                onClick={() => setIsCreateLoadModalOpen(false)}
-                className="px-5 py-2 border border-slate-300 text-slate-700 font-semibold rounded-lg text-sm hover:bg-slate-100 transition-colors"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={() => setIsCreateLoadModalOpen(false)}
-                className="px-5 py-2 bg-blue-600 text-white font-semibold rounded-lg text-sm hover:bg-blue-700 transition-colors shadow-sm"
-              >
-                Create Load
-              </button>
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between flex-shrink-0 bg-white">
+              <p className="text-[11px] text-slate-400"><span className="text-red-500">*</span> Required fields</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setIsCreateLoadModalOpen(false)}
+                  className="px-5 py-2.5 border border-slate-200 text-slate-700 font-semibold rounded-xl text-sm hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => setIsCreateLoadModalOpen(false)}
+                  className="px-6 py-2.5 font-bold rounded-xl text-sm text-white shadow-md transition-all hover:opacity-90 active:scale-95 flex items-center gap-2"
+                  style={{ background: 'linear-gradient(135deg, #1e40af, #3b82f6)' }}
+                >
+                  <Plus size={15} /> Create Load
+                </button>
+              </div>
             </div>
           </div>
+
+          <style>{`
+            @keyframes modalPop {
+              from { opacity: 0; transform: scale(0.93) translateY(18px); }
+              to   { opacity: 1; transform: scale(1)    translateY(0); }
+            }
+          `}</style>
         </div>
       )}
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   ArrowLeft, Save, Zap, Plus, Trash2, GripVertical,
   MapPin, User, Calendar, Clock, Package, Truck,
@@ -48,6 +48,83 @@ export default function CreateLoad({ onBack }) {
     { id: 3, type: 'Drop-off', address: '456 Jones Rd, Sydne', contactName: 'Jane Doe', contactPhone: '+61 421 987 654', date: '2025-07-17', time: '16:00' },
     { id: 4, type: 'Drop-off', address: '789 Depot Rd, Brisba', contactName: 'Peter Brown', contactPhone: '+61 433 221 122', date: '2025-07-18', time: '09:00' }
   ]);
+
+  // ── Drag & Drop state & handlers for Route Stops ─────────────────────────
+  const [draggedStopIndex, setDraggedStopIndex] = useState(null);
+  const [dragOverStopIndex, setDragOverStopIndex] = useState(null);
+  const touchStartYRef = useRef(0);
+  const touchElementIndexRef = useRef(null);
+
+  // Desktop Drag Handlers
+  const handleStopDragStart = (e, index) => {
+    setDraggedStopIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', index.toString());
+  };
+
+  const handleStopDragOver = (e, index) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverStopIndex !== index) {
+      setDragOverStopIndex(index);
+    }
+  };
+
+  const handleStopDrop = (e, targetIndex) => {
+    e.preventDefault();
+    if (draggedStopIndex === null || draggedStopIndex === targetIndex) {
+      setDraggedStopIndex(null);
+      setDragOverStopIndex(null);
+      return;
+    }
+
+    const updatedStops = [...stops];
+    const [movedStop] = updatedStops.splice(draggedStopIndex, 1);
+    updatedStops.splice(targetIndex, 0, movedStop);
+
+    setStops(updatedStops);
+    setDraggedStopIndex(null);
+    setDragOverStopIndex(null);
+  };
+
+  const handleStopDragEnd = () => {
+    setDraggedStopIndex(null);
+    setDragOverStopIndex(null);
+  };
+
+  // Mobile Touch Drag Handlers
+  const handleStopTouchStart = (e, index) => {
+    touchStartYRef.current = e.touches[0].clientY;
+    touchElementIndexRef.current = index;
+    setDraggedStopIndex(index);
+  };
+
+  const handleStopTouchMove = (e) => {
+    if (touchElementIndexRef.current === null) return;
+    const touchY = e.touches[0].clientY;
+    const elements = document.querySelectorAll('[data-stop-card-index]');
+    elements.forEach((el) => {
+      const rect = el.getBoundingClientRect();
+      if (touchY >= rect.top && touchY <= rect.bottom) {
+        const targetIdx = parseInt(el.getAttribute('data-stop-card-index'), 10);
+        if (!isNaN(targetIdx) && targetIdx !== dragOverStopIndex) {
+          setDragOverStopIndex(targetIdx);
+        }
+      }
+    });
+  };
+
+  const handleStopTouchEnd = () => {
+    if (touchElementIndexRef.current !== null && dragOverStopIndex !== null && touchElementIndexRef.current !== dragOverStopIndex) {
+      const updatedStops = [...stops];
+      const [movedStop] = updatedStops.splice(touchElementIndexRef.current, 1);
+      updatedStops.splice(dragOverStopIndex, 0, movedStop);
+      setStops(updatedStops);
+    }
+    touchElementIndexRef.current = null;
+    setDraggedStopIndex(null);
+    setDragOverStopIndex(null);
+  };
 
   const [activeStopMenu, setActiveStopMenu] = useState(null);
 
@@ -300,10 +377,33 @@ export default function CreateLoad({ onBack }) {
           {/* Mobile View: Cards (< md) */}
           <div className="block md:hidden space-y-3">
             {stops.map((stop, idx) => (
-              <div key={stop.id} className="bg-white rounded-xl p-3.5 border border-slate-200 shadow-xs space-y-3">
+              <div
+                key={stop.id}
+                data-stop-card-index={idx}
+                draggable
+                onDragStart={(e) => handleStopDragStart(e, idx)}
+                onDragOver={(e) => handleStopDragOver(e, idx)}
+                onDrop={(e) => handleStopDrop(e, idx)}
+                onDragEnd={handleStopDragEnd}
+                className={`bg-white rounded-xl p-3.5 border transition-all duration-200 space-y-3 ${
+                  draggedStopIndex === idx
+                    ? 'opacity-40 scale-[0.98] border-indigo-400 bg-indigo-50/50 shadow-lg'
+                    : dragOverStopIndex === idx
+                    ? 'border-indigo-500 border-2 shadow-md bg-indigo-50/30 scale-[1.01]'
+                    : 'border-slate-200 shadow-xs hover:border-slate-300'
+                }`}
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <GripVertical className="w-4 h-4 text-slate-300 cursor-grab" />
+                    <div
+                      onTouchStart={(e) => handleStopTouchStart(e, idx)}
+                      onTouchMove={handleStopTouchMove}
+                      onTouchEnd={handleStopTouchEnd}
+                      className="p-1 -ml-1 cursor-grab active:cursor-grabbing text-slate-400 hover:text-indigo-600 active:text-indigo-700 touch-none flex items-center justify-center rounded transition-colors"
+                      title="Drag to reorder"
+                    >
+                      <GripVertical className="w-4 h-4" />
+                    </div>
                     <span className="text-xs font-black text-slate-700">Stop #{idx + 1}</span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -411,10 +511,33 @@ export default function CreateLoad({ onBack }) {
 
               <div className="space-y-3">
                 {stops.map((stop, idx) => (
-                  <div key={stop.id} className="flex items-center gap-3 bg-white rounded-[14px] p-2.5 border border-slate-200 hover:border-slate-300 transition-colors group">
+                  <div
+                    key={stop.id}
+                    data-stop-card-index={idx}
+                    draggable
+                    onDragStart={(e) => handleStopDragStart(e, idx)}
+                    onDragOver={(e) => handleStopDragOver(e, idx)}
+                    onDrop={(e) => handleStopDrop(e, idx)}
+                    onDragEnd={handleStopDragEnd}
+                    className={`flex items-center gap-3 bg-white rounded-[14px] p-2.5 border transition-all duration-200 group ${
+                      draggedStopIndex === idx
+                        ? 'opacity-40 scale-[0.99] border-indigo-400 bg-indigo-50/50 shadow-lg'
+                        : dragOverStopIndex === idx
+                        ? 'border-indigo-500 border-2 shadow-md bg-indigo-50/30 scale-[1.005]'
+                        : 'border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
                     {/* # */}
                     <div className="w-8 shrink-0 flex items-center gap-1.5 pl-0.5">
-                      <GripVertical className="w-4 h-4 text-slate-300 cursor-grab" />
+                      <div
+                        onTouchStart={(e) => handleStopTouchStart(e, idx)}
+                        onTouchMove={handleStopTouchMove}
+                        onTouchEnd={handleStopTouchEnd}
+                        className="p-1 -ml-1 cursor-grab active:cursor-grabbing text-slate-400 hover:text-indigo-600 active:text-indigo-700 touch-none flex items-center justify-center rounded transition-colors"
+                        title="Drag to reorder"
+                      >
+                        <GripVertical className="w-4 h-4" />
+                      </div>
                       <span className="text-xs font-black text-slate-700">{idx + 1}</span>
                     </div>
 

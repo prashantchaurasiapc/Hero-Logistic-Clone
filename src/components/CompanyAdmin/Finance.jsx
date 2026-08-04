@@ -447,7 +447,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
                   <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-black text-slate-900 tracking-tight leading-snug">
-                    10.1 Finance Dashboard
+                    Finance Dashboard
                   </h1>
                   <span className="w-3.5 h-3.5 rounded-full bg-blue-500 text-white flex items-center justify-center text-[9px] font-black shrink-0" title="Verified Branch">✓</span>
                 </div>
@@ -1136,70 +1136,6 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Developer Notes Footer Box */}
-          <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-xl border border-slate-800 space-y-4">
-            <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
-              <Code2 className="w-4 h-4 text-purple-400" />
-              <h4 className="text-xs font-black uppercase tracking-widest text-purple-300">DEVELOPER NOTES &ndash; FINANCE DASHBOARD</h4>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 text-[11px] font-medium leading-relaxed">
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">1. PURPOSE</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Provide real-time financial overview.</li>
-                  <li>&bull; Monitor revenue, expenses and cash flow.</li>
-                  <li>&bull; Track invoices, overdue amounts and key metrics.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">2. KEY FEATURES</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Summary KPI cards with trends.</li>
-                  <li>&bull; Revenue, expense and cash flow charts.</li>
-                  <li>&bull; Invoice and expense overview widgets.</li>
-                  <li>&bull; Quick access to financial reports.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">3. AUTOMATION & ALERTS</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Automatic invoice reminders.</li>
-                  <li>&bull; Alerts for overdue invoices.</li>
-                  <li>&bull; Daily cash flow and performance updates.</li>
-                  <li>&bull; Threshold alerts for expenses and budget.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">4. PERMISSIONS</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Super Admin: Full access.</li>
-                  <li>&bull; Finance Manager: Full access.</li>
-                  <li>&bull; Accounts Staff: View and manage data.</li>
-                  <li>&bull; Read Only: View only (limited access).</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">5. DATA SOURCES</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Invoices, payments and receipts.</li>
-                  <li>&bull; Expenses and payroll.</li>
-                  <li>&bull; Bank accounts and transactions.</li>
-                  <li>&bull; Warehouse and operational data.</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="border-t border-slate-800 pt-3 flex flex-col sm:flex-row justify-between items-center text-[10px] text-slate-500 font-semibold">
-              <span>All times shown in your local time (AEST)</span>
-              <span className="flex items-center gap-1.5 text-purple-400">&bull; Data auto-refreshes every 5 minutes <RefreshCw className="w-3 h-3 animate-spin" /></span>
             </div>
           </div>
         </>

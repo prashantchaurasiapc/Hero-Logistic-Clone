@@ -51,6 +51,10 @@ export default function CommandCentre() {
   // Leaflet Map Refs
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
+  const fullMapContainerRef = useRef(null);
+  const fullMapRef = useRef(null);
+  const [isMapMaximized, setIsMapMaximized] = useState(false);
+  const [isMapToolsOpen, setIsMapToolsOpen] = useState(false);
 
   // Active Movements / Master Loads state list
   const [loads, setLoads] = useState([
@@ -518,7 +522,7 @@ export default function CommandCentre() {
     triggerToast('Filters reset to default.');
   };
 
-  // Leaflet Map Setup
+  // Leaflet Map Setup (Card View)
   useEffect(() => {
     if (view !== 'dashboard' || !mapContainerRef.current) return;
     if (mapRef.current) {
@@ -607,35 +611,137 @@ export default function CommandCentre() {
     vehicleMarkers.forEach(v => {
       const customHtml = `
         <div style="transform: translate(-50%, -100%); cursor: pointer; position: relative;">
-          <div style="background: ${v.badgeBg}; color: white; border-radius: 10px; padding: 6px 10px; box-shadow: 0 6px 16px rgba(0,0,0,0.25); font-family: system-ui, sans-serif; min-width: 120px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-bottom: 2px;">
-              <span style="font-size: 11px; font-weight: 900;">${v.id}</span>
-              <span style="font-size: 9.5px; font-weight: 700; opacity: 0.95;">${v.speed}</span>
+          <div style="background: ${v.badgeBg}; color: white; border-radius: 8px; padding: 5px 9px; box-shadow: 0 4px 14px rgba(0,0,0,0.25); font-family: system-ui, sans-serif; min-width: 110px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 4px; margin-bottom: 1px;">
+              <span style="font-size: 10.5px; font-weight: 900;">${v.id}</span>
+              <span style="font-size: 9px; font-weight: 700; opacity: 0.95;">${v.speed}</span>
             </div>
-            <div style="font-size: 10.5px; font-weight: 800; line-height: 1.1;">${v.driver}</div>
-            <div style="font-size: 8.5px; font-weight: 600; opacity: 0.9;">${v.vehicle}</div>
+            <div style="font-size: 10px; font-weight: 800; line-height: 1.1;">${v.driver}</div>
+            <div style="font-size: 8px; font-weight: 600; opacity: 0.9;">${v.vehicle}</div>
           </div>
-          <div style="width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 8px solid ${v.badgeBg}; margin: 0 auto;"></div>
+          <div style="width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 7px solid ${v.badgeBg}; margin: 0 auto;"></div>
         </div>
       `;
 
       const customIcon = L.divIcon({
         className: 'custom-vehicle-callout-marker',
         html: customHtml,
-        iconSize: [120, 60],
-        iconAnchor: [60, 60]
+        iconSize: [110, 55],
+        iconAnchor: [55, 55]
       });
 
       L.marker([v.lat, v.lng], { icon: customIcon }).addTo(map);
     });
 
+    // Invalidate map size after DOM mount
+    const timer = setTimeout(() => {
+      if (mapRef.current) {
+        mapRef.current.invalidateSize();
+      }
+    }, 300);
+
+    const resizeObserver = new ResizeObserver(() => {
+      if (mapRef.current) {
+        mapRef.current.invalidateSize();
+      }
+    });
+
+    if (mapContainerRef.current) {
+      resizeObserver.observe(mapContainerRef.current);
+    }
+
     return () => {
+      clearTimeout(timer);
+      resizeObserver.disconnect();
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
       }
     };
   }, [view]);
+
+  // Leaflet Map Setup (Full Screen Maximized View)
+  useEffect(() => {
+    if (!isMapMaximized || !fullMapContainerRef.current) return;
+    if (fullMapRef.current) {
+      fullMapRef.current.remove();
+      fullMapRef.current = null;
+    }
+
+    const fullMap = L.map(fullMapContainerRef.current, {
+      center: [-31.2, 149.2],
+      zoom: 6,
+      zoomControl: false
+    });
+    fullMapRef.current = fullMap;
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap &copy; CARTO'
+    }).addTo(fullMap);
+
+    const routeCoords = [
+      [-27.4698, 153.0251],
+      [-28.0167, 153.4000],
+      [-32.9283, 151.7817],
+      [-33.8688, 151.2093],
+      [-35.2809, 149.1300],
+      [-37.8136, 144.9631]
+    ];
+
+    L.polyline(routeCoords, {
+      color: '#2563eb',
+      weight: 4,
+      dashArray: '6, 8',
+      opacity: 0.8
+    }).addTo(fullMap);
+
+    const vehicleMarkers = [
+      { id: 'LD-10582', driver: 'John Doe', vehicle: 'MAN TGX 26.580', speed: '82 km/h', lat: -27.8500, lng: 153.3000, badgeBg: '#16a34a' },
+      { id: 'LD-10578', driver: 'Chris Lee', vehicle: 'Kenworth T909', speed: '76 km/h', lat: -33.2000, lng: 149.8000, badgeBg: '#16a34a' },
+      { id: 'LD-10579', driver: 'David Brown', vehicle: 'MAN TGX 26.580', speed: '62 km/h', lat: -29.8000, lng: 151.8000, badgeBg: '#ea580c' },
+      { id: 'LD-10575', driver: 'Daniel Craig', vehicle: 'Volvo FH16 750', speed: '58 km/h', lat: -34.8000, lng: 148.9000, badgeBg: '#dc2626' },
+      { id: 'LD-10581', driver: 'Michael Tan', vehicle: 'Scania R650', speed: '71 km/h', lat: -35.2809, lng: 149.1300, badgeBg: '#2563eb' }
+    ];
+
+    vehicleMarkers.forEach(v => {
+      const customHtml = `
+        <div style="transform: translate(-50%, -100%); cursor: pointer; position: relative;">
+          <div style="background: ${v.badgeBg}; color: white; border-radius: 10px; padding: 7px 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.3); font-family: system-ui, sans-serif; min-width: 130px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-bottom: 2px;">
+              <span style="font-size: 11px; font-weight: 900;">${v.id}</span>
+              <span style="font-size: 10px; font-weight: 800; opacity: 0.95;">${v.speed}</span>
+            </div>
+            <div style="font-size: 11px; font-weight: 800; line-height: 1.1;">${v.driver}</div>
+            <div style="font-size: 9px; font-weight: 600; opacity: 0.9;">${v.vehicle}</div>
+          </div>
+          <div style="width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 9px solid ${v.badgeBg}; margin: 0 auto;"></div>
+        </div>
+      `;
+
+      const customIcon = L.divIcon({
+        className: 'custom-vehicle-callout-marker-full',
+        html: customHtml,
+        iconSize: [130, 65],
+        iconAnchor: [65, 65]
+      });
+
+      L.marker([v.lat, v.lng], { icon: customIcon }).addTo(fullMap);
+    });
+
+    const timer = setTimeout(() => {
+      if (fullMapRef.current) {
+        fullMapRef.current.invalidateSize();
+      }
+    }, 200);
+
+    return () => {
+      clearTimeout(timer);
+      if (fullMapRef.current) {
+        fullMapRef.current.remove();
+        fullMapRef.current = null;
+      }
+    };
+  }, [isMapMaximized]);
 
   // Create Load Handlers
   const handleAddStop = () => {
@@ -720,7 +826,7 @@ export default function CommandCentre() {
       {view === 'dashboard' ? (
         <>
           {/* ============================================================
-             1. HEADER TITLE ROW & TOP FILTER ROW
+             1. HEADER TITLE ROW & SUMMARY CARDS (8 EQUAL CARDS)
              ============================================================ */}
           <div className="space-y-3">
             {/* Header Title Row */}
@@ -728,8 +834,109 @@ export default function CommandCentre() {
               <h1 className="text-xl font-bold text-slate-900 tracking-tight">Dispatch Dashboard</h1>
             </div>
 
-            {/* Top Filter Row with labels ABOVE select controls */}
-            <div className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
+            {/* Summary Cards (8 EQUAL CARDS) */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5">
+              
+              {/* Card 1: Total Loads */}
+              <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-start gap-2.5 hover:shadow-xs transition-shadow">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                  <Truck className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-[10.5px] font-medium text-slate-500 block">Total Loads</span>
+                  <h3 className="text-lg font-bold text-slate-900 leading-tight">128</h3>
+                  <span className="text-[9.5px] font-semibold text-emerald-600 block mt-0.5">↑ 12% vs yesterday</span>
+                </div>
+              </div>
+
+              {/* Card 2: Active Loads */}
+              <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-start gap-2.5 hover:shadow-xs transition-shadow">
+                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                  <Play className="w-4 h-4 fill-emerald-600" />
+                </div>
+                <div>
+                  <span className="text-[10.5px] font-medium text-slate-500 block">Active Loads</span>
+                  <h3 className="text-lg font-bold text-slate-900 leading-tight">63</h3>
+                  <span className="text-[9.5px] font-semibold text-emerald-600 block mt-0.5">On the road</span>
+                </div>
+              </div>
+
+              {/* Card 3: Planned Loads */}
+              <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-start gap-2.5 hover:shadow-xs transition-shadow">
+                <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                  <Calendar className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-[10.5px] font-medium text-slate-500 block">Planned Loads</span>
+                  <h3 className="text-lg font-bold text-slate-900 leading-tight">34</h3>
+                  <span className="text-[9.5px] font-semibold text-amber-600 block mt-0.5">Next 7 days</span>
+                </div>
+              </div>
+
+              {/* Card 4: Completed Today */}
+              <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-start gap-2.5 hover:shadow-xs transition-shadow">
+                <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+                  <CheckCircle2 className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-[10.5px] font-medium text-slate-500 block">Completed Today</span>
+                  <h3 className="text-lg font-bold text-slate-900 leading-tight">21</h3>
+                  <span className="text-[9.5px] font-semibold text-purple-600 block mt-0.5">↑ 5 vs yesterday</span>
+                </div>
+              </div>
+
+              {/* Card 5: Delayed Loads */}
+              <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-start gap-2.5 hover:shadow-xs transition-shadow">
+                <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-[10.5px] font-medium text-slate-500 block">Delayed Loads</span>
+                  <h3 className="text-lg font-bold text-slate-900 leading-tight">7</h3>
+                  <span className="text-[9.5px] font-semibold text-rose-600 block mt-0.5">Requires attention</span>
+                </div>
+              </div>
+
+              {/* Card 6: Available Drivers */}
+              <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-start gap-2.5 hover:shadow-xs transition-shadow">
+                <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
+                  <User className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-[10.5px] font-medium text-slate-500 block">Available Drivers</span>
+                  <h3 className="text-lg font-bold text-slate-900 leading-tight">18</h3>
+                  <span className="text-[9.5px] font-semibold text-emerald-600 block mt-0.5">On duty</span>
+                </div>
+              </div>
+
+              {/* Card 7: Available Trucks */}
+              <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-start gap-2.5 hover:shadow-xs transition-shadow">
+                <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
+                  <Truck className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-[10.5px] font-medium text-slate-500 block">Available Trucks</span>
+                  <h3 className="text-lg font-bold text-slate-900 leading-tight">12</h3>
+                  <span className="text-[9.5px] font-semibold text-teal-600 block mt-0.5">Ready to go</span>
+                </div>
+              </div>
+
+              {/* Card 8: Available Trailers */}
+              <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-start gap-2.5 hover:shadow-xs transition-shadow">
+                <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                  <Container className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-[10.5px] font-medium text-slate-500 block">Available Trailers</span>
+                  <h3 className="text-lg font-bold text-slate-900 leading-tight">9</h3>
+                  <span className="text-[9.5px] font-semibold text-indigo-600 block mt-0.5">Ready to go</span>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Filter Row with labels ABOVE select controls */}
+            <div className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/80 shadow-2xs mt-3">
               <div className="flex flex-wrap items-end gap-2">
                 
                 {/* Branch */}
@@ -896,109 +1103,6 @@ export default function CommandCentre() {
 
               </div>
             </div>
-          </div>
-
-          {/* ============================================================
-             2. SUMMARY CARDS (8 EQUAL CARDS)
-             ============================================================ */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5">
-            
-            {/* Card 1: Total Loads */}
-            <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-start gap-2.5 hover:shadow-xs transition-shadow">
-              <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                <Truck className="w-4 h-4" />
-              </div>
-              <div>
-                <span className="text-[10.5px] font-medium text-slate-500 block">Total Loads</span>
-                <h3 className="text-lg font-bold text-slate-900 leading-tight">128</h3>
-                <span className="text-[9.5px] font-semibold text-emerald-600 block mt-0.5">↑ 12% vs yesterday</span>
-              </div>
-            </div>
-
-            {/* Card 2: Active Loads */}
-            <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-start gap-2.5 hover:shadow-xs transition-shadow">
-              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                <Play className="w-4 h-4 fill-emerald-600" />
-              </div>
-              <div>
-                <span className="text-[10.5px] font-medium text-slate-500 block">Active Loads</span>
-                <h3 className="text-lg font-bold text-slate-900 leading-tight">63</h3>
-                <span className="text-[9.5px] font-semibold text-emerald-600 block mt-0.5">On the road</span>
-              </div>
-            </div>
-
-            {/* Card 3: Planned Loads */}
-            <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-start gap-2.5 hover:shadow-xs transition-shadow">
-              <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-                <Calendar className="w-4 h-4" />
-              </div>
-              <div>
-                <span className="text-[10.5px] font-medium text-slate-500 block">Planned Loads</span>
-                <h3 className="text-lg font-bold text-slate-900 leading-tight">34</h3>
-                <span className="text-[9.5px] font-semibold text-amber-600 block mt-0.5">Next 7 days</span>
-              </div>
-            </div>
-
-            {/* Card 4: Completed Today */}
-            <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-start gap-2.5 hover:shadow-xs transition-shadow">
-              <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
-                <CheckCircle2 className="w-4 h-4" />
-              </div>
-              <div>
-                <span className="text-[10.5px] font-medium text-slate-500 block">Completed Today</span>
-                <h3 className="text-lg font-bold text-slate-900 leading-tight">21</h3>
-                <span className="text-[9.5px] font-semibold text-purple-600 block mt-0.5">↑ 5 vs yesterday</span>
-              </div>
-            </div>
-
-            {/* Card 5: Delayed Loads */}
-            <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-start gap-2.5 hover:shadow-xs transition-shadow">
-              <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-4 h-4" />
-              </div>
-              <div>
-                <span className="text-[10.5px] font-medium text-slate-500 block">Delayed Loads</span>
-                <h3 className="text-lg font-bold text-slate-900 leading-tight">7</h3>
-                <span className="text-[9.5px] font-semibold text-rose-600 block mt-0.5">Requires attention</span>
-              </div>
-            </div>
-
-            {/* Card 6: Available Drivers */}
-            <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-start gap-2.5 hover:shadow-xs transition-shadow">
-              <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
-                <User className="w-4 h-4" />
-              </div>
-              <div>
-                <span className="text-[10.5px] font-medium text-slate-500 block">Available Drivers</span>
-                <h3 className="text-lg font-bold text-slate-900 leading-tight">18</h3>
-                <span className="text-[9.5px] font-semibold text-emerald-600 block mt-0.5">On duty</span>
-              </div>
-            </div>
-
-            {/* Card 7: Available Trucks */}
-            <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-start gap-2.5 hover:shadow-xs transition-shadow">
-              <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
-                <Truck className="w-4 h-4" />
-              </div>
-              <div>
-                <span className="text-[10.5px] font-medium text-slate-500 block">Available Trucks</span>
-                <h3 className="text-lg font-bold text-slate-900 leading-tight">12</h3>
-                <span className="text-[9.5px] font-semibold text-teal-600 block mt-0.5">Ready to go</span>
-              </div>
-            </div>
-
-            {/* Card 8: Available Trailers */}
-            <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs flex items-start gap-2.5 hover:shadow-xs transition-shadow">
-              <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-                <Container className="w-4 h-4" />
-              </div>
-              <div>
-                <span className="text-[10.5px] font-medium text-slate-500 block">Available Trailers</span>
-                <h3 className="text-lg font-bold text-slate-900 leading-tight">9</h3>
-                <span className="text-[9.5px] font-semibold text-indigo-600 block mt-0.5">Ready to go</span>
-              </div>
-            </div>
-
           </div>
 
           {/* ============================================================
@@ -1231,23 +1335,24 @@ export default function CommandCentre() {
                     <span>LIVE GPS MAP</span>
                   </h2>
                   <button 
-                    onClick={() => triggerToast('Maximizing map view...')}
-                    className="text-slate-400 hover:text-slate-700 p-0.5 cursor-pointer"
+                    onClick={() => setIsMapMaximized(true)}
+                    title="Maximize HD Map"
+                    className="text-slate-400 hover:text-slate-700 p-1 hover:bg-slate-100 rounded-md cursor-pointer transition-colors"
                   >
                     <Maximize2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
 
                 {/* Map Container matching Image 2 */}
-                <div className="relative w-full h-[340px] sm:h-[420px] lg:h-[520px] rounded-lg overflow-hidden border border-slate-200">
+                <div className="relative w-full h-[360px] sm:h-[440px] lg:h-[540px] rounded-lg overflow-hidden border border-slate-200">
                   {/* Leaflet Map Element */}
                   <div ref={mapContainerRef} className="w-full h-full z-0" />
 
                   {/* Top Left Overlay Button: View Full Map */}
                   <div className="absolute top-3 left-3 z-10">
                     <button 
-                      onClick={() => triggerToast('Opening full screen interactive tracking...')}
-                      className="px-3 py-1.5 bg-white/95 backdrop-blur-sm text-blue-600 hover:bg-white text-xs font-semibold rounded-lg border border-slate-200 shadow-sm flex items-center gap-1.5 cursor-pointer"
+                      onClick={() => setIsMapMaximized(true)}
+                      className="px-3 py-1.5 bg-white/95 backdrop-blur-sm text-blue-600 hover:bg-white text-xs font-semibold rounded-lg border border-slate-200 shadow-sm flex items-center gap-1.5 cursor-pointer transition-all hover:shadow"
                     >
                       <Globe className="w-3.5 h-3.5" />
                       <span>View Full Map</span>
@@ -1274,49 +1379,60 @@ export default function CommandCentre() {
                     </button>
                   </div>
 
-                  {/* Floating Actions Panel on Bottom Right Side of Map (Image 2) */}
-                  <div className="absolute bottom-3 right-3 z-10 bg-white/95 backdrop-blur-md p-1.5 rounded-lg border border-slate-200 shadow-md space-y-1 text-left min-w-[135px]">
+                  {/* Floating Toggle Actions Button (Does NOT block map markers) */}
+                  <div className="absolute bottom-3 right-3 z-10 text-right">
+                    {isMapToolsOpen && (
+                      <div className="mb-2 bg-white/95 backdrop-blur-md p-1.5 rounded-xl border border-slate-200 shadow-xl space-y-1 text-left min-w-[150px] animate-in fade-in slide-in-from-bottom-2">
+                        <button 
+                          onClick={() => { setIsMapToolsOpen(false); triggerToast('Tracking driver real-time position...'); }}
+                          className="w-full px-2.5 py-1.5 hover:bg-slate-100 rounded-lg text-[10.5px] font-semibold text-slate-700 flex items-center gap-2 transition-colors cursor-pointer"
+                        >
+                          <Target className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                          <span>Track Driver</span>
+                        </button>
+                        <button 
+                          onClick={() => { setIsMapToolsOpen(false); triggerToast('Opening optimized route polyline...'); }}
+                          className="w-full px-2.5 py-1.5 hover:bg-slate-100 rounded-lg text-[10.5px] font-semibold text-slate-700 flex items-center gap-2 transition-colors cursor-pointer"
+                        >
+                          <Compass className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                          <span>Open Route</span>
+                        </button>
+                        <button 
+                          onClick={() => { setIsMapToolsOpen(false); triggerToast('Location request sent to driver...'); }}
+                          className="w-full px-2.5 py-1.5 hover:bg-slate-100 rounded-lg text-[10.5px] font-semibold text-slate-700 flex items-center gap-2 transition-colors cursor-pointer"
+                        >
+                          <MapPin className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                          <span>Send Location</span>
+                        </button>
+                        <button 
+                          onClick={() => { setIsMapToolsOpen(false); triggerToast('Refreshing GPS satellite telemetry...'); }}
+                          className="w-full px-2.5 py-1.5 hover:bg-slate-100 rounded-lg text-[10.5px] font-semibold text-slate-700 flex items-center gap-2 transition-colors cursor-pointer"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                          <span>Refresh GPS</span>
+                        </button>
+                        <button 
+                          onClick={() => { setIsMapToolsOpen(false); triggerToast('Fetching location breadcrumb history...'); }}
+                          className="w-full px-2.5 py-1.5 hover:bg-slate-100 rounded-lg text-[10.5px] font-semibold text-slate-700 flex items-center gap-2 transition-colors cursor-pointer"
+                        >
+                          <Info className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                          <span>Location History</span>
+                        </button>
+                        <button 
+                          onClick={() => { setIsMapToolsOpen(false); triggerToast('Delay flagged for operational review.'); }}
+                          className="w-full px-2.5 py-1.5 hover:bg-slate-100 rounded-lg text-[10.5px] font-semibold text-slate-700 flex items-center gap-2 transition-colors cursor-pointer"
+                        >
+                          <FileText className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                          <span>Flag Delay</span>
+                        </button>
+                      </div>
+                    )}
                     <button 
-                      onClick={() => triggerToast('Tracking driver real-time position...')}
-                      className="w-full px-2.5 py-1.5 hover:bg-slate-100 rounded text-[10.5px] font-semibold text-slate-700 flex items-center gap-2 transition-colors cursor-pointer"
+                      onClick={() => setIsMapToolsOpen(!isMapToolsOpen)}
+                      className="px-3 py-1.5 bg-slate-900 text-white hover:bg-slate-800 text-xs font-bold rounded-lg shadow-lg flex items-center gap-1.5 cursor-pointer ml-auto transition-all"
                     >
-                      <Target className="w-3.5 h-3.5 text-slate-600 shrink-0" />
-                      <span>Track Driver</span>
-                    </button>
-                    <button 
-                      onClick={() => triggerToast('Opening optimized route polyline...')}
-                      className="w-full px-2.5 py-1.5 hover:bg-slate-100 rounded text-[10.5px] font-semibold text-slate-700 flex items-center gap-2 transition-colors cursor-pointer"
-                    >
-                      <Compass className="w-3.5 h-3.5 text-slate-600 shrink-0" />
-                      <span>Open Route</span>
-                    </button>
-                    <button 
-                      onClick={() => triggerToast('Location request sent to driver...')}
-                      className="w-full px-2.5 py-1.5 hover:bg-slate-100 rounded text-[10.5px] font-semibold text-slate-700 flex items-center gap-2 transition-colors cursor-pointer"
-                    >
-                      <MapPin className="w-3.5 h-3.5 text-slate-600 shrink-0" />
-                      <span>Send Location</span>
-                    </button>
-                    <button 
-                      onClick={() => triggerToast('Refreshing GPS satellite telemetry...')}
-                      className="w-full px-2.5 py-1.5 hover:bg-slate-100 rounded text-[10.5px] font-semibold text-slate-700 flex items-center gap-2 transition-colors cursor-pointer"
-                    >
-                      <RefreshCw className="w-3.5 h-3.5 text-slate-600 shrink-0" />
-                      <span>Refresh GPS</span>
-                    </button>
-                    <button 
-                      onClick={() => triggerToast('Fetching location breadcrumb history...')}
-                      className="w-full px-2.5 py-1.5 hover:bg-slate-100 rounded text-[10.5px] font-semibold text-slate-700 flex items-center gap-2 transition-colors cursor-pointer"
-                    >
-                      <Info className="w-3.5 h-3.5 text-slate-600 shrink-0" />
-                      <span>Location History</span>
-                    </button>
-                    <button 
-                      onClick={() => triggerToast('Delay flagged for operational review.')}
-                      className="w-full px-2.5 py-1.5 hover:bg-slate-100 rounded text-[10.5px] font-semibold text-slate-700 flex items-center gap-2 transition-colors cursor-pointer"
-                    >
-                      <FileText className="w-3.5 h-3.5 text-slate-600 shrink-0" />
-                      <span>Flag Delay</span>
+                      <Target className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>{isMapToolsOpen ? 'Close Tools' : 'GPS Tools'}</span>
                     </button>
                   </div>
                 </div>
@@ -1814,6 +1930,57 @@ export default function CommandCentre() {
                 </div>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* FULL SCREEN MAXIMIZED GPS MAP MODAL */}
+      {isMapMaximized && (
+        <div className="fixed inset-0 z-[9999] bg-slate-950/90 backdrop-blur-md flex flex-col p-4 animate-in fade-in">
+          {/* Header Bar */}
+          <div className="bg-slate-900 border border-slate-800 text-white px-5 py-3 rounded-t-2xl flex items-center justify-between shadow-xl">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/40 text-blue-400 flex items-center justify-center font-black">
+                <Globe className="w-5 h-5 animate-pulse" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-white tracking-wide">LIVE GPS SATELLITE FLEET MAP</h2>
+                <p className="text-[11px] text-slate-400 font-medium">Real-time driver tracking &amp; telemetry monitoring</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold rounded-full flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                5 Vehicles Active
+              </span>
+              <button 
+                onClick={() => setIsMapMaximized(false)}
+                className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl cursor-pointer transition-colors border border-slate-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Full Screen Map Body */}
+          <div className="relative flex-1 bg-slate-900 border-x border-b border-slate-800 rounded-b-2xl overflow-hidden shadow-2xl">
+            <div ref={fullMapContainerRef} className="w-full h-full z-0" />
+
+            {/* Map Controls */}
+            <div className="absolute top-4 right-4 z-10 flex flex-col shadow-xl">
+              <button 
+                onClick={() => fullMapRef.current && fullMapRef.current.zoomIn()}
+                className="w-9 h-9 bg-slate-900 hover:bg-slate-800 text-white font-bold text-base rounded-t-xl border border-slate-700 flex items-center justify-center cursor-pointer"
+              >
+                +
+              </button>
+              <button 
+                onClick={() => fullMapRef.current && fullMapRef.current.zoomOut()}
+                className="w-9 h-9 bg-slate-900 hover:bg-slate-800 text-white font-bold text-base rounded-b-xl border-x border-b border-slate-700 flex items-center justify-center cursor-pointer"
+              >
+                -
+              </button>
+            </div>
           </div>
         </div>
       )}

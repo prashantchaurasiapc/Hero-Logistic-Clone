@@ -195,6 +195,9 @@ export default function WarehouseHoldingAreas() {
   const [targetLane, setTargetLane] = useState('Lane 1');
   const [toast, setToast] = useState(null);
 
+  const [viewModalArea, setViewModalArea] = useState(null);
+  const [actionMenuAreaId, setActionMenuAreaId] = useState(null);
+
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3500);
@@ -277,7 +280,7 @@ export default function WarehouseHoldingAreas() {
   };
 
   return (
-    <div className="wh-stage-container">
+    <div className="wh-stage-container" onClick={() => setActionMenuAreaId(null)}>
       <style>{`
         .wh-stage-container {
           font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -286,6 +289,26 @@ export default function WarehouseHoldingAreas() {
           color: #0F172A;
           padding: 20px 24px;
           box-sizing: border-box;
+        }
+
+        .wh-dropdown-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 10px;
+          font-size: 11.5px;
+          font-weight: 700;
+          color: #1E293B;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.12s ease;
+        }
+        .wh-dropdown-item:hover {
+          background: #F1F5F9;
+        }
+        .wh-dropdown-item.danger:hover {
+          background: #FEE2E2;
+          color: #DC2626;
         }
 
         /* HEADER ROW */
@@ -975,14 +998,107 @@ export default function WarehouseHoldingAreas() {
                           )}
                         </td>
                         <td className="font-medium text-slate-700">{area.oldestItem}</td>
-                        <td style={{ textAlign: 'right' }}>
+                        <td style={{ textAlign: 'right', position: 'relative' }}>
                           <div className="flex items-center justify-end gap-1">
-                            <button className="btn-view-st" onClick={() => alert(`Viewing ${area.name} staging inventory`)}>
+                            <button
+                              className="btn-view-st"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setViewModalArea(area);
+                              }}
+                            >
                               View
                             </button>
-                            <button className="p-1 text-slate-400 hover:text-slate-900" onClick={() => alert(`Options for ${area.name}`)}>
+                            <button
+                              className="p-1.5 text-slate-500 hover:text-slate-900 rounded-md hover:bg-slate-100 transition"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActionMenuAreaId(actionMenuAreaId === area.id ? null : area.id);
+                              }}
+                            >
                               <MoreVertical size={14} />
                             </button>
+
+                            {/* 3-DOT ACTION MENU POPUP */}
+                            {actionMenuAreaId === area.id && (
+                              <div
+                                style={{
+                                  position: 'absolute',
+                                  right: 0,
+                                  top: 'calc(100% + 4px)',
+                                  background: '#FFFFFF',
+                                  border: '1px solid #CBD5E1',
+                                  borderRadius: '10px',
+                                  boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)',
+                                  padding: '6px',
+                                  zIndex: 1000,
+                                  minWidth: '190px',
+                                  textAlign: 'left'
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <div
+                                  className="wh-dropdown-item"
+                                  onClick={() => {
+                                    setViewModalArea(area);
+                                    setActionMenuAreaId(null);
+                                  }}
+                                >
+                                  <Eye size={13} className="text-blue-600" />
+                                  <span>View Inventory Details</span>
+                                </div>
+
+                                <div
+                                  className="wh-dropdown-item"
+                                  onClick={() => {
+                                    setSelectedAreaForMove(area.name);
+                                    setCreateMoveModalOpen(true);
+                                    setActionMenuAreaId(null);
+                                  }}
+                                >
+                                  <ArrowRight size={13} className="text-amber-600" />
+                                  <span>Create Move Task</span>
+                                </div>
+
+                                <div
+                                  className="wh-dropdown-item"
+                                  onClick={() => {
+                                    setSelectedAreaForMove(area.name);
+                                    setAssignModalOpen(true);
+                                    setActionMenuAreaId(null);
+                                  }}
+                                >
+                                  <Tag size={13} className="text-purple-600" />
+                                  <span>Assign Load Lane</span>
+                                </div>
+
+                                <div
+                                  className="wh-dropdown-item"
+                                  onClick={() => {
+                                    showToast(`🖨️ Barcode labels printed for ${area.code}`);
+                                    setActionMenuAreaId(null);
+                                  }}
+                                >
+                                  <Printer size={13} className="text-slate-600" />
+                                  <span>Print Area Barcode</span>
+                                </div>
+
+                                <div style={{ height: '1px', background: '#F1F5F9', margin: '4px 0' }} />
+
+                                <div
+                                  className="wh-dropdown-item"
+                                  onClick={() => {
+                                    const nextStatus = area.status === 'Active' ? 'Inactive' : 'Active';
+                                    setAreas(areas.map(a => a.id === area.id ? { ...a, status: nextStatus } : a));
+                                    showToast(`Updated ${area.name} status to ${nextStatus}`);
+                                    setActionMenuAreaId(null);
+                                  }}
+                                >
+                                  <RefreshCw size={13} className="text-emerald-600" />
+                                  <span>Mark {area.status === 'Active' ? 'Inactive' : 'Active'}</span>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -1555,6 +1671,127 @@ export default function WarehouseHoldingAreas() {
           </div>
         </div>
       )}
+      {/* VIEW STAGING AREA MODAL */}
+      {viewModalArea && (
+        <div className="wh-modal-overlay" onClick={() => setViewModalArea(null)}>
+          <div className="wh-modal-box" style={{ maxWidth: '560px' }} onClick={e => e.stopPropagation()}>
+            <div className="wh-modal-header" style={{ background: '#0F172A', color: '#FFFFFF', padding: '14px 18px' }}>
+              <div className="flex items-center gap-3">
+                <div style={{ background: '#FFD400', color: '#0F172A', fontWeight: 900, fontSize: '12px', padding: '4px 8px', borderRadius: '6px' }}>
+                  {viewModalArea.code}
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm text-white" style={{ margin: 0 }}>{viewModalArea.name}</h3>
+                  <div className="text-[10px] text-slate-400 font-medium">{viewModalArea.subLocation}</div>
+                </div>
+              </div>
+              <button onClick={() => setViewModalArea(null)} className="p-1 hover:bg-slate-800 rounded">
+                <X size={18} className="text-slate-400" />
+              </button>
+            </div>
+
+            <div style={{ padding: '18px', display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '80vh', overflowY: 'auto' }}>
+
+              {/* OVERVIEW CARDS */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '10px' }}>
+                  <div className="text-[9.5px] font-extrabold text-slate-500 uppercase">Zone / Lane</div>
+                  <div className="text-xs font-black text-slate-900 mt-0.5">{viewModalArea.zone} • {viewModalArea.lane}</div>
+                </div>
+
+                <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '10px' }}>
+                  <div className="text-[9.5px] font-extrabold text-slate-500 uppercase">Status</div>
+                  <span className={viewModalArea.status === 'Active' ? 'badge-active' : 'badge-inactive'} style={{ display: 'inline-block', marginTop: '3px' }}>
+                    {viewModalArea.status}
+                  </span>
+                </div>
+
+                <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '10px' }}>
+                  <div className="text-[9.5px] font-extrabold text-slate-500 uppercase">Oldest Item</div>
+                  <div className="text-xs font-black text-slate-900 mt-0.5">{viewModalArea.oldestItem}</div>
+                </div>
+              </div>
+
+              {/* OCCUPANCY BAR CARD */}
+              <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '12px' }}>
+                <div className="flex justify-between items-center mb-1.5">
+                  <span className="text-xs font-extrabold text-slate-900">Capacity & Occupancy</span>
+                  <span className="text-xs font-black text-slate-900">{viewModalArea.occupancy}% ({viewModalArea.stagedItems} / {viewModalArea.capacity} Capacity)</span>
+                </div>
+                <div className="occ-bar-bg" style={{ width: '100%', height: '8px' }}>
+                  <div
+                    className="occ-bar-fill"
+                    style={{
+                      width: `${viewModalArea.occupancy}%`,
+                      background: getOccupancyBarColor(viewModalArea.occupancy)
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* STAGED ITEMS IN THIS AREA */}
+              <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '12px' }}>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-extrabold text-slate-900 uppercase">Currently Staged Cargo</span>
+                  <span className="text-[10px] font-bold text-slate-500">{viewModalArea.stagedItems} Items</span>
+                </div>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {recentStagedItems.slice(0, 3).map((stItem) => (
+                    <div key={stItem.id} style={{ padding: '8px 10px', background: '#F8FAFC', border: '1px solid #F1F5F9', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div className="flex items-center gap-3">
+                        <img src={stItem.image} alt={stItem.title} style={{ width: '36px', height: '30px', borderRadius: '4px', objectFit: 'cover' }} />
+                        <div>
+                          <div className="text-xs font-bold text-slate-900">{stItem.title}</div>
+                          <div className="text-[10px] text-slate-500 font-mono">{stItem.ref}</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="badge-active" style={{ fontSize: '9px' }}>Staged</span>
+                        <div className="text-[9.5px] text-slate-400 mt-0.5">{stItem.time}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* ACTIONS INSIDE MODAL */}
+              <div className="flex items-center gap-2 pt-2 border-t border-slate-200">
+                <button
+                  className="flex-1 py-2 bg-amber-400 hover:bg-amber-500 text-slate-900 rounded-lg font-extrabold text-xs flex items-center justify-center gap-1.5 transition"
+                  onClick={() => {
+                    setSelectedAreaForMove(viewModalArea.name);
+                    setCreateMoveModalOpen(true);
+                    setViewModalArea(null);
+                  }}
+                >
+                  <ArrowRight size={14} />
+                  <span>Create Move Task</span>
+                </button>
+
+                <button
+                  className="px-3 py-2 border border-slate-300 hover:bg-slate-100 text-slate-700 rounded-lg font-bold text-xs flex items-center gap-1.5 transition"
+                  onClick={() => {
+                    showToast(`🖨️ Barcode labels printed for ${viewModalArea.code}`);
+                  }}
+                >
+                  <Printer size={14} />
+                  <span>Print Barcode</span>
+                </button>
+
+                <button
+                  className="px-4 py-2 border border-slate-300 hover:bg-slate-100 text-slate-600 rounded-lg font-bold text-xs transition"
+                  onClick={() => setViewModalArea(null)}
+                >
+                  Close
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
+
       {toast && (
         <div style={{
           position: 'fixed', bottom: 24, right: 24,

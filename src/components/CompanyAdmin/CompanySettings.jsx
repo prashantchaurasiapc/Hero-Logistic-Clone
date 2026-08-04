@@ -1294,7 +1294,7 @@ export default function CompanySettings() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight leading-none">
-                13.1 Settings Dashboard
+                Settings Dashboard
               </h1>
               <div className="w-5 h-5 rounded-md border border-purple-200 bg-purple-50 text-purple-600 flex items-center justify-center cursor-pointer hover:bg-purple-100 transition-colors">
                 <Bookmark size={11} />
@@ -1748,73 +1748,6 @@ export default function CompanySettings() {
 
           </div>
 
-          {/* 4. DEVELOPER NOTES - SETTINGS DASHBOARD FOOTER BANNER */}
-          <div className="bg-blue-50/60 border border-blue-200/80 rounded-xl p-4 shadow-2xs text-left">
-            <div className="flex items-center gap-2 mb-2.5">
-              <div className="w-5 h-5 rounded bg-[#2563EB] text-white font-mono text-[10px] font-bold flex items-center justify-center">
-                &lt;/&gt;
-              </div>
-              <h3 className="text-xs font-black text-blue-950 uppercase tracking-wider">DEVELOPER NOTES – SETTINGS DASHBOARD</h3>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 text-xs">
-              <div>
-                <h4 className="font-extrabold text-blue-900 mb-1 uppercase text-[8.5px] tracking-wider">1. PURPOSE</h4>
-                <ul className="space-y-0.5 text-[9.5px] text-slate-600 font-medium">
-                  <li>• Central overview of system configuration and platform health.</li>
-                  <li>• Quick access to key settings and actions.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-blue-900 mb-1 uppercase text-[8.5px] tracking-wider">2. KEY FEATURES</h4>
-                <ul className="space-y-0.5 text-[9.5px] text-slate-600 font-medium">
-                  <li>• Setup checklist with completion status.</li>
-                  <li>• System alerts and important notifications.</li>
-                  <li>• Quick shortcuts to all settings modules.</li>
-                  <li>• Integration and user activity overview.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-blue-900 mb-1 uppercase text-[8.5px] tracking-wider">3. AUTOMATION & ALERTS</h4>
-                <ul className="space-y-0.5 text-[9.5px] text-slate-600 font-medium">
-                  <li>• Real-time alerts for issues and warnings.</li>
-                  <li>• Incomplete setup notifications.</li>
-                  <li>• Integration sync status updates.</li>
-                  <li>• AI subscription status and usage.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-blue-900 mb-1 uppercase text-[8.5px] tracking-wider">4. PERMISSIONS</h4>
-                <ul className="space-y-0.5 text-[9.5px] text-slate-600 font-medium">
-                  <li>• Admin: Full access to all settings.</li>
-                  <li>• Managers: Limited access to relevant settings.</li>
-                  <li>• Branch: View branch specific settings only.</li>
-                  <li>• Users: No access to settings.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-blue-900 mb-1 uppercase text-[8.5px] tracking-wider">5. DATA SOURCES</h4>
-                <ul className="space-y-0.5 text-[9.5px] text-slate-600 font-medium">
-                  <li>• System configuration data.</li>
-                  <li>• User and role management.</li>
-                  <li>• Integration health and sync status.</li>
-                  <li>• System logs and notifications.</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="mt-3 pt-2 border-t border-blue-200/60 flex items-center justify-between text-[8.5px] text-slate-500 font-semibold">
-              <div className="flex items-center gap-1.5">
-                <RefreshCw size={10} className="text-[#2563EB] animate-spin-slow" />
-                <span>All times shown in your local time (AEST) • Data auto-refreshes every 5 minutes</span>
-              </div>
-            </div>
-          </div>
-
         </div>
       )}
 
@@ -1829,7 +1762,7 @@ export default function CompanySettings() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none">
-                  13.2 Company Settings
+                  Company Settings
                 </h1>
                 <div className="w-5 h-5 rounded-md border border-purple-200 bg-purple-50 text-purple-600 flex items-center justify-center cursor-pointer">
                   <Bookmark size={11} />
@@ -2813,73 +2746,7 @@ export default function CompanySettings() {
             </div>
           )}
 
-          {/* DEVELOPER NOTES BANNER - 13.2 COMPANY SETTINGS */}
-          <div className="bg-blue-50/60 border border-blue-200/80 rounded-xl p-4 shadow-2xs text-left mt-6">
-            <div className="flex items-center gap-2 mb-2.5">
-              <div className="w-5 h-5 rounded bg-[#2563EB] text-white font-mono text-[10px] font-bold flex items-center justify-center">
-                &lt;/&gt;
-              </div>
-              <h3 className="text-xs font-black text-blue-950 uppercase tracking-wider">DEVELOPER NOTES – COMPANY SETTINGS</h3>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 text-xs">
-              <div>
-                <h4 className="font-extrabold text-blue-900 mb-1 uppercase text-[8.5px] tracking-wider">1. PURPOSE</h4>
-                <ul className="space-y-0.5 text-[9.5px] text-slate-600 font-medium">
-                  <li>• Central hub for company configuration.</li>
-                  <li>• Controls branding, financial, and operational defaults.</li>
-                  <li>• Applies to all modules and transactions.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-blue-900 mb-1 uppercase text-[8.5px] tracking-wider">2. KEY FEATURES</h4>
-                <ul className="space-y-0.5 text-[9.5px] text-slate-600 font-medium">
-                  <li>• Company profile and contact details.</li>
-                  <li>• Branding (logo and colours).</li>
-                  <li>• Financial, tax and payment settings.</li>
-                  <li>• Operational preferences and defaults.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-blue-900 mb-1 uppercase text-[8.5px] tracking-wider">3. VALIDATION & RULES</h4>
-                <ul className="space-y-0.5 text-[9.5px] text-slate-600 font-medium">
-                  <li>• ABN must be valid (11 digits).</li>
-                  <li>• Email must be unique.</li>
-                  <li>• GST rate based on country.</li>
-                  <li>• Changes affect system-wide settings.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-blue-900 mb-1 uppercase text-[8.5px] tracking-wider">4. PERMISSIONS</h4>
-                <ul className="space-y-0.5 text-[9.5px] text-slate-600 font-medium">
-                  <li>• Admin: Full access to all settings.</li>
-                  <li>• Managers: View most settings.</li>
-                  <li>• Branch: View branch-related settings only.</li>
-                  <li>• Users: No access.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-blue-900 mb-1 uppercase text-[8.5px] tracking-wider">5. DATA SOURCES</h4>
-                <ul className="space-y-0.5 text-[9.5px] text-slate-600 font-medium">
-                  <li>• User input.</li>
-                  <li>• System defaults.</li>
-                  <li>• Integration settings.</li>
-                  <li>• Subscription plan limitations.</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="mt-3 pt-2 border-t border-blue-200/60 flex items-center justify-between text-[8.5px] text-slate-500 font-semibold">
-              <div className="flex items-center gap-1.5">
-                <RefreshCw size={10} className="text-[#2563EB] animate-spin-slow" />
-                <span>All times shown in your local time (AEST) • Data auto-refreshes every 5 minutes</span>
-              </div>
-            </div>
-          </div>
 
         </div>
       )}
@@ -2895,7 +2762,7 @@ export default function CompanySettings() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none">
-                  13.3 Users, Roles & Permissions
+                  Users, Roles & Permissions
                 </h1>
                 <div className="w-5 h-5 rounded-md border border-purple-200 bg-purple-50 text-purple-600 flex items-center justify-center cursor-pointer">
                   <Bookmark size={11} />
@@ -3590,74 +3457,7 @@ export default function CompanySettings() {
             </div>
           )}
 
-          {/* 4. DEVELOPER NOTES - USERS, ROLES & PERMISSIONS FOOTER BANNER */}
-          <div className="bg-blue-50/60 border border-blue-200/80 rounded-xl p-4 shadow-2xs text-left mt-6">
-            <div className="flex items-center gap-2 mb-2.5">
-              <div className="w-5 h-5 rounded bg-[#2563EB] text-white font-mono text-[10px] font-bold flex items-center justify-center">
-                &lt;/&gt;
-              </div>
-              <h3 className="text-xs font-black text-blue-950 uppercase tracking-wider">DEVELOPER NOTES – USERS, ROLES & PERMISSIONS</h3>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 text-xs">
-              <div>
-                <h4 className="font-extrabold text-blue-900 mb-1 uppercase text-[8.5px] tracking-wider">1. PURPOSE</h4>
-                <ul className="space-y-0.5 text-[9.5px] text-slate-600 font-medium">
-                  <li>• Centralised user and role management.</li>
-                  <li>• Role-based access control (RBAC).</li>
-                  <li>• Branch-level access restrictions.</li>
-                  <li>• Audit all user and permission changes.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-blue-900 mb-1 uppercase text-[8.5px] tracking-wider">2. KEY FEATURES</h4>
-                <ul className="space-y-0.5 text-[9.5px] text-slate-600 font-medium">
-                  <li>• User list with search and filters.</li>
-                  <li>• Create, edit, invite and deactivate users.</li>
-                  <li>• Predefined and custom roles.</li>
-                  <li>• Permission sets with granular control.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-blue-900 mb-1 uppercase text-[8.5px] tracking-wider">3. PERMISSIONS MANAGEMENT</h4>
-                <ul className="space-y-0.5 text-[9.5px] text-slate-600 font-medium">
-                  <li>• Module-level permissions.</li>
-                  <li>• Action-level permissions (View, Create, Edit, Delete).</li>
-                  <li>• Data-level restrictions by branch.</li>
-                  <li>• Custom permission sets.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-blue-900 mb-1 uppercase text-[8.5px] tracking-wider">4. SECURITY & ACCESS</h4>
-                <ul className="space-y-0.5 text-[9.5px] text-slate-600 font-medium">
-                  <li>• Strong password and session policies.</li>
-                  <li>• Optional 2FA for all admin users.</li>
-                  <li>• Role change and login activity logs.</li>
-                  <li>• Auto logout for inactive sessions.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-blue-900 mb-1 uppercase text-[8.5px] tracking-wider">5. DATA SOURCES</h4>
-                <ul className="space-y-0.5 text-[9.5px] text-slate-600 font-medium">
-                  <li>• User data and profiles.</li>
-                  <li>• Roles and permission definitions.</li>
-                  <li>• Branch and location data.</li>
-                  <li>• Login and activity logs.</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="mt-3 pt-2 border-t border-blue-200/60 flex items-center justify-between text-[8.5px] text-slate-500 font-semibold">
-              <div className="flex items-center gap-1.5">
-                <RefreshCw size={10} className="text-[#2563EB] animate-spin-slow" />
-                <span>All times shown in your local time (AEST) • Data auto-refreshes every 5 minutes</span>
-              </div>
-            </div>
-          </div>
 
         </div>
       )}
@@ -3673,7 +3473,7 @@ export default function CompanySettings() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none">
-                  13.4 Workflow & Automation Rules
+                  Workflow & Automation Rules
                 </h1>
                 <div className="w-5 h-5 rounded-md border border-purple-200 bg-purple-50 text-purple-600 flex items-center justify-center cursor-pointer">
                   <Bookmark size={11} />
@@ -4141,77 +3941,7 @@ export default function CompanySettings() {
 
           </div>
 
-          {/* DEVELOPER NOTES - WORKFLOW & AUTOMATION RULES FOOTER BANNER MATCHING SCREENSHOT 2 */}
-          <div className="bg-blue-50/60 border border-blue-200/80 rounded-xl p-4 shadow-2xs text-left mt-6">
-            <div className="flex items-center gap-2 mb-2.5">
-              <div className="w-5 h-5 rounded bg-[#2563EB] text-white font-mono text-[10px] font-bold flex items-center justify-center">
-                &lt;/&gt;
-              </div>
-              <h3 className="text-xs font-black text-blue-950 uppercase tracking-wider">DEVELOPER NOTES – WORKFLOW & AUTOMATION RULES</h3>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 text-xs">
-              <div>
-                <h4 className="font-extrabold text-blue-900 mb-1 uppercase text-[8.5px] tracking-wider">1. PURPOSE</h4>
-                <ul className="space-y-0.5 text-[9.5px] text-slate-600 font-medium">
-                  <li>• Configure and manage automation rules.</li>
-                  <li>• Improve efficiency with smart workflows.</li>
-                  <li>• Reduce manual tasks and errors.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-blue-900 mb-1 uppercase text-[8.5px] tracking-wider">2. KEY FEATURES</h4>
-                <ul className="space-y-0.5 text-[9.5px] text-slate-600 font-medium">
-                  <li>• Rule creation with trigger & action.</li>
-                  <li>• Enable/disable rules.</li>
-                  <li>• Execution logs and performance.</li>
-                  <li>• Time saving and analytics.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-blue-900 mb-1 uppercase text-[8.5px] tracking-wider">3. RULE CATEGORIES</h4>
-                <ul className="space-y-0.5 text-[9.5px] text-slate-600 font-medium">
-                  <li>• Invoice Automation.</li>
-                  <li>• Payment Reminders.</li>
-                  <li>• Compliance Reminders.</li>
-                  <li>• Load Status Actions.</li>
-                  <li>• Customer Notifications.</li>
-                  <li>• Approval Workflows.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-blue-900 mb-1 uppercase text-[8.5px] tracking-wider">4. RULE COMPONENTS</h4>
-                <ul className="space-y-0.5 text-[9.5px] text-slate-600 font-medium">
-                  <li>• Trigger: Event or condition.</li>
-                  <li>• Condition (optional).</li>
-                  <li>• Action: Email, SMS, In-App, Create Record.</li>
-                  <li>• Filters: Branch, Role, Date, etc.</li>
-                  <li>• Run: Real-time or scheduled.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-blue-900 mb-1 uppercase text-[8.5px] tracking-wider">5. DATA SOURCES</h4>
-                <ul className="space-y-0.5 text-[9.5px] text-slate-600 font-medium">
-                  <li>• Loads, Invoices, Drivers, Vehicles.</li>
-                  <li>• Customers, Branches.</li>
-                  <li>• Compliance, Maintenance.</li>
-                  <li>• User and role data.</li>
-                  <li>• System notifications.</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="mt-3 pt-2 border-t border-blue-200/60 flex items-center justify-between text-[8.5px] text-slate-500 font-semibold">
-              <div className="flex items-center gap-1.5">
-                <RefreshCw size={10} className="text-[#2563EB] animate-spin-slow" />
-                <span>All times shown in your local time (AEST) • Data auto-refreshes every 5 minutes</span>
-              </div>
-            </div>
-          </div>
 
         </div>
       )}
@@ -4227,7 +3957,7 @@ export default function CompanySettings() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none">
-                  13.5 AI Configuration
+                  AI Configuration
                 </h1>
                 <div className="w-5 h-5 rounded-md border border-purple-200 bg-purple-50 text-purple-600 flex items-center justify-center cursor-pointer hover:bg-purple-100 transition-colors">
                   <Bookmark size={11} />
@@ -5005,73 +4735,7 @@ export default function CompanySettings() {
             </div>
           )}
 
-          {/* DEVELOPER NOTES - AI CONFIGURATION FOOTER BANNER */}
-          <div className="bg-blue-50/60 border border-blue-200/80 rounded-xl p-4 shadow-2xs text-left">
-            <div className="flex items-center gap-2 mb-2.5">
-              <div className="w-5 h-5 rounded bg-[#2563EB] text-white font-mono text-[10px] font-bold flex items-center justify-center">
-                &lt;/&gt;
-              </div>
-              <h3 className="text-xs font-black text-blue-950 uppercase tracking-wider">DEVELOPER NOTES – AI CONFIGURATION</h3>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 text-xs">
-              <div>
-                <h4 className="font-extrabold text-blue-900 mb-1 uppercase text-[8.5px] tracking-wider">1. PURPOSE</h4>
-                <ul className="space-y-0.5 text-[9.5px] text-slate-600 font-medium">
-                  <li>• Central hub for AI and automation configuration.</li>
-                  <li>• Enable/disable AI features and set preferences.</li>
-                  <li>• Monitor usage, accuracy and system health.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-blue-900 mb-1 uppercase text-[8.5px] tracking-wider">2. KEY FEATURES</h4>
-                <ul className="space-y-0.5 text-[9.5px] text-slate-600 font-medium">
-                  <li>• Toggle AI features on/off.</li>
-                  <li>• Configure models and confidence thresholds.</li>
-                  <li>• Set auto-execute rules and triggers.</li>
-                  <li>• Track usage and performance metrics.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-blue-900 mb-1 uppercase text-[8.5px] tracking-wider">3. AI MODELS</h4>
-                <ul className="space-y-0.5 text-[9.5px] text-slate-600 font-medium">
-                  <li>• Manage AI models and versions.</li>
-                  <li>• Set default model per feature.</li>
-                  <li>• Support multiple providers and models.</li>
-                  <li>• Monitor model performance.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-blue-900 mb-1 uppercase text-[8.5px] tracking-wider">4. AUTOMATION & RULES</h4>
-                <ul className="space-y-0.5 text-[9.5px] text-slate-600 font-medium">
-                  <li>• Define triggers, conditions and actions.</li>
-                  <li>• Set schedules and dependencies.</li>
-                  <li>• Enable/disable automation workflows.</li>
-                  <li>• View execution logs and results.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-blue-900 mb-1 uppercase text-[8.5px] tracking-wider">5. DATA & SECURITY</h4>
-                <ul className="space-y-0.5 text-[9.5px] text-slate-600 font-medium">
-                  <li>• Manage data sources and permissions.</li>
-                  <li>• Ensure data privacy and compliance.</li>
-                  <li>• Audit AI usage and configuration changes.</li>
-                  <li>• Role-based access to AI settings.</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="mt-3 pt-2 border-t border-blue-200/60 flex items-center justify-between text-[8.5px] text-slate-500 font-semibold">
-              <div className="flex items-center gap-1.5">
-                <RefreshCw size={10} className="text-[#2563EB] animate-spin-slow" />
-                <span>All times shown in your local time (AEST) • Data auto-refreshes every 5 minutes</span>
-              </div>
-            </div>
-          </div>
 
         </div>
       )}
@@ -5086,7 +4750,7 @@ export default function CompanySettings() {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none">13.6 Integrations</h1>
+                <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none">Integrations</h1>
                 <div className="w-5 h-5 rounded-md border border-amber-200 bg-amber-50 text-amber-500 flex items-center justify-center cursor-pointer hover:bg-amber-100 transition-colors">
                   <Star size={11} />
                 </div>
@@ -5602,34 +5266,7 @@ export default function CompanySettings() {
             </div>
           )}
 
-          {/* DEVELOPER NOTES FOOTER */}
-          <div className="bg-blue-50/60 border border-blue-200/80 rounded-xl p-4 shadow-2xs text-left">
-            <div className="flex items-center gap-2 mb-2.5">
-              <div className="w-5 h-5 rounded bg-[#2563EB] text-white font-mono text-[10px] font-bold flex items-center justify-center">&lt;/&gt;</div>
-              <h3 className="text-xs font-black text-blue-950 uppercase tracking-wider">DEVELOPER NOTES – INTEGRATIONS</h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
-              {[
-                { title: '1. PURPOSE', items: ['Manage third-party integrations.', 'Monitor sync status and data flow.', 'Ensure secure and reliable connections.'] },
-                { title: '2. KEY FEATURES', items: ['Connect, configure and test integrations.', 'Real-time sync status and health-monitoring.', 'Auto-sync scheduling and manual sync.', 'Error handling and retry mechanisms.'] },
-                { title: '3. CATEGORIES', items: ['Accounting & Finance.', 'GPS / Telematics.', 'Compliance & EWD.', 'Payments.', 'Communication.'] },
-                { title: '4. DATA & SYNC', items: ['Two-way or one-way sync.', 'Field mapping and data validation.', 'Data sync to reduce API usage.', 'Sync logs and history.'] },
-                { title: '5. SECURITY & ACCESS', items: ['Secure OAuth2 authentication.', 'Encrypted data transmission.', 'Role-based integration management.', 'Audit log for all integration changes.'] },
-                { title: '6. DATA SOURCES', items: ['External system APIs.', 'Webhooks and real-time events.', 'Manual data import/export.', 'System configuration settings.'] },
-              ].map((col, i) => (
-                <div key={i}>
-                  <h4 className="font-extrabold text-blue-900 mb-1 uppercase text-[8.5px] tracking-wider">{col.title}</h4>
-                  <ul className="space-y-0.5 text-[9.5px] text-slate-600 font-medium">{col.items.map((item, j) => <li key={j}>• {item}</li>)}</ul>
-                </div>
-              ))}
-            </div>
-            <div className="mt-3 pt-2 border-t border-blue-200/60 flex items-center justify-between text-[8.5px] text-slate-500 font-semibold">
-              <div className="flex items-center gap-1.5">
-                <RefreshCw size={10} className="text-[#2563EB] animate-spin-slow" />
-                <span>All times shown in your local time (AEST) • Data auto-refreshes every 5 minutes</span>
-              </div>
-            </div>
-          </div>
+
 
         </div>
       )}
@@ -5643,7 +5280,7 @@ export default function CompanySettings() {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none">13.7 Notifications & Communication Settings</h1>
+                <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none">Notifications & Communication Settings</h1>
                 <div className="w-5 h-5 rounded-md border border-amber-200 bg-amber-50 text-amber-500 flex items-center justify-center cursor-pointer hover:bg-amber-100 transition-colors">
                   <Star size={11} />
                 </div>
@@ -6184,33 +5821,7 @@ export default function CompanySettings() {
             </div>
           )}
 
-          {/* DEVELOPER NOTES FOOTER */}
-          <div className="bg-blue-50/60 border border-blue-200/80 rounded-xl p-4 shadow-2xs text-left">
-            <div className="flex items-center gap-2 mb-2.5">
-              <div className="w-5 h-5 rounded bg-[#2563EB] text-white font-mono text-[10px] font-bold flex items-center justify-center">&lt;/&gt;</div>
-              <h3 className="text-xs font-black text-blue-950 uppercase tracking-wider">DEVELOPER NOTES – NOTIFICATIONS & COMMUNICATION SETTINGS</h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-              {[
-                { title: '1. PURPOSE', items: ['Central hub for all notification settings.', 'Configure channels, templates and rules.', 'Improve communication and user awareness.'] },
-                { title: '2. KEY FEATURES', items: ['Multi-channel notification support.', 'Custom templates and variables.', 'Rule-based notifications.', 'Recipient groups and preferences.'] },
-                { title: '3. CHANNELS', items: ['Email, SMS, Push, In-App, Voice, WhatsApp.', 'Configure channels, templates and rules.', 'Track delivery status and success rate.'] },
-                { title: '4. NOTIFICATION RULES', items: ['Event-based triggers.', 'Conditions, recipients and schedules.', 'Escalation and reminder rules.'] },
-                { title: '5. DATA & SECURITY', items: ['Secure message delivery.', 'Audit logs for all notifications.', 'Opt-in/out and quiet hours support.'] },
-              ].map((col, i) => (
-                <div key={i}>
-                  <h4 className="font-extrabold text-blue-900 mb-1 uppercase text-[8.5px] tracking-wider">{col.title}</h4>
-                  <ul className="space-y-0.5 text-[9.5px] text-slate-600 font-medium">{col.items.map((item, j) => <li key={j}>• {item}</li>)}</ul>
-                </div>
-              ))}
-            </div>
-            <div className="mt-3 pt-2 border-t border-blue-200/60 flex items-center justify-between text-[8.5px] text-slate-500 font-semibold">
-              <div className="flex items-center gap-1.5">
-                <RefreshCw size={10} className="text-[#2563EB] animate-spin-slow" />
-                <span>All times shown in your local time (AEST) • Data auto-refreshes every 5 minutes</span>
-              </div>
-            </div>
-          </div>
+
 
         </div>
       )}
@@ -6225,7 +5836,7 @@ export default function CompanySettings() {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none">13.8 Security & Audit Logs</h1>
+                <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none">Security & Audit Logs</h1>
                 <div className="w-5 h-5 rounded-md border border-amber-200 bg-amber-50 text-amber-500 flex items-center justify-center cursor-pointer hover:bg-amber-100 transition-colors">
                   <Star size={11} />
                 </div>
@@ -7016,33 +6627,7 @@ export default function CompanySettings() {
             </div>
           )}
 
-          {/* DEVELOPER NOTES FOOTER */}
-          <div className="bg-blue-50/60 border border-blue-200/80 rounded-xl p-4 shadow-2xs text-left">
-            <div className="flex items-center gap-2 mb-2.5">
-              <div className="w-5 h-5 rounded bg-[#2563EB] text-white font-mono text-[10px] font-bold flex items-center justify-center">&lt;/&gt;</div>
-              <h3 className="text-xs font-black text-blue-950 uppercase tracking-wider">DEVELOPER NOTES – SECURITY & AUDIT LOGS</h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-              {[
-                { title: '1. PURPOSE', items: ['Track and monitor all critical system activities.', 'Ensure data security and user accountability.', 'Support compliance and audit requirements.'] },
-                { title: '2. KEY FEATURES', items: ['Comprehensive audit logging.', 'Real-time security event detection.', 'Permission change tracking.', 'Data export and access monitoring.'] },
-                { title: '3. EVENT CATEGORIES', items: ['Authentication & Login events.', 'Data Create, Update, Delete.', 'Permission changes & role updates.', 'Data exports & downloads.', 'Security events & blocked actions.'] },
-                { title: '4. SECURITY & ACCESS', items: ['Role-based access to logs.', 'Admins can view all logs.', 'Users can view limited logs.', 'Logs are tamper-proof.'] },
-                { title: '5. DATA RETENTION', items: ['Logs retained for minimum 12 months.', 'Configurable retention period.', 'Older logs archived securely.', 'Export logs for compliance.'] },
-              ].map((col, i) => (
-                <div key={i}>
-                  <h4 className="font-extrabold text-blue-900 mb-1 uppercase text-[8.5px] tracking-wider">{col.title}</h4>
-                  <ul className="space-y-0.5 text-[9.5px] text-slate-600 font-medium">{col.items.map((item, j) => <li key={j}>• {item}</li>)}</ul>
-                </div>
-              ))}
-            </div>
-            <div className="mt-3 pt-2 border-t border-blue-200/60 flex items-center justify-between text-[8.5px] text-slate-500 font-semibold">
-              <div className="flex items-center gap-1.5">
-                <RefreshCw size={10} className="text-[#2563EB] animate-spin-slow" />
-                <span>All times shown in your local time (AEST) • Data auto-refreshes every 5 minutes</span>
-              </div>
-            </div>
-          </div>
+
 
         </div>
       )}
@@ -7056,7 +6641,7 @@ export default function CompanySettings() {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none">13.9 Subscription & Billing</h1>
+                <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none">Subscription & Billing</h1>
                 <div className="w-5 h-5 rounded-md border border-amber-200 bg-amber-50 text-amber-500 flex items-center justify-center cursor-pointer hover:bg-amber-100 transition-colors">
                   <Star size={11} />
                 </div>
@@ -7644,33 +7229,7 @@ export default function CompanySettings() {
             </div>
           )}
 
-          {/* DEVELOPER NOTES FOOTER */}
-          <div className="bg-blue-50/60 border border-blue-200/80 rounded-xl p-4 shadow-2xs text-left">
-            <div className="flex items-center gap-2 mb-2.5">
-              <div className="w-5 h-5 rounded bg-[#2563EB] text-white font-mono text-[10px] font-bold flex items-center justify-center">&lt;/&gt;</div>
-              <h3 className="text-xs font-black text-blue-950 uppercase tracking-wider">DEVELOPER NOTES – SUBSCRIPTION & BILLING</h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-              {[
-                { title: '1. PURPOSE', items: ['Manage subscription plans and billing.', 'Track usage, invoices and payments.', 'Handle add-ons and upgrades.'] },
-                { title: '2. KEY FEATURES', items: ['Plan details and billing cycle.', 'Real-time usage with limits.', 'Add-ons management.', 'Invoice and payment history.', 'Payment method management.'] },
-                { title: '3. BILLING COMPONENTS', items: ['Plans, Users, Usage, Add-ons.', 'Invoices, Payments, Discounts.', 'Taxes, Currency, Billing cycle.', 'Quotes and Orders.'] },
-                { title: '4. INTEGRATIONS', items: ['Payment Gateway (Stripe/Adyen).', 'Accounting (Xero, MYOB, QBO).', 'Email for invoices & receipts.', 'Usage metering service.'] },
-                { title: '5. SECURITY & DATA', items: ['Secure payment tokenization.', 'PCI DSS compliant.', 'Audit trail for billing changes.', 'Data retention per compliance.'] },
-              ].map((col, i) => (
-                <div key={i}>
-                  <h4 className="font-extrabold text-blue-900 mb-1 uppercase text-[8.5px] tracking-wider">{col.title}</h4>
-                  <ul className="space-y-0.5 text-[9.5px] text-slate-600 font-medium">{col.items.map((item, j) => <li key={j}>• {item}</li>)}</ul>
-                </div>
-              ))}
-            </div>
-            <div className="mt-3 pt-2 border-t border-blue-200/60 flex items-center justify-between text-[8.5px] text-slate-500 font-semibold">
-              <div className="flex items-center gap-1.5">
-                <RefreshCw size={10} className="text-[#2563EB] animate-spin-slow" />
-                <span>All times shown in your local time (AEST) • Data auto-refreshes every 5 minutes</span>
-              </div>
-            </div>
-          </div>
+
 
         </div>
       )}

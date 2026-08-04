@@ -228,7 +228,7 @@ function App() {
         <Route path="/company-admin" element={<DashboardLayout role="company-admin" />}>
           <Route path="command-centre" element={<CommandCentre />} />
           <Route path="loads" element={<Loads />} />
-          <Route path="load-inbox" element={<Loads />} />
+          <Route path="load-inbox" element={<LoadInbox />} />
           <Route path="live-tracking" element={<LiveTracking />} />
           <Route path="drivers" element={<Drivers />} />
           <Route path="vehicles" element={<Vehicles />} />
@@ -265,7 +265,7 @@ function App() {
           <Route path="dispatch-dashboard" element={<CommandCenter />} />
           <Route path="command-center" element={<CommandCenter />} />
           <Route path="create-load" element={<Loads />} />
-          <Route path="load-inbox" element={<Navigate to="/dispatcher/dashboard" replace />} />
+          <Route path="load-inbox" element={<LoadInbox />} />
           <Route path="active-loads" element={<DispatcherLoads />} />
           <Route path="loads" element={<DispatcherLoads />} />
           <Route path="planning-board" element={<TerminalWorkspace />} />
@@ -430,7 +430,7 @@ function App() {
           <Route path="notifications" element={<CustomerNotifications />} />
           <Route path="dispatcher-chat" element={<CustomerDispatcherChat />} />
           <Route path="support" element={<CustomerSupport />} />
-          <Route path="settings" element={<CustomerSettings />} />
+          <Route path="settings" element={<Navigate to="/customer/account-users" replace />} />
         </Route>
 
       </Routes>

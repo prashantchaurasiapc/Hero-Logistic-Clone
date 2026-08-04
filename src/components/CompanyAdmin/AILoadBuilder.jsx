@@ -158,7 +158,7 @@ export default function AILoadBuilder({ onBack }) {
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <h1 className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight">
-                    AI Load Builder <span className="text-indigo-600 text-sm sm:text-lg font-bold">(2.2A)</span>
+                    AI Load Builder
                   </h1>
                   <span className="px-2 py-0.5 bg-indigo-600 text-white text-[9px] font-black uppercase tracking-widest rounded-md">BETA</span>
                 </div>

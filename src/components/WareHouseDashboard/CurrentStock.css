@@ -103,7 +103,7 @@
 }
 
 .wh-stock-right-col {
-  width: 320px;
+  width: 230px;
   flex-shrink: 0;
 }
 
@@ -1003,12 +1003,9 @@
 }
 
 /* Responsive */
-@media (max-width: 1280px) {
+@media (max-width: 1024px) {
   .wh-stock-master-grid { flex-direction: column; }
   .wh-stock-right-col { width: 100%; }
-}
-
-@media (max-width: 1024px) {
   .wh-stock-dropdowns-grid { grid-template-columns: repeat(2, 1fr); }
 }
 

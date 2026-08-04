@@ -147,50 +147,50 @@ export default function StandaloneDocuments() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
         <div 
           onClick={() => setActiveCategory('Company Documents')}
-          className={`bg-white border rounded-2xl p-4 sm:p-5 shadow-xs cursor-pointer transition-all ${activeCategory === 'Company Documents' ? 'border-blue-500 ring-2 ring-blue-500/10' : 'border-slate-200/80 hover:border-blue-300'}`}
+          className={`bg-white border rounded-xl p-3 sm:p-3.5 shadow-xs cursor-pointer transition-all ${activeCategory === 'Company Documents' ? 'border-blue-500 ring-2 ring-blue-500/10' : 'border-slate-200/80 hover:border-blue-300'}`}
         >
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-1.5">
             <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Company Documents</span>
-            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0"><Building size={16} /></div>
+            <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0"><Building size={14} /></div>
           </div>
-          <p className="text-2xl font-black text-slate-900">SOPs & Policies</p>
-          <span className="text-[10px] font-bold text-blue-600 mt-1">NHVA & Safety Certs</span>
+          <p className="text-base sm:text-lg font-black text-slate-900 leading-tight">SOPs & Policies</p>
+          <span className="text-[10px] font-bold text-blue-600 mt-0.5 block">NHVA & Safety Certs</span>
         </div>
 
         <div 
           onClick={() => setActiveCategory('Driver Documents')}
-          className={`bg-white border rounded-2xl p-4 sm:p-5 shadow-xs cursor-pointer transition-all ${activeCategory === 'Driver Documents' ? 'border-purple-500 ring-2 ring-purple-500/10' : 'border-slate-200/80 hover:border-purple-300'}`}
+          className={`bg-white border rounded-xl p-3 sm:p-3.5 shadow-xs cursor-pointer transition-all ${activeCategory === 'Driver Documents' ? 'border-purple-500 ring-2 ring-purple-500/10' : 'border-slate-200/80 hover:border-purple-300'}`}
         >
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-1.5">
             <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Driver Documents</span>
-            <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-xs shrink-0"><UserCheck size={16} /></div>
+            <div className="w-7 h-7 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-xs shrink-0"><UserCheck size={14} /></div>
           </div>
-          <p className="text-2xl font-black text-slate-900">Licenses & Meds</p>
-          <span className="text-[10px] font-bold text-emerald-600 mt-1">100% Compliant</span>
+          <p className="text-base sm:text-lg font-black text-slate-900 leading-tight">Licenses & Meds</p>
+          <span className="text-[10px] font-bold text-emerald-600 mt-0.5 block">100% Compliant</span>
         </div>
 
         <div 
           onClick={() => setActiveCategory('Vehicle Documents')}
-          className={`bg-white border rounded-2xl p-4 sm:p-5 shadow-xs cursor-pointer transition-all ${activeCategory === 'Vehicle Documents' ? 'border-emerald-500 ring-2 ring-emerald-500/10' : 'border-slate-200/80 hover:border-emerald-300'}`}
+          className={`bg-white border rounded-xl p-3 sm:p-3.5 shadow-xs cursor-pointer transition-all ${activeCategory === 'Vehicle Documents' ? 'border-emerald-500 ring-2 ring-emerald-500/10' : 'border-slate-200/80 hover:border-emerald-300'}`}
         >
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-1.5">
             <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Vehicle Documents</span>
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs shrink-0"><Truck size={16} /></div>
+            <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs shrink-0"><Truck size={14} /></div>
           </div>
-          <p className="text-2xl font-black text-slate-900">Rego & Insurance</p>
-          <span className="text-[10px] font-bold text-slate-500 mt-1">50 Fleet Vehicles</span>
+          <p className="text-base sm:text-lg font-black text-slate-900 leading-tight">Rego & Insurance</p>
+          <span className="text-[10px] font-bold text-slate-500 mt-0.5 block">50 Fleet Vehicles</span>
         </div>
 
         <div 
           onClick={() => setActiveCategory('Customer Documents')}
-          className={`bg-white border rounded-2xl p-4 sm:p-5 shadow-xs cursor-pointer transition-all ${activeCategory === 'Customer Documents' ? 'border-amber-500 ring-2 ring-amber-500/10' : 'border-slate-200/80 hover:border-amber-300'}`}
+          className={`bg-white border rounded-xl p-3 sm:p-3.5 shadow-xs cursor-pointer transition-all ${activeCategory === 'Customer Documents' ? 'border-amber-500 ring-2 ring-amber-500/10' : 'border-slate-200/80 hover:border-amber-300'}`}
         >
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-1.5">
             <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Customer Documents</span>
-            <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-xs shrink-0"><Users size={16} /></div>
+            <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-xs shrink-0"><Users size={14} /></div>
           </div>
-          <p className="text-2xl font-black text-slate-900">Contracts & PODs</p>
-          <span className="text-[10px] font-bold text-amber-600 mt-1">Signed Agreements & PODs</span>
+          <p className="text-base sm:text-lg font-black text-slate-900 leading-tight">Contracts & PODs</p>
+          <span className="text-[10px] font-bold text-amber-600 mt-0.5 block">Signed Agreements & PODs</span>
         </div>
       </div>
 

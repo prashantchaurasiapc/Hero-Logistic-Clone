@@ -114,14 +114,15 @@
 }
 
 .nav-item.active {
-  background-color: #FFD400 !important;
-  color: #0F172A !important;
+  background-color: #FFC700 !important;
+  color: #000000 !important;
   font-weight: 800 !important;
-  box-shadow: 0 4px 14px rgba(255, 212, 0, 0.35);
+  box-shadow: 0 4px 14px rgba(255, 199, 0, 0.35);
+  border: 1.5px solid #E6B200;
 }
 
 .nav-item.active .nav-icon {
-  color: #0F172A !important;
+  color: #000000 !important;
   opacity: 1;
 }
 

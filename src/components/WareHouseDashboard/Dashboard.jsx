@@ -268,13 +268,13 @@ export default function Dashboard() {
 
         .wh-metric-card {
           border-radius: 12px;
-          padding: 16px;
+          padding: 12px 14px;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
           background-color: #FFFFFF;
           border: 1px solid #E2E8F0;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+          box-shadow: 0 1px 3px rgba(0,0,0,0.03);
           transition: transform 0.15s, border-color 0.15s;
         }
 
@@ -286,13 +286,13 @@ export default function Dashboard() {
         .wh-metric-header {
           display: flex;
           align-items: flex-start;
-          gap: 14px;
+          gap: 10px;
         }
 
         .wh-metric-icon-box {
-          width: 42px;
-          height: 42px;
-          border-radius: 10px;
+          width: 34px;
+          height: 34px;
+          border-radius: 8px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -311,7 +311,7 @@ export default function Dashboard() {
         }
 
         .wh-metric-label {
-          font-size: 10px;
+          font-size: 9.5px;
           font-weight: 800;
           letter-spacing: 0.5px;
           color: #64748B;
@@ -319,22 +319,22 @@ export default function Dashboard() {
         }
 
         .wh-metric-value {
-          font-size: 26px;
+          font-size: 22px;
           font-weight: 900;
           line-height: 1.1;
-          margin: 2px 0;
+          margin: 1px 0;
           color: #0F172A;
         }
 
         .wh-metric-sub {
-          font-size: 10.5px;
+          font-size: 10px;
           color: #94A3B8;
           font-weight: 500;
         }
 
         .wh-metric-footer {
-          margin-top: 14px;
-          font-size: 11px;
+          margin-top: 8px;
+          font-size: 10.5px;
           font-weight: 700;
           color: #3B82F6;
           display: flex;
@@ -546,14 +546,14 @@ export default function Dashboard() {
         .wh-quick-actions-grid {
           display: grid;
           grid-template-columns: repeat(6, 1fr);
-          gap: 14px;
+          gap: 12px;
         }
 
         .wh-quick-action-btn {
           display: flex;
           align-items: center;
-          gap: 12px;
-          padding: 14px 16px;
+          gap: 10px;
+          padding: 12px 14px;
           border-radius: 10px;
           cursor: pointer;
           text-align: left;
@@ -658,12 +658,9 @@ export default function Dashboard() {
         .wh-notif-text { font-size: 12px; font-weight: 600; line-height: 1.3; color: #1E293B; }
         .wh-notif-time { font-size: 10px; color: #94A3B8; font-weight: 500; }
 
-        @media (max-width: 1280px) {
+        @media (max-width: 1024px) {
           .wh-top-metrics-grid { grid-template-columns: repeat(3, 1fr); }
           .wh-quick-actions-grid { grid-template-columns: repeat(3, 1fr); }
-        }
-
-        @media (max-width: 1024px) {
           .wh-middle-grid { grid-template-columns: 1fr; }
           .wh-bottom-grid { grid-template-columns: 1fr; }
         }
@@ -701,7 +698,7 @@ export default function Dashboard() {
         <div className="wh-metric-card">
           <div className="wh-metric-header">
             <div className="wh-metric-icon-box icon-blue">
-              <InboxIcon size={20} color="#3B82F6" />
+              <InboxIcon size={18} color="#3B82F6" />
             </div>
             <div className="wh-metric-text-group">
               <div className="wh-metric-label">INBOUND</div>
@@ -719,7 +716,7 @@ export default function Dashboard() {
         <div className="wh-metric-card">
           <div className="wh-metric-header">
             <div className="wh-metric-icon-box icon-green">
-              <BuildingIcon size={20} color="#10B981" />
+              <BuildingIcon size={18} color="#10B981" />
             </div>
             <div className="wh-metric-text-group">
               <div className="wh-metric-label">IN YARD</div>
@@ -737,7 +734,7 @@ export default function Dashboard() {
         <div className="wh-metric-card">
           <div className="wh-metric-header">
             <div className="wh-metric-icon-box icon-orange">
-              <ArrowSwapIcon size={20} color="#F97316" />
+              <ArrowSwapIcon size={18} color="#F97316" />
             </div>
             <div className="wh-metric-text-group">
               <div className="wh-metric-label">TO MOVE</div>
@@ -755,7 +752,7 @@ export default function Dashboard() {
         <div className="wh-metric-card">
           <div className="wh-metric-header">
             <div className="wh-metric-icon-box icon-purple">
-              <LayoutGridIcon size={20} color="#8B5CF6" />
+              <LayoutGridIcon size={18} color="#8B5CF6" />
             </div>
             <div className="wh-metric-text-group">
               <div className="wh-metric-label">LOAD LANES</div>
@@ -773,7 +770,7 @@ export default function Dashboard() {
         <div className="wh-metric-card">
           <div className="wh-metric-header">
             <div className="wh-metric-icon-box icon-yellow">
-              <TruckIcon size={20} color="#EAB308" />
+              <TruckIcon size={18} color="#EAB308" />
             </div>
             <div className="wh-metric-text-group">
               <div className="wh-metric-label">DISPATCH READY</div>

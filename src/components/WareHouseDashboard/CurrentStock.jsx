@@ -347,7 +347,7 @@ export default function CurrentStock() {
         }
 
         .wh-stock-right-col {
-          width: 265px;
+          width: 230px;
           flex-shrink: 0;
         }
 
@@ -676,13 +676,13 @@ export default function CurrentStock() {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 14px 16px;
+          padding: 10px 12px;
           border-bottom: 1px solid #F1F5F9;
           background: #FFFFFF;
         }
 
         .wh-drawer-title {
-          font-size: 11.5px;
+          font-size: 11px;
           font-weight: 900;
           letter-spacing: 0.5px;
           text-transform: uppercase;
@@ -690,14 +690,14 @@ export default function CurrentStock() {
           margin: 0;
         }
 
-        .wh-drawer-actions { display: flex; align-items: center; gap: 6px; }
+        .wh-drawer-actions { display: flex; align-items: center; gap: 4px; }
 
         .wh-drawer-icon-btn {
           background: transparent;
           border: none;
           color: #94A3B8;
           cursor: pointer;
-          padding: 4px;
+          padding: 3px;
           border-radius: 6px;
           display: flex;
           align-items: center;
@@ -705,42 +705,42 @@ export default function CurrentStock() {
         }
 
         .wh-drawer-hero {
-          padding: 16px;
+          padding: 12px;
           background: #F8FAFC;
           border-bottom: 1px solid #E2E8F0;
         }
 
         .wh-drawer-img-box {
           width: 100%;
-          height: 160px;
-          border-radius: 10px;
+          height: 105px;
+          border-radius: 8px;
           overflow: hidden;
-          margin-bottom: 12px;
+          margin-bottom: 10px;
           background: #E2E8F0;
           border: 1px solid #CBD5E1;
         }
 
         .wh-drawer-img-box img { width: 100%; height: 100%; object-fit: cover; }
         .wh-drawer-item-heading { display: flex; flex-direction: column; gap: 4px; }
-        .wh-hero-title-row { display: flex; justify-content: space-between; align-items: center; }
-        .wh-hero-title { font-size: 16px; font-weight: 900; color: #0F172A; margin: 0; }
-        .wh-hero-sub-row { display: flex; align-items: center; gap: 10px; }
-        .wh-hero-rego { font-size: 12px; font-weight: 800; color: #475569; }
-        .wh-hero-vin { font-size: 10.5px; color: #64748B; font-family: monospace; }
+        .wh-hero-title-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px; }
+        .wh-hero-title { font-size: 14px; font-weight: 900; color: #0F172A; margin: 0; }
+        .wh-hero-sub-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .wh-hero-rego { font-size: 11px; font-weight: 800; color: #475569; }
+        .wh-hero-vin { font-size: 9.5px; color: #64748B; font-family: monospace; word-break: break-all; }
 
-        .wh-drawer-details-body { display: flex; flex-direction: column; padding: 8px 0; flex: 1; }
-        .wh-detail-field { display: flex; align-items: flex-start; gap: 12px; padding: 10px 16px; border-bottom: 1px solid #F8FAFC; }
-        .field-icon { color: #64748B; margin-top: 2px; }
-        .field-content { display: flex; flex-direction: column; }
-        .field-label { font-size: 10px; color: #94A3B8; font-weight: 600; }
-        .field-value { font-size: 12px; color: #334155; font-weight: 600; }
+        .wh-drawer-details-body { display: flex; flex-direction: column; padding: 4px 0; flex: 1; }
+        .wh-detail-field { display: flex; align-items: flex-start; gap: 8px; padding: 8px 12px; border-bottom: 1px solid #F8FAFC; }
+        .field-icon { color: #64748B; margin-top: 1px; flex-shrink: 0; }
+        .field-content { display: flex; flex-direction: column; min-width: 0; }
+        .field-label { font-size: 9.5px; color: #94A3B8; font-weight: 600; }
+        .field-value { font-size: 11px; color: #334155; font-weight: 600; word-break: break-word; }
         .field-value.bold { font-weight: 800; color: #0F172A; }
 
         .wh-drawer-footer-actions {
-          padding: 16px;
+          padding: 12px;
           display: flex;
           flex-direction: column;
-          gap: 8px;
+          gap: 6px;
           background: #FFFFFF;
           border-top: 1px solid #E2E8F0;
         }
@@ -879,12 +879,9 @@ export default function CurrentStock() {
 
         @keyframes scanLaser { 0% { top: 0%; } 50% { top: 100%; } 100% { top: 0%; } }
 
-        @media (max-width: 1280px) {
+        @media (max-width: 1024px) {
           .wh-stock-master-grid { flex-direction: column; }
           .wh-stock-right-col { width: 100%; }
-        }
-
-        @media (max-width: 1024px) {
           .wh-stock-dropdowns-grid { grid-template-columns: repeat(2, 1fr); }
         }
 
