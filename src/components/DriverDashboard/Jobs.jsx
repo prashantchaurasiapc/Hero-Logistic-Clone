@@ -498,30 +498,6 @@ export default function Jobs() {
           </div>
         </div>
 
-        {/* ── DEVELOPER NOTES ── */}
-        <div style={{ background: '#0f172a', borderRadius: 16, padding: '28px 32px', color: '#fff' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
-            <span style={{ fontSize: 18 }}>💻</span>
-            <h2 style={{ margin: 0, fontSize: 16, fontWeight: 900, color: '#fff' }}>Developer Notes – Assigned Jobs</h2>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 24, fontSize: 11 }}>
-            {[
-              { num: '1.', title: 'Purpose', items: ['Provide drivers with a clear list of all jobs assigned to them.', 'Allow filtering, searching and quick actions.'] },
-              { num: '2.', title: 'Key Features', items: ['List view with status indicators.', 'Filter by status, date range and load type.', 'Search by Load ID, reference, customer or location.', 'Quick access to load details.'] },
-              { num: '3.', title: 'Data Sources', items: ['Loads module.', 'Assignments (driver allocations).', 'Customers & locations.', 'Load stops.'] },
-              { num: '4.', title: 'Security & Access', items: ['Drivers can only see jobs assigned to them.', 'Role-based data visibility.', 'All actions and views are logged.'] },
-              { num: '5.', title: 'Integrations', items: ['Messaging (dispatch ↔ driver).', 'Documents module.', 'Pre-start checklist.', 'Calendar / scheduling.'] },
-              { num: '6.', title: 'Performance', items: ['List loads in < 2 seconds.', 'Supports pagination / infinite scroll.', 'Auto-refresh every 5 minutes.'] },
-            ].map(({ num, title, items }) => (
-              <div key={title}>
-                <div style={{ fontSize: 12, fontWeight: 900, color: '#fff', marginBottom: 10 }}>{num} {title}</div>
-                <ul style={{ margin: 0, paddingLeft: 14, color: '#94a3b8', lineHeight: 1.8 }}>
-                  {items.map(item => <li key={item}>{item}</li>)}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </div>
 
         {/* ── FOOTER ── */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16, fontSize: 12, color: '#94a3b8', fontWeight: 600, flexWrap: 'wrap', gap: 8 }}>

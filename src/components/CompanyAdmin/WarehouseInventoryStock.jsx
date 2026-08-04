@@ -121,7 +121,7 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
             <span>Home</span> <span style={{ color: '#CBD5E1' }}>›</span> <span>Warehouse</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ cursor: 'pointer' }} onClick={onBack}>Warehouse Details</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ color: '#0F172A' }}>Inventory & Stock</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-            <h1 style={{ fontSize: 22, fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.5px' }}>9.3 Inventory & Stock - {wh.name}</h1>
+            <h1 style={{ fontSize: 22, fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.5px' }}>Inventory & Stock - {wh.name}</h1>
             <div style={{ width: 18, height: 18, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 4 }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
             </div>
@@ -549,83 +549,7 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
         )}
       </div>
 
-      {/* DEVELOPER NOTES */}
-      <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 12, padding: '24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 24, height: 24, borderRadius: 6, background: '#4F46E5', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <CodeIcon />
-          </div>
-          <h3 style={{ fontSize: 12, fontWeight: 900, color: '#1E293B', margin: 0, letterSpacing: '0.5px' }}>DEVELOPER NOTES - INVENTORY & STOCK</h3>
-        </div>
-        <div className="wh-devnotes-cols" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 24 }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-              <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#EEF2FF', color: '#4F46E5', fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>1</div>
-              <h4 style={{ fontSize: 10, fontWeight: 800, color: '#1E293B', letterSpacing: '0.5px', margin: 0 }}>PURPOSE</h4>
-            </div>
-            <ul style={{ paddingLeft: 16, margin: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <li style={{ fontSize: 10, color: '#475569', fontWeight: 500, lineHeight: 1.4 }}>Central inventory and stock management.</li>
-              <li style={{ fontSize: 10, color: '#475569', fontWeight: 500, lineHeight: 1.4 }}>Real-time stock visibility and valuation.</li>
-              <li style={{ fontSize: 10, color: '#475569', fontWeight: 500, lineHeight: 1.4 }}>Support for multiple locations and categories.</li>
-            </ul>
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-              <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#EEF2FF', color: '#4F46E5', fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>2</div>
-              <h4 style={{ fontSize: 10, fontWeight: 800, color: '#1E293B', letterSpacing: '0.5px', margin: 0 }}>KEY FEATURES</h4>
-            </div>
-            <ul style={{ paddingLeft: 16, margin: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <li style={{ fontSize: 10, color: '#475569', fontWeight: 500, lineHeight: 1.4 }}>Search, filter and sort stock items.</li>
-              <li style={{ fontSize: 10, color: '#475569', fontWeight: 500, lineHeight: 1.4 }}>Stock levels: on hand, reserved, available.</li>
-              <li style={{ fontSize: 10, color: '#475569', fontWeight: 500, lineHeight: 1.4 }}>Low stock and out of stock alerts.</li>
-              <li style={{ fontSize: 10, color: '#475569', fontWeight: 500, lineHeight: 1.4 }}>Stock valuation and cost tracking.</li>
-            </ul>
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-              <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#EEF2FF', color: '#4F46E5', fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>3</div>
-              <h4 style={{ fontSize: 10, fontWeight: 800, color: '#1E293B', letterSpacing: '0.5px', margin: 0 }}>AUTOMATION & ALERTS</h4>
-            </div>
-            <ul style={{ paddingLeft: 16, margin: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <li style={{ fontSize: 10, color: '#475569', fontWeight: 500, lineHeight: 1.4 }}>Auto-alert on low stock and out of stock.</li>
-              <li style={{ fontSize: 10, color: '#475569', fontWeight: 500, lineHeight: 1.4 }}>Expiry alerts for perishable/dated items.</li>
-              <li style={{ fontSize: 10, color: '#475569', fontWeight: 500, lineHeight: 1.4 }}>Min/max level monitoring and reorder suggestions.</li>
-              <li style={{ fontSize: 10, color: '#475569', fontWeight: 500, lineHeight: 1.4 }}>AI insights for demand and stock trends.</li>
-            </ul>
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-              <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#EEF2FF', color: '#4F46E5', fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>4</div>
-              <h4 style={{ fontSize: 10, fontWeight: 800, color: '#1E293B', letterSpacing: '0.5px', margin: 0 }}>PERMISSIONS</h4>
-            </div>
-            <ul style={{ paddingLeft: 16, margin: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <li style={{ fontSize: 10, color: '#475569', fontWeight: 500, lineHeight: 1.4 }}>Super Admin: Full access.</li>
-              <li style={{ fontSize: 10, color: '#475569', fontWeight: 500, lineHeight: 1.4 }}>Admin/Manager: Full access.</li>
-              <li style={{ fontSize: 10, color: '#475569', fontWeight: 500, lineHeight: 1.4 }}>Warehouse Staff: View & manage own location.</li>
-              <li style={{ fontSize: 10, color: '#475569', fontWeight: 500, lineHeight: 1.4 }}>Dispatcher: View stock availability only.</li>
-            </ul>
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-              <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#EEF2FF', color: '#4F46E5', fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>5</div>
-              <h4 style={{ fontSize: 10, fontWeight: 800, color: '#1E293B', letterSpacing: '0.5px', margin: 0 }}>DATA SOURCES</h4>
-            </div>
-            <ul style={{ paddingLeft: 16, margin: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <li style={{ fontSize: 10, color: '#475569', fontWeight: 500, lineHeight: 1.4 }}>Warehouse module.</li>
-              <li style={{ fontSize: 10, color: '#475569', fontWeight: 500, lineHeight: 1.4 }}>Purchase Orders & Receipts.</li>
-              <li style={{ fontSize: 10, color: '#475569', fontWeight: 500, lineHeight: 1.4 }}>Stock Transfers & Adjustments.</li>
-              <li style={{ fontSize: 10, color: '#475569', fontWeight: 500, lineHeight: 1.4 }}>Sales/Loads & Reservations.</li>
-            </ul>
-          </div>
-        </div>
-        <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: 12, marginTop: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ fontSize: 10, color: '#4F46E5', fontWeight: 600 }}>All times shown in your local time (AEST)</div>
-          <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
-            <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#10B981' }}></div>
-            Data auto-refreshes every 5 minutes <RefreshIcon />
-          </div>
-        </div>
-      </div>
+
 
       {/* ADD STOCK ITEM MODAL */}
       {showAddStockModal && (

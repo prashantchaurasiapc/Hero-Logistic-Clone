@@ -121,7 +121,7 @@ export default function CompanySettings() {
   const [isMoreActionsDropdownOpen, setIsMoreActionsDropdownOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const logoInputRef = useRef(null);
-  
+
   const triggerToast = (msg) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(''), 3000);
@@ -294,7 +294,7 @@ export default function CompanySettings() {
   const [selectedRole, setSelectedRole] = useState('All Roles');
   const [selectedStatus, setSelectedStatus] = useState('All Status');
   const [selectedBranch, setSelectedBranch] = useState('All Branches');
-  
+
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isMoreActionsOpen, setIsMoreActionsOpen] = useState(false);
@@ -611,16 +611,16 @@ export default function CompanySettings() {
   const [openLogDropdownId, setOpenLogDropdownId] = useState(null);
 
   const [auditLogsData, setAuditLogsData] = useState([
-    { id: 1, time:'30 May 2025 09:15 AM', name:'Sarah Mitchell', email:'sarah.mitchell@herologistics.com.au', avatar:'SM', bg:'bg-purple-600', type:'Login', typeBg:'bg-blue-100 text-blue-700', action:'User Logged In', module:'Authentication', details:'Login via Web Portal', ip:'203.26.45.12', outcome:'Success', outcomeColor:'text-emerald-600' },
-    { id: 2, time:'30 May 2025 09:12 AM', name:'John Davis', email:'john.davis@herologistics.com.au', avatar:'JD', bg:'bg-blue-600', type:'Data Update', typeBg:'bg-teal-100 text-teal-700', action:'Updated Load LD-3981', module:'Loads', details:'Changed status to Dispatched', ip:'203.26.45.18', outcome:'Success', outcomeColor:'text-emerald-600' },
-    { id: 3, time:'30 May 2025 09:10 AM', name:'Ravi Wilson', email:'ravi.wilson@herologistics.com.au', avatar:'RW', bg:'bg-amber-600', type:'Permission Change', typeBg:'bg-purple-100 text-purple-700', action:'Updated role permissions', module:'Users & Roles', details:'Role: Dispatcher Permissions modified', ip:'203.26.45.21', outcome:'Success', outcomeColor:'text-emerald-600' },
-    { id: 4, time:'30 May 2025 09:05 AM', name:'Amit Handa', email:'amit.handa@herologistics.com.au', avatar:'AH', bg:'bg-teal-600', type:'Data Export', typeBg:'bg-blue-100 text-blue-700', action:'Exported Invoice Report', module:'Reports', details:'Report: Invoices Format: PDF', ip:'203.26.45.12', outcome:'Success', outcomeColor:'text-emerald-600' },
-    { id: 5, time:'30 May 2025 08:58 AM', name:'Lisa Patel', email:'lisa.patel@herologistics.com.au', avatar:'LP', bg:'bg-indigo-600', type:'Security Event', typeBg:'bg-rose-100 text-rose-700', action:'Failed Login Attempt', module:'Authentication', details:'Invalid password', ip:'203.26.45.99', outcome:'Failed', outcomeColor:'text-rose-600' },
-    { id: 6, time:'30 May 2025 08:50 AM', name:'Brian Taylor', email:'brian.taylor@herologistics.com.au', avatar:'BT', bg:'bg-orange-600', type:'Trailer Swap', typeBg:'bg-amber-100 text-amber-700', action:'Trailer swapped', module:'Vehicles', details:'Trailer TR-1045 swapped from Truck TRK-12', ip:'203.26.45.18', outcome:'Success', outcomeColor:'text-emerald-600' },
-    { id: 7, time:'30 May 2025 08:45 AM', name:'Michael Kumar', email:'michael.kumar@herologistics.com.au', avatar:'MK', bg:'bg-emerald-600', type:'Data Delete', typeBg:'bg-orange-100 text-orange-700', action:'Deleted Expense Record', module:'Expenses', details:'Expense ID: EXP-7781', ip:'203.26.45.21', outcome:'Success', outcomeColor:'text-emerald-600' },
-    { id: 8, time:'30 May 2025 08:30 AM', name:'Shane Cooper', email:'shane.cooper@herologistics.com.au', avatar:'SC', bg:'bg-blue-600', type:'Blocked Action', typeBg:'bg-amber-100 text-amber-700', action:'Blocked Unauthorized Export', module:'Reports', details:'Attempted to export restricted data', ip:'203.26.45.77', outcome:'Blocked', outcomeColor:'text-amber-600' },
-    { id: 9, time:'30 May 2025 08:15 AM', name:'Elena Rostova', email:'elena.rostova@herologistics.com.au', avatar:'ER', bg:'bg-pink-600', type:'Settings Update', typeBg:'bg-indigo-100 text-indigo-700', action:'Modified 2FA Policy', module:'Settings', details:'Enforced 2FA for Dispatchers', ip:'203.26.45.10', outcome:'Success', outcomeColor:'text-emerald-600' },
-    { id: 10, time:'30 May 2025 08:00 AM', name:'David Miller', email:'david.miller@herologistics.com.au', avatar:'DM', bg:'bg-sky-600', type:'API Token', typeBg:'bg-blue-100 text-blue-700', action:'Generated API Token', module:'Integrations', details:'Token: Live Fleet Sync', ip:'203.26.45.55', outcome:'Success', outcomeColor:'text-emerald-600' }
+    { id: 1, time: '30 May 2025 09:15 AM', name: 'Sarah Mitchell', email: 'sarah.mitchell@herologistics.com.au', avatar: 'SM', bg: 'bg-purple-600', type: 'Login', typeBg: 'bg-blue-100 text-blue-700', action: 'User Logged In', module: 'Authentication', details: 'Login via Web Portal', ip: '203.26.45.12', outcome: 'Success', outcomeColor: 'text-emerald-600' },
+    { id: 2, time: '30 May 2025 09:12 AM', name: 'John Davis', email: 'john.davis@herologistics.com.au', avatar: 'JD', bg: 'bg-blue-600', type: 'Data Update', typeBg: 'bg-teal-100 text-teal-700', action: 'Updated Load LD-3981', module: 'Loads', details: 'Changed status to Dispatched', ip: '203.26.45.18', outcome: 'Success', outcomeColor: 'text-emerald-600' },
+    { id: 3, time: '30 May 2025 09:10 AM', name: 'Ravi Wilson', email: 'ravi.wilson@herologistics.com.au', avatar: 'RW', bg: 'bg-amber-600', type: 'Permission Change', typeBg: 'bg-purple-100 text-purple-700', action: 'Updated role permissions', module: 'Users & Roles', details: 'Role: Dispatcher Permissions modified', ip: '203.26.45.21', outcome: 'Success', outcomeColor: 'text-emerald-600' },
+    { id: 4, time: '30 May 2025 09:05 AM', name: 'Amit Handa', email: 'amit.handa@herologistics.com.au', avatar: 'AH', bg: 'bg-teal-600', type: 'Data Export', typeBg: 'bg-blue-100 text-blue-700', action: 'Exported Invoice Report', module: 'Reports', details: 'Report: Invoices Format: PDF', ip: '203.26.45.12', outcome: 'Success', outcomeColor: 'text-emerald-600' },
+    { id: 5, time: '30 May 2025 08:58 AM', name: 'Lisa Patel', email: 'lisa.patel@herologistics.com.au', avatar: 'LP', bg: 'bg-indigo-600', type: 'Security Event', typeBg: 'bg-rose-100 text-rose-700', action: 'Failed Login Attempt', module: 'Authentication', details: 'Invalid password', ip: '203.26.45.99', outcome: 'Failed', outcomeColor: 'text-rose-600' },
+    { id: 6, time: '30 May 2025 08:50 AM', name: 'Brian Taylor', email: 'brian.taylor@herologistics.com.au', avatar: 'BT', bg: 'bg-orange-600', type: 'Trailer Swap', typeBg: 'bg-amber-100 text-amber-700', action: 'Trailer swapped', module: 'Vehicles', details: 'Trailer TR-1045 swapped from Truck TRK-12', ip: '203.26.45.18', outcome: 'Success', outcomeColor: 'text-emerald-600' },
+    { id: 7, time: '30 May 2025 08:45 AM', name: 'Michael Kumar', email: 'michael.kumar@herologistics.com.au', avatar: 'MK', bg: 'bg-emerald-600', type: 'Data Delete', typeBg: 'bg-orange-100 text-orange-700', action: 'Deleted Expense Record', module: 'Expenses', details: 'Expense ID: EXP-7781', ip: '203.26.45.21', outcome: 'Success', outcomeColor: 'text-emerald-600' },
+    { id: 8, time: '30 May 2025 08:30 AM', name: 'Shane Cooper', email: 'shane.cooper@herologistics.com.au', avatar: 'SC', bg: 'bg-blue-600', type: 'Blocked Action', typeBg: 'bg-amber-100 text-amber-700', action: 'Blocked Unauthorized Export', module: 'Reports', details: 'Attempted to export restricted data', ip: '203.26.45.77', outcome: 'Blocked', outcomeColor: 'text-amber-600' },
+    { id: 9, time: '30 May 2025 08:15 AM', name: 'Elena Rostova', email: 'elena.rostova@herologistics.com.au', avatar: 'ER', bg: 'bg-pink-600', type: 'Settings Update', typeBg: 'bg-indigo-100 text-indigo-700', action: 'Modified 2FA Policy', module: 'Settings', details: 'Enforced 2FA for Dispatchers', ip: '203.26.45.10', outcome: 'Success', outcomeColor: 'text-emerald-600' },
+    { id: 10, time: '30 May 2025 08:00 AM', name: 'David Miller', email: 'david.miller@herologistics.com.au', avatar: 'DM', bg: 'bg-sky-600', type: 'API Token', typeBg: 'bg-blue-100 text-blue-700', action: 'Generated API Token', module: 'Integrations', details: 'Token: Live Fleet Sync', ip: '203.26.45.55', outcome: 'Success', outcomeColor: 'text-emerald-600' }
   ]);
 
   const handleDeleteAuditLog = (logId) => {
@@ -651,13 +651,13 @@ export default function CompanySettings() {
   const handleSaveEditAuditLogSubmit = (e) => {
     e.preventDefault();
     if (!editingAuditLog) return;
-    
+
     let outcomeColor = 'text-emerald-600';
     if (editLogForm.outcome === 'Failed') outcomeColor = 'text-rose-600';
     if (editLogForm.outcome === 'Blocked') outcomeColor = 'text-amber-600';
 
-    setAuditLogsData(prev => prev.map(item => item.id === editingAuditLog.id ? { 
-      ...item, 
+    setAuditLogsData(prev => prev.map(item => item.id === editingAuditLog.id ? {
+      ...item,
       action: editLogForm.action,
       module: editLogForm.module,
       details: editLogForm.details,
@@ -827,7 +827,7 @@ export default function CompanySettings() {
   const renderRuleIcon = (rule, isLarge = false) => {
     const size = isLarge ? 22 : 12;
     const boxSize = isLarge ? 'w-11 h-11 rounded-xl shadow-xs' : 'w-6 h-6 rounded-md shadow-3xs';
-    
+
     switch (rule?.name) {
       case 'Auto Invoice on Delivery':
         return (
@@ -997,9 +997,9 @@ export default function CompanySettings() {
   };
 
   const filteredWorkflowRules = workflowRulesList.filter(r => {
-    const matchesSearch = r.name.toLowerCase().includes(workflowSearchQuery.toLowerCase()) || 
-                          r.desc.toLowerCase().includes(workflowSearchQuery.toLowerCase()) ||
-                          r.trigger.toLowerCase().includes(workflowSearchQuery.toLowerCase());
+    const matchesSearch = r.name.toLowerCase().includes(workflowSearchQuery.toLowerCase()) ||
+      r.desc.toLowerCase().includes(workflowSearchQuery.toLowerCase()) ||
+      r.trigger.toLowerCase().includes(workflowSearchQuery.toLowerCase());
     const matchesCategory = workflowCategoryFilter === 'All Categories' || r.category === workflowCategoryFilter;
     const matchesStatus = workflowStatusFilter === 'All Status' || r.status === workflowStatusFilter;
     const matchesTrigger = workflowTriggerFilter === 'All Triggers' || r.trigger === workflowTriggerFilter;
@@ -1137,9 +1137,9 @@ export default function CompanySettings() {
   };
 
   const filteredUsers = usersList.filter(u => {
-    const matchesSearch = u.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          u.email.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          u.role.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      u.role.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesRole = selectedRole === 'All Roles' || u.role === selectedRole;
     const matchesStatus = selectedStatus === 'All Status' || u.status === selectedStatus;
     const matchesBranch = selectedBranch === 'All Branches' || u.branch.includes(selectedBranch);
@@ -1148,14 +1148,14 @@ export default function CompanySettings() {
 
   return (
     <div className="p-3 sm:p-5 max-w-[1750px] mx-auto bg-[#F8FAFC] min-h-screen text-left font-sans flex flex-col space-y-4">
-      
+
       {/* Hidden File Input for Logo Upload */}
-      <input 
-        type="file" 
-        ref={logoInputRef} 
-        onChange={handleLogoUpload} 
-        accept="image/png, image/jpeg, image/jpg, image/svg+xml" 
-        className="hidden" 
+      <input
+        type="file"
+        ref={logoInputRef}
+        onChange={handleLogoUpload}
+        accept="image/png, image/jpeg, image/jpg, image/svg+xml"
+        className="hidden"
       />
 
       {/* Toast Notification */}
@@ -1179,8 +1179,8 @@ export default function CompanySettings() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3 shrink-0 flex-nowrap ml-auto pr-1">
-          <button 
-            onClick={() => triggerToast('Opening Help & Support documentation...')} 
+          <button
+            onClick={() => triggerToast('Opening Help & Support documentation...')}
             className="flex items-center gap-1 text-[11px] sm:text-xs font-bold text-[#2563EB] hover:underline transition-colors cursor-pointer whitespace-nowrap"
           >
             <HelpCircle size={14} className="text-[#2563EB]" />
@@ -1194,7 +1194,7 @@ export default function CompanySettings() {
               10
             </span>
           </div>
-          
+
           {/* Avatar Circle SM */}
           <div className="w-6.5 h-6.5 sm:w-7 sm:h-7 rounded-full bg-slate-900 text-white font-black text-[10px] sm:text-xs flex items-center justify-center shadow-xs cursor-pointer shrink-0" title="Sarah Mitchell (Super Admin)">
             SM
@@ -1202,8 +1202,8 @@ export default function CompanySettings() {
 
           {/* More Actions Dropdown Button & Menu */}
           <div className="relative shrink-0">
-            <button 
-              onClick={() => setIsMoreActionsDropdownOpen(!isMoreActionsDropdownOpen)} 
+            <button
+              onClick={() => setIsMoreActionsDropdownOpen(!isMoreActionsDropdownOpen)}
               className="flex items-center gap-1 text-[11px] sm:text-xs font-bold text-slate-700 bg-white border border-slate-200/90 px-2.5 sm:px-3 py-1 rounded-xl shadow-2xs hover:bg-slate-50 transition-all cursor-pointer whitespace-nowrap"
             >
               <span>More Actions</span>
@@ -1212,8 +1212,8 @@ export default function CompanySettings() {
 
             {isMoreActionsDropdownOpen && (
               <>
-                <div 
-                  className="fixed inset-0 z-[9999]" 
+                <div
+                  className="fixed inset-0 z-[9999]"
                   onClick={() => setIsMoreActionsDropdownOpen(false)}
                 />
                 <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl border border-slate-200 shadow-2xl z-[99999] py-1.5 animate-fade-in text-left">
@@ -1221,44 +1221,44 @@ export default function CompanySettings() {
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">SYSTEM ACTIONS</span>
                   </div>
 
-                  <button 
+                  <button
                     onClick={() => {
                       setIsMoreActionsDropdownOpen(false);
                       triggerToast('Exporting system settings backup...');
-                    }} 
+                    }}
                     className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-2 transition-colors cursor-pointer"
                   >
                     <Download size={14} className="text-slate-400" />
                     <span>Export Settings Backup</span>
                   </button>
 
-                  <button 
+                  <button
                     onClick={() => {
                       setIsMoreActionsDropdownOpen(false);
                       triggerToast('Opening config import wizard...');
-                    }} 
+                    }}
                     className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-2 transition-colors cursor-pointer"
                   >
                     <Upload size={14} className="text-slate-400" />
                     <span>Import Configuration</span>
                   </button>
 
-                  <button 
+                  <button
                     onClick={() => {
                       setIsMoreActionsDropdownOpen(false);
                       setCurrentView('security-audit-logs');
-                    }} 
+                    }}
                     className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-2 transition-colors cursor-pointer"
                   >
                     <Shield size={14} className="text-slate-400" />
                     <span>Security & Audit Logs</span>
                   </button>
 
-                  <button 
+                  <button
                     onClick={() => {
                       setIsMoreActionsDropdownOpen(false);
                       setCurrentView('integrations');
-                    }} 
+                    }}
                     className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-2 transition-colors cursor-pointer"
                   >
                     <Plug size={14} className="text-slate-400" />
@@ -1267,11 +1267,11 @@ export default function CompanySettings() {
 
                   <div className="my-1 border-t border-slate-100"></div>
 
-                  <button 
+                  <button
                     onClick={() => {
                       setIsMoreActionsDropdownOpen(false);
                       triggerToast('Resetting module display preferences...');
-                    }} 
+                    }}
                     className="w-full text-left px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition-colors cursor-pointer"
                   >
                     <RefreshCw size={14} className="text-rose-500" />
@@ -1307,7 +1307,7 @@ export default function CompanySettings() {
 
           {/* 1. TOP METRIC CARDS (ROW OF 6 CARDS) */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-            
+
             {/* Card 1: Company Setup */}
             <div className="bg-white rounded-xl border border-slate-200/80 px-3 py-2 shadow-2xs flex flex-col justify-between hover:border-purple-200 transition-all min-h-[92px]">
               <div className="flex items-start gap-2">
@@ -1458,8 +1458,8 @@ export default function CompanySettings() {
                     { label: 'Communication Settings', desc: 'Email, SMS and notifications', status: 'Complete', isDone: true, icon: <Mail size={13} />, color: 'bg-[#EEF2FF] text-[#4F46E5]' },
                     { label: 'Workflow Rules', desc: 'Automation and approval workflows', status: 'In Progress', isDone: false, icon: <Sliders size={13} />, color: 'bg-[#FFEDD5] text-[#EA580C]' },
                   ].map((item, idx) => (
-                    <div 
-                      key={idx} 
+                    <div
+                      key={idx}
                       onClick={() => {
                         if (item.label === 'Company Profile') setCurrentView('company-settings');
                         else if (item.label === 'Users & Roles') setCurrentView('users-permissions');
@@ -1560,8 +1560,8 @@ export default function CompanySettings() {
                     { label: 'Security & Audit Logs', desc: 'View system activity', color: 'text-emerald-600 bg-[#DCFCE7]', icon: <Shield size={15} />, action: () => setCurrentView('security-audit-logs') },
                     { label: 'Subscription & Billing', desc: 'Manage subscription', color: 'text-purple-600 bg-[#F3E8FF]', icon: <CreditCard size={15} />, action: () => setCurrentView('subscription-billing') },
                   ].map((item, idx) => (
-                    <div 
-                      key={idx} 
+                    <div
+                      key={idx}
                       onClick={item.action}
                       className="p-2 bg-white hover:bg-blue-50/40 border border-slate-200/70 hover:border-blue-200 rounded-xl transition-all cursor-pointer flex items-start gap-2 group shadow-2xs min-h-[58px]"
                     >
@@ -1841,28 +1841,28 @@ export default function CompanySettings() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-start sm:justify-end">
-              <button 
-                onClick={handleRefreshCompanySettings} 
+              <button
+                onClick={handleRefreshCompanySettings}
                 disabled={isRefreshingCompanySettings}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FFFFFF] border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
               >
-                <RefreshCw size={13} className={`text-slate-500 ${isRefreshingCompanySettings ? 'animate-spin' : ''}`} /> 
+                <RefreshCw size={13} className={`text-slate-500 ${isRefreshingCompanySettings ? 'animate-spin' : ''}`} />
                 {isRefreshingCompanySettings ? 'Refreshing...' : 'Refresh'}
               </button>
 
-              <button 
-                onClick={handleExportCompanySettings} 
+              <button
+                onClick={handleExportCompanySettings}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer shadow-2xs"
               >
                 <Download size={13} className="text-slate-500" /> Export Settings
               </button>
 
-              <button 
-                onClick={handleSaveCompanySettings} 
+              <button
+                onClick={handleSaveCompanySettings}
                 disabled={isSavingCompanySettings}
                 className="flex items-center gap-1.5 px-4 py-1.5 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer disabled:opacity-50"
               >
-                {isSavingCompanySettings ? <RefreshCw size={13} className="animate-spin" /> : <Save size={13} />} 
+                {isSavingCompanySettings ? <RefreshCw size={13} className="animate-spin" /> : <Save size={13} />}
                 {isSavingCompanySettings ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
@@ -1871,17 +1871,16 @@ export default function CompanySettings() {
           {/* SUB-TAB NAVIGATION (7 TABS) */}
           <div className="flex items-center gap-2 border-b border-slate-200/80 overflow-x-auto pb-3 pt-1 scrollbar-hide">
             {[
-              'Company Details', 'Branding', 'Financial & Tax', 
+              'Company Details', 'Branding', 'Financial & Tax',
               'Operational Defaults', 'Payment Terms', 'Document Numbering', 'Other Preferences'
             ].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-3.5 py-1.5 text-xs font-black whitespace-nowrap transition-all rounded-xl cursor-pointer outline-none focus:outline-none focus:ring-0 select-none ${
-                  activeTab === tab 
-                    ? 'bg-[#2563EB] text-white shadow-xs' 
+                className={`px-3.5 py-1.5 text-xs font-black whitespace-nowrap transition-all rounded-xl cursor-pointer outline-none focus:outline-none focus:ring-0 select-none ${activeTab === tab
+                    ? 'bg-[#2563EB] text-white shadow-xs'
                     : 'bg-slate-100/70 text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 border border-slate-200/60 font-bold'
-                }`}
+                  }`}
               >
                 {tab}
               </button>
@@ -1891,10 +1890,10 @@ export default function CompanySettings() {
           {/* TAB 1: COMPANY DETAILS */}
           {activeTab === 'Company Details' && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-              
+
               {/* COLUMN 1: COMPANY DETAILS & TAX COMPLIANCE */}
               <div className="lg:col-span-6 space-y-4">
-                
+
                 {/* COMPANY DETAILS CARD */}
                 <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-2xs space-y-4">
                   <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2">
@@ -1904,19 +1903,19 @@ export default function CompanySettings() {
                   <div className="grid grid-cols-2 gap-3.5">
                     <div>
                       <label className="text-[10.5px] font-bold text-slate-700 block mb-1">Company Name *</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         value={companyDetails.companyName}
-                        onChange={e => setCompanyDetails({...companyDetails, companyName: e.target.value})}
+                        onChange={e => setCompanyDetails({ ...companyDetails, companyName: e.target.value })}
                         className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                       />
                     </div>
                     <div>
                       <label className="text-[10.5px] font-bold text-slate-700 block mb-1">Trading Name</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         value={companyDetails.tradingName}
-                        onChange={e => setCompanyDetails({...companyDetails, tradingName: e.target.value})}
+                        onChange={e => setCompanyDetails({ ...companyDetails, tradingName: e.target.value })}
                         className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                       />
                     </div>
@@ -1925,19 +1924,19 @@ export default function CompanySettings() {
                   <div className="grid grid-cols-2 gap-3.5">
                     <div>
                       <label className="text-[10.5px] font-bold text-slate-700 block mb-1">ABN *</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         value={companyDetails.abn}
-                        onChange={e => setCompanyDetails({...companyDetails, abn: e.target.value})}
+                        onChange={e => setCompanyDetails({ ...companyDetails, abn: e.target.value })}
                         className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                       />
                     </div>
                     <div>
                       <label className="text-[10.5px] font-bold text-slate-700 block mb-1">ACN</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         value={companyDetails.acn}
-                        onChange={e => setCompanyDetails({...companyDetails, acn: e.target.value})}
+                        onChange={e => setCompanyDetails({ ...companyDetails, acn: e.target.value })}
                         className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                       />
                     </div>
@@ -1945,10 +1944,10 @@ export default function CompanySettings() {
 
                   <div>
                     <label className="text-[10.5px] font-bold text-slate-700 block mb-1">Registered Address *</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={companyDetails.registeredAddress}
-                      onChange={e => setCompanyDetails({...companyDetails, registeredAddress: e.target.value})}
+                      onChange={e => setCompanyDetails({ ...companyDetails, registeredAddress: e.target.value })}
                       className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     />
                   </div>
@@ -1957,18 +1956,18 @@ export default function CompanySettings() {
                   <div className="grid grid-cols-12 gap-3">
                     <div className="col-span-3">
                       <label className="text-[10.5px] font-bold text-slate-700 block mb-1">City *</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         value={companyDetails.city}
-                        onChange={e => setCompanyDetails({...companyDetails, city: e.target.value})}
+                        onChange={e => setCompanyDetails({ ...companyDetails, city: e.target.value })}
                         className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900"
                       />
                     </div>
                     <div className="col-span-2">
                       <label className="text-[10.5px] font-bold text-slate-700 block mb-1">State *</label>
-                      <select 
+                      <select
                         value={companyDetails.state}
-                        onChange={e => setCompanyDetails({...companyDetails, state: e.target.value})}
+                        onChange={e => setCompanyDetails({ ...companyDetails, state: e.target.value })}
                         className="w-full px-2 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 cursor-pointer"
                       >
                         <option value="NSW">NSW</option>
@@ -1980,18 +1979,18 @@ export default function CompanySettings() {
                     </div>
                     <div className="col-span-3">
                       <label className="text-[10.5px] font-bold text-slate-700 block mb-1">Postcode *</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         value={companyDetails.postcode}
-                        onChange={e => setCompanyDetails({...companyDetails, postcode: e.target.value})}
+                        onChange={e => setCompanyDetails({ ...companyDetails, postcode: e.target.value })}
                         className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900"
                       />
                     </div>
                     <div className="col-span-4">
                       <label className="text-[10.5px] font-bold text-slate-700 block mb-1">Country *</label>
-                      <select 
+                      <select
                         value={companyDetails.country}
-                        onChange={e => setCompanyDetails({...companyDetails, country: e.target.value})}
+                        onChange={e => setCompanyDetails({ ...companyDetails, country: e.target.value })}
                         className="w-full px-2.5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 cursor-pointer"
                       >
                         <option value="Australia">Australia</option>
@@ -2003,19 +2002,19 @@ export default function CompanySettings() {
                   <div className="grid grid-cols-12 gap-3.5">
                     <div className="col-span-5">
                       <label className="text-[10.5px] font-bold text-slate-700 block mb-1">Primary Phone</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         value={companyDetails.phone}
-                        onChange={e => setCompanyDetails({...companyDetails, phone: e.target.value})}
+                        onChange={e => setCompanyDetails({ ...companyDetails, phone: e.target.value })}
                         className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900"
                       />
                     </div>
                     <div className="col-span-7">
                       <label className="text-[10.5px] font-bold text-slate-700 block mb-1">Email *</label>
-                      <input 
-                        type="email" 
+                      <input
+                        type="email"
                         value={companyDetails.email}
-                        onChange={e => setCompanyDetails({...companyDetails, email: e.target.value})}
+                        onChange={e => setCompanyDetails({ ...companyDetails, email: e.target.value })}
                         className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900"
                       />
                     </div>
@@ -2024,18 +2023,18 @@ export default function CompanySettings() {
                   <div className="grid grid-cols-12 gap-3.5">
                     <div className="col-span-7">
                       <label className="text-[10.5px] font-bold text-slate-700 block mb-1">Website</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         value={companyDetails.website}
-                        onChange={e => setCompanyDetails({...companyDetails, website: e.target.value})}
+                        onChange={e => setCompanyDetails({ ...companyDetails, website: e.target.value })}
                         className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900"
                       />
                     </div>
                     <div className="col-span-5">
                       <label className="text-[10.5px] font-bold text-slate-700 block mb-1">Company Start Date</label>
                       <div className="relative">
-                        <input 
-                          type="text" 
+                        <input
+                          type="text"
                           value="01 Jan 2023"
                           readOnly
                           className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 cursor-pointer"
@@ -2047,10 +2046,10 @@ export default function CompanySettings() {
 
                   <div>
                     <label className="text-[10.5px] font-bold text-slate-700 block mb-1">Company Description</label>
-                    <textarea 
+                    <textarea
                       rows={2}
                       value={companyDetails.description}
-                      onChange={e => setCompanyDetails({...companyDetails, description: e.target.value})}
+                      onChange={e => setCompanyDetails({ ...companyDetails, description: e.target.value })}
                       className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-800"
                     />
                   </div>
@@ -2068,7 +2067,7 @@ export default function CompanySettings() {
                       <label className="text-[10.5px] font-bold text-slate-700 block mb-1">GST Registered</label>
                       <button
                         type="button"
-                        onClick={() => setTaxCompliance({...taxCompliance, gstRegistered: !taxCompliance.gstRegistered})}
+                        onClick={() => setTaxCompliance({ ...taxCompliance, gstRegistered: !taxCompliance.gstRegistered })}
                         className="flex items-center gap-2 cursor-pointer"
                       >
                         <div className={`w-8 h-4 rounded-full transition-colors relative ${taxCompliance.gstRegistered ? 'bg-blue-600' : 'bg-slate-200'}`}>
@@ -2086,20 +2085,20 @@ export default function CompanySettings() {
                     </div>
                     <div>
                       <label className="text-[10.5px] font-bold text-slate-700 block mb-1">TFN</label>
-                      <input type="text" value={taxCompliance.tfn} onChange={e => setTaxCompliance({...taxCompliance, tfn: e.target.value})} className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900" />
+                      <input type="text" value={taxCompliance.tfn} onChange={e => setTaxCompliance({ ...taxCompliance, tfn: e.target.value })} className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900" />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-3 gap-3.5 items-center pt-2 border-t border-slate-100">
                     <div>
                       <label className="text-[9.5px] font-bold text-slate-700 block mb-1">Pay As You Go (PAYG) Withholding</label>
-                      <input type="text" value={taxCompliance.payg} onChange={e => setTaxCompliance({...taxCompliance, payg: e.target.value})} className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900" />
+                      <input type="text" value={taxCompliance.payg} onChange={e => setTaxCompliance({ ...taxCompliance, payg: e.target.value })} className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900" />
                     </div>
                     <div>
                       <label className="text-[9.5px] font-bold text-slate-700 block mb-1">Workers Compensation Insurer</label>
                       <button
                         type="button"
-                        onClick={() => setTaxCompliance({...taxCompliance, workersComp: !taxCompliance.workersComp})}
+                        onClick={() => setTaxCompliance({ ...taxCompliance, workersComp: !taxCompliance.workersComp })}
                         className="flex items-center gap-2 cursor-pointer mt-1"
                       >
                         <div className={`w-8 h-4 rounded-full transition-colors relative ${taxCompliance.workersComp ? 'bg-blue-600' : 'bg-slate-200'}`}>
@@ -2110,18 +2109,18 @@ export default function CompanySettings() {
                     </div>
                     <div>
                       <label className="text-[9.5px] font-bold text-slate-700 block mb-1">Workers Compensation Policy No.</label>
-                      <input type="text" value={taxCompliance.workersPolicy} onChange={e => setTaxCompliance({...taxCompliance, workersPolicy: e.target.value})} className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900" />
+                      <input type="text" value={taxCompliance.workersPolicy} onChange={e => setTaxCompliance({ ...taxCompliance, workersPolicy: e.target.value })} className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900" />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3.5 pt-2 border-t border-slate-100">
                     <div>
                       <label className="text-[10.5px] font-bold text-slate-700 block mb-1">Public Liability Insurer</label>
-                      <input type="text" value={taxCompliance.publicLiability} onChange={e => setTaxCompliance({...taxCompliance, publicLiability: e.target.value})} className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900" />
+                      <input type="text" value={taxCompliance.publicLiability} onChange={e => setTaxCompliance({ ...taxCompliance, publicLiability: e.target.value })} className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900" />
                     </div>
                     <div>
                       <label className="text-[10.5px] font-bold text-slate-700 block mb-1">Public Liability Policy No.</label>
-                      <input type="text" value={taxCompliance.publicPolicy} onChange={e => setTaxCompliance({...taxCompliance, publicPolicy: e.target.value})} className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900" />
+                      <input type="text" value={taxCompliance.publicPolicy} onChange={e => setTaxCompliance({ ...taxCompliance, publicPolicy: e.target.value })} className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900" />
                     </div>
                   </div>
 
@@ -2131,7 +2130,7 @@ export default function CompanySettings() {
 
               {/* COLUMN 2: PRIMARY CONTACT, BUSINESS HOURS, DEFAULT BRANCH */}
               <div className="lg:col-span-3 space-y-4">
-                
+
                 {/* PRIMARY CONTACT CARD */}
                 <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-2xs space-y-3">
                   <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2">
@@ -2140,40 +2139,40 @@ export default function CompanySettings() {
 
                   <div>
                     <label className="text-[10px] font-bold text-slate-700 block mb-1">Contact Name *</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={contactDetails.name}
-                      onChange={e => setContactDetails({...contactDetails, name: e.target.value})}
+                      onChange={e => setContactDetails({ ...contactDetails, name: e.target.value })}
                       className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900"
                     />
                   </div>
 
                   <div>
                     <label className="text-[10px] font-bold text-slate-700 block mb-1">Position</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={contactDetails.position}
-                      onChange={e => setContactDetails({...contactDetails, position: e.target.value})}
+                      onChange={e => setContactDetails({ ...contactDetails, position: e.target.value })}
                       className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900"
                     />
                   </div>
 
                   <div>
                     <label className="text-[10px] font-bold text-slate-700 block mb-1">Phone *</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={contactDetails.phone}
-                      onChange={e => setContactDetails({...contactDetails, phone: e.target.value})}
+                      onChange={e => setContactDetails({ ...contactDetails, phone: e.target.value })}
                       className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900"
                     />
                   </div>
 
                   <div>
                     <label className="text-[10px] font-bold text-slate-700 block mb-1">Email *</label>
-                    <input 
-                      type="email" 
+                    <input
+                      type="email"
                       value={contactDetails.email}
-                      onChange={e => setContactDetails({...contactDetails, email: e.target.value})}
+                      onChange={e => setContactDetails({ ...contactDetails, email: e.target.value })}
                       className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900"
                     />
                   </div>
@@ -2190,9 +2189,9 @@ export default function CompanySettings() {
 
                   <div>
                     <label className="text-[10px] font-bold text-slate-700 block mb-1">Time Zone *</label>
-                    <select 
+                    <select
                       value={businessHours.timeZone}
-                      onChange={e => setBusinessHours({...businessHours, timeZone: e.target.value})}
+                      onChange={e => setBusinessHours({ ...businessHours, timeZone: e.target.value })}
                       className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 cursor-pointer"
                     >
                       <option value="(AEST) Australia/Sydney">(AEST) Australia/Sydney</option>
@@ -2203,9 +2202,9 @@ export default function CompanySettings() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-[10px] font-bold text-slate-700 block mb-1">Business Hours Start</label>
-                      <select 
+                      <select
                         value={businessHours.start}
-                        onChange={e => setBusinessHours({...businessHours, start: e.target.value})}
+                        onChange={e => setBusinessHours({ ...businessHours, start: e.target.value })}
                         className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 cursor-pointer"
                       >
                         <option value="07:00 AM">07:00 AM</option>
@@ -2214,9 +2213,9 @@ export default function CompanySettings() {
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-slate-700 block mb-1">Business Hours End</label>
-                      <select 
+                      <select
                         value={businessHours.end}
-                        onChange={e => setBusinessHours({...businessHours, end: e.target.value})}
+                        onChange={e => setBusinessHours({ ...businessHours, end: e.target.value })}
                         className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 cursor-pointer"
                       >
                         <option value="05:00 PM">05:00 PM</option>
@@ -2227,9 +2226,9 @@ export default function CompanySettings() {
 
                   <div>
                     <label className="text-[10px] font-bold text-slate-700 block mb-1">Week Start Day</label>
-                    <select 
+                    <select
                       value={businessHours.weekStart}
-                      onChange={e => setBusinessHours({...businessHours, weekStart: e.target.value})}
+                      onChange={e => setBusinessHours({ ...businessHours, weekStart: e.target.value })}
                       className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 cursor-pointer"
                     >
                       <option value="Monday">Monday</option>
@@ -2249,9 +2248,9 @@ export default function CompanySettings() {
 
                   <div>
                     <label className="text-[10px] font-bold text-slate-700 block mb-1">Default Branch *</label>
-                    <select 
+                    <select
                       value={defaultBranch.name}
-                      onChange={e => setDefaultBranch({...defaultBranch, name: e.target.value})}
+                      onChange={e => setDefaultBranch({ ...defaultBranch, name: e.target.value })}
                       className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 cursor-pointer"
                     >
                       <option value="Sydney Head Office">Sydney Head Office</option>
@@ -2277,7 +2276,7 @@ export default function CompanySettings() {
 
               {/* COLUMN 3: BRANDING & FINANCIAL SETTINGS */}
               <div className="lg:col-span-3 space-y-4">
-                
+
                 {/* COMPANY BRANDING CARD */}
                 <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-2xs space-y-3">
                   <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2">
@@ -2287,7 +2286,7 @@ export default function CompanySettings() {
                   <div>
                     <label className="text-[10px] font-bold text-slate-700 block">Company Logo</label>
                     <p className="text-[9px] text-slate-400 font-semibold mb-2">Recommended size: 400x200px (PNG, JPG)</p>
-                    
+
                     <div className="grid grid-cols-12 gap-2 items-center">
                       {/* Logo Preview Box */}
                       <div className="col-span-7 h-16 border border-slate-200 rounded-xl bg-white flex items-center justify-center p-2 shadow-2xs overflow-hidden">
@@ -2303,14 +2302,14 @@ export default function CompanySettings() {
 
                       {/* Action Buttons */}
                       <div className="col-span-5 space-y-1.5">
-                        <button 
+                        <button
                           type="button"
                           onClick={() => logoInputRef.current && logoInputRef.current.click()}
                           className="flex items-center justify-center gap-1 px-2 py-1 bg-white border border-slate-200 rounded-xl text-[10px] font-bold text-slate-700 hover:bg-slate-50 cursor-pointer w-full shadow-2xs transition-colors whitespace-nowrap"
                         >
                           <Upload size={10} /> Change Logo
                         </button>
-                        <button 
+                        <button
                           type="button"
                           onClick={() => {
                             setLogoUrl(null);
@@ -2331,17 +2330,17 @@ export default function CompanySettings() {
                         Primary Brand Colour
                       </label>
                       <div className="flex items-center gap-1.5 border border-slate-200 rounded-lg p-1.5 bg-white relative">
-                        <input 
-                          type="color" 
-                          value={branding.primary.length === 7 ? branding.primary : '#1E3ABA'} 
-                          onChange={e => setBranding({...branding, primary: e.target.value.toUpperCase()})}
-                          className="w-4 h-4 rounded border-0 cursor-pointer p-0 shrink-0" 
+                        <input
+                          type="color"
+                          value={branding.primary.length === 7 ? branding.primary : '#1E3ABA'}
+                          onChange={e => setBranding({ ...branding, primary: e.target.value.toUpperCase() })}
+                          className="w-4 h-4 rounded border-0 cursor-pointer p-0 shrink-0"
                         />
-                        <input 
-                          type="text" 
-                          value={branding.primary} 
-                          onChange={e => setBranding({...branding, primary: e.target.value})}
-                          className="w-full text-[11px] font-bold text-slate-800 uppercase focus:outline-none min-w-0" 
+                        <input
+                          type="text"
+                          value={branding.primary}
+                          onChange={e => setBranding({ ...branding, primary: e.target.value })}
+                          className="w-full text-[11px] font-bold text-slate-800 uppercase focus:outline-none min-w-0"
                         />
                         <ChevronDown size={11} className="text-slate-400 pointer-events-none shrink-0" />
                       </div>
@@ -2352,17 +2351,17 @@ export default function CompanySettings() {
                         Secondary Colour
                       </label>
                       <div className="flex items-center gap-1.5 border border-slate-200 rounded-lg p-1.5 bg-white relative">
-                        <input 
-                          type="color" 
-                          value={branding.secondary.length === 7 ? branding.secondary : '#6356F1'} 
-                          onChange={e => setBranding({...branding, secondary: e.target.value.toUpperCase()})}
-                          className="w-4 h-4 rounded border-0 cursor-pointer p-0 shrink-0" 
+                        <input
+                          type="color"
+                          value={branding.secondary.length === 7 ? branding.secondary : '#6356F1'}
+                          onChange={e => setBranding({ ...branding, secondary: e.target.value.toUpperCase() })}
+                          className="w-4 h-4 rounded border-0 cursor-pointer p-0 shrink-0"
                         />
-                        <input 
-                          type="text" 
-                          value={branding.secondary} 
-                          onChange={e => setBranding({...branding, secondary: e.target.value})}
-                          className="w-full text-[11px] font-bold text-slate-800 uppercase focus:outline-none min-w-0" 
+                        <input
+                          type="text"
+                          value={branding.secondary}
+                          onChange={e => setBranding({ ...branding, secondary: e.target.value })}
+                          className="w-full text-[11px] font-bold text-slate-800 uppercase focus:outline-none min-w-0"
                         />
                         <ChevronDown size={11} className="text-slate-400 pointer-events-none shrink-0" />
                       </div>
@@ -2372,17 +2371,17 @@ export default function CompanySettings() {
                   <div>
                     <label className="text-[10px] font-bold text-slate-700 block mb-1">Accent Colour</label>
                     <div className="flex items-center gap-1.5 border border-slate-200 rounded-lg p-1.5 bg-white w-1/2 relative">
-                      <input 
-                        type="color" 
-                        value={branding.accent.length === 7 ? branding.accent : '#F59E0B'} 
-                        onChange={e => setBranding({...branding, accent: e.target.value.toUpperCase()})}
-                        className="w-4 h-4 rounded border-0 cursor-pointer p-0 shrink-0" 
+                      <input
+                        type="color"
+                        value={branding.accent.length === 7 ? branding.accent : '#F59E0B'}
+                        onChange={e => setBranding({ ...branding, accent: e.target.value.toUpperCase() })}
+                        className="w-4 h-4 rounded border-0 cursor-pointer p-0 shrink-0"
                       />
-                      <input 
-                        type="text" 
-                        value={branding.accent} 
-                        onChange={e => setBranding({...branding, accent: e.target.value})}
-                        className="w-full text-[11px] font-bold text-slate-800 uppercase focus:outline-none min-w-0" 
+                      <input
+                        type="text"
+                        value={branding.accent}
+                        onChange={e => setBranding({ ...branding, accent: e.target.value })}
+                        className="w-full text-[11px] font-bold text-slate-800 uppercase focus:outline-none min-w-0"
                       />
                       <ChevronDown size={11} className="text-slate-400 pointer-events-none shrink-0" />
                     </div>
@@ -2399,14 +2398,14 @@ export default function CompanySettings() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-[10px] font-bold text-slate-700 block mb-1">Default Currency *</label>
-                      <select value={financials.currency} onChange={e => setFinancials({...financials, currency: e.target.value})} className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 cursor-pointer">
+                      <select value={financials.currency} onChange={e => setFinancials({ ...financials, currency: e.target.value })} className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 cursor-pointer">
                         <option value="AUD - Australian Dollar ($)">AUD - Australian Dollar ($)</option>
                         <option value="USD - US Dollar ($)">USD - US Dollar ($)</option>
                       </select>
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-slate-700 block mb-1">Default Tax Rate (GST) *</label>
-                      <select value={financials.taxRate} onChange={e => setFinancials({...financials, taxRate: e.target.value})} className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 cursor-pointer">
+                      <select value={financials.taxRate} onChange={e => setFinancials({ ...financials, taxRate: e.target.value })} className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 cursor-pointer">
                         <option value="10%">10%</option>
                         <option value="15%">15%</option>
                       </select>
@@ -2416,14 +2415,14 @@ export default function CompanySettings() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-[10px] font-bold text-slate-700 block mb-1">Tax Calculation Method</label>
-                      <select value={financials.method} onChange={e => setFinancials({...financials, method: e.target.value})} className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 cursor-pointer">
+                      <select value={financials.method} onChange={e => setFinancials({ ...financials, method: e.target.value })} className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 cursor-pointer">
                         <option value="Exclusive">Exclusive</option>
                         <option value="Inclusive">Inclusive</option>
                       </select>
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-slate-700 block mb-1">Rounding</label>
-                      <select value={financials.rounding} onChange={e => setFinancials({...financials, rounding: e.target.value})} className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 cursor-pointer">
+                      <select value={financials.rounding} onChange={e => setFinancials({ ...financials, rounding: e.target.value })} className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 cursor-pointer">
                         <option value="2 Decimal Places">2 Decimal Places</option>
                       </select>
                     </div>
@@ -2432,7 +2431,7 @@ export default function CompanySettings() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-[10px] font-bold text-slate-700 block mb-1">Default Payment Terms</label>
-                      <select value={financials.paymentTerms} onChange={e => setFinancials({...financials, paymentTerms: e.target.value})} className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 cursor-pointer">
+                      <select value={financials.paymentTerms} onChange={e => setFinancials({ ...financials, paymentTerms: e.target.value })} className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 cursor-pointer">
                         <option value="30 Days">30 Days</option>
                         <option value="14 Days">14 Days</option>
                         <option value="7 Days">7 Days</option>
@@ -2440,7 +2439,7 @@ export default function CompanySettings() {
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-slate-700 block mb-1">Price List</label>
-                      <select value={financials.priceList} onChange={e => setFinancials({...financials, priceList: e.target.value})} className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 cursor-pointer">
+                      <select value={financials.priceList} onChange={e => setFinancials({ ...financials, priceList: e.target.value })} className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 cursor-pointer">
                         <option value="Standard Price List">Standard Price List</option>
                       </select>
                     </div>
@@ -2453,10 +2452,9 @@ export default function CompanySettings() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => setFinancials({...financials, pricesIncludeTax: !financials.pricesIncludeTax})}
-                      className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
-                        financials.pricesIncludeTax ? 'bg-blue-600' : 'bg-slate-200'
-                      }`}
+                      onClick={() => setFinancials({ ...financials, pricesIncludeTax: !financials.pricesIncludeTax })}
+                      className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${financials.pricesIncludeTax ? 'bg-blue-600' : 'bg-slate-200'
+                        }`}
                     >
                       <span className={`w-3.5 h-3.5 bg-white rounded-full transition-transform absolute top-0.5 left-0.5 ${financials.pricesIncludeTax ? 'translate-x-4' : ''}`} />
                     </button>
@@ -2482,29 +2480,29 @@ export default function CompanySettings() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <h4 className="text-xs font-bold text-slate-800 uppercase">Brand Color Palette</h4>
-                  
+
                   <div className="space-y-3">
                     <div>
                       <label className="text-xs font-bold text-slate-700 block mb-1">Primary Theme Color</label>
                       <div className="flex items-center gap-3">
-                        <input type="color" value={branding.primary.length === 7 ? branding.primary : '#1E3ABA'} onChange={e => setBranding({...branding, primary: e.target.value.toUpperCase()})} className="w-10 h-10 rounded-lg border-0 cursor-pointer shadow-3xs" />
-                        <input type="text" value={branding.primary} onChange={e => setBranding({...branding, primary: e.target.value})} className="px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 w-36 uppercase" />
+                        <input type="color" value={branding.primary.length === 7 ? branding.primary : '#1E3ABA'} onChange={e => setBranding({ ...branding, primary: e.target.value.toUpperCase() })} className="w-10 h-10 rounded-lg border-0 cursor-pointer shadow-3xs" />
+                        <input type="text" value={branding.primary} onChange={e => setBranding({ ...branding, primary: e.target.value })} className="px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 w-36 uppercase" />
                       </div>
                     </div>
 
                     <div>
                       <label className="text-xs font-bold text-slate-700 block mb-1">Secondary Theme Color</label>
                       <div className="flex items-center gap-3">
-                        <input type="color" value={branding.secondary.length === 7 ? branding.secondary : '#6356F1'} onChange={e => setBranding({...branding, secondary: e.target.value.toUpperCase()})} className="w-10 h-10 rounded-lg border-0 cursor-pointer shadow-3xs" />
-                        <input type="text" value={branding.secondary} onChange={e => setBranding({...branding, secondary: e.target.value})} className="px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 w-36 uppercase" />
+                        <input type="color" value={branding.secondary.length === 7 ? branding.secondary : '#6356F1'} onChange={e => setBranding({ ...branding, secondary: e.target.value.toUpperCase() })} className="w-10 h-10 rounded-lg border-0 cursor-pointer shadow-3xs" />
+                        <input type="text" value={branding.secondary} onChange={e => setBranding({ ...branding, secondary: e.target.value })} className="px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 w-36 uppercase" />
                       </div>
                     </div>
 
                     <div>
                       <label className="text-xs font-bold text-slate-700 block mb-1">Accent Highlight Color</label>
                       <div className="flex items-center gap-3">
-                        <input type="color" value={branding.accent.length === 7 ? branding.accent : '#F59E0B'} onChange={e => setBranding({...branding, accent: e.target.value.toUpperCase()})} className="w-10 h-10 rounded-lg border-0 cursor-pointer shadow-3xs" />
-                        <input type="text" value={branding.accent} onChange={e => setBranding({...branding, accent: e.target.value})} className="px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 w-36 uppercase" />
+                        <input type="color" value={branding.accent.length === 7 ? branding.accent : '#F59E0B'} onChange={e => setBranding({ ...branding, accent: e.target.value.toUpperCase() })} className="w-10 h-10 rounded-lg border-0 cursor-pointer shadow-3xs" />
+                        <input type="text" value={branding.accent} onChange={e => setBranding({ ...branding, accent: e.target.value })} className="px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 w-36 uppercase" />
                       </div>
                     </div>
                   </div>
@@ -2539,7 +2537,7 @@ export default function CompanySettings() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 block">Default Currency *</label>
-                  <select value={financials.currency} onChange={e => setFinancials({...financials, currency: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 cursor-pointer">
+                  <select value={financials.currency} onChange={e => setFinancials({ ...financials, currency: e.target.value })} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 cursor-pointer">
                     <option value="AUD - Australian Dollar ($)">AUD - Australian Dollar ($)</option>
                     <option value="USD - US Dollar ($)">USD - US Dollar ($)</option>
                     <option value="NZD - NZ Dollar ($)">NZD - NZ Dollar ($)</option>
@@ -2548,7 +2546,7 @@ export default function CompanySettings() {
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 block">Default Tax Rate (GST) *</label>
-                  <select value={financials.taxRate} onChange={e => setFinancials({...financials, taxRate: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 cursor-pointer">
+                  <select value={financials.taxRate} onChange={e => setFinancials({ ...financials, taxRate: e.target.value })} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 cursor-pointer">
                     <option value="10%">10% Standard GST</option>
                     <option value="15%">15% NZ GST</option>
                     <option value="0%">0% GST Free</option>
@@ -2557,7 +2555,7 @@ export default function CompanySettings() {
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 block">Tax Calculation Method</label>
-                  <select value={financials.method} onChange={e => setFinancials({...financials, method: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 cursor-pointer">
+                  <select value={financials.method} onChange={e => setFinancials({ ...financials, method: e.target.value })} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 cursor-pointer">
                     <option value="Exclusive">Tax Exclusive (Prices + GST)</option>
                     <option value="Inclusive">Tax Inclusive (GST included in price)</option>
                   </select>
@@ -2585,7 +2583,7 @@ export default function CompanySettings() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => setOperationalDefaults({...operationalDefaults, autoAssignDrivers: !operationalDefaults.autoAssignDrivers})}
+                      onClick={() => setOperationalDefaults({ ...operationalDefaults, autoAssignDrivers: !operationalDefaults.autoAssignDrivers })}
                       className={`w-10 h-5 rounded-full transition-colors relative cursor-pointer ${operationalDefaults.autoAssignDrivers ? 'bg-blue-600' : 'bg-slate-200'}`}
                     >
                       <span className={`w-3.5 h-3.5 bg-white rounded-full transition-transform absolute top-0.5 left-0.5 ${operationalDefaults.autoAssignDrivers ? 'translate-x-5' : ''}`} />
@@ -2594,10 +2592,10 @@ export default function CompanySettings() {
 
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-700 block">Max Driving Shift Hours</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={operationalDefaults.maxDrivingHours}
-                      onChange={e => setOperationalDefaults({...operationalDefaults, maxDrivingHours: e.target.value})}
+                      onChange={e => setOperationalDefaults({ ...operationalDefaults, maxDrivingHours: e.target.value })}
                       className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
                     />
                   </div>
@@ -2606,20 +2604,20 @@ export default function CompanySettings() {
                 <div className="space-y-4">
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-700 block">Mandatory Fatigue Break Policy</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={operationalDefaults.breakMandatory}
-                      onChange={e => setOperationalDefaults({...operationalDefaults, breakMandatory: e.target.value})}
+                      onChange={e => setOperationalDefaults({ ...operationalDefaults, breakMandatory: e.target.value })}
                       className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
                     />
                   </div>
 
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-700 block">Telematics Speed Limit Alert</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={operationalDefaults.speedLimitAlert}
-                      onChange={e => setOperationalDefaults({...operationalDefaults, speedLimitAlert: e.target.value})}
+                      onChange={e => setOperationalDefaults({ ...operationalDefaults, speedLimitAlert: e.target.value })}
                       className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
                     />
                   </div>
@@ -2642,7 +2640,7 @@ export default function CompanySettings() {
                 <div className="space-y-4">
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-700 block">Default Invoice Credit Period</label>
-                    <select value={paymentTermsState.defaultCreditPeriod} onChange={e => setPaymentTermsState({...paymentTermsState, defaultCreditPeriod: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 cursor-pointer">
+                    <select value={paymentTermsState.defaultCreditPeriod} onChange={e => setPaymentTermsState({ ...paymentTermsState, defaultCreditPeriod: e.target.value })} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 cursor-pointer">
                       <option value="7 Days">7 Days Net</option>
                       <option value="14 Days">14 Days Net</option>
                       <option value="30 Days">30 Days Net</option>
@@ -2652,10 +2650,10 @@ export default function CompanySettings() {
 
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-700 block">Remittance Email Address</label>
-                    <input 
-                      type="email" 
+                    <input
+                      type="email"
                       value={paymentTermsState.remittanceEmail}
-                      onChange={e => setPaymentTermsState({...paymentTermsState, remittanceEmail: e.target.value})}
+                      onChange={e => setPaymentTermsState({ ...paymentTermsState, remittanceEmail: e.target.value })}
                       className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
                     />
                   </div>
@@ -2665,19 +2663,19 @@ export default function CompanySettings() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs font-bold text-slate-700 block mb-1">BSB Number</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         value={paymentTermsState.bsb}
-                        onChange={e => setPaymentTermsState({...paymentTermsState, bsb: e.target.value})}
+                        onChange={e => setPaymentTermsState({ ...paymentTermsState, bsb: e.target.value })}
                         className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
                       />
                     </div>
                     <div>
                       <label className="text-xs font-bold text-slate-700 block mb-1">Account Number</label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         value={paymentTermsState.accountNumber}
-                        onChange={e => setPaymentTermsState({...paymentTermsState, accountNumber: e.target.value})}
+                        onChange={e => setPaymentTermsState({ ...paymentTermsState, accountNumber: e.target.value })}
                         className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
                       />
                     </div>
@@ -2685,10 +2683,10 @@ export default function CompanySettings() {
 
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-slate-700 block">Bank Name</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={paymentTermsState.bankName}
-                      onChange={e => setPaymentTermsState({...paymentTermsState, bankName: e.target.value})}
+                      onChange={e => setPaymentTermsState({ ...paymentTermsState, bankName: e.target.value })}
                       className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
                     />
                   </div>
@@ -2715,11 +2713,11 @@ export default function CompanySettings() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-[10px] font-bold text-slate-500 block mb-1">Prefix</label>
-                      <input type="text" value={docNumbering.invPrefix} onChange={e => setDocNumbering({...docNumbering, invPrefix: e.target.value})} className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900" />
+                      <input type="text" value={docNumbering.invPrefix} onChange={e => setDocNumbering({ ...docNumbering, invPrefix: e.target.value })} className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900" />
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-slate-500 block mb-1">Next Number</label>
-                      <input type="text" value={docNumbering.invNext} onChange={e => setDocNumbering({...docNumbering, invNext: e.target.value})} className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900" />
+                      <input type="text" value={docNumbering.invNext} onChange={e => setDocNumbering({ ...docNumbering, invNext: e.target.value })} className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900" />
                     </div>
                   </div>
                 </div>
@@ -2731,11 +2729,11 @@ export default function CompanySettings() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-[10px] font-bold text-slate-500 block mb-1">Prefix</label>
-                      <input type="text" value={docNumbering.podPrefix} onChange={e => setDocNumbering({...docNumbering, podPrefix: e.target.value})} className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900" />
+                      <input type="text" value={docNumbering.podPrefix} onChange={e => setDocNumbering({ ...docNumbering, podPrefix: e.target.value })} className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900" />
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-slate-500 block mb-1">Next Number</label>
-                      <input type="text" value={docNumbering.podNext} onChange={e => setDocNumbering({...docNumbering, podNext: e.target.value})} className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900" />
+                      <input type="text" value={docNumbering.podNext} onChange={e => setDocNumbering({ ...docNumbering, podNext: e.target.value })} className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900" />
                     </div>
                   </div>
                 </div>
@@ -2747,11 +2745,11 @@ export default function CompanySettings() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-[10px] font-bold text-slate-500 block mb-1">Prefix</label>
-                      <input type="text" value={docNumbering.qtePrefix} onChange={e => setDocNumbering({...docNumbering, qtePrefix: e.target.value})} className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900" />
+                      <input type="text" value={docNumbering.qtePrefix} onChange={e => setDocNumbering({ ...docNumbering, qtePrefix: e.target.value })} className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900" />
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-slate-500 block mb-1">Next Number</label>
-                      <input type="text" value={docNumbering.qteNext} onChange={e => setDocNumbering({...docNumbering, qteNext: e.target.value})} className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900" />
+                      <input type="text" value={docNumbering.qteNext} onChange={e => setDocNumbering({ ...docNumbering, qteNext: e.target.value })} className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900" />
                     </div>
                   </div>
                 </div>
@@ -2763,11 +2761,11 @@ export default function CompanySettings() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-[10px] font-bold text-slate-500 block mb-1">Prefix</label>
-                      <input type="text" value={docNumbering.conPrefix} onChange={e => setDocNumbering({...docNumbering, conPrefix: e.target.value})} className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900" />
+                      <input type="text" value={docNumbering.conPrefix} onChange={e => setDocNumbering({ ...docNumbering, conPrefix: e.target.value })} className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900" />
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-slate-500 block mb-1">Next Number</label>
-                      <input type="text" value={docNumbering.conNext} onChange={e => setDocNumbering({...docNumbering, conNext: e.target.value})} className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900" />
+                      <input type="text" value={docNumbering.conNext} onChange={e => setDocNumbering({ ...docNumbering, conNext: e.target.value })} className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900" />
                     </div>
                   </div>
                 </div>
@@ -2788,7 +2786,7 @@ export default function CompanySettings() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 block">Date Format</label>
-                  <select value={otherPreferences.dateFormat} onChange={e => setOtherPreferences({...otherPreferences, dateFormat: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 cursor-pointer">
+                  <select value={otherPreferences.dateFormat} onChange={e => setOtherPreferences({ ...otherPreferences, dateFormat: e.target.value })} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 cursor-pointer">
                     <option value="DD/MM/YYYY">DD/MM/YYYY (Australian Standard)</option>
                     <option value="MM/DD/YYYY">MM/DD/YYYY (US Format)</option>
                     <option value="YYYY-MM-DD">YYYY-MM-DD (ISO Format)</option>
@@ -2797,7 +2795,7 @@ export default function CompanySettings() {
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 block">Measurement Units</label>
-                  <select value={otherPreferences.units} onChange={e => setOtherPreferences({...otherPreferences, units: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 cursor-pointer">
+                  <select value={otherPreferences.units} onChange={e => setOtherPreferences({ ...otherPreferences, units: e.target.value })} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 cursor-pointer">
                     <option value="Metric (km, kg, L)">Metric (km, kg, L)</option>
                     <option value="Imperial (mi, lbs, gal)">Imperial (mi, lbs, gal)</option>
                   </select>
@@ -2805,7 +2803,7 @@ export default function CompanySettings() {
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 block">Audit Log Retention</label>
-                  <select value={otherPreferences.auditLogRetention} onChange={e => setOtherPreferences({...otherPreferences, auditLogRetention: e.target.value})} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 cursor-pointer">
+                  <select value={otherPreferences.auditLogRetention} onChange={e => setOtherPreferences({ ...otherPreferences, auditLogRetention: e.target.value })} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 cursor-pointer">
                     <option value="365 Days">365 Days (1 Year)</option>
                     <option value="730 Days">730 Days (2 Years)</option>
                     <option value="Permanent">Permanent Archival</option>
@@ -2891,7 +2889,7 @@ export default function CompanySettings() {
          ========================================================================= */}
       {currentView === 'users-permissions' && (
         <div className="space-y-4">
-          
+
           {/* PAGE TITLE & ACTION BUTTONS HEADER */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div>
@@ -2909,20 +2907,20 @@ export default function CompanySettings() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-start sm:justify-end">
-              <button 
-                onClick={() => triggerToast('User list & security metrics refreshed!')} 
+              <button
+                onClick={() => triggerToast('User list & security metrics refreshed!')}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer shadow-2xs"
               >
                 <RefreshCw size={13} className="text-slate-500" /> Refresh
               </button>
-              <button 
-                onClick={handleExportCSV} 
+              <button
+                onClick={handleExportCSV}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer shadow-2xs"
               >
                 <Download size={13} className="text-slate-500" /> Export Report
               </button>
-              <button 
-                onClick={() => setIsAddModalOpen(true)} 
+              <button
+                onClick={() => setIsAddModalOpen(true)}
                 className="flex items-center gap-1.5 px-4 py-1.5 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
               >
                 <Plus size={14} /> Add User
@@ -2936,11 +2934,10 @@ export default function CompanySettings() {
               <button
                 key={tab}
                 onClick={() => setUsersTab(tab)}
-                className={`px-3.5 py-1.5 text-xs font-black whitespace-nowrap transition-all rounded-xl cursor-pointer outline-none focus:outline-none focus:ring-0 select-none ${
-                  usersTab === tab 
-                    ? 'bg-[#2563EB] text-white shadow-xs' 
+                className={`px-3.5 py-1.5 text-xs font-black whitespace-nowrap transition-all rounded-xl cursor-pointer outline-none focus:outline-none focus:ring-0 select-none ${usersTab === tab
+                    ? 'bg-[#2563EB] text-white shadow-xs'
                     : 'bg-slate-100/70 text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 border border-slate-200/60 font-bold'
-                }`}
+                  }`}
               >
                 {tab}
               </button>
@@ -2952,7 +2949,7 @@ export default function CompanySettings() {
             <>
               {/* 1. TOP METRIC CARDS (ROW OF 6 CARDS) */}
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-                
+
                 {/* Card 1: Total Users */}
                 <div className="bg-white rounded-xl border border-slate-200/80 px-3.5 py-2.5 shadow-2xs flex flex-col justify-between hover:border-blue-200 transition-all min-h-[92px]">
                   <div className="flex items-start gap-2.5">
@@ -3080,7 +3077,7 @@ export default function CompanySettings() {
 
               {/* 2. FILTERS & SEARCH BAR */}
               <div className="bg-white rounded-xl border border-slate-200/80 p-2.5 shadow-2xs flex flex-wrap items-center justify-between gap-2.5">
-                
+
                 {/* Search Input Box */}
                 <div className="relative flex-1 min-w-[240px]">
                   <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -3141,14 +3138,14 @@ export default function CompanySettings() {
                     <span>Filters</span>
                   </button>
 
-                  <button 
+                  <button
                     onClick={() => {
                       setSearchQuery('');
                       setSelectedRole('All Roles');
                       setSelectedStatus('All Status');
                       setSelectedBranch('All Branches');
                       triggerToast('Filters reset successfully');
-                    }} 
+                    }}
                     className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-500 hover:bg-slate-50 cursor-pointer"
                     title="Reset Filters"
                   >
@@ -3160,10 +3157,10 @@ export default function CompanySettings() {
 
               {/* 3. MAIN SPLIT GRID */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-                
+
                 {/* LEFT COLUMN: USERS LIST TABLE */}
                 <div className="lg:col-span-8 bg-white rounded-xl border border-slate-200/80 p-4 shadow-2xs space-y-3">
-                  
+
                   <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                     <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">USERS LIST</h3>
                     <button onClick={() => triggerToast('Showing all 48 users...')} className="text-[10px] font-bold text-[#2563EB] hover:underline cursor-pointer">
@@ -3187,8 +3184,8 @@ export default function CompanySettings() {
                       </thead>
                       <tbody className="divide-y divide-slate-100">
                         {filteredUsers.map((user) => (
-                          <tr 
-                            key={user.id} 
+                          <tr
+                            key={user.id}
                             onClick={() => setSelectedUser(user)}
                             className={`hover:bg-blue-50/40 transition-colors cursor-pointer ${selectedUser.id === user.id ? 'bg-blue-50/60' : ''}`}
                           >
@@ -3229,19 +3226,19 @@ export default function CompanySettings() {
                             </td>
 
                             <td className="py-2.5 px-2 text-right relative">
-                              <button 
-                                onClick={(e) => { 
-                                  e.stopPropagation(); 
-                                  setActiveRowMenuId(activeRowMenuId === user.id ? null : user.id); 
-                                }} 
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveRowMenuId(activeRowMenuId === user.id ? null : user.id);
+                                }}
                                 className="p-1.5 hover:bg-slate-200 rounded-lg text-slate-500 hover:text-slate-900 cursor-pointer"
                               >
                                 <MoreHorizontal size={14} />
                               </button>
 
                               {activeRowMenuId === user.id && (
-                                <div 
-                                  onClick={(e) => e.stopPropagation()} 
+                                <div
+                                  onClick={(e) => e.stopPropagation()}
                                   className="absolute right-2 top-8 z-50 bg-white border border-slate-200 rounded-xl shadow-xl py-1 w-44 text-left font-semibold text-xs space-y-0.5 animate-fade-in"
                                 >
                                   <button onClick={() => handleOpenEditModal(user)} className="w-full px-3 py-1.5 hover:bg-blue-50 text-slate-800 hover:text-blue-600 flex items-center gap-2 cursor-pointer">
@@ -3270,7 +3267,7 @@ export default function CompanySettings() {
                   {/* Pagination Footer */}
                   <div className="flex flex-col sm:flex-row justify-between items-center gap-2 pt-3 border-t border-slate-100 text-xs font-semibold text-slate-500">
                     <span>Showing 1 to {filteredUsers.length} of {usersList.length} users</span>
-                    
+
                     <div className="flex items-center gap-1">
                       <button className="px-2 py-1 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-400">|‹</button>
                       <button className="px-2 py-1 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-400">‹</button>
@@ -3288,7 +3285,7 @@ export default function CompanySettings() {
 
                 {/* RIGHT COLUMN: USER DETAILS & ROLE SUMMARY CARDS */}
                 <div className="lg:col-span-4 space-y-4">
-                  
+
                   {/* CARD 1: USER DETAILS */}
                   <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-2xs space-y-3.5 text-left">
                     <div className="flex items-center justify-between pb-2 border-b border-slate-100">
@@ -3670,7 +3667,7 @@ export default function CompanySettings() {
          ========================================================================= */}
       {currentView === 'workflow-rules' && (
         <div className="space-y-4">
-          
+
           {/* PAGE TITLE & ACTION BUTTONS HEADER */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div>
@@ -3688,20 +3685,20 @@ export default function CompanySettings() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-start sm:justify-end">
-              <button 
-                onClick={() => triggerToast('Workflow rules refreshed!')} 
+              <button
+                onClick={() => triggerToast('Workflow rules refreshed!')}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer shadow-2xs"
               >
                 <RefreshCw size={13} className="text-slate-500" /> Refresh
               </button>
-              <button 
-                onClick={handleExportWorkflowRulesCSV} 
+              <button
+                onClick={handleExportWorkflowRulesCSV}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer shadow-2xs"
               >
                 <Download size={13} className="text-slate-500" /> Export Rules
               </button>
-              <button 
-                onClick={() => setIsCreateWorkflowRuleModalOpen(true)} 
+              <button
+                onClick={() => setIsCreateWorkflowRuleModalOpen(true)}
                 className="flex items-center gap-1.5 px-4 py-1.5 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
               >
                 <Plus size={14} /> Create Rule
@@ -3715,11 +3712,10 @@ export default function CompanySettings() {
               <button
                 key={tab}
                 onClick={() => setWorkflowTab(tab)}
-                className={`px-3.5 py-1.5 text-xs font-black whitespace-nowrap transition-all rounded-xl cursor-pointer outline-none focus:outline-none focus:ring-0 select-none ${
-                  workflowTab === tab 
-                    ? 'bg-[#2563EB] text-white shadow-xs' 
+                className={`px-3.5 py-1.5 text-xs font-black whitespace-nowrap transition-all rounded-xl cursor-pointer outline-none focus:outline-none focus:ring-0 select-none ${workflowTab === tab
+                    ? 'bg-[#2563EB] text-white shadow-xs'
                     : 'bg-slate-100/70 text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 border border-slate-200/60 font-bold'
-                }`}
+                  }`}
               >
                 {tab}
               </button>
@@ -3728,7 +3724,7 @@ export default function CompanySettings() {
 
           {/* TOP METRIC CARDS (ROW OF 6 CARDS MATCHING SCREENSHOT 2) */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-            
+
             {/* Card 1: ACTIVE RULES */}
             <div className="bg-white rounded-xl border border-slate-200/80 p-3 shadow-2xs flex flex-col justify-between hover:border-emerald-200 transition-all text-left">
               <div className="flex items-start gap-2">
@@ -3894,19 +3890,19 @@ export default function CompanySettings() {
                 <option value="License Expiry 7 Days Before">License Expiry 7 Days Before</option>
               </select>
 
-              <button 
-                onClick={() => triggerToast('Filters applied')} 
+              <button
+                onClick={() => triggerToast('Filters applied')}
                 className="p-1.5 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 cursor-pointer"
               >
                 <Sliders size={14} />
               </button>
-              <button 
+              <button
                 onClick={() => {
                   setWorkflowSearchQuery('');
                   setWorkflowCategoryFilter('All Categories');
                   setWorkflowStatusFilter('All Status');
                   setWorkflowTriggerFilter('All Triggers');
-                }} 
+                }}
                 className="p-1.5 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 cursor-pointer"
               >
                 <RefreshCw size={14} />
@@ -3916,7 +3912,7 @@ export default function CompanySettings() {
 
           {/* MAIN 2-COLUMN SPLIT GRID (AUTOMATION RULES TABLE + SIDE CARDS) */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            
+
             {/* LEFT COLUMN: AUTOMATION RULES TABLE (LG 8 COLS) */}
             <div className="lg:col-span-8 bg-white rounded-xl border border-slate-200/80 p-4 shadow-2xs text-left space-y-3">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
@@ -3943,7 +3939,7 @@ export default function CompanySettings() {
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-xs font-medium">
                     {filteredWorkflowRules.map((rule) => (
-                      <tr 
+                      <tr
                         key={rule.id}
                         onClick={() => setSelectedWorkflowRule(rule)}
                         className={`hover:bg-blue-50/40 transition-colors cursor-pointer ${selectedWorkflowRule.id === rule.id ? 'bg-blue-50/60 font-semibold' : ''}`}
@@ -3987,19 +3983,19 @@ export default function CompanySettings() {
                         </td>
 
                         <td className="py-2 px-2 text-right relative whitespace-nowrap">
-                          <button 
-                            onClick={(e) => { 
-                              e.stopPropagation(); 
-                              setActiveRuleRowMenuId(activeRuleRowMenuId === rule.id ? null : rule.id); 
-                            }} 
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveRuleRowMenuId(activeRuleRowMenuId === rule.id ? null : rule.id);
+                            }}
                             className="p-1 hover:bg-slate-200 rounded-lg text-slate-500 hover:text-slate-900 cursor-pointer"
                           >
                             <MoreHorizontal size={14} />
                           </button>
 
                           {activeRuleRowMenuId === rule.id && (
-                            <div 
-                              onClick={(e) => e.stopPropagation()} 
+                            <div
+                              onClick={(e) => e.stopPropagation()}
                               className="absolute right-2 top-8 z-50 bg-white border border-slate-200 rounded-xl shadow-xl py-1 w-44 text-left font-semibold text-xs space-y-0.5 animate-fade-in"
                             >
                               <button onClick={() => handleOpenEditWorkflowRuleModal(rule)} className="w-full px-3 py-1.5 hover:bg-blue-50 text-slate-800 hover:text-blue-600 flex items-center gap-2 cursor-pointer">
@@ -4028,7 +4024,7 @@ export default function CompanySettings() {
               {/* Pagination Footer */}
               <div className="flex flex-col sm:flex-row justify-between items-center gap-2 pt-3 border-t border-slate-100 text-xs font-semibold text-slate-500">
                 <span>Showing 1 to {filteredWorkflowRules.length} of 36 rules</span>
-                
+
                 <div className="flex items-center gap-1">
                   <button className="px-2 py-1 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-400">|‹</button>
                   <button className="px-2 py-1 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-400">‹</button>
@@ -4046,7 +4042,7 @@ export default function CompanySettings() {
 
             {/* RIGHT COLUMN: RULE DETAILS & RECENT ACTIVITY CARDS (LG 4 COLS MATCHING SCREENSHOT 2) */}
             <div className="lg:col-span-4 space-y-4">
-              
+
               {/* CARD 1: RULE DETAILS */}
               <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-2xs space-y-3.5 text-left">
                 <div className="flex items-center justify-between pb-2 border-b border-slate-100">
@@ -4225,7 +4221,7 @@ export default function CompanySettings() {
          ========================================================================= */}
       {currentView === 'ai-configuration' && (
         <div className="space-y-4 text-left">
-          
+
           {/* PAGE TITLE & ACTION BUTTONS HEADER */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div>
@@ -4243,20 +4239,20 @@ export default function CompanySettings() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-start sm:justify-end">
-              <button 
-                onClick={() => triggerToast('AI Configuration refreshed!')} 
+              <button
+                onClick={() => triggerToast('AI Configuration refreshed!')}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer shadow-2xs"
               >
                 <RefreshCw size={13} className="text-slate-500" /> Refresh
               </button>
-              <button 
-                onClick={() => triggerToast('Exporting AI Configuration...')} 
+              <button
+                onClick={() => triggerToast('Exporting AI Configuration...')}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer shadow-2xs"
               >
                 <Download size={13} className="text-slate-500" /> Export Config
               </button>
-              <button 
-                onClick={() => triggerToast('AI Configuration changes saved successfully!')} 
+              <button
+                onClick={() => triggerToast('AI Configuration changes saved successfully!')}
                 className="flex items-center gap-1.5 px-4 py-1.5 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
               >
                 <Save size={14} /> Save Changes
@@ -4270,11 +4266,10 @@ export default function CompanySettings() {
               <button
                 key={tab}
                 onClick={() => setAiTab(tab)}
-                className={`px-3.5 py-1.5 text-xs font-black whitespace-nowrap transition-all rounded-xl cursor-pointer outline-none focus:outline-none focus:ring-0 select-none ${
-                  aiTab === tab 
-                    ? 'bg-[#2563EB] text-white shadow-xs' 
+                className={`px-3.5 py-1.5 text-xs font-black whitespace-nowrap transition-all rounded-xl cursor-pointer outline-none focus:outline-none focus:ring-0 select-none ${aiTab === tab
+                    ? 'bg-[#2563EB] text-white shadow-xs'
                     : 'bg-slate-100/70 text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 border border-slate-200/60 font-bold'
-                }`}
+                  }`}
               >
                 {tab}
               </button>
@@ -4286,475 +4281,472 @@ export default function CompanySettings() {
             <>
               {/* TOP METRIC CARDS (ROW OF 6 CARDS MATCHING SCREENSHOT 2) */}
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-            
-            {/* Card 1: AI FEATURES ENABLED */}
-            <div className="bg-white rounded-xl border border-slate-200/80 p-3 shadow-2xs flex flex-col justify-between hover:border-purple-200 transition-all text-left">
-              <div className="flex items-start gap-2">
-                <div className="w-8 h-8 rounded-xl bg-[#F3E8FF] text-purple-600 flex items-center justify-center shrink-0 shadow-3xs mt-0.5">
-                  <Cpu size={16} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-tight block leading-none">AI FEATURES ENABLED</span>
-                  <div className="flex items-baseline gap-1 mt-1">
-                    <span className="text-xl font-black text-slate-900 leading-none">12</span>
-                    <span className="text-[10px] font-bold text-slate-500">of 18</span>
+
+                {/* Card 1: AI FEATURES ENABLED */}
+                <div className="bg-white rounded-xl border border-slate-200/80 p-3 shadow-2xs flex flex-col justify-between hover:border-purple-200 transition-all text-left">
+                  <div className="flex items-start gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-[#F3E8FF] text-purple-600 flex items-center justify-center shrink-0 shadow-3xs mt-0.5">
+                      <Cpu size={16} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-tight block leading-none">AI FEATURES ENABLED</span>
+                      <div className="flex items-baseline gap-1 mt-1">
+                        <span className="text-xl font-black text-slate-900 leading-none">12</span>
+                        <span className="text-[10px] font-bold text-slate-500">of 18</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="pt-2 border-t border-slate-50 flex justify-end mt-2">
+                    <button onClick={() => setAiTab('Feature Settings')} className="text-[9px] font-bold text-[#2563EB] hover:underline cursor-pointer">
+                      View all features →
+                    </button>
                   </div>
                 </div>
-              </div>
-              <div className="pt-2 border-t border-slate-50 flex justify-end mt-2">
-                <button onClick={() => setAiTab('Feature Settings')} className="text-[9px] font-bold text-[#2563EB] hover:underline cursor-pointer">
-                  View all features →
-                </button>
-              </div>
-            </div>
 
-            {/* Card 2: AI REQUESTS (THIS MONTH) */}
-            <div className="bg-white rounded-xl border border-slate-200/80 p-3 shadow-2xs flex flex-col justify-between hover:border-emerald-200 transition-all text-left">
-              <div className="flex items-start gap-2">
-                <div className="w-8 h-8 rounded-xl bg-[#DCFCE7] text-[#16A34A] flex items-center justify-center shrink-0 shadow-3xs mt-0.5">
-                  <HardDrive size={16} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-tight block leading-none">AI REQUESTS (THIS MONTH)</span>
-                  <span className="text-xl font-black text-slate-900 block mt-1 leading-none">24,680</span>
-                  <p className="text-[9px] font-extrabold text-emerald-600 leading-none mt-1">↑ 18.6% <span className="font-semibold text-slate-400">vs Last Month</span></p>
-                </div>
-              </div>
-              <div className="pt-2 border-t border-slate-50 flex justify-end mt-2">
-                <button onClick={() => setAiTab('Usage & Limits')} className="text-[9px] font-bold text-[#2563EB] hover:underline cursor-pointer">
-                  View usage report →
-                </button>
-              </div>
-            </div>
-
-            {/* Card 3: AUTOMATIONS RUN (THIS MONTH) */}
-            <div className="bg-white rounded-xl border border-slate-200/80 p-3 shadow-2xs flex flex-col justify-between hover:border-amber-200 transition-all text-left">
-              <div className="flex items-start gap-2">
-                <div className="w-8 h-8 rounded-xl bg-[#FFEDD5] text-[#EA580C] flex items-center justify-center shrink-0 shadow-3xs mt-0.5">
-                  <Zap size={16} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-tight block leading-none">AUTOMATIONS RUN (THIS MONTH)</span>
-                  <span className="text-xl font-black text-slate-900 block mt-1 leading-none">3,842</span>
-                  <p className="text-[9px] font-extrabold text-emerald-600 leading-none mt-1">↑ 21.4% <span className="font-semibold text-slate-400">vs Last Month</span></p>
-                </div>
-              </div>
-              <div className="pt-2 border-t border-slate-50 flex justify-end mt-2">
-                <button onClick={() => setAiTab('Automation')} className="text-[9px] font-bold text-[#2563EB] hover:underline cursor-pointer">
-                  View automation log →
-                </button>
-              </div>
-            </div>
-
-            {/* Card 4: DATA SOURCES CONNECTED */}
-            <div className="bg-white rounded-xl border border-slate-200/80 p-3 shadow-2xs flex flex-col justify-between hover:border-blue-200 transition-all text-left">
-              <div className="flex items-start gap-2">
-                <div className="w-8 h-8 rounded-xl bg-[#DBEAFE] text-[#2563EB] flex items-center justify-center shrink-0 shadow-3xs mt-0.5">
-                  <Database size={16} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-tight block leading-none">DATA SOURCES CONNECTED</span>
-                  <span className="text-xl font-black text-slate-900 block mt-1 leading-none">8</span>
-                </div>
-              </div>
-              <div className="pt-2 border-t border-slate-50 flex justify-end mt-2">
-                <button onClick={() => setAiTab('Data Sources')} className="text-[9px] font-bold text-[#2563EB] hover:underline cursor-pointer">
-                  View data sources →
-                </button>
-              </div>
-            </div>
-
-            {/* Card 5: AI ACCURACY (AVG THIS MONTH) */}
-            <div className="bg-white rounded-xl border border-slate-200/80 p-3 shadow-2xs flex flex-col justify-between hover:border-rose-200 transition-all text-left">
-              <div className="flex items-start gap-2">
-                <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 shadow-3xs mt-0.5">
-                  <TrendingUp size={16} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-tight block leading-none">AI ACCURACY (AVG THIS MONTH)</span>
-                  <span className="text-xl font-black text-slate-900 block mt-1 leading-none">92.4%</span>
-                  <p className="text-[9px] font-extrabold text-emerald-600 leading-none mt-1">↑ 4.2% <span className="font-semibold text-slate-400">vs Last Month</span></p>
-                </div>
-              </div>
-              <div className="pt-2 border-t border-slate-50 flex justify-end mt-2">
-                <button onClick={() => setAiTab('Logs & Monitoring')} className="text-[9px] font-bold text-[#2563EB] hover:underline cursor-pointer">
-                  View accuracy report →
-                </button>
-              </div>
-            </div>
-
-            {/* Card 6: AI HEALTH STATUS */}
-            <div className="bg-white rounded-xl border border-slate-200/80 p-3 shadow-2xs flex flex-col justify-between hover:border-emerald-200 transition-all text-left">
-              <div className="flex items-start gap-2">
-                <div className="w-8 h-8 rounded-xl bg-[#DCFCE7] text-[#16A34A] flex items-center justify-center shrink-0 shadow-3xs mt-0.5">
-                  <ShieldCheck size={16} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-tight block leading-none">AI HEALTH STATUS</span>
-                  <span className="text-xl font-black text-emerald-600 block mt-1 leading-none">Healthy</span>
-                  <p className="text-[9px] font-semibold text-slate-400 leading-none mt-1">All systems operational</p>
-                </div>
-              </div>
-              <div className="pt-2 border-t border-slate-50 flex justify-end mt-2">
-                <button onClick={() => triggerToast('Checking AI system health...')} className="text-[9px] font-bold text-[#2563EB] hover:underline cursor-pointer">
-                  View health report →
-                </button>
-              </div>
-            </div>
-
-          </div>
-
-          {/* MAIN 2-COLUMN SPLIT GRID (AI FEATURE CONFIGURATION + RIGHT SIDE CARDS) */}
-          <div className="grid grid-cols-1 xl:grid-cols-12 gap-3.5 items-start">
-            
-            {/* LEFT COLUMN: AI FEATURE CONFIGURATION TABLE (XL 7 COLS) */}
-            <div className="xl:col-span-7 bg-white rounded-xl border border-slate-200/80 p-3.5 shadow-2xs text-left space-y-2.5 overflow-hidden">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">AI FEATURE CONFIGURATION</h3>
-              </div>
-
-              {/* Table */}
-              <div className="w-full overflow-x-auto scrollbar-thin">
-                <table className="w-full text-left border-collapse min-w-[680px]">
-                  <thead>
-                    <tr className="border-b border-slate-200 text-[10px] font-extrabold text-[#1E1B4B] bg-slate-50/50">
-                      <th className="py-2.5 px-2.5 whitespace-nowrap min-w-[170px]">Feature</th>
-                      <th className="py-2.5 px-2.5 whitespace-nowrap min-w-[240px]">Description</th>
-                      <th className="py-2.5 px-2.5 whitespace-nowrap min-w-[75px]">Status</th>
-                      <th className="py-2.5 px-2.5 whitespace-nowrap min-w-[130px]">Model</th>
-                      <th className="py-2.5 px-2.5 whitespace-nowrap min-w-[125px]">Confidence Threshold</th>
-                      <th className="py-2.5 px-2 text-center whitespace-nowrap min-w-[65px]">Auto Execute</th>
-                      <th className="py-2.5 px-1.5 text-right whitespace-nowrap min-w-[40px]">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-xs font-medium">
-                    {aiFeaturesList.map((feat) => (
-                      <tr 
-                        key={feat.id}
-                        className="hover:bg-blue-50/30 transition-colors"
-                      >
-                        <td className="py-2.5 px-2.5 whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${feat.iconBg}`}>
-                              {feat.icon}
-                            </div>
-                            <span className="font-extrabold text-[#1E293B] text-[11px] leading-tight">{feat.name}</span>
-                          </div>
-                        </td>
-
-                        <td className="py-2.5 px-2.5 whitespace-normal">
-                          <div className="text-slate-500 font-medium text-[10px] leading-[1.45] w-[210px] line-clamp-2">
-                            {feat.desc}
-                          </div>
-                        </td>
-
-                        <td className="py-2.5 px-2.5 whitespace-nowrap">
-                          <span className={`px-2 py-0.5 rounded-md text-[9px] font-extrabold ${
-                            feat.status === 'Enabled' ? 'bg-[#DCFCE7] text-[#166534]' : 'bg-rose-100 text-rose-700'
-                          }`}>
-                            {feat.status}
-                          </span>
-                        </td>
-
-                        <td className="py-2.5 px-2.5 text-slate-800 font-bold text-[10.5px] whitespace-nowrap">
-                          {feat.model}
-                        </td>
-
-                        <td className="py-2.5 px-2.5 whitespace-nowrap">
-                          <div className="flex items-center gap-2 w-24">
-                            <div className="flex-1 bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                              <div 
-                                className="bg-[#10B981] h-full rounded-full transition-all" 
-                                style={{ width: `${feat.confidence}%` }}
-                              ></div>
-                            </div>
-                            <span className="text-[10px] font-black text-slate-700 w-6 text-right">{feat.confidence}%</span>
-                          </div>
-                        </td>
-
-                        <td className="py-2 px-1 text-center whitespace-nowrap">
-                          <button
-                            onClick={() => {
-                              const updated = aiFeaturesList.map(f => f.id === feat.id ? { ...f, autoExecute: !f.autoExecute } : f);
-                              setAiFeaturesList(updated);
-                              triggerToast(`${feat.name} auto-execute set to ${!feat.autoExecute ? 'ON' : 'OFF'}`);
-                            }}
-                            className={`w-7.5 h-4 rounded-full transition-colors relative cursor-pointer inline-block align-middle ${
-                              feat.autoExecute ? 'bg-[#2563EB]' : 'bg-slate-300'
-                            }`}
-                          >
-                            <span className={`w-3 h-3 bg-white rounded-full absolute top-0.5 transition-transform ${
-                              feat.autoExecute ? 'left-4' : 'left-0.5'
-                            }`}></span>
-                          </button>
-                        </td>
-
-                        <td className="py-2 px-1 text-right whitespace-nowrap relative">
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveAiFeatureMenuId(activeAiFeatureMenuId === feat.id ? null : feat.id);
-                            }} 
-                            className="w-7 h-7 inline-flex items-center justify-center rounded-lg border border-slate-200/80 bg-white hover:bg-slate-100 hover:border-slate-300 text-slate-500 hover:text-slate-900 transition-all cursor-pointer outline-none focus:outline-none focus:ring-0 select-none shadow-2xs"
-                          >
-                            <MoreHorizontal size={13} />
-                          </button>
-
-                          {/* 3-DOT INTERACTIVE ACTION DROPDOWN MENU */}
-                          {activeAiFeatureMenuId === feat.id && (
-                            <>
-                              <div 
-                                className="fixed inset-0 z-40" 
-                                onClick={() => setActiveAiFeatureMenuId(null)} 
-                              />
-                              <div 
-                                className="absolute right-0 top-full mt-1.5 w-56 bg-white rounded-xl border border-slate-200 shadow-xl z-50 p-1.5 text-left space-y-1 animate-in fade-in zoom-in-95 duration-100"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <div className="px-2.5 py-1.5 border-b border-slate-100 mb-1">
-                                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">FEATURE ACTIONS</span>
-                                  <span className="text-xs font-black text-slate-900 truncate block">{feat.name}</span>
-                                </div>
-
-                                {/* Action 1: Toggle Status */}
-                                <button
-                                  onClick={() => {
-                                    const nextStatus = feat.status === 'Enabled' ? 'Disabled' : 'Enabled';
-                                    setAiFeaturesList(aiFeaturesList.map(f => f.id === feat.id ? { ...f, status: nextStatus } : f));
-                                    triggerToast(`${feat.name} is now ${nextStatus}!`);
-                                    setActiveAiFeatureMenuId(null);
-                                  }}
-                                  className="w-full px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center justify-between cursor-pointer transition-colors"
-                                >
-                                  <span className="flex items-center gap-2">
-                                    <Zap size={13} className={feat.status === 'Enabled' ? 'text-rose-500' : 'text-emerald-500'} />
-                                    {feat.status === 'Enabled' ? 'Disable Feature' : 'Enable Feature'}
-                                  </span>
-                                  <span className={`text-[9px] font-black px-1.5 py-0.5 rounded ${feat.status === 'Enabled' ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`}>
-                                    {feat.status === 'Enabled' ? 'OFF' : 'ON'}
-                                  </span>
-                                </button>
-
-                                {/* Action 2: Toggle Auto Execute */}
-                                <button
-                                  onClick={() => {
-                                    const nextAuto = !feat.autoExecute;
-                                    setAiFeaturesList(aiFeaturesList.map(f => f.id === feat.id ? { ...f, autoExecute: nextAuto } : f));
-                                    triggerToast(`${feat.name} Auto-Execute set to ${nextAuto ? 'ENABLED' : 'DISABLED'}`);
-                                    setActiveAiFeatureMenuId(null);
-                                  }}
-                                  className="w-full px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center gap-2 cursor-pointer transition-colors"
-                                >
-                                  <Sliders size={13} className="text-blue-500" />
-                                  <span>Toggle Auto-Execute ({feat.autoExecute ? 'ON' : 'OFF'})</span>
-                                </button>
-
-                                {/* Action 3: Increase Confidence Threshold */}
-                                <button
-                                  onClick={() => {
-                                    const nextConf = feat.confidence >= 95 ? 75 : feat.confidence + 5;
-                                    setAiFeaturesList(aiFeaturesList.map(f => f.id === feat.id ? { ...f, confidence: nextConf } : f));
-                                    triggerToast(`${feat.name} confidence threshold updated to ${nextConf}%`);
-                                    setActiveAiFeatureMenuId(null);
-                                  }}
-                                  className="w-full px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center gap-2 cursor-pointer transition-colors"
-                                >
-                                  <CheckCircle2 size={13} className="text-emerald-500" />
-                                  <span>Set Threshold ({feat.confidence}%)</span>
-                                </button>
-
-                                {/* Action 4: Switch Model */}
-                                <button
-                                  onClick={() => {
-                                    const models = ['GPT-4o', 'Hero AI Model v1.3', 'Azure OCR v3', 'Compliance AI v2.2'];
-                                    const nextModel = models[(models.indexOf(feat.model) + 1) % models.length];
-                                    setAiFeaturesList(aiFeaturesList.map(f => f.id === feat.id ? { ...f, model: nextModel } : f));
-                                    triggerToast(`${feat.name} model switched to ${nextModel}`);
-                                    setActiveAiFeatureMenuId(null);
-                                  }}
-                                  className="w-full px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center gap-2 cursor-pointer transition-colors"
-                                >
-                                  <Cpu size={13} className="text-purple-500" />
-                                  <span>Switch AI Model ({feat.model})</span>
-                                </button>
-
-                                <div className="my-1 border-t border-slate-100" />
-
-                                {/* Action 5: View Logs */}
-                                <button
-                                  onClick={() => {
-                                    setAiTab('Logs & Monitoring');
-                                    triggerToast(`Viewing AI audit logs for ${feat.name}...`);
-                                    setActiveAiFeatureMenuId(null);
-                                  }}
-                                  className="w-full px-2.5 py-1.5 rounded-lg text-xs font-bold text-[#2563EB] hover:bg-blue-50 flex items-center gap-2 cursor-pointer transition-colors"
-                                >
-                                  <FileText size={13} className="text-blue-500" />
-                                  <span>View Feature Logs</span>
-                                </button>
-                              </div>
-                            </>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Pagination Footer */}
-              <div className="flex flex-col sm:flex-row justify-between items-center gap-2 pt-2.5 border-t border-slate-100 text-[11px] font-semibold text-slate-500">
-                <span>Showing 1 to 8 of 12 features</span>
-                
-                <div className="flex items-center gap-1">
-                  <button className="px-2 py-0.5 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-400 text-xs">|‹</button>
-                  <button className="px-2 py-0.5 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-400 text-xs">‹</button>
-                  <button className="px-2.5 py-0.5 bg-[#2563EB] text-white font-bold rounded-md text-xs">1</button>
-                  <button className="px-2.5 py-0.5 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-700 font-bold text-xs">2</button>
-                  <button className="px-2 py-0.5 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-700 font-bold text-xs">›</button>
-                  <button className="px-2 py-0.5 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-700 font-bold text-xs">›|</button>
-                </div>
-              </div>
-            </div>
-
-            {/* RIGHT COLUMN: AI MODEL MANAGEMENT + AI USAGE OVERVIEW (XL 5 COLS) */}
-            <div className="xl:col-span-5 space-y-3.5">
-              
-              {/* TOP CARD: AI MODEL MANAGEMENT */}
-              <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-2xs text-left space-y-3">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">AI MODEL MANAGEMENT</h3>
-                  <button onClick={() => setAiTab('AI Models')} className="text-[10px] font-bold text-[#2563EB] hover:underline cursor-pointer">
-                    View all models →
-                  </button>
+                {/* Card 2: AI REQUESTS (THIS MONTH) */}
+                <div className="bg-white rounded-xl border border-slate-200/80 p-3 shadow-2xs flex flex-col justify-between hover:border-emerald-200 transition-all text-left">
+                  <div className="flex items-start gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-[#DCFCE7] text-[#16A34A] flex items-center justify-center shrink-0 shadow-3xs mt-0.5">
+                      <HardDrive size={16} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-tight block leading-none">AI REQUESTS (THIS MONTH)</span>
+                      <span className="text-xl font-black text-slate-900 block mt-1 leading-none">24,680</span>
+                      <p className="text-[9px] font-extrabold text-emerald-600 leading-none mt-1">↑ 18.6% <span className="font-semibold text-slate-400">vs Last Month</span></p>
+                    </div>
+                  </div>
+                  <div className="pt-2 border-t border-slate-50 flex justify-end mt-2">
+                    <button onClick={() => setAiTab('Usage & Limits')} className="text-[9px] font-bold text-[#2563EB] hover:underline cursor-pointer">
+                      View usage report →
+                    </button>
+                  </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-slate-200 text-[9.5px] font-black text-slate-400 uppercase tracking-tight bg-slate-50/50">
-                        <th className="py-2 px-2 whitespace-nowrap">Model Name</th>
-                        <th className="py-2 px-2 whitespace-nowrap">Provider</th>
-                        <th className="py-2 px-2 whitespace-nowrap">Version</th>
-                        <th className="py-2 px-2 whitespace-nowrap">Status</th>
-                        <th className="py-2 px-2 text-right whitespace-nowrap">Last Updated</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-xs font-medium">
-                      {aiModelsList.map((m) => (
-                        <tr key={m.id} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="py-2.5 px-2 font-extrabold text-slate-900 text-[11px] whitespace-nowrap">{m.name}</td>
-                          <td className="py-2.5 px-2 text-slate-600 text-[10px] whitespace-nowrap">{m.provider}</td>
-                          <td className="py-2.5 px-2 text-slate-500 font-mono text-[10px] whitespace-nowrap">{m.version}</td>
-                          <td className="py-2.5 px-2 whitespace-nowrap">
-                            <span className="text-emerald-600 font-black text-[10px]">Active</span>
-                          </td>
-                          <td className="py-2.5 px-2 text-right text-slate-500 text-[10px] whitespace-nowrap">{m.lastUpdated}</td>
+                {/* Card 3: AUTOMATIONS RUN (THIS MONTH) */}
+                <div className="bg-white rounded-xl border border-slate-200/80 p-3 shadow-2xs flex flex-col justify-between hover:border-amber-200 transition-all text-left">
+                  <div className="flex items-start gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-[#FFEDD5] text-[#EA580C] flex items-center justify-center shrink-0 shadow-3xs mt-0.5">
+                      <Zap size={16} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-tight block leading-none">AUTOMATIONS RUN (THIS MONTH)</span>
+                      <span className="text-xl font-black text-slate-900 block mt-1 leading-none">3,842</span>
+                      <p className="text-[9px] font-extrabold text-emerald-600 leading-none mt-1">↑ 21.4% <span className="font-semibold text-slate-400">vs Last Month</span></p>
+                    </div>
+                  </div>
+                  <div className="pt-2 border-t border-slate-50 flex justify-end mt-2">
+                    <button onClick={() => setAiTab('Automation')} className="text-[9px] font-bold text-[#2563EB] hover:underline cursor-pointer">
+                      View automation log →
+                    </button>
+                  </div>
+                </div>
+
+                {/* Card 4: DATA SOURCES CONNECTED */}
+                <div className="bg-white rounded-xl border border-slate-200/80 p-3 shadow-2xs flex flex-col justify-between hover:border-blue-200 transition-all text-left">
+                  <div className="flex items-start gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-[#DBEAFE] text-[#2563EB] flex items-center justify-center shrink-0 shadow-3xs mt-0.5">
+                      <Database size={16} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-tight block leading-none">DATA SOURCES CONNECTED</span>
+                      <span className="text-xl font-black text-slate-900 block mt-1 leading-none">8</span>
+                    </div>
+                  </div>
+                  <div className="pt-2 border-t border-slate-50 flex justify-end mt-2">
+                    <button onClick={() => setAiTab('Data Sources')} className="text-[9px] font-bold text-[#2563EB] hover:underline cursor-pointer">
+                      View data sources →
+                    </button>
+                  </div>
+                </div>
+
+                {/* Card 5: AI ACCURACY (AVG THIS MONTH) */}
+                <div className="bg-white rounded-xl border border-slate-200/80 p-3 shadow-2xs flex flex-col justify-between hover:border-rose-200 transition-all text-left">
+                  <div className="flex items-start gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 shadow-3xs mt-0.5">
+                      <TrendingUp size={16} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-tight block leading-none">AI ACCURACY (AVG THIS MONTH)</span>
+                      <span className="text-xl font-black text-slate-900 block mt-1 leading-none">92.4%</span>
+                      <p className="text-[9px] font-extrabold text-emerald-600 leading-none mt-1">↑ 4.2% <span className="font-semibold text-slate-400">vs Last Month</span></p>
+                    </div>
+                  </div>
+                  <div className="pt-2 border-t border-slate-50 flex justify-end mt-2">
+                    <button onClick={() => setAiTab('Logs & Monitoring')} className="text-[9px] font-bold text-[#2563EB] hover:underline cursor-pointer">
+                      View accuracy report →
+                    </button>
+                  </div>
+                </div>
+
+                {/* Card 6: AI HEALTH STATUS */}
+                <div className="bg-white rounded-xl border border-slate-200/80 p-3 shadow-2xs flex flex-col justify-between hover:border-emerald-200 transition-all text-left">
+                  <div className="flex items-start gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-[#DCFCE7] text-[#16A34A] flex items-center justify-center shrink-0 shadow-3xs mt-0.5">
+                      <ShieldCheck size={16} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-tight block leading-none">AI HEALTH STATUS</span>
+                      <span className="text-xl font-black text-emerald-600 block mt-1 leading-none">Healthy</span>
+                      <p className="text-[9px] font-semibold text-slate-400 leading-none mt-1">All systems operational</p>
+                    </div>
+                  </div>
+                  <div className="pt-2 border-t border-slate-50 flex justify-end mt-2">
+                    <button onClick={() => triggerToast('Checking AI system health...')} className="text-[9px] font-bold text-[#2563EB] hover:underline cursor-pointer">
+                      View health report →
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* MAIN 2-COLUMN SPLIT GRID (AI FEATURE CONFIGURATION + RIGHT SIDE CARDS) */}
+              <div className="grid grid-cols-1 xl:grid-cols-12 gap-3.5 items-start">
+
+                {/* LEFT COLUMN: AI FEATURE CONFIGURATION TABLE (XL 7 COLS) */}
+                <div className="xl:col-span-7 bg-white rounded-xl border border-slate-200/80 p-3.5 shadow-2xs text-left space-y-2.5 overflow-hidden">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">AI FEATURE CONFIGURATION</h3>
+                  </div>
+
+                  {/* Table */}
+                  <div className="w-full overflow-x-auto scrollbar-thin">
+                    <table className="w-full text-left border-collapse min-w-[680px]">
+                      <thead>
+                        <tr className="border-b border-slate-200 text-[10px] font-extrabold text-[#1E1B4B] bg-slate-50/50">
+                          <th className="py-2.5 px-2.5 whitespace-nowrap min-w-[170px]">Feature</th>
+                          <th className="py-2.5 px-2.5 whitespace-nowrap min-w-[240px]">Description</th>
+                          <th className="py-2.5 px-2.5 whitespace-nowrap min-w-[75px]">Status</th>
+                          <th className="py-2.5 px-2.5 whitespace-nowrap min-w-[130px]">Model</th>
+                          <th className="py-2.5 px-2.5 whitespace-nowrap min-w-[125px]">Confidence Threshold</th>
+                          <th className="py-2.5 px-2 text-center whitespace-nowrap min-w-[65px]">Auto Execute</th>
+                          <th className="py-2.5 px-1.5 text-right whitespace-nowrap min-w-[40px]">Actions</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-xs font-medium">
+                        {aiFeaturesList.map((feat) => (
+                          <tr
+                            key={feat.id}
+                            className="hover:bg-blue-50/30 transition-colors"
+                          >
+                            <td className="py-2.5 px-2.5 whitespace-nowrap">
+                              <div className="flex items-center gap-2">
+                                <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${feat.iconBg}`}>
+                                  {feat.icon}
+                                </div>
+                                <span className="font-extrabold text-[#1E293B] text-[11px] leading-tight">{feat.name}</span>
+                              </div>
+                            </td>
+
+                            <td className="py-2.5 px-2.5 whitespace-normal">
+                              <div className="text-slate-500 font-medium text-[10px] leading-[1.45] w-[210px] line-clamp-2">
+                                {feat.desc}
+                              </div>
+                            </td>
+
+                            <td className="py-2.5 px-2.5 whitespace-nowrap">
+                              <span className={`px-2 py-0.5 rounded-md text-[9px] font-extrabold ${feat.status === 'Enabled' ? 'bg-[#DCFCE7] text-[#166534]' : 'bg-rose-100 text-rose-700'
+                                }`}>
+                                {feat.status}
+                              </span>
+                            </td>
+
+                            <td className="py-2.5 px-2.5 text-slate-800 font-bold text-[10.5px] whitespace-nowrap">
+                              {feat.model}
+                            </td>
+
+                            <td className="py-2.5 px-2.5 whitespace-nowrap">
+                              <div className="flex items-center gap-2 w-24">
+                                <div className="flex-1 bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                  <div
+                                    className="bg-[#10B981] h-full rounded-full transition-all"
+                                    style={{ width: `${feat.confidence}%` }}
+                                  ></div>
+                                </div>
+                                <span className="text-[10px] font-black text-slate-700 w-6 text-right">{feat.confidence}%</span>
+                              </div>
+                            </td>
+
+                            <td className="py-2 px-1 text-center whitespace-nowrap">
+                              <button
+                                onClick={() => {
+                                  const updated = aiFeaturesList.map(f => f.id === feat.id ? { ...f, autoExecute: !f.autoExecute } : f);
+                                  setAiFeaturesList(updated);
+                                  triggerToast(`${feat.name} auto-execute set to ${!feat.autoExecute ? 'ON' : 'OFF'}`);
+                                }}
+                                className={`w-7.5 h-4 rounded-full transition-colors relative cursor-pointer inline-block align-middle ${feat.autoExecute ? 'bg-[#2563EB]' : 'bg-slate-300'
+                                  }`}
+                              >
+                                <span className={`w-3 h-3 bg-white rounded-full absolute top-0.5 transition-transform ${feat.autoExecute ? 'left-4' : 'left-0.5'
+                                  }`}></span>
+                              </button>
+                            </td>
+
+                            <td className="py-2 px-1 text-right whitespace-nowrap relative">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveAiFeatureMenuId(activeAiFeatureMenuId === feat.id ? null : feat.id);
+                                }}
+                                className="w-7 h-7 inline-flex items-center justify-center rounded-lg border border-slate-200/80 bg-white hover:bg-slate-100 hover:border-slate-300 text-slate-500 hover:text-slate-900 transition-all cursor-pointer outline-none focus:outline-none focus:ring-0 select-none shadow-2xs"
+                              >
+                                <MoreHorizontal size={13} />
+                              </button>
+
+                              {/* 3-DOT INTERACTIVE ACTION DROPDOWN MENU */}
+                              {activeAiFeatureMenuId === feat.id && (
+                                <>
+                                  <div
+                                    className="fixed inset-0 z-40"
+                                    onClick={() => setActiveAiFeatureMenuId(null)}
+                                  />
+                                  <div
+                                    className="absolute right-0 top-full mt-1.5 w-56 bg-white rounded-xl border border-slate-200 shadow-xl z-50 p-1.5 text-left space-y-1 animate-in fade-in zoom-in-95 duration-100"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <div className="px-2.5 py-1.5 border-b border-slate-100 mb-1">
+                                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">FEATURE ACTIONS</span>
+                                      <span className="text-xs font-black text-slate-900 truncate block">{feat.name}</span>
+                                    </div>
+
+                                    {/* Action 1: Toggle Status */}
+                                    <button
+                                      onClick={() => {
+                                        const nextStatus = feat.status === 'Enabled' ? 'Disabled' : 'Enabled';
+                                        setAiFeaturesList(aiFeaturesList.map(f => f.id === feat.id ? { ...f, status: nextStatus } : f));
+                                        triggerToast(`${feat.name} is now ${nextStatus}!`);
+                                        setActiveAiFeatureMenuId(null);
+                                      }}
+                                      className="w-full px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center justify-between cursor-pointer transition-colors"
+                                    >
+                                      <span className="flex items-center gap-2">
+                                        <Zap size={13} className={feat.status === 'Enabled' ? 'text-rose-500' : 'text-emerald-500'} />
+                                        {feat.status === 'Enabled' ? 'Disable Feature' : 'Enable Feature'}
+                                      </span>
+                                      <span className={`text-[9px] font-black px-1.5 py-0.5 rounded ${feat.status === 'Enabled' ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                                        {feat.status === 'Enabled' ? 'OFF' : 'ON'}
+                                      </span>
+                                    </button>
+
+                                    {/* Action 2: Toggle Auto Execute */}
+                                    <button
+                                      onClick={() => {
+                                        const nextAuto = !feat.autoExecute;
+                                        setAiFeaturesList(aiFeaturesList.map(f => f.id === feat.id ? { ...f, autoExecute: nextAuto } : f));
+                                        triggerToast(`${feat.name} Auto-Execute set to ${nextAuto ? 'ENABLED' : 'DISABLED'}`);
+                                        setActiveAiFeatureMenuId(null);
+                                      }}
+                                      className="w-full px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center gap-2 cursor-pointer transition-colors"
+                                    >
+                                      <Sliders size={13} className="text-blue-500" />
+                                      <span>Toggle Auto-Execute ({feat.autoExecute ? 'ON' : 'OFF'})</span>
+                                    </button>
+
+                                    {/* Action 3: Increase Confidence Threshold */}
+                                    <button
+                                      onClick={() => {
+                                        const nextConf = feat.confidence >= 95 ? 75 : feat.confidence + 5;
+                                        setAiFeaturesList(aiFeaturesList.map(f => f.id === feat.id ? { ...f, confidence: nextConf } : f));
+                                        triggerToast(`${feat.name} confidence threshold updated to ${nextConf}%`);
+                                        setActiveAiFeatureMenuId(null);
+                                      }}
+                                      className="w-full px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center gap-2 cursor-pointer transition-colors"
+                                    >
+                                      <CheckCircle2 size={13} className="text-emerald-500" />
+                                      <span>Set Threshold ({feat.confidence}%)</span>
+                                    </button>
+
+                                    {/* Action 4: Switch Model */}
+                                    <button
+                                      onClick={() => {
+                                        const models = ['GPT-4o', 'Hero AI Model v1.3', 'Azure OCR v3', 'Compliance AI v2.2'];
+                                        const nextModel = models[(models.indexOf(feat.model) + 1) % models.length];
+                                        setAiFeaturesList(aiFeaturesList.map(f => f.id === feat.id ? { ...f, model: nextModel } : f));
+                                        triggerToast(`${feat.name} model switched to ${nextModel}`);
+                                        setActiveAiFeatureMenuId(null);
+                                      }}
+                                      className="w-full px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center gap-2 cursor-pointer transition-colors"
+                                    >
+                                      <Cpu size={13} className="text-purple-500" />
+                                      <span>Switch AI Model ({feat.model})</span>
+                                    </button>
+
+                                    <div className="my-1 border-t border-slate-100" />
+
+                                    {/* Action 5: View Logs */}
+                                    <button
+                                      onClick={() => {
+                                        setAiTab('Logs & Monitoring');
+                                        triggerToast(`Viewing AI audit logs for ${feat.name}...`);
+                                        setActiveAiFeatureMenuId(null);
+                                      }}
+                                      className="w-full px-2.5 py-1.5 rounded-lg text-xs font-bold text-[#2563EB] hover:bg-blue-50 flex items-center gap-2 cursor-pointer transition-colors"
+                                    >
+                                      <FileText size={13} className="text-blue-500" />
+                                      <span>View Feature Logs</span>
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Pagination Footer */}
+                  <div className="flex flex-col sm:flex-row justify-between items-center gap-2 pt-2.5 border-t border-slate-100 text-[11px] font-semibold text-slate-500">
+                    <span>Showing 1 to 8 of 12 features</span>
+
+                    <div className="flex items-center gap-1">
+                      <button className="px-2 py-0.5 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-400 text-xs">|‹</button>
+                      <button className="px-2 py-0.5 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-400 text-xs">‹</button>
+                      <button className="px-2.5 py-0.5 bg-[#2563EB] text-white font-bold rounded-md text-xs">1</button>
+                      <button className="px-2.5 py-0.5 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-700 font-bold text-xs">2</button>
+                      <button className="px-2 py-0.5 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-700 font-bold text-xs">›</button>
+                      <button className="px-2 py-0.5 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-700 font-bold text-xs">›|</button>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="pt-2 border-t border-slate-100 flex justify-start">
-                  <button onClick={() => setAiTab('AI Models')} className="text-[10px] font-extrabold text-[#2563EB] hover:underline cursor-pointer">
-                    Manage AI models →
-                  </button>
+                {/* RIGHT COLUMN: AI MODEL MANAGEMENT + AI USAGE OVERVIEW (XL 5 COLS) */}
+                <div className="xl:col-span-5 space-y-3.5">
+
+                  {/* TOP CARD: AI MODEL MANAGEMENT */}
+                  <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-2xs text-left space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                      <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">AI MODEL MANAGEMENT</h3>
+                      <button onClick={() => setAiTab('AI Models')} className="text-[10px] font-bold text-[#2563EB] hover:underline cursor-pointer">
+                        View all models →
+                      </button>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="border-b border-slate-200 text-[9.5px] font-black text-slate-400 uppercase tracking-tight bg-slate-50/50">
+                            <th className="py-2 px-2 whitespace-nowrap">Model Name</th>
+                            <th className="py-2 px-2 whitespace-nowrap">Provider</th>
+                            <th className="py-2 px-2 whitespace-nowrap">Version</th>
+                            <th className="py-2 px-2 whitespace-nowrap">Status</th>
+                            <th className="py-2 px-2 text-right whitespace-nowrap">Last Updated</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-xs font-medium">
+                          {aiModelsList.map((m) => (
+                            <tr key={m.id} className="hover:bg-slate-50/80 transition-colors">
+                              <td className="py-2.5 px-2 font-extrabold text-slate-900 text-[11px] whitespace-nowrap">{m.name}</td>
+                              <td className="py-2.5 px-2 text-slate-600 text-[10px] whitespace-nowrap">{m.provider}</td>
+                              <td className="py-2.5 px-2 text-slate-500 font-mono text-[10px] whitespace-nowrap">{m.version}</td>
+                              <td className="py-2.5 px-2 whitespace-nowrap">
+                                <span className="text-emerald-600 font-black text-[10px]">Active</span>
+                              </td>
+                              <td className="py-2.5 px-2 text-right text-slate-500 text-[10px] whitespace-nowrap">{m.lastUpdated}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-100 flex justify-start">
+                      <button onClick={() => setAiTab('AI Models')} className="text-[10px] font-extrabold text-[#2563EB] hover:underline cursor-pointer">
+                        Manage AI models →
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* BOTTOM CARD: AI USAGE OVERVIEW (THIS MONTH) */}
+                  <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-2xs text-left space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                      <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">AI USAGE OVERVIEW (THIS MONTH)</h3>
+                      <button onClick={() => setAiTab('Usage & Limits')} className="text-[10px] font-bold text-[#2563EB] hover:underline cursor-pointer">
+                        View full analytics →
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-2.5">
+
+                      {/* Donut Chart */}
+                      <div className="relative w-[85px] h-[85px] flex-shrink-0 flex items-center justify-center">
+                        <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
+                          <circle cx="60" cy="60" r="45" fill="none" stroke="#E2E8F0" strokeWidth="18" />
+                          <circle cx="60" cy="60" r="45" fill="none" stroke="#2563EB" strokeWidth="18" strokeDasharray="282.7" strokeDashoffset="96" />
+                          <circle cx="60" cy="60" r="45" fill="none" stroke="#06B6D4" strokeWidth="18" strokeDasharray="282.7" strokeDashoffset="166" />
+                          <circle cx="60" cy="60" r="45" fill="none" stroke="#F59E0B" strokeWidth="18" strokeDasharray="282.7" strokeDashoffset="215" />
+                          <circle cx="60" cy="60" r="45" fill="none" stroke="#10B981" strokeWidth="18" strokeDasharray="282.7" strokeDashoffset="256" />
+                          <circle cx="60" cy="60" r="45" fill="none" stroke="#A855F7" strokeWidth="18" strokeDasharray="282.7" strokeDashoffset="278" />
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                          <span className="text-[10px] font-black text-slate-900 leading-none">24,680</span>
+                          <span className="text-[7px] font-bold text-slate-400 leading-tight mt-0.5">Total Requests</span>
+                        </div>
+                      </div>
+
+                      {/* Legend List beside chart */}
+                      <div className="flex-1 min-w-0 space-y-[4px]">
+                        {[
+                          { color: '#2563EB', label: 'Load Creation', val: '8,450 (34.2%)' },
+                          { color: '#06B6D4', label: 'Document OCR', val: '6,120 (24.8%)' },
+                          { color: '#F59E0B', label: 'Trailer Recommendation', val: '4,320 (17.5%)' },
+                          { color: '#10B981', label: 'Payment Reminders', val: '3,650 (14.8%)' },
+                          { color: '#A855F7', label: 'Other Features', val: '2,140 (8.7%)' },
+                        ].map((item, i) => (
+                          <div key={i} className="flex items-center justify-between gap-1">
+                            <div className="flex items-center gap-1 min-w-0">
+                              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }}></span>
+                              <span className="text-[8.5px] font-semibold text-slate-600 whitespace-nowrap">{item.label}</span>
+                            </div>
+                            <span className="text-[8.5px] font-bold text-slate-800 whitespace-nowrap ml-1">{item.val}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Right Stat Boxes — compact */}
+                      <div className="flex-shrink-0 space-y-1 w-[108px]">
+                        <div className="px-2 py-1.5 bg-slate-50 rounded-lg border border-slate-100">
+                          <div className="flex items-center gap-1 mb-0.5">
+                            <div className="w-3 h-3 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0">
+                              <Check size={7} />
+                            </div>
+                            <span className="text-[8.5px] font-bold text-slate-500">Successful</span>
+                          </div>
+                          <div className="flex items-baseline gap-0.5">
+                            <span className="text-[12px] font-black text-slate-900 leading-none">22,846</span>
+                            <span className="text-[8px] font-extrabold text-emerald-600">(92.6%)</span>
+                          </div>
+                        </div>
+
+                        <div className="px-2 py-1.5 bg-slate-50 rounded-lg border border-slate-100">
+                          <div className="flex items-center gap-1 mb-0.5">
+                            <div className="w-3 h-3 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
+                              <AlertTriangle size={7} />
+                            </div>
+                            <span className="text-[8.5px] font-bold text-slate-500">Failed</span>
+                          </div>
+                          <div className="flex items-baseline gap-0.5">
+                            <span className="text-[12px] font-black text-slate-900 leading-none">1,834</span>
+                            <span className="text-[8px] font-extrabold text-amber-600">(7.4%)</span>
+                          </div>
+                        </div>
+
+                        <div className="px-2 py-1.5 bg-slate-50 rounded-lg border border-slate-100">
+                          <div className="flex items-center gap-1 mb-0.5">
+                            <div className="w-3 h-3 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+                              <Clock size={7} />
+                            </div>
+                            <span className="text-[8.5px] font-bold text-slate-500">Avg Response Time</span>
+                          </div>
+                          <span className="text-[12px] font-black text-slate-900 leading-none">2.4 sec</span>
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+
                 </div>
+
               </div>
-
-              {/* BOTTOM CARD: AI USAGE OVERVIEW (THIS MONTH) */}
-              <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-2xs text-left space-y-3">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">AI USAGE OVERVIEW (THIS MONTH)</h3>
-                  <button onClick={() => setAiTab('Usage & Limits')} className="text-[10px] font-bold text-[#2563EB] hover:underline cursor-pointer">
-                    View full analytics →
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-2.5">
-                  
-                  {/* Donut Chart */}
-                  <div className="relative w-[85px] h-[85px] flex-shrink-0 flex items-center justify-center">
-                    <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
-                      <circle cx="60" cy="60" r="45" fill="none" stroke="#E2E8F0" strokeWidth="18" />
-                      <circle cx="60" cy="60" r="45" fill="none" stroke="#2563EB" strokeWidth="18" strokeDasharray="282.7" strokeDashoffset="96" />
-                      <circle cx="60" cy="60" r="45" fill="none" stroke="#06B6D4" strokeWidth="18" strokeDasharray="282.7" strokeDashoffset="166" />
-                      <circle cx="60" cy="60" r="45" fill="none" stroke="#F59E0B" strokeWidth="18" strokeDasharray="282.7" strokeDashoffset="215" />
-                      <circle cx="60" cy="60" r="45" fill="none" stroke="#10B981" strokeWidth="18" strokeDasharray="282.7" strokeDashoffset="256" />
-                      <circle cx="60" cy="60" r="45" fill="none" stroke="#A855F7" strokeWidth="18" strokeDasharray="282.7" strokeDashoffset="278" />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                      <span className="text-[10px] font-black text-slate-900 leading-none">24,680</span>
-                      <span className="text-[7px] font-bold text-slate-400 leading-tight mt-0.5">Total Requests</span>
-                    </div>
-                  </div>
-
-                  {/* Legend List beside chart */}
-                  <div className="flex-1 min-w-0 space-y-[4px]">
-                    {[
-                      { color: '#2563EB', label: 'Load Creation', val: '8,450 (34.2%)' },
-                      { color: '#06B6D4', label: 'Document OCR', val: '6,120 (24.8%)' },
-                      { color: '#F59E0B', label: 'Trailer Recommendation', val: '4,320 (17.5%)' },
-                      { color: '#10B981', label: 'Payment Reminders', val: '3,650 (14.8%)' },
-                      { color: '#A855F7', label: 'Other Features', val: '2,140 (8.7%)' },
-                    ].map((item, i) => (
-                      <div key={i} className="flex items-center justify-between gap-1">
-                        <div className="flex items-center gap-1 min-w-0">
-                          <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }}></span>
-                          <span className="text-[8.5px] font-semibold text-slate-600 whitespace-nowrap">{item.label}</span>
-                        </div>
-                        <span className="text-[8.5px] font-bold text-slate-800 whitespace-nowrap ml-1">{item.val}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Right Stat Boxes — compact */}
-                  <div className="flex-shrink-0 space-y-1 w-[108px]">
-                    <div className="px-2 py-1.5 bg-slate-50 rounded-lg border border-slate-100">
-                      <div className="flex items-center gap-1 mb-0.5">
-                        <div className="w-3 h-3 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0">
-                          <Check size={7} />
-                        </div>
-                        <span className="text-[8.5px] font-bold text-slate-500">Successful</span>
-                      </div>
-                      <div className="flex items-baseline gap-0.5">
-                        <span className="text-[12px] font-black text-slate-900 leading-none">22,846</span>
-                        <span className="text-[8px] font-extrabold text-emerald-600">(92.6%)</span>
-                      </div>
-                    </div>
-
-                    <div className="px-2 py-1.5 bg-slate-50 rounded-lg border border-slate-100">
-                      <div className="flex items-center gap-1 mb-0.5">
-                        <div className="w-3 h-3 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center flex-shrink-0">
-                          <AlertTriangle size={7} />
-                        </div>
-                        <span className="text-[8.5px] font-bold text-slate-500">Failed</span>
-                      </div>
-                      <div className="flex items-baseline gap-0.5">
-                        <span className="text-[12px] font-black text-slate-900 leading-none">1,834</span>
-                        <span className="text-[8px] font-extrabold text-amber-600">(7.4%)</span>
-                      </div>
-                    </div>
-
-                    <div className="px-2 py-1.5 bg-slate-50 rounded-lg border border-slate-100">
-                      <div className="flex items-center gap-1 mb-0.5">
-                        <div className="w-3 h-3 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
-                          <Clock size={7} />
-                        </div>
-                        <span className="text-[8.5px] font-bold text-slate-500">Avg Response Time</span>
-                      </div>
-                      <span className="text-[12px] font-black text-slate-900 leading-none">2.4 sec</span>
-                    </div>
-                  </div>
-
-                </div>
-              </div>
-
-            </div>
-
-          </div>
-          </>
+            </>
           )}
 
           {/* 13.5 SUB-TAB 2: FEATURE SETTINGS */}
@@ -4806,8 +4798,8 @@ export default function CompanySettings() {
                     <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">DEPLOYED AI MODEL REGISTRY</h3>
                     <p className="text-xs text-slate-500 font-medium">Manage AI model deployments, versions, latency SLA benchmarks, and costs.</p>
                   </div>
-                  <button 
-                    onClick={() => setIsRegisterAiModelModalOpen(true)} 
+                  <button
+                    onClick={() => setIsRegisterAiModelModalOpen(true)}
                     className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#2563EB] text-white font-bold text-xs rounded-xl shadow-2xs hover:bg-blue-700 cursor-pointer"
                   >
                     <Plus size={14} /> + Register AI Model
@@ -4999,9 +4991,8 @@ export default function CompanySettings() {
                           <td className="py-2.5 px-3 font-mono text-[11px]">{row.lat}</td>
                           <td className="py-2.5 px-3 font-extrabold text-emerald-600">{row.conf}</td>
                           <td className="py-2.5 px-3">
-                            <span className={`px-2 py-0.5 rounded text-[9.5px] font-black uppercase ${
-                              row.status === 'SUCCESS' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-                            }`}>
+                            <span className={`px-2 py-0.5 rounded text-[9.5px] font-black uppercase ${row.status === 'SUCCESS' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                              }`}>
                               {row.status}
                             </span>
                           </td>
@@ -5103,24 +5094,24 @@ export default function CompanySettings() {
               <p className="text-xs text-slate-500 font-semibold mt-1">Connect and manage third-party integrations and data synchronisation.</p>
             </div>
             <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-start sm:justify-end">
-              <button 
-                onClick={handleRefreshIntegrations} 
+              <button
+                onClick={handleRefreshIntegrations}
                 disabled={isRefreshingIntegrations}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
               >
-                <RefreshCw size={13} className={`text-slate-500 ${isRefreshingIntegrations ? 'animate-spin' : ''}`} /> 
+                <RefreshCw size={13} className={`text-slate-500 ${isRefreshingIntegrations ? 'animate-spin' : ''}`} />
                 {isRefreshingIntegrations ? 'Refreshing...' : 'Refresh'}
               </button>
 
-              <button 
-                onClick={() => { setIntegrationsTab('Integration Logs'); triggerToast('Opening integration logs...'); }} 
+              <button
+                onClick={() => { setIntegrationsTab('Integration Logs'); triggerToast('Opening integration logs...'); }}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer shadow-2xs"
               >
                 <FileText size={13} className="text-slate-500" /> View Integration Logs
               </button>
 
-              <button 
-                onClick={() => setIsAddIntegrationModalOpen(true)} 
+              <button
+                onClick={() => setIsAddIntegrationModalOpen(true)}
                 className="flex items-center gap-1.5 px-4 py-1.5 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
               >
                 <Plus size={14} /> Add Integration
@@ -5132,11 +5123,10 @@ export default function CompanySettings() {
           <div className="flex items-center gap-2 border-b border-slate-200/80 overflow-x-auto pb-3 pt-1 scrollbar-hide">
             {['Overview', 'Connected Integrations', 'Available Integrations', 'API & Webhooks', 'Data Sync', 'Integration Logs', 'Settings'].map((tab) => (
               <button key={tab} onClick={() => setIntegrationsTab(tab)}
-                className={`px-3.5 py-1.5 text-xs font-black whitespace-nowrap transition-all rounded-xl cursor-pointer outline-none focus:outline-none focus:ring-0 select-none ${
-                  integrationsTab === tab 
-                    ? 'bg-[#2563EB] text-white shadow-xs' 
+                className={`px-3.5 py-1.5 text-xs font-black whitespace-nowrap transition-all rounded-xl cursor-pointer outline-none focus:outline-none focus:ring-0 select-none ${integrationsTab === tab
+                    ? 'bg-[#2563EB] text-white shadow-xs'
                     : 'bg-slate-100/70 text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 border border-slate-200/60 font-bold'
-                }`}>{tab}</button>
+                  }`}>{tab}</button>
             ))}
           </div>
 
@@ -5211,16 +5201,16 @@ export default function CompanySettings() {
                       </thead>
                       <tbody className="divide-y divide-slate-100">
                         {[
-                          { id:1, name:'Xero Accounting', desc:'Sync invoices, bills, payments & contacts', cat:'Accounting', sync:'Synced', last:'30 May 2025 10:16 AM', next:'30 May 2025 11:15 AM', color:'#1A73E8', letter:'X' },
-                          { id:2, name:'MYOB Accounting', desc:'Sync financial data and contacts', cat:'Accounting', sync:'Synced', last:'30 May 2025 10:10 AM', next:'30 May 2025 10:45 AM', color:'#6B21A8', letter:'M' },
-                          { id:3, name:'QuickBooks Online', desc:'Sync customers, invoices & payments', cat:'Accounting', sync:'Synced', last:'30 May 2025 10:10 AM', next:'30 May 2025 11:10 AM', color:'#16A34A', letter:'Q' },
-                          { id:4, name:'Google Maps Platform', desc:'Maps, geocoding and route optimisation', cat:'Maps & Routing', sync:'Synced', last:'30 May 2025 10:10 AM', next:'30 May 2025 11:10 AM', color:'#EA4335', letter:'G' },
-                          { id:5, name:'Samsara Telematics', desc:'GPS tracking and vehicle data', cat:'GPS / Telematics', sync:'Synced', last:'30 May 2025 10:12 AM', next:'30 May 2025 11:12 AM', color:'#0EA5E9', letter:'S' },
-                          { id:6, name:'Geotab', desc:'Vehicle tracking and diagnostics', cat:'GPS / Telematics', sync:'Synced', last:'30 May 2025 10:10 AM', next:'30 May 2025 11:10 AM', color:'#6B7280', letter:'G' },
-                          { id:7, name:'NHVR EWD', desc:'Driver work diary & fatigue data', cat:'Compliance', sync:'Synced', last:'30 May 2025 10:12 AM', next:'30 May 2025 11:12 AM', color:'#DC2626', letter:'N' },
-                          { id:8, name:'Stripe Payments', desc:'Online payments and subscriptions', cat:'Payments', sync:'Synced', last:'30 May 2025 10:12 AM', next:'30 May 2025 11:10 AM', color:'#6366F1', letter:'S' },
-                          { id:9, name:'Email Service (SendGrid)', desc:'Transactional emails and alerts', cat:'Communication', sync:'Syncing', last:'30 May 2025 10:15 AM', next:'30 May 2025 11:30 AM', color:'#0891B2', letter:'E' },
-                          { id:10, name:'SMS Service (Twilio)', desc:'SMS notifications and alerts', cat:'Communication', sync:'Synced', last:'30 May 2025 10:11 AM', next:'30 May 2025 11:11 AM', color:'#DC2626', letter:'T' },
+                          { id: 1, name: 'Xero Accounting', desc: 'Sync invoices, bills, payments & contacts', cat: 'Accounting', sync: 'Synced', last: '30 May 2025 10:16 AM', next: '30 May 2025 11:15 AM', color: '#1A73E8', letter: 'X' },
+                          { id: 2, name: 'MYOB Accounting', desc: 'Sync financial data and contacts', cat: 'Accounting', sync: 'Synced', last: '30 May 2025 10:10 AM', next: '30 May 2025 10:45 AM', color: '#6B21A8', letter: 'M' },
+                          { id: 3, name: 'QuickBooks Online', desc: 'Sync customers, invoices & payments', cat: 'Accounting', sync: 'Synced', last: '30 May 2025 10:10 AM', next: '30 May 2025 11:10 AM', color: '#16A34A', letter: 'Q' },
+                          { id: 4, name: 'Google Maps Platform', desc: 'Maps, geocoding and route optimisation', cat: 'Maps & Routing', sync: 'Synced', last: '30 May 2025 10:10 AM', next: '30 May 2025 11:10 AM', color: '#EA4335', letter: 'G' },
+                          { id: 5, name: 'Samsara Telematics', desc: 'GPS tracking and vehicle data', cat: 'GPS / Telematics', sync: 'Synced', last: '30 May 2025 10:12 AM', next: '30 May 2025 11:12 AM', color: '#0EA5E9', letter: 'S' },
+                          { id: 6, name: 'Geotab', desc: 'Vehicle tracking and diagnostics', cat: 'GPS / Telematics', sync: 'Synced', last: '30 May 2025 10:10 AM', next: '30 May 2025 11:10 AM', color: '#6B7280', letter: 'G' },
+                          { id: 7, name: 'NHVR EWD', desc: 'Driver work diary & fatigue data', cat: 'Compliance', sync: 'Synced', last: '30 May 2025 10:12 AM', next: '30 May 2025 11:12 AM', color: '#DC2626', letter: 'N' },
+                          { id: 8, name: 'Stripe Payments', desc: 'Online payments and subscriptions', cat: 'Payments', sync: 'Synced', last: '30 May 2025 10:12 AM', next: '30 May 2025 11:10 AM', color: '#6366F1', letter: 'S' },
+                          { id: 9, name: 'Email Service (SendGrid)', desc: 'Transactional emails and alerts', cat: 'Communication', sync: 'Syncing', last: '30 May 2025 10:15 AM', next: '30 May 2025 11:30 AM', color: '#0891B2', letter: 'E' },
+                          { id: 10, name: 'SMS Service (Twilio)', desc: 'SMS notifications and alerts', cat: 'Communication', sync: 'Synced', last: '30 May 2025 10:11 AM', next: '30 May 2025 11:11 AM', color: '#DC2626', letter: 'T' },
                         ].map((item) => (
                           <tr key={item.id} className="hover:bg-blue-50/30 transition-colors">
                             <td className="py-2 px-2">
@@ -5283,7 +5273,7 @@ export default function CompanySettings() {
                         </div>
                       </div>
                       <div className="flex-1 space-y-2">
-                        {[{ color:'#16A34A', label:'Connected', count:'10', pct:'83.3%' }, { color:'#F59E0B', label:'Limited', count:'1', pct:'8.3%' }, { color:'#EF4444', label:'Disconnected', count:'1', pct:'8.3%' }].map((item, i) => (
+                        {[{ color: '#16A34A', label: 'Connected', count: '10', pct: '83.3%' }, { color: '#F59E0B', label: 'Limited', count: '1', pct: '8.3%' }, { color: '#EF4444', label: 'Disconnected', count: '1', pct: '8.3%' }].map((item, i) => (
                           <div key={i} className="flex items-center justify-between">
                             <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }}></span><span className="text-[9px] font-semibold text-slate-600">{item.label}</span></div>
                             <div className="text-right"><span className="text-[11px] font-black text-slate-900">{item.count}</span><span className="text-[8.5px] font-semibold text-slate-400 ml-1">({item.pct})</span></div>
@@ -5297,7 +5287,7 @@ export default function CompanySettings() {
                       <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">TOP DATA SYNC (TODAY)</h3>
                       <button className="text-[10px] font-bold text-[#2563EB] hover:underline cursor-pointer">View all activity →</button>
                     </div>
-                    {[{ color:'#16A34A', label:'Invoices Sync', val:'766 records' }, { color:'#2563EB', label:'Driver Logs Sync', val:'312 records' }, { color:'#9333EA', label:'Vehicle Data Sync', val:'128 records' }, { color:'#F59E0B', label:'Payments Sync', val:'62 records' }].map((item, i) => (
+                    {[{ color: '#16A34A', label: 'Invoices Sync', val: '766 records' }, { color: '#2563EB', label: 'Driver Logs Sync', val: '312 records' }, { color: '#9333EA', label: 'Vehicle Data Sync', val: '128 records' }, { color: '#F59E0B', label: 'Payments Sync', val: '62 records' }].map((item, i) => (
                       <div key={i} className="flex items-center justify-between py-1 border-b border-slate-50 last:border-0">
                         <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }}></span><span className="text-[10px] font-semibold text-slate-700">{item.label}</span></div>
                         <span className="text-[10px] font-bold text-slate-900">{item.val}</span>
@@ -5309,7 +5299,7 @@ export default function CompanySettings() {
                       <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">FAILED SYNC (TODAY)</h3>
                       <button className="text-[10px] font-bold text-[#2563EB] hover:underline cursor-pointer">View error log →</button>
                     </div>
-                    {[{ name:'MYOB Accounting', reason:'Failed to sync 5 invoices', time:'08:45 AM' }, { name:'NHVR EWD', reason:'Authentication token expired', time:'07:20 AM' }, { name:'SMS Service (Twilio)', reason:'Failed to send 3 messages', time:'06:10 AM' }].map((item, i) => (
+                    {[{ name: 'MYOB Accounting', reason: 'Failed to sync 5 invoices', time: '08:45 AM' }, { name: 'NHVR EWD', reason: 'Authentication token expired', time: '07:20 AM' }, { name: 'SMS Service (Twilio)', reason: 'Failed to send 3 messages', time: '06:10 AM' }].map((item, i) => (
                       <div key={i} className="flex items-start gap-2 py-1.5 border-b border-slate-50 last:border-0">
                         <div className="w-5 h-5 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0 mt-0.5"><AlertTriangle size={10} /></div>
                         <div className="flex-1 min-w-0"><div className="text-[10px] font-extrabold text-slate-900">{item.name}</div><div className="text-[9px] font-medium text-slate-500 leading-tight">{item.reason}</div></div>
@@ -5415,8 +5405,8 @@ export default function CompanySettings() {
                     <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">REST API KEYS & WEBHOOK ENDPOINTS</h3>
                     <p className="text-xs text-slate-500 font-medium">Manage developer API keys and real-time HTTP event webhooks.</p>
                   </div>
-                  <button 
-                    onClick={() => setIsGenerateApiKeyModalOpen(true)} 
+                  <button
+                    onClick={() => setIsGenerateApiKeyModalOpen(true)}
                     className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#2563EB] text-white font-bold text-xs rounded-xl shadow-2xs hover:bg-blue-700 cursor-pointer"
                   >
                     <Plus size={14} /> + Generate API Key
@@ -5445,16 +5435,15 @@ export default function CompanySettings() {
                             <td className="py-3 px-3 text-slate-500">{key.date}</td>
                             <td className="py-3 px-3">{key.limit}</td>
                             <td className="py-3 px-3">
-                              <span className={`px-2 py-0.5 font-bold text-[9.5px] rounded ${
-                                key.status === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
-                              }`}>
+                              <span className={`px-2 py-0.5 font-bold text-[9.5px] rounded ${key.status === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
+                                }`}>
                                 {key.status}
                               </span>
                             </td>
                             <td className="py-3 px-3 text-right">
                               {key.status === 'Active' ? (
-                                <button 
-                                  onClick={() => handleRevokeKey(key.id, key.name)} 
+                                <button
+                                  onClick={() => handleRevokeKey(key.id, key.name)}
                                   className="text-rose-600 hover:underline font-bold cursor-pointer"
                                 >
                                   Revoke
@@ -5480,8 +5469,8 @@ export default function CompanySettings() {
                       </div>
                       <span className="text-[10px] text-slate-500 font-medium block mt-1">Secret: whsec_88f92a... • Health: 100% (200 OK)</span>
                     </div>
-                    <button 
-                      onClick={() => setIsTestWebhookModalOpen(true)} 
+                    <button
+                      onClick={() => setIsTestWebhookModalOpen(true)}
                       className="px-3.5 py-1.5 bg-white border border-slate-200 text-slate-700 font-bold text-xs rounded-xl hover:bg-slate-100 shadow-2xs transition-all cursor-pointer whitespace-nowrap"
                     >
                       Test Webhook
@@ -5621,12 +5610,12 @@ export default function CompanySettings() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
               {[
-                { title:'1. PURPOSE', items:['Manage third-party integrations.','Monitor sync status and data flow.','Ensure secure and reliable connections.'] },
-                { title:'2. KEY FEATURES', items:['Connect, configure and test integrations.','Real-time sync status and health-monitoring.','Auto-sync scheduling and manual sync.','Error handling and retry mechanisms.'] },
-                { title:'3. CATEGORIES', items:['Accounting & Finance.','GPS / Telematics.','Compliance & EWD.','Payments.','Communication.'] },
-                { title:'4. DATA & SYNC', items:['Two-way or one-way sync.','Field mapping and data validation.','Data sync to reduce API usage.','Sync logs and history.'] },
-                { title:'5. SECURITY & ACCESS', items:['Secure OAuth2 authentication.','Encrypted data transmission.','Role-based integration management.','Audit log for all integration changes.'] },
-                { title:'6. DATA SOURCES', items:['External system APIs.','Webhooks and real-time events.','Manual data import/export.','System configuration settings.'] },
+                { title: '1. PURPOSE', items: ['Manage third-party integrations.', 'Monitor sync status and data flow.', 'Ensure secure and reliable connections.'] },
+                { title: '2. KEY FEATURES', items: ['Connect, configure and test integrations.', 'Real-time sync status and health-monitoring.', 'Auto-sync scheduling and manual sync.', 'Error handling and retry mechanisms.'] },
+                { title: '3. CATEGORIES', items: ['Accounting & Finance.', 'GPS / Telematics.', 'Compliance & EWD.', 'Payments.', 'Communication.'] },
+                { title: '4. DATA & SYNC', items: ['Two-way or one-way sync.', 'Field mapping and data validation.', 'Data sync to reduce API usage.', 'Sync logs and history.'] },
+                { title: '5. SECURITY & ACCESS', items: ['Secure OAuth2 authentication.', 'Encrypted data transmission.', 'Role-based integration management.', 'Audit log for all integration changes.'] },
+                { title: '6. DATA SOURCES', items: ['External system APIs.', 'Webhooks and real-time events.', 'Manual data import/export.', 'System configuration settings.'] },
               ].map((col, i) => (
                 <div key={i}>
                   <h4 className="font-extrabold text-blue-900 mb-1 uppercase text-[8.5px] tracking-wider">{col.title}</h4>
@@ -5662,28 +5651,28 @@ export default function CompanySettings() {
               <p className="text-xs text-slate-500 font-semibold mt-1">Configure notification channels, templates and communication preferences.</p>
             </div>
             <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-start sm:justify-end">
-              <button 
-                onClick={handleRefreshNotifications} 
+              <button
+                onClick={handleRefreshNotifications}
                 disabled={isRefreshingNotifications}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
               >
-                <RefreshCw size={13} className={`text-slate-500 ${isRefreshingNotifications ? 'animate-spin' : ''}`} /> 
+                <RefreshCw size={13} className={`text-slate-500 ${isRefreshingNotifications ? 'animate-spin' : ''}`} />
                 {isRefreshingNotifications ? 'Refreshing...' : 'Refresh'}
               </button>
 
-              <button 
-                onClick={() => setIsTestNotificationModalOpen(true)} 
+              <button
+                onClick={() => setIsTestNotificationModalOpen(true)}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer shadow-2xs"
               >
                 <Send size={13} className="text-slate-500" /> Test Notifications
               </button>
 
-              <button 
-                onClick={handleSaveNotifications} 
+              <button
+                onClick={handleSaveNotifications}
                 disabled={isSavingNotifications}
                 className="flex items-center gap-1.5 px-4 py-1.5 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer disabled:opacity-50"
               >
-                {isSavingNotifications ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />} 
+                {isSavingNotifications ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
                 {isSavingNotifications ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
@@ -5692,14 +5681,13 @@ export default function CompanySettings() {
           {/* SUB TABS */}
           <div className="flex items-center gap-2 border-b border-slate-200/80 overflow-x-auto pb-3 pt-1 scrollbar-hide">
             {['Overview', 'Notification Channels', 'Templates', 'Notification Rules', 'Recipient Groups', 'Communication Preferences', 'History & Logs'].map((tab) => (
-              <button 
-                key={tab} 
+              <button
+                key={tab}
                 onClick={() => setNotificationsTab(tab)}
-                className={`px-3.5 py-1.5 text-xs font-black whitespace-nowrap transition-all rounded-xl cursor-pointer outline-none focus:outline-none focus:ring-0 select-none ${
-                  notificationsTab === tab 
-                    ? 'bg-[#2563EB] text-white shadow-xs' 
+                className={`px-3.5 py-1.5 text-xs font-black whitespace-nowrap transition-all rounded-xl cursor-pointer outline-none focus:outline-none focus:ring-0 select-none ${notificationsTab === tab
+                    ? 'bg-[#2563EB] text-white shadow-xs'
                     : 'bg-slate-100/70 text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 border border-slate-200/60 font-bold'
-                }`}
+                  }`}
               >
                 {tab}
               </button>
@@ -5759,7 +5747,7 @@ export default function CompanySettings() {
 
               {/* MAIN 2-COLUMN GRID */}
               <div className="grid grid-cols-1 xl:grid-cols-12 gap-3.5 items-start">
-                
+
                 {/* LEFT: NOTIFICATION CHANNELS + RECENT ACTIVITY (8 cols) */}
                 <div className="xl:col-span-8 space-y-3.5">
                   {/* NOTIFICATION CHANNELS TABLE */}
@@ -5783,14 +5771,14 @@ export default function CompanySettings() {
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                           {[
-                            { id:1, name:'Email', desc:'Send email notifications and alerts', status:'Active', default:'Yes', last:'30 May 2025 09:15 AM', rate:'98.2%', pct:98, icon:<Mail size={13}/>, color:'bg-blue-100 text-blue-600' },
-                            { id:2, name:'SMS', desc:'Send SMS text messages', status:'Active', default:'Yes', last:'30 May 2025 09:12 AM', rate:'96.4%', pct:96, icon:<MessageSquare size={13}/>, color:'bg-purple-100 text-purple-600' },
-                            { id:3, name:'Push Notifications', desc:'Send push notifications to mobile apps', status:'Active', default:'Yes', last:'30 May 2025 09:10 AM', rate:'97.1%', pct:97, icon:<Bell size={13}/>, color:'bg-amber-100 text-amber-600' },
-                            { id:4, name:'In-App Messages', desc:'Send in-app messages and alerts', status:'Active', default:'Yes', last:'30 May 2025 09:08 AM', rate:'100%', pct:100, icon:<Send size={13}/>, color:'bg-indigo-100 text-indigo-600' },
-                            { id:5, name:'Voice Calls', desc:'Automated voice call notifications', status:'Inactive', default:'No', last:'-', rate:'-', pct:0, icon:<Phone size={13}/>, color:'bg-slate-100 text-slate-500' },
-                            { id:6, name:'WhatsApp Business', desc:'Send WhatsApp messages', status:'Active', default:'No', last:'30 May 2025 09:05 AM', rate:'94.3%', pct:94, icon:<MessageSquare size={13}/>, color:'bg-emerald-100 text-emerald-600' },
-                            { id:7, name:'Fax', desc:'Send fax notifications', status:'Inactive', default:'No', last:'-', rate:'-', pct:0, icon:<FileText size={13}/>, color:'bg-slate-100 text-slate-500' },
-                            { id:8, name:'Webhooks', desc:'Send webhook events to external systems', status:'Active', default:'No', last:'30 May 2025 09:02 AM', rate:'99.1%', pct:99, icon:<Plug size={13}/>, color:'bg-teal-100 text-teal-600' },
+                            { id: 1, name: 'Email', desc: 'Send email notifications and alerts', status: 'Active', default: 'Yes', last: '30 May 2025 09:15 AM', rate: '98.2%', pct: 98, icon: <Mail size={13} />, color: 'bg-blue-100 text-blue-600' },
+                            { id: 2, name: 'SMS', desc: 'Send SMS text messages', status: 'Active', default: 'Yes', last: '30 May 2025 09:12 AM', rate: '96.4%', pct: 96, icon: <MessageSquare size={13} />, color: 'bg-purple-100 text-purple-600' },
+                            { id: 3, name: 'Push Notifications', desc: 'Send push notifications to mobile apps', status: 'Active', default: 'Yes', last: '30 May 2025 09:10 AM', rate: '97.1%', pct: 97, icon: <Bell size={13} />, color: 'bg-amber-100 text-amber-600' },
+                            { id: 4, name: 'In-App Messages', desc: 'Send in-app messages and alerts', status: 'Active', default: 'Yes', last: '30 May 2025 09:08 AM', rate: '100%', pct: 100, icon: <Send size={13} />, color: 'bg-indigo-100 text-indigo-600' },
+                            { id: 5, name: 'Voice Calls', desc: 'Automated voice call notifications', status: 'Inactive', default: 'No', last: '-', rate: '-', pct: 0, icon: <Phone size={13} />, color: 'bg-slate-100 text-slate-500' },
+                            { id: 6, name: 'WhatsApp Business', desc: 'Send WhatsApp messages', status: 'Active', default: 'No', last: '30 May 2025 09:05 AM', rate: '94.3%', pct: 94, icon: <MessageSquare size={13} />, color: 'bg-emerald-100 text-emerald-600' },
+                            { id: 7, name: 'Fax', desc: 'Send fax notifications', status: 'Inactive', default: 'No', last: '-', rate: '-', pct: 0, icon: <FileText size={13} />, color: 'bg-slate-100 text-slate-500' },
+                            { id: 8, name: 'Webhooks', desc: 'Send webhook events to external systems', status: 'Active', default: 'No', last: '30 May 2025 09:02 AM', rate: '99.1%', pct: 99, icon: <Plug size={13} />, color: 'bg-teal-100 text-teal-600' },
                           ].map((ch) => (
                             <tr key={ch.id} className="hover:bg-blue-50/30 transition-colors">
                               <td className="py-2 px-2 whitespace-nowrap">
@@ -5838,11 +5826,11 @@ export default function CompanySettings() {
                     </div>
                     <div className="space-y-1.5">
                       {[
-                        { icon: <Mail size={12}/>, title: 'Invoice INV-1058 created', channel: 'Email', channelBg: 'bg-blue-100 text-blue-700', recipient: 'Sent to 12 recipients', time: '30 May 2025 09:15 AM', status: 'Delivered', statusColor: 'text-emerald-600' },
-                        { icon: <MessageSquare size={12}/>, title: 'Load LD-3921 arrived at pickup', channel: 'SMS', channelBg: 'bg-purple-100 text-purple-700', recipient: 'Sent to 1 driver', time: '30 May 2025 09:12 AM', status: 'Delivered', statusColor: 'text-emerald-600' },
-                        { icon: <Bell size={12}/>, title: 'Load LD-3918 dispatched', channel: 'Push', channelBg: 'bg-amber-100 text-amber-700', recipient: 'Sent to 2 recipients', time: '30 May 2025 09:10 AM', status: 'Delivered', statusColor: 'text-emerald-600' },
-                        { icon: <Send size={12}/>, title: 'Safety Check - Daily Reminder', channel: 'In-App', channelBg: 'bg-indigo-100 text-indigo-700', recipient: 'Sent to 25 users', time: '30 May 2025 09:08 AM', status: 'Delivered', statusColor: 'text-emerald-600' },
-                        { icon: <AlertTriangle size={12}/>, title: 'Payment failed for INV-1045', channel: 'Email', channelBg: 'bg-blue-100 text-blue-700', recipient: 'Sent to 1 recipient', time: '30 May 2025 08:45 AM', status: 'Failed', statusColor: 'text-rose-600' },
+                        { icon: <Mail size={12} />, title: 'Invoice INV-1058 created', channel: 'Email', channelBg: 'bg-blue-100 text-blue-700', recipient: 'Sent to 12 recipients', time: '30 May 2025 09:15 AM', status: 'Delivered', statusColor: 'text-emerald-600' },
+                        { icon: <MessageSquare size={12} />, title: 'Load LD-3921 arrived at pickup', channel: 'SMS', channelBg: 'bg-purple-100 text-purple-700', recipient: 'Sent to 1 driver', time: '30 May 2025 09:12 AM', status: 'Delivered', statusColor: 'text-emerald-600' },
+                        { icon: <Bell size={12} />, title: 'Load LD-3918 dispatched', channel: 'Push', channelBg: 'bg-amber-100 text-amber-700', recipient: 'Sent to 2 recipients', time: '30 May 2025 09:10 AM', status: 'Delivered', statusColor: 'text-emerald-600' },
+                        { icon: <Send size={12} />, title: 'Safety Check - Daily Reminder', channel: 'In-App', channelBg: 'bg-indigo-100 text-indigo-700', recipient: 'Sent to 25 users', time: '30 May 2025 09:08 AM', status: 'Delivered', statusColor: 'text-emerald-600' },
+                        { icon: <AlertTriangle size={12} />, title: 'Payment failed for INV-1045', channel: 'Email', channelBg: 'bg-blue-100 text-blue-700', recipient: 'Sent to 1 recipient', time: '30 May 2025 08:45 AM', status: 'Failed', statusColor: 'text-rose-600' },
                       ].map((item, i) => (
                         <div key={i} className="flex items-center justify-between py-1.5 px-2 hover:bg-slate-50 rounded-lg border-b border-slate-50 last:border-0 transition-colors">
                           <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -5889,10 +5877,10 @@ export default function CompanySettings() {
                       </div>
                       <div className="flex-1 space-y-1.5">
                         {[
-                          { color:'#2563EB', label:'Email', count:'24,680', pct:'58.1%' },
-                          { color:'#9333EA', label:'SMS', count:'8,954', pct:'21.1%' },
-                          { color:'#F59E0B', label:'Push', count:'5,612', pct:'13.2%' },
-                          { color:'#4F46E5', label:'In-App', count:'3,245', pct:'7.6%' },
+                          { color: '#2563EB', label: 'Email', count: '24,680', pct: '58.1%' },
+                          { color: '#9333EA', label: 'SMS', count: '8,954', pct: '21.1%' },
+                          { color: '#F59E0B', label: 'Push', count: '5,612', pct: '13.2%' },
+                          { color: '#4F46E5', label: 'In-App', count: '3,245', pct: '7.6%' },
                         ].map((item, i) => (
                           <div key={i} className="flex items-center justify-between">
                             <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }}></span><span className="text-[9px] font-semibold text-slate-600">{item.label}</span></div>
@@ -5908,36 +5896,36 @@ export default function CompanySettings() {
                     <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                       <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">QUICK SETTINGS</h3>
                       <button onClick={() => triggerToast('Editing quick settings...')} className="text-[10px] font-bold text-[#2563EB] hover:underline flex items-center gap-1 cursor-pointer">
-                        <Edit size={10}/> Edit Settings
+                        <Edit size={10} /> Edit Settings
                       </button>
                     </div>
                     <div className="space-y-1.5 text-[10px]">
                       <div className="flex items-center justify-between py-1 border-b border-slate-50">
-                        <div className="flex items-center gap-1.5 text-slate-700 font-semibold"><Clock size={12} className="text-slate-400"/> Quiet Hours</div>
+                        <div className="flex items-center gap-1.5 text-slate-700 font-semibold"><Clock size={12} className="text-slate-400" /> Quiet Hours</div>
                         <span className="font-bold text-slate-900">10:00 PM - 06:00 AM</span>
                       </div>
                       <div className="flex items-center justify-between py-1 border-b border-slate-50">
-                        <div className="flex items-center gap-1.5 text-slate-700 font-semibold"><Globe size={12} className="text-slate-400"/> Time Zone</div>
+                        <div className="flex items-center gap-1.5 text-slate-700 font-semibold"><Globe size={12} className="text-slate-400" /> Time Zone</div>
                         <span className="font-bold text-slate-900">(AEST) Australia/Sydney</span>
                       </div>
                       <div className="flex items-center justify-between py-1 border-b border-slate-50">
-                        <div className="flex items-center gap-1.5 text-slate-700 font-semibold"><Bell size={12} className="text-slate-400"/> Weekend Notifications</div>
+                        <div className="flex items-center gap-1.5 text-slate-700 font-semibold"><Bell size={12} className="text-slate-400" /> Weekend Notifications</div>
                         <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[9px] font-black">On</span>
                       </div>
                       <div className="flex items-center justify-between py-1 border-b border-slate-50">
-                        <div className="flex items-center gap-1.5 text-slate-700 font-semibold"><AlertTriangle size={12} className="text-slate-400"/> System Alerts (Critical)</div>
+                        <div className="flex items-center gap-1.5 text-slate-700 font-semibold"><AlertTriangle size={12} className="text-slate-400" /> System Alerts (Critical)</div>
                         <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[9px] font-black">On</span>
                       </div>
                       <div className="flex items-center justify-between py-1 border-b border-slate-50">
-                        <div className="flex items-center gap-1.5 text-slate-700 font-semibold"><Mail size={12} className="text-slate-400"/> Marketing & Updates</div>
+                        <div className="flex items-center gap-1.5 text-slate-700 font-semibold"><Mail size={12} className="text-slate-400" /> Marketing & Updates</div>
                         <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[9px] font-black">Off</span>
                       </div>
                       <div className="flex items-center justify-between py-1 border-b border-slate-50">
-                        <div className="flex items-center gap-1.5 text-slate-700 font-semibold"><Calendar size={12} className="text-slate-400"/> Digest Summary (Daily)</div>
+                        <div className="flex items-center gap-1.5 text-slate-700 font-semibold"><Calendar size={12} className="text-slate-400" /> Digest Summary (Daily)</div>
                         <span className="font-bold text-slate-900">07:00 AM</span>
                       </div>
                       <div className="flex items-center justify-between py-1">
-                        <div className="flex items-center gap-1.5 text-slate-700 font-semibold"><Globe size={12} className="text-slate-400"/> Language</div>
+                        <div className="flex items-center gap-1.5 text-slate-700 font-semibold"><Globe size={12} className="text-slate-400" /> Language</div>
                         <span className="font-bold text-slate-900">English (Australia) ∨</span>
                       </div>
                     </div>
@@ -5950,11 +5938,11 @@ export default function CompanySettings() {
                       <button onClick={() => setNotificationsTab('Notification Rules')} className="text-[10px] font-bold text-[#2563EB] hover:underline cursor-pointer">View all rules →</button>
                     </div>
                     {[
-                      { icon: <Truck size={12}/>, label: 'Load Status Updates', val: '16,842 sent' },
-                      { icon: <FileText size={12}/>, label: 'Invoice & Payment Notifications', val: '9,752 sent' },
-                      { icon: <Users size={12}/>, label: 'Driver Alerts & Reminders', val: '6,321 sent' },
-                      { icon: <ShieldCheck size={12}/>, label: 'Compliance & Document Expiry', val: '4,112 sent' },
-                      { icon: <Zap size={12}/>, label: 'Maintenance & Service Reminders', val: '3,464 sent' },
+                      { icon: <Truck size={12} />, label: 'Load Status Updates', val: '16,842 sent' },
+                      { icon: <FileText size={12} />, label: 'Invoice & Payment Notifications', val: '9,752 sent' },
+                      { icon: <Users size={12} />, label: 'Driver Alerts & Reminders', val: '6,321 sent' },
+                      { icon: <ShieldCheck size={12} />, label: 'Compliance & Document Expiry', val: '4,112 sent' },
+                      { icon: <Zap size={12} />, label: 'Maintenance & Service Reminders', val: '3,464 sent' },
                     ].map((item, i) => (
                       <div key={i} className="flex items-center justify-between py-1 border-b border-slate-50 last:border-0">
                         <div className="flex items-center gap-2"><span className="text-slate-400">{item.icon}</span><span className="text-[10px] font-bold text-slate-800">{item.label}</span></div>
@@ -6016,8 +6004,8 @@ export default function CompanySettings() {
                     <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">NOTIFICATION MESSAGE TEMPLATES ({notificationTemplatesList.length} TEMPLATES)</h3>
                     <p className="text-xs text-slate-500 font-medium">Customize automated customer emails, driver SMS, and POD receipts.</p>
                   </div>
-                  <button 
-                    onClick={() => setIsCreateTemplateModalOpen(true)} 
+                  <button
+                    onClick={() => setIsCreateTemplateModalOpen(true)}
                     className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#2563EB] text-white font-bold text-xs rounded-xl shadow-2xs hover:bg-blue-700 cursor-pointer"
                   >
                     <Plus size={14} /> + Create Template
@@ -6033,8 +6021,8 @@ export default function CompanySettings() {
                       </div>
                       <p className="text-[11px] font-mono text-slate-600 bg-white p-2.5 rounded-lg border border-slate-200/60 leading-relaxed">{tpl.preview}</p>
                       <div className="flex justify-end pt-1">
-                        <button 
-                          onClick={() => triggerToast(`Editing template "${tpl.title}"...`)} 
+                        <button
+                          onClick={() => triggerToast(`Editing template "${tpl.title}"...`)}
                           className="text-[10.5px] font-bold text-[#2563EB] hover:underline cursor-pointer"
                         >
                           Edit Template →
@@ -6056,8 +6044,8 @@ export default function CompanySettings() {
                     <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">AUTOMATED NOTIFICATION RULES & TRIGGERS</h3>
                     <p className="text-xs text-slate-500 font-medium">Define automated event triggers, recipient rules, and channel routing.</p>
                   </div>
-                  <button 
-                    onClick={() => setIsAddNotificationRuleModalOpen(true)} 
+                  <button
+                    onClick={() => setIsAddNotificationRuleModalOpen(true)}
                     className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#2563EB] text-white font-bold text-xs rounded-xl shadow-2xs hover:bg-blue-700 cursor-pointer"
                   >
                     <Plus size={14} /> + Add Notification Rule
@@ -6091,8 +6079,8 @@ export default function CompanySettings() {
                     <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">RECIPIENT DISTRIBUTION GROUPS</h3>
                     <p className="text-xs text-slate-500 font-medium">Manage driver, dispatcher, customer, and finance distribution lists.</p>
                   </div>
-                  <button 
-                    onClick={() => setIsCreateRecipientGroupModalOpen(true)} 
+                  <button
+                    onClick={() => setIsCreateRecipientGroupModalOpen(true)}
                     className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#2563EB] text-white font-bold text-xs rounded-xl shadow-2xs hover:bg-blue-700 cursor-pointer"
                   >
                     <Plus size={14} /> + Create Recipient Group
@@ -6204,11 +6192,11 @@ export default function CompanySettings() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
               {[
-                { title:'1. PURPOSE', items:['Central hub for all notification settings.','Configure channels, templates and rules.','Improve communication and user awareness.'] },
-                { title:'2. KEY FEATURES', items:['Multi-channel notification support.','Custom templates and variables.','Rule-based notifications.','Recipient groups and preferences.'] },
-                { title:'3. CHANNELS', items:['Email, SMS, Push, In-App, Voice, WhatsApp.','Configure channels, templates and rules.','Track delivery status and success rate.'] },
-                { title:'4. NOTIFICATION RULES', items:['Event-based triggers.','Conditions, recipients and schedules.','Escalation and reminder rules.'] },
-                { title:'5. DATA & SECURITY', items:['Secure message delivery.','Audit logs for all notifications.','Opt-in/out and quiet hours support.'] },
+                { title: '1. PURPOSE', items: ['Central hub for all notification settings.', 'Configure channels, templates and rules.', 'Improve communication and user awareness.'] },
+                { title: '2. KEY FEATURES', items: ['Multi-channel notification support.', 'Custom templates and variables.', 'Rule-based notifications.', 'Recipient groups and preferences.'] },
+                { title: '3. CHANNELS', items: ['Email, SMS, Push, In-App, Voice, WhatsApp.', 'Configure channels, templates and rules.', 'Track delivery status and success rate.'] },
+                { title: '4. NOTIFICATION RULES', items: ['Event-based triggers.', 'Conditions, recipients and schedules.', 'Escalation and reminder rules.'] },
+                { title: '5. DATA & SECURITY', items: ['Secure message delivery.', 'Audit logs for all notifications.', 'Opt-in/out and quiet hours support.'] },
               ].map((col, i) => (
                 <div key={i}>
                   <h4 className="font-extrabold text-blue-900 mb-1 uppercase text-[8.5px] tracking-wider">{col.title}</h4>
@@ -6245,24 +6233,24 @@ export default function CompanySettings() {
               <p className="text-xs text-slate-500 font-semibold mt-1">Monitor system activity, review audit logs and manage security settings.</p>
             </div>
             <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-start sm:justify-end">
-              <button 
-                onClick={handleRefreshSecurityLogs} 
+              <button
+                onClick={handleRefreshSecurityLogs}
                 disabled={isRefreshingSecurityLogs}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
               >
-                <RefreshCw size={13} className={`text-slate-500 ${isRefreshingSecurityLogs ? 'animate-spin' : ''}`} /> 
+                <RefreshCw size={13} className={`text-slate-500 ${isRefreshingSecurityLogs ? 'animate-spin' : ''}`} />
                 {isRefreshingSecurityLogs ? 'Refreshing...' : 'Refresh'}
               </button>
 
-              <button 
-                onClick={handleExportSecurityLogs} 
+              <button
+                onClick={handleExportSecurityLogs}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer shadow-2xs"
               >
                 <Download size={13} className="text-slate-500" /> Export Logs
               </button>
 
-              <button 
-                onClick={() => setIsSecuritySettingsModalOpen(true)} 
+              <button
+                onClick={() => setIsSecuritySettingsModalOpen(true)}
                 className="flex items-center gap-1.5 px-4 py-1.5 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
               >
                 <Lock size={14} /> Security Settings
@@ -6273,14 +6261,13 @@ export default function CompanySettings() {
           {/* SUB TABS */}
           <div className="flex items-center gap-2 border-b border-slate-200/80 overflow-x-auto pb-3 pt-1 scrollbar-hide">
             {['Overview', 'Audit Logs', 'Login History', 'Security Events', 'Permission Changes', 'Data Access', 'Exports & Downloads', 'Blocked Actions', 'Settings'].map((tab) => (
-              <button 
-                key={tab} 
+              <button
+                key={tab}
                 onClick={() => setSecurityLogsTab(tab)}
-                className={`px-3.5 py-1.5 text-xs font-black whitespace-nowrap transition-all rounded-xl cursor-pointer outline-none focus:outline-none focus:ring-0 select-none ${
-                  securityLogsTab === tab 
-                    ? 'bg-[#2563EB] text-white shadow-xs' 
+                className={`px-3.5 py-1.5 text-xs font-black whitespace-nowrap transition-all rounded-xl cursor-pointer outline-none focus:outline-none focus:ring-0 select-none ${securityLogsTab === tab
+                    ? 'bg-[#2563EB] text-white shadow-xs'
                     : 'bg-slate-100/70 text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 border border-slate-200/60 font-bold'
-                }`}
+                  }`}
               >
                 {tab}
               </button>
@@ -6341,7 +6328,7 @@ export default function CompanySettings() {
 
               {/* MAIN 2-COLUMN GRID */}
               <div className="grid grid-cols-1 xl:grid-cols-12 gap-3.5 items-start">
-                
+
                 {/* LEFT: RECENT AUDIT LOGS TABLE (8 cols) */}
                 <div className="xl:col-span-8 bg-white rounded-xl border border-slate-200/80 p-3.5 shadow-2xs text-left space-y-2.5 overflow-hidden">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-2">
@@ -6383,36 +6370,36 @@ export default function CompanySettings() {
                             <td className="py-2 px-2 whitespace-nowrap"><span className="text-[8.5px] font-mono text-slate-400">{row.ip}</span></td>
                             <td className="py-2 px-2 whitespace-nowrap"><span className={`text-[9.5px] font-black ${row.outcomeColor}`}>{row.outcome}</span></td>
                             <td className="py-2 px-1.5 text-right whitespace-nowrap relative">
-                              <button 
+                              <button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setOpenLogDropdownId(openLogDropdownId === `overview-${row.id}` ? null : `overview-${row.id}`);
-                                }} 
-                                title="Actions Menu" 
+                                }}
+                                title="Actions Menu"
                                 className="p-1.5 hover:bg-slate-200 rounded-lg text-slate-500 hover:text-slate-900 cursor-pointer transition-colors border border-transparent"
                               >
                                 <MoreHorizontal size={14} />
                               </button>
 
                               {openLogDropdownId === `overview-${row.id}` && (
-                                <div 
+                                <div
                                   className="absolute right-0 top-8 z-50 w-44 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 text-xs text-left animate-in fade-in duration-100"
                                   onClick={(e) => e.stopPropagation()}
                                 >
-                                  <button 
+                                  <button
                                     onClick={() => { setOpenLogDropdownId(null); setSelectedAuditLog(row); }}
                                     className="w-full text-left px-3 py-1.5 hover:bg-slate-50 font-bold text-slate-700 flex items-center gap-2 cursor-pointer"
                                   >
                                     <Eye size={13} className="text-blue-600" /> View Details
                                   </button>
-                                  <button 
+                                  <button
                                     onClick={() => { setOpenLogDropdownId(null); handleOpenEditAuditLogModal(row); }}
                                     className="w-full text-left px-3 py-1.5 hover:bg-slate-50 font-bold text-slate-700 flex items-center gap-2 cursor-pointer"
                                   >
                                     <Edit size={13} className="text-amber-600" /> Edit Record
                                   </button>
                                   <div className="my-1 border-t border-slate-100"></div>
-                                  <button 
+                                  <button
                                     onClick={() => { setOpenLogDropdownId(null); handleDeleteAuditLog(row.id); }}
                                     className="w-full text-left px-3 py-1.5 hover:bg-rose-50 font-bold text-rose-600 flex items-center gap-2 cursor-pointer"
                                   >
@@ -6467,12 +6454,12 @@ export default function CompanySettings() {
                       </div>
                       <div className="flex-1 space-y-1.5 text-[9px]">
                         {[
-                          { color:'#2563EB', label:'Login Events', count:'3,245', pct:'13.2%' },
-                          { color:'#16A34A', label:'Data Updates', count:'8,724', pct:'35.4%' },
-                          { color:'#F59E0B', label:'Data Exports', count:'2,156', pct:'8.7%' },
-                          { color:'#9333EA', label:'Permission Changes', count:'89', pct:'0.4%' },
-                          { color:'#EF4444', label:'Security Events', count:'156', pct:'0.6%' },
-                          { color:'#64748B', label:'Other Events', count:'10,280', pct:'41.7%' },
+                          { color: '#2563EB', label: 'Login Events', count: '3,245', pct: '13.2%' },
+                          { color: '#16A34A', label: 'Data Updates', count: '8,724', pct: '35.4%' },
+                          { color: '#F59E0B', label: 'Data Exports', count: '2,156', pct: '8.7%' },
+                          { color: '#9333EA', label: 'Permission Changes', count: '89', pct: '0.4%' },
+                          { color: '#EF4444', label: 'Security Events', count: '156', pct: '0.6%' },
+                          { color: '#64748B', label: 'Other Events', count: '10,280', pct: '41.7%' },
                         ].map((item, i) => (
                           <div key={i} className="flex items-center justify-between">
                             <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }}></span><span className="font-semibold text-slate-600">{item.label}</span></div>
@@ -6491,10 +6478,10 @@ export default function CompanySettings() {
                     </div>
                     <div className="space-y-1.5 text-[10px]">
                       {[
-                        { label:'Failed Login Attempts', count:'86', color:'text-rose-600', icon:<AlertTriangle size={12} className="text-rose-500"/> },
-                        { label:'Blocked Actions', count:'27', color:'text-amber-600', icon:<CheckCircle2 size={12} className="text-amber-500"/> },
-                        { label:'Suspicious Activities', count:'15', color:'text-amber-600', icon:<Shield size={12} className="text-amber-500"/> },
-                        { label:'Unusual Access Locations', count:'8', color:'text-amber-600', icon:<Globe size={12} className="text-amber-500"/> },
+                        { label: 'Failed Login Attempts', count: '86', color: 'text-rose-600', icon: <AlertTriangle size={12} className="text-rose-500" /> },
+                        { label: 'Blocked Actions', count: '27', color: 'text-amber-600', icon: <CheckCircle2 size={12} className="text-amber-500" /> },
+                        { label: 'Suspicious Activities', count: '15', color: 'text-amber-600', icon: <Shield size={12} className="text-amber-500" /> },
+                        { label: 'Unusual Access Locations', count: '8', color: 'text-amber-600', icon: <Globe size={12} className="text-amber-500" /> },
                       ].map((sec, i) => (
                         <div key={i} className="flex items-center justify-between py-1 border-b border-slate-50 last:border-0">
                           <div className="flex items-center gap-1.5 text-slate-700 font-semibold">{sec.icon} {sec.label}</div>
@@ -6511,11 +6498,11 @@ export default function CompanySettings() {
                       <button onClick={() => setCurrentView('users-permissions')} className="text-[10px] font-bold text-[#2563EB] hover:underline cursor-pointer">View all users →</button>
                     </div>
                     {[
-                      { avatar:'SM', bg:'bg-purple-600', name:'Sarah Mitchell', val:'1,248 events' },
-                      { avatar:'JD', bg:'bg-blue-600', name:'John Davis', val:'986 events' },
-                      { avatar:'RW', bg:'bg-amber-600', name:'Ravi Wilson', val:'842 events' },
-                      { avatar:'AH', bg:'bg-teal-600', name:'Amit Handa', val:'756 events' },
-                      { avatar:'BT', bg:'bg-orange-600', name:'Brian Taylor', val:'688 events' },
+                      { avatar: 'SM', bg: 'bg-purple-600', name: 'Sarah Mitchell', val: '1,248 events' },
+                      { avatar: 'JD', bg: 'bg-blue-600', name: 'John Davis', val: '986 events' },
+                      { avatar: 'RW', bg: 'bg-amber-600', name: 'Ravi Wilson', val: '842 events' },
+                      { avatar: 'AH', bg: 'bg-teal-600', name: 'Amit Handa', val: '756 events' },
+                      { avatar: 'BT', bg: 'bg-orange-600', name: 'Brian Taylor', val: '688 events' },
                     ].map((user, i) => (
                       <div key={i} className="flex items-center justify-between py-1 border-b border-slate-50 last:border-0">
                         <div className="flex items-center gap-2">
@@ -6602,36 +6589,36 @@ export default function CompanySettings() {
                         <td className="py-2 px-2 whitespace-nowrap"><span className="text-[8.5px] font-mono text-slate-400">{row.ip}</span></td>
                         <td className="py-2 px-2 whitespace-nowrap"><span className={`text-[9.5px] font-black ${row.outcomeColor}`}>{row.outcome}</span></td>
                         <td className="py-2 px-1.5 text-right whitespace-nowrap relative">
-                          <button 
+                          <button
                             onClick={(e) => {
                               e.stopPropagation();
                               setOpenLogDropdownId(openLogDropdownId === `audit-${row.id}` ? null : `audit-${row.id}`);
-                            }} 
-                            title="Actions Menu" 
+                            }}
+                            title="Actions Menu"
                             className="p-1.5 hover:bg-slate-200 rounded-lg text-slate-500 hover:text-slate-900 cursor-pointer transition-colors border border-transparent"
                           >
                             <MoreHorizontal size={14} />
                           </button>
 
                           {openLogDropdownId === `audit-${row.id}` && (
-                            <div 
+                            <div
                               className="absolute right-0 top-8 z-50 w-44 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 text-xs text-left animate-in fade-in duration-100"
                               onClick={(e) => e.stopPropagation()}
                             >
-                              <button 
+                              <button
                                 onClick={() => { setOpenLogDropdownId(null); setSelectedAuditLog(row); }}
                                 className="w-full text-left px-3 py-1.5 hover:bg-slate-50 font-bold text-slate-700 flex items-center gap-2 cursor-pointer"
                               >
                                 <Eye size={13} className="text-blue-600" /> View Details
                               </button>
-                              <button 
+                              <button
                                 onClick={() => { setOpenLogDropdownId(null); handleOpenEditAuditLogModal(row); }}
                                 className="w-full text-left px-3 py-1.5 hover:bg-slate-50 font-bold text-slate-700 flex items-center gap-2 cursor-pointer"
                               >
                                 <Edit size={13} className="text-amber-600" /> Edit Record
                               </button>
                               <div className="my-1 border-t border-slate-100"></div>
-                              <button 
+                              <button
                                 onClick={() => { setOpenLogDropdownId(null); handleDeleteAuditLog(row.id); }}
                                 className="w-full text-left px-3 py-1.5 hover:bg-rose-50 font-bold text-rose-600 flex items-center gap-2 cursor-pointer"
                               >
@@ -6708,11 +6695,11 @@ export default function CompanySettings() {
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-xs">
                       {[
-                        { time:'30 May 09:15 AM', name:'Sarah Mitchell', method:'Web App', device:'Chrome / Windows 11', location:'Sydney, NSW', ip:'203.26.45.12', status:'Success', bg:'bg-emerald-100 text-emerald-700' },
-                        { time:'30 May 09:02 AM', name:'John Davis', method:'Mobile Driver App', device:'iOS App 3.2.1', location:'Melbourne, VIC', ip:'203.26.45.18', status:'Success', bg:'bg-emerald-100 text-emerald-700' },
-                        { time:'30 May 08:58 AM', name:'Lisa Patel', method:'Web App', device:'Firefox / MacOS', location:'Brisbane, QLD', ip:'203.26.45.99', status:'Failed (Bad Password)', bg:'bg-rose-100 text-rose-700' },
-                        { time:'30 May 08:45 AM', name:'Ravi Wilson', method:'Web App', device:'Edge / Windows 10', location:'Sydney, NSW', ip:'203.26.45.21', status:'Success', bg:'bg-emerald-100 text-emerald-700' },
-                        { time:'30 May 08:12 AM', name:'Amit Handa', method:'API OAuth2', device:'Automated Service Token', location:'Sydney Depot Server', ip:'203.26.45.12', status:'Success', bg:'bg-emerald-100 text-emerald-700' },
+                        { time: '30 May 09:15 AM', name: 'Sarah Mitchell', method: 'Web App', device: 'Chrome / Windows 11', location: 'Sydney, NSW', ip: '203.26.45.12', status: 'Success', bg: 'bg-emerald-100 text-emerald-700' },
+                        { time: '30 May 09:02 AM', name: 'John Davis', method: 'Mobile Driver App', device: 'iOS App 3.2.1', location: 'Melbourne, VIC', ip: '203.26.45.18', status: 'Success', bg: 'bg-emerald-100 text-emerald-700' },
+                        { time: '30 May 08:58 AM', name: 'Lisa Patel', method: 'Web App', device: 'Firefox / MacOS', location: 'Brisbane, QLD', ip: '203.26.45.99', status: 'Failed (Bad Password)', bg: 'bg-rose-100 text-rose-700' },
+                        { time: '30 May 08:45 AM', name: 'Ravi Wilson', method: 'Web App', device: 'Edge / Windows 10', location: 'Sydney, NSW', ip: '203.26.45.21', status: 'Success', bg: 'bg-emerald-100 text-emerald-700' },
+                        { time: '30 May 08:12 AM', name: 'Amit Handa', method: 'API OAuth2', device: 'Automated Service Token', location: 'Sydney Depot Server', ip: '203.26.45.12', status: 'Success', bg: 'bg-emerald-100 text-emerald-700' },
                       ].map((row, i) => (
                         <tr key={i} className="hover:bg-slate-50/50">
                           <td className="py-2.5 px-2 font-mono text-[10px] text-slate-500">{row.time}</td>
@@ -6968,9 +6955,9 @@ export default function CompanySettings() {
               <form onSubmit={handleSaveSecuritySettingsSubmit} className="space-y-4 text-xs font-sans">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Audit Log Retention Period</label>
-                  <select 
-                    value={securitySettingsForm.retentionDays} 
-                    onChange={e => setSecuritySettingsForm({...securitySettingsForm, retentionDays: e.target.value})}
+                  <select
+                    value={securitySettingsForm.retentionDays}
+                    onChange={e => setSecuritySettingsForm({ ...securitySettingsForm, retentionDays: e.target.value })}
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl font-semibold text-slate-800 bg-white focus:outline-none focus:border-blue-400 font-sans"
                   >
                     <option value="90 Days">90 Days</option>
@@ -6985,19 +6972,19 @@ export default function CompanySettings() {
                     <label className="font-bold text-slate-800 block">Enforce Two-Factor Authentication (2FA)</label>
                     <span className="text-[11px] text-slate-500">Require 2FA code via SMS / Authenticator for all admin users.</span>
                   </div>
-                  <input 
-                    type="checkbox" 
-                    checked={securitySettingsForm.twoFactorAuth} 
-                    onChange={e => setSecuritySettingsForm({...securitySettingsForm, twoFactorAuth: e.target.checked})}
-                    className="w-4 h-4 text-blue-600 rounded cursor-pointer" 
+                  <input
+                    type="checkbox"
+                    checked={securitySettingsForm.twoFactorAuth}
+                    onChange={e => setSecuritySettingsForm({ ...securitySettingsForm, twoFactorAuth: e.target.checked })}
+                    className="w-4 h-4 text-blue-600 rounded cursor-pointer"
                   />
                 </div>
 
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Session Idle Timeout</label>
-                  <select 
-                    value={securitySettingsForm.sessionTimeout} 
-                    onChange={e => setSecuritySettingsForm({...securitySettingsForm, sessionTimeout: e.target.value})}
+                  <select
+                    value={securitySettingsForm.sessionTimeout}
+                    onChange={e => setSecuritySettingsForm({ ...securitySettingsForm, sessionTimeout: e.target.value })}
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl font-semibold text-slate-800 bg-white focus:outline-none focus:border-blue-400 font-sans"
                   >
                     <option value="15 Minutes">15 Minutes</option>
@@ -7012,11 +6999,11 @@ export default function CompanySettings() {
                     <label className="font-bold text-slate-800 block">Security Alert Notifications</label>
                     <span className="text-[11px] text-slate-500">Receive instant email alerts on critical failed logins & blocked actions.</span>
                   </div>
-                  <input 
-                    type="checkbox" 
-                    checked={securitySettingsForm.auditAlerts} 
-                    onChange={e => setSecuritySettingsForm({...securitySettingsForm, auditAlerts: e.target.checked})}
-                    className="w-4 h-4 text-blue-600 rounded cursor-pointer" 
+                  <input
+                    type="checkbox"
+                    checked={securitySettingsForm.auditAlerts}
+                    onChange={e => setSecuritySettingsForm({ ...securitySettingsForm, auditAlerts: e.target.checked })}
+                    className="w-4 h-4 text-blue-600 rounded cursor-pointer"
                   />
                 </div>
 
@@ -7037,11 +7024,11 @@ export default function CompanySettings() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
               {[
-                { title:'1. PURPOSE', items:['Track and monitor all critical system activities.','Ensure data security and user accountability.','Support compliance and audit requirements.'] },
-                { title:'2. KEY FEATURES', items:['Comprehensive audit logging.','Real-time security event detection.','Permission change tracking.','Data export and access monitoring.'] },
-                { title:'3. EVENT CATEGORIES', items:['Authentication & Login events.','Data Create, Update, Delete.','Permission changes & role updates.','Data exports & downloads.','Security events & blocked actions.'] },
-                { title:'4. SECURITY & ACCESS', items:['Role-based access to logs.','Admins can view all logs.','Users can view limited logs.','Logs are tamper-proof.'] },
-                { title:'5. DATA RETENTION', items:['Logs retained for minimum 12 months.','Configurable retention period.','Older logs archived securely.','Export logs for compliance.'] },
+                { title: '1. PURPOSE', items: ['Track and monitor all critical system activities.', 'Ensure data security and user accountability.', 'Support compliance and audit requirements.'] },
+                { title: '2. KEY FEATURES', items: ['Comprehensive audit logging.', 'Real-time security event detection.', 'Permission change tracking.', 'Data export and access monitoring.'] },
+                { title: '3. EVENT CATEGORIES', items: ['Authentication & Login events.', 'Data Create, Update, Delete.', 'Permission changes & role updates.', 'Data exports & downloads.', 'Security events & blocked actions.'] },
+                { title: '4. SECURITY & ACCESS', items: ['Role-based access to logs.', 'Admins can view all logs.', 'Users can view limited logs.', 'Logs are tamper-proof.'] },
+                { title: '5. DATA RETENTION', items: ['Logs retained for minimum 12 months.', 'Configurable retention period.', 'Older logs archived securely.', 'Export logs for compliance.'] },
               ].map((col, i) => (
                 <div key={i}>
                   <h4 className="font-extrabold text-blue-900 mb-1 uppercase text-[8.5px] tracking-wider">{col.title}</h4>
@@ -7077,24 +7064,24 @@ export default function CompanySettings() {
               <p className="text-xs text-slate-500 font-semibold mt-1">Manage your subscription plan, add-ons, billing, invoices and payment methods.</p>
             </div>
             <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-start sm:justify-end">
-              <button 
-                onClick={handleRefreshBilling} 
+              <button
+                onClick={handleRefreshBilling}
                 disabled={isRefreshingBilling}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
               >
-                <RefreshCw size={13} className={`text-slate-500 ${isRefreshingBilling ? 'animate-spin' : ''}`} /> 
+                <RefreshCw size={13} className={`text-slate-500 ${isRefreshingBilling ? 'animate-spin' : ''}`} />
                 {isRefreshingBilling ? 'Refreshing...' : 'Refresh'}
               </button>
 
-              <button 
-                onClick={handleDownloadStatement} 
+              <button
+                onClick={handleDownloadStatement}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition-all cursor-pointer shadow-2xs"
               >
                 <Download size={13} className="text-slate-500" /> Download Statement
               </button>
 
-              <button 
-                onClick={() => setIsManageSubscriptionModalOpen(true)} 
+              <button
+                onClick={() => setIsManageSubscriptionModalOpen(true)}
                 className="flex items-center gap-1.5 px-4 py-1.5 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer"
               >
                 <Crown size={14} /> Manage Subscription
@@ -7105,14 +7092,13 @@ export default function CompanySettings() {
           {/* SUB TABS */}
           <div className="flex items-center gap-2 border-b border-slate-200/80 overflow-x-auto pb-3 pt-1 scrollbar-hide">
             {['Overview', 'Plan & Usage', 'Add-ons', 'Invoices', 'Payment Methods', 'Billing History', 'Quotes & Orders'].map((tab) => (
-              <button 
-                key={tab} 
+              <button
+                key={tab}
                 onClick={() => setBillingTab(tab)}
-                className={`px-3.5 py-1.5 text-xs font-black whitespace-nowrap transition-all rounded-xl cursor-pointer outline-none focus:outline-none focus:ring-0 select-none ${
-                  billingTab === tab 
-                    ? 'bg-[#2563EB] text-white shadow-xs' 
+                className={`px-3.5 py-1.5 text-xs font-black whitespace-nowrap transition-all rounded-xl cursor-pointer outline-none focus:outline-none focus:ring-0 select-none ${billingTab === tab
+                    ? 'bg-[#2563EB] text-white shadow-xs'
                     : 'bg-slate-100/70 text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 border border-slate-200/60 font-bold'
-                }`}
+                  }`}
               >
                 {tab}
               </button>
@@ -7150,7 +7136,7 @@ export default function CompanySettings() {
 
               {/* SUBSCRIPTION OVERVIEW (LEFT) + BILLING SUMMARY (RIGHT) OUTER GRID */}
               <div className="grid grid-cols-1 xl:grid-cols-12 gap-3.5 items-stretch text-left">
-                
+
                 {/* LEFT CONTAINER (8 COLS): SUBSCRIPTION OVERVIEW CARD WITH 3 SUB-SECTIONS */}
                 <div className="xl:col-span-8 bg-white rounded-xl border border-slate-200/80 p-4 shadow-2xs space-y-3.5 flex flex-col justify-between">
                   <div className="text-xs font-black text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2">
@@ -7158,7 +7144,7 @@ export default function CompanySettings() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 items-stretch flex-1">
-                    
+
                     {/* SUB-COL 1: YOUR PLAN */}
                     <div className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3.5 space-y-3 flex flex-col justify-between">
                       <div>
@@ -7170,7 +7156,7 @@ export default function CompanySettings() {
                         <p className="text-[10px] text-slate-500 font-medium mt-1 leading-relaxed">
                           Designed for growing logistics businesses with advanced features and automation.
                         </p>
-                        
+
                         <div className="space-y-1.5 mt-3 text-[10px] font-bold text-slate-700">
                           <div className="flex items-center gap-1.5 text-emerald-600">✓ <span className="text-slate-800">Up to 50 users</span></div>
                           <div className="flex items-center gap-1.5 text-emerald-600">✓ <span className="text-slate-800">Advanced reporting & analytics</span></div>
@@ -7273,7 +7259,7 @@ export default function CompanySettings() {
 
               {/* BOTTOM SECTION: RECENT INVOICES + PAYMENT METHOD (2-COLUMN GRID) */}
               <div className="grid grid-cols-1 xl:grid-cols-12 gap-3.5 items-start">
-                
+
                 {/* LEFT: RECENT INVOICES TABLE (8 cols) */}
                 <div className="xl:col-span-8 bg-white rounded-xl border border-slate-200/80 p-3.5 shadow-2xs text-left space-y-2.5 overflow-hidden">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-2">
@@ -7295,11 +7281,11 @@ export default function CompanySettings() {
                       </thead>
                       <tbody className="divide-y divide-slate-100">
                         {[
-                          { inv:'INV-2025-0529', date:'29 May 2025', desc:'Monthly Subscription - May 2025', amt:'$854.70', status:'Paid', pm:'Visa •••• 4242' },
-                          { inv:'INV-2025-0429', date:'29 Apr 2025', desc:'Monthly Subscription - April 2025', amt:'$854.70', status:'Paid', pm:'Visa •••• 4242' },
-                          { inv:'INV-2025-0329', date:'29 Mar 2025', desc:'Monthly Subscription - March 2025', amt:'$854.70', status:'Paid', pm:'Visa •••• 4242' },
-                          { inv:'INV-2025-0228', date:'28 Feb 2025', desc:'Monthly Subscription - February 2025', amt:'$854.70', status:'Paid', pm:'Visa •••• 4242' },
-                          { inv:'INV-2025-0129', date:'29 Jan 2025', desc:'Monthly Subscription - January 2025', amt:'$854.70', status:'Paid', pm:'Visa •••• 4242' },
+                          { inv: 'INV-2025-0529', date: '29 May 2025', desc: 'Monthly Subscription - May 2025', amt: '$854.70', status: 'Paid', pm: 'Visa •••• 4242' },
+                          { inv: 'INV-2025-0429', date: '29 Apr 2025', desc: 'Monthly Subscription - April 2025', amt: '$854.70', status: 'Paid', pm: 'Visa •••• 4242' },
+                          { inv: 'INV-2025-0329', date: '29 Mar 2025', desc: 'Monthly Subscription - March 2025', amt: '$854.70', status: 'Paid', pm: 'Visa •••• 4242' },
+                          { inv: 'INV-2025-0228', date: '28 Feb 2025', desc: 'Monthly Subscription - February 2025', amt: '$854.70', status: 'Paid', pm: 'Visa •••• 4242' },
+                          { inv: 'INV-2025-0129', date: '29 Jan 2025', desc: 'Monthly Subscription - January 2025', amt: '$854.70', status: 'Paid', pm: 'Visa •••• 4242' },
                         ].map((row, i) => (
                           <tr key={i} className="hover:bg-blue-50/30 transition-colors">
                             <td className="py-2 px-2 whitespace-nowrap"><span className="text-[10px] font-extrabold text-[#2563EB]">{row.inv}</span></td>
@@ -7340,7 +7326,7 @@ export default function CompanySettings() {
                       <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">PAYMENT METHOD</h3>
                       <button onClick={() => setBillingTab('Payment Methods')} className="text-[10px] font-bold text-[#2563EB] hover:underline cursor-pointer">Manage →</button>
                     </div>
-                    
+
                     <div className="flex items-center justify-between p-2.5 bg-slate-50/80 rounded-xl border border-slate-200/80">
                       <div className="flex items-center gap-2.5">
                         <div className="px-2 py-1 bg-[#1A1F71] text-white rounded font-extrabold text-[10px] tracking-wider italic">
@@ -7361,7 +7347,7 @@ export default function CompanySettings() {
                       <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">NEXT BILLING</h3>
                       <button onClick={() => setBillingTab('Billing History')} className="text-[10px] font-bold text-[#2563EB] hover:underline cursor-pointer">View schedule →</button>
                     </div>
-                    
+
                     <div className="flex items-center justify-between p-2.5 bg-slate-50/80 rounded-xl border border-slate-200/80">
                       <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#2563EB] flex items-center justify-center shrink-0">
@@ -7480,11 +7466,10 @@ export default function CompanySettings() {
                         <div className="text-xs font-black text-[#2563EB] mt-0.5">{addon.price}</div>
                         <p className="text-[11px] text-slate-500 font-medium mt-1.5 leading-relaxed">{addon.desc}</p>
                       </div>
-                      <button 
+                      <button
                         onClick={() => triggerToast(`${addon.active ? 'Deactivated' : 'Activated'} ${addon.title} successfully!`)}
-                        className={`w-full py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-3xs ${
-                          addon.active ? 'bg-white border border-slate-200 text-rose-600 hover:bg-rose-50' : 'bg-[#2563EB] text-white hover:bg-blue-700'
-                        }`}
+                        className={`w-full py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-3xs ${addon.active ? 'bg-white border border-slate-200 text-rose-600 hover:bg-rose-50' : 'bg-[#2563EB] text-white hover:bg-blue-700'
+                          }`}
                       >
                         {addon.active ? 'Manage / Deactivate' : 'Activate Add-on'}
                       </button>
@@ -7525,12 +7510,12 @@ export default function CompanySettings() {
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-xs font-semibold text-slate-700">
                       {[
-                        { inv:'INV-2025-0529', date:'29 May 2025', desc:'Hero Pro Subscription + Add-ons (May 2025)', sub:'$777.00', gst:'$77.70', total:'$854.70', status:'Paid' },
-                        { inv:'INV-2025-0429', date:'29 Apr 2025', desc:'Hero Pro Subscription + Add-ons (April 2025)', sub:'$777.00', gst:'$77.70', total:'$854.70', status:'Paid' },
-                        { inv:'INV-2025-0329', date:'29 Mar 2025', desc:'Hero Pro Subscription + Add-ons (March 2025)', sub:'$777.00', gst:'$77.70', total:'$854.70', status:'Paid' },
-                        { inv:'INV-2025-0228', date:'28 Feb 2025', desc:'Hero Pro Subscription + Add-ons (February 2025)', sub:'$777.00', gst:'$77.70', total:'$854.70', status:'Paid' },
-                        { inv:'INV-2025-0129', date:'29 Jan 2025', desc:'Hero Pro Subscription + Add-ons (January 2025)', sub:'$777.00', gst:'$77.70', total:'$854.70', status:'Paid' },
-                        { inv:'INV-2024-1229', date:'29 Dec 2024', desc:'Hero Pro Subscription + Add-ons (December 2024)', sub:'$777.00', gst:'$77.70', total:'$854.70', status:'Paid' },
+                        { inv: 'INV-2025-0529', date: '29 May 2025', desc: 'Hero Pro Subscription + Add-ons (May 2025)', sub: '$777.00', gst: '$77.70', total: '$854.70', status: 'Paid' },
+                        { inv: 'INV-2025-0429', date: '29 Apr 2025', desc: 'Hero Pro Subscription + Add-ons (April 2025)', sub: '$777.00', gst: '$77.70', total: '$854.70', status: 'Paid' },
+                        { inv: 'INV-2025-0329', date: '29 Mar 2025', desc: 'Hero Pro Subscription + Add-ons (March 2025)', sub: '$777.00', gst: '$77.70', total: '$854.70', status: 'Paid' },
+                        { inv: 'INV-2025-0228', date: '28 Feb 2025', desc: 'Hero Pro Subscription + Add-ons (February 2025)', sub: '$777.00', gst: '$77.70', total: '$854.70', status: 'Paid' },
+                        { inv: 'INV-2025-0129', date: '29 Jan 2025', desc: 'Hero Pro Subscription + Add-ons (January 2025)', sub: '$777.00', gst: '$77.70', total: '$854.70', status: 'Paid' },
+                        { inv: 'INV-2024-1229', date: '29 Dec 2024', desc: 'Hero Pro Subscription + Add-ons (December 2024)', sub: '$777.00', gst: '$77.70', total: '$854.70', status: 'Paid' },
                       ].map((row, i) => (
                         <tr key={i} className="hover:bg-slate-50/70 transition-colors">
                           <td className="py-3 px-3 font-bold text-[#2563EB]">{row.inv}</td>
@@ -7667,11 +7652,11 @@ export default function CompanySettings() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
               {[
-                { title:'1. PURPOSE', items:['Manage subscription plans and billing.','Track usage, invoices and payments.','Handle add-ons and upgrades.'] },
-                { title:'2. KEY FEATURES', items:['Plan details and billing cycle.','Real-time usage with limits.','Add-ons management.','Invoice and payment history.','Payment method management.'] },
-                { title:'3. BILLING COMPONENTS', items:['Plans, Users, Usage, Add-ons.','Invoices, Payments, Discounts.','Taxes, Currency, Billing cycle.','Quotes and Orders.'] },
-                { title:'4. INTEGRATIONS', items:['Payment Gateway (Stripe/Adyen).','Accounting (Xero, MYOB, QBO).','Email for invoices & receipts.','Usage metering service.'] },
-                { title:'5. SECURITY & DATA', items:['Secure payment tokenization.','PCI DSS compliant.','Audit trail for billing changes.','Data retention per compliance.'] },
+                { title: '1. PURPOSE', items: ['Manage subscription plans and billing.', 'Track usage, invoices and payments.', 'Handle add-ons and upgrades.'] },
+                { title: '2. KEY FEATURES', items: ['Plan details and billing cycle.', 'Real-time usage with limits.', 'Add-ons management.', 'Invoice and payment history.', 'Payment method management.'] },
+                { title: '3. BILLING COMPONENTS', items: ['Plans, Users, Usage, Add-ons.', 'Invoices, Payments, Discounts.', 'Taxes, Currency, Billing cycle.', 'Quotes and Orders.'] },
+                { title: '4. INTEGRATIONS', items: ['Payment Gateway (Stripe/Adyen).', 'Accounting (Xero, MYOB, QBO).', 'Email for invoices & receipts.', 'Usage metering service.'] },
+                { title: '5. SECURITY & DATA', items: ['Secure payment tokenization.', 'PCI DSS compliant.', 'Audit trail for billing changes.', 'Data retention per compliance.'] },
               ].map((col, i) => (
                 <div key={i}>
                   <h4 className="font-extrabold text-blue-900 mb-1 uppercase text-[8.5px] tracking-wider">{col.title}</h4>
@@ -7715,24 +7700,24 @@ export default function CompanySettings() {
             <form onSubmit={handleAddUserSubmit} className="space-y-3.5">
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1">Full Name *</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   required
-                  placeholder="e.g. David Miller" 
+                  placeholder="e.g. David Miller"
                   value={newUserForm.name}
-                  onChange={e => setNewUserForm({...newUserForm, name: e.target.value})}
+                  onChange={e => setNewUserForm({ ...newUserForm, name: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1">Email Address *</label>
-                <input 
-                  type="email" 
+                <input
+                  type="email"
                   required
-                  placeholder="david.m@herologistics.com.au" 
+                  placeholder="david.m@herologistics.com.au"
                   value={newUserForm.email}
-                  onChange={e => setNewUserForm({...newUserForm, email: e.target.value})}
+                  onChange={e => setNewUserForm({ ...newUserForm, email: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -7740,9 +7725,9 @@ export default function CompanySettings() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-slate-700 block mb-1">Role *</label>
-                  <select 
+                  <select
                     value={newUserForm.role}
-                    onChange={e => setNewUserForm({...newUserForm, role: e.target.value})}
+                    onChange={e => setNewUserForm({ ...newUserForm, role: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 cursor-pointer"
                   >
                     <option value="Super Admin">Super Admin</option>
@@ -7758,9 +7743,9 @@ export default function CompanySettings() {
 
                 <div>
                   <label className="text-xs font-bold text-slate-700 block mb-1">Branch Access</label>
-                  <select 
+                  <select
                     value={newUserForm.branch}
-                    onChange={e => setNewUserForm({...newUserForm, branch: e.target.value})}
+                    onChange={e => setNewUserForm({ ...newUserForm, branch: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 cursor-pointer"
                   >
                     <option value="All Branches">All Branches</option>
@@ -7775,19 +7760,19 @@ export default function CompanySettings() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-slate-700 block mb-1">Phone Number</label>
-                  <input 
-                    type="text" 
-                    placeholder="+61 400 123 456" 
+                  <input
+                    type="text"
+                    placeholder="+61 400 123 456"
                     value={newUserForm.phone}
-                    onChange={e => setNewUserForm({...newUserForm, phone: e.target.value})}
+                    onChange={e => setNewUserForm({ ...newUserForm, phone: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
                   />
                 </div>
                 <div>
                   <label className="text-xs font-bold text-slate-700 block mb-1">Account Status</label>
-                  <select 
+                  <select
                     value={newUserForm.status}
-                    onChange={e => setNewUserForm({...newUserForm, status: e.target.value})}
+                    onChange={e => setNewUserForm({ ...newUserForm, status: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 cursor-pointer"
                   >
                     <option value="Active">Active</option>
@@ -7797,14 +7782,14 @@ export default function CompanySettings() {
               </div>
 
               <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setIsAddModalOpen(false)}
                   className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   type="submit"
                   className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
                 >
@@ -7838,22 +7823,22 @@ export default function CompanySettings() {
             <form onSubmit={handleEditUserSubmit} className="space-y-3.5">
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1">Full Name *</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   required
                   value={editUserForm.name}
-                  onChange={e => setEditUserForm({...editUserForm, name: e.target.value})}
+                  onChange={e => setEditUserForm({ ...editUserForm, name: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1">Email Address *</label>
-                <input 
-                  type="email" 
+                <input
+                  type="email"
                   required
                   value={editUserForm.email}
-                  onChange={e => setEditUserForm({...editUserForm, email: e.target.value})}
+                  onChange={e => setEditUserForm({ ...editUserForm, email: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -7861,9 +7846,9 @@ export default function CompanySettings() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-slate-700 block mb-1">Role *</label>
-                  <select 
+                  <select
                     value={editUserForm.role}
-                    onChange={e => setEditUserForm({...editUserForm, role: e.target.value})}
+                    onChange={e => setEditUserForm({ ...editUserForm, role: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 cursor-pointer"
                   >
                     <option value="Super Admin">Super Admin</option>
@@ -7879,9 +7864,9 @@ export default function CompanySettings() {
 
                 <div>
                   <label className="text-xs font-bold text-slate-700 block mb-1">Branch Access</label>
-                  <select 
+                  <select
                     value={editUserForm.branch}
-                    onChange={e => setEditUserForm({...editUserForm, branch: e.target.value})}
+                    onChange={e => setEditUserForm({ ...editUserForm, branch: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 cursor-pointer"
                   >
                     <option value="All Branches">All Branches</option>
@@ -7896,18 +7881,18 @@ export default function CompanySettings() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-slate-700 block mb-1">Phone Number</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={editUserForm.phone}
-                    onChange={e => setEditUserForm({...editUserForm, phone: e.target.value})}
+                    onChange={e => setEditUserForm({ ...editUserForm, phone: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
                   />
                 </div>
                 <div>
                   <label className="text-xs font-bold text-slate-700 block mb-1">Account Status</label>
-                  <select 
+                  <select
                     value={editUserForm.status}
-                    onChange={e => setEditUserForm({...editUserForm, status: e.target.value})}
+                    onChange={e => setEditUserForm({ ...editUserForm, status: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 cursor-pointer"
                   >
                     <option value="Active">Active</option>
@@ -7917,14 +7902,14 @@ export default function CompanySettings() {
               </div>
 
               <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setIsEditModalOpen(false)}
                   className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   type="submit"
                   className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
                 >
@@ -7958,32 +7943,32 @@ export default function CompanySettings() {
             <form onSubmit={handleCreateRoleSubmit} className="space-y-3.5">
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1">Role Title *</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   required
-                  placeholder="e.g. Safety Compliance Officer" 
+                  placeholder="e.g. Safety Compliance Officer"
                   value={newRoleForm.name}
-                  onChange={e => setNewRoleForm({...newRoleForm, name: e.target.value})}
+                  onChange={e => setNewRoleForm({ ...newRoleForm, name: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1">Role Description</label>
-                <textarea 
+                <textarea
                   rows={2}
-                  placeholder="Describe the primary responsibilities and access scope of this role..." 
+                  placeholder="Describe the primary responsibilities and access scope of this role..."
                   value={newRoleForm.desc}
-                  onChange={e => setNewRoleForm({...newRoleForm, desc: e.target.value})}
+                  onChange={e => setNewRoleForm({ ...newRoleForm, desc: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:outline-none"
                 />
               </div>
 
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1">Badge Color Theme</label>
-                <select 
+                <select
                   value={newRoleForm.colorTheme}
-                  onChange={e => setNewRoleForm({...newRoleForm, colorTheme: e.target.value})}
+                  onChange={e => setNewRoleForm({ ...newRoleForm, colorTheme: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 cursor-pointer"
                 >
                   <option value="blue">Blue Badge</option>
@@ -7997,14 +7982,14 @@ export default function CompanySettings() {
               </div>
 
               <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setIsCreateRoleModalOpen(false)}
                   className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   type="submit"
                   className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
                 >
@@ -8038,34 +8023,34 @@ export default function CompanySettings() {
             <form onSubmit={handleEditRoleSubmit} className="space-y-3.5">
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1">Role Title *</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   required
                   value={editRoleForm.name}
-                  onChange={e => setEditRoleForm({...editRoleForm, name: e.target.value})}
+                  onChange={e => setEditRoleForm({ ...editRoleForm, name: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1">Role Description</label>
-                <textarea 
+                <textarea
                   rows={3}
                   value={editRoleForm.desc}
-                  onChange={e => setEditRoleForm({...editRoleForm, desc: e.target.value})}
+                  onChange={e => setEditRoleForm({ ...editRoleForm, desc: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:outline-none"
                 />
               </div>
 
               <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setIsEditRoleModalOpen(false)}
                   className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   type="submit"
                   className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
                 >
@@ -8099,23 +8084,23 @@ export default function CompanySettings() {
             <form onSubmit={handleCreateWorkflowRuleSubmit} className="space-y-3.5">
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1">Rule Name *</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   required
-                  placeholder="e.g. POD Upload Notification" 
+                  placeholder="e.g. POD Upload Notification"
                   value={newWorkflowRuleForm.name}
-                  onChange={e => setNewWorkflowRuleForm({...newWorkflowRuleForm, name: e.target.value})}
+                  onChange={e => setNewWorkflowRuleForm({ ...newWorkflowRuleForm, name: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1">Description</label>
-                <textarea 
+                <textarea
                   rows={2}
-                  placeholder="Describe when and why this rule executes..." 
+                  placeholder="Describe when and why this rule executes..."
                   value={newWorkflowRuleForm.desc}
-                  onChange={e => setNewWorkflowRuleForm({...newWorkflowRuleForm, desc: e.target.value})}
+                  onChange={e => setNewWorkflowRuleForm({ ...newWorkflowRuleForm, desc: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:outline-none"
                 />
               </div>
@@ -8123,9 +8108,9 @@ export default function CompanySettings() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-slate-700 block mb-1">Category</label>
-                  <select 
+                  <select
                     value={newWorkflowRuleForm.category}
-                    onChange={e => setNewWorkflowRuleForm({...newWorkflowRuleForm, category: e.target.value})}
+                    onChange={e => setNewWorkflowRuleForm({ ...newWorkflowRuleForm, category: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 cursor-pointer"
                   >
                     <option value="Invoice Automation">Invoice Automation</option>
@@ -8139,11 +8124,11 @@ export default function CompanySettings() {
 
                 <div>
                   <label className="text-xs font-bold text-slate-700 block mb-1">Trigger Event</label>
-                  <input 
-                    type="text" 
-                    placeholder="e.g. Load Status: Delivered" 
+                  <input
+                    type="text"
+                    placeholder="e.g. Load Status: Delivered"
                     value={newWorkflowRuleForm.trigger}
-                    onChange={e => setNewWorkflowRuleForm({...newWorkflowRuleForm, trigger: e.target.value})}
+                    onChange={e => setNewWorkflowRuleForm({ ...newWorkflowRuleForm, trigger: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
                   />
                 </div>
@@ -8151,24 +8136,24 @@ export default function CompanySettings() {
 
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1">Automated Action</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. Create Invoice & Notify Accounts" 
+                <input
+                  type="text"
+                  placeholder="e.g. Create Invoice & Notify Accounts"
                   value={newWorkflowRuleForm.action}
-                  onChange={e => setNewWorkflowRuleForm({...newWorkflowRuleForm, action: e.target.value})}
+                  onChange={e => setNewWorkflowRuleForm({ ...newWorkflowRuleForm, action: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
                 />
               </div>
 
               <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setIsCreateWorkflowRuleModalOpen(false)}
                   className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   type="submit"
                   className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
                 >
@@ -8202,21 +8187,21 @@ export default function CompanySettings() {
             <form onSubmit={handleEditWorkflowRuleSubmit} className="space-y-3.5">
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1">Rule Name *</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   required
                   value={editWorkflowRuleForm.name}
-                  onChange={e => setEditWorkflowRuleForm({...editWorkflowRuleForm, name: e.target.value})}
+                  onChange={e => setEditWorkflowRuleForm({ ...editWorkflowRuleForm, name: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1">Description</label>
-                <textarea 
+                <textarea
                   rows={2}
                   value={editWorkflowRuleForm.desc}
-                  onChange={e => setEditWorkflowRuleForm({...editWorkflowRuleForm, desc: e.target.value})}
+                  onChange={e => setEditWorkflowRuleForm({ ...editWorkflowRuleForm, desc: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:bg-white focus:outline-none"
                 />
               </div>
@@ -8224,9 +8209,9 @@ export default function CompanySettings() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-slate-700 block mb-1">Category</label>
-                  <select 
+                  <select
                     value={editWorkflowRuleForm.category}
-                    onChange={e => setEditWorkflowRuleForm({...editWorkflowRuleForm, category: e.target.value})}
+                    onChange={e => setEditWorkflowRuleForm({ ...editWorkflowRuleForm, category: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 cursor-pointer"
                   >
                     <option value="Invoice Automation">Invoice Automation</option>
@@ -8240,10 +8225,10 @@ export default function CompanySettings() {
 
                 <div>
                   <label className="text-xs font-bold text-slate-700 block mb-1">Trigger Event</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={editWorkflowRuleForm.trigger}
-                    onChange={e => setEditWorkflowRuleForm({...editWorkflowRuleForm, trigger: e.target.value})}
+                    onChange={e => setEditWorkflowRuleForm({ ...editWorkflowRuleForm, trigger: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
                   />
                 </div>
@@ -8251,23 +8236,23 @@ export default function CompanySettings() {
 
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1">Automated Action</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={editWorkflowRuleForm.action}
-                  onChange={e => setEditWorkflowRuleForm({...editWorkflowRuleForm, action: e.target.value})}
+                  onChange={e => setEditWorkflowRuleForm({ ...editWorkflowRuleForm, action: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
                 />
               </div>
 
               <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setIsEditWorkflowRuleModalOpen(false)}
                   className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   type="submit"
                   className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
                 >
@@ -8300,9 +8285,9 @@ export default function CompanySettings() {
             <form onSubmit={handleAddIntegrationSubmit} className="space-y-4">
               <div>
                 <label className="text-xs font-extrabold text-slate-700 block mb-1">Integration Provider / System *</label>
-                <select 
+                <select
                   value={newIntegrationForm.provider}
-                  onChange={e => setNewIntegrationForm({...newIntegrationForm, provider: e.target.value, name: e.target.value})}
+                  onChange={e => setNewIntegrationForm({ ...newIntegrationForm, provider: e.target.value, name: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                 >
                   <option>Xero Accounting</option>
@@ -8321,12 +8306,12 @@ export default function CompanySettings() {
 
               <div>
                 <label className="text-xs font-extrabold text-slate-700 block mb-1">Connection Display Name *</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   required
-                  placeholder="e.g. Xero Primary Account" 
+                  placeholder="e.g. Xero Primary Account"
                   value={newIntegrationForm.name}
-                  onChange={e => setNewIntegrationForm({...newIntegrationForm, name: e.target.value})}
+                  onChange={e => setNewIntegrationForm({ ...newIntegrationForm, name: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -8334,9 +8319,9 @@ export default function CompanySettings() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-extrabold text-slate-700 block mb-1">Category</label>
-                  <select 
+                  <select
                     value={newIntegrationForm.category}
-                    onChange={e => setNewIntegrationForm({...newIntegrationForm, category: e.target.value})}
+                    onChange={e => setNewIntegrationForm({ ...newIntegrationForm, category: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:outline-none cursor-pointer"
                   >
                     <option>Accounting</option>
@@ -8349,9 +8334,9 @@ export default function CompanySettings() {
                 </div>
                 <div>
                   <label className="text-xs font-extrabold text-slate-700 block mb-1">Sync Frequency</label>
-                  <select 
+                  <select
                     value={newIntegrationForm.syncFrequency}
-                    onChange={e => setNewIntegrationForm({...newIntegrationForm, syncFrequency: e.target.value})}
+                    onChange={e => setNewIntegrationForm({ ...newIntegrationForm, syncFrequency: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:outline-none cursor-pointer"
                   >
                     <option>Real-time (Webhooks)</option>
@@ -8364,36 +8349,36 @@ export default function CompanySettings() {
 
               <div>
                 <label className="text-xs font-extrabold text-slate-700 block mb-1">API Key / Authorization Secret *</label>
-                <input 
-                  type="password" 
+                <input
+                  type="password"
                   required
-                  placeholder="e.g. live_sk_9837189a87f897x456" 
+                  placeholder="e.g. live_sk_9837189a87f897x456"
                   value={newIntegrationForm.apiKey}
-                  onChange={e => setNewIntegrationForm({...newIntegrationForm, apiKey: e.target.value})}
+                  onChange={e => setNewIntegrationForm({ ...newIntegrationForm, apiKey: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div className="flex items-center gap-2 pt-1">
-                <input 
+                <input
                   type="checkbox"
                   id="autoSync"
                   checked={newIntegrationForm.autoSync}
-                  onChange={e => setNewIntegrationForm({...newIntegrationForm, autoSync: e.target.checked})}
+                  onChange={e => setNewIntegrationForm({ ...newIntegrationForm, autoSync: e.target.checked })}
                   className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
                 />
                 <label htmlFor="autoSync" className="text-xs font-bold text-slate-700 cursor-pointer">Enable automatic background synchronization</label>
               </div>
 
               <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setIsAddIntegrationModalOpen(false)}
                   className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   type="submit"
                   className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
                 >
@@ -8426,9 +8411,9 @@ export default function CompanySettings() {
             <form onSubmit={handleSendTestNotificationSubmit} className="space-y-4">
               <div>
                 <label className="text-xs font-extrabold text-slate-700 block mb-1">Notification Channel *</label>
-                <select 
+                <select
                   value={testNotificationForm.channel}
-                  onChange={e => setTestNotificationForm({...testNotificationForm, channel: e.target.value})}
+                  onChange={e => setTestNotificationForm({ ...testNotificationForm, channel: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                 >
                   <option>Email</option>
@@ -8442,35 +8427,35 @@ export default function CompanySettings() {
 
               <div>
                 <label className="text-xs font-extrabold text-slate-700 block mb-1">Target Recipient Address / Phone / User ID *</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   required
-                  placeholder="e.g. sarah.mitchell@herologistics.com.au or +61412345678" 
+                  placeholder="e.g. sarah.mitchell@herologistics.com.au or +61412345678"
                   value={testNotificationForm.recipient}
-                  onChange={e => setTestNotificationForm({...testNotificationForm, recipient: e.target.value})}
+                  onChange={e => setTestNotificationForm({ ...testNotificationForm, recipient: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div>
                 <label className="text-xs font-extrabold text-slate-700 block mb-1">Test Message Body</label>
-                <textarea 
+                <textarea
                   rows={3}
                   value={testNotificationForm.message}
-                  onChange={e => setTestNotificationForm({...testNotificationForm, message: e.target.value})}
+                  onChange={e => setTestNotificationForm({ ...testNotificationForm, message: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setIsTestNotificationModalOpen(false)}
                   className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   type="submit"
                   className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
                 >
@@ -8503,9 +8488,9 @@ export default function CompanySettings() {
             <form onSubmit={handleSaveSecuritySettingsSubmit} className="space-y-4">
               <div>
                 <label className="text-xs font-extrabold text-slate-700 block mb-1">Audit Log Retention Period *</label>
-                <select 
+                <select
                   value={securitySettingsForm.retentionDays}
-                  onChange={e => setSecuritySettingsForm({...securitySettingsForm, retentionDays: e.target.value})}
+                  onChange={e => setSecuritySettingsForm({ ...securitySettingsForm, retentionDays: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                 >
                   <option>90 Days</option>
@@ -8518,9 +8503,9 @@ export default function CompanySettings() {
 
               <div>
                 <label className="text-xs font-extrabold text-slate-700 block mb-1">Inactivity Session Timeout</label>
-                <select 
+                <select
                   value={securitySettingsForm.sessionTimeout}
-                  onChange={e => setSecuritySettingsForm({...securitySettingsForm, sessionTimeout: e.target.value})}
+                  onChange={e => setSecuritySettingsForm({ ...securitySettingsForm, sessionTimeout: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                 >
                   <option>15 Minutes</option>
@@ -8537,10 +8522,10 @@ export default function CompanySettings() {
                     <span className="text-xs font-bold text-slate-800 block">Require Two-Factor Authentication (2FA)</span>
                     <span className="text-[10px] text-slate-500 font-medium">Enforce 2FA for all administrative accounts</span>
                   </div>
-                  <input 
+                  <input
                     type="checkbox"
                     checked={securitySettingsForm.twoFactorAuth}
-                    onChange={e => setSecuritySettingsForm({...securitySettingsForm, twoFactorAuth: e.target.checked})}
+                    onChange={e => setSecuritySettingsForm({ ...securitySettingsForm, twoFactorAuth: e.target.checked })}
                     className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
                   />
                 </div>
@@ -8550,10 +8535,10 @@ export default function CompanySettings() {
                     <span className="text-xs font-bold text-slate-800 block">IP Whitelisting Restrictions</span>
                     <span className="text-[10px] text-slate-500 font-medium">Restrict API and admin access to approved corporate IP ranges</span>
                   </div>
-                  <input 
+                  <input
                     type="checkbox"
                     checked={securitySettingsForm.ipWhitelisting}
-                    onChange={e => setSecuritySettingsForm({...securitySettingsForm, ipWhitelisting: e.target.checked})}
+                    onChange={e => setSecuritySettingsForm({ ...securitySettingsForm, ipWhitelisting: e.target.checked })}
                     className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
                   />
                 </div>
@@ -8563,24 +8548,24 @@ export default function CompanySettings() {
                     <span className="text-xs font-bold text-slate-800 block">Automated Security Alerts</span>
                     <span className="text-[10px] text-slate-500 font-medium">Email super admin on failed logins or suspicious export attempts</span>
                   </div>
-                  <input 
+                  <input
                     type="checkbox"
                     checked={securitySettingsForm.auditAlerts}
-                    onChange={e => setSecuritySettingsForm({...securitySettingsForm, auditAlerts: e.target.checked})}
+                    onChange={e => setSecuritySettingsForm({ ...securitySettingsForm, auditAlerts: e.target.checked })}
                     className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
                   />
                 </div>
               </div>
 
               <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setIsSecuritySettingsModalOpen(false)}
                   className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   type="submit"
                   className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
                 >
@@ -8613,9 +8598,9 @@ export default function CompanySettings() {
             <form onSubmit={handleSaveManageSubscriptionSubmit} className="space-y-4">
               <div>
                 <label className="text-xs font-extrabold text-slate-700 block mb-1">Subscription Tier *</label>
-                <select 
+                <select
                   value={manageSubscriptionForm.plan}
-                  onChange={e => setManageSubscriptionForm({...manageSubscriptionForm, plan: e.target.value})}
+                  onChange={e => setManageSubscriptionForm({ ...manageSubscriptionForm, plan: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                 >
                   <option>Hero Starter ($199/month)</option>
@@ -8627,9 +8612,9 @@ export default function CompanySettings() {
 
               <div>
                 <label className="text-xs font-extrabold text-slate-700 block mb-1">Billing Frequency</label>
-                <select 
+                <select
                   value={manageSubscriptionForm.billingCycle}
-                  onChange={e => setManageSubscriptionForm({...manageSubscriptionForm, billingCycle: e.target.value})}
+                  onChange={e => setManageSubscriptionForm({ ...manageSubscriptionForm, billingCycle: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                 >
                   <option>Monthly Billing</option>
@@ -8639,16 +8624,16 @@ export default function CompanySettings() {
 
               <div className="space-y-2 pt-1">
                 <label className="text-xs font-extrabold text-slate-700 block">Included Add-on Packages</label>
-                
+
                 <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
                   <div>
                     <span className="text-xs font-bold text-slate-800 block">Hero AI Add-on ($199/mo)</span>
                     <span className="text-[10px] text-slate-500 font-medium">15,000 AI dispatch & document extraction requests</span>
                   </div>
-                  <input 
+                  <input
                     type="checkbox"
                     checked={manageSubscriptionForm.aiAddon}
-                    onChange={e => setManageSubscriptionForm({...manageSubscriptionForm, aiAddon: e.target.checked})}
+                    onChange={e => setManageSubscriptionForm({ ...manageSubscriptionForm, aiAddon: e.target.checked })}
                     className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
                   />
                 </div>
@@ -8658,10 +8643,10 @@ export default function CompanySettings() {
                     <span className="text-xs font-bold text-slate-800 block">Advanced Reporting ($99/mo)</span>
                     <span className="text-[10px] text-slate-500 font-medium">Custom analytics dashboards & scheduled PDF exports</span>
                   </div>
-                  <input 
+                  <input
                     type="checkbox"
                     checked={manageSubscriptionForm.reportingAddon}
-                    onChange={e => setManageSubscriptionForm({...manageSubscriptionForm, reportingAddon: e.target.checked})}
+                    onChange={e => setManageSubscriptionForm({ ...manageSubscriptionForm, reportingAddon: e.target.checked })}
                     className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
                   />
                 </div>
@@ -8671,24 +8656,24 @@ export default function CompanySettings() {
                     <span className="text-xs font-bold text-slate-800 block">SMS Notifications ($29/mo)</span>
                     <span className="text-[10px] text-slate-500 font-medium">2,000 automated SMS dispatch notifications</span>
                   </div>
-                  <input 
+                  <input
                     type="checkbox"
                     checked={manageSubscriptionForm.smsAddon}
-                    onChange={e => setManageSubscriptionForm({...manageSubscriptionForm, smsAddon: e.target.checked})}
+                    onChange={e => setManageSubscriptionForm({ ...manageSubscriptionForm, smsAddon: e.target.checked })}
                     className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
                   />
                 </div>
               </div>
 
               <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setIsManageSubscriptionModalOpen(false)}
                   className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   type="submit"
                   className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
                 >
@@ -8716,8 +8701,8 @@ export default function CompanySettings() {
                   <p className="text-[10.5px] text-slate-500 font-medium">Create a REST API bearer token for developer integration.</p>
                 </div>
               </div>
-              <button 
-                onClick={() => setIsGenerateApiKeyModalOpen(false)} 
+              <button
+                onClick={() => setIsGenerateApiKeyModalOpen(false)}
                 className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 cursor-pointer"
               >
                 ✕
@@ -8727,8 +8712,8 @@ export default function CompanySettings() {
             <form onSubmit={handleGenerateApiKey} className="space-y-3.5">
               <div>
                 <label className="text-xs font-extrabold text-slate-700 block mb-1">API Key Description Name *</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   required
                   placeholder="e.g. Mobile Warehouse Scanner API Key"
                   value={newApiKeyForm.name}
@@ -8739,7 +8724,7 @@ export default function CompanySettings() {
 
               <div>
                 <label className="text-xs font-extrabold text-slate-700 block mb-1">Monthly Rate Limit Quota</label>
-                <select 
+                <select
                   value={newApiKeyForm.limit}
                   onChange={(e) => setNewApiKeyForm({ ...newApiKeyForm, limit: e.target.value })}
                   className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none cursor-pointer font-medium"
@@ -8757,14 +8742,14 @@ export default function CompanySettings() {
               </div>
 
               <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setIsGenerateApiKeyModalOpen(false)}
                   className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   type="submit"
                   className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
                 >
@@ -8792,8 +8777,8 @@ export default function CompanySettings() {
                   <p className="text-[10.5px] text-slate-500 font-medium">Sending mock HTTP POST payload to target listener endpoint.</p>
                 </div>
               </div>
-              <button 
-                onClick={() => setIsTestWebhookModalOpen(false)} 
+              <button
+                onClick={() => setIsTestWebhookModalOpen(false)}
                 className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 cursor-pointer"
               >
                 ✕
@@ -8807,12 +8792,12 @@ export default function CompanySettings() {
                 <div className="text-slate-400 text-[10px]">Content-Type: application/json</div>
                 <div className="text-slate-400 text-[10px]">X-Hero-Signature: sha256=9f8a3b...</div>
                 <pre className="text-blue-300 text-[10px] pt-1 font-mono">
-                  &#123;<br/>
-                  &nbsp;&nbsp;&quot;event&quot;: &quot;load.delivered&quot;,<br/>
-                  &nbsp;&nbsp;&quot;loadId&quot;: &quot;LD-9920&quot;,<br/>
-                  &nbsp;&nbsp;&quot;status&quot;: &quot;DELIVERED&quot;,<br/>
-                  &nbsp;&nbsp;&quot;timestamp&quot;: &quot;2026-07-25T18:30:00.000Z&quot;,<br/>
-                  &nbsp;&nbsp;&quot;podSigned&quot;: true<br/>
+                  &#123;<br />
+                  &nbsp;&nbsp;&quot;event&quot;: &quot;load.delivered&quot;,<br />
+                  &nbsp;&nbsp;&quot;loadId&quot;: &quot;LD-9920&quot;,<br />
+                  &nbsp;&nbsp;&quot;status&quot;: &quot;DELIVERED&quot;,<br />
+                  &nbsp;&nbsp;&quot;timestamp&quot;: &quot;2026-07-25T18:30:00.000Z&quot;,<br />
+                  &nbsp;&nbsp;&quot;podSigned&quot;: true<br />
                   &#125;
                 </pre>
               </div>
@@ -8827,13 +8812,13 @@ export default function CompanySettings() {
             </div>
 
             <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-              <button 
+              <button
                 onClick={() => triggerToast('Re-sending test webhook...')}
                 className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
               >
                 Re-send Payload
               </button>
-              <button 
+              <button
                 onClick={() => setIsTestWebhookModalOpen(false)}
                 className="px-5 py-2 bg-[#2563EB] text-white font-bold text-xs rounded-xl shadow-xs hover:bg-blue-700 cursor-pointer"
               >
@@ -8862,8 +8847,8 @@ export default function CompanySettings() {
                   <p className="text-[10.5px] text-slate-500 font-medium">Log ID: <span className="font-mono font-bold text-slate-700">LOG-{Date.now().toString().slice(-6)}</span> • {selectedAuditLog.time}</p>
                 </div>
               </div>
-              <button 
-                onClick={() => setSelectedAuditLog(null)} 
+              <button
+                onClick={() => setSelectedAuditLog(null)}
                 className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors"
               >
                 ✕
@@ -8909,16 +8894,16 @@ export default function CompanySettings() {
               <div>
                 <span className="text-[10px] font-black text-slate-500 uppercase block mb-1">RAW JSON PAYLOAD AUDIT TRACE</span>
                 <div className="p-3 bg-slate-900 text-slate-100 rounded-xl font-mono text-[10px] space-y-1 overflow-x-auto max-h-[140px] overflow-y-auto">
-                  <span className="text-emerald-400 font-bold">// HTTP Request Transaction Details</span><br/>
-                  <span className="text-purple-300">&#123;</span><br/>
-                  &nbsp;&nbsp;&quot;event_id&quot;: &quot;evt_8849201&quot;,<br/>
-                  &nbsp;&nbsp;&quot;timestamp&quot;: &quot;{selectedAuditLog.time}&quot;,<br/>
-                  &nbsp;&nbsp;&quot;actor&quot;: &#123; &quot;name&quot;: &quot;{selectedAuditLog.name}&quot;, &quot;email&quot;: &quot;{selectedAuditLog.email}&quot; &#125;,<br/>
-                  &nbsp;&nbsp;&quot;action&quot;: &quot;{selectedAuditLog.action}&quot;,<br/>
-                  &nbsp;&nbsp;&quot;module&quot;: &quot;{selectedAuditLog.module}&quot;,<br/>
-                  &nbsp;&nbsp;&quot;ip_address&quot;: &quot;{selectedAuditLog.ip}&quot;,<br/>
-                  &nbsp;&nbsp;&quot;outcome&quot;: &quot;{selectedAuditLog.outcome}&quot;,<br/>
-                  &nbsp;&nbsp;&quot;session_id&quot;: &quot;sess_live_994021&quot;<br/>
+                  <span className="text-emerald-400 font-bold">// HTTP Request Transaction Details</span><br />
+                  <span className="text-purple-300">&#123;</span><br />
+                  &nbsp;&nbsp;&quot;event_id&quot;: &quot;evt_8849201&quot;,<br />
+                  &nbsp;&nbsp;&quot;timestamp&quot;: &quot;{selectedAuditLog.time}&quot;,<br />
+                  &nbsp;&nbsp;&quot;actor&quot;: &#123; &quot;name&quot;: &quot;{selectedAuditLog.name}&quot;, &quot;email&quot;: &quot;{selectedAuditLog.email}&quot; &#125;,<br />
+                  &nbsp;&nbsp;&quot;action&quot;: &quot;{selectedAuditLog.action}&quot;,<br />
+                  &nbsp;&nbsp;&quot;module&quot;: &quot;{selectedAuditLog.module}&quot;,<br />
+                  &nbsp;&nbsp;&quot;ip_address&quot;: &quot;{selectedAuditLog.ip}&quot;,<br />
+                  &nbsp;&nbsp;&quot;outcome&quot;: &quot;{selectedAuditLog.outcome}&quot;,<br />
+                  &nbsp;&nbsp;&quot;session_id&quot;: &quot;sess_live_994021&quot;<br />
                   <span className="text-purple-300">&#125;</span>
                 </div>
               </div>
@@ -8926,8 +8911,8 @@ export default function CompanySettings() {
 
             {/* FOOTER ACTIONS */}
             <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={() => {
                   navigator.clipboard?.writeText?.(selectedAuditLog.ip || '203.26.45.12');
                   triggerToast(`Copied IP ${selectedAuditLog.ip} to clipboard!`);
@@ -8937,8 +8922,8 @@ export default function CompanySettings() {
                 Copy IP Address
               </button>
               <div className="flex items-center gap-2">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => {
                     triggerToast(`Log record for ${selectedAuditLog.action} exported as JSON.`);
                     setSelectedAuditLog(null);
@@ -8947,8 +8932,8 @@ export default function CompanySettings() {
                 >
                   Export Payload
                 </button>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setSelectedAuditLog(null)}
                   className="px-4 py-1.5 bg-[#2563EB] text-white font-bold text-xs rounded-xl hover:bg-blue-700 cursor-pointer shadow-xs"
                 >
@@ -8974,8 +8959,8 @@ export default function CompanySettings() {
                   <p className="text-[10.5px] text-slate-500 font-medium">Modify record metadata for LOG-{editingAuditLog.id}</p>
                 </div>
               </div>
-              <button 
-                onClick={() => setEditingAuditLog(null)} 
+              <button
+                onClick={() => setEditingAuditLog(null)}
                 className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-50 cursor-pointer"
               >
                 ✕
@@ -8995,8 +8980,8 @@ export default function CompanySettings() {
 
               <div>
                 <label className="block font-bold text-slate-700 mb-1">Action Description *</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   required
                   value={editLogForm.action}
                   onChange={e => setEditLogForm({ ...editLogForm, action: e.target.value })}
@@ -9007,7 +8992,7 @@ export default function CompanySettings() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">System Module</label>
-                  <select 
+                  <select
                     value={editLogForm.module}
                     onChange={e => setEditLogForm({ ...editLogForm, module: e.target.value })}
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl font-medium text-slate-800 bg-white focus:outline-none focus:border-blue-400 font-sans"
@@ -9025,7 +9010,7 @@ export default function CompanySettings() {
 
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Outcome Status</label>
-                  <select 
+                  <select
                     value={editLogForm.outcome}
                     onChange={e => setEditLogForm({ ...editLogForm, outcome: e.target.value })}
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl font-medium text-slate-800 bg-white focus:outline-none focus:border-blue-400 font-sans"
@@ -9039,7 +9024,7 @@ export default function CompanySettings() {
 
               <div>
                 <label className="block font-bold text-slate-700 mb-1">Event Details / Notes</label>
-                <textarea 
+                <textarea
                   rows={3}
                   value={editLogForm.details}
                   onChange={e => setEditLogForm({ ...editLogForm, details: e.target.value })}
@@ -9048,14 +9033,14 @@ export default function CompanySettings() {
               </div>
 
               <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setEditingAuditLog(null)}
                   className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer font-sans"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   type="submit"
                   className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer font-sans"
                 >
@@ -9083,20 +9068,20 @@ export default function CompanySettings() {
                   <p className="text-[10.5px] text-slate-500 font-medium">Link third-party software connectors to Hero Logistics.</p>
                 </div>
               </div>
-              <button 
-                onClick={() => setIsAddIntegrationModalOpen(false)} 
+              <button
+                onClick={() => setIsAddIntegrationModalOpen(false)}
                 className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
-            <form 
+            <form
               onSubmit={(e) => {
                 e.preventDefault();
                 setIsAddIntegrationModalOpen(false);
                 triggerToast('Integration connected successfully!');
-              }} 
+              }}
               className="space-y-3.5"
             >
               <div>
@@ -9116,8 +9101,8 @@ export default function CompanySettings() {
 
               <div>
                 <label className="text-xs font-extrabold text-slate-700 block mb-1">API Secret Key / OAuth Token *</label>
-                <input 
-                  type="password" 
+                <input
+                  type="password"
                   required
                   placeholder="Paste OAuth token or API secret key..."
                   className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:border-blue-500 font-mono"
@@ -9125,14 +9110,14 @@ export default function CompanySettings() {
               </div>
 
               <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setIsAddIntegrationModalOpen(false)}
                   className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   type="submit"
                   className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
                 >
@@ -9160,8 +9145,8 @@ export default function CompanySettings() {
                   <p className="text-[10.5px] text-slate-500 font-medium">Deploy an LLM or OCR model into Hero AI Registry.</p>
                 </div>
               </div>
-              <button 
-                onClick={() => setIsRegisterAiModelModalOpen(false)} 
+              <button
+                onClick={() => setIsRegisterAiModelModalOpen(false)}
                 className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 cursor-pointer"
               >
                 ✕
@@ -9171,8 +9156,8 @@ export default function CompanySettings() {
             <form onSubmit={handleRegisterAiModelSubmit} className="space-y-3.5">
               <div>
                 <label className="text-xs font-extrabold text-slate-700 block mb-1">Model Name & Identifier *</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   required
                   placeholder="e.g. Claude 3.5 Sonnet (Anthropic)"
                   value={newAiModelForm.name}
@@ -9184,7 +9169,7 @@ export default function CompanySettings() {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="text-xs font-extrabold text-slate-700 block mb-1">Provider *</label>
-                  <select 
+                  <select
                     value={newAiModelForm.provider}
                     onChange={(e) => setNewAiModelForm({ ...newAiModelForm, provider: e.target.value })}
                     className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none cursor-pointer font-medium"
@@ -9199,8 +9184,8 @@ export default function CompanySettings() {
 
                 <div>
                   <label className="text-xs font-extrabold text-slate-700 block mb-1">Version *</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     required
                     placeholder="e.g. v3.5"
                     value={newAiModelForm.version}
@@ -9213,8 +9198,8 @@ export default function CompanySettings() {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="text-xs font-extrabold text-slate-700 block mb-1">Target Latency SLA</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     placeholder="e.g. 120ms"
                     value={newAiModelForm.latency}
                     onChange={(e) => setNewAiModelForm({ ...newAiModelForm, latency: e.target.value })}
@@ -9224,8 +9209,8 @@ export default function CompanySettings() {
 
                 <div>
                   <label className="text-xs font-extrabold text-slate-700 block mb-1">Cost Rate</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     placeholder="e.g. $0.003 / 1k tokens"
                     value={newAiModelForm.cost}
                     onChange={(e) => setNewAiModelForm({ ...newAiModelForm, cost: e.target.value })}
@@ -9235,14 +9220,14 @@ export default function CompanySettings() {
               </div>
 
               <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setIsRegisterAiModelModalOpen(false)}
                   className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   type="submit"
                   className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
                 >
@@ -9270,8 +9255,8 @@ export default function CompanySettings() {
                   <p className="text-[10.5px] text-slate-500 font-medium">Build custom email/SMS template with dynamic placeholders.</p>
                 </div>
               </div>
-              <button 
-                onClick={() => setIsCreateTemplateModalOpen(false)} 
+              <button
+                onClick={() => setIsCreateTemplateModalOpen(false)}
                 className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 cursor-pointer"
               >
                 ✕
@@ -9281,8 +9266,8 @@ export default function CompanySettings() {
             <form onSubmit={handleCreateTemplateSubmit} className="space-y-3.5">
               <div>
                 <label className="text-xs font-extrabold text-slate-700 block mb-1">Template Title *</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   required
                   placeholder="e.g. Delivery Confirmation SMS"
                   value={newTemplateForm.title}
@@ -9293,7 +9278,7 @@ export default function CompanySettings() {
 
               <div>
                 <label className="text-xs font-extrabold text-slate-700 block mb-1">Delivery Channel</label>
-                <select 
+                <select
                   value={newTemplateForm.channel}
                   onChange={(e) => setNewTemplateForm({ ...newTemplateForm, channel: e.target.value })}
                   className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none cursor-pointer font-medium"
@@ -9308,7 +9293,7 @@ export default function CompanySettings() {
 
               <div>
                 <label className="text-xs font-extrabold text-slate-700 block mb-1">Template Content Body</label>
-                <textarea 
+                <textarea
                   rows={3}
                   placeholder="Dear {customer_name}, your load #{load_id} is out for delivery..."
                   value={newTemplateForm.preview}
@@ -9318,14 +9303,14 @@ export default function CompanySettings() {
               </div>
 
               <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setIsCreateTemplateModalOpen(false)}
                   className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   type="submit"
                   className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
                 >
@@ -9353,8 +9338,8 @@ export default function CompanySettings() {
                   <p className="text-[10.5px] text-slate-500 font-medium">Automate alerts based on system events & status changes.</p>
                 </div>
               </div>
-              <button 
-                onClick={() => setIsAddNotificationRuleModalOpen(false)} 
+              <button
+                onClick={() => setIsAddNotificationRuleModalOpen(false)}
                 className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 cursor-pointer"
               >
                 ✕
@@ -9364,8 +9349,8 @@ export default function CompanySettings() {
             <form onSubmit={handleAddNotificationRuleSubmit} className="space-y-3.5">
               <div>
                 <label className="text-xs font-extrabold text-slate-700 block mb-1">Rule Name *</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   required
                   placeholder="e.g. Overdue POD Customer Alert"
                   value={newRuleForm.name}
@@ -9376,7 +9361,7 @@ export default function CompanySettings() {
 
               <div>
                 <label className="text-xs font-extrabold text-slate-700 block mb-1">Event Trigger</label>
-                <select 
+                <select
                   value={newRuleForm.trigger}
                   onChange={(e) => setNewRuleForm({ ...newRuleForm, trigger: e.target.value })}
                   className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none cursor-pointer font-medium"
@@ -9391,7 +9376,7 @@ export default function CompanySettings() {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="text-xs font-extrabold text-slate-700 block mb-1">Channels</label>
-                  <select 
+                  <select
                     value={newRuleForm.channels}
                     onChange={(e) => setNewRuleForm({ ...newRuleForm, channels: e.target.value })}
                     className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none cursor-pointer font-medium"
@@ -9405,7 +9390,7 @@ export default function CompanySettings() {
 
                 <div>
                   <label className="text-xs font-extrabold text-slate-700 block mb-1">Priority</label>
-                  <select 
+                  <select
                     value={newRuleForm.priority}
                     onChange={(e) => setNewRuleForm({ ...newRuleForm, priority: e.target.value })}
                     className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none cursor-pointer font-medium"
@@ -9419,14 +9404,14 @@ export default function CompanySettings() {
               </div>
 
               <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setIsAddNotificationRuleModalOpen(false)}
                   className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   type="submit"
                   className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
                 >
@@ -9454,8 +9439,8 @@ export default function CompanySettings() {
                   <p className="text-[10.5px] text-slate-500 font-medium">Group contacts for mass broadcast notifications.</p>
                 </div>
               </div>
-              <button 
-                onClick={() => setIsCreateRecipientGroupModalOpen(false)} 
+              <button
+                onClick={() => setIsCreateRecipientGroupModalOpen(false)}
                 className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 cursor-pointer"
               >
                 ✕
@@ -9465,8 +9450,8 @@ export default function CompanySettings() {
             <form onSubmit={handleCreateRecipientGroupSubmit} className="space-y-3.5">
               <div>
                 <label className="text-xs font-extrabold text-slate-700 block mb-1">Group Name *</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   required
                   placeholder="e.g. Brisbane Yard Supervisors"
                   value={newGroupForm.name}
@@ -9477,8 +9462,8 @@ export default function CompanySettings() {
 
               <div>
                 <label className="text-xs font-extrabold text-slate-700 block mb-1">Description</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   placeholder="e.g. Operational contacts for QLD depots."
                   value={newGroupForm.desc}
                   onChange={(e) => setNewGroupForm({ ...newGroupForm, desc: e.target.value })}
@@ -9487,14 +9472,14 @@ export default function CompanySettings() {
               </div>
 
               <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setIsCreateRecipientGroupModalOpen(false)}
                   className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   type="submit"
                   className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
                 >

@@ -699,7 +699,7 @@ const Vehicles = () => {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <h1 className="text-[22px] font-bold text-gray-900 tracking-tight leading-none">
-                {activeTab === 'DOCUMENTS & COMPLIANCE' ? '5.3 Vehicle Documents & Compliance' : activeTab === 'MAINTENANCE & SERVICE' ? '5.4 Vehicle Maintenance & Service' : activeTab === 'COSTS & EXPENSES' ? '5.5 Vehicle Costs & Expenses' : activeTab === 'ACTIVITY HISTORY' ? '5.6 Vehicle Activity History' : '5.2 Vehicle Details'}
+                {activeTab === 'DOCUMENTS & COMPLIANCE' ? 'Vehicle Documents & Compliance' : activeTab === 'MAINTENANCE & SERVICE' ? 'Vehicle Maintenance & Service' : activeTab === 'COSTS & EXPENSES' ? 'Vehicle Costs & Expenses' : activeTab === 'ACTIVITY HISTORY' ? 'Vehicle Activity History' : 'Vehicle Details'}
               </h1>
               <Shield className="w-5 h-5 text-purple-600" />
             </div>
@@ -1882,48 +1882,7 @@ const Vehicles = () => {
               </div>
             )}
 
-            {/* Developer Notes Footer */}
-            <div className="bg-purple-50/50 border border-purple-100 rounded-2xl p-6 mt-4 shadow-sm">
-               <h3 className="text-[13px] font-black text-purple-900 uppercase tracking-widest flex items-center gap-2 mb-6">
-                  <div className="bg-purple-700 text-white px-1.5 py-0.5 rounded text-[10px] font-bold font-mono">{"</>"}</div> DEVELOPER NOTES - VEHICLE DOCUMENTS & COMPLIANCE
-               </h3>
-               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-[12px]">
-                  <div>
-                     <h4 className="font-bold text-purple-900 mb-3 flex items-center gap-2">1. PURPOSE</h4>
-                     <ul className="list-disc pl-4 space-y-2 text-gray-700 font-medium leading-relaxed">
-                        <li>Store and manage all vehicle and trailer documents, licences, registrations and compliance records in one place.</li>
-                        <li>Track expiry dates and trigger reminders and alerts.</li>
-                     </ul>
-                  </div>
-                  <div>
-                     <h4 className="font-bold text-purple-900 mb-3 flex items-center gap-2">2. KEY FEATURES</h4>
-                     <ul className="list-disc pl-4 space-y-2 text-gray-700 font-medium leading-relaxed">
-                        <li>Categorised document tabs and filters.</li>
-                        <li>Upload, view, download and delete documents.</li>
-                        <li>Expiry tracking with colour status.</li>
-                        <li>Bulk upload and bulk expiry update.</li>
-                        <li>Reminder toggles for each document.</li>
-                     </ul>
-                  </div>
-                  <div>
-                     <h4 className="font-bold text-purple-900 mb-3 flex items-center gap-2">3. AUTOMATION & AI</h4>
-                     <ul className="list-disc pl-4 space-y-2 text-gray-700 font-medium leading-relaxed">
-                        <li>AI scans uploaded documents (OCR) to detect expiry dates and key fields.</li>
-                        <li>Auto-create reminders and compliance tasks.</li>
-                        <li>AI alerts for upcoming expiries and missing documents.</li>
-                     </ul>
-                  </div>
-                  <div>
-                     <h4 className="font-bold text-purple-900 mb-3 flex items-center gap-2">4. PERMISSIONS</h4>
-                     <ul className="list-disc pl-4 space-y-2 text-gray-700 font-medium leading-relaxed">
-                        <li><b>Admin:</b> Full access (upload/edit/delete).</li>
-                        <li><b>Dispatcher:</b> View all, upload, edit.</li>
-                        <li><b>Driver:</b> View own (truck + trailer documents).</li>
-                        <li><b>Accounts:</b> View relevant compliance docs.</li>
-                     </ul>
-                  </div>
-               </div>
-            </div>
+
 
           </div>
         )}
@@ -2594,56 +2553,7 @@ const Vehicles = () => {
                      </div>
                   </div>
 
-                  {/* Developer Notes */}
-                  <div className="bg-[#f8f9fc] border border-purple-100 rounded-2xl p-6">
-                     <h3 className="text-[12px] font-black text-purple-900 uppercase tracking-widest flex items-center gap-2 mb-4">
-                        <div className="w-6 h-6 rounded bg-purple-100 flex items-center justify-center shrink-0"><Terminal size={14} className="text-purple-700" /></div>
-                        DEVELOPER NOTES – VEHICLE COSTS & EXPENSES
-                     </h3>
-                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 text-[11px] text-gray-700">
-                        <div>
-                           <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Info size={12}/> 1. PURPOSE</div>
-                           <ul className="list-disc pl-4 space-y-1">
-                              <li>Track and categorise all costs and expenses related to the vehicle.</li>
-                              <li>Provide visibility into spending and cost per km.</li>
-                           </ul>
-                        </div>
-                        <div>
-                           <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Settings size={12}/> 2. KEY FEATURES</div>
-                           <ul className="list-disc pl-4 space-y-1">
-                              <li>Add, edit, delete expenses.</li>
-                              <li>Categorise by expense type.</li>
-                              <li>Attach receipts and references.</li>
-                              <li>Calculate cost per km and monthly averages.</li>
-                           </ul>
-                        </div>
-                        <div>
-                           <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Cpu size={12}/> 3. AUTOMATION & AI (ADD-ON)</div>
-                           <ul className="list-disc pl-4 space-y-1">
-                              <li>OCR scan receipts to auto-capture data.</li>
-                              <li>AI suggests expense category.</li>
-                              <li>Detect unusual spending patterns and alert.</li>
-                           </ul>
-                        </div>
-                        <div>
-                           <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Shield size={12}/> 4. PERMISSIONS</div>
-                           <ul className="list-disc pl-4 space-y-1">
-                              <li><strong>Admin:</strong> Full access (add/edit/delete).</li>
-                              <li><strong>Dispatcher:</strong> View all, add expenses.</li>
-                              <li><strong>Driver:</strong> Add expenses (if enabled).</li>
-                              <li><strong>Accounts:</strong> View expenses and reports.</li>
-                           </ul>
-                        </div>
-                        <div>
-                           <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Database size={12}/> 5. DATA SOURCES</div>
-                           <ul className="list-disc pl-4 space-y-1">
-                              <li>Manual entry (Admin/Driver/Dispatcher).</li>
-                              <li>OCR scanned receipts.</li>
-                              <li>Fuel card / telematics integrations.</li>
-                           </ul>
-                        </div>
-                     </div>
-                  </div>
+
                </div>
 
                {/* Right Column */}
@@ -2882,57 +2792,7 @@ const Vehicles = () => {
                      </div>
                   </div>
 
-                  {/* Developer Notes */}
-                  <div className="bg-[#f8f9fc] border border-purple-100 rounded-2xl p-6">
-                     <h3 className="text-[12px] font-black text-purple-900 uppercase tracking-widest flex items-center gap-2 mb-4">
-                        <div className="w-6 h-6 rounded bg-purple-100 flex items-center justify-center shrink-0"><Terminal size={14} className="text-purple-700" /></div>
-                        DEVELOPER NOTES – ACTIVITY HISTORY
-                     </h3>
-                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 text-[11px] text-gray-700">
-                        <div>
-                           <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Info size={12}/> 1. PURPOSE</div>
-                           <ul className="list-disc pl-4 space-y-1">
-                              <li>Provide a complete audit trail of all activities and events for the vehicle.</li>
-                              <li>Ensure transparency, accountability and traceability.</li>
-                           </ul>
-                        </div>
-                        <div>
-                           <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Settings size={12}/> 2. KEY FEATURES</div>
-                           <ul className="list-disc pl-4 space-y-1">
-                              <li>Filter by date range, activity type and category.</li>
-                              <li>Search by description, reference or user.</li>
-                              <li>View detailed activity information.</li>
-                              <li>Export activity log to CSV/PDF.</li>
-                           </ul>
-                        </div>
-                        <div>
-                           <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Cpu size={12}/> 3. AUTOMATION & ALERTS</div>
-                           <ul className="list-disc pl-4 space-y-1">
-                              <li>Auto-log all system actions and changes.</li>
-                              <li>Trigger compliance expiry alerts.</li>
-                              <li>Log GPS location updates at defined intervals.</li>
-                              <li>Notify on key events and changes.</li>
-                           </ul>
-                        </div>
-                        <div>
-                           <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Shield size={12}/> 4. PERMISSIONS</div>
-                           <ul className="list-disc pl-4 space-y-1">
-                              <li><strong>Admin:</strong> Full access (view/export/delete).</li>
-                              <li><strong>Dispatcher:</strong> View all activity.</li>
-                              <li><strong>Driver:</strong> View own related activity only.</li>
-                              <li><strong>Accounts:</strong> View cost & expense activity.</li>
-                           </ul>
-                        </div>
-                        <div>
-                           <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Database size={12}/> 5. DATA SOURCES</div>
-                           <ul className="list-disc pl-4 space-y-1">
-                              <li>System actions and user activities.</li>
-                              <li>GPS / Telematics data.</li>
-                              <li>Maintenance, compliance, document and costs modules.</li>
-                           </ul>
-                        </div>
-                     </div>
-                  </div>
+
                   
                   <div className="text-right text-[11px] text-gray-500 font-medium pb-4">
                      <span className="mr-8">All times shown in your local time (AEST)</span>
@@ -3947,7 +3807,7 @@ const Vehicles = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-[22px] font-bold text-gray-900 tracking-tight leading-none mb-1 flex items-center gap-2">
-            5.1 Vehicle List <Shield className="w-5 h-5 text-purple-600" />
+            Vehicle List <Shield className="w-5 h-5 text-purple-600" />
           </h1>
           <p className="text-gray-500 text-[13px] font-medium mt-1">View and manage all vehicles in your fleet.</p>
         </div>
@@ -4309,62 +4169,7 @@ const Vehicles = () => {
          </div>
       </div>
 
-      {/* Footer Notes Section */}
-      <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 mt-4 overflow-x-auto min-w-0">
-         <div className="flex items-center gap-2 mb-4 border-b border-gray-100 pb-3">
-            <span className="bg-purple-600 text-white text-[10px] px-1.5 rounded font-mono">&lt;/&gt;</span>
-            <h3 className="text-[14px] font-bold text-purple-900">Developer Notes – Vehicle List</h3>
-         </div>
-         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 min-w-[800px]">
-            <div>
-               <h4 className="text-[12px] font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Box size={14} /> Purpose</h4>
-               <p className="text-[11px] text-gray-600 leading-relaxed">This page provides a summary view of all vehicles in the fleet with status, compliance and key information for quick management.</p>
-            </div>
-            <div>
-               <h4 className="text-[12px] font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Key size={14} /> Key Features</h4>
-               <ul className="text-[11px] text-gray-600 leading-relaxed list-disc pl-4 space-y-1">
-                  <li>Search, filter and sort vehicles.</li>
-                  <li>View status (Active, In Maintenance, Out of Service).</li>
-                  <li>Compliance overview with expiry alerts.</li>
-                  <li>Quick actions to view vehicle details.</li>
-               </ul>
-            </div>
-            <div>
-               <h4 className="text-[12px] font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Shield size={14} /> Business Rules</h4>
-               <ul className="text-[11px] text-gray-600 leading-relaxed list-disc pl-4 space-y-1">
-                  <li>Only vehicles for the user's company and branches.</li>
-                  <li>Compliance status calculated from document expiries.</li>
-                  <li>Overdue items appear in red and trigger alerts.</li>
-                  <li>Odometer is updated from driver/dispatch or manual entry.</li>
-               </ul>
-            </div>
-            <div className="flex flex-col gap-4">
-               <div>
-                  <h4 className="text-[12px] font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Lock size={14} /> Permissions</h4>
-                  <ul className="text-[11px] text-gray-600 leading-relaxed list-disc pl-4 space-y-1">
-                     <li>View: Dispatch, Admin, Accounts</li>
-                     <li>Add Vehicle: Admin</li>
-                     <li>Edit Vehicle: Admin, Dispatch</li>
-                     <li>Delete/Deactivate: Admin</li>
-                     <li>Export: Admin, Accounts</li>
-                  </ul>
-               </div>
-               <div>
-                  <h4 className="text-[12px] font-bold text-purple-800 mb-2 flex items-center gap-1.5"><ArrowUpRight size={14} /> Interactions</h4>
-                  <ul className="text-[11px] text-gray-600 leading-relaxed list-disc pl-4 space-y-1">
-                     <li>Add Vehicle: Opens Add Vehicle Modal</li>
-                     <li>View Vehicle: Opens Vehicle Details Page</li>
-                     <li>More Actions: Edit, Duplicate, Deactivate, Delete, View History, Export</li>
-                     <li>Export: Downloads vehicle list (CSV/PDF)</li>
-                  </ul>
-               </div>
-            </div>
-         </div>
-         <div className="flex flex-wrap justify-between items-center mt-6 pt-3 border-t border-gray-100 text-[10px] text-gray-400 gap-2 min-w-[800px]">
-            <span>All times shown in your local time (AEST)</span>
-            <span>Data auto-refreshes every 5 minutes</span>
-         </div>
-      </div>
+
 
       {/* EDIT VEHICLE MODAL */}
       {editVehicleModal && (

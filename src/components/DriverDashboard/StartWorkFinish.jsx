@@ -85,7 +85,7 @@ export default function StartWork() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">15.2 Safety Checklist</h1>
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Safety Checklist</h1>
             <span className="bg-purple-100 text-purple-800 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-purple-200 uppercase">
               Pre-Start
             </span>

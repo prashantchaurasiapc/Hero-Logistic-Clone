@@ -2511,7 +2511,7 @@ export default function Drivers() {
           {/* Title & Actions */}
           <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
             <div>
-              <h1 className="text-xl sm:text-[28px] leading-none font-black text-slate-900 tracking-tight">4.2 Driver Details</h1>
+              <h1 className="text-xl sm:text-[28px] leading-none font-black text-slate-900 tracking-tight">Driver Details</h1>
               <p className="text-xs text-slate-500 font-medium mt-1.5">View and manage driver information, documents, assignments and performance.</p>
             </div>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
@@ -4907,59 +4907,7 @@ export default function Drivers() {
               </div>
             );
           })()}
-          <div className="mt-8 bg-purple-50/50 rounded-2xl border border-purple-100 p-6">
-            <h4 className="text-xs font-black text-purple-900 mb-4">Developer Notes - Driver Details</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div>
-                <div className="flex items-center gap-1.5 mb-2 text-purple-700">
-                  <User size={14} />
-                  <h5 className="text-[11px] font-bold">Purpose</h5>
-                </div>
-                <p className="text-[10px] text-purple-800/80 leading-relaxed font-medium">This page displays the complete driver profile including personal details, compliance, assignments, performance and activity.</p>
-              </div>
-              <div>
-                <div className="flex items-center gap-1.5 mb-2 text-purple-700">
-                  <CheckSquare size={14} />
-                  <h5 className="text-[11px] font-bold">Key Features</h5>
-                </div>
-                <ul className="text-[10px] text-purple-800/80 space-y-1.5 font-medium list-disc pl-3">
-                  <li>Driver profile and status</li>
-                  <li>Compliance and expiry tracking</li>
-                  <li>Current assignment and availability</li>
-                  <li>Documents, performance and payroll access</li>
-                  <li>AI insights (if enabled)</li>
-                </ul>
-              </div>
-              <div>
-                <div className="flex items-center gap-1.5 mb-2 text-purple-700">
-                  <Settings size={14} />
-                  <h5 className="text-[11px] font-bold">Business Rules</h5>
-                </div>
-                <ul className="text-[10px] text-purple-800/80 space-y-1.5 font-medium list-disc pl-3">
-                  <li>Drivers belong to a specific company and branch.</li>
-                  <li>Compliance score is calculated from all required documents.</li>
-                  <li>Expiring Soon = within next 30 days.</li>
-                  <li>Overall Compliance is shown as a percentage.</li>
-                </ul>
-              </div>
-              <div>
-                <div className="flex items-center gap-1.5 mb-2 text-purple-700">
-                  <Shield size={14} />
-                  <h5 className="text-[11px] font-bold">Permissions</h5>
-                </div>
-                <ul className="text-[10px] text-purple-800/80 space-y-1.5 font-medium list-disc pl-3">
-                  <li>View Driver Details: Dispatch, Admin, Accounts</li>
-                  <li>Edit Driver: Admin, Super Admin</li>
-                  <li>Delete Driver: Super Admin only</li>
-                  <li>Sensitive info (licence, DOB, medical) restricted</li>
-                </ul>
-              </div>
-            </div>
-            <div className="flex justify-between items-center mt-4 text-[10px] font-semibold text-slate-400">
-              <span>All times shown in your local time (AEST)</span>
-              <span>Data auto-refreshes every 5 minutes ↺</span>
-            </div>
-          </div>
+
 
           {renderAllModals()}
         </div>
@@ -4984,7 +4932,7 @@ export default function Drivers() {
         {/* Page Title & Add Button */}
         <div className="flex flex-col sm:flex-row justify-between items-start gap-3 mb-6">
           <div>
-            <h1 className="text-xl sm:text-[28px] leading-none font-black text-slate-900 tracking-tight">4.1 Drivers List</h1>
+            <h1 className="text-xl sm:text-[28px] leading-none font-black text-slate-900 tracking-tight">Drivers List</h1>
             <p className="text-xs text-slate-500 font-medium mt-1.5">Manage all drivers, their details, compliance, assignments and performance.</p>
           </div>
           <button onClick={() => setShowAddDriver(true)} className="flex items-center gap-2 px-4 py-2.5 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-sm font-bold transition-colors shadow-sm cursor-pointer w-full sm:w-auto justify-center sm:justify-start">
@@ -5388,55 +5336,7 @@ export default function Drivers() {
           </div>
         </div>
 
-        {/* Developer Notes Footer */}
-        <div className="mt-8 bg-purple-50/50 rounded-2xl border border-purple-100 p-6">
-          <h4 className="text-xs font-black text-purple-900 mb-4">Developer Notes - Drivers List</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div>
-              <div className="flex items-center gap-1.5 mb-2 text-purple-700">
-                <Target size={14} />
-                <h5 className="text-[11px] font-bold">Purpose</h5>
-              </div>
-              <p className="text-[10px] text-purple-800/80 leading-relaxed font-medium">This page provides an overview of all drivers across the organisation with key status, compliance and assignment information.</p>
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5 mb-2 text-purple-700">
-                <CheckSquare size={14} />
-                <h5 className="text-[11px] font-bold">Key Features</h5>
-              </div>
-              <ul className="text-[10px] text-purple-800/80 space-y-1.5 font-medium list-disc pl-3">
-                <li>Search, filters and sorting</li>
-                <li>Compliance status with indicators</li>
-                <li>Expiry alerts</li>
-                <li>Quick actions</li>
-                <li>AI insights (if enabled)</li>
-              </ul>
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5 mb-2 text-purple-700">
-                <Settings size={14} />
-                <h5 className="text-[11px] font-bold">Business Rules</h5>
-              </div>
-              <ul className="text-[10px] text-purple-800/80 space-y-1.5 font-medium list-disc pl-3">
-                <li>Only drivers belonging to the selected company and branch (based on user permissions) are visible.</li>
-                <li>Compliance score is calculated from all required documents.</li>
-                <li>Expiring Soon = within next 30 days.</li>
-              </ul>
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5 mb-2 text-purple-700">
-                <Shield size={14} />
-                <h5 className="text-[11px] font-bold">Permissions</h5>
-              </div>
-              <ul className="text-[10px] text-purple-800/80 space-y-1.5 font-medium list-disc pl-3">
-                <li>View Drivers: All Dispatch, Admin, Accounts</li>
-                <li>Add/Edit Drivers: Admin, Super Admin</li>
-                <li>Delete Drivers: Super Admin only</li>
-                <li>Sensitive info (licence no., DOB, medical) role based</li>
-              </ul>
-            </div>
-          </div>
-        </div>
+
 
         <div className="flex justify-between items-center mt-4 text-[10px] font-semibold text-slate-400">
           <span>All times shown in your local time (AEST)</span>

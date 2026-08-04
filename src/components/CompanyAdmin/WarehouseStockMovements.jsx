@@ -167,7 +167,7 @@ export default function WarehouseStockMovements({ wh, onBack }) {
             <span>Home</span> <span style={{ color: '#CBD5E1' }}>›</span> <span>Warehouse</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ cursor: 'pointer' }} onClick={onBack}>Warehouse Details</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ color: '#0F172A' }}>Stock Movements</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-            <h1 style={{ fontSize: 22, fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.5px' }}>9.4 Stock Movements – {wh.name}</h1>
+            <h1 style={{ fontSize: 22, fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.5px' }}>Stock Movements – {wh.name}</h1>
             <div style={{ width: 18, height: 18, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 4 }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
             </div>
@@ -614,93 +614,7 @@ export default function WarehouseStockMovements({ wh, onBack }) {
 
       </div>
 
-      {/* DEVELOPER NOTES */}
-      <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '24px', position: 'relative' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-          <div style={{ background: '#4F46E5', padding: '6px', borderRadius: 6, display: 'flex' }}>
-            <CodeIcon />
-          </div>
-          <h2 style={{ fontSize: 14, fontWeight: 800, color: '#4F46E5', letterSpacing: '0.5px', margin: 0 }}>DEVELOPER NOTES – STOCK MOVEMENTS</h2>
-        </div>
-        
-        <div className="wh-devnotes-cols" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 24 }}>
-          
-          <div>
-            <h4 style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <div style={{ width: 16, height: 16, borderRadius: '50%', border: '1px solid #0F172A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10 }}>1</div>
-              PURPOSE
-            </h4>
-            <ul style={{ margin: 0, paddingLeft: 16, fontSize: 11, color: '#475569', lineHeight: 1.6, fontWeight: 500 }}>
-              <li>Track all inventory movements.</li>
-              <li>Provide audit trail and accountability.</li>
-              <li>Ensure stock accuracy and traceability.</li>
-            </ul>
-          </div>
 
-          <div>
-            <h4 style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <div style={{ width: 16, height: 16, borderRadius: '50%', border: '1px solid #0F172A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10 }}>2</div>
-              KEY FEATURES
-            </h4>
-            <ul style={{ margin: 0, paddingLeft: 16, fontSize: 11, color: '#475569', lineHeight: 1.6, fontWeight: 500 }}>
-              <li>Record stock in, out, transfers and adjustments.</li>
-              <li>Filter by type, location, date and status.</li>
-              <li>View item, quantity, locations and reasons.</li>
-              <li>Export and print movement records.</li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <div style={{ width: 16, height: 16, borderRadius: '50%', border: '1px solid #0F172A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10 }}>3</div>
-              AUTOMATION & ALERTS
-            </h4>
-            <ul style={{ margin: 0, paddingLeft: 16, fontSize: 11, color: '#475569', lineHeight: 1.6, fontWeight: 500 }}>
-              <li>Auto-update stock levels on movement.</li>
-              <li>Alert on negative stock and anomalies.</li>
-              <li>Notify on large adjustments or cancellations.</li>
-              <li>AI insights for unusual movement patterns.</li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <div style={{ width: 16, height: 16, borderRadius: '50%', border: '1px solid #0F172A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10 }}>4</div>
-              PERMISSIONS
-            </h4>
-            <ul style={{ margin: 0, paddingLeft: 16, fontSize: 11, color: '#475569', lineHeight: 1.6, fontWeight: 500 }}>
-              <li><strong>Super Admin:</strong> Full access.</li>
-              <li><strong>Admin/Manager:</strong> Create, edit, view all.</li>
-              <li><strong>Warehouse Staff:</strong> View and create (based on role).</li>
-              <li><strong>Dispatcher:</strong> View stock movements (read-only).</li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <div style={{ width: 16, height: 16, borderRadius: '50%', border: '1px solid #0F172A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10 }}>5</div>
-              DATA SOURCES
-            </h4>
-            <ul style={{ margin: 0, paddingLeft: 16, fontSize: 11, color: '#475569', lineHeight: 1.6, fontWeight: 500 }}>
-              <li>Inventory & Stock module.</li>
-              <li>Purchase Orders & Receipts.</li>
-              <li>Sales Orders / Pick Tasks.</li>
-              <li>Stock Transfers & Adjustments.</li>
-            </ul>
-          </div>
-
-        </div>
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 24, paddingTop: 16, borderTop: '1px solid #E2E8F0', fontSize: 11, color: '#64748B', fontWeight: 500 }}>
-          <div style={{ color: '#4F46E5' }}>All times shown in your local time (AEST)</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#10B981' }}></span>
-            Data auto-refreshes every 5 minutes
-            <RefreshIcon />
-          </div>
-        </div>
-
-      </div>
 
       {/* NEW STOCK MOVEMENT MODAL */}
       {showNewMovementModal && (

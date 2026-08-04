@@ -201,7 +201,7 @@ export default function CustomerSettings() {
           {/* Title & Bookmark */}
           <div className="flex items-center gap-2.5">
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-              14.8 Account & Users
+              Account & Users
             </h1>
             <button 
               onClick={() => triggerToast("Page bookmarked!")}
@@ -829,43 +829,7 @@ export default function CustomerSettings() {
 
       </div>
 
-      {/* =========================================================================
-         DEVELOPER NOTES BANNER (Exact Match 2nd Screenshot)
-         ========================================================================= */}
-      <div className="bg-[#1E293B] text-white rounded-2xl p-4 shadow-lg space-y-3 font-sans border border-slate-700">
-        <div className="flex items-center justify-between border-b border-slate-700 pb-2">
-          <div className="flex items-center gap-2">
-            <span className="text-blue-400 font-mono font-bold text-xs">&lt;/&gt;</span>
-            <h3 className="font-extrabold uppercase text-[11px] tracking-wider text-slate-200">DEVELOPER NOTES – ACCOUNT & USERS</h3>
-          </div>
-          <span className="text-[9.5px] font-mono text-slate-400 font-semibold">REF: 14.8-ACCOUNT-USERS-SPEC</span>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-3 text-left">
-          {[
-            { title: '1. PURPOSE', items: ['Allow customers to manage their account.', 'Control portal users and their permissions.', 'Manage notifications and security settings.'] },
-            { title: '2. KEY FEATURES', items: ['Company account details.', 'Invite, edit, activate or deactivate users.', 'Role-based permission control.', 'Notification and security preferences.'] },
-            { title: '3. DATA SOURCES', items: ['Customer profile module.', 'Users & roles module.', 'Permissions configuration.', 'Activity log module.'] },
-            { title: '4. SECURITY & ACCESS', items: ['Only Customer Admin can invite or edit users.', 'Role-based access enforced.', '2FA required for all admin users.', 'Audit log for all account changes.'] },
-            { title: '5. INTEGRATIONS', items: ['Email/SMS service for invites & alerts.', 'Authentication service (2FA).', 'Activity log (audit trail).'] },
-            { title: '6. PERFORMANCE', items: ['User list loads in < 2 seconds.', 'Permission updates in real-time.', 'Activity log updates in real-time.'] }
-          ].map((col, i) => (
-            <div key={i}>
-              <h4 className="font-extrabold text-blue-400 mb-1 uppercase text-[8.5px] tracking-wider">{col.title}</h4>
-              <ul className="space-y-0.5 text-[9.5px] text-slate-300 font-medium">
-                {col.items.map((item, j) => <li key={j}>• {item}</li>)}
-              </ul>
-            </div>
-          ))}
-        </div>
-
-        <div className="pt-2 border-t border-slate-700 flex flex-col sm:flex-row items-center justify-between text-[8.5px] text-slate-400 font-semibold gap-2">
-          <div className="flex items-center gap-1.5">
-            <RefreshCw size={10} className="text-blue-400 animate-spin-slow" />
-            <span>All times shown in your local time (AEST) • Data auto-refreshes every 5 minutes</span>
-          </div>
-        </div>
-      </div>
 
       {/* =========================================================================
          ADD / EDIT USER MODAL

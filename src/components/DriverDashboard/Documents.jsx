@@ -688,69 +688,6 @@ export default function Documents() {
 
       </div>
 
-      {/* DEVELOPER NOTES AT THE BOTTOM */}
-      <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs text-xs space-y-4">
-        <div className="flex items-center gap-2 text-slate-800 font-black tracking-tight">
-          <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded font-mono text-[11px]">&lt;/&gt;</span>
-          <span>DEVELOPER NOTES – DOCUMENTS & COMPLIANCE</span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-6 gap-4 text-slate-600 border-t border-slate-100 pt-4">
-          <div>
-            <div className="font-black text-slate-900 uppercase text-[10px] mb-1">1. PURPOSE</div>
-            <ul className="list-disc list-inside space-y-0.5 text-[11px] font-semibold">
-              <li>Allow drivers to store & manage personal and vehicle documents.</li>
-              <li>Ensure compliance with legal & company requirements.</li>
-            </ul>
-          </div>
-
-          <div>
-            <div className="font-black text-slate-900 uppercase text-[10px] mb-1">2. KEY FEATURES</div>
-            <ul className="list-disc list-inside space-y-0.5 text-[11px] font-semibold">
-              <li>Upload, view & manage documents.</li>
-              <li>Expiry tracking with alerts.</li>
-              <li>Status indicators (Valid, Expiring, Expired).</li>
-              <li>Filter and search documents.</li>
-            </ul>
-          </div>
-
-          <div>
-            <div className="font-black text-slate-900 uppercase text-[10px] mb-1">3. DATA SOURCES</div>
-            <ul className="list-disc list-inside space-y-0.5 text-[11px] font-semibold">
-              <li>Driver documents (Licence module)</li>
-              <li>Vehicle documents (Vehicles module)</li>
-              <li>Compliance rules (Company configurable)</li>
-            </ul>
-          </div>
-
-          <div>
-            <div className="font-black text-slate-900 uppercase text-[10px] mb-1">4. SECURITY & ACCESS</div>
-            <ul className="list-disc list-inside space-y-0.5 text-[11px] font-semibold">
-              <li>Drivers access own documents only.</li>
-              <li>Role-based access control.</li>
-              <li>Encrypted storage in transit & at rest.</li>
-            </ul>
-          </div>
-
-          <div>
-            <div className="font-black text-slate-900 uppercase text-[10px] mb-1">5. INTEGRATIONS</div>
-            <ul className="list-disc list-inside space-y-0.5 text-[11px] font-semibold">
-              <li>Document Storage (Hero Cloud).</li>
-              <li>Notifications (Alerts).</li>
-              <li>Compliance Reporting.</li>
-            </ul>
-          </div>
-
-          <div>
-            <div className="font-black text-slate-900 uppercase text-[10px] mb-1">6. PERFORMANCE</div>
-            <ul className="list-disc list-inside space-y-0.5 text-[11px] font-semibold">
-              <li>Support large file uploads.</li>
-              <li>Quick preview and download.</li>
-              <li>Offline access with auto-sync when online.</li>
-            </ul>
-          </div>
-        </div>
-      </div>
 
       {/* UPLOAD DOCUMENT MODAL */}
       {uploadModalOpen && (

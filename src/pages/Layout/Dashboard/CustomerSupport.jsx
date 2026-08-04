@@ -227,7 +227,7 @@ export default function CustomerSupport() {
           {/* Title & Bookmark */}
           <div className="flex items-center gap-2.5">
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-              14.7 Messages & Support
+              Messages & Support
             </h1>
             <button 
               onClick={() => triggerToast("Page bookmarked!")}
@@ -653,43 +653,7 @@ export default function CustomerSupport() {
 
       </div>
 
-      {/* =========================================================================
-         DEVELOPER NOTES BANNER (Exact Match 2nd Screenshot)
-         ========================================================================= */}
-      <div className="bg-[#1E293B] text-white rounded-2xl p-4 shadow-lg space-y-3 font-sans border border-slate-700">
-        <div className="flex items-center justify-between border-b border-slate-700 pb-2">
-          <div className="flex items-center gap-2">
-            <span className="text-blue-400 font-mono font-bold text-xs">&lt;/&gt;</span>
-            <h3 className="font-extrabold uppercase text-[11px] tracking-wider text-slate-200">DEVELOPER NOTES – MESSAGES & SUPPORT</h3>
-          </div>
-          <span className="text-[9.5px] font-mono text-slate-400 font-semibold">REF: 14.7-MESSAGES-SUPPORT-SPEC</span>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-3 text-left">
-          {[
-            { title: '1. PURPOSE', items: ['Enable secure messaging with dispatch.', 'Allow customers to raise support tickets.', 'Provide visibility of ticket status.'] },
-            { title: '2. KEY FEATURES', items: ['Real-time messaging with dispatch team.', 'Create and manage support tickets.', 'Unread message indicators.', 'Attach files and images in messages.'] },
-            { title: '3. DATA SOURCES', items: ['Messages module.', 'Support tickets module.', 'Loads module (for context).', 'Users & roles module.'] },
-            { title: '4. SECURITY & ACCESS', items: ['Customers can only message their company.', 'Role-based ticket visibility.', 'Files scanned and stored securely.', 'Audit log for messages and tickets.'] },
-            { title: '5. INTEGRATIONS', items: ['Email/SMS notifications.', 'Driver App (dispatch messages).', 'Document storage (AWS S3/DO Spaces).', 'Accounting (for invoice related queries).'] },
-            { title: '6. PERFORMANCE', items: ['Real-time messaging via WebSocket.', 'Pagination for conversations.', 'Auto-refresh for new messages.', 'Ticket status updates in real-time.'] }
-          ].map((col, i) => (
-            <div key={i}>
-              <h4 className="font-extrabold text-blue-400 mb-1 uppercase text-[8.5px] tracking-wider">{col.title}</h4>
-              <ul className="space-y-0.5 text-[9.5px] text-slate-300 font-medium">
-                {col.items.map((item, j) => <li key={j}>• {item}</li>)}
-              </ul>
-            </div>
-          ))}
-        </div>
-
-        <div className="pt-2 border-t border-slate-700 flex flex-col sm:flex-row items-center justify-between text-[8.5px] text-slate-400 font-semibold gap-2">
-          <div className="flex items-center gap-1.5">
-            <RefreshCw size={10} className="text-blue-400 animate-spin-slow" />
-            <span>All times shown in your local time (AEST) • Data auto-refreshes every 5 minutes</span>
-          </div>
-        </div>
-      </div>
 
       {/* =========================================================================
          CREATE SUPPORT TICKET MODAL

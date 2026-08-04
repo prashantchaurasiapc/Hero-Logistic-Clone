@@ -300,11 +300,11 @@ export default function AssetDetails({ assetData, onBack }) {
         <div>
           <h1 className="text-lg sm:text-xl md:text-2xl font-black text-slate-900 tracking-tight flex flex-wrap items-center gap-2">
             {activeTab === 'Assignments & History' ? (
-              <>8.5 Asset Assignments & History – Forklift {asset.id}</>
+              <>Asset Assignments & History – Forklift {asset.id}</>
             ) : activeTab === 'Costs & Depreciation' ? (
-              <>8.6 Asset Costs & Depreciation – Forklift {asset.id}</>
+              <>Asset Costs & Depreciation – Forklift {asset.id}</>
             ) : (
-              <>8.2 Asset Details – Forklift {asset.id}</>
+              <>Asset Details – Forklift {asset.id}</>
             )}
             <span className="w-5 h-5 rounded-full bg-purple-600 text-white flex items-center justify-center text-[10px] font-black shrink-0">
               <CheckCircle2 size={12} />
@@ -1213,72 +1213,7 @@ export default function AssetDetails({ assetData, onBack }) {
           </div>
           </div>
 
-          {/* DEVELOPER NOTES - ASSET DETAILS */}
-          <div className="bg-purple-50/50 rounded-2xl border border-purple-100 p-4 sm:p-6 shadow-sm">
-            <h4 className="text-xs font-black text-purple-900 flex items-center gap-2 mb-4 uppercase tracking-widest">
-              <Info size={14} className="text-purple-600 shrink-0" /> DEVELOPER NOTES - ASSET DETAILS
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
-              <div className="bg-white/60 sm:bg-transparent p-3.5 sm:p-0 rounded-xl border border-purple-100/60 sm:border-0">
-                <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
-                  1. PURPOSE
-                </div>
-                <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
-                  <li>Detailed view of a single asset.</li>
-                  <li>Manage all asset related data.</li>
-                  <li>Track status, usage, compliance and costs.</li>
-                </ul>
-              </div>
-              <div className="bg-white/60 sm:bg-transparent p-3.5 sm:p-0 rounded-xl border border-purple-100/60 sm:border-0">
-                <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
-                  2. KEY FEATURES
-                </div>
-                <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
-                  <li>Overview with key details.</li>
-                  <li>Tabs for complete asset lifecycle management.</li>
-                  <li>Quick access to maintenance and compliance.</li>
-                  <li>Activity log for audit trail.</li>
-                </ul>
-              </div>
-              <div className="bg-white/60 sm:bg-transparent p-3.5 sm:p-0 rounded-xl border border-purple-100/60 sm:border-0">
-                <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
-                  3. AUTOMATION & ALERTS
-                </div>
-                <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
-                  <li>Auto-calculate next service due.</li>
-                  <li>AI alerts for expiry, maintenance and cost anomalies.</li>
-                  <li>Predict downtime based on usage patterns.</li>
-                  <li>AI scanning of uploaded documents.</li>
-                </ul>
-              </div>
-              <div className="bg-white/60 sm:bg-transparent p-3.5 sm:p-0 rounded-xl border border-purple-100/60 sm:border-0">
-                <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
-                  4. PERMISSIONS
-                </div>
-                <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
-                  <li>Super Admin: Full access.</li>
-                  <li>Admin/Manager: Full access.</li>
-                  <li>Staff/Warehouse: View relevant assets only.</li>
-                  <li>Driver: View assets assigned (if allowed).</li>
-                </ul>
-              </div>
-              <div className="bg-white/60 sm:bg-transparent p-3.5 sm:p-0 rounded-xl border border-purple-100/60 sm:border-0">
-                <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
-                  5. DATA SOURCES
-                </div>
-                <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
-                  <li>Assets module.</li>
-                  <li>Maintenance module.</li>
-                  <li>Compliance module.</li>
-                  <li>Usage from device / manual entry.</li>
-                </ul>
-              </div>
-            </div>
-            <div className="mt-4 pt-3 border-t border-purple-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-[9px] font-semibold text-slate-500">
-              <span>All times shown in your local time (AEST)</span>
-              <span className="flex items-center gap-1"><RefreshCw size={10} /> Data auto-refreshes every 5 minutes</span>
-            </div>
-          </div>
+
         </div>
       )}
 

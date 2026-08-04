@@ -741,69 +741,6 @@ export default function AddExpense() {
 
       </div>
 
-      {/* DEVELOPER NOTES AT THE BOTTOM */}
-      <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs text-xs space-y-4">
-        <div className="flex items-center gap-2 text-slate-800 font-black tracking-tight">
-          <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded font-mono text-[11px]">&lt;/&gt;</span>
-          <span>DEVELOPER NOTES – FUEL & EXPENSES</span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-6 gap-4 text-slate-600 border-t border-slate-100 pt-4">
-          <div>
-            <div className="font-black text-slate-900 uppercase text-[10px] mb-1">1. PURPOSE</div>
-            <ul className="list-disc list-inside space-y-0.5 text-[11px] font-semibold">
-              <li>Allow drivers to record & manage fuel and operating expenses.</li>
-              <li>Snap receipts and track costs.</li>
-            </ul>
-          </div>
-
-          <div>
-            <div className="font-black text-slate-900 uppercase text-[10px] mb-1">2. KEY FEATURES</div>
-            <ul className="list-disc list-inside space-y-0.5 text-[11px] font-semibold">
-              <li>Add expenses by category.</li>
-              <li>Capture odometer & quantity (litres).</li>
-              <li>Upload receipt photos.</li>
-              <li>Expense status workflow (Pending/Approved).</li>
-            </ul>
-          </div>
-
-          <div>
-            <div className="font-black text-slate-900 uppercase text-[10px] mb-1">3. DATA SOURCES</div>
-            <ul className="list-disc list-inside space-y-0.5 text-[11px] font-semibold">
-              <li>Loads & Vehicles module</li>
-              <li>Odometer readings</li>
-              <li>Expense categories & config</li>
-            </ul>
-          </div>
-
-          <div>
-            <div className="font-black text-slate-900 uppercase text-[10px] mb-1">4. SECURITY & ACCESS</div>
-            <ul className="list-disc list-inside space-y-0.5 text-[11px] font-semibold">
-              <li>Drivers create & view own expenses.</li>
-              <li>Edit/Delete allowed before approval.</li>
-              <li>All actions are logged.</li>
-            </ul>
-          </div>
-
-          <div>
-            <div className="font-black text-slate-900 uppercase text-[10px] mb-1">5. INTEGRATIONS</div>
-            <ul className="list-disc list-inside space-y-0.5 text-[11px] font-semibold">
-              <li>Expenses feed to P&L.</li>
-              <li>Connect to Fuel Cards.</li>
-              <li>OCR for receipt data extraction.</li>
-            </ul>
-          </div>
-
-          <div>
-            <div className="font-black text-slate-900 uppercase text-[10px] mb-1">6. PERFORMANCE</div>
-            <ul className="list-disc list-inside space-y-0.5 text-[11px] font-semibold">
-              <li>Expense list loads in &lt; 2 seconds.</li>
-              <li>Receipts compression on upload.</li>
-              <li>Offline entry & sync automatically.</li>
-            </ul>
-          </div>
-        </div>
-      </div>
 
       {/* ADD EXPENSE MODAL */}
       {addExpenseModalOpen && (

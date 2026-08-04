@@ -328,7 +328,7 @@ export default function CustomerDocuments() {
           {/* Title & Bookmark */}
           <div className="flex items-center gap-2.5">
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-              14.6 Documents & PODs
+              Documents & PODs
             </h1>
             <button 
               onClick={() => {
@@ -1044,43 +1044,7 @@ export default function CustomerDocuments() {
 
       </div>
 
-      {/* =========================================================================
-         DEVELOPER NOTES BANNER (Exact Match 2nd Screenshot)
-         ========================================================================= */}
-      <div className="bg-[#1E293B] text-white rounded-2xl p-4 shadow-lg space-y-3 font-sans border border-slate-700">
-        <div className="flex items-center justify-between border-b border-slate-700 pb-2">
-          <div className="flex items-center gap-2">
-            <span className="text-blue-400 font-mono font-bold text-xs">&lt;/&gt;</span>
-            <h3 className="font-extrabold uppercase text-[11px] tracking-wider text-slate-200">DEVELOPER NOTES – DOCUMENTS & PODS</h3>
-          </div>
-          <span className="text-[9.5px] font-mono text-slate-400 font-semibold">REF: 14.6-DOCUMENTS-PODS-SPEC</span>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-3 text-left">
-          {[
-            { title: '1. PURPOSE', items: ['Provide secure access to all documents.', 'View, download and manage PODs.', 'Maintain complete document history.'] },
-            { title: '2. KEY FEATURES', items: ['Filter by type, load and date.', 'Quick preview and download.', 'Bulk download selected documents.', 'Upload and request documents.'] },
-            { title: '3. DATA SOURCES', items: ['Documents module.', 'Loads module (PODs, reports).', 'Invoices module.', 'Driver App uploads.'] },
-            { title: '4. SECURITY & ACCESS', items: ['Customers see only their documents.', 'Role-based access for portal users.', 'Files stored in secure storage.', 'Encrypted in transit and at rest.'] },
-            { title: '5. INTEGRATIONS', items: ['Driver App (document uploads).', 'Email/SMS (document notifications).', 'Accounting (invoices & statements).', 'Cloud storage (AWS S3/DO Spaces).'] },
-            { title: '6. PERFORMANCE', items: ['Lazy load documents.', 'Optimize previews for large files.', 'CDN for fast file delivery.', 'Audit log for uploads/downloads.'] }
-          ].map((col, i) => (
-            <div key={i}>
-              <h4 className="font-extrabold text-blue-400 mb-1 uppercase text-[8.5px] tracking-wider">{col.title}</h4>
-              <ul className="space-y-0.5 text-[9.5px] text-slate-300 font-medium">
-                {col.items.map((item, j) => <li key={j}>• {item}</li>)}
-              </ul>
-            </div>
-          ))}
-        </div>
-
-        <div className="pt-2 border-t border-slate-700 flex flex-col sm:flex-row items-center justify-between text-[8.5px] text-slate-400 font-semibold gap-2">
-          <div className="flex items-center gap-1.5">
-            <RefreshCw size={10} className="text-blue-400 animate-spin-slow" />
-            <span>All times shown in your local time (AEST) • Data auto-refreshes every 5 minutes</span>
-          </div>
-        </div>
-      </div>
 
       {/* =========================================================================
          UPLOAD DOCUMENT MODAL (With Working File Picker & Drag-and-Drop)

@@ -313,19 +313,19 @@ export default function Branches() {
     const isAssetsTab = activeTab === 'Assets & Fleet';
     const isPerfTab = activeTab === 'Performance';
 
-    let pageTitle = '7.2 Branch Details';
+    let pageTitle = 'Branch Details';
     let pageSubtitle = 'View and manage detailed information for this branch.';
     if (isStaffTab) {
-       pageTitle = '7.3 Branch Staff & Permissions';
+       pageTitle = 'Branch Staff & Permissions';
        pageSubtitle = 'Manage branch staff, roles, permissions and time & pay settings.';
     } else if (isTimeTab) {
-       pageTitle = '7.4 Branch Time Attendance & Wages';
+       pageTitle = 'Branch Time Attendance & Wages';
        pageSubtitle = 'Track staff time, attendance, leave and calculate wages.';
     } else if (isAssetsTab) {
-       pageTitle = '7.5 Branch Assets & Fleet Assignments';
+       pageTitle = 'Branch Assets & Fleet Assignments';
        pageSubtitle = 'View and manage all vehicles and assets assigned to this branch.';
     } else if (isPerfTab) {
-       pageTitle = '7.6 Branch Performance Dashboard';
+       pageTitle = 'Branch Performance Dashboard';
        pageSubtitle = 'Real-time overview of branch performance, KPIs and operational insights.';
     }
 
@@ -2287,255 +2287,7 @@ export default function Branches() {
            </div>
         )}
 
-        {/* Developer Notes Dynamic Footer */}
-        <div className="bg-[#f8f9fc] border border-purple-100 rounded-2xl p-6 mt-6 shadow-sm">
-           <div className="flex justify-between items-center mb-4">
-              <h3 className="text-[12px] font-black text-purple-900 uppercase tracking-widest flex items-center gap-2">
-                 <div className="w-6 h-6 rounded bg-purple-100 flex items-center justify-center shrink-0"><Terminal size={14} className="text-purple-700" /></div>
-                 {isPerfTab ? 'DEVELOPER NOTES – BRANCH PERFORMANCE DASHBOARD' : isAssetsTab ? 'DEVELOPER NOTES – BRANCH ASSETS & FLEET ASSIGNMENTS' : isTimeTab ? 'DEVELOPER NOTES – BRANCH TIME ATTENDANCE & WAGES' : isStaffTab ? 'DEVELOPER NOTES – BRANCH STAFF & PERMISSIONS' : 'DEVELOPER NOTES – BRANCH DETAILS'}
-              </h3>
-           </div>
-           
-           {isPerfTab ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 text-[11px] text-gray-700">
-                 <div>
-                    <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Info size={12}/> 1. PURPOSE</div>
-                    <ul className="list-disc pl-4 space-y-1">
-                       <li>Provide real-time branch performance overview.</li>
-                       <li>Help managers make data-driven decisions.</li>
-                       <li>Track KPIs, trends and operational efficiency.</li>
-                    </ul>
-                 </div>
-                 <div>
-                    <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Settings size={12}/> 2. KEY FEATURES</div>
-                    <ul className="list-disc pl-4 space-y-1">
-                       <li>KPI scorecards with targets and status.</li>
-                       <li>Interactive charts with drill-down reports.</li>
-                       <li>Compare with previous period or branches.</li>
-                       <li>Export data in PDF / Excel / CSV.</li>
-                    </ul>
-                 </div>
-                 <div>
-                    <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Bell size={12}/> 3. AUTOMATION & ALERTS</div>
-                    <ul className="list-disc pl-4 space-y-1">
-                       <li>AI alerts for KPI deviations and trends.</li>
-                       <li>Auto-calculate KPIs from live operational data.</li>
-                       <li>Notify managers for underperforming KPIs.</li>
-                       <li>Suggest actions to improve performance.</li>
-                    </ul>
-                 </div>
-                 <div>
-                    <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Shield size={12}/> 4. PERMISSIONS</div>
-                    <ul className="list-disc pl-4 space-y-1">
-                       <li><strong>Super Admin:</strong> Full access to all data.</li>
-                       <li><strong>Branch Manager:</strong> Own branch data.</li>
-                       <li><strong>Other roles:</strong> View only as per permissions.</li>
-                       <li>Export permission controlled.</li>
-                    </ul>
-                 </div>
-                 <div>
-                    <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Database size={12}/> 5. DATA SOURCES</div>
-                    <ul className="list-disc pl-4 space-y-1">
-                       <li>Loads, Finance, Payroll, Assets, Vehicles.</li>
-                       <li>Attendance, Customer Feedback.</li>
-                       <li>Warehouse & Maintenance modules.</li>
-                       <li>Live tracking and telematics (If integrated).</li>
-                    </ul>
-                 </div>
-              </div>
-           ) : isAssetsTab ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 text-[11px] text-gray-700">
-                 <div>
-                    <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Info size={12}/> 1. PURPOSE</div>
-                    <ul className="list-disc pl-4 space-y-1">
-                       <li>View all vehicles and assets assigned to the branch.</li>
-                       <li>Manage assignments, transfers and inventory.</li>
-                       <li>Monitor maintenance, compliance and condition.</li>
-                    </ul>
-                 </div>
-                 <div>
-                    <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Settings size={12}/> 2. KEY FEATURES</div>
-                    <ul className="list-disc pl-4 space-y-1">
-                       <li>Assign existing vehicles or assets to branch.</li>
-                       <li>Transfer between branches with reason.</li>
-                       <li>Assignment history with audit trail.</li>
-                       <li>Filter by category, type, status and condition.</li>
-                    </ul>
-                 </div>
-                 <div>
-                    <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Bell size={12}/> 3. AUTOMATION & ALERTS</div>
-                    <ul className="list-disc pl-4 space-y-1">
-                       <li>AI alerts for maintenance, compliance and expiry.</li>
-                       <li>Predict upcoming service and renewals.</li>
-                       <li>Suggest optimal asset allocation.</li>
-                    </ul>
-                 </div>
-                 <div>
-                    <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Shield size={12}/> 4. PERMISSIONS</div>
-                    <ul className="list-disc pl-4 space-y-1">
-                       <li><strong>Super Admin / Admin:</strong> Full access.</li>
-                       <li><strong>Branch Admin, Manager:</strong> Manage assign/ xfer.</li>
-                       <li><strong>Dispatch / Operations:</strong> View only.</li>
-                       <li><strong>Staff:</strong> View assets assigned to them.</li>
-                    </ul>
-                 </div>
-                 <div>
-                    <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Database size={12}/> 5. DATA SOURCES</div>
-                    <ul className="list-disc pl-4 space-y-1">
-                       <li>Vehicles from Vehicles module.</li>
-                       <li>Assets from Assets module.</li>
-                       <li>Maintenance from Maintenance module.</li>
-                       <li>Documents from Documents module.</li>
-                    </ul>
-                 </div>
-              </div>
-           ) : isTimeTab ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 text-[11px] text-gray-700">
-                 <div>
-                    <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Info size={12}/> 1. PURPOSE</div>
-                    <ul className="list-disc pl-4 space-y-1">
-                       <li>Track staff time, breaks, attendance and leave.</li>
-                       <li>Calculate estimated wages automatically.</li>
-                       <li>Generate timesheets for payroll.</li>
-                    </ul>
-                 </div>
-                 <div>
-                    <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Settings size={12}/> 2. KEY FEATURES</div>
-                    <ul className="list-disc pl-4 space-y-1">
-                       <li>Clock in/out via Web, Mobile, QR Code or NFC.</li>
-                       <li>Breaks (Start/End) with duration tracking.</li>
-                       <li>GPS location captured on clock actions.</li>
-                       <li>Leave applications with approval workflow.</li>
-                    </ul>
-                 </div>
-                 <div>
-                    <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Bell size={12}/> 3. AUTOMATION & ALERTS</div>
-                    <ul className="list-disc pl-4 space-y-1">
-                       <li>Alert on missed clock in/out or late starts.</li>
-                       <li>Auto-calculate overtime, weekend & PH rates.</li>
-                       <li>Notify on leave conflicts or staff shortages.</li>
-                       <li>Timesheet locked after approval.</li>
-                    </ul>
-                 </div>
-                 <div>
-                    <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><DollarSign size={12}/> 4. PAYROLL INTEGRATION</div>
-                    <ul className="list-disc pl-4 space-y-1">
-                       <li>Supports Hourly, Salary, Daily, Per Load, Per KM.</li>
-                       <li>Include allowances, penalties & deductions.</li>
-                       <li>Approved timesheets feed into payroll.</li>
-                       <li>Export wages, super & tax data.</li>
-                    </ul>
-                 </div>
-                 <div>
-                    <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Database size={12}/> 5. DATA SOURCES</div>
-                    <ul className="list-disc pl-4 space-y-1">
-                       <li>Staff master data & pay settings.</li>
-                       <li>Time clock logs (Web/Mobile/QR/NFC).</li>
-                       <li>Leave & holiday calendar.</li>
-                       <li>Approved timesheets & pay rates.</li>
-                    </ul>
-                 </div>
-              </div>
-           ) : isStaffTab ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 text-[11px] text-gray-700">
-                 <div>
-                    <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Info size={12}/> 1. PURPOSE</div>
-                    <ul className="list-disc pl-4 space-y-1">
-                       <li>Manage all branch staff, roles and permissions.</li>
-                       <li>Configure pay types, rates and time tracking.</li>
-                       <li>Control access to modules and actions.</li>
-                       <li>Maintain staff information and status.</li>
-                    </ul>
-                 </div>
-                 <div>
-                    <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Settings size={12}/> 2. KEY FEATURES</div>
-                    <ul className="list-disc pl-4 space-y-1">
-                       <li>Staff list with role, department, and status.</li>
-                       <li>Time & Pay: pay type, rate and current status.</li>
-                       <li>Permissions count (assigned vs total).</li>
-                       <li>Invite staff, manage roles and permissions.</li>
-                    </ul>
-                 </div>
-                 <div>
-                    <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Clock size={12}/> 3. TIME TRACKING INTEGRATION</div>
-                    <ul className="list-disc pl-4 space-y-1">
-                       <li>Staff can clock in/out via web, mobile, QR or NFC.</li>
-                       <li>Breaks (Start/End) with duration tracking.</li>
-                       <li>GPS location captured on clock actions.</li>
-                       <li>Geofence validation for branch locations.</li>
-                    </ul>
-                 </div>
-                 <div>
-                    <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><DollarSign size={12}/> 4. PAYROLL & WAGES</div>
-                    <ul className="list-disc pl-4 space-y-1">
-                       <li>Supports Hourly, Salary, Daily, Per Load, Per KM.</li>
-                       <li>Overtime, weekend and public holiday rates.</li>
-                       <li>Timesheets feed into payroll for wage calc.</li>
-                       <li>Export timesheets and payroll data.</li>
-                    </ul>
-                 </div>
-                 <div>
-                    <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Shield size={12}/> 5. PERMISSIONS</div>
-                    <ul className="list-disc pl-4 space-y-1">
-                       <li><strong>Super Admin / Admin:</strong> Full access.</li>
-                       <li><strong>Branch Admin:</strong> Manage staff & roles.</li>
-                       <li><strong>Managers:</strong> View team and timesheets.</li>
-                       <li><strong>Users:</strong> View own profile and timesheets.</li>
-                    </ul>
-                 </div>
-              </div>
-           ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 text-[11px] text-gray-700">
-                 <div>
-                    <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Info size={12}/> 1. PURPOSE</div>
-                    <ul className="list-disc pl-4 space-y-1">
-                       <li>Display comprehensive details for the selected branch.</li>
-                       <li>Allow admins to manage branch settings, contacts, and configurations.</li>
-                    </ul>
-                 </div>
-                 <div>
-                    <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Settings size={12}/> 2. KEY FEATURES</div>
-                    <ul className="list-disc pl-4 space-y-1">
-                       <li>Tab based navigation for organized data.</li>
-                       <li>View and manage branch contacts.</li>
-                       <li>Overview metrics and performance.</li>
-                       <li>Manage operational settings and defaults.</li>
-                    </ul>
-                 </div>
-                 <div>
-                    <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Bell size={12}/> 3. AUTOMATION & ALERTS</div>
-                    <ul className="list-disc pl-4 space-y-1">
-                       <li>Alert if branch inactive for {'>'} 90 days.</li>
-                       <li>Notify admin on key performance drops.</li>
-                       <li>Auto-update metrics daily.</li>
-                       <li>Highlight compliance or safety issues.</li>
-                    </ul>
-                 </div>
-                 <div>
-                    <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Users size={12}/> 4. PERMISSIONS</div>
-                    <ul className="list-disc pl-4 space-y-1">
-                       <li><strong>Super Admin / Admin:</strong> Full access.</li>
-                       <li><strong>Branch Admin:</strong> Edit branch details, contacts, and settings.</li>
-                       <li><strong>Dispatchers / Users:</strong> View only.</li>
-                       <li><strong>Accounts:</strong> View financial and performance data.</li>
-                    </ul>
-                 </div>
-                 <div>
-                    <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Database size={12}/> 5. DATA SOURCES</div>
-                    <ul className="list-disc pl-4 space-y-1">
-                       <li>Branches master data.</li>
-                       <li>Users and roles.</li>
-                       <li>Assets, vehicles, trailers, warehouses.</li>
-                       <li>Loads, performance and activity logs.</li>
-                    </ul>
-                 </div>
-              </div>
-           )}
-           <div className="flex justify-between text-[9px] text-gray-400 mt-6 pt-4 border-t border-purple-50 font-medium">
-              <span>All times shown in your local time (AEST)</span>
-              <span className="flex items-center gap-1"><Clock size={10}/> Data auto-refreshes every 5 minutes</span>
-           </div>
-        </div>
+
       </div>
     );
   }
@@ -2554,7 +2306,7 @@ export default function Branches() {
               <span className="text-gray-900">Branch List</span>
            </div>
            <div className="flex items-center gap-2">
-             <h1 className="text-2xl font-black text-gray-900 tracking-tight">7.1 Branch List</h1>
+             <h1 className="text-2xl font-black text-gray-900 tracking-tight">Branch List</h1>
              <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-blue-600"><CheckCircle2 size={12} /></div>
            </div>
            <p className="text-sm text-gray-500 font-medium mt-1">View and manage all branches across your organisation.</p>
@@ -2827,59 +2579,7 @@ export default function Branches() {
          </div>
       </div>
 
-      {/* Developer Notes - Branch List */}
-      <div className="bg-[#f8f9fc] border border-purple-100 rounded-2xl p-6 mt-6 shadow-sm">
-         <h3 className="text-[12px] font-black text-purple-900 uppercase tracking-widest flex items-center gap-2 mb-4">
-            <div className="w-6 h-6 rounded bg-purple-100 flex items-center justify-center shrink-0"><Terminal size={14} className="text-purple-700" /></div>
-            DEVELOPER NOTES – BRANCH LIST
-         </h3>
-         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 text-[11px] text-gray-700">
-            <div>
-               <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Info size={12}/> 1. PURPOSE</div>
-               <ul className="list-disc pl-4 space-y-1">
-                  <li>Display all branches under the company.</li>
-                  <li>Provide overview of branch status, location, manager and activity.</li>
-                  <li>Enable quick access to branch details and management actions.</li>
-               </ul>
-            </div>
-            <div>
-               <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Settings size={12}/> 2. KEY FEATURES</div>
-               <ul className="list-disc pl-4 space-y-1">
-                  <li>Search, filters (country, status).</li>
-                  <li>Status badges with color coding.</li>
-                  <li>Loads count for last 30 days.</li>
-                  <li>Quick actions for view and more options.</li>
-                  <li>Bulk import/export functionality.</li>
-               </ul>
-            </div>
-            <div>
-               <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Bell size={12}/> 3. AUTOMATION & ALERTS</div>
-               <ul className="list-disc pl-4 space-y-1">
-                  <li>Alert if a branch is inactive for {'>'} 90 days.</li>
-                  <li>Notify admin when a new branch is added.</li>
-                  <li>Highlight branches pending setup.</li>
-               </ul>
-            </div>
-            <div>
-               <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Users size={12}/> 4. PERMISSIONS</div>
-               <ul className="list-disc pl-4 space-y-1">
-                  <li><strong>Super Admin / Admin:</strong> Full access.</li>
-                  <li><strong>Branch Admin:</strong> View own branch only.</li>
-                  <li><strong>Dispatcher:</strong> View branches & basic info.</li>
-                  <li><strong>Accounts:</strong> View branches for reporting.</li>
-               </ul>
-            </div>
-            <div>
-               <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Database size={12}/> 5. DATA SOURCES</div>
-               <ul className="list-disc pl-4 space-y-1">
-                  <li>Branches master data.</li>
-                  <li>Branch managers and users.</li>
-                  <li>Load data (last 30 days).</li>
-                  <li>Company and country information.</li>
-               </ul>
-            </div>
-         </div>
-      </div>
+
 
       {/* EDIT BRANCH MODAL */}
       {editBranchModal && (

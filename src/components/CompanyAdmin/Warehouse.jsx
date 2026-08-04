@@ -438,7 +438,7 @@ export default function Warehouse() {
                 <span style={{ color: '#0F172A', fontWeight: 800 }}>Warehouse Details</span>
               </div>
               <h1 style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', margin: '0 0 4px 0', letterSpacing: '-0.5px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                9.2 Warehouse Details
+                Warehouse Details
                 <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 20, height: 20, borderRadius: '50%', background: '#EEF2FF', color: '#4F46E5' }}>
                   <CheckCircle2 size={14} />
                 </span>
@@ -713,14 +713,7 @@ export default function Warehouse() {
             </div>
           </div>
 
-          {/* Developer Notes */}
-          <DevNotes title="WAREHOUSE DETAILS" cols={[
-            { title: 'PURPOSE', items: ['Central record for all warehouse information.', 'Manage settings, contacts and capabilities.', 'Access related data and operational actions.'] },
-            { title: 'KEY FEATURES', items: ['Warehouse overview and key metrics.', 'Contact details and operating settings.', 'Quick actions for daily operations.', 'Access to locations, inventory and tasks.'] },
-            { title: 'AUTOMATION & ALERTS', items: ['Alert on low utilisation or capacity issues.', 'Notify when documents are expiring.', 'Auto-create tasks based on settings.', 'Dashboard updates in real-time.'] },
-            { title: 'PERMISSIONS', items: ['Super Admin: Full access.', 'Admin/Manager: Full access.', 'Warehouse Staff: View assigned warehouse only.', 'Dispatcher: View warehouse info (read-only).'] },
-            { title: 'DATA SOURCES', items: ['Warehouses module.', 'Inventory & Stock module.', 'Tasks module.', 'Shipments & Purchase Orders.'] },
-          ]} />
+
 
           {renderEditModal()}
         </div>
@@ -890,7 +883,7 @@ export default function Warehouse() {
             <div style={{ fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 6, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
               <span>Home</span><span style={{ color: '#CBD5E1' }}>›</span><span>Warehouse</span><span style={{ color: '#CBD5E1' }}>›</span><span style={{ color: '#0F172A' }}>Warehouse Dashboard</span>
             </div>
-            <h1 style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.5px' }}>9.1 Warehouse Dashboard / List</h1>
+            <h1 style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.5px' }}>Warehouse Dashboard / List</h1>
             <p style={{ fontSize: 12, color: '#64748B', margin: '4px 0 0 0', fontWeight: 500 }}>View all warehouses, stock overview and real-time operational summary.</p>
           </div>
           <div className="wh-header-actions">
@@ -1282,14 +1275,7 @@ export default function Warehouse() {
           </div>
         </div>
 
-        {/* Developer Notes */}
-        <DevNotes title="WAREHOUSE DASHBOARD / LIST" cols={[
-          { title: 'PURPOSE', items: ['Central overview of all warehouses.', 'Real-time stock, tasks, alerts and activity.', 'Quick access to key warehouse functions.'] },
-          { title: 'KEY FEATURES', items: ['Search, filter and view warehouses.', 'Stock and inventory summary widgets.', 'Map view of all warehouse locations.', 'Quick actions and recent activity feed.'] },
-          { title: 'AUTOMATION & ALERTS', items: ['Auto alerts for low stock, expiry and overdue tasks.', 'Incoming shipment and task notifications.', 'Dashboard updates in real-time.', 'AI insights for stock anomalies and trends.'] },
-          { title: 'PERMISSIONS', items: ['Super Admin: Full access.', 'Admin/Manager: Full access.', 'Warehouse Staff: View assigned warehouse only.', 'Dispatcher: View stock and tasks (read-only).'] },
-          { title: 'DATA SOURCES', items: ['Warehouses module.', 'Inventory & Stock module.', 'Tasks & Pick/Pack module.', 'Shipments & Purchase Orders.'] },
-        ]} />
+
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16, paddingTop: 12, borderTop: '1px solid #E2E8F0', flexWrap: 'wrap', gap: 8 }}>
           <div style={{ fontSize: 10, color: '#64748B' }}>All times shown in your local time (AEST)</div>
