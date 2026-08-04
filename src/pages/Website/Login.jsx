@@ -9,8 +9,8 @@ import {
 
 const roleCards = [
   { id: 'super-admin', label: 'Super Admin', icon: <FiShield />, color: '#a855f7', bg: 'rgba(168, 85, 247, 0.1)' },
-  { id: 'sales', label: 'Sales', icon: <FiBarChart2 />, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
   { id: 'company-admin', label: 'Company Admin', icon: <FiBriefcase />, color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)' },
+  { id: 'sales', label: 'Sales', icon: <FiBarChart2 />, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
   { id: 'dispatcher', label: 'Dispatcher', icon: <FiClipboard />, color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)' },
   { id: 'driver', label: 'Driver', icon: <FiTruck />, color: '#d97706', bg: 'rgba(217, 119, 6, 0.1)' },
   { id: 'warehouse', label: 'Warehouse Manager', icon: <FiBox />, color: '#14b8a6', bg: 'rgba(20, 184, 166, 0.1)' },

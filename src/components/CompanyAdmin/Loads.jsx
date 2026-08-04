@@ -71,7 +71,7 @@ function MapComponent() {
   }, []);
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+    <div style={{ position: 'relative', width: '100%', height: '100%', zIndex: 1, isolation: 'isolate' }}>
       <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
     </div>
   );
@@ -91,8 +91,66 @@ function LoadDetail({ load, onBack }) {
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [previewItem, setPreviewItem] = useState(null);
 
+  // ── Dynamic Load & Header Actions State ─────────────────────────
+  const [currentLoad, setCurrentLoad] = useState({
+    id: load?.id || 'PO-12546',
+    type: load?.type || 'Car Carrying',
+    customer: load?.customer || 'Premium Motors',
+    status: load?.status || 'ACTIVE',
+    statusSub: load?.statusSub || 'In Progress',
+    priority: 'Normal',
+    notes: 'Customer prefers delivery between 9am - 12pm. Please call customer 30 mins before arrival. Vehicle must be kept clean and free of debris.',
+    date: load?.date || '2025-07-15'
+  });
+
+  const [activeDriver, setActiveDriver] = useState({
+    name: load?.driver || 'Mike Thompson',
+    code: 'DRV001',
+    phone: '+61 412 345 678',
+    license: 'MC (VIC) 076',
+    diary: '07:15 / 14:00',
+    avatar: load?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&h=100&q=80'
+  });
+
+  const [activeTruck, setActiveTruck] = useState({
+    id: load?.truck?.split(' | ')[0] || 'TRK-101',
+    name: load?.truck?.split(' | ')[1] || 'Volvo FH 540',
+    odo: '523,410 KM',
+    trailer: 'TRL-201 | 8 Car Carrier',
+    rego: 'YQ-12-A8'
+  });
+
+  // Modal & Dropdown States
+  const [showEditLoadModal, setShowEditLoadModal] = useState(false);
+  const [showReassignModal, setShowReassignModal] = useState(false);
+  const [showMoreActions, setShowMoreActions] = useState(false);
+  const [toastNotification, setToastNotification] = useState(null);
+
+  // Form States
+  const [editFormData, setEditFormData] = useState({
+    type: currentLoad.type,
+    customer: currentLoad.customer,
+    priority: currentLoad.priority,
+    status: currentLoad.status,
+    notes: currentLoad.notes
+  });
+
+  const [reassignForm, setReassignForm] = useState({
+    driverName: activeDriver.name,
+    truckId: activeTruck.id,
+    trailer: activeTruck.trailer,
+    notes: ''
+  });
+
+  const triggerToast = (msg, type = 'success') => {
+    setToastNotification({ msg, type });
+    setTimeout(() => {
+      setToastNotification(null);
+    }, 3500);
+  };
+
   const handleDownload = (filename) => {
-    alert(`Downloading ${filename}...`);
+    triggerToast(`Downloading ${filename}...`);
   };
   
   const [stopsList, setStopsList] = useState([
@@ -256,26 +314,140 @@ function LoadDetail({ load, onBack }) {
           </button>
           <div>
             <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-              <h1 className="text-lg sm:text-xl font-bold text-slate-900">Load {load.id}</h1>
-              <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black border uppercase tracking-wider ${getLoadStatusBadge(load.status)}`}>
-                ● {load.status === 'ACTIVE' ? 'IN PROGRESS' : load.statusSub?.toUpperCase()}
+              <h1 className="text-lg sm:text-xl font-bold text-slate-900">Load {currentLoad.id}</h1>
+              <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black border uppercase tracking-wider ${getLoadStatusBadge(currentLoad.status)}`}>
+                ● {currentLoad.status === 'ACTIVE' ? 'IN PROGRESS' : currentLoad.status}
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-1 flex items-center gap-1 flex-wrap">
-              <Truck className="w-3 h-3 shrink-0" /> {load.type} • Created by Sarah Mitchell • {load.date?.split('-').reverse().join('/')} 07:15 AM
+              <Truck className="w-3 h-3 shrink-0" /> {currentLoad.type} • Created by Sarah Mitchell • {currentLoad.date?.split('-').reverse().join('/')} 07:15 AM
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <button className="flex-1 sm:flex-none justify-center flex items-center gap-1.5 px-3 sm:px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors">
-            <Edit3 className="w-3.5 h-3.5" /> Edit Load
+        <div className="flex items-center gap-2 w-full sm:w-auto relative">
+          <button 
+            onClick={() => {
+              setEditFormData({
+                type: currentLoad.type,
+                customer: currentLoad.customer,
+                priority: currentLoad.priority,
+                status: currentLoad.status,
+                notes: currentLoad.notes
+              });
+              setShowEditLoadModal(true);
+            }}
+            className="flex-1 sm:flex-none justify-center flex items-center gap-1.5 px-3 sm:px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-xs cursor-pointer"
+          >
+            <Edit3 className="w-3.5 h-3.5 text-indigo-600" /> Edit Load
           </button>
-          <button className="flex-1 sm:flex-none justify-center flex items-center gap-1.5 px-3 sm:px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors">
-            <UserCheck className="w-3.5 h-3.5" /> Reassign
+          
+          <button 
+            onClick={() => {
+              setReassignForm({
+                driverName: activeDriver.name,
+                truckId: activeTruck.id,
+                trailer: activeTruck.trailer,
+                notes: ''
+              });
+              setShowReassignModal(true);
+            }}
+            className="flex-1 sm:flex-none justify-center flex items-center gap-1.5 px-3 sm:px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors shadow-xs cursor-pointer"
+          >
+            <UserCheck className="w-3.5 h-3.5 text-indigo-600" /> Reassign
           </button>
-          <button className="flex-1 sm:flex-none justify-center flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-black transition-colors">
-            More Actions <ChevronDown className="w-3.5 h-3.5" />
-          </button>
+          
+          <div className="relative">
+            <button 
+              onClick={() => setShowMoreActions(!showMoreActions)}
+              className="flex-1 sm:flex-none justify-center flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-black transition-colors shadow-sm cursor-pointer"
+            >
+              More Actions <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showMoreActions ? 'rotate-180' : ''}`} />
+            </button>
+
+            {/* Floating Dropdown Menu */}
+            {showMoreActions && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowMoreActions(false)} />
+                <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden py-1 divide-y divide-slate-100 animate-in fade-in zoom-in-95 duration-100">
+                  <div className="py-1">
+                    <button 
+                      onClick={() => {
+                        setShowMoreActions(false);
+                        triggerToast(`Downloading Manifest for Load ${currentLoad.id}...`);
+                      }}
+                      className="w-full px-4 py-2 text-left text-xs font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2.5 cursor-pointer"
+                    >
+                      <FileText className="w-4 h-4 text-slate-400" /> Download Manifest PDF
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setShowMoreActions(false);
+                        triggerToast(`Emailing load details to ${activeDriver.name} & ${currentLoad.customer}...`);
+                      }}
+                      className="w-full px-4 py-2 text-left text-xs font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2.5 cursor-pointer"
+                    >
+                      <MessageSquare className="w-4 h-4 text-slate-400" /> Email Load Summary
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setShowMoreActions(false);
+                        triggerToast(`Sending barcode labels for ${currentLoad.id} to printer...`);
+                      }}
+                      className="w-full px-4 py-2 text-left text-xs font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2.5 cursor-pointer"
+                    >
+                      <Package className="w-4 h-4 text-slate-400" /> Print Barcode Labels
+                    </button>
+                  </div>
+                  <div className="py-1">
+                    <button 
+                      onClick={() => {
+                        setShowMoreActions(false);
+                        setShowInvoiceModal(true);
+                      }}
+                      className="w-full px-4 py-2 text-left text-xs font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2.5 cursor-pointer"
+                    >
+                      <DollarSign className="w-4 h-4 text-emerald-500" /> Create / View Invoice
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setShowMoreActions(false);
+                        const isPaused = currentLoad.status === 'ON HOLD';
+                        const newStatus = isPaused ? 'ACTIVE' : 'ON HOLD';
+                        setCurrentLoad(prev => ({ ...prev, status: newStatus }));
+                        triggerToast(isPaused ? `Load ${currentLoad.id} resumed` : `Load ${currentLoad.id} put ON HOLD`, isPaused ? 'success' : 'warning');
+                      }}
+                      className="w-full px-4 py-2 text-left text-xs font-bold text-slate-700 hover:bg-amber-50 hover:text-amber-700 flex items-center gap-2.5 cursor-pointer"
+                    >
+                      <Clock className="w-4 h-4 text-amber-500" /> {currentLoad.status === 'ON HOLD' ? 'Resume Load' : 'Put Load On Hold'}
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setShowMoreActions(false);
+                        triggerToast(`Load ${currentLoad.id} duplicated as PO-${Math.floor(10000 + Math.random() * 90000)}`);
+                      }}
+                      className="w-full px-4 py-2 text-left text-xs font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2.5 cursor-pointer"
+                    >
+                      <Layers className="w-4 h-4 text-slate-400" /> Duplicate Load
+                    </button>
+                  </div>
+                  <div className="py-1">
+                    <button 
+                      onClick={() => {
+                        setShowMoreActions(false);
+                        if (window.confirm(`Are you sure you want to cancel Load ${currentLoad.id}?`)) {
+                          setCurrentLoad(prev => ({ ...prev, status: 'CANCELLED', statusSub: 'Cancelled' }));
+                          triggerToast(`Load ${currentLoad.id} has been cancelled`, 'error');
+                        }
+                      }}
+                      className="w-full px-4 py-2 text-left text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 cursor-pointer"
+                    >
+                      <Trash2 className="w-4 h-4 text-rose-500" /> Cancel Load
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -304,10 +476,10 @@ function LoadDetail({ load, onBack }) {
                 <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-4">Load Summary</h3>
                 <div className="flex flex-col gap-3.5">
                   {[
-                    { icon: <FileText className="w-4 h-4 text-slate-400" />, label: 'Load Reference', value: load.id },
-                    { icon: <Layers className="w-4 h-4 text-slate-400" />, label: 'Load Type', value: load.type },
-                    { icon: <AlertCircle className="w-4 h-4 text-rose-500" />, label: 'Priority', value: '🔴 Normal' },
-                    { icon: <User className="w-4 h-4 text-slate-400" />, label: 'Booking Customer', value: load.customer || 'Premium Motors' },
+                    { icon: <FileText className="w-4 h-4 text-slate-400" />, label: 'Load Reference', value: currentLoad.id },
+                    { icon: <Layers className="w-4 h-4 text-slate-400" />, label: 'Load Type', value: currentLoad.type },
+                    { icon: <AlertCircle className="w-4 h-4 text-rose-500" />, label: 'Priority', value: currentLoad.priority === 'High' ? '🔴 High' : currentLoad.priority === 'Urgent' ? '⚡ Urgent' : '🟢 Normal' },
+                    { icon: <User className="w-4 h-4 text-slate-400" />, label: 'Booking Customer', value: currentLoad.customer },
                     { icon: <MapPin className="w-4 h-4 text-slate-400" />, label: 'Total Stops', value: '4 (2 Pickup, 2 Drop-off)' },
                     { icon: <Package className="w-4 h-4 text-slate-400" />, label: 'Items / Vehicles', value: '1 Vehicle' },
                     { icon: <Navigation className="w-4 h-4 text-slate-400" />, label: 'Total Distance (EST.)', value: '1,260 km' },
@@ -369,10 +541,24 @@ function LoadDetail({ load, onBack }) {
               <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Load Notes</h3>
-                  <button className="text-[11px] font-bold text-indigo-600 hover:underline uppercase tracking-wider">EDIT</button>
+                  <button 
+                    onClick={() => {
+                      setEditFormData({
+                        type: currentLoad.type,
+                        customer: currentLoad.customer,
+                        priority: currentLoad.priority,
+                        status: currentLoad.status,
+                        notes: currentLoad.notes
+                      });
+                      setShowEditLoadModal(true);
+                    }}
+                    className="text-[11px] font-bold text-indigo-600 hover:underline uppercase tracking-wider cursor-pointer"
+                  >
+                    EDIT
+                  </button>
                 </div>
                 <p className="text-[12px] text-slate-600 leading-relaxed">
-                  Customer prefers delivery between 9am - 12pm. Please call customer 30 mins before arrival. Vehicle must be kept clean and free of debris.
+                  {currentLoad.notes}
                 </p>
               </div>
 
@@ -537,16 +723,16 @@ function LoadDetail({ load, onBack }) {
                 </div>
                 <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
                   <img
-                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&h=100&q=80"
+                    src={activeDriver.avatar}
                     alt="Driver"
                     className="w-10 h-10 rounded-full object-cover border border-slate-200 shrink-0"
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-black text-slate-900 truncate">Mike Thompson (DRV001)</p>
-                    <p className="text-[9px] text-slate-400 font-semibold leading-tight">PHONE: +61 412 345 • LICENSE: MC (VIC) 076</p>
-                    <p className="text-[9px] text-slate-400 font-semibold leading-tight mt-0.5">WORK DIARY: 07:15 / 14:00</p>
+                    <p className="text-xs font-black text-slate-900 truncate">{activeDriver.name} ({activeDriver.code})</p>
+                    <p className="text-[9px] text-slate-400 font-semibold leading-tight">PHONE: {activeDriver.phone} • LICENSE: {activeDriver.license}</p>
+                    <p className="text-[9px] text-slate-400 font-semibold leading-tight mt-0.5">WORK DIARY: {activeDriver.diary}</p>
                   </div>
-                  <a href="tel:+61412345" className="w-8 h-8 bg-green-50 hover:bg-green-100 rounded-full flex items-center justify-center shrink-0 transition-colors">
+                  <a href={`tel:${activeDriver.phone}`} className="w-8 h-8 bg-green-50 hover:bg-green-100 rounded-full flex items-center justify-center shrink-0 transition-colors">
                     <Phone className="w-3.5 h-3.5 text-green-600" />
                   </a>
                 </div>
@@ -555,8 +741,8 @@ function LoadDetail({ load, onBack }) {
                     <Truck className="w-5 h-5 text-slate-500" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-slate-800 truncate">Truck: TRK-101 | Volvo FH 540</p>
-                    <p className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider">ODOMETER: 523,410 KM • STATUS: ON THE ROAD</p>
+                    <p className="text-xs font-bold text-slate-800 truncate">Truck: {activeTruck.id} | {activeTruck.name}</p>
+                    <p className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider">ODOMETER: {activeTruck.odo} • STATUS: ON THE ROAD</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 pt-3">
@@ -564,8 +750,8 @@ function LoadDetail({ load, onBack }) {
                     <Package className="w-5 h-5 text-slate-500" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-slate-800 truncate">Trailer: TRL-201 | 8 Car Carrier</p>
-                    <p className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider">REG NO.: YQ-12-A8 • STATUS: ATTACHED</p>
+                    <p className="text-xs font-bold text-slate-800 truncate">Trailer: {activeTruck.trailer}</p>
+                    <p className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider">REG NO.: {activeTruck.rego} • STATUS: ATTACHED</p>
                   </div>
                 </div>
               </div>
@@ -1206,7 +1392,7 @@ function LoadDetail({ load, onBack }) {
 
       {/* ── Stop Details Modal ────────────────────────────── */}
       {selectedStop && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-[9999] animate-fadeIn">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 pt-16 pb-6 z-[999999] animate-fadeIn">
           <div className="bg-white rounded-2xl border border-slate-100 shadow-2xl w-full max-w-[500px] overflow-hidden flex flex-col" style={{ fontFamily: 'sans-serif' }}>
             
             {/* Header */}
@@ -1222,7 +1408,7 @@ function LoadDetail({ load, onBack }) {
               </div>
               <button 
                 onClick={() => setSelectedStop(null)}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1318,13 +1504,13 @@ function LoadDetail({ load, onBack }) {
             <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2.5">
               <button 
                 onClick={() => setSelectedStop(null)}
-                className="px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors bg-white shadow-sm"
+                className="px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors bg-white shadow-sm cursor-pointer"
               >
                 Close
               </button>
               <button 
                 onClick={() => { setSelectedStop(null); }}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm"
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm cursor-pointer"
               >
                 View on Map
               </button>
@@ -1336,13 +1522,13 @@ function LoadDetail({ load, onBack }) {
 
       {/* ── Add/Edit Stop Modal ────────────────────────────── */}
       {showStopModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-[9999] animate-fadeIn">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 pt-16 pb-6 z-[999999] animate-fadeIn">
           <div className="bg-white rounded-2xl border border-slate-100 shadow-2xl w-full max-w-[500px] overflow-hidden flex flex-col" style={{ fontFamily: 'sans-serif' }}>
             <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
               <h3 className="text-base font-black text-slate-950">{editingStop ? 'Edit Stop' : 'Add New Stop'}</h3>
               <button 
                 onClick={() => setShowStopModal(false)}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1379,7 +1565,7 @@ function LoadDetail({ load, onBack }) {
               <div className="p-6 space-y-4">
                 <div>
                   <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Stop Type</label>
-                  <select value={stopForm.type} onChange={e => setStopForm({...stopForm, type: e.target.value})} className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500">
+                  <select value={stopForm.type} onChange={e => setStopForm({...stopForm, type: e.target.value})} className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500 cursor-pointer">
                     <option>PICKUP</option>
                     <option>DROP-OFF</option>
                     <option>REST STOP</option>
@@ -1416,13 +1602,13 @@ function LoadDetail({ load, onBack }) {
                 <button 
                   type="button"
                   onClick={() => setShowStopModal(false)} 
-                  className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+                  className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit"
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors shadow-sm"
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors shadow-sm cursor-pointer"
                 >
                   {editingStop ? 'Save Changes' : 'Add Stop'}
                 </button>
@@ -1434,11 +1620,11 @@ function LoadDetail({ load, onBack }) {
 
       {/* ── Add Expense Modal ────────────────────────────── */}
       {showExpenseModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-[9999] animate-fadeIn">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 pt-16 pb-6 z-[999999] animate-fadeIn">
           <div className="bg-white rounded-2xl border border-slate-100 shadow-2xl w-full max-w-[400px] overflow-hidden flex flex-col" style={{ fontFamily: 'sans-serif' }}>
             <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
               <h3 className="text-base font-black text-slate-950">Add Expense</h3>
-              <button onClick={() => setShowExpenseModal(false)} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors">
+              <button onClick={() => setShowExpenseModal(false)} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1460,7 +1646,7 @@ function LoadDetail({ load, onBack }) {
               <div className="p-6 space-y-4">
                 <div>
                   <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Expense Type</label>
-                  <select name="type" className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500">
+                  <select name="type" className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500 cursor-pointer">
                     <option>Fuel</option>
                     <option>Toll</option>
                     <option>Meals</option>
@@ -1494,8 +1680,8 @@ function LoadDetail({ load, onBack }) {
                 </div>
               </div>
               <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
-                <button type="button" onClick={() => setShowExpenseModal(false)} className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors shadow-sm">Save Expense</button>
+                <button type="button" onClick={() => setShowExpenseModal(false)} className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors shadow-sm cursor-pointer">Save Expense</button>
               </div>
             </form>
           </div>
@@ -1504,11 +1690,11 @@ function LoadDetail({ load, onBack }) {
 
       {/* ── Upload Document Modal ────────────────────────────── */}
       {showDocumentModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-[9999] animate-fadeIn">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 pt-16 pb-6 z-[999999] animate-fadeIn">
           <div className="bg-white rounded-2xl border border-slate-100 shadow-2xl w-full max-w-[400px] overflow-hidden flex flex-col" style={{ fontFamily: 'sans-serif' }}>
             <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
               <h3 className="text-base font-black text-slate-950">Upload Document</h3>
-              <button onClick={() => setShowDocumentModal(false)} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors">
+              <button onClick={() => setShowDocumentModal(false)} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1527,7 +1713,7 @@ function LoadDetail({ load, onBack }) {
               <div className="p-6 space-y-4">
                 <div>
                   <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Document Type</label>
-                  <select name="type" className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500">
+                  <select name="type" className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500 cursor-pointer">
                     <option>Bill of Lading (BOL)</option>
                     <option>Consignment Note</option>
                     <option>Weighbridge Ticket</option>
@@ -1548,8 +1734,8 @@ function LoadDetail({ load, onBack }) {
                 </div>
               </div>
               <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
-                <button type="button" onClick={() => setShowDocumentModal(false)} className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors shadow-sm">Upload File</button>
+                <button type="button" onClick={() => setShowDocumentModal(false)} className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors shadow-sm cursor-pointer">Upload File</button>
               </div>
             </form>
           </div>
@@ -1558,11 +1744,11 @@ function LoadDetail({ load, onBack }) {
 
       {/* ── Generate Invoice Modal ────────────────────────────── */}
       {showInvoiceModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-[9999] animate-fadeIn">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 pt-16 pb-6 z-[999999] animate-fadeIn">
           <div className="bg-white rounded-2xl border border-slate-100 shadow-2xl w-full max-w-[450px] overflow-hidden flex flex-col" style={{ fontFamily: 'sans-serif' }}>
             <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
               <h3 className="text-base font-black text-slate-950">Generate Invoice</h3>
-              <button onClick={() => setShowInvoiceModal(false)} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors">
+              <button onClick={() => setShowInvoiceModal(false)} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1584,7 +1770,7 @@ function LoadDetail({ load, onBack }) {
               </div>
               <div>
                 <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Invoice Due Date</label>
-                <select className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500">
+                <select className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500 cursor-pointer">
                   <option>Net 7 (7 days)</option>
                   <option>Net 14 (14 days)</option>
                   <option>Net 30 (30 days)</option>
@@ -1596,8 +1782,8 @@ function LoadDetail({ load, onBack }) {
               </div>
             </div>
             <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
-              <button onClick={() => setShowInvoiceModal(false)} className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors">Cancel</button>
-              <button onClick={() => setShowInvoiceModal(false)} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors shadow-sm">Generate & Send</button>
+              <button onClick={() => setShowInvoiceModal(false)} className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer">Cancel</button>
+              <button onClick={() => setShowInvoiceModal(false)} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors shadow-sm cursor-pointer">Generate & Send</button>
             </div>
           </div>
         </div>
@@ -1605,14 +1791,14 @@ function LoadDetail({ load, onBack }) {
 
       {/* ── Preview Modal ────────────────────────────── */}
       {previewItem && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-[9999] animate-fadeIn">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 pt-16 pb-6 z-[999999] animate-fadeIn">
           <div className="bg-white rounded-2xl border border-slate-100 shadow-2xl w-full max-w-[600px] overflow-hidden flex flex-col" style={{ fontFamily: 'sans-serif' }}>
             <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
               <div>
                 <h3 className="text-base font-black text-slate-950">{previewItem.type} Preview</h3>
                 <p className="text-[10px] font-bold text-slate-400 mt-0.5">{previewItem.title}</p>
               </div>
-              <button onClick={() => setPreviewItem(null)} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors">
+              <button onClick={() => setPreviewItem(null)} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1630,12 +1816,269 @@ function LoadDetail({ load, onBack }) {
               )}
             </div>
             <div className="px-6 py-4 bg-white border-t border-slate-100 flex justify-end gap-3">
-              <button onClick={() => setPreviewItem(null)} className="px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors">Close Preview</button>
-              <button onClick={() => { handleDownload(previewItem.title); setPreviewItem(null); }} className="px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-lg text-xs font-bold hover:bg-indigo-100 transition-colors flex items-center gap-2">
+              <button onClick={() => setPreviewItem(null)} className="px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer">Close Preview</button>
+              <button onClick={() => { handleDownload(previewItem.title); setPreviewItem(null); }} className="px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-lg text-xs font-bold hover:bg-indigo-100 transition-colors flex items-center gap-2 cursor-pointer">
                 <Download size={14}/> Download File
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ── Edit Load Modal ────────────────────────────────────────── */}
+      {showEditLoadModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 pt-16 pb-6 z-[999999] animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
+                  <Edit3 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">Edit Load Details</h3>
+                  <p className="text-[11px] font-medium text-slate-400">Update configuration for Load {currentLoad.id}</p>
+                </div>
+              </div>
+              <button onClick={() => setShowEditLoadModal(false)} className="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              setCurrentLoad(prev => ({
+                ...prev,
+                customer: editFormData.customer,
+                type: editFormData.type,
+                priority: editFormData.priority,
+                status: editFormData.status,
+                notes: editFormData.notes
+              }));
+              setShowEditLoadModal(false);
+              triggerToast(`Load ${currentLoad.id} details updated successfully!`);
+            }} className="space-y-4">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Booking Customer</label>
+                <input 
+                  type="text"
+                  value={editFormData.customer}
+                  onChange={(e) => setEditFormData({ ...editFormData, customer: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition-colors"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Load Type</label>
+                  <select 
+                    value={editFormData.type}
+                    onChange={(e) => setEditFormData({ ...editFormData, type: e.target.value })}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition-colors cursor-pointer"
+                  >
+                    <option>Car Carrying</option>
+                    <option>General Freight</option>
+                    <option>Dangerous Goods</option>
+                    <option>Refrigerated</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Priority</label>
+                  <select 
+                    value={editFormData.priority}
+                    onChange={(e) => setEditFormData({ ...editFormData, priority: e.target.value })}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition-colors cursor-pointer"
+                  >
+                    <option>Normal</option>
+                    <option>High</option>
+                    <option>Urgent</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Status</label>
+                <select 
+                  value={editFormData.status}
+                  onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition-colors cursor-pointer"
+                >
+                  <option value="ACTIVE">IN PROGRESS (ACTIVE)</option>
+                  <option value="PLANNED">PLANNED</option>
+                  <option value="ON HOLD">ON HOLD</option>
+                  <option value="COMPLETED">COMPLETED</option>
+                  <option value="CANCELLED">CANCELLED</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Load Notes / Special Instructions</label>
+                <textarea 
+                  rows={3}
+                  value={editFormData.notes}
+                  onChange={(e) => setEditFormData({ ...editFormData, notes: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition-colors resize-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+                <button 
+                  type="button" 
+                  onClick={() => setShowEditLoadModal(false)}
+                  className="px-4 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Check className="w-4 h-4" /> Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Reassign Driver & Fleet Modal ────────────────────────────── */}
+      {showReassignModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 pt-16 pb-6 z-[999999] animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
+                  <UserCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">Reassign Driver &amp; Vehicle</h3>
+                  <p className="text-[11px] font-medium text-slate-400">Reassign active load {currentLoad.id} to new driver or truck</p>
+                </div>
+              </div>
+              <button onClick={() => setShowReassignModal(false)} className="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const driversList = [
+                { name: 'Mike Thompson', code: 'DRV001', phone: '+61 412 345 678', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&h=100&q=80', license: 'MC (VIC) 076' },
+                { name: 'Sarah Mitchell', code: 'DRV002', phone: '+61 418 222 333', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&h=100&q=80', license: 'HC (NSW) 102' },
+                { name: 'Chris Lee', code: 'DRV003', phone: '+61 422 777 888', avatar: 'https://i.pravatar.cc/150?u=15', license: 'MC (QLD) 088' },
+                { name: 'Alex Rivera', code: 'DRV004', phone: '+61 433 999 111', avatar: 'https://i.pravatar.cc/150?u=12', license: 'MC (SA) 044' }
+              ];
+
+              const selectedD = driversList.find(d => d.name === reassignForm.driverName) || driversList[0];
+              setActiveDriver({
+                name: selectedD.name,
+                code: selectedD.code,
+                phone: selectedD.phone,
+                license: selectedD.license,
+                diary: '07:15 / 14:00',
+                avatar: selectedD.avatar
+              });
+
+              setActiveTruck({
+                id: reassignForm.truckId,
+                name: reassignForm.truckId === 'TRK-101' ? 'Volvo FH 540' : reassignForm.truckId === 'TRK-220' ? 'Scania T500' : 'Kenworth T610',
+                odo: '523,410 KM',
+                trailer: reassignForm.trailer,
+                rego: 'YQ-12-A8'
+              });
+
+              setShowReassignModal(false);
+              triggerToast(`Load ${currentLoad.id} reassigned to ${selectedD.name}!`);
+            }} className="space-y-4">
+              
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Assign Driver</label>
+                <select 
+                  value={reassignForm.driverName}
+                  onChange={(e) => setReassignForm({ ...reassignForm, driverName: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition-colors cursor-pointer"
+                >
+                  <option value="Mike Thompson">Mike Thompson (DRV001 - MC License)</option>
+                  <option value="Sarah Mitchell">Sarah Mitchell (DRV002 - HC License)</option>
+                  <option value="Chris Lee">Chris Lee (DRV003 - MC License)</option>
+                  <option value="Alex Rivera">Alex Rivera (DRV004 - MC License)</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Truck / Vehicle</label>
+                  <select 
+                    value={reassignForm.truckId}
+                    onChange={(e) => setReassignForm({ ...reassignForm, truckId: e.target.value })}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition-colors cursor-pointer"
+                  >
+                    <option value="TRK-101">TRK-101 | Volvo FH 540</option>
+                    <option value="TRK-220">TRK-220 | Scania T500</option>
+                    <option value="TRK-330">TRK-330 | Kenworth T610</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Trailer</label>
+                  <select 
+                    value={reassignForm.trailer}
+                    onChange={(e) => setReassignForm({ ...reassignForm, trailer: e.target.value })}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition-colors cursor-pointer"
+                  >
+                    <option value="TRL-201 | 8 Car Carrier">TRL-201 | 8 Car Carrier</option>
+                    <option value="TRL-202 | Flatbed B-Double">TRL-202 | Flatbed B-Double</option>
+                    <option value="TRL-203 | Enclosed Carrier">TRL-203 | Enclosed Carrier</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">Reassignment Notes / Dispatch Reason</label>
+                <textarea 
+                  rows={2}
+                  placeholder="Optional notes for driver notify..."
+                  value={reassignForm.notes}
+                  onChange={(e) => setReassignForm({ ...reassignForm, notes: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition-colors resize-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+                <button 
+                  type="button" 
+                  onClick={() => setShowReassignModal(false)}
+                  className="px-4 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer"
+                >
+                  <UserCheck className="w-4 h-4" /> Confirm Reassign
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Toast Notification Banner ────────────────────────────────────────── */}
+      {toastNotification && (
+        <div className="fixed bottom-5 right-5 z-[999999] flex items-center gap-3 px-4 py-3 bg-slate-900 text-white rounded-xl shadow-2xl border border-slate-800 animate-fadeIn">
+          {toastNotification.type === 'error' ? (
+            <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
+          ) : toastNotification.type === 'warning' ? (
+            <AlertCircle className="w-5 h-5 text-amber-400 shrink-0" />
+          ) : (
+            <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />
+          )}
+          <span className="text-xs font-bold">{toastNotification.msg}</span>
+          <button onClick={() => setToastNotification(null)} className="ml-2 text-slate-400 hover:text-white cursor-pointer">
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 
