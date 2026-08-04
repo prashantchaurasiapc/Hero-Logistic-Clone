@@ -1,38 +1,38 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  Search, 
-  ChevronRight, 
-  ChevronDown, 
-  Shield, 
-  HelpCircle, 
-  RefreshCw, 
-  MailCheck, 
-  Plus, 
-  MessageSquare, 
-  CheckCircle, 
-  Clock, 
-  Megaphone, 
-  Send, 
-  Activity, 
-  X, 
-  Filter, 
-  Calendar, 
-  Users, 
-  FileText, 
-  SlidersHorizontal, 
-  Building2, 
-  Check, 
-  Pin, 
-  Inbox, 
-  MessageCircle, 
-  Phone, 
-  Video, 
-  MoreVertical, 
-  Paperclip, 
-  UserCheck, 
-  Sparkles, 
-  TrendingUp, 
-  BarChart3, 
+import {
+  Search,
+  ChevronRight,
+  ChevronDown,
+  Shield,
+  HelpCircle,
+  RefreshCw,
+  MailCheck,
+  Plus,
+  MessageSquare,
+  CheckCircle,
+  Clock,
+  Megaphone,
+  Send,
+  Activity,
+  X,
+  Filter,
+  Calendar,
+  Users,
+  FileText,
+  SlidersHorizontal,
+  Building2,
+  Check,
+  Pin,
+  Inbox,
+  MessageCircle,
+  Phone,
+  Video,
+  MoreVertical,
+  Paperclip,
+  UserCheck,
+  Sparkles,
+  TrendingUp,
+  BarChart3,
   SendHorizontal,
   Truck,
   Wrench,
@@ -83,10 +83,10 @@ export default function Messages() {
   const [selectedStatus, setSelectedStatus] = useState('All Status');
   const [searchQuery, setSearchQuery] = useState('');
   const [dateRange, setDateRange] = useState('01 May 2025 - 31 May 2025');
-  
+
   // Conversations Sub-tab state
   const [conversationSubTab, setConversationSubTab] = useState('All');
-  
+
   // Customer Communications Sub-tab state
   const [customerSubTab, setCustomerSubTab] = useState('All');
 
@@ -621,9 +621,9 @@ export default function Messages() {
   // Filtered contacts list by searchQuery & sub-tabs
   const filteredContacts = useMemo(() => {
     return contactsList.filter(c => {
-      const matchesSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                            c.preview.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            c.role.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.preview.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.role.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesTab = conversationSubTab === 'All' || c.type === conversationSubTab;
       return matchesSearch && matchesTab;
     });
@@ -632,9 +632,9 @@ export default function Messages() {
   // Filtered customer list for 12.3 Customer Communications
   const filteredCustomers = useMemo(() => {
     return customerList.filter(c => {
-      const matchesSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                            c.preview.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            c.email.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.preview.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.email.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesTab = customerSubTab === 'All' || c.type === customerSubTab;
       return matchesSearch && matchesTab;
     });
@@ -644,8 +644,8 @@ export default function Messages() {
   const filteredBroadcasts = useMemo(() => {
     return recentBroadcasts.filter(b => {
       return b.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-             b.desc.toLowerCase().includes(searchQuery.toLowerCase()) ||
-             b.type.toLowerCase().includes(searchQuery.toLowerCase());
+        b.desc.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        b.type.toLowerCase().includes(searchQuery.toLowerCase());
     });
   }, [recentBroadcasts, searchQuery]);
 
@@ -677,7 +677,7 @@ export default function Messages() {
 
           {/* Top Right Utilities */}
           <div className="flex items-center gap-2 sm:gap-3 ml-auto shrink-0 flex-nowrap">
-            <button 
+            <button
               onClick={() => showToast('Help center opened')}
               className="flex items-center gap-1 text-xs font-bold text-[#4338CA] hover:text-[#312E81] transition-colors cursor-pointer"
             >
@@ -704,7 +704,7 @@ export default function Messages() {
 
             {/* More Actions Dropdown Button */}
             <div className="relative shrink-0">
-              <button 
+              <button
                 onClick={() => setOpenMoreActions(!openMoreActions)}
                 className="flex items-center gap-1 text-[11px] sm:text-xs font-bold text-slate-700 bg-white border border-slate-200 px-2 sm:px-3 py-1 rounded-xl shadow-2xs hover:bg-slate-50 transition-colors cursor-pointer whitespace-nowrap"
               >
@@ -731,7 +731,7 @@ export default function Messages() {
           <div>
             <div className="flex items-start gap-2">
               <h1 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight leading-snug">
-                {selectedCategory === 'All Categories' ? '12.1 Messages Dashboard' : selectedCategory === 'Conversations' ? '12.2 Conversations' : selectedCategory === 'Customer Communications' ? '12.3 Customer Communications' : selectedCategory === 'Broadcast & Notifications' ? '12.4 Broadcasts & Notifications' : selectedCategory === 'Templates & Automation' ? '12.5 Templates & Automation' : selectedCategory}
+                {selectedCategory === 'All Categories' ? 'Messages Dashboard' : selectedCategory === 'Conversations' ? 'Conversations' : selectedCategory === 'Customer Communications' ? 'Customer Communications' : selectedCategory === 'Broadcast & Notifications' ? 'Broadcasts & Notifications' : selectedCategory === 'Templates & Automation' ? 'Templates & Automation' : selectedCategory}
               </h1>
               <div className="w-5.5 h-5.5 rounded-lg bg-[#EEF2FF] border-2 border-[#6366F1] text-[#6366F1] flex items-center justify-center shrink-0 shadow-2xs mt-0.5 sm:mt-1">
                 <Shield size={12} strokeWidth={2.5} />
@@ -745,115 +745,115 @@ export default function Messages() {
           {/* Right Action Controls */}
           <div className="flex flex-wrap sm:flex-nowrap items-center justify-start sm:justify-end gap-2 w-full sm:w-auto shrink-0">
             {/* Main Header Action Buttons */}
-            <button 
+            <button
               onClick={() => showToast('Refreshing data...')}
               className="flex-1 sm:flex-none justify-center flex items-center gap-1 bg-white border border-slate-200 hover:bg-slate-50 text-[#4338CA] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer hover:border-slate-300 whitespace-nowrap"
             >
-                <RefreshCw size={14} className="text-[#4338CA]" />
-                <span>Refresh</span>
-              </button>
+              <RefreshCw size={14} className="text-[#4338CA]" />
+              <span>Refresh</span>
+            </button>
 
-              {selectedCategory === 'Templates & Automation' ? (
-                <>
-                  <button 
-                    onClick={() => showToast('Exporting templates report...')}
-                    className="flex-1 sm:flex-none justify-center flex items-center gap-1 bg-white border border-slate-200 hover:bg-slate-50 text-[#4338CA] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer hover:border-slate-300 whitespace-nowrap"
-                  >
-                    <Download size={14} className="text-[#4338CA]" />
-                    <span>Export Report</span>
-                  </button>
-                  <button 
-                    onClick={() => setShowTemplateLibraryModal(true)}
+            {selectedCategory === 'Templates & Automation' ? (
+              <>
+                <button
+                  onClick={() => showToast('Exporting templates report...')}
+                  className="flex-1 sm:flex-none justify-center flex items-center gap-1 bg-white border border-slate-200 hover:bg-slate-50 text-[#4338CA] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer hover:border-slate-300 whitespace-nowrap"
+                >
+                  <Download size={14} className="text-[#4338CA]" />
+                  <span>Export Report</span>
+                </button>
+                <button
+                  onClick={() => setShowTemplateLibraryModal(true)}
+                  className="w-full sm:w-auto justify-center flex items-center gap-1 bg-white border border-slate-200 hover:bg-slate-50 text-[#4338CA] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer hover:border-slate-300 whitespace-nowrap"
+                >
+                  <BookOpen size={14} className="text-[#4338CA]" />
+                  <span>Template Library</span>
+                </button>
+                <button
+                  onClick={() => setShowNewTemplateModal(true)}
+                  className="w-full sm:w-auto justify-center flex items-center gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-md cursor-pointer hover:shadow-lg whitespace-nowrap"
+                >
+                  <Plus size={15} strokeWidth={2.5} />
+                  <span>New Template / Rule</span>
+                </button>
+              </>
+            ) : selectedCategory === 'Broadcast & Notifications' ? (
+              <>
+                <button
+                  onClick={() => showToast('Exporting broadcast report...')}
+                  className="flex-1 sm:flex-none justify-center flex items-center gap-1 bg-white border border-slate-200 hover:bg-slate-50 text-[#4338CA] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer hover:border-slate-300 whitespace-nowrap"
+                >
+                  <Download size={14} className="text-[#4338CA]" />
+                  <span>Export Report</span>
+                </button>
+
+                <button
+                  onClick={() => setShowBroadcastModal(true)}
+                  className="w-full sm:w-auto justify-center flex items-center gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-md cursor-pointer hover:shadow-lg whitespace-nowrap"
+                >
+                  <Plus size={15} strokeWidth={2.5} />
+                  <span>New Broadcast</span>
+                </button>
+              </>
+            ) : selectedCategory === 'Customer Communications' ? (
+              <>
+                <button
+                  onClick={() => showToast('Exporting customer communications report...')}
+                  className="flex-1 sm:flex-none justify-center flex items-center gap-1 bg-white border border-slate-200 hover:bg-slate-50 text-[#4338CA] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer hover:border-slate-300 whitespace-nowrap"
+                >
+                  <Download size={14} className="text-[#4338CA]" />
+                  <span>Export Report</span>
+                </button>
+
+                <button
+                  onClick={() => setShowNewCommunicationModal(true)}
+                  className="w-full sm:w-auto justify-center flex items-center gap-1 bg-white border border-slate-200 hover:bg-slate-50 text-[#4338CA] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer hover:border-slate-300 whitespace-nowrap"
+                >
+                  <Mail size={14} className="text-[#4338CA]" />
+                  <span>Message Customer</span>
+                </button>
+
+                <button
+                  onClick={() => setShowNewCommunicationModal(true)}
+                  className="w-full sm:w-auto justify-center flex items-center gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-md cursor-pointer hover:shadow-lg whitespace-nowrap"
+                >
+                  <Plus size={15} strokeWidth={2.5} />
+                  <span>New Communication</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={handleMarkAllRead}
+                  className="flex-1 sm:flex-none justify-center flex items-center gap-1 bg-white border border-slate-200 hover:bg-slate-50 text-[#4338CA] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer hover:border-slate-300 whitespace-nowrap"
+                >
+                  <MailCheck size={14} className="text-[#4338CA]" />
+                  <span>Mark All as Read</span>
+                </button>
+
+                {selectedCategory === 'Conversations' && (
+                  <button
+                    onClick={handleToggleStar}
                     className="w-full sm:w-auto justify-center flex items-center gap-1 bg-white border border-slate-200 hover:bg-slate-50 text-[#4338CA] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer hover:border-slate-300 whitespace-nowrap"
                   >
-                    <BookOpen size={14} className="text-[#4338CA]" />
-                    <span>Template Library</span>
+                    <Star size={14} className={starredContacts[activeContactId] ? "text-amber-500 fill-amber-400" : "text-[#4338CA]"} />
+                    <span>{starredContacts[activeContactId] ? "Starred" : "Star Conversation"}</span>
                   </button>
-                  <button 
-                    onClick={() => setShowNewTemplateModal(true)}
-                    className="w-full sm:w-auto justify-center flex items-center gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-md cursor-pointer hover:shadow-lg whitespace-nowrap"
-                  >
-                    <Plus size={15} strokeWidth={2.5} />
-                    <span>New Template / Rule</span>
-                  </button>
-                </>
-              ) : selectedCategory === 'Broadcast & Notifications' ? (
-                <>
-                  <button 
-                    onClick={() => showToast('Exporting broadcast report...')}
-                    className="flex-1 sm:flex-none justify-center flex items-center gap-1 bg-white border border-slate-200 hover:bg-slate-50 text-[#4338CA] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer hover:border-slate-300 whitespace-nowrap"
-                  >
-                    <Download size={14} className="text-[#4338CA]" />
-                    <span>Export Report</span>
-                  </button>
+                )}
 
-                  <button 
-                    onClick={() => setShowBroadcastModal(true)}
-                    className="w-full sm:w-auto justify-center flex items-center gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-md cursor-pointer hover:shadow-lg whitespace-nowrap"
-                  >
-                    <Plus size={15} strokeWidth={2.5} />
-                    <span>New Broadcast</span>
-                  </button>
-                </>
-              ) : selectedCategory === 'Customer Communications' ? (
-                <>
-                  <button 
-                    onClick={() => showToast('Exporting customer communications report...')}
-                    className="flex-1 sm:flex-none justify-center flex items-center gap-1 bg-white border border-slate-200 hover:bg-slate-50 text-[#4338CA] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer hover:border-slate-300 whitespace-nowrap"
-                  >
-                    <Download size={14} className="text-[#4338CA]" />
-                    <span>Export Report</span>
-                  </button>
+                <button
+                  onClick={() => setShowNewMessageModal(true)}
+                  className="w-full sm:w-auto justify-center flex items-center gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-md cursor-pointer hover:shadow-lg whitespace-nowrap"
+                >
+                  <Plus size={15} strokeWidth={2.5} />
+                  <span>New Message</span>
+                </button>
+              </>
+            )}
 
-                  <button 
-                    onClick={() => setShowNewCommunicationModal(true)}
-                    className="w-full sm:w-auto justify-center flex items-center gap-1 bg-white border border-slate-200 hover:bg-slate-50 text-[#4338CA] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer hover:border-slate-300 whitespace-nowrap"
-                  >
-                    <Mail size={14} className="text-[#4338CA]" />
-                    <span>Message Customer</span>
-                  </button>
-
-                  <button 
-                    onClick={() => setShowNewCommunicationModal(true)}
-                    className="w-full sm:w-auto justify-center flex items-center gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-md cursor-pointer hover:shadow-lg whitespace-nowrap"
-                  >
-                    <Plus size={15} strokeWidth={2.5} />
-                    <span>New Communication</span>
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button 
-                    onClick={handleMarkAllRead}
-                    className="flex-1 sm:flex-none justify-center flex items-center gap-1 bg-white border border-slate-200 hover:bg-slate-50 text-[#4338CA] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer hover:border-slate-300 whitespace-nowrap"
-                  >
-                    <MailCheck size={14} className="text-[#4338CA]" />
-                    <span>Mark All as Read</span>
-                  </button>
-
-                  {selectedCategory === 'Conversations' && (
-                    <button 
-                      onClick={handleToggleStar}
-                      className="w-full sm:w-auto justify-center flex items-center gap-1 bg-white border border-slate-200 hover:bg-slate-50 text-[#4338CA] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer hover:border-slate-300 whitespace-nowrap"
-                    >
-                      <Star size={14} className={starredContacts[activeContactId] ? "text-amber-500 fill-amber-400" : "text-[#4338CA]"} />
-                      <span>{starredContacts[activeContactId] ? "Starred" : "Star Conversation"}</span>
-                    </button>
-                  )}
-
-                  <button 
-                    onClick={() => setShowNewMessageModal(true)}
-                    className="w-full sm:w-auto justify-center flex items-center gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-md cursor-pointer hover:shadow-lg whitespace-nowrap"
-                  >
-                    <Plus size={15} strokeWidth={2.5} />
-                    <span>New Message</span>
-                  </button>
-                </>
-              )}
-
-            </div>
           </div>
         </div>
+      </div>
 
       {/* ========================================================================= */}
       {/* RENDER VIEW: 12.5 TEMPLATES & AUTOMATION                                  */}
@@ -956,10 +956,10 @@ export default function Messages() {
             </div>
             <div className="flex flex-wrap gap-2 items-center shrink-0">
               {[
-                { label: selectedTemplateType, set: setSelectedTemplateType, options: ['All Template Types','Email Templates','SMS Templates','Push Notifications','Delivery Notifications','Invoice & Payment'] },
-                { label: selectedTemplateChannel, set: setSelectedTemplateChannel, options: ['All Channels','Email','SMS','Push','In-App'] },
-                { label: selectedTemplateStatus, set: setSelectedTemplateStatus, options: ['All Status','Active','Inactive','Draft'] },
-                { label: selectedTemplateCategoryFilter, set: setSelectedTemplateCategoryFilter, options: ['All Categories','Drivers','Customers','Internal','Maintenance'] }
+                { label: selectedTemplateType, set: setSelectedTemplateType, options: ['All Template Types', 'Email Templates', 'SMS Templates', 'Push Notifications', 'Delivery Notifications', 'Invoice & Payment'] },
+                { label: selectedTemplateChannel, set: setSelectedTemplateChannel, options: ['All Channels', 'Email', 'SMS', 'Push', 'In-App'] },
+                { label: selectedTemplateStatus, set: setSelectedTemplateStatus, options: ['All Status', 'Active', 'Inactive', 'Draft'] },
+                { label: selectedTemplateCategoryFilter, set: setSelectedTemplateCategoryFilter, options: ['All Categories', 'Drivers', 'Customers', 'Internal', 'Maintenance'] }
               ].map((dd, i) => (
                 <select key={i} value={dd.label} onChange={e => dd.set(e.target.value)} className="text-[10px] font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-md px-2.5 py-1.5 outline-none focus:border-blue-400 cursor-pointer appearance-none hover:bg-white transition-all">
                   {dd.options.map(o => <option key={o}>{o}</option>)}
@@ -983,7 +983,7 @@ export default function Messages() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
 
             {/* ── COL 1: TEMPLATE CATEGORIES ── */}
-            <div className="bg-white border border-slate-200/80 rounded-xl shadow-2xs overflow-hidden flex flex-col" style={{height: '420px'}}>
+            <div className="bg-white border border-slate-200/80 rounded-xl shadow-2xs overflow-hidden flex flex-col" style={{ height: '420px' }}>
               <div className="flex items-center justify-between px-3 py-2.5 border-b border-slate-100 shrink-0">
                 <span className="text-[10px] font-black text-slate-700 uppercase tracking-wider">TEMPLATE CATEGORIES</span>
                 <button onClick={() => showToast('Viewing all categories')} className="text-[10px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 cursor-pointer">View All <ChevronRight size={12} /></button>
@@ -1017,7 +1017,7 @@ export default function Messages() {
             </div>
 
             {/* ── COL 2: TEMPLATE PREVIEW ── */}
-            <div className="bg-white border border-slate-200/80 rounded-xl shadow-2xs overflow-hidden flex flex-col" style={{height: '420px'}}>
+            <div className="bg-white border border-slate-200/80 rounded-xl shadow-2xs overflow-hidden flex flex-col" style={{ height: '420px' }}>
               <div className="flex items-center justify-between px-3 py-2.5 border-b border-slate-100 shrink-0">
                 <span className="text-[10px] font-black text-slate-700 uppercase tracking-wider">TEMPLATE PREVIEW</span>
                 <button onClick={() => showToast('Viewing all templates')} className="text-[10px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 cursor-pointer">View All <ChevronRight size={12} /></button>
@@ -1025,7 +1025,7 @@ export default function Messages() {
               <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-3">
                 {/* Template Selector Dropdown */}
                 <div className="flex items-center justify-between gap-2">
-                  <select 
+                  <select
                     value={selectedPreviewTemplate}
                     onChange={(e) => setSelectedPreviewTemplate(e.target.value)}
                     className="flex-1 text-[11px] font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-blue-400 cursor-pointer"
@@ -1039,7 +1039,7 @@ export default function Messages() {
                     {selectedPreviewTemplate.includes('Invoice') ? 'Email' : selectedPreviewTemplate.includes('Maintenance') ? 'System' : 'SMS'}
                   </span>
                 </div>
-                
+
                 {/* Dynamic Template Body */}
                 <div className="bg-[#F8FFF8] rounded-lg border border-slate-200 p-3 flex-1 text-[11.5px] text-slate-700 font-medium leading-relaxed overflow-y-auto">
                   {selectedPreviewTemplate === 'Invoice Payment Reminder' ? (
@@ -1079,8 +1079,8 @@ export default function Messages() {
                 <div className="flex items-center justify-between text-[10px] text-slate-500 font-semibold relative">
                   <span>Characters: <span className="font-black text-slate-700">{selectedPreviewTemplate.includes('Invoice') ? '185 / 500' : '142 / 160'}</span></span>
                   <div className="relative">
-                    <button 
-                      onClick={() => setOpenInsertVariable(!openInsertVariable)} 
+                    <button
+                      onClick={() => setOpenInsertVariable(!openInsertVariable)}
                       className="text-[#4338CA] font-bold hover:underline cursor-pointer flex items-center gap-1"
                     >
                       <span>Insert Variable</span>
@@ -1089,7 +1089,7 @@ export default function Messages() {
                     {openInsertVariable && (
                       <div className="absolute right-0 bottom-full mb-1 w-44 bg-white border border-slate-200 rounded-xl shadow-xl z-30 p-1 text-xs space-y-0.5">
                         {['{{customer_name}}', '{{load_id}}', '{{eta_time}}', '{{tracking_link}}', '{{company_name}}', '{{driver_name}}', '{{invoice_num}}'].map(v => (
-                          <button 
+                          <button
                             key={v}
                             onClick={() => { setOpenInsertVariable(false); showToast(`Inserted variable: ${v}`); }}
                             className="w-full text-left px-2.5 py-1 rounded text-[10.5px] font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
@@ -1115,18 +1115,18 @@ export default function Messages() {
             </div>
 
             {/* ── COL 3: AUTOMATION RULES ── */}
-            <div className="bg-white border border-slate-200/80 rounded-xl shadow-2xs overflow-hidden flex flex-col" style={{height: '420px'}}>
+            <div className="bg-white border border-slate-200/80 rounded-xl shadow-2xs overflow-hidden flex flex-col" style={{ height: '420px' }}>
               <div className="flex items-center justify-between px-3 py-2.5 border-b border-slate-100 shrink-0">
                 <span className="text-[10px] font-black text-slate-700 uppercase tracking-wider">AUTOMATION RULES</span>
                 <button onClick={() => showToast('Viewing all rules')} className="text-[10px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 cursor-pointer">View All <ChevronRight size={12} /></button>
               </div>
-              
+
               {/* Scrollable Container with horizontal & vertical scrollbar */}
               <div className="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar">
                 <div className="w-[550px] min-w-[550px]">
                   {/* Table Header */}
                   <div className="grid grid-cols-[130px_120px_95px_75px_105px_25px] gap-1 px-3 py-2 bg-slate-50 border-b border-slate-100 sticky top-0 z-10">
-                    {['Rule Name','Trigger','Action','Status','Last Run',''].map((h, i) => (
+                    {['Rule Name', 'Trigger', 'Action', 'Status', 'Last Run', ''].map((h, i) => (
                       <span key={i} className="text-[8.5px] font-black text-slate-500 uppercase tracking-wider truncate">{h}</span>
                     ))}
                   </div>
@@ -1174,7 +1174,7 @@ export default function Messages() {
               <div className="flex-1">
                 {/* Table Header */}
                 <div className="grid grid-cols-4 px-3 py-2 bg-slate-50 border-b border-slate-100">
-                  {['Channel','Status','Last Sync','Success Rate'].map(h => (
+                  {['Channel', 'Status', 'Last Sync', 'Success Rate'].map(h => (
                     <span key={h} className="text-[8.5px] font-black text-slate-500 uppercase tracking-wider truncate">{h}</span>
                   ))}
                 </div>
@@ -1458,12 +1458,12 @@ export default function Messages() {
           <div className="bg-white border border-slate-200/80 rounded-lg p-2 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center gap-2 w-full">
             <div className="relative flex-1">
               <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input 
-                type="text" 
+              <input
+                type="text"
                 placeholder="Search broadcasts..."
-                value={searchQuery} 
-                onChange={(e) => setSearchQuery(e.target.value)} 
-                className="w-full pl-8 pr-7 py-1.5 text-xs font-semibold bg-slate-50/70 border border-slate-200 rounded-md outline-none focus:border-blue-500 focus:bg-white transition-all text-slate-800 placeholder-slate-400" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-8 pr-7 py-1.5 text-xs font-semibold bg-slate-50/70 border border-slate-200 rounded-md outline-none focus:border-blue-500 focus:bg-white transition-all text-slate-800 placeholder-slate-400"
               />
               {searchQuery && (
                 <button onClick={() => setSearchQuery('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
@@ -1474,7 +1474,7 @@ export default function Messages() {
 
             {/* Dropdown 1: Categories */}
             <div className="relative shrink-0">
-              <button 
+              <button
                 onClick={() => { setOpenCategoryDropdown(!openCategoryDropdown); setOpenParticipantDropdown(false); setOpenBranchDropdown(false); setOpenStatusDropdown(false); }}
                 className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
               >
@@ -1490,8 +1490,8 @@ export default function Messages() {
                     'Broadcast & Notifications',
                     'Templates & Automation'
                   ].map(cat => (
-                    <button 
-                      key={cat} 
+                    <button
+                      key={cat}
                       onClick={() => { setSelectedCategory(cat); setOpenCategoryDropdown(false); showToast(`Navigated to ${cat}`); }}
                       className={`w-full text-left px-3 py-1.5 font-semibold transition-colors flex items-center justify-between ${selectedCategory === cat ? 'bg-blue-50 text-blue-600 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
                     >
@@ -1505,7 +1505,7 @@ export default function Messages() {
 
             {/* Dropdown 2: All Channels */}
             <div className="relative shrink-0">
-              <button 
+              <button
                 onClick={() => { setOpenParticipantDropdown(!openParticipantDropdown); setOpenCategoryDropdown(false); setOpenBranchDropdown(false); setOpenStatusDropdown(false); }}
                 className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
               >
@@ -1525,7 +1525,7 @@ export default function Messages() {
 
             {/* Dropdown 3: All Recipients */}
             <div className="relative shrink-0">
-              <button 
+              <button
                 onClick={() => { setOpenBranchDropdown(!openBranchDropdown); setOpenCategoryDropdown(false); setOpenParticipantDropdown(false); setOpenStatusDropdown(false); }}
                 className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
               >
@@ -1545,7 +1545,7 @@ export default function Messages() {
 
             {/* Dropdown 4: Status */}
             <div className="relative shrink-0">
-              <button 
+              <button
                 onClick={() => { setOpenStatusDropdown(!openStatusDropdown); setOpenCategoryDropdown(false); setOpenParticipantDropdown(false); setOpenBranchDropdown(false); }}
                 className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
               >
@@ -1565,7 +1565,7 @@ export default function Messages() {
 
             {/* Date Range Picker Input */}
             <div className="relative shrink-0">
-              <button 
+              <button
                 onClick={() => setShowDatePicker(!showDatePicker)}
                 className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
               >
@@ -1579,7 +1579,7 @@ export default function Messages() {
                   <div className="font-bold text-slate-900 mb-1.5">Select Date Range</div>
                   <div className="space-y-1">
                     {['01 May 2025 - 31 May 2025', '01 Apr 2025 - 30 Apr 2025', 'Q1 2025 (Jan - Mar)', 'Year to Date 2025'].map(range => (
-                      <button 
+                      <button
                         key={range}
                         onClick={() => { setDateRange(range); setShowDatePicker(false); showToast(`Date updated: ${range}`); }}
                         className={`w-full text-left px-2 py-1 rounded text-xs font-medium cursor-pointer ${dateRange === range ? 'bg-blue-50 text-blue-600 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
@@ -1606,7 +1606,7 @@ export default function Messages() {
 
           {/* MAIN 3-COLUMN WORKSPACE ROW (SIDE-BY-SIDE MATCHING SCREENSHOT 2) */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-stretch">
-            
+
             {/* COLUMN 1: BROADCAST CATEGORIES (Span 3 ~25% Width) */}
             <div className="lg:col-span-3 bg-white border border-slate-200/80 rounded-xl p-3 shadow-2xs flex flex-col justify-between h-[420px]">
               <div className="flex flex-col h-full overflow-hidden">
@@ -1622,8 +1622,8 @@ export default function Messages() {
                   {broadcastCategories.map((cat) => {
                     const CatIcon = cat.icon;
                     return (
-                      <div 
-                        key={cat.id} 
+                      <div
+                        key={cat.id}
                         onClick={() => showToast(`Filtered by ${cat.title}`)}
                         className="p-2 rounded-xl border border-slate-100 hover:border-slate-200 bg-slate-50/30 hover:bg-slate-50 transition-all flex items-start gap-2.5 cursor-pointer group"
                       >
@@ -1729,7 +1729,7 @@ export default function Messages() {
             {/* COLUMN 3: BROADCAST CHANNELS & CHANNEL PERFORMANCE (Span 3 ~25% Width) */}
             <div className="lg:col-span-3 bg-white border border-slate-200/80 rounded-xl p-3 shadow-2xs flex flex-col justify-between h-[420px]">
               <div className="flex flex-col h-full justify-between">
-                
+
                 {/* BLOCK 1: BROADCAST CHANNELS (MTD) */}
                 <div>
                   <div className="flex items-center justify-between mb-2 pb-1 border-b border-slate-100">
@@ -1773,7 +1773,7 @@ export default function Messages() {
                 {/* BLOCK 2: CHANNEL PERFORMANCE */}
                 <div>
                   <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">CHANNEL PERFORMANCE</h3>
-                  
+
                   <div className="space-y-2 text-xs">
                     <div>
                       <div className="flex justify-between text-[10px] font-bold text-slate-700 mb-0.5">
@@ -1831,11 +1831,11 @@ export default function Messages() {
 
           {/* BOTTOM ROW: SCHEDULED BROADCASTS & QUICK ACTIONS (MATCHING SCREENSHOT 2) */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5">
-            
+
             {/* LEFT: SCHEDULED BROADCASTS (Span 6) */}
             <div className="lg:col-span-6 bg-white border border-slate-200/80 rounded-xl p-3 shadow-2xs">
               <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-wider mb-2.5">SCHEDULED BROADCASTS</h2>
-              
+
               <div className="space-y-2">
                 {scheduledBroadcasts.map((sb) => (
                   <div key={sb.id} className="p-2.5 rounded-xl border border-slate-100 bg-slate-50/40 flex items-center justify-between">
@@ -1863,7 +1863,7 @@ export default function Messages() {
             {/* RIGHT: QUICK ACTIONS (Span 6) */}
             <div className="lg:col-span-6 bg-white border border-slate-200/80 rounded-xl p-3 shadow-2xs">
               <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-wider mb-2.5">QUICK ACTIONS</h2>
-              
+
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 <button onClick={() => setShowBroadcastModal(true)} className="p-2.5 rounded-xl border border-slate-200 hover:border-blue-400 bg-slate-50/50 hover:bg-blue-50/30 transition-all text-left group cursor-pointer flex items-center gap-2">
                   <div className="w-7 h-7 rounded-lg bg-[#EEF2FF] text-[#4338CA] flex items-center justify-center shrink-0">
@@ -2004,17 +2004,17 @@ export default function Messages() {
         /* RENDER VIEW: 12.3 CUSTOMER COMMUNICATIONS MATCHING SCREENSHOT 2           */
         /* ========================================================================= */
         <div className="space-y-4">
-          
+
           {/* SEARCH AND FILTERS BAR (For 12.3 Customer Communications) */}
           <div className="bg-white border border-slate-200/80 rounded-lg p-2 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center gap-2 w-full">
             <div className="relative flex-1">
               <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input 
-                type="text" 
+              <input
+                type="text"
                 placeholder="Search customers, messages..."
-                value={searchQuery} 
-                onChange={(e) => setSearchQuery(e.target.value)} 
-                className="w-full pl-8 pr-7 py-1.5 text-xs font-semibold bg-slate-50/70 border border-slate-200 rounded-md outline-none focus:border-blue-500 focus:bg-white transition-all text-slate-800 placeholder-slate-400" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-8 pr-7 py-1.5 text-xs font-semibold bg-slate-50/70 border border-slate-200 rounded-md outline-none focus:border-blue-500 focus:bg-white transition-all text-slate-800 placeholder-slate-400"
               />
               {searchQuery && (
                 <button onClick={() => setSearchQuery('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
@@ -2025,7 +2025,7 @@ export default function Messages() {
 
             {/* Dropdown 1: Communication Types */}
             <div className="relative shrink-0">
-              <button 
+              <button
                 onClick={() => { setOpenCategoryDropdown(!openCategoryDropdown); setOpenParticipantDropdown(false); setOpenBranchDropdown(false); setOpenStatusDropdown(false); }}
                 className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
               >
@@ -2041,8 +2041,8 @@ export default function Messages() {
                     'Broadcast & Notifications',
                     'Templates & Automation'
                   ].map(cat => (
-                    <button 
-                      key={cat} 
+                    <button
+                      key={cat}
                       onClick={() => { setSelectedCategory(cat); setOpenCategoryDropdown(false); showToast(`Navigated to ${cat}`); }}
                       className={`w-full text-left px-3 py-1.5 font-semibold transition-colors flex items-center justify-between ${selectedCategory === cat ? 'bg-blue-50 text-blue-600 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
                     >
@@ -2056,7 +2056,7 @@ export default function Messages() {
 
             {/* Dropdown 2: All Customers */}
             <div className="relative shrink-0">
-              <button 
+              <button
                 onClick={() => { setOpenParticipantDropdown(!openParticipantDropdown); setOpenCategoryDropdown(false); setOpenBranchDropdown(false); setOpenStatusDropdown(false); }}
                 className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
               >
@@ -2066,8 +2066,8 @@ export default function Messages() {
               {openParticipantDropdown && (
                 <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-slate-200 rounded-xl shadow-xl z-20 overflow-hidden py-1 text-xs">
                   {['All Customers', 'ABC Logistics', 'Global Retail Solutions', 'Fast Freight Pty Ltd', 'Sydney Car Movers'].map(part => (
-                    <button 
-                      key={part} 
+                    <button
+                      key={part}
                       onClick={() => { setSelectedParticipant(part); setOpenParticipantDropdown(false); }}
                       className="w-full text-left px-3 py-1.5 font-semibold transition-colors hover:bg-slate-50 text-slate-700"
                     >
@@ -2080,7 +2080,7 @@ export default function Messages() {
 
             {/* Dropdown 3: Branches */}
             <div className="relative shrink-0">
-              <button 
+              <button
                 onClick={() => { setOpenBranchDropdown(!openBranchDropdown); setOpenCategoryDropdown(false); setOpenParticipantDropdown(false); setOpenStatusDropdown(false); }}
                 className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
               >
@@ -2090,8 +2090,8 @@ export default function Messages() {
               {openBranchDropdown && (
                 <div className="absolute top-full left-0 mt-1 w-44 bg-white border border-slate-200 rounded-xl shadow-xl z-20 overflow-hidden py-1 text-xs">
                   {['All Branches', 'Sydney Branch', 'Melbourne Branch', 'Brisbane Branch', 'Perth Branch'].map(b => (
-                    <button 
-                      key={b} 
+                    <button
+                      key={b}
                       onClick={() => { setSelectedBranch(b); setOpenBranchDropdown(false); }}
                       className={`w-full text-left px-3 py-1.5 font-semibold transition-colors flex items-center justify-between ${selectedBranch === b ? 'bg-blue-50 text-blue-600 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
                     >
@@ -2105,7 +2105,7 @@ export default function Messages() {
 
             {/* Dropdown 4: Status */}
             <div className="relative shrink-0">
-              <button 
+              <button
                 onClick={() => { setOpenStatusDropdown(!openStatusDropdown); setOpenCategoryDropdown(false); setOpenParticipantDropdown(false); setOpenBranchDropdown(false); }}
                 className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
               >
@@ -2115,8 +2115,8 @@ export default function Messages() {
               {openStatusDropdown && (
                 <div className="absolute top-full left-0 mt-1 w-36 bg-white border border-slate-200 rounded-xl shadow-xl z-20 overflow-hidden py-1 text-xs">
                   {['All Status', 'Delivered', 'Opened', 'Pending', 'Failed'].map(st => (
-                    <button 
-                      key={st} 
+                    <button
+                      key={st}
                       onClick={() => { setSelectedStatus(st); setOpenStatusDropdown(false); }}
                       className={`w-full text-left px-3 py-1.5 font-semibold transition-colors flex items-center justify-between ${selectedStatus === st ? 'bg-blue-50 text-blue-600 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
                     >
@@ -2130,7 +2130,7 @@ export default function Messages() {
 
             {/* Date Range Picker Input */}
             <div className="relative shrink-0">
-              <button 
+              <button
                 onClick={() => setShowDatePicker(!showDatePicker)}
                 className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
               >
@@ -2144,7 +2144,7 @@ export default function Messages() {
                   <div className="font-bold text-slate-900 mb-1.5">Select Date Range</div>
                   <div className="space-y-1">
                     {['01 May 2025 - 31 May 2025', '01 Apr 2025 - 30 Apr 2025', 'Q1 2025 (Jan - Mar)', 'Year to Date 2025'].map(range => (
-                      <button 
+                      <button
                         key={range}
                         onClick={() => { setDateRange(range); setShowDatePicker(false); showToast(`Date updated: ${range}`); }}
                         className={`w-full text-left px-2 py-1 rounded text-xs font-medium cursor-pointer ${dateRange === range ? 'bg-blue-50 text-blue-600 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
@@ -2159,7 +2159,7 @@ export default function Messages() {
 
             {/* Filter Action Buttons */}
             <div className="flex items-center gap-1.5 shrink-0">
-              <button 
+              <button
                 onClick={handleResetFilters}
                 className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
               >
@@ -2167,7 +2167,7 @@ export default function Messages() {
                 <span>Filters</span>
               </button>
 
-              <button 
+              <button
                 onClick={() => showToast('Refreshing data...')}
                 className="p-1.5 text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
               >
@@ -2187,7 +2187,7 @@ export default function Messages() {
                 <span className="text-[7.5px] xl:text-[8px] 2xl:text-[9px] font-black text-slate-400 uppercase tracking-tight block truncate" title="TOTAL COMMUNICATIONS (MTD)">TOTAL COMMUNICATIONS (MTD)</span>
                 <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">1,248</div>
                 <div className="text-[8px] xl:text-[8.5px] font-bold text-emerald-600 mt-0.5 whitespace-nowrap">▲ 19.3% vs Last Month</div>
-                <button 
+                <button
                   onClick={() => showToast('Viewing communications analytics')}
                   className="text-[8px] xl:text-[8.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1 cursor-pointer whitespace-nowrap truncate"
                 >
@@ -2206,7 +2206,7 @@ export default function Messages() {
                 <span className="text-[7.5px] xl:text-[8px] 2xl:text-[9px] font-black text-slate-400 uppercase tracking-tight block truncate" title="EMAILS SENT (MTD)">EMAILS SENT (MTD)</span>
                 <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">642</div>
                 <div className="text-[8px] xl:text-[8.5px] font-bold text-emerald-600 mt-0.5 whitespace-nowrap">▲ 16.7% vs Last Month</div>
-                <button 
+                <button
                   onClick={() => showToast('Viewing email report')}
                   className="text-[8px] xl:text-[8.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1 cursor-pointer whitespace-nowrap truncate"
                 >
@@ -2225,7 +2225,7 @@ export default function Messages() {
                 <span className="text-[7.5px] xl:text-[8px] 2xl:text-[9px] font-black text-slate-400 uppercase tracking-tight block truncate" title="SMS SENT (MTD)">SMS SENT (MTD)</span>
                 <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">386</div>
                 <div className="text-[8px] xl:text-[8.5px] font-bold text-emerald-600 mt-0.5 whitespace-nowrap">▲ 21.8% vs Last Month</div>
-                <button 
+                <button
                   onClick={() => showToast('Viewing SMS report')}
                   className="text-[8px] xl:text-[8.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1 cursor-pointer whitespace-nowrap truncate"
                 >
@@ -2244,7 +2244,7 @@ export default function Messages() {
                 <span className="text-[7.5px] xl:text-[8px] 2xl:text-[9px] font-black text-slate-400 uppercase tracking-tight block truncate" title="DELIVERY NOTIFICATIONS (MTD)">DELIVERY NOTIFICATIONS (MTD)</span>
                 <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">142</div>
                 <div className="text-[8px] xl:text-[8.5px] font-bold text-emerald-600 mt-0.5 whitespace-nowrap">▲ 14.2% vs Last Month</div>
-                <button 
+                <button
                   onClick={() => showToast('Viewing delivery report')}
                   className="text-[8px] xl:text-[8.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1 cursor-pointer whitespace-nowrap truncate"
                 >
@@ -2263,7 +2263,7 @@ export default function Messages() {
                 <span className="text-[7.5px] xl:text-[8px] 2xl:text-[9px] font-black text-slate-400 uppercase tracking-tight block truncate" title="POD SHARED (MTD)">POD SHARED (MTD)</span>
                 <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">78</div>
                 <div className="text-[8px] xl:text-[8.5px] font-bold text-emerald-600 mt-0.5 whitespace-nowrap">▲ 28.1% vs Last Month</div>
-                <button 
+                <button
                   onClick={() => showToast('Viewing POD report')}
                   className="text-[8px] xl:text-[8.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1 cursor-pointer whitespace-nowrap truncate"
                 >
@@ -2282,7 +2282,7 @@ export default function Messages() {
                 <span className="text-[7.5px] xl:text-[8px] 2xl:text-[9px] font-black text-slate-400 uppercase tracking-tight block truncate" title="AVG RESPONSE TIME">AVG RESPONSE TIME</span>
                 <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">2h 14m</div>
                 <div className="text-[8px] xl:text-[8.5px] font-bold text-emerald-600 mt-0.5 whitespace-nowrap">▲ 18.6% vs Last Month</div>
-                <button 
+                <button
                   onClick={() => showToast('Viewing response performance')}
                   className="text-[8px] xl:text-[8.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1 cursor-pointer whitespace-nowrap truncate"
                 >
@@ -2295,15 +2295,15 @@ export default function Messages() {
 
           {/* MAIN 3-COLUMN WORKSPACE ROW (SIDE-BY-SIDE MATCHING SCREENSHOT 2) */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-stretch">
-            
+
             {/* COLUMN 1: CUSTOMER COMMUNICATIONS (Span 3 ~25% Width) */}
             <div className="lg:col-span-3 bg-white border border-slate-200/80 rounded-xl p-3 shadow-2xs flex flex-col justify-between h-[500px]">
               <div className="flex flex-col h-full overflow-hidden">
-                
+
                 {/* Header Title & Sub-tabs */}
                 <div className="mb-2">
                   <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-wider mb-2">CUSTOMER COMMUNICATIONS</h2>
-                  
+
                   {/* Sub-tab pills: All (1248), Emails (642), SMS (386), System (220) */}
                   <div className="flex items-center gap-1 bg-slate-100/80 p-0.5 rounded-lg text-[9.5px] font-extrabold text-slate-600">
                     {[
@@ -2312,7 +2312,7 @@ export default function Messages() {
                       { key: 'SMS', label: 'SMS (386)' },
                       { key: 'System', label: 'System (220)' }
                     ].map(tab => (
-                      <button 
+                      <button
                         key={tab.key}
                         onClick={() => setCustomerSubTab(tab.key)}
                         className={`flex-1 py-1 px-1 rounded-md transition-all cursor-pointer text-center truncate ${customerSubTab === tab.key ? 'bg-white text-blue-600 shadow-xs font-black' : 'hover:bg-slate-200/60'}`}
@@ -2328,7 +2328,7 @@ export default function Messages() {
                   {filteredCustomers.map(c => {
                     const isSelected = activeCustomerId === c.id;
                     return (
-                      <div 
+                      <div
                         key={c.id}
                         onClick={() => setActiveCustomerId(c.id)}
                         className={`p-2 rounded-lg border transition-all cursor-pointer flex items-start justify-between group ${isSelected ? 'bg-[#EEF2FF]/70 border-[#6366F1]/40 shadow-xs' : 'border-slate-100 hover:border-slate-200 bg-slate-50/20 hover:bg-slate-50'}`}
@@ -2372,7 +2372,7 @@ export default function Messages() {
             {/* COLUMN 2: COMMUNICATION HISTORY (Span 5 ~45% Width) */}
             <div className="lg:col-span-5 bg-white border border-slate-200/80 rounded-xl p-3 shadow-2xs flex flex-col justify-between h-[500px]">
               <div className="flex flex-col h-full overflow-hidden">
-                
+
                 {/* Section Title & View All */}
                 <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-100 shrink-0">
                   <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-wider">COMMUNICATION HISTORY</h2>
@@ -2387,7 +2387,7 @@ export default function Messages() {
                   {communicationHistory.map((item) => {
                     const ItemIcon = item.icon;
                     return (
-                      <div 
+                      <div
                         key={item.id}
                         className="p-2.5 rounded-xl border border-slate-100 hover:border-slate-200 bg-slate-50/30 hover:bg-slate-50 transition-all flex items-start gap-2.5 group cursor-pointer"
                       >
@@ -2401,7 +2401,7 @@ export default function Messages() {
                             <span className="text-[9px] font-bold text-slate-400 shrink-0">{item.time}</span>
                           </div>
                           <p className="text-[10px] text-slate-600 font-semibold leading-snug mt-0.5 truncate">{item.desc}</p>
-                          
+
                           <div className="flex items-center justify-between mt-1 pt-1 border-t border-slate-100/60">
                             <span className="text-[9px] font-bold text-slate-400 truncate">{item.recipient}</span>
                             <span className={`text-[8.5px] font-black px-2 py-0.5 rounded-full border ${item.statusBg}`}>
@@ -2428,7 +2428,7 @@ export default function Messages() {
             {/* COLUMN 3: CUSTOMER DETAILS & QUICK ACTIONS (Span 4 ~30% Width) */}
             <div className="lg:col-span-4 bg-white border border-slate-200/80 rounded-xl p-3 shadow-2xs flex flex-col justify-between h-[500px] overflow-y-auto">
               <div>
-                
+
                 {/* Section 1: Customer Details Header */}
                 <div className="flex items-center justify-between mb-2.5 pb-2 border-b border-slate-100">
                   <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-wider">CUSTOMER DETAILS</h2>
@@ -2443,7 +2443,7 @@ export default function Messages() {
                   <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto font-black text-sm shadow-xs border-2 border-white ${activeCustomer.avatarBg}`}>
                     {activeCustomer.initials}
                   </div>
-                  
+
                   <div className="flex items-center justify-center gap-1.5 mt-2">
                     <h3 className="text-xs font-black text-slate-900">{activeCustomer.name}</h3>
                     <span className="text-[8.5px] font-extrabold text-blue-600 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded-full">
@@ -2471,7 +2471,7 @@ export default function Messages() {
                 {/* Section 2: COMMUNICATION PREFERENCES */}
                 <div className="mb-3">
                   <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">COMMUNICATION PREFERENCES</h3>
-                  
+
                   <div className="space-y-1 text-[10.5px]">
                     {[
                       { key: 'email', label: 'Email Notifications', status: customerPreferences.email },
@@ -2483,7 +2483,7 @@ export default function Messages() {
                     ].map(pref => (
                       <div key={pref.key} className="flex items-center justify-between p-1.5 rounded-lg border border-slate-100 bg-slate-50/40">
                         <span className="font-bold text-slate-700">{pref.label}</span>
-                        <button 
+                        <button
                           onClick={() => {
                             setCustomerPreferences(p => ({ ...p, [pref.key]: !p[pref.key] }));
                             showToast(`${pref.label} updated`);
@@ -2505,9 +2505,9 @@ export default function Messages() {
                 {/* Section 3: QUICK ACTIONS */}
                 <div>
                   <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">QUICK ACTIONS</h3>
-                  
+
                   <div className="grid grid-cols-2 gap-2">
-                    <button 
+                    <button
                       onClick={() => setShowNewCommunicationModal(true)}
                       className="p-2.5 rounded-xl border border-slate-200 hover:border-blue-400 bg-slate-50/70 hover:bg-blue-50/40 transition-all text-left flex items-center gap-2 group cursor-pointer shadow-2xs hover:shadow-xs"
                     >
@@ -2517,7 +2517,7 @@ export default function Messages() {
                       <span className="text-[10.5px] font-extrabold text-slate-800 group-hover:text-blue-600 truncate">Send Email</span>
                     </button>
 
-                    <button 
+                    <button
                       onClick={() => setShowNewCommunicationModal(true)}
                       className="p-2.5 rounded-xl border border-slate-200 hover:border-emerald-400 bg-slate-50/70 hover:bg-emerald-50/40 transition-all text-left flex items-center gap-2 group cursor-pointer shadow-2xs hover:shadow-xs"
                     >
@@ -2527,7 +2527,7 @@ export default function Messages() {
                       <span className="text-[10.5px] font-extrabold text-slate-800 group-hover:text-emerald-600 truncate">Send SMS</span>
                     </button>
 
-                    <button 
+                    <button
                       onClick={() => { setShowNewCommunicationModal(true); showToast('Selected: Delivery Update'); }}
                       className="p-2.5 rounded-xl border border-slate-200 hover:border-sky-400 bg-slate-50/70 hover:bg-sky-50/40 transition-all text-left flex items-center gap-2 group cursor-pointer shadow-2xs hover:shadow-xs"
                     >
@@ -2537,7 +2537,7 @@ export default function Messages() {
                       <span className="text-[10.5px] font-extrabold text-slate-800 group-hover:text-sky-600 truncate">Send Delivery Update</span>
                     </button>
 
-                    <button 
+                    <button
                       onClick={() => showToast(`Sharing POD for ${activeCustomer.name}...`)}
                       className="p-2.5 rounded-xl border border-slate-200 hover:border-amber-400 bg-slate-50/70 hover:bg-amber-50/40 transition-all text-left flex items-center gap-2 group cursor-pointer shadow-2xs hover:shadow-xs"
                     >
@@ -2547,7 +2547,7 @@ export default function Messages() {
                       <span className="text-[10.5px] font-extrabold text-slate-800 group-hover:text-amber-600 truncate">Share POD</span>
                     </button>
 
-                    <button 
+                    <button
                       onClick={() => showToast(`Sending Invoice to ${activeCustomer.name}...`)}
                       className="p-2.5 rounded-xl border border-slate-200 hover:border-purple-400 bg-slate-50/70 hover:bg-purple-50/40 transition-all text-left flex items-center gap-2 group cursor-pointer shadow-2xs hover:shadow-xs"
                     >
@@ -2557,7 +2557,7 @@ export default function Messages() {
                       <span className="text-[10.5px] font-extrabold text-slate-800 group-hover:text-purple-600 truncate">Send Invoice</span>
                     </button>
 
-                    <button 
+                    <button
                       onClick={() => setShowNewTemplateModal(true)}
                       className="p-2.5 rounded-xl border border-slate-200 hover:border-indigo-400 bg-slate-50/70 hover:bg-indigo-50/40 transition-all text-left flex items-center gap-2 group cursor-pointer shadow-2xs hover:shadow-xs"
                     >
@@ -2648,17 +2648,17 @@ export default function Messages() {
         /* RENDER VIEW: 12.2 CONVERSATIONS PAGE MATCHING SCREENSHOT 2                */
         /* ========================================================================= */
         <div className="space-y-4">
-          
+
           {/* SEARCH AND FILTERS BAR (For 12.2 Conversations) */}
           <div className="bg-white border border-slate-200/80 rounded-lg p-2 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center gap-2 w-full">
             <div className="relative flex-1">
               <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input 
-                type="text" 
+              <input
+                type="text"
                 placeholder="Search conversations..."
-                value={searchQuery} 
-                onChange={(e) => setSearchQuery(e.target.value)} 
-                className="w-full pl-8 pr-7 py-1.5 text-xs font-semibold bg-slate-50/70 border border-slate-200 rounded-md outline-none focus:border-blue-500 focus:bg-white transition-all text-slate-800 placeholder-slate-400" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-8 pr-7 py-1.5 text-xs font-semibold bg-slate-50/70 border border-slate-200 rounded-md outline-none focus:border-blue-500 focus:bg-white transition-all text-slate-800 placeholder-slate-400"
               />
               {searchQuery && (
                 <button onClick={() => setSearchQuery('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
@@ -2669,7 +2669,7 @@ export default function Messages() {
 
             {/* Dropdown 1: Categories */}
             <div className="relative shrink-0">
-              <button 
+              <button
                 onClick={() => { setOpenCategoryDropdown(!openCategoryDropdown); setOpenParticipantDropdown(false); setOpenBranchDropdown(false); setOpenStatusDropdown(false); }}
                 className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
               >
@@ -2685,8 +2685,8 @@ export default function Messages() {
                     'Broadcast & Notifications',
                     'Templates & Automation'
                   ].map(cat => (
-                    <button 
-                      key={cat} 
+                    <button
+                      key={cat}
                       onClick={() => { setSelectedCategory(cat); setOpenCategoryDropdown(false); showToast(`Navigated to ${cat}`); }}
                       className={`w-full text-left px-3 py-1.5 font-semibold transition-colors flex items-center justify-between ${selectedCategory === cat ? 'bg-blue-50 text-blue-600 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
                     >
@@ -2700,7 +2700,7 @@ export default function Messages() {
 
             {/* Dropdown 2: Participants */}
             <div className="relative shrink-0">
-              <button 
+              <button
                 onClick={() => { setOpenParticipantDropdown(!openParticipantDropdown); setOpenCategoryDropdown(false); setOpenBranchDropdown(false); setOpenStatusDropdown(false); }}
                 className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
               >
@@ -2710,8 +2710,8 @@ export default function Messages() {
               {openParticipantDropdown && (
                 <div className="absolute top-full left-0 mt-1 w-44 bg-white border border-slate-200 rounded-xl shadow-xl z-20 overflow-hidden py-1 text-xs">
                   {['All Participants', 'Drivers', 'Customers', 'Internal Team', 'System Alerts'].map(part => (
-                    <button 
-                      key={part} 
+                    <button
+                      key={part}
                       onClick={() => { setSelectedParticipant(part); setOpenParticipantDropdown(false); }}
                       className={`w-full text-left px-3 py-1.5 font-semibold transition-colors flex items-center justify-between ${selectedParticipant === part ? 'bg-blue-50 text-blue-600 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
                     >
@@ -2725,7 +2725,7 @@ export default function Messages() {
 
             {/* Dropdown 3: Branches */}
             <div className="relative shrink-0">
-              <button 
+              <button
                 onClick={() => { setOpenBranchDropdown(!openBranchDropdown); setOpenCategoryDropdown(false); setOpenParticipantDropdown(false); setOpenStatusDropdown(false); }}
                 className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
               >
@@ -2735,8 +2735,8 @@ export default function Messages() {
               {openBranchDropdown && (
                 <div className="absolute top-full left-0 mt-1 w-44 bg-white border border-slate-200 rounded-xl shadow-xl z-20 overflow-hidden py-1 text-xs">
                   {['All Branches', 'Sydney Branch', 'Melbourne Branch', 'Brisbane Branch', 'Perth Branch'].map(b => (
-                    <button 
-                      key={b} 
+                    <button
+                      key={b}
                       onClick={() => { setSelectedBranch(b); setOpenBranchDropdown(false); }}
                       className={`w-full text-left px-3 py-1.5 font-semibold transition-colors flex items-center justify-between ${selectedBranch === b ? 'bg-blue-50 text-blue-600 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
                     >
@@ -2750,7 +2750,7 @@ export default function Messages() {
 
             {/* Dropdown 4: Status */}
             <div className="relative shrink-0">
-              <button 
+              <button
                 onClick={() => { setOpenStatusDropdown(!openStatusDropdown); setOpenCategoryDropdown(false); setOpenParticipantDropdown(false); setOpenBranchDropdown(false); }}
                 className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
               >
@@ -2760,8 +2760,8 @@ export default function Messages() {
               {openStatusDropdown && (
                 <div className="absolute top-full left-0 mt-1 w-36 bg-white border border-slate-200 rounded-xl shadow-xl z-20 overflow-hidden py-1 text-xs">
                   {['All Status', 'Unread', 'Read', 'Archived', 'Flagged'].map(st => (
-                    <button 
-                      key={st} 
+                    <button
+                      key={st}
                       onClick={() => { setSelectedStatus(st); setOpenStatusDropdown(false); }}
                       className={`w-full text-left px-3 py-1.5 font-semibold transition-colors flex items-center justify-between ${selectedStatus === st ? 'bg-blue-50 text-blue-600 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
                     >
@@ -2775,7 +2775,7 @@ export default function Messages() {
 
             {/* Date Range Picker Input */}
             <div className="relative shrink-0">
-              <button 
+              <button
                 onClick={() => setShowDatePicker(!showDatePicker)}
                 className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
               >
@@ -2789,7 +2789,7 @@ export default function Messages() {
                   <div className="font-bold text-slate-900 mb-1.5">Select Date Range</div>
                   <div className="space-y-1">
                     {['01 May 2025 - 31 May 2025', '01 Apr 2025 - 30 Apr 2025', 'Q1 2025 (Jan - Mar)', 'Year to Date 2025'].map(range => (
-                      <button 
+                      <button
                         key={range}
                         onClick={() => { setDateRange(range); setShowDatePicker(false); showToast(`Date updated: ${range}`); }}
                         className={`w-full text-left px-2 py-1 rounded text-xs font-medium cursor-pointer ${dateRange === range ? 'bg-blue-50 text-blue-600 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
@@ -2804,7 +2804,7 @@ export default function Messages() {
 
             {/* Filter Action Buttons */}
             <div className="flex items-center gap-1.5 shrink-0">
-              <button 
+              <button
                 onClick={handleResetFilters}
                 className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
               >
@@ -2812,7 +2812,7 @@ export default function Messages() {
                 <span>Filters</span>
               </button>
 
-              <button 
+              <button
                 onClick={() => showToast('Refreshing data...')}
                 className="p-1.5 text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
               >
@@ -2820,22 +2820,22 @@ export default function Messages() {
               </button>
             </div>
           </div>
-          
+
           {/* MAIN 3-COLUMN WORKSPACE ROW MATCHING SCREENSHOT 2 */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-stretch">
-            
+
             {/* COLUMN 1: CONVERSATIONS LIST (Span 3 ~25% Width) */}
             <div className="lg:col-span-3 bg-white border border-slate-200/80 rounded-xl p-3 shadow-2xs flex flex-col justify-between h-[500px]">
               <div className="flex flex-col h-full overflow-hidden">
-                
+
                 {/* Header Title & Sub-tabs */}
                 <div className="mb-2">
                   <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-wider mb-2">CONVERSATIONS</h2>
-                  
+
                   {/* Sub-tab pills: All, Direct, Groups, Teams, + */}
                   <div className="flex items-center gap-1 bg-slate-100/80 p-0.5 rounded-lg text-[10px] font-extrabold text-slate-600">
                     {['All', 'Direct', 'Groups', 'Teams'].map(tab => (
-                      <button 
+                      <button
                         key={tab}
                         onClick={() => setConversationSubTab(tab)}
                         className={`flex-1 py-1 px-1.5 rounded-md transition-all cursor-pointer text-center ${conversationSubTab === tab ? 'bg-white text-blue-600 shadow-xs font-black' : 'hover:bg-slate-200/60'}`}
@@ -2843,8 +2843,8 @@ export default function Messages() {
                         {tab}
                       </button>
                     ))}
-                    <button 
-                      onClick={() => setShowNewMessageModal(true)} 
+                    <button
+                      onClick={() => setShowNewMessageModal(true)}
                       className="p-1 rounded-md bg-white hover:bg-slate-200 text-slate-700 shadow-xs cursor-pointer"
                     >
                       <Plus size={11} strokeWidth={2.5} />
@@ -2857,7 +2857,7 @@ export default function Messages() {
                   {filteredContacts.map(c => {
                     const isSelected = activeContactId === c.id;
                     return (
-                      <div 
+                      <div
                         key={c.id}
                         onClick={() => setActiveContactId(c.id)}
                         className={`p-2 rounded-lg border transition-all cursor-pointer flex items-start justify-between group ${isSelected ? 'bg-[#EEF2FF]/70 border-[#6366F1]/40 shadow-xs' : 'border-slate-100 hover:border-slate-200 bg-slate-50/20 hover:bg-slate-50'}`}
@@ -2905,7 +2905,7 @@ export default function Messages() {
 
             {/* COLUMN 2: ACTIVE LIVE CHAT AREA (Span 6 ~50% Width) */}
             <div className="lg:col-span-6 bg-white border border-slate-200/80 rounded-xl shadow-2xs flex flex-col justify-between h-[500px] overflow-hidden">
-              
+
               {/* Active Chat Header */}
               <div className="p-3 border-b border-slate-200/80 bg-white flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-2.5">
@@ -2947,12 +2947,12 @@ export default function Messages() {
 
               {/* Scrollable Live Chat Messages Area */}
               <div className="flex-1 p-3.5 overflow-y-auto space-y-3.5 bg-[#F8FAFC]">
-                
+
                 {(chatMessages[activeContactId] || [
                   { id: 1, text: activeContact.preview, time: activeContact.time, sender: activeContact.name, isMe: false, dateDivider: 'Today' }
                 ]).map((msg) => (
                   <React.Fragment key={msg.id}>
-                    
+
                     {/* Date Divider pill */}
                     {msg.dateDivider && (
                       <div className="flex items-center justify-center my-2">
@@ -3017,7 +3017,7 @@ export default function Messages() {
                   <Paperclip size={15} />
                 </button>
 
-                <input 
+                <input
                   type="text"
                   placeholder="Type your message..."
                   value={activeChatInput}
@@ -3030,7 +3030,7 @@ export default function Messages() {
                   <Smile size={15} />
                 </button>
 
-                <button 
+                <button
                   onClick={handleSendLiveMessage}
                   className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white p-2 rounded-lg transition-all shadow-xs hover:shadow-md cursor-pointer shrink-0"
                 >
@@ -3062,7 +3062,7 @@ export default function Messages() {
                   )}
                   <h3 className="text-xs font-black text-slate-900 mt-2">{activeContact.name}</h3>
                   <p className="text-[9.5px] text-slate-400 font-bold leading-tight mt-0.5">{activeContact.role}</p>
-                  
+
                   <div className="inline-flex items-center gap-1 text-[9.5px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full mt-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                     Online
@@ -3078,7 +3078,7 @@ export default function Messages() {
                 {/* CONVERSATION INFO */}
                 <div className="mb-3 space-y-1.5 text-xs">
                   <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">CONVERSATION INFO</h3>
-                  
+
                   <div className="flex items-center justify-between text-[10.5px]">
                     <span className="font-semibold text-slate-500">Type</span>
                     <span className="font-extrabold text-slate-900">{activeContact.type}</span>
@@ -3166,7 +3166,7 @@ export default function Messages() {
                 {/* ACTIONS SECTION */}
                 <div className="space-y-1 pt-2 border-t border-slate-100">
                   <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">ACTIONS</h3>
-                  
+
                   <button onClick={() => showToast('Search in conversation')} className="w-full text-left p-1.5 rounded-lg hover:bg-slate-50 text-[10.5px] font-extrabold text-slate-700 flex items-center gap-2 cursor-pointer">
                     <Search size={13} className="text-slate-400" />
                     <span>Search in Conversation</span>
@@ -3266,7 +3266,7 @@ export default function Messages() {
         /* RENDER VIEW: 12.1 MESSAGES DASHBOARD PAGE (EXACT SCREENSHOT 2 ROW ORDER)  */
         /* ========================================================================= */
         <div className="space-y-4">
-          
+
           {/* ROW 1: 6 KPI METRIC CARDS (EXACT SCREENSHOT 2 POSITIONS) */}
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2 sm:gap-2.5">
             {/* Metric 1 - Linked to Conversations */}
@@ -3278,7 +3278,7 @@ export default function Messages() {
                 <span className="text-[8.5px] 2xl:text-[9.5px] font-black text-slate-400 uppercase tracking-wider block truncate">UNREAD MESSAGES</span>
                 <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">18</div>
                 <div className="text-[8.5px] 2xl:text-[9.5px] font-bold text-emerald-600 mt-0.5 whitespace-nowrap">▲ 28.6% vs Last Month</div>
-                <button 
+                <button
                   onClick={() => { setSelectedCategory('Conversations'); showToast('Opened Conversations'); }}
                   className="text-[8.5px] 2xl:text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1.5 cursor-pointer whitespace-nowrap truncate"
                 >
@@ -3297,7 +3297,7 @@ export default function Messages() {
                 <span className="text-[8.5px] 2xl:text-[9.5px] font-black text-slate-400 uppercase tracking-wider block truncate">TOTAL CONVERSATIONS</span>
                 <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">156</div>
                 <div className="text-[8.5px] 2xl:text-[9.5px] font-bold text-emerald-600 mt-0.5 whitespace-nowrap">▲ 12.4% vs Last Month</div>
-                <button 
+                <button
                   onClick={() => { setSelectedCategory('Conversations'); showToast('Opened Conversations'); }}
                   className="text-[8.5px] 2xl:text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1.5 cursor-pointer whitespace-nowrap truncate"
                 >
@@ -3316,7 +3316,7 @@ export default function Messages() {
                 <span className="text-[8.5px] 2xl:text-[9.5px] font-black text-slate-400 uppercase tracking-wider block truncate">PENDING REPLIES</span>
                 <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">24</div>
                 <div className="text-[8.5px] 2xl:text-[9.5px] font-bold text-rose-600 mt-0.5 whitespace-nowrap">▼ 14.3% vs Last Month</div>
-                <button 
+                <button
                   onClick={() => { setSelectedCategory('Conversations'); showToast('Opened Conversations'); }}
                   className="text-[8.5px] 2xl:text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1.5 cursor-pointer whitespace-nowrap truncate"
                 >
@@ -3335,7 +3335,7 @@ export default function Messages() {
                 <span className="text-[8.5px] 2xl:text-[9.5px] font-black text-slate-400 uppercase tracking-wider block truncate">ANNOUNCEMENTS</span>
                 <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">5</div>
                 <div className="text-[8.5px] 2xl:text-[9.5px] font-bold text-emerald-600 mt-0.5 whitespace-nowrap">▲ 66.7% vs Last Month</div>
-                <button 
+                <button
                   onClick={() => { setSelectedCategory('Broadcast & Notifications'); showToast('Opened Broadcast & Notifications'); }}
                   className="text-[8.5px] 2xl:text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1.5 cursor-pointer whitespace-nowrap truncate"
                 >
@@ -3354,7 +3354,7 @@ export default function Messages() {
                 <span className="text-[8.5px] 2xl:text-[9.5px] font-black text-slate-400 uppercase tracking-wider block truncate">SENT THIS MONTH</span>
                 <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">372</div>
                 <div className="text-[8.5px] 2xl:text-[9.5px] font-bold text-emerald-600 mt-0.5 whitespace-nowrap">▲ 18.9% vs Last Month</div>
-                <button 
+                <button
                   onClick={() => { setSelectedCategory('Templates & Automation'); showToast('Opened Templates & Automation'); }}
                   className="text-[8.5px] 2xl:text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1.5 cursor-pointer whitespace-nowrap truncate"
                 >
@@ -3373,7 +3373,7 @@ export default function Messages() {
                 <span className="text-[8.5px] 2xl:text-[9.5px] font-black text-slate-400 uppercase tracking-wider block truncate">DELIVERY SUCCESS RATE</span>
                 <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">97.8%</div>
                 <div className="text-[8.5px] 2xl:text-[9.5px] font-bold text-emerald-600 mt-0.5 whitespace-nowrap">▲ 2.4% vs Last Month</div>
-                <button 
+                <button
                   onClick={() => { setSelectedCategory('Customer Communications'); showToast('Opened Customer Communications'); }}
                   className="text-[8.5px] 2xl:text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1.5 cursor-pointer whitespace-nowrap truncate"
                 >
@@ -3389,12 +3389,12 @@ export default function Messages() {
             {/* Search input */}
             <div className="relative flex-1">
               <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input 
-                type="text" 
+              <input
+                type="text"
                 placeholder="Search messages, contacts, conversations..."
-                value={searchQuery} 
-                onChange={(e) => setSearchQuery(e.target.value)} 
-                className="w-full pl-8 pr-7 py-1.5 text-xs font-semibold bg-slate-50/70 border border-slate-200 rounded-md outline-none focus:border-blue-500 focus:bg-white transition-all text-slate-800 placeholder-slate-400" 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-8 pr-7 py-1.5 text-xs font-semibold bg-slate-50/70 border border-slate-200 rounded-md outline-none focus:border-blue-500 focus:bg-white transition-all text-slate-800 placeholder-slate-400"
               />
               {searchQuery && (
                 <button onClick={() => setSearchQuery('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
@@ -3405,7 +3405,7 @@ export default function Messages() {
 
             {/* Dropdown 1: Categories */}
             <div className="relative shrink-0">
-              <button 
+              <button
                 onClick={() => { setOpenCategoryDropdown(!openCategoryDropdown); setOpenParticipantDropdown(false); setOpenBranchDropdown(false); setOpenStatusDropdown(false); }}
                 className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
               >
@@ -3421,8 +3421,8 @@ export default function Messages() {
                     'Broadcast & Notifications',
                     'Templates & Automation'
                   ].map(cat => (
-                    <button 
-                      key={cat} 
+                    <button
+                      key={cat}
                       onClick={() => { setSelectedCategory(cat); setOpenCategoryDropdown(false); showToast(`Navigated to ${cat}`); }}
                       className={`w-full text-left px-3 py-1.5 font-semibold transition-colors flex items-center justify-between ${selectedCategory === cat ? 'bg-blue-50 text-blue-600 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
                     >
@@ -3436,7 +3436,7 @@ export default function Messages() {
 
             {/* Dropdown 2: Participants */}
             <div className="relative shrink-0">
-              <button 
+              <button
                 onClick={() => { setOpenParticipantDropdown(!openParticipantDropdown); setOpenCategoryDropdown(false); setOpenBranchDropdown(false); setOpenStatusDropdown(false); }}
                 className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
               >
@@ -3446,8 +3446,8 @@ export default function Messages() {
               {openParticipantDropdown && (
                 <div className="absolute top-full left-0 mt-1 w-44 bg-white border border-slate-200 rounded-xl shadow-xl z-20 overflow-hidden py-1 text-xs">
                   {['All Participants', 'Drivers', 'Customers', 'Internal Team', 'System Alerts'].map(part => (
-                    <button 
-                      key={part} 
+                    <button
+                      key={part}
                       onClick={() => { setSelectedParticipant(part); setOpenParticipantDropdown(false); }}
                       className={`w-full text-left px-3 py-1.5 font-semibold transition-colors flex items-center justify-between ${selectedParticipant === part ? 'bg-blue-50 text-blue-600 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
                     >
@@ -3461,7 +3461,7 @@ export default function Messages() {
 
             {/* Dropdown 3: Branches */}
             <div className="relative shrink-0">
-              <button 
+              <button
                 onClick={() => { setOpenBranchDropdown(!openBranchDropdown); setOpenCategoryDropdown(false); setOpenParticipantDropdown(false); setOpenStatusDropdown(false); }}
                 className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
               >
@@ -3471,8 +3471,8 @@ export default function Messages() {
               {openBranchDropdown && (
                 <div className="absolute top-full left-0 mt-1 w-44 bg-white border border-slate-200 rounded-xl shadow-xl z-20 overflow-hidden py-1 text-xs">
                   {['All Branches', 'Sydney Branch', 'Melbourne Branch', 'Brisbane Branch', 'Perth Branch'].map(b => (
-                    <button 
-                      key={b} 
+                    <button
+                      key={b}
                       onClick={() => { setSelectedBranch(b); setOpenBranchDropdown(false); }}
                       className={`w-full text-left px-3 py-1.5 font-semibold transition-colors flex items-center justify-between ${selectedBranch === b ? 'bg-blue-50 text-blue-600 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
                     >
@@ -3486,7 +3486,7 @@ export default function Messages() {
 
             {/* Dropdown 4: Status */}
             <div className="relative shrink-0">
-              <button 
+              <button
                 onClick={() => { setOpenStatusDropdown(!openStatusDropdown); setOpenCategoryDropdown(false); setOpenParticipantDropdown(false); setOpenBranchDropdown(false); }}
                 className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
               >
@@ -3496,8 +3496,8 @@ export default function Messages() {
               {openStatusDropdown && (
                 <div className="absolute top-full left-0 mt-1 w-36 bg-white border border-slate-200 rounded-xl shadow-xl z-20 overflow-hidden py-1 text-xs">
                   {['All Status', 'Unread', 'Read', 'Archived', 'Flagged'].map(st => (
-                    <button 
-                      key={st} 
+                    <button
+                      key={st}
                       onClick={() => { setSelectedStatus(st); setOpenStatusDropdown(false); }}
                       className={`w-full text-left px-3 py-1.5 font-semibold transition-colors flex items-center justify-between ${selectedStatus === st ? 'bg-blue-50 text-blue-600 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
                     >
@@ -3511,7 +3511,7 @@ export default function Messages() {
 
             {/* Date Range Picker Input */}
             <div className="relative shrink-0">
-              <button 
+              <button
                 onClick={() => setShowDatePicker(!showDatePicker)}
                 className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
               >
@@ -3525,7 +3525,7 @@ export default function Messages() {
                   <div className="font-bold text-slate-900 mb-1.5">Select Date Range</div>
                   <div className="space-y-1">
                     {['01 May 2025 - 31 May 2025', '01 Apr 2025 - 30 Apr 2025', 'Q1 2025 (Jan - Mar)', 'Year to Date 2025'].map(range => (
-                      <button 
+                      <button
                         key={range}
                         onClick={() => { setDateRange(range); setShowDatePicker(false); showToast(`Date updated: ${range}`); }}
                         className={`w-full text-left px-2 py-1 rounded text-xs font-medium cursor-pointer ${dateRange === range ? 'bg-blue-50 text-blue-600 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
@@ -3540,7 +3540,7 @@ export default function Messages() {
 
             {/* Filter Action Buttons */}
             <div className="flex items-center gap-1.5 shrink-0">
-              <button 
+              <button
                 onClick={handleResetFilters}
                 className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
               >
@@ -3548,7 +3548,7 @@ export default function Messages() {
                 <span>Filters</span>
               </button>
 
-              <button 
+              <button
                 onClick={() => showToast('Refreshing data...')}
                 className="p-1.5 text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
               >
@@ -3559,7 +3559,7 @@ export default function Messages() {
 
           {/* MIDDLE DASHBOARD ROW (3 COLUMNS SIDE BY SIDE) */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5">
-            
+
             {/* COLUMN 1: INBOX (UNREAD FIRST) (Span 3 - Linked to Conversations) */}
             <div className="lg:col-span-3 bg-white border border-slate-200/80 rounded-xl p-3 shadow-2xs flex flex-col justify-between w-full">
               <div>
@@ -3575,17 +3575,17 @@ export default function Messages() {
                   {contactsList.slice(0, 6).map((item) => {
                     const isSelected = activeContactId === item.id;
                     return (
-                      <div 
+                      <div
                         key={item.id}
                         onClick={() => { setActiveContactId(item.id); setSelectedCategory('Conversations'); }}
                         className={`p-2 rounded-lg border transition-all cursor-pointer flex items-start justify-between group ${isSelected ? 'bg-[#EEF2FF]/70 border-[#6366F1]/40 shadow-xs' : 'border-slate-100 hover:border-slate-200 bg-slate-50/30 hover:bg-slate-50'}`}
                       >
                         <div className="flex items-start gap-2 overflow-hidden pr-1">
                           {item.avatarImg ? (
-                            <img 
-                              src={item.avatarImg} 
-                              alt={item.name} 
-                              className="w-8 h-8 rounded-full object-cover shrink-0 mt-0.5 shadow-2xs" 
+                            <img
+                              src={item.avatarImg}
+                              alt={item.name}
+                              className="w-8 h-8 rounded-full object-cover shrink-0 mt-0.5 shadow-2xs"
                             />
                           ) : (
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-black text-[10.5px] mt-0.5 shadow-2xs ${item.avatarBg}`}>
@@ -3635,17 +3635,17 @@ export default function Messages() {
 
                 <div className="space-y-1.5">
                   {contactsList.map((item) => (
-                    <div 
+                    <div
                       key={item.id}
                       onClick={() => { setActiveContactId(item.id); setSelectedCategory('Conversations'); }}
                       className="py-1.5 px-2.5 rounded-lg border border-slate-100 hover:border-slate-200 bg-slate-50/20 hover:bg-slate-50 transition-all cursor-pointer flex items-center justify-between group"
                     >
                       <div className="flex items-center gap-2 overflow-hidden pr-1">
                         {item.avatarImg ? (
-                          <img 
-                            src={item.avatarImg} 
-                            alt={item.name} 
-                            className="w-7 h-7 rounded-full object-cover shrink-0 shadow-2xs" 
+                          <img
+                            src={item.avatarImg}
+                            alt={item.name}
+                            className="w-7 h-7 rounded-full object-cover shrink-0 shadow-2xs"
                           />
                         ) : (
                           <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 font-extrabold text-[10px] shadow-2xs ${item.avatarBg}`}>
@@ -3680,7 +3680,7 @@ export default function Messages() {
 
             {/* COLUMN 3: ANNOUNCEMENTS & MESSAGE ACTIVITY (Span 4 - Linked to Broadcast & Notifications) */}
             <div className="lg:col-span-4 flex flex-col gap-3.5 w-full">
-              
+
               {/* TOP BLOCK: ANNOUNCEMENTS */}
               <div className="bg-white border border-slate-200/80 rounded-xl p-3 shadow-2xs flex flex-col justify-between flex-1">
                 <div>
@@ -3785,8 +3785,8 @@ export default function Messages() {
           <div className="bg-white border border-slate-200/80 rounded-xl p-3 shadow-2xs">
             <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-wider mb-2.5">QUICK ACTIONS</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2.5">
-              
-              <button 
+
+              <button
                 onClick={() => setShowNewMessageModal(true)}
                 className="p-2.5 rounded-xl border border-slate-200 hover:border-blue-400 bg-slate-50/50 hover:bg-blue-50/30 transition-all text-left group cursor-pointer flex items-center gap-2.5"
               >
@@ -3799,7 +3799,7 @@ export default function Messages() {
                 </div>
               </button>
 
-              <button 
+              <button
                 onClick={() => { setSelectedCategory('Broadcast & Notifications'); setShowBroadcastModal(true); }}
                 className="p-2.5 rounded-xl border border-slate-200 hover:border-emerald-400 bg-slate-50/50 hover:bg-emerald-50/30 transition-all text-left group cursor-pointer flex items-center gap-2.5"
               >
@@ -3812,7 +3812,7 @@ export default function Messages() {
                 </div>
               </button>
 
-              <button 
+              <button
                 onClick={() => { setSelectedCategory('Templates & Automation'); showToast('Opened Templates'); }}
                 className="p-2.5 rounded-xl border border-slate-200 hover:border-amber-400 bg-slate-50/50 hover:bg-amber-50/30 transition-all text-left group cursor-pointer flex items-center gap-2.5"
               >
@@ -3825,7 +3825,7 @@ export default function Messages() {
                 </div>
               </button>
 
-              <button 
+              <button
                 onClick={() => { setSelectedCategory('Templates & Automation'); showToast('Opened Scheduled Messages'); }}
                 className="p-2.5 rounded-xl border border-slate-200 hover:border-purple-400 bg-slate-50/50 hover:bg-purple-50/30 transition-all text-left group cursor-pointer flex items-center gap-2.5"
               >
@@ -3838,7 +3838,7 @@ export default function Messages() {
                 </div>
               </button>
 
-              <button 
+              <button
                 onClick={() => { setSelectedCategory('Customer Communications'); showToast('Opened Customer Contacts'); }}
                 className="p-2.5 rounded-xl border border-slate-200 hover:border-indigo-400 bg-slate-50/50 hover:bg-indigo-50/30 transition-all text-left group cursor-pointer flex items-center gap-2.5"
               >
@@ -3851,7 +3851,7 @@ export default function Messages() {
                 </div>
               </button>
 
-              <button 
+              <button
                 onClick={() => { setSelectedCategory('Conversations'); showToast('Opened Conversations'); }}
                 className="p-2.5 rounded-xl border border-slate-200 hover:border-sky-400 bg-slate-50/50 hover:bg-sky-50/30 transition-all text-left group cursor-pointer flex items-center gap-2.5"
               >
@@ -3867,70 +3867,7 @@ export default function Messages() {
             </div>
           </div>
 
-          {/* DEVELOPER NOTES - MESSAGES DASHBOARD BANNER */}
-          <div className="bg-[#312E81] text-white border border-[#4338CA] rounded-xl p-4 shadow-lg">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-6 h-6 rounded bg-[#4338CA] flex items-center justify-center text-amber-300 font-mono text-xs font-black">
-                {'</>'}
-              </div>
-              <h3 className="text-xs font-black uppercase tracking-wider text-indigo-100">DEVELOPER NOTES - MODULE 12 MESSAGES ARCHITECTURE</h3>
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 text-[10px]">
-              <div>
-                <h4 className="font-extrabold text-amber-300 mb-1">MESSAGES DASHBOARD</h4>
-                <ul className="space-y-0.5 text-indigo-100 font-medium list-disc list-inside">
-                  <li>Central hub overview.</li>
-                  <li>6 Key metric cards.</li>
-                  <li>Real-time message activity.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-amber-300 mb-1">CONVERSATIONS</h4>
-                <ul className="space-y-0.5 text-indigo-100 font-medium list-disc list-inside">
-                  <li>Total conversations.</li>
-                  <li>Recent chats log.</li>
-                  <li>Unread inbox filter.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-amber-300 mb-1">CUSTOMER COMMS</h4>
-                <ul className="space-y-0.5 text-indigo-100 font-medium list-disc list-inside">
-                  <li>Customer contact search.</li>
-                  <li>Client message history.</li>
-                  <li>POD & invoice chats.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-amber-300 mb-1">BROADCASTS</h4>
-                <ul className="space-y-0.5 text-indigo-100 font-medium list-disc list-inside">
-                  <li>Announcements hub.</li>
-                  <li>Broadcast alerts to drivers.</li>
-                  <li>System maintenance logs.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-amber-300 mb-1">TEMPLATES & AUTO</h4>
-                <ul className="space-y-0.5 text-indigo-100 font-medium list-disc list-inside">
-                  <li>Saved message templates.</li>
-                  <li>Scheduled message queues.</li>
-                  <li>AI reply automation.</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="mt-3 pt-2.5 border-t border-[#4338CA] flex flex-col sm:flex-row items-center justify-between text-[9.5px] font-bold text-indigo-200 gap-2">
-              <span>Module 12 Architecture Tree Ready • All times shown in local time (AEST)</span>
-              <span className="flex items-center gap-1 text-emerald-300">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                Data auto-refreshes every 5 minutes 🔄
-              </span>
-            </div>
-          </div>
 
         </div>
       )}

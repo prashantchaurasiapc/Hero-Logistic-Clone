@@ -202,7 +202,7 @@ export default function WarehousePickPackDispatch({ wh, onBack }) {
             <span>Home</span> <span style={{ color: '#CBD5E1' }}>›</span> <span>Warehouse</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ cursor: 'pointer' }} onClick={onBack}>Warehouse Details</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ color: '#0F172A' }}>Pick, Pack & Dispatch</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-            <h1 style={{ fontSize: 22, fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.5px' }}>9.5 Pick, Pack & Dispatch – {wh?.name || 'Sydney Head Office Warehouse'}</h1>
+            <h1 style={{ fontSize: 22, fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.5px' }}>Pick, Pack & Dispatch – {wh?.name || 'Sydney Head Office Warehouse'}</h1>
             <div style={{ width: 18, height: 18, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 4 }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
             </div>
@@ -615,83 +615,7 @@ export default function WarehousePickPackDispatch({ wh, onBack }) {
         </div>
       </div>
 
-      {/* DEVELOPER NOTES */}
-      <div style={{ marginTop: 24, background: '#fff', borderRadius: 8, border: '1px solid #E2E8F0', padding: 24, position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: 0, left: 0, width: 4, height: '100%', background: '#8B5CF6' }}></div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 8, background: '#8B5CF6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <CodeIcon />
-          </div>
-          <h2 style={{ fontSize: 16, fontWeight: 800, color: '#4F46E5', margin: 0, letterSpacing: '0.5px' }}>DEVELOPER NOTES - PICK, PACK & DISPATCH</h2>
-        </div>
 
-        <div className="wh-devnotes-cols" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 24 }}>
-          {/* 1 */}
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <div style={{ width: 16, height: 16, borderRadius: '50%', border: '1px solid #4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#4F46E5' }}>1</div>
-              PURPOSE
-            </div>
-            <ul style={{ margin: 0, paddingLeft: 16, fontSize: 11, color: '#1E293B', display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <li>Manage picking, packing and dispatch operations.</li>
-              <li>Ensure accurate and efficient order fulfilment.</li>
-              <li>Provide visibility of tasks and dispatch status.</li>
-            </ul>
-          </div>
-          {/* 2 */}
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <div style={{ width: 16, height: 16, borderRadius: '50%', border: '1px solid #4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#4F46E5' }}>2</div>
-              KEY FEATURES
-            </div>
-            <ul style={{ margin: 0, paddingLeft: 16, fontSize: 11, color: '#1E293B', display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <li>Pick task creation and assignment.</li>
-              <li>Picking, packing, staging and dispatch flow.</li>
-              <li>Wave planning and task prioritisation.</li>
-              <li>Real-time progress and updates.</li>
-            </ul>
-          </div>
-          {/* 3 */}
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <div style={{ width: 16, height: 16, borderRadius: '50%', border: '1px solid #4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#4F46E5' }}>3</div>
-              AUTOMATION & ALERTS
-            </div>
-            <ul style={{ margin: 0, paddingLeft: 16, fontSize: 11, color: '#1E293B', display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <li>Alert for overdue or delayed tasks.</li>
-              <li>Auto-assign tasks based on availability.</li>
-              <li>Notify when orders are ready for dispatch.</li>
-              <li>AI suggestions for wave optimisation.</li>
-            </ul>
-          </div>
-          {/* 4 */}
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <div style={{ width: 16, height: 16, borderRadius: '50%', border: '1px solid #4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#4F46E5' }}>4</div>
-              PERMISSIONS
-            </div>
-            <ul style={{ margin: 0, paddingLeft: 16, fontSize: 11, color: '#1E293B', display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <li>Super Admin: Full access.</li>
-              <li>Admin/Manager: Full access.</li>
-              <li>Warehouse Staff: Assigned tasks only.</li>
-              <li>Dispatcher: Dispatch and view only.</li>
-            </ul>
-          </div>
-          {/* 5 */}
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <div style={{ width: 16, height: 16, borderRadius: '50%', border: '1px solid #4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#4F46E5' }}>5</div>
-              DATA SOURCES
-            </div>
-            <ul style={{ margin: 0, paddingLeft: 16, fontSize: 11, color: '#1E293B', display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <li>Sales Orders & Purchase Orders.</li>
-              <li>Inventory & Stock module.</li>
-              <li>Warehouse Locations.</li>
-              <li>Shipments & Loads modules.</li>
-            </ul>
-          </div>
-        </div>
-      </div>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16, gap: 24, fontSize: 11, color: '#64748B', fontWeight: 500 }}>
         <div>All times shown in your local time (AEST)</div>

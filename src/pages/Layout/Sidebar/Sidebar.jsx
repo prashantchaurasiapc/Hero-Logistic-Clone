@@ -84,7 +84,7 @@ const roleConfigs = {
       { icon: <FiGrid />, label: 'Command Centre', path: '/company-admin/command-centre' },
       { icon: <FiUsers />, label: 'Customers', path: '/company-admin/customers' },
       { icon: <FiBox />, label: 'Loads', path: '/company-admin/loads' },
-      { icon: <FiInbox />, label: 'Load Inbox', path: '/company-admin/load-inbox', badge: 'AI' },
+
       { icon: <FiUsers />, label: 'Drivers', path: '/company-admin/drivers' },
       { icon: <FiTruck />, label: 'Vehicles', path: '/company-admin/vehicles' },
       { icon: <FiLayers />, label: 'Assets', path: '/company-admin/assets' },

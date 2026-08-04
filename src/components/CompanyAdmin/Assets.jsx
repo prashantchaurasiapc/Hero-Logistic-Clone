@@ -313,7 +313,7 @@ export default function Assets() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-            8.1 Assets List <CheckCircle2 size={20} className="text-purple-600 fill-purple-100" />
+            Assets List <CheckCircle2 size={20} className="text-purple-600 fill-purple-100" />
           </h1>
           <p className="text-slate-500 text-xs font-semibold mt-1">View and manage all non-vehicle assets across all branches.</p>
         </div>
@@ -835,71 +835,7 @@ export default function Assets() {
         </div>
       </div>
 
-      {/* DEVELOPER NOTES */}
-      <div className="mt-8 bg-purple-50/50 rounded-2xl border border-purple-100 p-4 sm:p-6 shadow-sm mb-6 sm:mb-8">
-        <h4 className="text-xs font-black text-purple-900 flex items-center gap-2 mb-4 uppercase tracking-widest">
-          <Info size={14} className="text-purple-600 shrink-0" /> Developer Notes - Assets List
-        </h4>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
-          <div className="bg-white/60 sm:bg-transparent p-3.5 sm:p-0 rounded-xl border border-purple-100/60 sm:border-0">
-            <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
-              <Key size={12} className="shrink-0" /> 1. Purpose
-            </div>
-            <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
-              <li>Central list of all non-vehicle assets.</li>
-              <li>Supports tracking, maintenance, compliance, and assignments.</li>
-              <li>Provides quick filtering and reporting.</li>
-            </ul>
-          </div>
-          <div className="bg-white/60 sm:bg-transparent p-3.5 sm:p-0 rounded-xl border border-purple-100/60 sm:border-0">
-            <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
-              <Settings size={12} className="shrink-0" /> 2. Key Features
-            </div>
-            <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
-              <li>Search, filters, and sorting.</li>
-              <li>Category, type, branch, and status filters.</li>
-              <li>Asset thumbnails and key details.</li>
-              <li>Bulk actions via More Actions menu.</li>
-            </ul>
-          </div>
-          <div className="bg-white/60 sm:bg-transparent p-3.5 sm:p-0 rounded-xl border border-purple-100/60 sm:border-0">
-            <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
-              <Zap size={12} className="shrink-0" /> 3. Automation & Alerts
-            </div>
-            <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
-              <li>AI detects due dates from documents (AI add-on).</li>
-              <li>Automatic maintenance and compliance reminders.</li>
-              <li>Status auto-updates based on maintenance or compliance expiry.</li>
-            </ul>
-          </div>
-          <div className="bg-white/60 sm:bg-transparent p-3.5 sm:p-0 rounded-xl border border-purple-100/60 sm:border-0">
-            <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
-              <Shield size={12} className="shrink-0" /> 4. Permissions
-            </div>
-            <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
-              <li>Super Admin: Full access.</li>
-              <li>Admin/Manager: Create, edit, assign.</li>
-              <li>Staff: View assigned assets only.</li>
-              <li>Dispatch: View assets relevant to operations.</li>
-            </ul>
-          </div>
-          <div className="bg-white/60 sm:bg-transparent p-3.5 sm:p-0 rounded-xl border border-purple-100/60 sm:border-0">
-            <div className="flex items-center gap-1.5 mb-2 text-[10px] font-black text-purple-800 uppercase tracking-widest">
-              <Database size={12} className="shrink-0" /> 5. Data Sources
-            </div>
-            <ul className="text-[10px] font-medium text-slate-600 space-y-1.5 list-disc pl-3">
-              <li>Assets module.</li>
-              <li>Maintenance module.</li>
-              <li>Compliance module.</li>
-              <li>Assignments & Activity logs.</li>
-            </ul>
-          </div>
-        </div>
-        <div className="mt-4 pt-4 border-t border-purple-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-[9px] font-bold text-slate-400">
-          <span>All times shown in your local time (AEST)</span>
-          <span className="flex items-center gap-1"><RotateCcw size={10} /> Data auto-refreshes every 5 minutes</span>
-        </div>
-      </div>
+
       
       {/* Edit Asset Modal */}
       {editAssetModal && (

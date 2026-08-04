@@ -1,26 +1,26 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  FileText, 
-  Clock, 
-  Calendar, 
-  Star, 
-  Download, 
-  Search, 
-  ChevronDown, 
+import {
+  FileText,
+  Clock,
+  Calendar,
+  Star,
+  Download,
+  Search,
+  ChevronDown,
   ChevronRight,
-  Filter, 
-  RefreshCw, 
-  Plus, 
-  TrendingUp, 
-  AlertTriangle, 
-  Truck, 
-  Shield, 
-  DollarSign, 
-  PieChart, 
-  HelpCircle, 
-  MoreHorizontal, 
-  CheckCircle2, 
-  UserCheck, 
+  Filter,
+  RefreshCw,
+  Plus,
+  TrendingUp,
+  AlertTriangle,
+  Truck,
+  Shield,
+  DollarSign,
+  PieChart,
+  HelpCircle,
+  MoreHorizontal,
+  CheckCircle2,
+  UserCheck,
   X,
   Code,
   ArrowRight,
@@ -344,11 +344,11 @@ export default function Reports() {
               <button onClick={() => setShowCustomReportModal(false)} className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer">
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={() => {
                   setShowCustomReportModal(false);
                   showToast('Custom report template created successfully!');
-                }} 
+                }}
                 className="px-4 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 shadow-sm cursor-pointer"
               >
                 Create Report
@@ -362,7 +362,7 @@ export default function Reports() {
       {showExportModal && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-[9999] flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl border border-slate-200 max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150">
-            
+
             {/* Header */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
@@ -382,39 +382,36 @@ export default function Reports() {
             {/* 3 Selectable File Format Cards */}
             <div className="grid grid-cols-3 gap-3">
               {/* CSV Card */}
-              <button 
+              <button
                 onClick={() => setSelectedExportFormat('CSV')}
-                className={`p-4 rounded-2xl text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-1 ${
-                  selectedExportFormat === 'CSV' 
-                    ? 'border-2 border-blue-600 bg-blue-50/40 shadow-xs' 
+                className={`p-4 rounded-2xl text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-1 ${selectedExportFormat === 'CSV'
+                    ? 'border-2 border-blue-600 bg-blue-50/40 shadow-xs'
                     : 'border border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
-                }`}
+                  }`}
               >
                 <div className={`text-base font-black ${selectedExportFormat === 'CSV' ? 'text-blue-600' : 'text-slate-800'}`}>CSV</div>
                 <div className={`text-[11px] font-bold ${selectedExportFormat === 'CSV' ? 'text-blue-500' : 'text-slate-400'}`}>Spreadsheet</div>
               </button>
 
               {/* PDF Card */}
-              <button 
+              <button
                 onClick={() => setSelectedExportFormat('PDF')}
-                className={`p-4 rounded-2xl text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-1 ${
-                  selectedExportFormat === 'PDF' 
-                    ? 'border-2 border-blue-600 bg-blue-50/40 shadow-xs' 
+                className={`p-4 rounded-2xl text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-1 ${selectedExportFormat === 'PDF'
+                    ? 'border-2 border-blue-600 bg-blue-50/40 shadow-xs'
                     : 'border border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
-                }`}
+                  }`}
               >
                 <div className={`text-base font-black ${selectedExportFormat === 'PDF' ? 'text-blue-600' : 'text-slate-800'}`}>PDF</div>
                 <div className={`text-[11px] font-bold ${selectedExportFormat === 'PDF' ? 'text-blue-500' : 'text-slate-400'}`}>Document</div>
               </button>
 
               {/* XLSX Card */}
-              <button 
+              <button
                 onClick={() => setSelectedExportFormat('XLSX')}
-                className={`p-4 rounded-2xl text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-1 ${
-                  selectedExportFormat === 'XLSX' 
-                    ? 'border-2 border-blue-600 bg-blue-50/40 shadow-xs' 
+                className={`p-4 rounded-2xl text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-1 ${selectedExportFormat === 'XLSX'
+                    ? 'border-2 border-blue-600 bg-blue-50/40 shadow-xs'
                     : 'border-2 border-slate-900 bg-white hover:border-slate-800 hover:bg-slate-50'
-                }`}
+                  }`}
               >
                 <div className={`text-base font-black ${selectedExportFormat === 'XLSX' ? 'text-blue-600' : 'text-slate-900'}`}>XLSX</div>
                 <div className={`text-[11px] font-bold ${selectedExportFormat === 'XLSX' ? 'text-blue-500' : 'text-slate-400'}`}>Excel Book</div>
@@ -425,7 +422,7 @@ export default function Reports() {
             <div className="space-y-1.5 pt-1">
               <label className="text-xs font-bold text-slate-800 block">Include Period</label>
               <div className="relative">
-                <select 
+                <select
                   value={exportPeriod}
                   onChange={(e) => setExportPeriod(e.target.value)}
                   className="w-full py-2.5 px-3 bg-slate-50/60 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:border-blue-500 focus:bg-white cursor-pointer appearance-none pr-8 transition-colors"
@@ -441,13 +438,13 @@ export default function Reports() {
 
             {/* Footer Buttons */}
             <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-              <button 
+              <button
                 onClick={() => setShowExportModal(false)}
                 className="px-5 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
               >
                 Close
               </button>
-              <button 
+              <button
                 onClick={handleDownloadExport}
                 className="px-5 py-2 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold transition-all shadow-md hover:shadow-lg flex items-center gap-1.5 cursor-pointer"
               >
@@ -504,11 +501,11 @@ export default function Reports() {
               <button onClick={() => setShowScheduleModal(false)} className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer">
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={() => {
                   setShowScheduleModal(false);
                   showToast('Automated report schedule saved successfully!');
-                }} 
+                }}
                 className="px-4 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 shadow-sm flex items-center gap-1.5 cursor-pointer"
               >
                 <Calendar size={14} /> Save Schedule
@@ -526,7 +523,7 @@ export default function Reports() {
   if (selectedCategory === 'Financial Reports') {
     return (
       <div className="min-h-screen bg-[#F8FAFC] text-slate-800 font-sans p-3 sm:p-4 w-full max-w-full space-y-3.5 text-left">
-        
+
         {/* Toast Alert Notification */}
         {toastMessage && (
           <div className="fixed bottom-6 right-6 bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-2xl z-[9999] flex items-center gap-2 text-xs font-bold animate-in fade-in slide-in-from-bottom-2">
@@ -537,7 +534,7 @@ export default function Reports() {
 
         {/* TOP HEADER SECTION */}
         <div className="flex flex-col gap-2">
-          
+
           {/* Row 1: Breadcrumbs on Left & Top Header Utilities on Right */}
           <div className="flex items-center justify-between gap-2 text-xs flex-wrap sm:flex-nowrap">
             {/* Breadcrumbs */}
@@ -551,7 +548,7 @@ export default function Reports() {
 
             {/* Top Right Utilities */}
             <div className="flex items-center gap-2.5 sm:gap-3.5 ml-auto shrink-0">
-              <button 
+              <button
                 onClick={() => showToast('Help center opened')}
                 className="flex items-center gap-1 text-xs font-bold text-[#4338CA] hover:text-[#312E81] transition-colors cursor-pointer"
               >
@@ -582,7 +579,7 @@ export default function Reports() {
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pt-0.5">
             <div>
               <div className="flex items-start gap-2">
-                <h1 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight leading-snug">11.3 Financial Reports</h1>
+                <h1 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight leading-snug">Financial Reports</h1>
                 <div className="w-5.5 h-5.5 rounded-lg bg-[#EEF2FF] border-2 border-[#6366F1] text-[#6366F1] flex items-center justify-center shrink-0 shadow-2xs mt-0.5 sm:mt-1">
                   <Shield size={12} strokeWidth={2.5} />
                 </div>
@@ -595,7 +592,7 @@ export default function Reports() {
             {/* Right Action Controls */}
             <div className="flex flex-col items-end gap-1.5 shrink-0 w-full sm:w-auto">
               <div className="relative self-end sm:self-auto">
-                <button 
+                <button
                   onClick={() => setOpenMoreActions(!openMoreActions)}
                   className="flex items-center gap-1 text-[10px] font-extrabold text-slate-700 bg-white border border-slate-200 px-2.5 py-0.5 rounded shadow-2xs hover:bg-slate-50 transition-colors cursor-pointer"
                 >
@@ -616,21 +613,21 @@ export default function Reports() {
               </div>
 
               <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
-                <button 
+                <button
                   onClick={() => setShowExportModal(true)}
                   className="col-span-1 sm:col-span-auto justify-center flex items-center gap-1 bg-white border border-slate-200 hover:bg-slate-50 text-[#4338CA] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer hover:border-slate-300 whitespace-nowrap"
                 >
                   <Download size={14} className="text-[#4338CA]" />
                   <span>Export Centre</span>
                 </button>
-                <button 
+                <button
                   onClick={() => setShowScheduleModal(true)}
                   className="col-span-1 sm:col-span-auto justify-center flex items-center gap-1 bg-white border border-slate-200 hover:bg-slate-50 text-[#4338CA] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer hover:border-slate-300 whitespace-nowrap"
                 >
                   <Calendar size={14} className="text-[#4338CA]" />
                   <span>Schedule Report</span>
                 </button>
-                <button 
+                <button
                   onClick={() => setShowCustomReportModal(true)}
                   className="col-span-2 sm:col-span-auto justify-center flex items-center gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-md cursor-pointer hover:shadow-lg whitespace-nowrap"
                 >
@@ -653,7 +650,7 @@ export default function Reports() {
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">TOTAL REVENUE (MTD)</span>
               <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">$1,248,760</div>
               <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 12.6% vs Last Month</div>
-              <button 
+              <button
                 onClick={() => showToast('Opening Total Revenue Report')}
                 className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
               >
@@ -672,7 +669,7 @@ export default function Reports() {
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">TOTAL EXPENSES (MTD)</span>
               <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">$823,415</div>
               <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 8.9% vs Last Month</div>
-              <button 
+              <button
                 onClick={() => showToast('Opening Total Expenses Report')}
                 className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
               >
@@ -691,7 +688,7 @@ export default function Reports() {
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">GROSS PROFIT (MTD)</span>
               <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">$425,345</div>
               <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 15.3% vs Last Month</div>
-              <button 
+              <button
                 onClick={() => showToast('Opening Gross Profit Report')}
                 className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
               >
@@ -710,7 +707,7 @@ export default function Reports() {
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">NET PROFIT (MTD)</span>
               <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">$256,890</div>
               <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 18.7% vs Last Month</div>
-              <button 
+              <button
                 onClick={() => showToast('Opening Net Profit Report')}
                 className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
               >
@@ -729,7 +726,7 @@ export default function Reports() {
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">ACCOUNTS RECEIVABLE</span>
               <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">$654,230</div>
               <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">↑ 6.3% vs Last Month</div>
-              <button 
+              <button
                 onClick={() => showToast('Opening Accounts Receivable Report')}
                 className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
               >
@@ -748,7 +745,7 @@ export default function Reports() {
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">ACCOUNTS PAYABLE</span>
               <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">$213,450</div>
               <div className="text-[9.5px] font-bold text-rose-600 mt-1 whitespace-nowrap">↓ 4.2% vs Last Month</div>
-              <button 
+              <button
                 onClick={() => showToast('Opening Accounts Payable Report')}
                 className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
               >
@@ -764,8 +761,8 @@ export default function Reports() {
           {/* Search input */}
           <div className="relative flex-1">
             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input 
-              type="text" 
+            <input
+              type="text"
               placeholder="Search financial reports by name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -780,7 +777,7 @@ export default function Reports() {
 
           {/* Dropdown 1: Categories */}
           <div className="relative shrink-0">
-            <button 
+            <button
               onClick={() => { setOpenCategoryDropdown(!openCategoryDropdown); setOpenSubCategoryDropdown(false); setOpenBranchDropdown(false); setOpenStatusDropdown(false); }}
               className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
             >
@@ -790,7 +787,7 @@ export default function Reports() {
             {openCategoryDropdown && (
               <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-slate-200 rounded-xl shadow-xl z-20 overflow-hidden py-1 text-xs">
                 {['All Categories', 'Operations Reports', 'Financial Reports', 'Compliance Reports', 'Analytics & Insights'].map(cat => (
-                  <button 
+                  <button
                     key={cat}
                     onClick={() => { setSelectedCategory(cat); setOpenCategoryDropdown(false); }}
                     className={`w-full text-left px-3 py-1.5 font-semibold transition-colors flex items-center justify-between ${selectedCategory === cat ? 'bg-blue-50 text-blue-600 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
@@ -805,7 +802,7 @@ export default function Reports() {
 
           {/* Dropdown 2: Sub-Categories */}
           <div className="relative shrink-0">
-            <button 
+            <button
               onClick={() => { setOpenSubCategoryDropdown(!openSubCategoryDropdown); setOpenCategoryDropdown(false); setOpenBranchDropdown(false); setOpenStatusDropdown(false); }}
               className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
             >
@@ -815,7 +812,7 @@ export default function Reports() {
             {openSubCategoryDropdown && (
               <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-slate-200 rounded-xl shadow-xl z-20 overflow-hidden py-1 text-xs">
                 {['All Sub-Categories', 'Revenue Reports', 'Profit & Loss Reports', 'Expense Reports', 'Cash Flow Reports', 'Tax Reports', 'Payroll Reports'].map(sub => (
-                  <button 
+                  <button
                     key={sub}
                     onClick={() => { setSelectedSubCategory(sub); setOpenSubCategoryDropdown(false); }}
                     className={`w-full text-left px-3 py-1.5 font-semibold transition-colors flex items-center justify-between ${selectedSubCategory === sub ? 'bg-blue-50 text-blue-600 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
@@ -830,7 +827,7 @@ export default function Reports() {
 
           {/* Dropdown 3: Branches */}
           <div className="relative shrink-0">
-            <button 
+            <button
               onClick={() => { setOpenBranchDropdown(!openBranchDropdown); setOpenCategoryDropdown(false); setOpenSubCategoryDropdown(false); setOpenStatusDropdown(false); }}
               className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
             >
@@ -840,7 +837,7 @@ export default function Reports() {
             {openBranchDropdown && (
               <div className="absolute top-full left-0 mt-1 w-44 bg-white border border-slate-200 rounded-xl shadow-xl z-20 overflow-hidden py-1 text-xs">
                 {['All Branches', 'Sydney (Head Office)', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide'].map(br => (
-                  <button 
+                  <button
                     key={br}
                     onClick={() => { setSelectedBranch(br); setOpenBranchDropdown(false); }}
                     className={`w-full text-left px-3 py-1.5 font-semibold transition-colors flex items-center justify-between ${selectedBranch === br ? 'bg-blue-50 text-blue-600 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
@@ -855,7 +852,7 @@ export default function Reports() {
 
           {/* Dropdown 4: Status */}
           <div className="relative shrink-0">
-            <button 
+            <button
               onClick={() => { setOpenStatusDropdown(!openStatusDropdown); setOpenCategoryDropdown(false); setOpenSubCategoryDropdown(false); setOpenBranchDropdown(false); }}
               className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
             >
@@ -865,7 +862,7 @@ export default function Reports() {
             {openStatusDropdown && (
               <div className="absolute top-full left-0 mt-1 w-36 bg-white border border-slate-200 rounded-xl shadow-xl z-20 overflow-hidden py-1 text-xs">
                 {['All Status', 'Active', 'Scheduled', 'Archived'].map(st => (
-                  <button 
+                  <button
                     key={st}
                     onClick={() => { setSelectedStatus(st); setOpenStatusDropdown(false); }}
                     className={`w-full text-left px-3 py-1.5 font-semibold transition-colors flex items-center justify-between ${selectedStatus === st ? 'bg-blue-50 text-blue-600 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
@@ -879,7 +876,7 @@ export default function Reports() {
           </div>
 
           {/* Date Picker Button */}
-          <button 
+          <button
             onClick={() => showToast('Date range selected: 01 May 2025 - 31 May 2025')}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors shrink-0"
           >
@@ -889,14 +886,14 @@ export default function Reports() {
 
           {/* Filters & Refresh Action Buttons */}
           <div className="flex items-center gap-1.5 shrink-0">
-            <button 
+            <button
               onClick={() => showToast('Filter panel opened')}
               className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
             >
               <Filter size={13} className="text-slate-500" />
               <span>Filters</span>
             </button>
-            <button 
+            <button
               onClick={() => showToast('Financial Data refreshed')}
               className="p-1.5 text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
               title="Refresh Data"
@@ -908,7 +905,7 @@ export default function Reports() {
 
         {/* ROW 1: 3-COLUMN LAYOUT (CATEGORIES, REVENUE & PROFIT OVERVIEW GRAPH, TOP REVENUE GENERATORS TABLE) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 w-full">
-          
+
           {/* Column 1: Financial Report Categories (3 Cols) */}
           <div className="lg:col-span-3 bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-2xs flex flex-col justify-between">
             <div>
@@ -928,7 +925,7 @@ export default function Reports() {
                   { title: 'Tax Reports', desc: 'GST, BAS, PAYG and tax summaries', count: '7 Reports', icon: FileCheck, color: 'bg-purple-50 text-purple-600 border-purple-100' },
                   { title: 'Payroll Reports', desc: 'Payroll costs and workforce analysis', count: '9 Reports', icon: Users, color: 'bg-teal-50 text-teal-600 border-teal-100' }
                 ].map((item, idx) => (
-                  <div 
+                  <div
                     key={idx}
                     onClick={() => showToast(`Selected category: ${item.title}`)}
                     className="flex items-center justify-between p-2 rounded-lg border border-slate-100 hover:border-blue-200 hover:bg-slate-50/80 transition-all cursor-pointer group"
@@ -996,46 +993,46 @@ export default function Reports() {
                   <text x="20" y="113" className="text-[8px] fill-slate-400 font-bold">0</text>
 
                   {/* Curve 1: Revenue (#4F46E5) */}
-                  <path 
-                    d="M30 48 Q70 20 110 52 T190 28 T270 42 T350 25 T390 38" 
-                    fill="none" 
-                    stroke="#4F46E5" 
+                  <path
+                    d="M30 48 Q70 20 110 52 T190 28 T270 42 T350 25 T390 38"
+                    fill="none"
+                    stroke="#4F46E5"
                     strokeWidth="2.5"
                   />
                   {/* Revenue Dots */}
                   {[
-                    { cx: 30, cy: 48 }, { cx: 90, cy: 35 }, { cx: 150, cy: 45 }, 
+                    { cx: 30, cy: 48 }, { cx: 90, cy: 35 }, { cx: 150, cy: 45 },
                     { cx: 210, cy: 25 }, { cx: 270, cy: 42 }, { cx: 330, cy: 26 }, { cx: 390, cy: 38 }
                   ].map((pt, i) => (
                     <circle key={i} cx={pt.cx} cy={pt.cy} r="3" fill="#FFFFFF" stroke="#4F46E5" strokeWidth="2" />
                   ))}
 
                   {/* Curve 2: Gross Profit (#16A34A) */}
-                  <path 
-                    d="M30 75 Q70 65 110 70 T190 60 T270 68 T350 58 T390 66" 
-                    fill="none" 
-                    stroke="#16A34A" 
+                  <path
+                    d="M30 75 Q70 65 110 70 T190 60 T270 68 T350 58 T390 66"
+                    fill="none"
+                    stroke="#16A34A"
                     strokeWidth="2.5"
                   />
                   {/* Gross Profit Dots */}
                   {[
-                    { cx: 30, cy: 75 }, { cx: 90, cy: 68 }, { cx: 150, cy: 71 }, 
+                    { cx: 30, cy: 75 }, { cx: 90, cy: 68 }, { cx: 150, cy: 71 },
                     { cx: 210, cy: 60 }, { cx: 270, cy: 68 }, { cx: 330, cy: 58 }, { cx: 390, cy: 66 }
                   ].map((pt, i) => (
                     <circle key={i} cx={pt.cx} cy={pt.cy} r="3" fill="#FFFFFF" stroke="#16A34A" strokeWidth="2" />
                   ))}
 
                   {/* Curve 3: Net Profit (#EA580C) */}
-                  <path 
-                    d="M30 98 Q70 92 110 95 T190 86 T270 92 T350 85 T390 90" 
-                    fill="none" 
-                    stroke="#EA580C" 
+                  <path
+                    d="M30 98 Q70 92 110 95 T190 86 T270 92 T350 85 T390 90"
+                    fill="none"
+                    stroke="#EA580C"
                     strokeWidth="2"
                     strokeDasharray="4 2"
                   />
                   {/* Net Profit Dots */}
                   {[
-                    { cx: 30, cy: 98 }, { cx: 90, cy: 93 }, { cx: 150, cy: 95 }, 
+                    { cx: 30, cy: 98 }, { cx: 90, cy: 93 }, { cx: 150, cy: 95 },
                     { cx: 210, cy: 86 }, { cx: 270, cy: 92 }, { cx: 330, cy: 85 }, { cx: 390, cy: 90 }
                   ].map((pt, i) => (
                     <circle key={i} cx={pt.cx} cy={pt.cy} r="2.5" fill="#FFFFFF" stroke="#EA580C" strokeWidth="1.5" />
@@ -1111,7 +1108,7 @@ export default function Reports() {
               </div>
             </div>
 
-            <button 
+            <button
               onClick={() => showToast('Showing all revenue customers')}
               className="text-[10px] font-bold text-[#4338CA] hover:underline flex items-center justify-between mt-3 pt-2 border-t border-slate-100 cursor-pointer"
             >
@@ -1178,7 +1175,7 @@ export default function Reports() {
               </div>
             </div>
 
-            <button 
+            <button
               onClick={() => showToast('Opening detailed expenses report')}
               className="text-[10px] font-bold text-[#4338CA] hover:underline flex items-center justify-between mt-3 pt-2 border-t border-slate-100 cursor-pointer"
             >
@@ -1230,7 +1227,7 @@ export default function Reports() {
               </div>
             </div>
 
-            <button 
+            <button
               onClick={() => showToast('Opening branch profitability report')}
               className="text-[10px] font-bold text-[#4338CA] hover:underline flex items-center justify-between mt-3 pt-2 border-t border-slate-100 cursor-pointer"
             >
@@ -1274,7 +1271,7 @@ export default function Reports() {
               </div>
             </div>
 
-            <button 
+            <button
               onClick={() => showToast('Opening cash flow report')}
               className="text-[10px] font-bold text-[#4338CA] hover:underline flex items-center justify-between mt-3 pt-2 border-t border-slate-100 cursor-pointer"
             >
@@ -1364,7 +1361,7 @@ export default function Reports() {
   if (selectedCategory === 'Compliance Reports') {
     return (
       <div className="min-h-screen bg-[#F8FAFC] text-slate-800 font-sans p-3 sm:p-4 w-full max-w-full space-y-3.5 text-left">
-        
+
         {/* Toast Alert Notification */}
         {toastMessage && (
           <div className="fixed bottom-6 right-6 bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-2xl z-[9999] flex items-center gap-2 text-xs font-bold animate-in fade-in slide-in-from-bottom-2">
@@ -1375,7 +1372,7 @@ export default function Reports() {
 
         {/* TOP HEADER SECTION */}
         <div className="flex flex-col gap-2">
-          
+
           {/* Row 1: Breadcrumbs on Left & Top Header Utilities on Right */}
           <div className="flex items-center justify-between gap-2 text-xs flex-wrap sm:flex-nowrap">
             {/* Breadcrumbs */}
@@ -1389,7 +1386,7 @@ export default function Reports() {
 
             {/* Top Right Utilities */}
             <div className="flex items-center gap-2.5 sm:gap-3.5 ml-auto shrink-0">
-              <button 
+              <button
                 onClick={() => showToast('Help center opened')}
                 className="flex items-center gap-1 text-xs font-bold text-[#4338CA] hover:text-[#312E81] transition-colors cursor-pointer"
               >
@@ -1420,7 +1417,7 @@ export default function Reports() {
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pt-0.5">
             <div>
               <div className="flex items-start gap-2">
-                <h1 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight leading-snug">11.4 Compliance Reports</h1>
+                <h1 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight leading-snug">Compliance Reports</h1>
                 <div className="w-5.5 h-5.5 rounded-lg bg-[#EEF2FF] border-2 border-[#6366F1] text-[#6366F1] flex items-center justify-center shrink-0 shadow-2xs mt-0.5 sm:mt-1">
                   <ShieldCheck size={12} strokeWidth={2.5} />
                 </div>
@@ -1433,7 +1430,7 @@ export default function Reports() {
             {/* Right Action Controls */}
             <div className="flex flex-col items-end gap-1.5 shrink-0 w-full sm:w-auto">
               <div className="relative self-end sm:self-auto">
-                <button 
+                <button
                   onClick={() => setOpenMoreActions(!openMoreActions)}
                   className="flex items-center gap-1 text-[10px] font-extrabold text-slate-700 bg-white border border-slate-200 px-2.5 py-0.5 rounded shadow-2xs hover:bg-slate-50 transition-colors cursor-pointer"
                 >
@@ -1454,21 +1451,21 @@ export default function Reports() {
               </div>
 
               <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
-                <button 
+                <button
                   onClick={() => setShowExportModal(true)}
                   className="col-span-1 sm:col-span-auto justify-center flex items-center gap-1 bg-white border border-slate-200 hover:bg-slate-50 text-[#4338CA] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer hover:border-slate-300 whitespace-nowrap"
                 >
                   <Download size={14} className="text-[#4338CA]" />
                   <span>Export Centre</span>
                 </button>
-                <button 
+                <button
                   onClick={() => setShowScheduleModal(true)}
                   className="col-span-1 sm:col-span-auto justify-center flex items-center gap-1 bg-white border border-slate-200 hover:bg-slate-50 text-[#4338CA] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer hover:border-slate-300 whitespace-nowrap"
                 >
                   <Calendar size={14} className="text-[#4338CA]" />
                   <span>Schedule Report</span>
                 </button>
-                <button 
+                <button
                   onClick={() => setShowCustomReportModal(true)}
                   className="col-span-2 sm:col-span-auto justify-center flex items-center gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-md cursor-pointer hover:shadow-lg whitespace-nowrap"
                 >
@@ -1493,7 +1490,7 @@ export default function Reports() {
                 <div className="text-xl sm:text-2xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">92.6%</div>
                 <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 3.4% vs Last Month</div>
               </div>
-              <button 
+              <button
                 onClick={() => showToast('Opening Total Compliance Report')}
                 className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer whitespace-nowrap"
               >
@@ -1514,7 +1511,7 @@ export default function Reports() {
                 <div className="text-xl sm:text-2xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">37</div>
                 <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">↑ 12.1% vs Last Month</div>
               </div>
-              <button 
+              <button
                 onClick={() => showToast('Opening Expiring Compliance Report')}
                 className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer whitespace-nowrap"
               >
@@ -1535,7 +1532,7 @@ export default function Reports() {
                 <div className="text-xl sm:text-2xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">14</div>
                 <div className="text-[9.5px] font-bold text-rose-600 mt-1 whitespace-nowrap">↓ -22.2% vs Last Month</div>
               </div>
-              <button 
+              <button
                 onClick={() => showToast('Opening Expired Items Report')}
                 className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer whitespace-nowrap"
               >
@@ -1556,7 +1553,7 @@ export default function Reports() {
                 <div className="text-xl sm:text-2xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">88.1%</div>
                 <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 2.7% vs Last Month</div>
               </div>
-              <button 
+              <button
                 onClick={() => showToast('Opening Drivers Compliance Report')}
                 className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer whitespace-nowrap"
               >
@@ -1577,7 +1574,7 @@ export default function Reports() {
                 <div className="text-xl sm:text-2xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">91.3%</div>
                 <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 4.1% vs Last Month</div>
               </div>
-              <button 
+              <button
                 onClick={() => showToast('Opening Vehicles Compliance Report')}
                 className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer whitespace-nowrap"
               >
@@ -1598,7 +1595,7 @@ export default function Reports() {
                 <div className="text-xl sm:text-2xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">1,245</div>
                 <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 5.6% vs Last Month</div>
               </div>
-              <button 
+              <button
                 onClick={() => showToast('Opening Document Compliance Report')}
                 className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer whitespace-nowrap"
               >
@@ -1614,8 +1611,8 @@ export default function Reports() {
           {/* Search input */}
           <div className="relative flex-1">
             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input 
-              type="text" 
+            <input
+              type="text"
               placeholder="Search compliance reports by name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -1630,7 +1627,7 @@ export default function Reports() {
 
           {/* Dropdown 1: Categories */}
           <div className="relative shrink-0">
-            <button 
+            <button
               onClick={() => { setOpenCategoryDropdown(!openCategoryDropdown); setOpenSubCategoryDropdown(false); setOpenBranchDropdown(false); setOpenStatusDropdown(false); }}
               className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
             >
@@ -1640,7 +1637,7 @@ export default function Reports() {
             {openCategoryDropdown && (
               <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-slate-200 rounded-xl shadow-xl z-20 overflow-hidden py-1 text-xs">
                 {['All Categories', 'Operations Reports', 'Financial Reports', 'Compliance Reports', 'Analytics & Insights'].map(cat => (
-                  <button 
+                  <button
                     key={cat}
                     onClick={() => { setSelectedCategory(cat); setOpenCategoryDropdown(false); }}
                     className={`w-full text-left px-3 py-1.5 font-semibold transition-colors flex items-center justify-between ${selectedCategory === cat ? 'bg-blue-50 text-blue-600 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
@@ -1655,7 +1652,7 @@ export default function Reports() {
 
           {/* Dropdown 2: Sub-Categories */}
           <div className="relative shrink-0">
-            <button 
+            <button
               onClick={() => { setOpenSubCategoryDropdown(!openSubCategoryDropdown); setOpenCategoryDropdown(false); setOpenBranchDropdown(false); setOpenStatusDropdown(false); }}
               className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
             >
@@ -1665,7 +1662,7 @@ export default function Reports() {
             {openSubCategoryDropdown && (
               <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-slate-200 rounded-xl shadow-xl z-20 overflow-hidden py-1 text-xs">
                 {['All Sub-Categories', 'Driver Compliance', 'Vehicle Compliance', 'Insurance Compliance', 'Dangerous Goods (DG)', 'NHVR & Fatigue', 'Other Compliance'].map(sub => (
-                  <button 
+                  <button
                     key={sub}
                     onClick={() => { setSelectedSubCategory(sub); setOpenSubCategoryDropdown(false); }}
                     className={`w-full text-left px-3 py-1.5 font-semibold transition-colors flex items-center justify-between ${selectedSubCategory === sub ? 'bg-blue-50 text-blue-600 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
@@ -1680,7 +1677,7 @@ export default function Reports() {
 
           {/* Dropdown 3: Branches */}
           <div className="relative shrink-0">
-            <button 
+            <button
               onClick={() => { setOpenBranchDropdown(!openBranchDropdown); setOpenCategoryDropdown(false); setOpenSubCategoryDropdown(false); setOpenStatusDropdown(false); }}
               className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
             >
@@ -1690,7 +1687,7 @@ export default function Reports() {
             {openBranchDropdown && (
               <div className="absolute top-full left-0 mt-1 w-44 bg-white border border-slate-200 rounded-xl shadow-xl z-20 overflow-hidden py-1 text-xs">
                 {['All Branches', 'Sydney (Head Office)', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide'].map(br => (
-                  <button 
+                  <button
                     key={br}
                     onClick={() => { setSelectedBranch(br); setOpenBranchDropdown(false); }}
                     className={`w-full text-left px-3 py-1.5 font-semibold transition-colors flex items-center justify-between ${selectedBranch === br ? 'bg-blue-50 text-blue-600 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
@@ -1705,7 +1702,7 @@ export default function Reports() {
 
           {/* Dropdown 4: Status */}
           <div className="relative shrink-0">
-            <button 
+            <button
               onClick={() => { setOpenStatusDropdown(!openStatusDropdown); setOpenCategoryDropdown(false); setOpenSubCategoryDropdown(false); setOpenBranchDropdown(false); }}
               className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
             >
@@ -1715,7 +1712,7 @@ export default function Reports() {
             {openStatusDropdown && (
               <div className="absolute top-full left-0 mt-1 w-36 bg-white border border-slate-200 rounded-xl shadow-xl z-20 overflow-hidden py-1 text-xs">
                 {['All Status', 'Active', 'Scheduled', 'Archived'].map(st => (
-                  <button 
+                  <button
                     key={st}
                     onClick={() => { setSelectedStatus(st); setOpenStatusDropdown(false); }}
                     className={`w-full text-left px-3 py-1.5 font-semibold transition-colors flex items-center justify-between ${selectedStatus === st ? 'bg-blue-50 text-blue-600 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
@@ -1729,7 +1726,7 @@ export default function Reports() {
           </div>
 
           {/* Date Picker Button */}
-          <button 
+          <button
             onClick={() => showToast('Date range selected: 01 May 2025 - 31 May 2025')}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors shrink-0"
           >
@@ -1739,14 +1736,14 @@ export default function Reports() {
 
           {/* Filters & Refresh Action Buttons */}
           <div className="flex items-center gap-1.5 shrink-0">
-            <button 
+            <button
               onClick={() => showToast('Filter panel opened')}
               className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
             >
               <Filter size={13} className="text-slate-500" />
               <span>Filters</span>
             </button>
-            <button 
+            <button
               onClick={() => showToast('Compliance Data refreshed')}
               className="p-1.5 text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
               title="Refresh Data"
@@ -1758,7 +1755,7 @@ export default function Reports() {
 
         {/* ROW 1: 3-COLUMN LAYOUT (CATEGORIES, COMPLIANCE OVERVIEW DONUT, EXPIRING SOON TABLE) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 w-full items-start">
-          
+
           {/* Column 1: Compliance Report Categories (3 Cols) */}
           <div className="lg:col-span-3 bg-white border border-slate-200/80 rounded-xl p-2.5 sm:p-3 shadow-2xs">
             <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-slate-100">
@@ -1777,7 +1774,7 @@ export default function Reports() {
                 { title: 'NHVR & Fatigue', count: '7 Reports', icon: FileCheck, color: 'bg-purple-50 text-purple-600 border-purple-100' },
                 { title: 'Other Compliance', count: '6 Reports', icon: CheckSquare, color: 'bg-teal-50 text-teal-600 border-teal-100' }
               ].map((item, idx) => (
-                <div 
+                <div
                   key={idx}
                   onClick={() => showToast(`Selected category: ${item.title}`)}
                   className="flex items-center justify-between py-1.5 px-2 rounded-lg border border-slate-100 hover:border-blue-200 hover:bg-slate-50/80 transition-all cursor-pointer group"
@@ -1831,7 +1828,7 @@ export default function Reports() {
                       <span className="font-bold text-slate-700 truncate">Compliant</span>
                     </div>
                     <div className="flex items-center gap-3 shrink-0 ml-2">
-                      <span className="font-black text-slate-900">{ (1245).toLocaleString() }</span>
+                      <span className="font-black text-slate-900">{(1245).toLocaleString()}</span>
                       <span className="font-bold text-emerald-600 text-[10px] w-8 text-right">92.6%</span>
                     </div>
                   </div>
@@ -1952,7 +1949,7 @@ export default function Reports() {
               </div>
             </div>
 
-            <button 
+            <button
               onClick={() => showToast('Showing all expiring items')}
               className="text-[10px] font-bold text-[#4338CA] hover:underline flex items-center justify-between mt-2.5 pt-2 border-t border-slate-100 cursor-pointer"
             >
@@ -2066,7 +2063,7 @@ export default function Reports() {
               </div>
             </div>
 
-            <button 
+            <button
               onClick={() => showToast('Showing all expired breaches')}
               className="text-[10px] font-bold text-[#4338CA] hover:underline flex items-center justify-between mt-2.5 pt-2 border-t border-slate-100 cursor-pointer"
             >
@@ -2219,7 +2216,7 @@ export default function Reports() {
   if (selectedCategory === 'Analytics & Insights') {
     return (
       <div className="min-h-screen bg-[#F8FAFC] text-slate-800 font-sans p-3 sm:p-4 w-full max-w-full space-y-3.5 text-left">
-        
+
         {/* Toast Alert Notification */}
         {toastMessage && (
           <div className="fixed bottom-6 right-6 bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-2xl z-[9999] flex items-center gap-2 text-xs font-bold animate-in fade-in slide-in-from-bottom-2">
@@ -2260,7 +2257,7 @@ export default function Reports() {
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pt-0.5">
             <div>
               <div className="flex items-start gap-2">
-                <h1 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight leading-snug">11.5 AI Analytics & Business Intelligence</h1>
+                <h1 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight leading-snug">AI Analytics & Business Intelligence</h1>
                 <div className="w-5.5 h-5.5 rounded-lg bg-[#EEF2FF] border-2 border-[#6366F1] text-[#6366F1] flex items-center justify-center shrink-0 shadow-2xs mt-0.5 sm:mt-1">
                   <Shield size={12} strokeWidth={2.5} />
                 </div>
@@ -2535,12 +2532,12 @@ export default function Reports() {
                 <path d="M 45 90 C 90 80, 95 70, 145 55 S 195 40, 245 35 L 245 128 L 45 128 Z" fill="url(#aiRevenueGradient)" />
                 {/* Actual Revenue Line (Solid Blue) */}
                 <path d="M 45 90 C 90 80, 95 70, 145 55 S 195 40, 245 35" fill="none" stroke="#4338CA" strokeWidth="2" strokeLinecap="round" />
-                {[{x:45,y:90},{x:95,y:75},{x:145,y:55},{x:195,y:42},{x:245,y:35}].map((pt,i)=>(
+                {[{ x: 45, y: 90 }, { x: 95, y: 75 }, { x: 145, y: 55 }, { x: 195, y: 42 }, { x: 245, y: 35 }].map((pt, i) => (
                   <circle key={i} cx={pt.x} cy={pt.y} r="2.5" fill="#4338CA" stroke="#fff" strokeWidth="1" />
                 ))}
                 {/* AI Forecast Line (Dashed Amber) */}
                 <path d="M 245 35 C 290 28, 340 22, 395 18 S 440 15, 445 13" fill="none" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeDasharray="5 3" />
-                {[{x:295,y:26},{x:345,y:20},{x:395,y:16},{x:445,y:13}].map((pt,i)=>(
+                {[{ x: 295, y: 26 }, { x: 345, y: 20 }, { x: 395, y: 16 }, { x: 445, y: 13 }].map((pt, i) => (
                   <circle key={i} cx={pt.x} cy={pt.y} r="2" fill="#F59E0B" stroke="#fff" strokeWidth="1" />
                 ))}
               </svg>
@@ -2645,7 +2642,7 @@ export default function Reports() {
                 ].map((item, i) => (
                   <div key={i} className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 min-w-0">
-                      <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{backgroundColor: item.color}}></div>
+                      <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: item.color }}></div>
                       <span className="font-bold text-slate-700 truncate text-[10px]">{item.label}</span>
                     </div>
                     <div className="flex items-center gap-2 shrink-0 ml-2">
@@ -2760,7 +2757,7 @@ export default function Reports() {
   if (selectedCategory === 'Operations Reports') {
     return (
       <div className="min-h-screen bg-[#F8FAFC] text-slate-800 font-sans p-3 sm:p-4 w-full max-w-full space-y-3.5 text-left">
-        
+
         {/* Toast Alert Notification */}
         {toastMessage && (
           <div className="fixed bottom-6 right-6 bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-2xl z-[9999] flex items-center gap-2 text-xs font-bold animate-in fade-in slide-in-from-bottom-2">
@@ -2771,7 +2768,7 @@ export default function Reports() {
 
         {/* TOP HEADER SECTION */}
         <div className="flex flex-col gap-2">
-          
+
           {/* Row 1: Breadcrumbs on Left & Top Header Utilities on Right */}
           <div className="flex items-center justify-between gap-2 text-xs flex-wrap sm:flex-nowrap">
             {/* Breadcrumbs */}
@@ -2785,7 +2782,7 @@ export default function Reports() {
 
             {/* Top Right Utilities */}
             <div className="flex items-center gap-2.5 sm:gap-3.5 ml-auto shrink-0">
-              <button 
+              <button
                 onClick={() => showToast('Help center opened')}
                 className="flex items-center gap-1 text-xs font-bold text-[#4338CA] hover:text-[#312E81] transition-colors cursor-pointer"
               >
@@ -2816,7 +2813,7 @@ export default function Reports() {
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pt-0.5">
             <div>
               <div className="flex items-start gap-2">
-                <h1 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight leading-snug">11.2 Operations Reports</h1>
+                <h1 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight leading-snug">Operations Reports</h1>
                 {/* Purple Shield Icon */}
                 <div className="w-5.5 h-5.5 rounded-lg bg-[#EEF2FF] border-2 border-[#6366F1] text-[#6366F1] flex items-center justify-center shrink-0 shadow-2xs mt-0.5 sm:mt-1">
                   <Shield size={12} strokeWidth={2.5} />
@@ -2830,7 +2827,7 @@ export default function Reports() {
             {/* Right Action Controls */}
             <div className="flex flex-col items-end gap-1.5 shrink-0 w-full sm:w-auto">
               <div className="relative self-end sm:self-auto">
-                <button 
+                <button
                   onClick={() => setOpenMoreActions(!openMoreActions)}
                   className="flex items-center gap-1 text-[10px] font-extrabold text-slate-700 bg-white border border-slate-200 px-2.5 py-0.5 rounded shadow-2xs hover:bg-slate-50 transition-colors cursor-pointer"
                 >
@@ -2854,21 +2851,21 @@ export default function Reports() {
               </div>
 
               <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
-                <button 
+                <button
                   onClick={() => setShowExportModal(true)}
                   className="col-span-1 sm:col-span-auto justify-center flex items-center gap-1 bg-white border border-slate-200 hover:bg-slate-50 text-[#4338CA] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer hover:border-slate-300 whitespace-nowrap"
                 >
                   <Download size={14} className="text-[#4338CA]" />
                   <span>Export Centre</span>
                 </button>
-                <button 
+                <button
                   onClick={() => setShowScheduleModal(true)}
                   className="col-span-1 sm:col-span-auto justify-center flex items-center gap-1 bg-white border border-slate-200 hover:bg-slate-50 text-[#4338CA] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer hover:border-slate-300 whitespace-nowrap"
                 >
                   <Calendar size={14} className="text-[#4338CA]" />
                   <span>Schedule Report</span>
                 </button>
-                <button 
+                <button
                   onClick={() => setShowCustomReportModal(true)}
                   className="col-span-2 sm:col-span-auto justify-center flex items-center gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-md cursor-pointer hover:shadow-lg whitespace-nowrap"
                 >
@@ -2891,7 +2888,7 @@ export default function Reports() {
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">TOTAL LOADS (MTD)</span>
               <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">428</div>
               <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 12.6% vs Last Month</div>
-              <button 
+              <button
                 onClick={() => showToast('Showing Loads Report')}
                 className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
               >
@@ -2910,7 +2907,7 @@ export default function Reports() {
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">TOTAL DELIVERIES (MTD)</span>
               <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">392</div>
               <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 11.3% vs Last Month</div>
-              <button 
+              <button
                 onClick={() => showToast('Showing Deliveries Report')}
                 className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
               >
@@ -2929,7 +2926,7 @@ export default function Reports() {
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">KILOMETRES (MTD)</span>
               <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">256,780 km</div>
               <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 9.8% vs Last Month</div>
-              <button 
+              <button
                 onClick={() => showToast('Showing Kilometres Report')}
                 className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
               >
@@ -2948,7 +2945,7 @@ export default function Reports() {
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">ACTIVE DRIVERS (MTD)</span>
               <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">68</div>
               <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 6.3% vs Last Month</div>
-              <button 
+              <button
                 onClick={() => showToast('Showing Driver Report')}
                 className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
               >
@@ -2967,7 +2964,7 @@ export default function Reports() {
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">FLEET UTILISATION (MTD)</span>
               <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">78.4%</div>
               <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 5.9% vs Last Month</div>
-              <button 
+              <button
                 onClick={() => showToast('Showing Utilisation Report')}
                 className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
               >
@@ -2983,8 +2980,8 @@ export default function Reports() {
           {/* Search input */}
           <div className="relative flex-1">
             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input 
-              type="text" 
+            <input
+              type="text"
               placeholder="Search operations reports by name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -2999,7 +2996,7 @@ export default function Reports() {
 
           {/* Dropdown 1: Categories */}
           <div className="relative shrink-0">
-            <button 
+            <button
               onClick={() => { setOpenCategoryDropdown(!openCategoryDropdown); setOpenSubCategoryDropdown(false); setOpenBranchDropdown(false); setOpenStatusDropdown(false); }}
               className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
             >
@@ -3009,7 +3006,7 @@ export default function Reports() {
             {openCategoryDropdown && (
               <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-slate-200 rounded-xl shadow-xl z-20 overflow-hidden py-1 text-xs">
                 {['All Categories', 'Operations Reports', 'Financial Reports', 'Compliance Reports', 'Analytics & Insights'].map(cat => (
-                  <button 
+                  <button
                     key={cat}
                     onClick={() => { setSelectedCategory(cat); setOpenCategoryDropdown(false); }}
                     className={`w-full text-left px-3 py-1.5 font-semibold transition-colors flex items-center justify-between ${selectedCategory === cat ? 'bg-blue-50 text-blue-600 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
@@ -3024,7 +3021,7 @@ export default function Reports() {
 
           {/* Dropdown 2: Sub-Categories */}
           <div className="relative shrink-0">
-            <button 
+            <button
               onClick={() => { setOpenSubCategoryDropdown(!openSubCategoryDropdown); setOpenCategoryDropdown(false); setOpenBranchDropdown(false); setOpenStatusDropdown(false); }}
               className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
             >
@@ -3034,7 +3031,7 @@ export default function Reports() {
             {openSubCategoryDropdown && (
               <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-slate-200 rounded-xl shadow-xl z-20 overflow-hidden py-1 text-xs">
                 {['All Sub-Categories', 'Loads Reports', 'Driver Reports', 'Vehicle Reports', 'Customer Reports', 'Branch Reports', 'Warehouse Reports', 'Asset Reports'].map(sub => (
-                  <button 
+                  <button
                     key={sub}
                     onClick={() => { setSelectedSubCategory(sub); setOpenSubCategoryDropdown(false); }}
                     className={`w-full text-left px-3 py-1.5 font-semibold transition-colors flex items-center justify-between ${selectedSubCategory === sub ? 'bg-blue-50 text-blue-600 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
@@ -3049,7 +3046,7 @@ export default function Reports() {
 
           {/* Dropdown 3: Branches */}
           <div className="relative shrink-0">
-            <button 
+            <button
               onClick={() => { setOpenBranchDropdown(!openBranchDropdown); setOpenCategoryDropdown(false); setOpenSubCategoryDropdown(false); setOpenStatusDropdown(false); }}
               className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
             >
@@ -3059,7 +3056,7 @@ export default function Reports() {
             {openBranchDropdown && (
               <div className="absolute top-full left-0 mt-1 w-40 bg-white border border-slate-200 rounded-xl shadow-xl z-20 overflow-hidden py-1 text-xs">
                 {['All Branches', 'Sydney HQ', 'Melbourne Hub', 'Brisbane Depot', 'Perth Terminal'].map(br => (
-                  <button 
+                  <button
                     key={br}
                     onClick={() => { setSelectedBranch(br); setOpenBranchDropdown(false); }}
                     className={`w-full text-left px-3 py-1.5 font-semibold transition-colors flex items-center justify-between ${selectedBranch === br ? 'bg-blue-50 text-blue-600 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
@@ -3074,7 +3071,7 @@ export default function Reports() {
 
           {/* Dropdown 4: Status */}
           <div className="relative shrink-0">
-            <button 
+            <button
               onClick={() => { setOpenStatusDropdown(!openStatusDropdown); setOpenCategoryDropdown(false); setOpenSubCategoryDropdown(false); setOpenBranchDropdown(false); }}
               className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
             >
@@ -3084,7 +3081,7 @@ export default function Reports() {
             {openStatusDropdown && (
               <div className="absolute top-full left-0 mt-1 w-36 bg-white border border-slate-200 rounded-xl shadow-xl z-20 overflow-hidden py-1 text-xs">
                 {['All Status', 'Active', 'Draft', 'Archived'].map(st => (
-                  <button 
+                  <button
                     key={st}
                     onClick={() => { setSelectedStatus(st); setOpenStatusDropdown(false); }}
                     className={`w-full text-left px-3 py-1.5 font-semibold transition-colors flex items-center justify-between ${selectedStatus === st ? 'bg-blue-50 text-blue-600 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
@@ -3099,7 +3096,7 @@ export default function Reports() {
 
           {/* Date Range Picker Input */}
           <div className="relative shrink-0">
-            <button 
+            <button
               onClick={() => setShowDatePicker(!showDatePicker)}
               className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
             >
@@ -3113,7 +3110,7 @@ export default function Reports() {
                 <div className="font-bold text-slate-900 mb-1.5">Select Date Range</div>
                 <div className="space-y-1">
                   {['01 May 2025 - 31 May 2025', '01 Apr 2025 - 30 Apr 2025', 'Q1 2025 (Jan - Mar)', 'Year to Date 2025'].map(range => (
-                    <button 
+                    <button
                       key={range}
                       onClick={() => { setDateRange(range); setShowDatePicker(false); showToast(`Date updated: ${range}`); }}
                       className={`w-full text-left px-2 py-1 rounded text-xs font-medium cursor-pointer ${dateRange === range ? 'bg-blue-50 text-blue-600 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
@@ -3128,15 +3125,15 @@ export default function Reports() {
 
           {/* Filter Action Buttons */}
           <div className="flex items-center gap-1.5 shrink-0">
-            <button 
+            <button
               onClick={handleResetFilters}
               className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
             >
               <Filter size={13} className="text-slate-500" />
               <span>Filters</span>
             </button>
-            
-            <button 
+
+            <button
               onClick={() => showToast('Data refreshed')}
               title="Refresh Data"
               className="p-1.5 text-slate-600 hover:text-slate-900 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
@@ -3148,7 +3145,7 @@ export default function Reports() {
 
         {/* ROW 1: 3 COLUMNS (CATEGORIES | OPERATIONS OVERVIEW MTD | TOP ROUTES) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch w-full">
-          
+
           {/* COLUMN 1: OPERATIONS REPORT CATEGORIES (Span 3) */}
           <div className="lg:col-span-4 xl:col-span-3 bg-white border border-slate-200/80 rounded-lg p-2.5 shadow-2xs flex flex-col justify-between w-full">
             <div>
@@ -3164,7 +3161,7 @@ export default function Reports() {
                 {operationsCategories.map((cat, idx) => {
                   const Icon = cat.icon;
                   return (
-                    <div 
+                    <div
                       key={idx}
                       onClick={() => showToast(`Filtered by ${cat.title}`)}
                       className="py-1 px-2 rounded-md border border-slate-100 hover:border-slate-200 bg-slate-50/40 hover:bg-slate-50 transition-all cursor-pointer flex items-center justify-between group"
@@ -3249,17 +3246,17 @@ export default function Reports() {
                   ))}
 
                   {/* Purple Fill under top curve */}
-                  <path 
-                    d="M 45 45 Q 95 30, 150 48 T 250 35 T 350 42 T 450 38 L 450 125 L 45 125 Z" 
-                    fill="url(#opPurpleGradient)" 
+                  <path
+                    d="M 45 45 Q 95 30, 150 48 T 250 35 T 350 42 T 450 38 L 450 125 L 45 125 Z"
+                    fill="url(#opPurpleGradient)"
                   />
 
                   {/* Line 1: Loads (Purple) */}
-                  <path 
-                    d="M 45 45 Q 95 30, 150 48 T 250 35 T 350 42 T 450 38" 
-                    fill="none" 
-                    stroke="#4F46E5" 
-                    strokeWidth="2" 
+                  <path
+                    d="M 45 45 Q 95 30, 150 48 T 250 35 T 350 42 T 450 38"
+                    fill="none"
+                    stroke="#4F46E5"
+                    strokeWidth="2"
                     strokeLinecap="round"
                   />
                   {[{ x: 45, y: 45 }, { x: 150, y: 48 }, { x: 250, y: 35 }, { x: 350, y: 42 }, { x: 450, y: 38 }].map((pt, i) => (
@@ -3267,11 +3264,11 @@ export default function Reports() {
                   ))}
 
                   {/* Line 2: Deliveries (Green) */}
-                  <path 
-                    d="M 45 70 Q 95 60, 150 72 T 250 58 T 350 65 T 450 62" 
-                    fill="none" 
-                    stroke="#10B981" 
-                    strokeWidth="2" 
+                  <path
+                    d="M 45 70 Q 95 60, 150 72 T 250 58 T 350 65 T 450 62"
+                    fill="none"
+                    stroke="#10B981"
+                    strokeWidth="2"
                     strokeLinecap="round"
                   />
                   {[{ x: 45, y: 70 }, { x: 150, y: 72 }, { x: 250, y: 58 }, { x: 350, y: 65 }, { x: 450, y: 62 }].map((pt, i) => (
@@ -3279,11 +3276,11 @@ export default function Reports() {
                   ))}
 
                   {/* Line 3: Kilometres 000s (Orange) */}
-                  <path 
-                    d="M 45 95 Q 95 90, 150 98 T 250 85 T 350 90 T 450 88" 
-                    fill="none" 
-                    stroke="#F97316" 
-                    strokeWidth="2" 
+                  <path
+                    d="M 45 95 Q 95 90, 150 98 T 250 85 T 350 90 T 450 88"
+                    fill="none"
+                    stroke="#F97316"
+                    strokeWidth="2"
                     strokeLinecap="round"
                   />
                   {[{ x: 45, y: 95 }, { x: 150, y: 98 }, { x: 250, y: 85 }, { x: 350, y: 90 }, { x: 450, y: 88 }].map((pt, i) => (
@@ -3291,11 +3288,11 @@ export default function Reports() {
                   ))}
 
                   {/* Line 4: Utilisation % (Blue) */}
-                  <path 
-                    d="M 45 35 Q 95 40, 150 32 T 250 28 T 350 34 T 450 30" 
-                    fill="none" 
-                    stroke="#0284C7" 
-                    strokeWidth="2" 
+                  <path
+                    d="M 45 35 Q 95 40, 150 32 T 250 28 T 350 34 T 450 30"
+                    fill="none"
+                    stroke="#0284C7"
+                    strokeWidth="2"
                     strokeLinecap="round"
                   />
                   {[{ x: 45, y: 35 }, { x: 150, y: 32 }, { x: 250, y: 28 }, { x: 350, y: 34 }, { x: 450, y: 30 }].map((pt, i) => (
@@ -3385,7 +3382,7 @@ export default function Reports() {
 
         {/* ROW 2: 3 COLUMNS (RECENTLY RUN | REPORT SCHEDULES | OPERATIONS INSIGHTS) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch w-full">
-          
+
           {/* COLUMN 1: RECENTLY RUN OPERATIONS REPORTS (Span 4) */}
           <div className="lg:col-span-4 bg-white border border-slate-200/80 rounded-lg p-3 shadow-2xs flex flex-col justify-between w-full">
             <div>
@@ -3423,7 +3420,7 @@ export default function Reports() {
               </div>
             </div>
 
-            <button 
+            <button
               onClick={() => showToast('Viewing report history')}
               className="text-[10px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 mt-2.5 pt-2 border-t border-slate-100 cursor-pointer"
             >
@@ -3464,7 +3461,7 @@ export default function Reports() {
               </div>
             </div>
 
-            <button 
+            <button
               onClick={() => setShowScheduleModal(true)}
               className="text-[10px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 mt-2.5 pt-2 border-t border-slate-100 cursor-pointer"
             >
@@ -3499,7 +3496,7 @@ export default function Reports() {
               </div>
             </div>
 
-            <button 
+            <button
               onClick={() => showToast('Viewing all operations insights')}
               className="text-[10px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 mt-2.5 pt-2 border-t border-slate-100 cursor-pointer"
             >
@@ -3589,7 +3586,7 @@ export default function Reports() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-800 font-sans p-3 sm:p-4 w-full max-w-full space-y-3.5 text-left">
-      
+
       {/* Toast Alert Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-2xl z-[9999] flex items-center gap-2 text-xs font-bold animate-in fade-in slide-in-from-bottom-2">
@@ -3600,7 +3597,7 @@ export default function Reports() {
 
       {/* TOP HEADER SECTION */}
       <div className="flex flex-col gap-2">
-        
+
         {/* Row 1: Breadcrumbs on Left & Top Header Profile Icons on Right */}
         <div className="flex items-center justify-between gap-2 text-xs flex-wrap sm:flex-nowrap">
           {/* Breadcrumbs */}
@@ -3614,7 +3611,7 @@ export default function Reports() {
 
           {/* Top Right Utilities */}
           <div className="flex items-center gap-2.5 sm:gap-3.5 ml-auto shrink-0">
-            <button 
+            <button
               onClick={() => showToast('Help center opened')}
               className="flex items-center gap-1 text-xs font-bold text-[#4338CA] hover:text-[#312E81] transition-colors cursor-pointer"
             >
@@ -3645,7 +3642,7 @@ export default function Reports() {
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pt-0.5">
           <div>
             <div className="flex items-start gap-2">
-              <h1 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight leading-snug">11.1 Reports Dashboard</h1>
+              <h1 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight leading-snug">Reports Dashboard</h1>
               {/* Purple Shield Icon */}
               <div className="w-5.5 h-5.5 rounded-lg bg-[#EEF2FF] border-2 border-[#6366F1] text-[#6366F1] flex items-center justify-center shrink-0 shadow-2xs mt-0.5 sm:mt-1">
                 <Shield size={12} strokeWidth={2.5} />
@@ -3660,7 +3657,7 @@ export default function Reports() {
           <div className="flex flex-col items-end gap-1.5 shrink-0 w-full sm:w-auto">
             {/* More Actions Dropdown Button */}
             <div className="relative self-end sm:self-auto">
-              <button 
+              <button
                 onClick={() => setOpenMoreActions(!openMoreActions)}
                 className="flex items-center gap-1 text-[10px] font-extrabold text-slate-700 bg-white border border-slate-200 px-2.5 py-0.5 rounded shadow-2xs hover:bg-slate-50 transition-colors cursor-pointer"
               >
@@ -3685,21 +3682,21 @@ export default function Reports() {
 
             {/* 3 Main Action Buttons Row */}
             <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
-              <button 
+              <button
                 onClick={() => setShowExportModal(true)}
                 className="col-span-1 sm:col-span-auto justify-center flex items-center gap-1 bg-white border border-slate-200 hover:bg-slate-50 text-[#4338CA] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer hover:border-slate-300 whitespace-nowrap"
               >
                 <Download size={14} className="text-[#4338CA]" />
                 <span>Export Centre</span>
               </button>
-              <button 
+              <button
                 onClick={() => setShowScheduleModal(true)}
                 className="col-span-1 sm:col-span-auto justify-center flex items-center gap-1 bg-white border border-slate-200 hover:bg-slate-50 text-[#4338CA] px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer hover:border-slate-300 whitespace-nowrap"
               >
                 <Calendar size={14} className="text-[#4338CA]" />
                 <span>Schedule Report</span>
               </button>
-              <button 
+              <button
                 onClick={() => setShowCustomReportModal(true)}
                 className="col-span-2 sm:col-span-auto justify-center flex items-center gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-md cursor-pointer hover:shadow-lg whitespace-nowrap"
               >
@@ -3722,7 +3719,7 @@ export default function Reports() {
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">TOTAL REPORTS</span>
             <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">102</div>
             <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 12 vs Last Month</div>
-            <button 
+            <button
               onClick={() => showToast('Showing all 102 reports')}
               className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
             >
@@ -3741,7 +3738,7 @@ export default function Reports() {
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">RECENTLY VIEWED</span>
             <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">12</div>
             <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 3 vs Last Month</div>
-            <button 
+            <button
               onClick={() => showToast('Viewing report history')}
               className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
             >
@@ -3760,7 +3757,7 @@ export default function Reports() {
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">SCHEDULED REPORTS</span>
             <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">15</div>
             <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 4 vs Last Month</div>
-            <button 
+            <button
               onClick={() => setShowScheduleModal(true)}
               className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
             >
@@ -3779,7 +3776,7 @@ export default function Reports() {
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">FAVOURITE REPORTS</span>
             <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">18</div>
             <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 2 vs Last Month</div>
-            <button 
+            <button
               onClick={() => showToast('Showing favourite reports')}
               className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
             >
@@ -3798,7 +3795,7 @@ export default function Reports() {
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">DOWNLOADS (MTD)</span>
             <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">86</div>
             <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 15 vs Last Month</div>
-            <button 
+            <button
               onClick={() => showToast('Showing report downloads')}
               className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
             >
@@ -3814,8 +3811,8 @@ export default function Reports() {
         {/* Search input */}
         <div className="relative flex-1">
           <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input 
-            type="text" 
+          <input
+            type="text"
             placeholder="Search reports by name, category or keyword..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -3830,7 +3827,7 @@ export default function Reports() {
 
         {/* Dropdown 1: Categories */}
         <div className="relative shrink-0">
-          <button 
+          <button
             onClick={() => { setOpenCategoryDropdown(!openCategoryDropdown); setOpenTypeDropdown(false); setOpenStatusDropdown(false); }}
             className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
           >
@@ -3840,7 +3837,7 @@ export default function Reports() {
           {openCategoryDropdown && (
             <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-slate-200 rounded-xl shadow-xl z-20 overflow-hidden py-1 text-xs">
               {['All Categories', 'Operations Reports', 'Financial Reports', 'Compliance Reports', 'Analytics & Insights'].map(cat => (
-                <button 
+                <button
                   key={cat}
                   onClick={() => { setSelectedCategory(cat); setOpenCategoryDropdown(false); }}
                   className={`w-full text-left px-3 py-1.5 font-semibold transition-colors flex items-center justify-between ${selectedCategory === cat ? 'bg-blue-50 text-blue-600 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
@@ -3855,7 +3852,7 @@ export default function Reports() {
 
         {/* Dropdown 2: Report Types */}
         <div className="relative shrink-0">
-          <button 
+          <button
             onClick={() => { setOpenTypeDropdown(!openTypeDropdown); setOpenCategoryDropdown(false); setOpenStatusDropdown(false); }}
             className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
           >
@@ -3865,7 +3862,7 @@ export default function Reports() {
           {openTypeDropdown && (
             <div className="absolute top-full left-0 mt-1 w-44 bg-white border border-slate-200 rounded-xl shadow-xl z-20 overflow-hidden py-1 text-xs">
               {['All Report Types', 'Executive Summary', 'Detailed Audit', 'Trend Analysis', 'Operational Log'].map(type => (
-                <button 
+                <button
                   key={type}
                   onClick={() => { setSelectedType(type); setOpenTypeDropdown(false); }}
                   className={`w-full text-left px-3 py-1.5 font-semibold transition-colors flex items-center justify-between ${selectedType === type ? 'bg-blue-50 text-blue-600 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
@@ -3880,7 +3877,7 @@ export default function Reports() {
 
         {/* Dropdown 3: Status */}
         <div className="relative shrink-0">
-          <button 
+          <button
             onClick={() => { setOpenStatusDropdown(!openStatusDropdown); setOpenCategoryDropdown(false); setOpenTypeDropdown(false); }}
             className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
           >
@@ -3890,7 +3887,7 @@ export default function Reports() {
           {openStatusDropdown && (
             <div className="absolute top-full left-0 mt-1 w-36 bg-white border border-slate-200 rounded-xl shadow-xl z-20 overflow-hidden py-1 text-xs">
               {['All Status', 'Active', 'Draft', 'Archived'].map(st => (
-                <button 
+                <button
                   key={st}
                   onClick={() => { setSelectedStatus(st); setOpenStatusDropdown(false); }}
                   className={`w-full text-left px-3 py-1.5 font-semibold transition-colors flex items-center justify-between ${selectedStatus === st ? 'bg-blue-50 text-blue-600 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
@@ -3905,7 +3902,7 @@ export default function Reports() {
 
         {/* Date Range Picker Input */}
         <div className="relative shrink-0">
-          <button 
+          <button
             onClick={() => setShowDatePicker(!showDatePicker)}
             className="w-full md:w-auto flex items-center justify-between gap-1.5 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
           >
@@ -3919,7 +3916,7 @@ export default function Reports() {
               <div className="font-bold text-slate-900 mb-1.5">Select Date Range</div>
               <div className="space-y-1">
                 {['01 May 2025 - 31 May 2025', '01 Apr 2025 - 30 Apr 2025', 'Q1 2025 (Jan - Mar)', 'Year to Date 2025'].map(range => (
-                  <button 
+                  <button
                     key={range}
                     onClick={() => { setDateRange(range); setShowDatePicker(false); showToast(`Date updated: ${range}`); }}
                     className={`w-full text-left px-2 py-1 rounded text-xs font-medium cursor-pointer ${dateRange === range ? 'bg-blue-50 text-blue-600 font-bold' : 'hover:bg-slate-50 text-slate-700'}`}
@@ -3934,15 +3931,15 @@ export default function Reports() {
 
         {/* Filter Action Buttons */}
         <div className="flex items-center gap-1.5 shrink-0">
-          <button 
+          <button
             onClick={handleResetFilters}
             className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
           >
             <Filter size={13} className="text-slate-500" />
             <span>Filters</span>
           </button>
-          
-          <button 
+
+          <button
             onClick={() => showToast('Data refreshed')}
             title="Refresh Data"
             className="p-1.5 text-slate-600 hover:text-slate-900 bg-slate-50/70 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer transition-colors"
@@ -3954,7 +3951,7 @@ export default function Reports() {
 
       {/* ROW 1: 3 COLUMNS (REPORT CATEGORIES | REPORTS OVERVIEW | RECENTLY VIEWED REPORTS) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch w-full">
-        
+
         {/* COLUMN 1: REPORT CATEGORIES (Span 3.5) */}
         <div className="lg:col-span-4 xl:col-span-3 bg-white border border-slate-200/80 rounded-lg p-2.5 shadow-2xs flex flex-col justify-between w-full">
           <div>
@@ -3970,7 +3967,7 @@ export default function Reports() {
               {reportCategories.map((cat, idx) => {
                 const Icon = cat.icon;
                 return (
-                  <div 
+                  <div
                     key={idx}
                     onClick={() => { setSelectedCategory(cat.title); showToast(`Filtered by ${cat.title}`); }}
                     className="py-1 px-2 rounded-md border border-slate-100 hover:border-slate-200 bg-slate-50/40 hover:bg-slate-50 transition-all cursor-pointer flex items-center justify-between group"
@@ -4050,17 +4047,17 @@ export default function Reports() {
                 ))}
 
                 {/* Shaded Gradient Area under Top Generated Curve */}
-                <path 
-                  d="M 35 60 L 55 50 L 80 40 L 105 50 L 130 35 L 155 42 L 180 35 L 205 30 L 230 48 L 255 42 L 280 50 L 305 30 L 330 42 L 355 35 L 380 48 L 405 55 L 430 45 L 455 52 L 475 55 L 475 125 L 35 125 Z" 
-                  fill="url(#purpleGradientDetailed)" 
+                <path
+                  d="M 35 60 L 55 50 L 80 40 L 105 50 L 130 35 L 155 42 L 180 35 L 205 30 L 230 48 L 255 42 L 280 50 L 305 30 L 330 42 L 355 35 L 380 48 L 405 55 L 430 45 L 455 52 L 475 55 L 475 125 L 35 125 Z"
+                  fill="url(#purpleGradientDetailed)"
                 />
 
                 {/* Line 1: Generated (Purple / Indigo Multi-Point Curve) */}
-                <path 
-                  d="M 35 60 Q 45 55, 55 50 T 80 40 T 105 50 T 130 35 T 155 42 T 180 35 T 205 30 T 230 48 T 255 42 T 280 50 T 305 30 T 330 42 T 355 35 T 380 48 T 405 55 T 430 45 T 455 52 T 475 55" 
-                  fill="none" 
-                  stroke="#4F46E5" 
-                  strokeWidth="2" 
+                <path
+                  d="M 35 60 Q 45 55, 55 50 T 80 40 T 105 50 T 130 35 T 155 42 T 180 35 T 205 30 T 230 48 T 255 42 T 280 50 T 305 30 T 330 42 T 355 35 T 380 48 T 405 55 T 430 45 T 455 52 T 475 55"
+                  fill="none"
+                  stroke="#4F46E5"
+                  strokeWidth="2"
                   strokeLinecap="round"
                 />
                 {[
@@ -4074,11 +4071,11 @@ export default function Reports() {
                 ))}
 
                 {/* Line 2: Downloaded (Green Multi-Point Curve) */}
-                <path 
-                  d="M 35 95 Q 45 90, 55 85 T 80 80 T 105 90 T 130 85 T 155 80 T 180 75 T 205 78 T 230 85 T 255 90 T 280 82 T 305 85 T 330 90 T 355 80 T 380 88 T 405 98 T 430 92 T 455 85 T 475 88" 
-                  fill="none" 
-                  stroke="#10B981" 
-                  strokeWidth="2" 
+                <path
+                  d="M 35 95 Q 45 90, 55 85 T 80 80 T 105 90 T 130 85 T 155 80 T 180 75 T 205 78 T 230 85 T 255 90 T 280 82 T 305 85 T 330 90 T 355 80 T 380 88 T 405 98 T 430 92 T 455 85 T 475 88"
+                  fill="none"
+                  stroke="#10B981"
+                  strokeWidth="2"
                   strokeLinecap="round"
                 />
                 {[
@@ -4092,11 +4089,11 @@ export default function Reports() {
                 ))}
 
                 {/* Line 3: Scheduled (Orange Multi-Point Curve) */}
-                <path 
-                  d="M 35 110 Q 45 110, 55 110 T 80 110 T 105 112 T 130 115 T 155 108 T 180 105 T 205 110 T 230 108 T 255 118 T 280 112 T 305 113 T 330 116 T 355 108 T 380 111 T 405 112 T 430 112 T 455 110 T 475 110" 
-                  fill="none" 
-                  stroke="#F97316" 
-                  strokeWidth="2" 
+                <path
+                  d="M 35 110 Q 45 110, 55 110 T 80 110 T 105 112 T 130 115 T 155 108 T 180 105 T 205 110 T 230 108 T 255 118 T 280 112 T 305 113 T 330 116 T 355 108 T 380 111 T 405 112 T 430 112 T 455 110 T 475 110"
+                  fill="none"
+                  stroke="#F97316"
+                  strokeWidth="2"
                   strokeLinecap="round"
                 />
                 {[
@@ -4164,8 +4161,8 @@ export default function Reports() {
 
                   <div className="flex items-center gap-2 shrink-0">
                     <span className="text-[9.5px] text-slate-400 font-semibold whitespace-nowrap">{item.time}</span>
-                    
-                    <button 
+
+                    <button
                       onClick={() => toggleFavourite(item.title, item.category)}
                       title="Star report"
                       className="text-slate-300 hover:text-amber-400 transition-colors p-0.5"
@@ -4173,7 +4170,7 @@ export default function Reports() {
                       <Star size={13} className={favourites.some(f => f.title === item.title) ? 'fill-amber-400 text-amber-400' : ''} />
                     </button>
 
-                    <button 
+                    <button
                       onClick={() => setActiveItemMenu(activeItemMenu === item.id ? null : item.id)}
                       className="text-slate-400 hover:text-slate-700 p-0.5"
                     >
@@ -4185,7 +4182,7 @@ export default function Reports() {
             </div>
           </div>
 
-          <button 
+          <button
             onClick={() => showToast('Viewing complete historical logs')}
             className="text-[10px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 mt-2.5 pt-2 border-t border-slate-100 cursor-pointer"
           >
@@ -4198,7 +4195,7 @@ export default function Reports() {
 
       {/* ROW 2: 3 COLUMNS (FAVOURITE REPORTS | SCHEDULED REPORTS | AI INSIGHTS MTD) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-stretch">
-        
+
         {/* COLUMN 1: FAVOURITE REPORTS (Span 3) */}
         <div className="lg:col-span-4 xl:col-span-3 bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-2xs flex flex-col justify-between">
           <div>
@@ -4235,7 +4232,7 @@ export default function Reports() {
             </div>
           </div>
 
-          <button 
+          <button
             onClick={() => showToast('Opening favourites configuration')}
             className="text-[10px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 mt-2.5 pt-2 border-t border-slate-100 cursor-pointer"
           >
@@ -4284,7 +4281,7 @@ export default function Reports() {
             </div>
           </div>
 
-          <button 
+          <button
             onClick={() => setShowScheduleModal(true)}
             className="text-[10px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 mt-2.5 pt-2 border-t border-slate-100 cursor-pointer"
           >
@@ -4322,7 +4319,7 @@ export default function Reports() {
             </div>
           </div>
 
-          <button 
+          <button
             onClick={() => showToast('Viewing all AI insights and recommendations')}
             className="text-[10px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 mt-2.5 pt-2 border-t border-slate-100 cursor-pointer"
           >
@@ -4333,62 +4330,6 @@ export default function Reports() {
 
       </div>
 
-      {/* ROW 3: DEVELOPER NOTES BANNER CARD */}
-      <div className="bg-[#EEF2FF] border border-[#C7D2FE] rounded-xl p-4 text-left shadow-2xs">
-        <div className="flex items-center gap-2 mb-3">
-          <Code size={16} className="text-indigo-700" strokeWidth={2.5} />
-          <h2 className="text-xs font-black text-indigo-900 tracking-wider uppercase">
-            DEVELOPER NOTES – REPORTS DASHBOARD
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 text-xs font-semibold text-indigo-950">
-          <div>
-            <div className="font-extrabold text-indigo-900 mb-1">1. PURPOSE</div>
-            <ul className="space-y-0.5 text-[11px] font-medium text-indigo-900/90 leading-tight">
-              <li>• Central hub for all reporting activities.</li>
-              <li>• Quick access to reports, schedules and insights.</li>
-            </ul>
-          </div>
-
-          <div>
-            <div className="font-extrabold text-indigo-900 mb-1">2. KEY FEATURES</div>
-            <ul className="space-y-0.5 text-[11px] font-medium text-indigo-900/90 leading-tight">
-              <li>• Report categories with counts.</li>
-              <li>• Recently viewed and favourites.</li>
-              <li>• Scheduled reports overview.</li>
-              <li>• AI insights for key trends and alerts.</li>
-            </ul>
-          </div>
-
-          <div>
-            <div className="font-extrabold text-indigo-900 mb-1">3. AUTOMATION & ALERTS</div>
-            <ul className="space-y-0.5 text-[11px] font-medium text-indigo-900/90 leading-tight">
-              <li>• Auto-refresh KPIs and charts.</li>
-              <li>• Notify on failed scheduled reports.</li>
-              <li>• Highlight overdue and expiring items.</li>
-            </ul>
-          </div>
-
-          <div>
-            <div className="font-extrabold text-indigo-900 mb-1">4. PERMISSIONS</div>
-            <ul className="space-y-0.5 text-[11px] font-medium text-indigo-900/90 leading-tight">
-              <li>• Admin: Full access to all reports.</li>
-              <li>• Accounts: Create, schedule, export.</li>
-              <li>• Read Only: View and export reports.</li>
-            </ul>
-          </div>
-
-          <div>
-            <div className="font-extrabold text-indigo-900 mb-1">5. DATA SOURCES</div>
-            <ul className="space-y-0.5 text-[11px] font-medium text-indigo-900/90 leading-tight">
-              <li>• All modules and transactions.</li>
-              <li>• Scheduled jobs and logs.</li>
-              <li>• AI analytics engine.</li>
-            </ul>
-          </div>
-        </div>
-      </div>
 
       {/* FOOTER INFORMATIONAL BAR */}
       <div className="flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-400 font-medium px-1 pt-1 gap-2 border-t border-slate-200/50">

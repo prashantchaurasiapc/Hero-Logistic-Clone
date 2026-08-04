@@ -393,68 +393,6 @@ export default function ActiveRun() {
             </div>
           </div>
 
-          {/* DEVELOPER NOTES - START TRIP / ACTIVE RUN */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs text-xs space-y-4">
-            <div className="flex items-center gap-2 text-slate-800 font-black tracking-tight">
-              <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded font-mono text-[11px]">&lt;/&gt;</span>
-              <span>DEVELOPER NOTES – START TRIP / ACTIVE RUN</span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-6 gap-4 text-slate-600 border-t border-slate-100 pt-4">
-              <div>
-                <div className="font-black text-slate-900 uppercase text-[10px] mb-1">1. PURPOSE</div>
-                <ul className="list-disc list-inside space-y-0.5 text-[11px] font-semibold">
-                  <li>Minimal driver view.</li>
-                  <li>Drivers follow three key stages only: Picked Up → Dispatched → Delivered.</li>
-                </ul>
-              </div>
-
-              <div>
-                <div className="font-black text-slate-900 uppercase text-[10px] mb-1">2. KEY FEATURES</div>
-                <ul className="list-disc list-inside space-y-0.5 text-[11px] font-semibold">
-                  <li>Shows pickup progress.</li>
-                  <li>Dispatch only available when all required cars are picked up.</li>
-                  <li>Bold DISPATCH button to start the run.</li>
-                </ul>
-              </div>
-
-              <div>
-                <div className="font-black text-slate-900 uppercase text-[10px] mb-1">3. DATA SOURCES</div>
-                <ul className="list-disc list-inside space-y-0.5 text-[11px] font-semibold">
-                  <li>Loads module</li>
-                  <li>Stops module</li>
-                  <li>Vehicles / Items module</li>
-                  <li>GPS / Telematics</li>
-                </ul>
-              </div>
-
-              <div>
-                <div className="font-black text-slate-900 uppercase text-[10px] mb-1">4. ACTION LOGIC</div>
-                <ul className="list-disc list-inside space-y-0.5 text-[11px] font-semibold">
-                  <li>Picked Up = when all required cars are scanned at pickup.</li>
-                  <li>Dispatch = when driver taps DISPATCH.</li>
-                  <li>Delivered handled in 15.7.</li>
-                </ul>
-              </div>
-
-              <div>
-                <div className="font-black text-slate-900 uppercase text-[10px] mb-1">5. OFFLINE SUPPORT</div>
-                <ul className="list-disc list-inside space-y-0.5 text-[11px] font-semibold">
-                  <li>Dispatch triggers email / SMS to customer.</li>
-                  <li>Delivery notifications handled in 15.7.</li>
-                </ul>
-              </div>
-
-              <div>
-                <div className="font-black text-slate-900 uppercase text-[10px] mb-1">6. PERFORMANCE</div>
-                <ul className="list-disc list-inside space-y-0.5 text-[11px] font-semibold">
-                  <li>Load screen in &lt; 2 sec.</li>
-                  <li>Status updates in real-time.</li>
-                  <li>Data auto-refresh every 5 minutes.</li>
-                </ul>
-              </div>
-            </div>
-          </div>
 
         </div>
 

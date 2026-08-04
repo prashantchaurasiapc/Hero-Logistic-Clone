@@ -262,7 +262,7 @@ const MyLoads = () => {
             <div className="cp-header-row">
               <div className="cp-header-left">
                 <div className="cp-title-group">
-                  <span className="cp-section-code">14.2</span>
+
                   <h1 className="cp-page-title">My Loads / Bookings</h1>
                   <button className="cp-star-btn" title="Bookmark page">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2">
@@ -829,67 +829,6 @@ const MyLoads = () => {
             </div>
 
           </div>
-
-          {/* Developer Notes Banner Block */}
-          <div className="cp-dev-notes-card">
-            <div className="cp-dev-header">
-              <span className="cp-dev-code-icon">&lt;/&gt;</span>
-              <span className="cp-dev-title">DEVELOPER NOTES - MY LOADS / BOOKINGS</span>
-            </div>
-            <div className="cp-dev-grid">
-              <div className="cp-dev-col">
-                <h4 className="cp-dev-col-title">1. PURPOSE</h4>
-                <ul className="cp-dev-list">
-                  <li>Allow customers to view all their loads.</li>
-                  <li>Track status, dates, ETA and history.</li>
-                  <li>Quick access to load details and actions.</li>
-                </ul>
-              </div>
-              <div className="cp-dev-col">
-                <h4 className="cp-dev-col-title">2. KEY FEATURES</h4>
-                <ul className="cp-dev-list">
-                  <li>Status-based tabs and filters.</li>
-                  <li>Search by load #, reference, route, driver.</li>
-                  <li>Load type and date range filters.</li>
-                  <li>Pagination and export options.</li>
-                </ul>
-              </div>
-              <div className="cp-dev-col">
-                <h4 className="cp-dev-col-title">3. LOAD INFORMATION</h4>
-                <ul className="cp-dev-list">
-                  <li>Load number, reference and route.</li>
-                  <li>Type, status, driver and dates.</li>
-                  <li>ETA or delivered time.</li>
-                  <li>Quick view and actions.</li>
-                </ul>
-              </div>
-              <div className="cp-dev-col">
-                <h4 className="cp-dev-col-title">4. DATA SOURCES</h4>
-                <ul className="cp-dev-list">
-                  <li>Loads module.</li>
-                  <li>Live Tracking module.</li>
-                  <li>Driver App updates.</li>
-                  <li>Proof of Delivery (POD).</li>
-                </ul>
-              </div>
-              <div className="cp-dev-col">
-                <h4 className="cp-dev-col-title">5. SECURITY &amp; ACCESS</h4>
-                <ul className="cp-dev-list">
-                  <li>Customers see only their own loads.</li>
-                  <li>Role-based access for sub-users.</li>
-                  <li>Real-time data with permission checks.</li>
-                </ul>
-              </div>
-              <div className="cp-dev-col">
-                <h4 className="cp-dev-col-title">6. PERFORMANCE</h4>
-                <ul className="cp-dev-list">
-                  <li>List loads under 2 seconds.</li>
-                  <li>Use server-side filtering and pagination.</li>
-                  <li>Cache frequently accessed data.</li>
-                </ul>
-              </div>
-            </div>
-          </div>
         </div>
       ) : (
 
@@ -921,7 +860,7 @@ const MyLoads = () => {
             <div className="cp-header-row">
               <div className="cp-header-left">
                 <div className="cp-title-group">
-                  <span className="cp-section-code">14.3</span>
+
                   <h1 className="cp-page-title">Load Details &amp; Tracking</h1>
                   <button className="cp-star-btn" title="Bookmark load">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2">
@@ -1622,66 +1561,6 @@ const MyLoads = () => {
             </div>
 
           </div>
-
-          {/* Developer Notes Banner Block */}
-          <div className="cp-dev-notes-card">
-            <div className="cp-dev-header">
-              <span className="cp-dev-code-icon">&lt;/&gt;</span>
-              <span className="cp-dev-title">DEVELOPER NOTES - LOAD DETAILS &amp; TRACKING</span>
-            </div>
-            <div className="cp-dev-grid">
-              <div className="cp-dev-col">
-                <h4 className="cp-dev-col-title">1. PURPOSE</h4>
-                <ul className="cp-dev-list">
-                  <li>Provide real-time tracking and full visibility.</li>
-                  <li>Show status, timeline, documents and updates.</li>
-                  <li>Enable dispatch communication.</li>
-                </ul>
-              </div>
-              <div className="cp-dev-col">
-                <h4 className="cp-dev-col-title">2. KEY FEATURES</h4>
-                <ul className="cp-dev-list">
-                  <li>Live GPS map with auto-refresh.</li>
-                  <li>Status timeline with real-time updates.</li>
-                  <li>Items, documents, POD and photos.</li>
-                  <li>Message dispatch functionality.</li>
-                </ul>
-              </div>
-              <div className="cp-dev-col">
-                <h4 className="cp-dev-col-title">3. DATA SOURCES</h4>
-                <ul className="cp-dev-list">
-                  <li>Loads, Vehicles, Drivers modules.</li>
-                  <li>Live Tracking (GPS) module.</li>
-                  <li>Documents &amp; PODs module.</li>
-                  <li>Messaging module.</li>
-                </ul>
-              </div>
-              <div className="cp-dev-col">
-                <h4 className="cp-dev-col-title">4. SECURITY &amp; ACCESS</h4>
-                <ul className="cp-dev-list">
-                  <li>Customers see only their own loads.</li>
-                  <li>Role-based access for portal users.</li>
-                  <li>Secure API endpoints and data filters.</li>
-                </ul>
-              </div>
-              <div className="cp-dev-col">
-                <h4 className="cp-dev-col-title">5. PERFORMANCE</h4>
-                <ul className="cp-dev-list">
-                  <li>Map and tracking update every 30-60 sec.</li>
-                  <li>Lazy load documents and images.</li>
-                  <li>Cache location updates for performance.</li>
-                </ul>
-              </div>
-              <div className="cp-dev-col">
-                <h4 className="cp-dev-col-title">6. INTEGRATIONS</h4>
-                <ul className="cp-dev-list">
-                  <li>GPS / Telematics providers.</li>
-                  <li>Document storage (AWS S3/DO Spaces).</li>
-                  <li>Email/SMS for notifications.</li>
-                </ul>
-              </div>
-            </div>
-          </div>
         </div>
       )}
 
@@ -1906,15 +1785,15 @@ const MyLoads = () => {
             </div>
 
             <div style={{ padding: '12px 20px', backgroundColor: '#f8fafc', borderTop: '1px solid #e2e8f0', borderRadius: '0 0 12px 12px', display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={() => setDeletingLoadId(null)}
                 style={{ padding: '8px 16px', borderRadius: 6, border: '1px solid #cbd5e1', background: '#fff', color: '#475569', fontWeight: '600', fontSize: 12, cursor: 'pointer' }}
               >
                 Cancel
               </button>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={handleExecuteDelete}
                 style={{ padding: '8px 18px', borderRadius: 6, border: 'none', background: '#dc2626', color: '#fff', fontWeight: '700', fontSize: 12, cursor: 'pointer' }}
               >

@@ -165,7 +165,7 @@ export default function WarehouseStaffEquipment({ wh, onBack }) {
             <span>Home</span> <span style={{ color: '#CBD5E1' }}>›</span> <span>Warehouse</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ cursor: 'pointer' }} onClick={onBack}>Warehouse Details</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ color: '#0F172A' }}>Warehouse Staff & Equipment</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-            <h1 style={{ fontSize: 22, fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.5px' }}>9.7 Warehouse Staff & Equipment – {wh?.name || 'Sydney Head Office Warehouse'}</h1>
+            <h1 style={{ fontSize: 22, fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.5px' }}>Warehouse Staff & Equipment – {wh?.name || 'Sydney Head Office Warehouse'}</h1>
             <div style={{ width: 18, height: 18, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 4 }}>
               <ShieldIcon color="#8B5CF6" />
             </div>
@@ -651,83 +651,7 @@ export default function WarehouseStaffEquipment({ wh, onBack }) {
         </div>
       </div>
 
-      {/* DEVELOPER NOTES */}
-      <div style={{ marginTop: 24, background: '#fff', borderRadius: 8, border: '1px solid #E2E8F0', padding: 24, position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: 0, left: 0, width: 4, height: '100%', background: '#4F46E5' }}></div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 8, background: '#4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <CodeIcon />
-          </div>
-          <h2 style={{ fontSize: 16, fontWeight: 800, color: '#4F46E5', margin: 0, letterSpacing: '0.5px' }}>DEVELOPER NOTES - WAREHOUSE STAFF & EQUIPMENT</h2>
-        </div>
 
-        <div className="wh-devnotes-cols" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 24 }}>
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <div style={{ width: 16, height: 16, borderRadius: '50%', border: '1px solid #4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#4F46E5' }}>1</div>
-              PURPOSE
-            </div>
-            <ul style={{ margin: 0, paddingLeft: 16, fontSize: 11, color: '#1E293B', display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <li>Manage warehouse team and equipment.</li>
-              <li>Track roles, shifts, skills and training.</li>
-              <li>Monitor equipment, status and maintenance.</li>
-            </ul>
-          </div>
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <div style={{ width: 16, height: 16, borderRadius: '50%', border: '1px solid #4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#4F46E5' }}>2</div>
-              KEY FEATURES
-            </div>
-            <ul style={{ margin: 0, paddingLeft: 16, fontSize: 11, color: '#1E293B', display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <li>Staff directory with roles and shifts.</li>
-              <li>Equipment registry with live status.</li>
-              <li>Maintenance and training tracking.</li>
-              <li>Access zone and permission management.</li>
-            </ul>
-          </div>
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <div style={{ width: 16, height: 16, borderRadius: '50%', border: '1px solid #4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#4F46E5' }}>3</div>
-              AUTOMATION & ALERTS
-            </div>
-            <ul style={{ margin: 0, paddingLeft: 16, fontSize: 11, color: '#1E293B', display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <li>Alert for maintenance due/overdue.</li>
-              <li>Alert for training expiry.</li>
-              <li>Auto-notify equipment offline.</li>
-              <li>AI suggestions for staffing needs.</li>
-            </ul>
-          </div>
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <div style={{ width: 16, height: 16, borderRadius: '50%', border: '1px solid #4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#4F46E5' }}>4</div>
-              PERMISSIONS
-            </div>
-            <ul style={{ margin: 0, paddingLeft: 16, fontSize: 11, color: '#1E293B', display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <li>Super Admin: Full access.</li>
-              <li>Admin/Manager: Full access.</li>
-              <li>Warehouse Staff: View assigned only.</li>
-              <li>Dispatcher: View equipment status.</li>
-            </ul>
-          </div>
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <div style={{ width: 16, height: 16, borderRadius: '50%', border: '1px solid #4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#4F46E5' }}>5</div>
-              DATA SOURCES
-            </div>
-            <ul style={{ margin: 0, paddingLeft: 16, fontSize: 11, color: '#1E293B', display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <li>Warehouse module.</li>
-              <li>Inventory & Stock module.</li>
-              <li>Maintenance module.</li>
-              <li>HR / Training module.</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16, gap: 24, fontSize: 11, color: '#64748B', fontWeight: 500 }}>
-        <div>All times shown in your local time (AEST)</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>• Data auto-refreshes every 5 minutes <RefreshIcon /></div>
-      </div>
 
       {/* ADD STAFF / EQUIPMENT MODAL */}
       {showAddStaffModal && (

@@ -78,7 +78,7 @@ const CustomerDashboard = () => {
         <div className="cp-header-row">
           <div className="cp-header-left">
             <div className="cp-title-group">
-              <span className="cp-section-code">14.1</span>
+
               <h1 className="cp-page-title">Customer Portal Dashboard</h1>
               <button
                 className="cp-star-btn"
@@ -617,29 +617,7 @@ const CustomerDashboard = () => {
 
       </div>
 
-      {/* =========== DEVELOPER NOTES BANNER =========== */}
-      <div className="cp-dev-notes-card">
-        <div className="cp-dev-header">
-          <span className="cp-dev-code-icon">&lt;/&gt;</span>
-          <span className="cp-dev-title">DEVELOPER NOTES – CUSTOMER PORTAL DASHBOARD</span>
-        </div>
-        <div className="cp-dev-grid">
-          {[
-            { title: '1. PURPOSE', items: ['Provide customers with a real-time overview.', 'Show key metrics, loads, invoices and updates.', 'Improve visibility and customer experience.'] },
-            { title: '2. KEY FEATURES', items: ['Summary cards with real-time data.', 'Quick access to loads, invoices and documents.', 'Recent activity and upcoming deliveries.', 'Quick actions for common tasks.'] },
-            { title: '3. DATA SOURCES', items: ['Loads, Invoices, Payments, Documents.', 'Real-time data from operational modules.', 'Customer-specific data only.'] },
-            { title: '4. SECURITY & ACCESS', items: ['Customers see only their own data.', 'Role-based access for portal users.', 'Secure API endpoints and data filters.'] },
-            { title: '5. PERFORMANCE', items: ['Dashboard loads under 2 seconds.', 'Use caching for summary cards.', 'Auto-refresh summary data every 5 minutes.'] },
-          ].map(col => (
-            <div key={col.title} className="cp-dev-col">
-              <h4 className="cp-dev-col-title">{col.title}</h4>
-              <ul className="cp-dev-list">
-                {col.items.map(item => <li key={item}>{item}</li>)}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </div>
+
 
 
 
