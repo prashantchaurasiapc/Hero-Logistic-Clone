@@ -317,8 +317,8 @@ export default function WarehouseHoldingAreas() {
           justify-content: space-between;
           align-items: center;
           margin-bottom: 16px;
-          flex-wrap: wrap;
-          gap: 12px;
+          width: 100%;
+          gap: 16px;
         }
         .wh-st-title {
           font-size: 18px;
@@ -337,6 +337,8 @@ export default function WarehouseHoldingAreas() {
           display: flex;
           align-items: center;
           gap: 8px;
+          margin-left: auto;
+          flex-shrink: 0;
         }
         .wh-btn-export-st {
           height: 36px;

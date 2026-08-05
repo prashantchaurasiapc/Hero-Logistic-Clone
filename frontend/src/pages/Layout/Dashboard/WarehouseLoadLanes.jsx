@@ -262,8 +262,8 @@ export default function WarehouseLoadLanes() {
           justify-content: space-between;
           align-items: center;
           margin-bottom: 16px;
-          flex-wrap: wrap;
-          gap: 12px;
+          width: 100%;
+          gap: 16px;
         }
         .wh-ll-title {
           font-size: 18px;
@@ -279,8 +279,8 @@ export default function WarehouseLoadLanes() {
           margin-top: 2px;
         }
         .wh-btn-create-lane {
-          height: 36px;
-          padding: 0 16px;
+          height: 38px;
+          padding: 0 18px;
           border-radius: 8px;
           border: none;
           background: #FFD400;
@@ -293,6 +293,8 @@ export default function WarehouseLoadLanes() {
           gap: 6px;
           box-shadow: 0 2px 6px rgba(255,212,0,0.3);
           transition: background 0.15s;
+          margin-left: auto;
+          flex-shrink: 0;
         }
         .wh-btn-create-lane:hover { background: #E6C000; }
 
@@ -771,12 +773,12 @@ export default function WarehouseLoadLanes() {
       `}</style>
 
       {/* PAGE HEADER */}
-      <div className="wh-ll-header-row">
+      <div className="wh-ll-header-row flex flex-row justify-between items-center w-full">
         <div>
           <h1 className="wh-ll-title">LOAD LANES (STAGING)</h1>
           <p className="wh-ll-sub">Manage staging areas and monitor loads/items waiting for dispatch.</p>
         </div>
-        <button className="wh-btn-create-lane" onClick={() => setCreateModalOpen(true)}>
+        <button className="wh-btn-create-lane ml-auto flex-shrink-0" onClick={() => setCreateModalOpen(true)}>
           <Plus size={14} />
           <span>Create Load Lane</span>
         </button>
