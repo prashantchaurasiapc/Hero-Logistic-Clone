@@ -1,76 +1,124 @@
 const prisma = require('../utils/prismaClient');
+const { sendSuccess, sendList, sendError } = require('../utils/apiResponse');
+const { buildPrismaQuery, buildPaginationMeta } = require('../utils/queryBuilder');
+const { HTTP_STATUS, ERROR_CODES } = require('../config/constants');
 
-// Get all AiModules
-exports.getAll = async (req, res) => {
+// Get all AiModules with pagination, sorting and filtering
+exports.getAll = async (req, res, next) => {
   try {
-    const data = await prisma.aiModule.findMany();
-    res.status(200).json({ success: true, count: data.length, data });
+    const { where, skip, take, orderBy, currentPage, pageSize } = buildPrismaQuery(req.query);
+    
+    // Optional: Inject tenant scope here if applicable
+    // if (req.tenantId) where.tenantId = req.tenantId;
+
+    const [data, total] = await Promise.all([
+      prisma.aiModule.findMany({
+        where, skip, take, orderBy
+      }),
+      prisma.aiModule.count({ where })
+    ]);
+
+    const meta = buildPaginationMeta(total, currentPage, pageSize, req.query.sort);
+    return sendList(res, data, meta);
   } catch (error) {
-    console.error('Error fetching AiModules:', error);
-    res.status(500).json({ success: false, message: 'Server Error', error: error.message });
+    next(error);
   }
 };
 
 // Get single AiModule by ID
-exports.getById = async (req, res) => {
+exports.getById = async (req, res, next) => {
   try {
-    const data = await prisma.aiModule.findUnique({
-      where: { id: req.params.id }
-    });
+    const where = { id: req.params.id };
+    // if (req.tenantId) where.tenantId = req.tenantId;
+
+    const data = await prisma.aiModule.findFirst({ where });
     
     if (!data) {
-      return res.status(404).json({ success: false, message: 'AiModule not found' });
+      return sendError(res, {
+        code: ERROR_CODES.NOT_FOUND,
+        message: 'AiModule not found'
+      }, HTTP_STATUS.NOT_FOUND);
     }
     
-    res.status(200).json({ success: true, data });
+    return sendSuccess(res, data);
   } catch (error) {
-    console.error('Error fetching AiModule:', error);
-    res.status(500).json({ success: false, message: 'Server Error', error: error.message });
+    next(error);
   }
 };
 
 // Create new AiModule
-exports.create = async (req, res) => {
+exports.create = async (req, res, next) => {
   try {
+    const payload = { ...req.body };
+    // if (req.tenantId) payload.tenantId = req.tenantId;
+
     const data = await prisma.aiModule.create({
-      data: req.body
+      data: payload
     });
-    res.status(201).json({ success: true, data });
+    return sendSuccess(res, data, HTTP_STATUS.CREATED);
   } catch (error) {
-    console.error('Error creating AiModule:', error);
-    res.status(400).json({ success: false, message: 'Invalid data', error: error.message });
+    next(error);
   }
 };
 
-// Update AiModule
-exports.update = async (req, res) => {
+// Update AiModule with Optimistic Concurrency check
+exports.update = async (req, res, next) => {
   try {
-    const data = await prisma.aiModule.update({
-      where: { id: req.params.id },
-      data: req.body
-    });
-    res.status(200).json({ success: true, data });
-  } catch (error) {
-    console.error('Error updating AiModule:', error);
-    if (error.code === 'P2025') {
-      return res.status(404).json({ success: false, message: 'AiModule not found' });
+    const { id } = req.params;
+    const updateData = { ...req.body };
+    
+    const where = { id };
+    // if (req.tenantId) where.tenantId = req.tenantId;
+
+    // Check version if optimistic concurrency is required
+    const ifMatch = req.headers['if-match'];
+    if (ifMatch) {
+      where.version = parseInt(ifMatch.replace(/"/g, ''), 10);
     }
-    res.status(400).json({ success: false, message: 'Invalid data', error: error.message });
+
+    try {
+      const data = await prisma.aiModule.update({
+        where,
+        data: updateData
+      });
+      return sendSuccess(res, data);
+    } catch (e) {
+      if (e.code === 'P2025') {
+        if (ifMatch) {
+          return sendError(res, {
+            code: ERROR_CODES.RESOURCE_CONFLICT,
+            message: 'Resource was updated by another user or does not exist.'
+          }, HTTP_STATUS.CONFLICT);
+        }
+        return sendError(res, {
+          code: ERROR_CODES.NOT_FOUND,
+          message: 'AiModule not found'
+        }, HTTP_STATUS.NOT_FOUND);
+      }
+      throw e;
+    }
+  } catch (error) {
+    next(error);
   }
 };
 
 // Delete AiModule
-exports.delete = async (req, res) => {
+exports.delete = async (req, res, next) => {
   try {
-    await prisma.aiModule.delete({
-      where: { id: req.params.id }
-    });
-    res.status(200).json({ success: true, message: 'AiModule deleted successfully' });
+    const where = { id: req.params.id };
+    // if (req.tenantId) where.tenantId = req.tenantId;
+
+    await prisma.aiModule.delete({ where });
+    
+    // 204 No Content for successful delete
+    return res.status(HTTP_STATUS.NO_CONTENT).send();
   } catch (error) {
-    console.error('Error deleting AiModule:', error);
     if (error.code === 'P2025') {
-      return res.status(404).json({ success: false, message: 'AiModule not found' });
+      return sendError(res, {
+        code: ERROR_CODES.NOT_FOUND,
+        message: 'AiModule not found'
+      }, HTTP_STATUS.NOT_FOUND);
     }
-    res.status(500).json({ success: false, message: 'Server Error', error: error.message });
+    next(error);
   }
 };
