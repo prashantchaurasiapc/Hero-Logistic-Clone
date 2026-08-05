@@ -143,6 +143,133 @@ export default function WarehouseLoadLanes() {
     setTimeout(() => setToast(null), 3500);
   };
 
+  const handlePrintManifest = (laneData) => {
+    const lane = laneData || viewLaneModal;
+    if (!lane) return;
+
+    const printWindow = window.open('', '_blank', 'width=800,height=900');
+    if (!printWindow) {
+      showToast('⚠️ Pop-up blocked! Please allow pop-ups to print manifest.', 'error');
+      return;
+    }
+
+    const items = [
+      { name: 'Toyota Hilux SRS #01', sub: 'VIN: JTDKB3...9901', status: 'Ready' },
+      { name: 'Pallet - Auto Spare Parts (4x)', sub: 'SKU: PAL-778811', status: 'Ready' }
+    ];
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Manifest - ${lane.name} (${lane.area})</title>
+          <style>
+            body { font-family: 'Helvetica Neue', Arial, sans-serif; padding: 32px; color: #0F172A; line-height: 1.5; }
+            .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #0F172A; padding-bottom: 16px; margin-bottom: 24px; }
+            .company { font-size: 22px; font-weight: 900; letter-spacing: -0.5px; color: #0F172A; }
+            .badge { background: #FFD400; color: #0F172A; padding: 6px 14px; font-size: 12px; font-weight: 800; border-radius: 6px; display: inline-block; text-transform: uppercase; }
+            .meta-date { font-size: 11px; color: #64748B; margin-top: 6px; text-align: right; }
+            .title-area { margin-bottom: 24px; background: #F8FAFC; padding: 16px; border-radius: 8px; border: 1px solid #E2E8F0; }
+            .title-area h2 { font-size: 20px; font-weight: 900; margin: 0 0 4px 0; color: #0F172A; }
+            .title-area p { font-size: 12px; color: #64748B; margin: 0; }
+            .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px; }
+            .box { border: 1px solid #CBD5E1; padding: 14px; border-radius: 8px; background: #FFFFFF; }
+            .box-title { font-size: 10.5px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+            .box-value { font-size: 15px; font-weight: 800; color: #0F172A; }
+            .table { width: 100%; border-collapse: collapse; margin-bottom: 36px; margin-top: 12px; }
+            .table th { background: #F1F5F9; font-size: 10.5px; font-weight: 800; color: #475569; text-transform: uppercase; padding: 10px 12px; text-align: left; border-bottom: 2px solid #CBD5E1; }
+            .table td { padding: 10px 12px; border-bottom: 1px solid #E2E8F0; font-size: 12.5px; }
+            .status-badge { background: #DCFCE7; color: #15803D; font-weight: 800; font-size: 10.5px; padding: 3px 8px; border-radius: 4px; }
+            .signatures { display: grid; grid-template-columns: repeat(2, 1fr); gap: 48px; margin-top: 60px; page-break-inside: avoid; }
+            .sig-box { border-top: 2px solid #0F172A; padding-top: 8px; font-size: 12px; font-weight: 800; color: #334155; }
+            .footer-note { margin-top: 40px; text-align: center; font-size: 10px; color: #94A3B8; border-top: 1px solid #F1F5F9; padding-top: 12px; }
+            @media print {
+              body { padding: 0; }
+              @page { size: auto; margin: 15mm; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div>
+              <div class="company">HERO LOGISTICS WMS</div>
+              <div style="font-size: 12px; color: #475569; font-weight: 600; margin-top: 2px;">Official Warehouse Dispatch Manifest</div>
+            </div>
+            <div>
+              <span class="badge">${lane.name}</span>
+              <div class="meta-date">Date: ${new Date().toLocaleDateString('en-GB')} | ${new Date().toLocaleTimeString()}</div>
+            </div>
+          </div>
+
+          <div class="title-area">
+            <h2>${lane.name} - ${lane.area}</h2>
+            <p>Status: <strong>${lane.status}</strong> &bull; Est. Dispatch: <strong>${lane.estDispatch}</strong> &bull; Loads Staged: <strong>${lane.loadsCount}</strong></p>
+          </div>
+
+          <div class="grid">
+            <div class="box">
+              <div class="box-title">LOAD & REFERENCE DETAILS</div>
+              <div class="box-value">${lane.loadRef}</div>
+              <div style="font-size: 11.5px; color: #64748B; margin-top: 4px; font-family: monospace;">Sub-Ref: ${lane.subRef}</div>
+              <div style="font-size: 11px; color: #16A34A; font-weight: 700; margin-top: 6px;">Staging Status: Verified & Sealed</div>
+            </div>
+            <div class="box">
+              <div class="box-title">ASSIGNED DRIVER & VEHICLE</div>
+              <div class="box-value">${lane.driver !== '-' ? lane.driver : 'Unassigned'}</div>
+              <div style="font-size: 11.5px; color: #475569; margin-top: 4px;">Vehicle: ${lane.vehicle !== '-' ? lane.vehicle : 'Pending'}</div>
+              <div style="font-size: 11px; color: #64748B; margin-top: 2px;">Type: ${lane.vehicleType}</div>
+            </div>
+          </div>
+
+          <div style="font-size: 13px; font-weight: 900; color: #0F172A; text-transform: uppercase; letter-spacing: 0.3px;">STAGED CARGO & ITEMS MANIFEST</div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ITEM DESCRIPTION</th>
+                <th>IDENTIFIER / VIN / SKU</th>
+                <th>VERIFICATION STATUS</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${items.map(item => `
+                <tr>
+                  <td><strong>${item.name}</strong></td>
+                  <td style="font-family: monospace; color: #475569;">${item.sub}</td>
+                  <td><span class="status-badge">${item.status}</span></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+
+          <div class="signatures">
+            <div>
+              <div style="height: 40px;"></div>
+              <div class="sig-box">Warehouse Dispatcher Signature</div>
+            </div>
+            <div>
+              <div style="height: 40px;"></div>
+              <div class="sig-box">Driver Acceptance Signature</div>
+            </div>
+          </div>
+
+          <div class="footer-note">
+            Hero Logistics Multi-Tenant WMS Platform &bull; System Generated Manifest &bull; Page 1 of 1
+          </div>
+
+          <script>
+            window.onload = function() {
+              window.print();
+            };
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    showToast(`🖨️ Printing manifest for ${lane.name}...`);
+  };
+
   const filteredLanes = lanes.filter(lane => {
     const matchesSearch = !searchQuery ||
       lane.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -1045,7 +1172,7 @@ export default function WarehouseLoadLanes() {
                                 <div
                                   className="wh-dropdown-item"
                                   onClick={() => {
-                                    showToast(`🖨️ Manifest printed for ${lane.name}`);
+                                    handlePrintManifest(lane);
                                     setActionMenuLaneId(null);
                                   }}
                                 >
@@ -1402,9 +1529,7 @@ export default function WarehouseLoadLanes() {
 
                 <button
                   className="px-3 py-2 border border-slate-300 hover:bg-slate-100 text-slate-700 rounded-lg font-bold text-xs flex items-center gap-1.5 transition"
-                  onClick={() => {
-                    showToast(`🖨️ Printing manifest for ${viewLaneModal.name}`);
-                  }}
+                  onClick={() => handlePrintManifest(viewLaneModal)}
                 >
                   <Printer size={14} />
                   <span>Print</span>
