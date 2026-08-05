@@ -254,6 +254,8 @@ export default function Tools() {
   // ============================================================
   // TAB 5 STATE: BATCH PRINTING
   // ============================================================
+  const [spoolerPaused, setSpoolerPaused] = useState(false);
+  const [spoolerActiveCount, setSpoolerActiveCount] = useState(120);
   const [batchQueue, setBatchQueue] = useState([
     { id: '#PJ-901', name: 'Batch 120 Pallet Barcodes', printer: 'Zebra ZD421 (Dock A)', count: '120 Labels', status: 'Printing (45%)' },
     { id: '#PJ-902', name: 'Outbound Manifest Batch #84', printer: 'HP LaserJet Pro (Office)', count: '24 Pages', status: 'Queued' },
@@ -261,13 +263,65 @@ export default function Tools() {
     { id: '#PJ-900', name: 'Putaway Slips Morning Shift', printer: 'HP LaserJet Pro (Office)', count: '15 Pages', status: 'Completed' }
   ]);
 
-  const handleClearCompletedJobs = () => {
-    setBatchQueue(batchQueue.filter(job => job.status !== 'Completed'));
-    showToast('✓ Cleared completed print jobs from spooler queue');
+  const handlePauseQueue = () => {
+    if (spoolerPaused) {
+      handleResumeSpoolerJobs();
+      return;
+    }
+    setSpoolerPaused(true);
+    setBatchQueue(prev => prev.map(job => 
+      job.status.includes('Printing') ? { ...job, status: 'Paused' } : job
+    ));
+    showToast('⏸ Spooler Queue Paused. Print engine suspended.');
   };
 
-  const handlePauseQueue = () => {
-    showToast('⏸ Spooler Queue Paused');
+  const handleResumeSpoolerJobs = () => {
+    setSpoolerPaused(false);
+    
+    const hasPending = batchQueue.some(j => j.status !== 'Completed');
+    if (!hasPending) {
+      showToast('ℹ️ All spooler jobs are already completed!');
+      return;
+    }
+
+    setBatchQueue(prev => {
+      let foundPrinting = false;
+      return prev.map(job => {
+        if (job.status === 'Completed') return job;
+        if (!foundPrinting) {
+          foundPrinting = true;
+          return { ...job, status: 'Printing (65%)' };
+        }
+        return { ...job, status: 'Queued' };
+      });
+    });
+
+    showToast('🖨️ Resumed Spooler Jobs! Print engine processing queue...');
+
+    setTimeout(() => {
+      setBatchQueue(prev => {
+        const next = [...prev];
+        const printingIdx = next.findIndex(j => j.status.includes('Printing'));
+        if (printingIdx !== -1) {
+          next[printingIdx] = { ...next[printingIdx], status: 'Completed' };
+          if (printingIdx + 1 < next.length && next[printingIdx + 1].status !== 'Completed') {
+            next[printingIdx + 1] = { ...next[printingIdx + 1], status: 'Printing (20%)' };
+          }
+        }
+        return next;
+      });
+      setSpoolerActiveCount(prev => Math.max(0, prev - 40));
+    }, 2200);
+  };
+
+  const handleClearCompletedJobs = () => {
+    const completedCount = batchQueue.filter(job => job.status === 'Completed').length;
+    if (completedCount === 0) {
+      showToast('No completed jobs in the spooler queue to clear.');
+      return;
+    }
+    setBatchQueue(batchQueue.filter(job => job.status !== 'Completed'));
+    showToast(`✓ Cleared ${completedCount} completed print job(s) from spooler queue`);
   };
 
   return (
@@ -1405,10 +1459,16 @@ export default function Tools() {
             <div className="wh-light-card justify-between">
               <div>
                 <div className="wh-card-num-title justify-between">
-                  <span>🖨️ BATCH PRINT SPOOLER QUEUE</span>
+                  <span className="flex items-center gap-2">
+                    <Printer size={16} className="text-amber-600" />
+                    <span>BATCH PRINT SPOOLER QUEUE</span>
+                  </span>
                   <div className="flex gap-2">
-                    <button className="wh-light-filter-btn px-2 py-1 text-[10px]" onClick={handlePauseQueue}>
-                      Pause Spooler
+                    <button 
+                      className={`wh-light-filter-btn px-2.5 py-1 text-[10px] ${spoolerPaused ? 'bg-emerald-50 text-emerald-700 border-emerald-300 font-bold' : ''}`} 
+                      onClick={handlePauseQueue}
+                    >
+                      {spoolerPaused ? '▶ Resume Spooler' : '⏸ Pause Spooler'}
                     </button>
                     <button className="wh-light-filter-btn px-2 py-1 text-[10px] text-red-600 border-red-200 hover:bg-red-50" onClick={handleClearCompletedJobs}>
                       Clear Completed
@@ -1436,7 +1496,7 @@ export default function Tools() {
                           <td className="font-medium text-slate-600">{job.printer}</td>
                           <td className="font-bold text-slate-700">{job.count}</td>
                           <td>
-                            <span className={`px-2 py-0.5 rounded font-extrabold text-[9px] ${job.status.includes('Printing') ? 'bg-amber-100 text-amber-800 animate-pulse' : job.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'}`}>
+                            <span className={`px-2 py-0.5 rounded font-extrabold text-[9px] ${job.status.includes('Printing') ? 'bg-amber-100 text-amber-800 animate-pulse' : job.status === 'Completed' ? 'bg-emerald-50 text-emerald-700' : job.status === 'Paused' ? 'bg-slate-200 text-slate-700' : 'bg-blue-50 text-blue-700'}`}>
                               {job.status}
                             </span>
                           </td>
@@ -1452,9 +1512,12 @@ export default function Tools() {
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-slate-100 flex justify-between items-center mt-3">
-                <span className="text-xs text-slate-400 font-semibold">Print Engine Queue Status: Active (120 Labels Left)</span>
-                <button className="wh-btn-batch-yellow" onClick={() => showToast('✓ Spooler output processing launched!')}>
+              <div className="pt-3 border-t border-slate-100 flex justify-between items-center mt-3 flex-wrap gap-2">
+                <span className="text-xs text-slate-500 font-semibold flex items-center gap-1.5">
+                  <span className={`w-2 h-2 rounded-full ${spoolerPaused ? 'bg-amber-500' : 'bg-emerald-500 animate-ping'}`} />
+                  Print Engine Queue Status: <strong>{spoolerPaused ? 'Paused' : 'Active'} ({spoolerActiveCount} Labels Left)</strong>
+                </span>
+                <button className="wh-btn-batch-yellow" onClick={handleResumeSpoolerJobs}>
                   <Printer size={13} /> Resume Spooler Jobs
                 </button>
               </div>
