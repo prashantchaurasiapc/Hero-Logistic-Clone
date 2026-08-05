@@ -314,6 +314,171 @@ export default function WarehouseHoldingAreas() {
     showToast(`✓ ${selectedAreaForMove} assigned to ${targetLane}!`);
   };
 
+  const handlePrintBarcode = (area) => {
+    if (!area) return;
+    const printWindow = window.open('', '_blank', 'width=800,height=650');
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Location Barcode Label - ${area.code}</title>
+          <style>
+            @page { size: auto; margin: 15mm; }
+            body {
+              font-family: 'Inter', system-ui, -apple-system, sans-serif;
+              color: #0F172A;
+              margin: 0;
+              padding: 20px;
+              background: #fff;
+            }
+            .label-card {
+              border: 3px solid #0F172A;
+              border-radius: 16px;
+              padding: 24px;
+              max-width: 480px;
+              margin: 0 auto;
+              text-align: center;
+              box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            }
+            .header-badge {
+              background: #FFD400;
+              color: #0F172A;
+              font-size: 28px;
+              font-weight: 900;
+              padding: 6px 18px;
+              border-radius: 8px;
+              display: inline-block;
+              letter-spacing: 1px;
+            }
+            .area-title {
+              font-size: 22px;
+              font-weight: 800;
+              margin: 12px 0 2px 0;
+              color: #0F172A;
+            }
+            .sub-loc {
+              font-size: 13px;
+              color: #64748B;
+              font-weight: 600;
+              margin-bottom: 20px;
+            }
+            .barcode-svg {
+              margin: 16px 0;
+            }
+            .details-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 12px;
+              background: #F8FAFC;
+              padding: 12px;
+              border-radius: 8px;
+              border: 1px solid #E2E8F0;
+              text-align: left;
+              font-size: 12px;
+              margin-top: 16px;
+            }
+            .detail-label {
+              font-size: 10px;
+              font-weight: 800;
+              color: #64748B;
+              text-transform: uppercase;
+            }
+            .detail-val {
+              font-size: 12px;
+              font-weight: 800;
+              color: #0F172A;
+            }
+            .footer-notes {
+              margin-top: 16px;
+              font-size: 10px;
+              color: #94A3B8;
+              font-weight: 600;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="label-card">
+            <div class="header-badge">${area.code}</div>
+            <div class="area-title">${area.name}</div>
+            <div class="sub-loc">${area.subLocation}</div>
+
+            <!-- Visual Barcode Graphic -->
+            <div class="barcode-svg">
+              <svg width="280" height="70" viewBox="0 0 280 70">
+                <rect x="10" y="0" width="4" height="50" fill="#0F172A"/>
+                <rect x="18" y="0" width="2" height="50" fill="#0F172A"/>
+                <rect x="24" y="0" width="6" height="50" fill="#0F172A"/>
+                <rect x="34" y="0" width="3" height="50" fill="#0F172A"/>
+                <rect x="40" y="0" width="8" height="50" fill="#0F172A"/>
+                <rect x="52" y="0" width="2" height="50" fill="#0F172A"/>
+                <rect x="58" y="0" width="5" height="50" fill="#0F172A"/>
+                <rect x="66" y="0" width="3" height="50" fill="#0F172A"/>
+                <rect x="73" y="0" width="7" height="50" fill="#0F172A"/>
+                <rect x="84" y="0" width="2" height="50" fill="#0F172A"/>
+                <rect x="90" y="0" width="6" height="50" fill="#0F172A"/>
+                <rect x="100" y="0" width="4" height="50" fill="#0F172A"/>
+                <rect x="108" y="0" width="2" height="50" fill="#0F172A"/>
+                <rect x="114" y="0" width="8" height="50" fill="#0F172A"/>
+                <rect x="126" y="0" width="3" height="50" fill="#0F172A"/>
+                <rect x="133" y="0" width="5" height="50" fill="#0F172A"/>
+                <rect x="142" y="0" width="2" height="50" fill="#0F172A"/>
+                <rect x="148" y="0" width="7" height="50" fill="#0F172A"/>
+                <rect x="159" y="0" width="4" height="50" fill="#0F172A"/>
+                <rect x="167" y="0" width="2" height="50" fill="#0F172A"/>
+                <rect x="173" y="0" width="6" height="50" fill="#0F172A"/>
+                <rect x="183" y="0" width="3" height="50" fill="#0F172A"/>
+                <rect x="190" y="0" width="8" height="50" fill="#0F172A"/>
+                <rect x="202" y="0" width="2" height="50" fill="#0F172A"/>
+                <rect x="208" y="0" width="5" height="50" fill="#0F172A"/>
+                <rect x="216" y="0" width="3" height="50" fill="#0F172A"/>
+                <rect x="223" y="0" width="7" height="50" fill="#0F172A"/>
+                <rect x="234" y="0" width="2" height="50" fill="#0F172A"/>
+                <rect x="240" y="0" width="6" height="50" fill="#0F172A"/>
+                <rect x="250" y="0" width="4" height="50" fill="#0F172A"/>
+                <rect x="258" y="0" width="2" height="50" fill="#0F172A"/>
+                <rect x="264" y="0" width="6" height="50" fill="#0F172A"/>
+                <text x="140" y="66" text-anchor="middle" font-family="monospace" font-size="12" font-weight="bold" fill="#0F172A">
+                  *${area.code}*
+                </text>
+              </svg>
+            </div>
+
+            <div class="details-grid">
+              <div>
+                <div class="detail-label">Zone & Lane</div>
+                <div class="detail-val">${area.zone} • ${area.lane}</div>
+              </div>
+              <div>
+                <div class="detail-label">Total Capacity</div>
+                <div class="detail-val">${area.capacity} Units</div>
+              </div>
+              <div>
+                <div class="detail-label">Current Staged</div>
+                <div class="detail-val">${area.stagedItems || 0} Items</div>
+              </div>
+              <div>
+                <div class="detail-label">Depot Facility</div>
+                <div class="detail-val">Sydney Central Depot</div>
+              </div>
+            </div>
+
+            <div class="footer-notes">
+              HERO LOGISTICS • LOCATION BARCODE LABEL SHEET
+            </div>
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   const getOccupancyBarColor = (pct) => {
     if (pct >= 90) return '#EF4444'; // Red
     if (pct >= 80) return '#F59E0B'; // Amber
@@ -1727,18 +1892,18 @@ export default function WarehouseHoldingAreas() {
       {viewModalArea && (
         <div className="wh-modal-overlay" onClick={() => setViewModalArea(null)}>
           <div className="wh-modal-box" style={{ maxWidth: '560px' }} onClick={e => e.stopPropagation()}>
-            <div className="wh-modal-header" style={{ background: '#0F172A', color: '#FFFFFF', padding: '14px 18px' }}>
+            <div className="wh-modal-header" style={{ background: '#FFFFFF', color: '#0F172A', padding: '14px 18px', borderBottom: '1px solid #E2E8F0' }}>
               <div className="flex items-center gap-3">
                 <div style={{ background: '#FFD400', color: '#0F172A', fontWeight: 900, fontSize: '12px', padding: '4px 8px', borderRadius: '6px' }}>
                   {viewModalArea.code}
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-sm text-white" style={{ margin: 0 }}>{viewModalArea.name}</h3>
-                  <div className="text-[10px] text-slate-400 font-medium">{viewModalArea.subLocation}</div>
+                  <h3 className="font-extrabold text-sm text-slate-900" style={{ margin: 0 }}>{viewModalArea.name}</h3>
+                  <div className="text-[10px] text-slate-500 font-medium">{viewModalArea.subLocation}</div>
                 </div>
               </div>
-              <button onClick={() => setViewModalArea(null)} className="p-1 hover:bg-slate-800 rounded">
-                <X size={18} className="text-slate-400" />
+              <button onClick={() => setViewModalArea(null)} className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-slate-600 transition">
+                <X size={18} />
               </button>
             </div>
 
@@ -1823,9 +1988,7 @@ export default function WarehouseHoldingAreas() {
 
                 <button
                   className="px-3 py-2 border border-slate-300 hover:bg-slate-100 text-slate-700 rounded-lg font-bold text-xs flex items-center gap-1.5 transition"
-                  onClick={() => {
-                    showToast(`🖨️ Barcode labels printed for ${viewModalArea.code}`);
-                  }}
+                  onClick={() => handlePrintBarcode(viewModalArea)}
                 >
                   <Printer size={14} />
                   <span>Print Barcode</span>
