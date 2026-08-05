@@ -882,59 +882,124 @@ export default function CurrentStock() {
         @media (max-width: 1024px) {
           .wh-stock-master-grid { flex-direction: column; }
           .wh-stock-right-col { width: 100%; }
-          .wh-stock-dropdowns-grid { grid-template-columns: repeat(2, 1fr); }
+          .wh-stock-dropdowns-grid { grid-template-columns: repeat(3, 1fr); }
         }
 
         @media (max-width: 768px) {
           .wh-stock-top-bar {
-            padding: 16px 16px 12px 16px;
+            padding: 14px 14px 10px 14px;
             flex-direction: column;
-            align-items: flex-start;
-            gap: 12px;
+            align-items: stretch;
+            gap: 10px;
+          }
+          .wh-stock-title-wrap {
+            width: 100%;
+          }
+          .wh-stock-main-title {
+            font-size: 17px;
           }
           .wh-stock-top-actions {
             width: 100%;
             display: flex;
+            flex-direction: row !important;
             gap: 8px;
+            align-items: center;
           }
-          .wh-stock-top-actions button {
+          .wh-stock-top-actions .wh-btn-yellow {
             flex: 1;
+            display: flex;
+            align-items: center;
             justify-content: center;
-            padding: 0 10px;
+            height: 38px;
+            padding: 0 12px;
             font-size: 11.5px;
+          }
+          .wh-stock-top-actions .wh-btn-secondary {
+            white-space: nowrap;
+            height: 38px;
+            padding: 0 12px;
+            font-size: 11.5px;
+            flex-shrink: 0;
           }
           .wh-stock-master-grid {
             padding: 0 12px 16px 12px;
             gap: 12px;
           }
           .wh-stock-search-row {
-            flex-direction: column;
-            align-items: stretch;
-            gap: 10px;
+            flex-direction: row;
+            align-items: center;
+            gap: 8px;
+          }
+          .wh-stock-search-input-wrap {
+            flex: 1;
           }
           .wh-stock-filter-toggle-btn {
-            width: 100%;
-            justify-content: center;
+            white-space: nowrap;
+            padding: 0 12px;
+            height: 38px;
+            font-size: 11.5px;
+            flex-shrink: 0;
           }
           .wh-stock-dropdowns-grid,
           .wh-stock-dropdowns-grid.second-row {
-            grid-template-columns: 1fr !important;
-            gap: 10px !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 8px !important;
           }
           .wh-stock-results-bar {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 10px;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
           }
           .wh-results-controls {
-            width: 100%;
-            justify-content: space-between;
+            width: auto;
+            gap: 8px;
           }
         }
 
         @media (max-width: 480px) {
           .wh-stock-main-title {
-            font-size: 17px;
+            font-size: 15px;
+            letter-spacing: -0.2px;
+          }
+          .wh-stock-top-bar {
+            padding: 12px 10px 8px 10px;
+          }
+          .wh-stock-top-actions {
+            flex-direction: row !important;
+            gap: 8px;
+            width: 100%;
+          }
+          .wh-stock-top-actions .wh-btn-yellow {
+            flex: 1 !important;
+            width: auto !important;
+            font-size: 11px;
+            padding: 0 10px;
+          }
+          .wh-stock-top-actions .wh-btn-secondary {
+            width: auto !important;
+            font-size: 11px;
+            padding: 0 10px;
+          }
+          .wh-stock-search-input {
+            height: 38px;
+            font-size: 11.5px;
+            padding-left: 36px;
+          }
+          .wh-stock-filter-toggle-btn {
+            height: 38px;
+            padding: 0 10px;
+            font-size: 11px;
+          }
+          .wh-stock-dropdowns-grid,
+          .wh-stock-dropdowns-grid.second-row {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 6px !important;
+          }
+          .wh-filter-group select, .wh-date-input {
+            font-size: 11px !important;
+            height: 34px !important;
+            padding: 0 8px !important;
           }
           .wh-modal-overlay {
             padding: 8px !important;
@@ -946,24 +1011,6 @@ export default function CurrentStock() {
             max-height: 90vh !important;
             overflow-y: auto !important;
             border-radius: 12px !important;
-          }
-          .wh-stock-top-actions {
-            flex-direction: column;
-          }
-          .wh-stock-top-actions button {
-            width: 100%;
-          }
-          .wh-results-controls {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 8px;
-          }
-          .wh-sort-wrap {
-            width: 100%;
-            justify-content: space-between;
-          }
-          .wh-sort-select {
-            flex: 1;
           }
         }
       `}</style>

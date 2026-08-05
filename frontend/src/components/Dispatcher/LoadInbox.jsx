@@ -115,137 +115,136 @@ function DraftModal({ draft, onClose, onApprove, onReject }) {
     <div
       onClick={onClose}
       style={{
-        position: 'fixed', inset: 0, zIndex: 999,
-        background: 'rgba(15,23,42,0.65)',
+        position: 'fixed', inset: 0, zIndex: 999999,
+        background: 'rgba(15,23,42,0.5)', backdropFilter: 'blur(4px)',
         display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px',
       }}
     >
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          background: '#fff', borderRadius: '20px',
-          boxShadow: '0 25px 60px rgba(0,0,0,0.25)',
-          width: '100%', maxWidth: '680px',
-          maxHeight: '90vh', overflow: 'hidden',
+          background: '#ffffff', borderRadius: '18px',
+          boxShadow: '0 20px 50px rgba(0,0,0,0.15)',
+          width: '100%', maxWidth: '540px',
+          maxHeight: '88vh', overflow: 'hidden',
           display: 'flex', flexDirection: 'column',
           border: '1px solid #e2e8f0',
           fontFamily: 'Inter, system-ui, sans-serif',
         }}
       >
-        {/* ── Header ── */}
-        <div style={{ background: '#0f172a', padding: '18px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ width: 38, height: 38, borderRadius: 12, background: 'rgba(99,102,241,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Inbox size={20} color="#818cf8" />
+        {/* ── Header (Clean White) ── */}
+        <div style={{ background: '#ffffff', padding: '16px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: '#f8fafc', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Inbox size={18} color="#475569" />
             </div>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                <span style={{ color: '#fff', fontWeight: 900, fontSize: 16 }}>{draft.id}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                <span style={{ color: '#0f172a', fontWeight: 900, fontSize: 15 }}>{draft.id}</span>
                 <span style={{ color: '#94a3b8', fontWeight: 600, fontSize: 11, fontFamily: 'monospace' }}>({draft.ref})</span>
                 {draft.urgent && (
-                  <span style={{ padding: '2px 8px', borderRadius: 6, background: 'rgba(239,68,68,0.2)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)', fontSize: 9, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    ⚡ URGENT
+                  <span style={{ padding: '2px 7px', borderRadius: 5, background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', fontSize: 9, fontWeight: 800, textTransform: 'uppercase' }}>
+                    URGENT
                   </span>
                 )}
               </div>
-              <p style={{ color: '#64748b', fontSize: 11, margin: '2px 0 0 0' }}>{draft.time} · via {draft.sourceLabel}</p>
+              <p style={{ color: '#64748b', fontSize: 11, margin: '2px 0 0 0', fontWeight: 500 }}>{draft.time} · via {draft.sourceLabel}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: '#94a3b8', borderRadius: 10, padding: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.16)'; e.currentTarget.style.color = '#fff'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#94a3b8'; }}
+            style={{ background: '#f8fafc', border: '1px solid #e2e8f0', color: '#64748b', borderRadius: 8, width: 32, height: 32, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = '#0f172a'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#64748b'; }}
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
 
         {/* ── Scrollable Body ── */}
-        <div style={{ overflowY: 'auto', flex: 1, padding: '24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ overflowY: 'auto', flex: 1, padding: '20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
 
           {/* AI Confidence */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderRadius: 12, background: conf.bg, border: `1px solid ${conf.border}`, color: conf.color, fontWeight: 700, fontSize: 13 }}>
-            <Sparkles size={16} style={{ flexShrink: 0 }} />
-            <span>AI Confidence: <strong>{draft.confidence}</strong> — {draft.confidence === 'High' ? 'All fields extracted with high accuracy.' : draft.confidence === 'Medium' ? 'Some fields may need manual review.' : 'Manual verification required before approving.'}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 10, background: '#f8fafc', border: '1px solid #e2e8f0', color: '#334155', fontWeight: 600, fontSize: 12 }}>
+            <Sparkles size={15} style={{ flexShrink: 0, color: '#6366f1' }} />
+            <span>AI Confidence: <strong style={{ color: '#0f172a' }}>{draft.confidence}</strong> — {draft.confidence === 'High' ? 'All fields extracted with high accuracy.' : draft.confidence === 'Medium' ? 'Some fields may need manual review.' : 'Manual verification required.'}</span>
           </div>
 
-          {/* Route */}
-          <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 14, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          {/* Route Card */}
+          <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
             <div>
-              <p style={{ fontSize: 9, fontWeight: 900, color: '#60a5fa', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 4px 0' }}>ORIGIN</p>
-              <p style={{ fontSize: 15, fontWeight: 900, color: '#0f172a', margin: 0 }}>{draft.from}</p>
-              <p style={{ fontSize: 10, fontWeight: 700, color: '#3b82f6', margin: '4px 0 0 0', display: 'flex', alignItems: 'center', gap: 4 }}>
-                <Calendar size={11} /> {draft.pickupDate}
+              <p style={{ fontSize: 9, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 3px 0' }}>ORIGIN</p>
+              <p style={{ fontSize: 14, fontWeight: 800, color: '#0f172a', margin: 0 }}>{draft.from}</p>
+              <p style={{ fontSize: 10, fontWeight: 600, color: '#64748b', margin: '3px 0 0 0', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <Calendar size={11} color="#94a3b8" /> {draft.pickupDate}
               </p>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-              <ArrowRight size={22} color="#93c5fd" />
-              <span style={{ fontSize: 9, fontWeight: 900, color: '#93c5fd', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{draft.volume}</span>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+              <ArrowRight size={18} color="#94a3b8" />
+              <span style={{ fontSize: 9, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>{draft.volume}</span>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <p style={{ fontSize: 9, fontWeight: 900, color: '#60a5fa', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 4px 0' }}>DESTINATION</p>
-              <p style={{ fontSize: 15, fontWeight: 900, color: '#0f172a', margin: 0 }}>{draft.to}</p>
-              <p style={{ fontSize: 10, fontWeight: 700, color: '#3b82f6', margin: '4px 0 0 0', display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end' }}>
-                <Calendar size={11} /> {draft.deliveryDate}
+              <p style={{ fontSize: 9, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 3px 0' }}>DESTINATION</p>
+              <p style={{ fontSize: 14, fontWeight: 800, color: '#0f172a', margin: 0 }}>{draft.to}</p>
+              <p style={{ fontSize: 10, fontWeight: 600, color: '#64748b', margin: '3px 0 0 0', display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end' }}>
+                <Calendar size={11} color="#94a3b8" /> {draft.deliveryDate}
               </p>
             </div>
           </div>
 
           {/* Driver + Fleet */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 14, padding: 16 }}>
-              <p style={{ fontSize: 9, fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 10px 0' }}>ASSIGNED DRIVER</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 40, height: 40, borderRadius: 12, background: draft.avatarColor, color: '#fff', fontWeight: 900, fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 14 }}>
+              <p style={{ fontSize: 9, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 8px 0' }}>ASSIGNED DRIVER</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 34, height: 34, borderRadius: 10, background: '#f1f5f9', color: '#334155', fontWeight: 800, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: '1px solid #e2e8f0' }}>
                   {draft.avatar}
                 </div>
-                <div>
-                  <p style={{ fontSize: 14, fontWeight: 900, color: '#0f172a', margin: 0 }}>{draft.driver}</p>
-                  <p style={{ fontSize: 10, fontWeight: 700, color: '#64748b', margin: '2px 0 0 0' }}>{draft.driverLicence}</p>
-                  <p style={{ fontSize: 10, fontWeight: 700, color: '#4f46e5', margin: '3px 0 0 0', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ minWidth: 0 }}>
+                  <p style={{ fontSize: 13, fontWeight: 800, color: '#0f172a', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{draft.driver}</p>
+                  <p style={{ fontSize: 10, fontWeight: 500, color: '#64748b', margin: '1px 0 0 0' }}>{draft.driverLicence}</p>
+                  <p style={{ fontSize: 10, fontWeight: 600, color: '#4f46e5', margin: '2px 0 0 0', display: 'flex', alignItems: 'center', gap: 4 }}>
                     <Phone size={10} /> {draft.driverPhone}
                   </p>
                 </div>
               </div>
             </div>
-            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 14, padding: 16 }}>
-              <p style={{ fontSize: 9, fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 10px 0' }}>FLEET ASSIGNMENT</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, fontSize: 12, fontWeight: 700, color: '#1e293b' }}>
-                <Truck size={14} color="#3b82f6" /> {draft.vehicle}
+            <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 12, padding: 14 }}>
+              <p style={{ fontSize: 9, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 8px 0' }}>FLEET ASSIGNMENT</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, fontSize: 11, fontWeight: 700, color: '#334155' }}>
+                <Truck size={13} color="#64748b" /> {draft.vehicle}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 700, color: '#1e293b' }}>
-                <Package size={14} color="#7c3aed" /> {draft.trailer}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, color: '#334155' }}>
+                <Package size={13} color="#64748b" /> {draft.trailer}
               </div>
             </div>
           </div>
 
           {/* VIN Table */}
           <div>
-            <p style={{ fontSize: 9, fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Sparkles size={12} color="#6366f1" /> AI EXTRACTED CARGO MANIFEST
+            <p style={{ fontSize: 9, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px 0', display: 'flex', alignItems: 'center', gap: 5 }}>
+              <Sparkles size={11} color="#6366f1" /> AI EXTRACTED CARGO MANIFEST
             </p>
-            <div style={{ border: '1px solid #e2e8f0', borderRadius: 12, overflow: 'hidden' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+            <div style={{ border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
                 <thead>
                   <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
                     {['#', 'Rego', 'VIN / Chassis', 'Model', 'Colour', 'Conf.'].map(h => (
-                      <th key={h} style={{ padding: '10px 12px', textAlign: 'left', fontSize: 9, fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{h}</th>
+                      <th key={h} style={{ padding: '8px 10px', textAlign: 'left', fontSize: 9, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {draft.manifests.map((m, idx) => {
-                    const cs = CONF_STYLE[m.conf];
                     return (
                       <tr key={idx} style={{ borderBottom: idx < draft.manifests.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
-                        <td style={{ padding: '10px 12px', color: '#94a3b8', fontWeight: 700 }}>{idx + 1}</td>
-                        <td style={{ padding: '10px 12px', fontWeight: 900, color: '#0f172a' }}>{m.rego}</td>
-                        <td style={{ padding: '10px 12px', fontFamily: 'monospace', fontWeight: 700, color: '#4f46e5', fontSize: 11 }}>{m.vin}</td>
-                        <td style={{ padding: '10px 12px', fontWeight: 700, color: '#1e293b' }}>{m.model}</td>
-                        <td style={{ padding: '10px 12px', fontWeight: 600, color: '#64748b' }}>{m.colour}</td>
-                        <td style={{ padding: '10px 12px' }}>
-                          <span style={{ padding: '2px 8px', borderRadius: 6, background: cs.bg, color: cs.color, border: `1px solid ${cs.border}`, fontSize: 9, fontWeight: 900, textTransform: 'uppercase' }}>{m.conf}</span>
+                        <td style={{ padding: '8px 10px', color: '#94a3b8', fontWeight: 600 }}>{idx + 1}</td>
+                        <td style={{ padding: '8px 10px', fontWeight: 800, color: '#0f172a' }}>{m.rego}</td>
+                        <td style={{ padding: '8px 10px', fontFamily: 'monospace', fontWeight: 600, color: '#4f46e5', fontSize: 10 }}>{m.vin}</td>
+                        <td style={{ padding: '8px 10px', fontWeight: 600, color: '#334155' }}>{m.model}</td>
+                        <td style={{ padding: '8px 10px', fontWeight: 500, color: '#64748b' }}>{m.colour}</td>
+                        <td style={{ padding: '8px 10px' }}>
+                          <span style={{ padding: '2px 6px', borderRadius: 4, background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0', fontSize: 9, fontWeight: 800, textTransform: 'uppercase' }}>{m.conf}</span>
                         </td>
                       </tr>
                     );
@@ -257,41 +256,41 @@ function DraftModal({ draft, onClose, onApprove, onReject }) {
 
           {/* Notes */}
           {draft.notes && (
-            <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 12, padding: '12px 16px' }}>
-              <p style={{ fontSize: 9, fontWeight: 900, color: '#d97706', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 6px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <MessageSquare size={12} /> SPECIAL INSTRUCTIONS
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '10px 14px' }}>
+              <p style={{ fontSize: 9, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 4px 0', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <MessageSquare size={11} color="#64748b" /> SPECIAL INSTRUCTIONS
               </p>
-              <p style={{ fontSize: 13, fontWeight: 600, color: '#374151', margin: 0 }}>{draft.notes}</p>
+              <p style={{ fontSize: 12, fontWeight: 500, color: '#334155', margin: 0 }}>{draft.notes}</p>
             </div>
           )}
         </div>
 
         {/* ── Footer Buttons ── */}
-        <div style={{ padding: '16px 24px', background: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexShrink: 0 }}>
+        <div style={{ padding: '14px 20px', background: '#ffffff', borderTop: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexShrink: 0 }}>
           <button
             onClick={() => { onReject(draft.id); onClose(); }}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', background: '#fff', border: '1.5px solid #fca5a5', color: '#dc2626', fontWeight: 700, borderRadius: 12, cursor: 'pointer', fontSize: 13, transition: 'all 0.15s' }}
+            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', background: '#fff', border: '1px solid #fca5a5', color: '#dc2626', fontWeight: 700, borderRadius: 10, cursor: 'pointer', fontSize: 12, transition: 'all 0.15s' }}
             onMouseEnter={e => { e.currentTarget.style.background = '#fef2f2'; }}
             onMouseLeave={e => { e.currentTarget.style.background = '#fff'; }}
           >
-            <XCircle size={16} /> Reject Load
+            <XCircle size={14} /> Reject Load
           </button>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <button
               onClick={onClose}
-              style={{ padding: '10px 18px', background: '#fff', border: '1.5px solid #e2e8f0', color: '#475569', fontWeight: 700, borderRadius: 12, cursor: 'pointer', fontSize: 13, transition: 'all 0.15s' }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#f1f5f9'; }}
+              style={{ padding: '8px 14px', background: '#fff', border: '1px solid #e2e8f0', color: '#475569', fontWeight: 700, borderRadius: 10, cursor: 'pointer', fontSize: 12, transition: 'all 0.15s' }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#f8fafc'; }}
               onMouseLeave={e => { e.currentTarget.style.background = '#fff'; }}
             >
               Close
             </button>
             <button
               onClick={() => { onApprove(draft.id); onClose(); }}
-              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 22px', background: '#16a34a', color: '#fff', fontWeight: 900, borderRadius: 12, cursor: 'pointer', fontSize: 13, border: 'none', boxShadow: '0 4px 12px rgba(22,163,74,0.35)', transition: 'all 0.15s', textTransform: 'uppercase', letterSpacing: '0.05em' }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#15803d'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = '#16a34a'; e.currentTarget.style.transform = 'translateY(0)'; }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', background: '#4f46e5', color: '#fff', fontWeight: 800, borderRadius: 10, cursor: 'pointer', fontSize: 12, border: 'none', boxShadow: '0 2px 8px rgba(79,70,229,0.25)', transition: 'all 0.15s' }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#4338ca'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = '#4f46e5'; }}
             >
-              <Zap size={15} fill="#fbbf24" color="#fbbf24" /> Approve &amp; Dispatch
+              <Check size={14} /> Approve &amp; Dispatch
             </button>
           </div>
         </div>
@@ -366,64 +365,64 @@ function CreateManualLoadModal({ onClose, onCreate }) {
     <div
       onClick={onClose}
       style={{
-        position: 'fixed', inset: 0, zIndex: 9999,
-        background: 'rgba(15,23,42,0.7)', backdropFilter: 'blur(4px)',
+        position: 'fixed', inset: 0, zIndex: 999999,
+        background: 'rgba(15,23,42,0.5)', backdropFilter: 'blur(4px)',
         display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px',
       }}
     >
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          background: '#fff', borderRadius: '20px',
-          boxShadow: '0 25px 60px rgba(0,0,0,0.3)',
-          width: '100%', maxWidth: '720px',
-          maxHeight: '90vh', overflow: 'hidden',
+          background: '#ffffff', borderRadius: '18px',
+          boxShadow: '0 20px 50px rgba(0,0,0,0.15)',
+          width: '100%', maxWidth: '540px',
+          maxHeight: '88vh', overflow: 'hidden',
           display: 'flex', flexDirection: 'column',
           border: '1px solid #e2e8f0',
           fontFamily: 'Inter, system-ui, sans-serif',
         }}
       >
-        {/* Header */}
-        <div style={{ background: '#0f172a', padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ width: 42, height: 42, borderRadius: 14, background: '#facc15', color: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900 }}>
-              <Plus size={22} strokeWidth={3} />
+        {/* Header (Clean White) */}
+        <div style={{ background: '#ffffff', padding: '16px 20px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: '#f8fafc', border: '1px solid #e2e8f0', color: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
+              <Plus size={18} strokeWidth={2.5} />
             </div>
             <div>
-              <h2 style={{ color: '#fff', fontWeight: 900, fontSize: 18, margin: 0 }}>Create New Manual Load</h2>
-              <p style={{ color: '#94a3b8', fontSize: 12, margin: '2px 0 0 0' }}>Manually register &amp; dispatch a new load without leaving inbox</p>
+              <h2 style={{ color: '#0f172a', fontWeight: 800, fontSize: 16, margin: 0 }}>Create New Manual Load</h2>
+              <p style={{ color: '#64748b', fontSize: 11, margin: '2px 0 0 0', fontWeight: 500 }}>Manually register &amp; dispatch a new load</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: '#94a3b8', borderRadius: 10, padding: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; e.currentTarget.style.color = '#fff'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#94a3b8'; }}
+            style={{ background: '#f8fafc', border: '1px solid #e2e8f0', color: '#64748b', borderRadius: 8, width: 32, height: 32, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = '#0f172a'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.color = '#64748b'; }}
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
 
         {/* Body */}
-        <form onSubmit={handleSubmit} style={{ overflowY: 'auto', flex: 1, padding: '24px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+        <form onSubmit={handleSubmit} style={{ overflowY: 'auto', flex: 1, padding: '20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
           
           {/* Row 1: Ref & Customer & Urgency */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr 1fr', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr 1fr', gap: 10 }}>
             <div>
-              <label style={{ display: 'block', fontSize: 10, fontWeight: 900, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>PO / Ref No. *</label>
+              <label style={{ display: 'block', fontSize: 9, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>PO / Ref No. *</label>
               <input
                 required
                 value={ref}
                 onChange={e => setRef(e.target.value)}
-                style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 13, fontWeight: 700, outline: 'none', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 12, fontWeight: 700, outline: 'none', boxSizing: 'border-box' }}
               />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: 10, fontWeight: 900, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Shipper / Customer *</label>
+              <label style={{ display: 'block', fontSize: 9, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Shipper / Customer *</label>
               <select
                 value={customer}
                 onChange={e => setCustomer(e.target.value)}
-                style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 13, fontWeight: 700, outline: 'none', boxSizing: 'border-box', background: '#fff' }}
+                style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 12, fontWeight: 700, outline: 'none', boxSizing: 'border-box', background: '#fff' }}
               >
                 <option>FreightCo</option>
                 <option>Speedy Logistics</option>
@@ -433,68 +432,68 @@ function CreateManualLoadModal({ onClose, onCreate }) {
               </select>
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: 10, fontWeight: 900, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Priority</label>
+              <label style={{ display: 'block', fontSize: 9, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Priority</label>
               <button
                 type="button"
                 onClick={() => setUrgent(!urgent)}
                 style={{
-                  width: '100%', padding: '9px 12px', borderRadius: 10, cursor: 'pointer', fontSize: 12, fontWeight: 900,
+                  width: '100%', padding: '7px 10px', borderRadius: 8, cursor: 'pointer', fontSize: 11, fontWeight: 800,
                   background: urgent ? '#fef2f2' : '#f8fafc',
                   color: urgent ? '#dc2626' : '#64748b',
-                  border: `1.5px solid ${urgent ? '#fecaca' : '#e2e8f0'}`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, boxSizing: 'border-box'
+                  border: `1px solid ${urgent ? '#fecaca' : '#e2e8f0'}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, boxSizing: 'border-box'
                 }}
               >
-                <AlertTriangle size={14} color={urgent ? '#dc2626' : '#94a3b8'} />
-                {urgent ? '⚡ URGENT' : 'Normal'}
+                <AlertTriangle size={13} color={urgent ? '#dc2626' : '#94a3b8'} />
+                {urgent ? 'URGENT' : 'Normal'}
               </button>
             </div>
           </div>
 
           {/* Row 2: Origin & Destination */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 14, padding: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: 12 }}>
             <div>
-              <label style={{ display: 'block', fontSize: 10, fontWeight: 900, color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Origin (Pickup) *</label>
+              <label style={{ display: 'block', fontSize: 9, fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Origin (Pickup) *</label>
               <input
                 required
                 value={from}
                 onChange={e => setFrom(e.target.value)}
                 placeholder="City, State"
-                style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #cbd5e1', borderRadius: 10, fontSize: 13, fontWeight: 700, outline: 'none', boxSizing: 'border-box', marginBottom: 8 }}
+                style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 12, fontWeight: 700, outline: 'none', boxSizing: 'border-box', marginBottom: 6, background: '#fff' }}
               />
               <input
                 value={pickupDate}
                 onChange={e => setPickupDate(e.target.value)}
                 placeholder="Pickup Date & Time"
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 11, fontWeight: 600, color: '#64748b', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '7px 10px', border: '1px solid #e2e8f0', borderRadius: 6, fontSize: 11, fontWeight: 500, color: '#64748b', boxSizing: 'border-box', background: '#fff' }}
               />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: 10, fontWeight: 900, color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Destination (Delivery) *</label>
+              <label style={{ display: 'block', fontSize: 9, fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Destination (Delivery) *</label>
               <input
                 required
                 value={to}
                 onChange={e => setTo(e.target.value)}
                 placeholder="City, State"
-                style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #cbd5e1', borderRadius: 10, fontSize: 13, fontWeight: 700, outline: 'none', boxSizing: 'border-box', marginBottom: 8 }}
+                style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 12, fontWeight: 700, outline: 'none', boxSizing: 'border-box', marginBottom: 6, background: '#fff' }}
               />
               <input
                 value={deliveryDate}
                 onChange={e => setDeliveryDate(e.target.value)}
                 placeholder="Delivery Date & Time"
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 11, fontWeight: 600, color: '#64748b', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '7px 10px', border: '1px solid #e2e8f0', borderRadius: 6, fontSize: 11, fontWeight: 500, color: '#64748b', boxSizing: 'border-box', background: '#fff' }}
               />
             </div>
           </div>
 
           {/* Row 3: Driver & Fleet */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <div>
-              <label style={{ display: 'block', fontSize: 10, fontWeight: 900, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Assigned Driver *</label>
+              <label style={{ display: 'block', fontSize: 9, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Assigned Driver *</label>
               <select
                 value={driver}
                 onChange={e => setDriver(e.target.value)}
-                style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 13, fontWeight: 700, outline: 'none', boxSizing: 'border-box', background: '#fff' }}
+                style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 12, fontWeight: 700, outline: 'none', boxSizing: 'border-box', background: '#fff' }}
               >
                 <option>Michael Chen</option>
                 <option>Sarah Connor</option>
@@ -503,11 +502,11 @@ function CreateManualLoadModal({ onClose, onCreate }) {
               </select>
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: 10, fontWeight: 900, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Vehicle / Truck *</label>
+              <label style={{ display: 'block', fontSize: 9, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Vehicle / Truck *</label>
               <select
                 value={vehicle}
                 onChange={e => setVehicle(e.target.value)}
-                style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 13, fontWeight: 700, outline: 'none', boxSizing: 'border-box', background: '#fff' }}
+                style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 12, fontWeight: 700, outline: 'none', boxSizing: 'border-box', background: '#fff' }}
               >
                 <option>TRK-101 · Volvo FH540</option>
                 <option>TRK-117 · Scania T500</option>
@@ -518,56 +517,56 @@ function CreateManualLoadModal({ onClose, onCreate }) {
           </div>
 
           {/* Row 4: Cargo Manifest */}
-          <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 14, padding: 14 }}>
-            <p style={{ fontSize: 10, fontWeight: 900, color: '#1d4ed8', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 10px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Package size={14} /> Cargo Item / Vehicle Manifest
+          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 12, padding: 12 }}>
+            <p style={{ fontSize: 9, fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: 5 }}>
+              <Package size={13} color="#64748b" /> Cargo Item / Vehicle Manifest
             </p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr 1.5fr 1fr', gap: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr 1.4fr 1fr', gap: 6 }}>
               <div>
-                <label style={{ fontSize: 9, fontWeight: 900, color: '#64748b' }}>REGO</label>
-                <input value={rego} onChange={e => setRego(e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: 12, fontWeight: 700, boxSizing: 'border-box' }} />
+                <label style={{ fontSize: 8, fontWeight: 800, color: '#64748b' }}>REGO</label>
+                <input value={rego} onChange={e => setRego(e.target.value)} style={{ width: '100%', padding: '6px 8px', border: '1px solid #e2e8f0', borderRadius: 6, fontSize: 11, fontWeight: 700, boxSizing: 'border-box', background: '#fff' }} />
               </div>
               <div>
-                <label style={{ fontSize: 9, fontWeight: 900, color: '#64748b' }}>VIN / CHASSIS</label>
-                <input value={vin} onChange={e => setVin(e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: 11, fontFamily: 'monospace', fontWeight: 700, boxSizing: 'border-box' }} />
+                <label style={{ fontSize: 8, fontWeight: 800, color: '#64748b' }}>VIN / CHASSIS</label>
+                <input value={vin} onChange={e => setVin(e.target.value)} style={{ width: '100%', padding: '6px 8px', border: '1px solid #e2e8f0', borderRadius: 6, fontSize: 10, fontFamily: 'monospace', fontWeight: 600, boxSizing: 'border-box', background: '#fff' }} />
               </div>
               <div>
-                <label style={{ fontSize: 9, fontWeight: 900, color: '#64748b' }}>MODEL</label>
-                <input value={model} onChange={e => setModel(e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: 12, fontWeight: 700, boxSizing: 'border-box' }} />
+                <label style={{ fontSize: 8, fontWeight: 800, color: '#64748b' }}>MODEL</label>
+                <input value={model} onChange={e => setModel(e.target.value)} style={{ width: '100%', padding: '6px 8px', border: '1px solid #e2e8f0', borderRadius: 6, fontSize: 11, fontWeight: 700, boxSizing: 'border-box', background: '#fff' }} />
               </div>
               <div>
-                <label style={{ fontSize: 9, fontWeight: 900, color: '#64748b' }}>COLOUR</label>
-                <input value={colour} onChange={e => setColour(e.target.value)} style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: 12, fontWeight: 700, boxSizing: 'border-box' }} />
+                <label style={{ fontSize: 8, fontWeight: 800, color: '#64748b' }}>COLOUR</label>
+                <input value={colour} onChange={e => setColour(e.target.value)} style={{ width: '100%', padding: '6px 8px', border: '1px solid #e2e8f0', borderRadius: 6, fontSize: 11, fontWeight: 700, boxSizing: 'border-box', background: '#fff' }} />
               </div>
             </div>
           </div>
 
           {/* Row 5: Notes */}
           <div>
-            <label style={{ display: 'block', fontSize: 10, fontWeight: 900, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Special Delivery Instructions &amp; Gate Codes</label>
+            <label style={{ display: 'block', fontSize: 9, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Special Delivery Instructions</label>
             <textarea
               rows={2}
               value={notes}
               onChange={e => setNotes(e.target.value)}
-              placeholder="Call driver 30 mins before arrival. Gate code #1234..."
-              style={{ width: '100%', padding: '10px 12px', border: '1.5px solid #e2e8f0', borderRadius: 10, fontSize: 12, fontWeight: 600, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }}
+              placeholder="Call driver 30 mins before arrival..."
+              style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 11, fontWeight: 500, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }}
             />
           </div>
 
           {/* Buttons */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10, marginTop: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, marginTop: 4 }}>
             <button
               type="button"
               onClick={onClose}
-              style={{ padding: '10px 18px', background: '#fff', border: '1.5px solid #e2e8f0', color: '#475569', fontWeight: 700, borderRadius: 12, cursor: 'pointer', fontSize: 13 }}
+              style={{ padding: '8px 14px', background: '#fff', border: '1px solid #e2e8f0', color: '#475569', fontWeight: 700, borderRadius: 10, cursor: 'pointer', fontSize: 12 }}
             >
               Cancel
             </button>
             <button
               type="submit"
-              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 24px', background: '#16a34a', color: '#fff', fontWeight: 900, borderRadius: 12, cursor: 'pointer', fontSize: 13, border: 'none', boxShadow: '0 4px 14px rgba(22,163,74,0.35)' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', background: '#4f46e5', color: '#fff', fontWeight: 800, borderRadius: 10, cursor: 'pointer', fontSize: 12, border: 'none', boxShadow: '0 2px 8px rgba(79,70,229,0.25)' }}
             >
-              <Zap size={16} fill="#fbbf24" color="#fbbf24" /> Create &amp; Dispatch Load
+              <Check size={14} /> Create &amp; Dispatch Load
             </button>
           </div>
         </form>
