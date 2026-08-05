@@ -1288,7 +1288,7 @@ export default function WarehouseHoldingAreas() {
                                 <div
                                   className="wh-dropdown-item"
                                   onClick={() => {
-                                    showToast(`🖨️ Barcode labels printed for ${area.code}`);
+                                    handlePrintBarcode(area);
                                     setActionMenuAreaId(null);
                                   }}
                                 >
