@@ -1405,6 +1405,30 @@ export default function WarehouseMovements() {
         .mvt-table th { padding: 8px 10px; font-size: 8.5px; font-weight: 800; color: #64748B; text-transform: uppercase; background: #F8FAFC; border-bottom: 1px solid #E2E8F0; text-align: left; letter-spacing: 0.3px; white-space: nowrap; }
         .mvt-table td { padding: 8px 10px; border-bottom: 1px solid #F1F5F9; vertical-align: middle; white-space: nowrap; }
 
+        /* MODAL OVERLAY & BOX */
+        .wh-modal-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(15, 23, 42, 0.6);
+          backdrop-filter: blur(4px);
+          z-index: 999999;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 16px;
+        }
+        .wh-modal-box {
+          background: #FFFFFF;
+          border-radius: 12px;
+          width: 100%;
+          max-width: 540px;
+          max-height: 85vh;
+          display: flex;
+          flex-direction: column;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+          overflow: hidden;
+        }
+
         @media (max-width: 1024px) {
           .mvt-master {
             flex-direction: column;
@@ -1996,18 +2020,18 @@ export default function WarehouseMovements() {
       {/* EDIT ITEM MODAL POPUP */}
       {editingItem && (
         <div className="wh-modal-overlay" style={{ zIndex: 999999 }} onClick={() => setEditingItem(null)}>
-          <div className="wh-modal-box" style={{ maxWidth: 540, borderRadius: 12, overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }} onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center px-5 py-3.5 border-b border-slate-200 bg-slate-50">
+          <div className="wh-modal-box" style={{ maxWidth: 560, borderRadius: 12, overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center px-5 py-3 border-b border-slate-200 bg-slate-50 flex-shrink-0">
               <h3 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
                 <Edit2 size={16} className="text-amber-500" />
-                Item Details & Movement Settings
+                Edit Item Details & Destination Location
               </h3>
               <button onClick={() => setEditingItem(null)} className="p-1 text-slate-400 hover:text-slate-600 font-bold"><X size={16} /></button>
             </div>
             
             {/* Header Preview Card */}
-            <div className="p-4 bg-slate-100/70 border-b border-slate-200 flex items-center gap-4">
-              <img src={editingItem.image} alt={editingItem.title} className="w-16 h-12 rounded-lg object-cover border border-slate-300 shadow-sm" />
+            <div className="p-3.5 bg-slate-100/80 border-b border-slate-200 flex items-center gap-3.5 flex-shrink-0">
+              <img src={editingItem.image} alt={editingItem.title} className="w-14 h-11 rounded-lg object-cover border border-slate-300 shadow-sm" />
               <div>
                 <h4 className="font-extrabold text-sm text-slate-900">{editingItem.title}</h4>
                 <div className="text-[11px] text-slate-500 font-mono mt-0.5">VIN: {editingItem.vin}</div>
@@ -2018,7 +2042,7 @@ export default function WarehouseMovements() {
               </div>
             </div>
 
-            <div className="p-5 flex flex-col gap-3.5 text-xs bg-white">
+            <div className="p-4 flex-1 overflow-y-auto flex flex-col gap-3 text-xs bg-white">
               <div className="flex flex-col gap-1">
                 <label className="font-extrabold text-slate-700 uppercase text-[9.5px]">Item Title</label>
                 <input
@@ -2069,22 +2093,58 @@ export default function WarehouseMovements() {
                 </div>
               </div>
 
-              {/* TO LOCATION & CONDITION */}
-              <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100">
-                <div className="flex flex-col gap-1">
-                  <label className="font-extrabold text-slate-700 uppercase text-[9.5px]">Destination Zone</label>
-                  <select
-                    value={editingItem.toZone}
-                    onChange={e => setEditingItem({ ...editingItem, toZone: e.target.value })}
-                    className="px-3 py-1.5 border border-slate-300 rounded-md text-xs font-semibold outline-none focus:border-amber-400"
-                  >
-                    <option value="Zone A">Zone A</option>
-                    <option value="Zone B">Zone B</option>
-                    <option value="Zone C">Zone C</option>
-                    <option value="Zone D">Zone D</option>
-                    <option value="Warehouse 1">Warehouse 1</option>
-                  </select>
+              {/* DESTINATION LOCATION & CONDITION SECTION */}
+              <div className="pt-2 border-t border-slate-100 flex flex-col gap-2.5">
+                <div className="text-[10px] font-black text-amber-600 uppercase tracking-wider">
+                  DESTINATION LOCATION & CONDITION
                 </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="flex flex-col gap-1">
+                    <label className="font-extrabold text-slate-700 uppercase text-[9.5px]">To Zone</label>
+                    <select
+                      value={editingItem.toZone}
+                      onChange={e => setEditingItem({ ...editingItem, toZone: e.target.value })}
+                      className="px-2 py-1.5 border border-slate-300 rounded-md text-xs font-semibold outline-none focus:border-amber-400"
+                    >
+                      <option value="Zone A">Zone A</option>
+                      <option value="Zone B">Zone B</option>
+                      <option value="Zone C">Zone C</option>
+                      <option value="Zone D">Zone D</option>
+                      <option value="Warehouse 1">Warehouse 1</option>
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="font-extrabold text-slate-700 uppercase text-[9.5px]">To Row / Bay</label>
+                    <select
+                      value={editingItem.toRow}
+                      onChange={e => setEditingItem({ ...editingItem, toRow: e.target.value })}
+                      className="px-2 py-1.5 border border-slate-300 rounded-md text-xs font-semibold outline-none focus:border-amber-400"
+                    >
+                      <option value="Row 1 / Bay 03">Row 1 / Bay 03</option>
+                      <option value="Row 2 / Bay 05">Row 2 / Bay 05</option>
+                      <option value="Row 3 / Bay 07">Row 3 / Bay 07</option>
+                      <option value="Row 4 / Bay 12">Row 4 / Bay 12</option>
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="font-extrabold text-slate-700 uppercase text-[9.5px]">To Position</label>
+                    <select
+                      value={editingItem.toPos}
+                      onChange={e => setEditingItem({ ...editingItem, toPos: e.target.value })}
+                      className="px-2 py-1.5 border border-slate-300 rounded-md text-xs font-semibold outline-none focus:border-amber-400"
+                    >
+                      <option value="Position 01">Position 01</option>
+                      <option value="Position 02">Position 02</option>
+                      <option value="Position 03">Position 03</option>
+                      <option value="Position 04">Position 04</option>
+                      <option value="Position 05">Position 05</option>
+                      <option value="Position 06">Position 06</option>
+                    </select>
+                  </div>
+                </div>
+
                 <div className="flex flex-col gap-1">
                   <label className="font-extrabold text-slate-700 uppercase text-[9.5px]">Condition</label>
                   <select
@@ -2100,7 +2160,7 @@ export default function WarehouseMovements() {
                 </div>
               </div>
 
-              <div className="flex justify-between items-center pt-3 border-t border-slate-100">
+              <div className="flex justify-between items-center pt-3 border-t border-slate-100 flex-shrink-0">
                 <button 
                   onClick={() => {
                     handleRemoveFormItem(editingItem.id);
