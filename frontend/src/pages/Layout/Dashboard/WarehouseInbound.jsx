@@ -128,6 +128,40 @@ export default function WarehouseInbound() {
     alert(`Item ${newItem.title} (${newItem.vin}) added to receive list!`);
   };
 
+  const handleAddAnotherItem = () => {
+    const nextNum = itemsToReceive.length + 1;
+    const defaultSampleVehicles = [
+      { make: 'Ford', model: 'Ranger Wildtrak', vin: `1FTER4FH${Math.floor(100000 + Math.random() * 900000)}`, rego: `XYZ${Math.floor(100 + Math.random() * 900)}`, image: 'https://images.unsplash.com/photo-1549317661-bd32c8ce0729?auto=format&fit=crop&w=400&q=80' },
+      { make: 'Nissan', model: 'X-Trail ST-L', vin: `JN1TCNT3${Math.floor(100000 + Math.random() * 900000)}`, rego: `MNO${Math.floor(100 + Math.random() * 900)}`, image: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=400&q=80' },
+      { make: 'Isuzu', model: 'D-Max LS-U', vin: `MPB11223${Math.floor(100000 + Math.random() * 900000)}`, rego: `KJH${Math.floor(100 + Math.random() * 900)}`, image: 'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&w=400&q=80' }
+    ];
+    const sample = defaultSampleVehicles[(nextNum - 1) % defaultSampleVehicles.length];
+
+    const newItem = {
+      id: String(Date.now()),
+      type: 'Vehicle',
+      title: `${sample.make} ${sample.model}`,
+      vin: sample.vin,
+      rego: sample.rego,
+      location: `${zone} / ${row} / ${bay} / ${stagingArea}`,
+      condition: 'Good',
+      damage: 'No Damage',
+      image: sample.image
+    };
+
+    setItemsToReceive(prev => [...prev, newItem]);
+
+    setVin(sample.vin);
+    setRegoPlate(sample.rego);
+    setMake(sample.make);
+    setModel(sample.model);
+
+    const itemEntryElem = document.getElementById('section-item-entry');
+    if (itemEntryElem) {
+      itemEntryElem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
   const handleRemoveItem = (id) => {
     setItemsToReceive(itemsToReceive.filter(item => item.id !== id));
   };
@@ -1079,7 +1113,7 @@ export default function WarehouseInbound() {
             </div>
 
             {/* CARD 3: ITEM ENTRY */}
-            <div className="wh-card-3">
+            <div className="wh-card-3" id="section-item-entry">
               <div className="card-num-title">3. ITEM ENTRY</div>
 
               <div className="item-entry-tabs">
@@ -1293,7 +1327,7 @@ export default function WarehouseInbound() {
             </div>
 
             <div className="table-card-footer">
-              <button className="btn-add-another" onClick={() => alert('Form ready to add another item!')}>
+              <button className="btn-add-another" onClick={handleAddAnotherItem}>
                 + Add Another Item
               </button>
               <div className="text-xs font-bold text-slate-700">
@@ -1453,7 +1487,7 @@ export default function WarehouseInbound() {
               </div>
             ))}
 
-            <button className="btn-add-another" style={{ width: '100%', marginTop: '4px' }}>
+            <button className="btn-add-another" style={{ width: '100%', marginTop: '4px' }} onClick={handleAddAnotherItem}>
               + Add Another Item
             </button>
           </div>
