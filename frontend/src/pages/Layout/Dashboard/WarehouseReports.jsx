@@ -16,6 +16,7 @@ export default function WarehouseReports() {
   const [selectedZone, setSelectedZone] = useState('All Zones');
   const [selectedLane, setSelectedLane] = useState('All Load Lanes');
   const [selectedItemType, setSelectedItemType] = useState('All Item Types');
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [toast, setToast] = useState(null);
 
   const showToast = (msg) => {
@@ -23,8 +24,124 @@ export default function WarehouseReports() {
     setTimeout(() => setToast(null), 3500);
   };
 
-  const handleExport = (type) => {
-    showToast(`✓ Exporting ${type} report...`);
+  const handleExport = (type = activeTab, format = 'csv') => {
+    setExportMenuOpen(false);
+
+    if (format === 'pdf') {
+      const printWindow = window.open('', '_blank', 'width=900,height=700');
+      if (!printWindow) return;
+
+      const kpis = getKpiCards();
+
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>${type} Executive Report - Hero Logistics</title>
+            <style>
+              @page { size: landscape; margin: 10mm; }
+              body { font-family: 'Inter', system-ui, sans-serif; padding: 20px; color: #0F172A; }
+              .header { display: flex; justify-content: space-between; border-bottom: 2px solid #FFD400; padding-bottom: 12px; margin-bottom: 20px; }
+              h1 { font-size: 20px; font-weight: 900; text-transform: uppercase; margin: 0; }
+              p { font-size: 11px; color: #64748B; margin: 2px 0 0 0; }
+              .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+              .card { background: #F8FAFC; border: 1px solid #E2E8F0; padding: 12px; border-radius: 8px; }
+              .card-title { font-size: 10px; font-weight: 800; color: #64748B; text-transform: uppercase; }
+              .card-val { font-size: 22px; font-weight: 900; color: #0F172A; margin: 4px 0; }
+              .card-trend { font-size: 10px; font-weight: 700; color: #16A34A; }
+              table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 16px; }
+              th { background: #F8FAFC; border: 1px solid #E2E8F0; padding: 8px 10px; text-align: left; font-size: 9px; text-transform: uppercase; color: #64748B; }
+              td { border: 1px solid #F1F5F9; padding: 8px 10px; font-size: 10.5px; }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <div>
+                <h1>HERO LOGISTICS - ${type.toUpperCase()} ANALYTICS REPORT</h1>
+                <p>Date Range: ${dateRange} • Facility: ${selectedWarehouse} (${selectedZone})</p>
+              </div>
+              <div style="text-align: right; font-size: 10px; color: #64748B;">
+                <strong>CONFIDENTIAL</strong><br/>
+                Generated: ${new Date().toLocaleString()}
+              </div>
+            </div>
+
+            <div class="grid">
+              ${kpis.map(k => `
+                <div class="card">
+                  <div class="card-title">${k.lbl}</div>
+                  <div class="card-val">${k.val}</div>
+                  <div class="card-trend">${k.trend} vs Prior Period</div>
+                </div>
+              `).join('')}
+            </div>
+
+            <h3>OPERATIONAL METRICS SUMMARY</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>METRIC DESCRIPTION</th>
+                  <th>CURRENT PERFORMANCE</th>
+                  <th>BENCHMARK TARGET</th>
+                  <th>STATUS</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>Items Handled / Throughput</td><td>2,458 Units</td><td>2,200 Units</td><td><strong style="color: green;">EXCEEDED</strong></td></tr>
+                <tr><td>Receiving (Inbound Volume)</td><td>842 Shipments</td><td>800 Shipments</td><td><strong style="color: green;">ON TARGET</strong></td></tr>
+                <tr><td>Dispatched (Outbound Volume)</td><td>799 Loads</td><td>750 Loads</td><td><strong style="color: green;">EXCEEDED</strong></td></tr>
+                <tr><td>Staging Bay Occupancy</td><td>817 Items (68%)</td><td>80% Max</td><td><strong style="color: green;">OPTIMAL</strong></td></tr>
+                <tr><td>Average Dwell Time</td><td>2h 45m</td><td>3h 00m Max</td><td><strong style="color: green;">IMPROVED</strong></td></tr>
+                <tr><td>Order Accuracy Rate</td><td>98.6%</td><td>98.0% Min</td><td><strong style="color: green;">PASSED</strong></td></tr>
+              </tbody>
+            </table>
+
+            <script>
+              window.onload = function() { window.print(); };
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      showToast(`✓ Generated Printable PDF Summary for ${type}!`);
+      return;
+    }
+
+    const kpis = getKpiCards();
+    const headers = ['Metric Name', 'Current Value', 'Trend vs Last Period', 'Report Date', 'Warehouse'];
+    const rows = kpis.map(k => [
+      `"${k.lbl}"`,
+      `"${k.val}"`,
+      `"${k.trend}"`,
+      `"${dateRange}"`,
+      `"${selectedWarehouse}"`
+    ]);
+
+    rows.push([]);
+    rows.push(['"--- METRIC BREAKDOWN ---"']);
+    rows.push(['"Category"', '"Value"', '"Pct / Details"']);
+    rows.push(['"In Stock Items"', '"1,246"', '"50.7%"']);
+    rows.push(['"Staged Cargo"', '"817"', '"33.2%"']);
+    rows.push(['"In Transit Loads"', '"249"', '"10.1%"']);
+    rows.push(['"On Hold"', '"96"', '"3.9%"']);
+    rows.push(['"Damaged / QC"', '"26"', '"1.1%"']);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(r => r.join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${type}_Analytics_Report_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    showToast(`✓ Exported ${type} analytics data to CSV!`);
   };
 
   // Dynamic KPI Cards per Tab
@@ -488,11 +605,51 @@ export default function WarehouseReports() {
             <ChevronDown size={14} className="text-slate-400" />
           </div>
 
-          <button className="wh-btn-export-yellow" onClick={() => handleExport(`${activeTab} Report`)}>
-            <Download size={14} />
-            <span>Export {activeTab}</span>
-            <ChevronDown size={12} />
-          </button>
+          <div className="relative">
+            <button 
+              className="wh-btn-export-yellow" 
+              onClick={() => setExportMenuOpen(!exportMenuOpen)}
+            >
+              <Download size={14} />
+              <span>Export {activeTab}</span>
+              <ChevronDown size={12} />
+            </button>
+
+            {exportMenuOpen && (
+              <div
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: 'calc(100% + 6px)',
+                  background: '#FFFFFF',
+                  border: '1px solid #CBD5E1',
+                  borderRadius: '10px',
+                  boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)',
+                  padding: '6px',
+                  zIndex: 1000,
+                  minWidth: '220px'
+                }}
+              >
+                <div
+                  className="wh-dropdown-item"
+                  style={{ padding: '8px 12px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', borderRadius: '6px', color: '#0F172A' }}
+                  onClick={() => handleExport(activeTab, 'csv')}
+                >
+                  <FileSpreadsheet size={14} className="text-emerald-600" />
+                  <span>Export {activeTab} Data (CSV)</span>
+                </div>
+
+                <div
+                  className="wh-dropdown-item"
+                  style={{ padding: '8px 12px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', borderRadius: '6px', color: '#0F172A' }}
+                  onClick={() => handleExport(activeTab, 'pdf')}
+                >
+                  <FileText size={14} className="text-blue-600" />
+                  <span>Print PDF Executive Report</span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
