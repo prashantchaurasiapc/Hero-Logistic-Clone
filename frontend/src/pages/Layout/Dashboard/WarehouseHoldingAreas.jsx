@@ -287,7 +287,7 @@ export default function WarehouseHoldingAreas() {
           background: #F8FAFC;
           min-height: 100vh;
           color: #0F172A;
-          padding: 20px 24px;
+          padding: 24px 32px;
           box-sizing: border-box;
         }
 
@@ -316,7 +316,7 @@ export default function WarehouseHoldingAreas() {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 16px;
+          margin-bottom: 24px;
           width: 100%;
           gap: 16px;
         }
@@ -331,7 +331,7 @@ export default function WarehouseHoldingAreas() {
         .wh-st-sub {
           font-size: 12px;
           color: #64748B;
-          margin-top: 2px;
+          margin-top: 3px;
         }
         .wh-st-actions-top {
           display: flex;
@@ -341,7 +341,7 @@ export default function WarehouseHoldingAreas() {
           flex-shrink: 0;
         }
         .wh-btn-export-st {
-          height: 36px;
+          height: 38px;
           padding: 0 14px;
           border-radius: 8px;
           border: 1px solid #CBD5E1;
@@ -358,7 +358,7 @@ export default function WarehouseHoldingAreas() {
         .wh-btn-export-st:hover { background: #F1F5F9; }
 
         .wh-btn-refresh-st {
-          height: 36px;
+          height: 38px;
           padding: 0 18px;
           border-radius: 8px;
           border: none;
@@ -374,7 +374,7 @@ export default function WarehouseHoldingAreas() {
         }
 
         .wh-btn-add-st {
-          height: 36px;
+          height: 38px;
           padding: 0 16px;
           border-radius: 8px;
           border: 1px solid #CBD5E1;
@@ -395,22 +395,22 @@ export default function WarehouseHoldingAreas() {
         .wh-st-stats-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
-          gap: 12px;
-          margin-bottom: 16px;
+          gap: 16px;
+          margin-bottom: 24px;
         }
         .wh-st-stat-card {
           background: #FFFFFF;
           border: 1px solid #E2E8F0;
           border-radius: 12px;
-          padding: 14px 16px;
+          padding: 16px 20px;
           display: flex;
           align-items: center;
-          gap: 14px;
-          box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+          gap: 16px;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.03);
         }
         .wh-st-icon-box {
-          width: 42px;
-          height: 42px;
+          width: 44px;
+          height: 44px;
           border-radius: 10px;
           display: flex;
           align-items: center;
@@ -418,9 +418,9 @@ export default function WarehouseHoldingAreas() {
           flex-shrink: 0;
         }
         .wh-st-icon-box.blue { background: #DBEAFE; color: #2563EB; }
-        .wh-st-icon-box.green { background: #DCFCE7; color: #16A34A; }
         .wh-st-icon-box.amber { background: #FEF3C7; color: #D97706; }
-        .wh-st-icon-box.red { background: #FEE2E2; color: #DC2626; }
+        .wh-st-icon-box.green { background: #DCFCE7; color: #16A34A; }
+        .wh-st-icon-box.purple { background: #F3E8FF; color: #9333EA; }
 
         .wh-st-stat-num {
           font-size: 22px;
@@ -444,7 +444,7 @@ export default function WarehouseHoldingAreas() {
         /* MASTER GRID LAYOUT */
         .wh-st-master-grid {
           display: flex;
-          gap: 14px;
+          gap: 18px;
           align-items: flex-start;
         }
         .wh-st-left-col {
@@ -452,21 +452,21 @@ export default function WarehouseHoldingAreas() {
           min-width: 0;
           display: flex;
           flex-direction: column;
-          gap: 12px;
+          gap: 14px;
         }
         .wh-st-right-col {
-          width: 250px;
+          width: 260px;
           flex-shrink: 0;
           display: flex;
           flex-direction: column;
-          gap: 12px;
+          gap: 14px;
         }
 
         .wh-st-main-card {
           background: #FFFFFF;
           border: 1px solid #E2E8F0;
           border-radius: 12px;
-          padding: 16px;
+          padding: 20px;
           box-shadow: 0 1px 3px rgba(0,0,0,0.03);
         }
 

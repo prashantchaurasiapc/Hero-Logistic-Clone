@@ -228,7 +228,7 @@ export default function WarehouseLoadLanes() {
           background: #F8FAFC;
           min-height: 100vh;
           color: #0F172A;
-          padding: 20px 24px;
+          padding: 24px 32px;
           box-sizing: border-box;
         }
 
@@ -251,17 +251,13 @@ export default function WarehouseLoadLanes() {
           background: #FEE2E2;
           color: #DC2626;
         }
-          color: #0F172A;
-          padding: 20px 24px;
-          box-sizing: border-box;
-        }
 
         /* ── HEADER ── */
         .wh-ll-header-row {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 16px;
+          margin-bottom: 24px;
           width: 100%;
           gap: 16px;
         }
@@ -276,7 +272,7 @@ export default function WarehouseLoadLanes() {
         .wh-ll-sub {
           font-size: 12px;
           color: #64748B;
-          margin-top: 2px;
+          margin-top: 3px;
         }
         .wh-btn-create-lane {
           height: 38px;
@@ -302,22 +298,22 @@ export default function WarehouseLoadLanes() {
         .wh-ll-stats-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
-          gap: 12px;
-          margin-bottom: 16px;
+          gap: 16px;
+          margin-bottom: 24px;
         }
         .wh-ll-stat-card {
           background: #FFFFFF;
           border: 1px solid #E2E8F0;
           border-radius: 12px;
-          padding: 14px 16px;
+          padding: 16px 20px;
           display: flex;
           align-items: center;
-          gap: 14px;
-          box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+          gap: 16px;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.03);
         }
         .wh-stat-icon-box {
-          width: 42px;
-          height: 42px;
+          width: 44px;
+          height: 44px;
           border-radius: 10px;
           display: flex;
           align-items: center;
@@ -351,7 +347,7 @@ export default function WarehouseLoadLanes() {
         /* ── MASTER LAYOUT (LEFT + RIGHT) ── */
         .wh-ll-master-grid {
           display: flex;
-          gap: 14px;
+          gap: 18px;
           align-items: flex-start;
         }
         .wh-ll-left-col {
@@ -359,14 +355,14 @@ export default function WarehouseLoadLanes() {
           min-width: 0;
           display: flex;
           flex-direction: column;
-          gap: 12px;
+          gap: 14px;
         }
         .wh-ll-right-col {
-          width: 250px;
+          width: 260px;
           flex-shrink: 0;
           display: flex;
           flex-direction: column;
-          gap: 12px;
+          gap: 14px;
         }
 
         /* ── MAIN CARD ── */
@@ -374,7 +370,7 @@ export default function WarehouseLoadLanes() {
           background: #FFFFFF;
           border: 1px solid #E2E8F0;
           border-radius: 12px;
-          padding: 16px;
+          padding: 20px;
           box-shadow: 0 1px 3px rgba(0,0,0,0.03);
         }
 
