@@ -427,11 +427,122 @@ export default function WarehouseMovements() {
   });
 
   const handleExportCSV = () => {
-    showToast('Exporting movement history log (CSV)...');
+    const exportData = filteredHistory.length > 0 ? filteredHistory : historyLogs;
+
+    const headers = [
+      'Movement ID',
+      'Date & Time',
+      'Movement Type',
+      'Item Description',
+      'VIN / Reference / Barcode',
+      'License Plate / REGO',
+      'From Location',
+      'To Location',
+      'Load Reference',
+      'Moved By',
+      'Role',
+      'Result'
+    ];
+
+    const rows = exportData.map(log => [
+      `"${log.id}"`,
+      `"${log.dateTime}"`,
+      `"${log.movementType}"`,
+      `"${log.itemTitle}"`,
+      `"${log.vin}"`,
+      `"${log.badge || ''}"`,
+      `"${log.fromLoc}"`,
+      `"${log.toLoc}"`,
+      `"${log.loadRef}"`,
+      `"${log.byName}"`,
+      `"${log.byRole}"`,
+      `"${log.result}"`
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(r => r.join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Movement_History_Report_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    showToast(`✓ Exported ${exportData.length} movement history records to CSV!`);
   };
 
   const handlePrintHistory = () => {
-    alert('Printing movement history audit trail report...');
+    const printData = filteredHistory.length > 0 ? filteredHistory : historyLogs;
+    const printWindow = window.open('', '_blank', 'width=900,height=700');
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Movement History Report - Hero Logistics</title>
+          <style>
+            @page { size: landscape; margin: 10mm; }
+            body { font-family: 'Inter', system-ui, sans-serif; padding: 20px; color: #0F172A; }
+            h1 { font-size: 20px; font-weight: 900; text-transform: uppercase; margin: 0 0 4px 0; }
+            p { font-size: 11px; color: #64748B; margin: 0 0 16px 0; }
+            table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 12px; }
+            th { background: #F8FAFC; border: 1px solid #E2E8F0; padding: 8px 10px; text-align: left; font-size: 9px; text-transform: uppercase; color: #64748B; }
+            td { border: 1px solid #F1F5F9; padding: 8px 10px; font-size: 10.5px; }
+            tr:nth-child(even) { background: #F8FAFC; }
+            .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-weight: 800; font-size: 9px; }
+            .badge-completed { background: #DCFCE7; color: #15803D; }
+            .badge-failed { background: #FEE2E2; color: #B91C1C; }
+          </style>
+        </head>
+        <body>
+          <h1>Movement History Audit Log Report</h1>
+          <p>Generated on ${new Date().toLocaleString()} • Total Records: ${printData.length}</p>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Date / Time</th>
+                <th>Type</th>
+                <th>Item / Description</th>
+                <th>VIN / Ref</th>
+                <th>From Location</th>
+                <th>To Location</th>
+                <th>Load Ref</th>
+                <th>Moved By</th>
+                <th>Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${printData.map(log => `
+                <tr>
+                  <td><strong>${log.id}</strong></td>
+                  <td>${log.dateTime}</td>
+                  <td><strong>${log.movementType}</strong></td>
+                  <td><strong>${log.itemTitle}</strong></td>
+                  <td style="font-family: monospace;">${log.vin}</td>
+                  <td>${log.fromLoc}</td>
+                  <td>${log.toLoc}</td>
+                  <td>${log.loadRef}</td>
+                  <td>${log.byName} (${log.byRole})</td>
+                  <td><span class="badge ${log.result === 'Completed' ? 'badge-completed' : 'badge-failed'}">${log.result}</span></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          <script>
+            window.onload = function() { window.print(); };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   /* ============================================================
