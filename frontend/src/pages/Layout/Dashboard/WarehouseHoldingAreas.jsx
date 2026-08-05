@@ -750,7 +750,12 @@ export default function WarehouseHoldingAreas() {
         }
         .wh-modal-box {
           background: #FFFFFF; border-radius: 12px; width: 100%; max-width: 440px;
+          max-height: 84vh; display: flex; flex-direction: column;
           box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); overflow: hidden;
+        }
+        .wh-modal-box form {
+          max-height: calc(84vh - 48px);
+          overflow-y: auto;
         }
 
         .wh-st-table-wrap::-webkit-scrollbar {
@@ -1394,40 +1399,44 @@ export default function WarehouseHoldingAreas() {
         </div>
       )}
 
-      {/* ADD HOLDING AREA MODAL (NARROW COMPACT WIDTH) */}
+      {/* ADD HOLDING AREA MODAL (NARROW COMPACT WIDTH & RESPONSIVE HEIGHT) */}
       {addAreaModalOpen && (
         <div className="wh-modal-overlay" onClick={() => setAddAreaModalOpen(false)}>
-          <div className="wh-modal-box" style={{ maxWidth: 500, padding: 0 }} onClick={e => e.stopPropagation()}>
+          <div
+            className="wh-modal-box"
+            style={{ maxWidth: 540, padding: 0, maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}
+            onClick={e => e.stopPropagation()}
+          >
             
             {/* MODAL HEADER */}
-            <div className="flex justify-between items-center px-4 py-3 border-b border-slate-200">
+            <div className="flex justify-between items-center px-4 py-2.5 border-b border-slate-200 flex-shrink-0">
               <h3 className="font-black text-sm text-slate-900">Add New Holding Area</h3>
               <button onClick={() => setAddAreaModalOpen(false)} className="p-1 rounded-md text-slate-400 hover:text-slate-800">
                 <X size={16} />
               </button>
             </div>
 
-            {/* MODAL BODY (2-COLUMN GRID) */}
-            <form onSubmit={handleCreateArea} className="grid grid-cols-1 md:grid-cols-12">
+            {/* MODAL BODY (2-COLUMN GRID WITH SCROLL) */}
+            <form onSubmit={handleCreateArea} className="grid grid-cols-1 md:grid-cols-12 flex-1 overflow-y-auto min-h-0">
               
-              {/* LEFT STEPPER PANEL (5 COLS - ~175px WIDTH, HIDDEN ON MOBILE) */}
+              {/* LEFT STEPPER PANEL (5 COLS - HIDDEN ON MOBILE) */}
               <div className="hidden md:flex md:col-span-5 p-3 bg-slate-50 border-r border-slate-200 flex-col justify-between select-none">
                 <div>
-                  <div className="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-4">
+                  <div className="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-3">
                     HOW TO ADD A HOLDING AREA
                   </div>
 
                   {/* STEP 1 */}
                   <div
                     onClick={() => setActiveStep(1)}
-                    className={`flex gap-3 mb-4 cursor-pointer p-2 rounded-lg transition-all ${activeStep === 1 ? 'bg-amber-50 border border-amber-200/80 shadow-sm' : 'hover:bg-slate-100/80'}`}
+                    className={`flex gap-2.5 mb-2.5 cursor-pointer p-1.5 rounded-lg transition-all ${activeStep === 1 ? 'bg-amber-50 border border-amber-200/80 shadow-sm' : 'hover:bg-slate-100/80'}`}
                   >
-                    <div className={`w-6 h-6 rounded-full font-extrabold text-xs flex items-center justify-center flex-shrink-0 transition-all ${activeStep === 1 ? 'bg-amber-400 text-slate-900 shadow-sm' : 'border border-slate-300 text-slate-500 bg-white'}`}>
+                    <div className={`w-5 h-5 rounded-full font-extrabold text-[11px] flex items-center justify-center flex-shrink-0 transition-all ${activeStep === 1 ? 'bg-amber-400 text-slate-900 shadow-sm' : 'border border-slate-300 text-slate-500 bg-white'}`}>
                       1
                     </div>
                     <div>
-                      <div className={`font-extrabold text-xs transition-colors ${activeStep === 1 ? 'text-amber-700' : 'text-slate-800'}`}>Basic Information</div>
-                      <div className="text-[10px] text-slate-500 mt-0.5 leading-snug">
+                      <div className={`font-extrabold text-[11.5px] transition-colors ${activeStep === 1 ? 'text-amber-700' : 'text-slate-800'}`}>Basic Information</div>
+                      <div className="text-[9.5px] text-slate-500 mt-0.5 leading-snug">
                         Provide an area name and area code to uniquely identify this staging spot.
                       </div>
                     </div>
@@ -1436,14 +1445,14 @@ export default function WarehouseHoldingAreas() {
                   {/* STEP 2 */}
                   <div
                     onClick={() => setActiveStep(2)}
-                    className={`flex gap-3 mb-4 cursor-pointer p-2 rounded-lg transition-all ${activeStep === 2 ? 'bg-amber-50 border border-amber-200/80 shadow-sm' : 'hover:bg-slate-100/80'}`}
+                    className={`flex gap-2.5 mb-2.5 cursor-pointer p-1.5 rounded-lg transition-all ${activeStep === 2 ? 'bg-amber-50 border border-amber-200/80 shadow-sm' : 'hover:bg-slate-100/80'}`}
                   >
-                    <div className={`w-6 h-6 rounded-full font-extrabold text-xs flex items-center justify-center flex-shrink-0 transition-all ${activeStep === 2 ? 'bg-amber-400 text-slate-900 shadow-sm' : 'border border-slate-300 text-slate-500 bg-white'}`}>
+                    <div className={`w-5 h-5 rounded-full font-extrabold text-[11px] flex items-center justify-center flex-shrink-0 transition-all ${activeStep === 2 ? 'bg-amber-400 text-slate-900 shadow-sm' : 'border border-slate-300 text-slate-500 bg-white'}`}>
                       2
                     </div>
                     <div>
-                      <div className={`font-extrabold text-xs transition-colors ${activeStep === 2 ? 'text-amber-700' : 'text-slate-800'}`}>Set Capacity</div>
-                      <div className="text-[10px] text-slate-500 mt-0.5 leading-snug">
+                      <div className={`font-extrabold text-[11.5px] transition-colors ${activeStep === 2 ? 'text-amber-700' : 'text-slate-800'}`}>Set Capacity</div>
+                      <div className="text-[9.5px] text-slate-500 mt-0.5 leading-snug">
                         Define the maximum capacity for items that can be held in this area.
                       </div>
                     </div>
@@ -1452,14 +1461,14 @@ export default function WarehouseHoldingAreas() {
                   {/* STEP 3 */}
                   <div
                     onClick={() => setActiveStep(3)}
-                    className={`flex gap-3 mb-4 cursor-pointer p-2 rounded-lg transition-all ${activeStep === 3 ? 'bg-amber-50 border border-amber-200/80 shadow-sm' : 'hover:bg-slate-100/80'}`}
+                    className={`flex gap-2.5 mb-2.5 cursor-pointer p-1.5 rounded-lg transition-all ${activeStep === 3 ? 'bg-amber-50 border border-amber-200/80 shadow-sm' : 'hover:bg-slate-100/80'}`}
                   >
-                    <div className={`w-6 h-6 rounded-full font-extrabold text-xs flex items-center justify-center flex-shrink-0 transition-all ${activeStep === 3 ? 'bg-amber-400 text-slate-900 shadow-sm' : 'border border-slate-300 text-slate-500 bg-white'}`}>
+                    <div className={`w-5 h-5 rounded-full font-extrabold text-[11px] flex items-center justify-center flex-shrink-0 transition-all ${activeStep === 3 ? 'bg-amber-400 text-slate-900 shadow-sm' : 'border border-slate-300 text-slate-500 bg-white'}`}>
                       3
                     </div>
                     <div>
-                      <div className={`font-extrabold text-xs transition-colors ${activeStep === 3 ? 'text-amber-700' : 'text-slate-800'}`}>Optional Settings</div>
-                      <div className="text-[10px] text-slate-500 mt-0.5 leading-snug">
+                      <div className={`font-extrabold text-[11.5px] transition-colors ${activeStep === 3 ? 'text-amber-700' : 'text-slate-800'}`}>Optional Settings</div>
+                      <div className="text-[9.5px] text-slate-500 mt-0.5 leading-snug">
                         Add a description and mark if this is a restricted or temperature controlled area.
                       </div>
                     </div>
@@ -1468,14 +1477,14 @@ export default function WarehouseHoldingAreas() {
                   {/* STEP 4 */}
                   <div
                     onClick={() => setActiveStep(4)}
-                    className={`flex gap-3 mb-4 cursor-pointer p-2 rounded-lg transition-all ${activeStep === 4 ? 'bg-amber-50 border border-amber-200/80 shadow-sm' : 'hover:bg-slate-100/80'}`}
+                    className={`flex gap-2.5 mb-2.5 cursor-pointer p-1.5 rounded-lg transition-all ${activeStep === 4 ? 'bg-amber-50 border border-amber-200/80 shadow-sm' : 'hover:bg-slate-100/80'}`}
                   >
-                    <div className={`w-6 h-6 rounded-full font-extrabold text-xs flex items-center justify-center flex-shrink-0 transition-all ${activeStep === 4 ? 'bg-amber-400 text-slate-900 shadow-sm' : 'border border-slate-300 text-slate-500 bg-white'}`}>
+                    <div className={`w-5 h-5 rounded-full font-extrabold text-[11px] flex items-center justify-center flex-shrink-0 transition-all ${activeStep === 4 ? 'bg-amber-400 text-slate-900 shadow-sm' : 'border border-slate-300 text-slate-500 bg-white'}`}>
                       4
                     </div>
                     <div>
-                      <div className={`font-extrabold text-xs transition-colors ${activeStep === 4 ? 'text-amber-700' : 'text-slate-800'}`}>Save</div>
-                      <div className="text-[10px] text-slate-500 mt-0.5 leading-snug">
+                      <div className={`font-extrabold text-[11.5px] transition-colors ${activeStep === 4 ? 'text-amber-700' : 'text-slate-800'}`}>Save</div>
+                      <div className="text-[9.5px] text-slate-500 mt-0.5 leading-snug">
                         Click Save Area to create the holding area. It will be available immediately.
                       </div>
                     </div>
@@ -1483,58 +1492,58 @@ export default function WarehouseHoldingAreas() {
                 </div>
 
                 {/* HELP NOTE BOX AT BOTTOM */}
-                <div className="p-2.5 bg-blue-50/80 border border-blue-200/80 rounded-lg flex items-start gap-2 text-[10.5px] text-blue-900">
-                  <Info size={14} className="flex-shrink-0 text-blue-600 mt-0.5" />
+                <div className="p-2 bg-blue-50/80 border border-blue-200/80 rounded-lg flex items-start gap-1.5 text-[10px] text-blue-900 mt-2">
+                  <Info size={13} className="flex-shrink-0 text-blue-600 mt-0.5" />
                   <span className="leading-snug">
-                    Holding areas help you organize inventory before items are moved to load lanes for dispatch.
+                    Holding areas help you organize inventory before items are moved to load lanes.
                   </span>
                 </div>
               </div>
 
-              {/* RIGHT FORM FIELDS PANEL (12 COLS ON MOBILE, 7 COLS ON DESKTOP) */}
-              <div className="col-span-12 md:col-span-7 p-4 flex flex-col justify-between">
-                <div className="space-y-4">
+              {/* RIGHT FORM FIELDS PANEL */}
+              <div className="col-span-12 md:col-span-7 p-3.5 flex flex-col justify-between">
+                <div className="space-y-3">
                   
                   {/* AREA DETAILS SECTION */}
                   <div>
-                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">
+                    <div className="text-[9.5px] font-black text-slate-400 uppercase tracking-wider mb-1.5">
                       AREA DETAILS
                     </div>
                     
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
                       <div>
-                        <label className="text-[10.5px] font-extrabold text-slate-700 block mb-1">Area Name <span className="text-red-500">*</span></label>
+                        <label className="text-[10px] font-extrabold text-slate-700 block mb-0.5">Area Name <span className="text-red-500">*</span></label>
                         <input
                           type="text"
                           required
                           placeholder="e.g. Stage Area 9"
                           value={newAreaName}
                           onChange={e => setNewAreaName(e.target.value)}
-                          className="w-full h-8 px-2.5 border border-slate-300 rounded-md text-xs font-medium outline-none focus:border-amber-400"
+                          className="w-full h-7.5 px-2 border border-slate-300 rounded-md text-xs font-medium outline-none focus:border-amber-400"
                         />
                       </div>
                       <div>
-                        <label className="text-[10.5px] font-extrabold text-slate-700 block mb-1">Area Code <span className="text-red-500">*</span></label>
+                        <label className="text-[10px] font-extrabold text-slate-700 block mb-0.5">Area Code <span className="text-red-500">*</span></label>
                         <input
                           type="text"
                           required
                           placeholder="e.g. SA-09"
                           value={newAreaCode}
                           onChange={e => setNewAreaCode(e.target.value)}
-                          className="w-full h-8 px-2.5 border border-slate-300 rounded-md text-xs font-medium outline-none focus:border-amber-400"
+                          className="w-full h-7.5 px-2 border border-slate-300 rounded-md text-xs font-medium outline-none focus:border-amber-400"
                         />
-                        <span className="text-[9.5px] text-slate-400 block mt-0.5">Unique code to identify this area</span>
+                        <span className="text-[9px] text-slate-400 block mt-0.5">Unique code to identify area</span>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div>
-                        <label className="text-[10.5px] font-extrabold text-slate-700 block mb-1">Zone <span className="text-red-500">*</span></label>
+                        <label className="text-[10px] font-extrabold text-slate-700 block mb-0.5">Zone <span className="text-red-500">*</span></label>
                         <select
                           required
                           value={newAreaZone}
                           onChange={e => setNewAreaZone(e.target.value)}
-                          className="w-full h-8 px-2 border border-slate-300 rounded-md text-xs font-medium outline-none focus:border-amber-400"
+                          className="w-full h-7.5 px-2 border border-slate-300 rounded-md text-xs font-medium outline-none focus:border-amber-400"
                         >
                           <option value="">Select Zone</option>
                           <option value="Zone A">Zone A</option>
@@ -1544,14 +1553,14 @@ export default function WarehouseHoldingAreas() {
                         </select>
                       </div>
                       <div>
-                        <label className="text-[10.5px] font-extrabold text-slate-700 flex items-center justify-between mb-1">
-                          <span>Next Load Lane (Default)</span>
-                          <Info size={11} className="text-slate-400" />
+                        <label className="text-[10px] font-extrabold text-slate-700 flex items-center justify-between mb-0.5">
+                          <span>Next Load Lane</span>
+                          <Info size={10} className="text-slate-400" />
                         </label>
                         <select
                           value={newAreaLane}
                           onChange={e => setNewAreaLane(e.target.value)}
-                          className="w-full h-8 px-2 border border-slate-300 rounded-md text-xs font-medium outline-none focus:border-amber-400"
+                          className="w-full h-7.5 px-2 border border-slate-300 rounded-md text-xs font-medium outline-none focus:border-amber-400"
                         >
                           <option value="">Select Load Lane</option>
                           <option value="Lane 1">Lane 1</option>
@@ -1567,29 +1576,29 @@ export default function WarehouseHoldingAreas() {
 
                   {/* CAPACITY SECTION */}
                   <div>
-                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">
+                    <div className="text-[9.5px] font-black text-slate-400 uppercase tracking-wider mb-1.5">
                       CAPACITY
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div>
-                        <label className="text-[10.5px] font-extrabold text-slate-700 block mb-1">Maximum Capacity <span className="text-red-500">*</span></label>
+                        <label className="text-[10px] font-extrabold text-slate-700 block mb-0.5">Maximum Capacity <span className="text-red-500">*</span></label>
                         <input
                           type="number"
                           required
                           placeholder="e.g. 50"
                           value={newAreaCap}
                           onChange={e => setNewAreaCap(e.target.value)}
-                          className="w-full h-8 px-2.5 border border-slate-300 rounded-md text-xs font-medium outline-none focus:border-amber-400"
+                          className="w-full h-7.5 px-2 border border-slate-300 rounded-md text-xs font-medium outline-none focus:border-amber-400"
                         />
-                        <span className="text-[9.5px] text-slate-400 block mt-0.5">Total items this area can hold</span>
+                        <span className="text-[9px] text-slate-400 block mt-0.5">Total capacity</span>
                       </div>
                       <div>
-                        <label className="text-[10.5px] font-extrabold text-slate-700 block mb-1">Unit Type</label>
+                        <label className="text-[10px] font-extrabold text-slate-700 block mb-0.5">Unit Type</label>
                         <select
                           value={newAreaUnit}
                           onChange={e => setNewAreaUnit(e.target.value)}
-                          className="w-full h-8 px-2 border border-slate-300 rounded-md text-xs font-medium outline-none focus:border-amber-400"
+                          className="w-full h-7.5 px-2 border border-slate-300 rounded-md text-xs font-medium outline-none focus:border-amber-400"
                         >
                           <option value="Items">Items</option>
                           <option value="Pallets">Pallets</option>
@@ -1599,34 +1608,34 @@ export default function WarehouseHoldingAreas() {
                     </div>
                   </div>
 
-                  {/* ADDITIONAL SETTINGS (OPTIONAL) SECTION */}
+                  {/* ADDITIONAL SETTINGS SECTION */}
                   <div>
-                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">
+                    <div className="text-[9.5px] font-black text-slate-400 uppercase tracking-wider mb-1.5">
                       ADDITIONAL SETTINGS (OPTIONAL)
                     </div>
 
-                    <div className="mb-3">
-                      <label className="text-[10.5px] font-extrabold text-slate-700 block mb-1">Description</label>
+                    <div className="mb-2">
+                      <label className="text-[10px] font-extrabold text-slate-700 block mb-0.5">Description</label>
                       <textarea
-                        rows={2}
+                        rows={1.5}
                         placeholder="Enter description (optional)"
                         value={newAreaDesc}
                         onChange={e => setNewAreaDesc(e.target.value)}
-                        className="w-full p-2 border border-slate-300 rounded-md text-xs font-medium outline-none focus:border-amber-400 resize-none"
+                        className="w-full p-1.5 border border-slate-300 rounded-md text-xs font-medium outline-none focus:border-amber-400 resize-none"
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <label className="flex items-start gap-2 cursor-pointer">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <label className="flex items-start gap-1.5 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={isRestricted}
                           onChange={e => setIsRestricted(e.target.checked)}
-                          className="mt-0.5 w-4 h-4 rounded border-slate-300 accent-amber-400 cursor-pointer"
+                          className="mt-0.5 w-3.5 h-3.5 rounded border-slate-300 accent-amber-400 cursor-pointer"
                         />
                         <div>
-                          <div className="text-xs font-bold text-slate-800">Restricted Area</div>
-                          <div className="text-[9.5px] text-slate-400">Only authorized staff can use this area</div>
+                          <div className="text-[11px] font-bold text-slate-800">Restricted Area</div>
+                          <div className="text-[9px] text-slate-400">Authorized staff only</div>
                         </div>
                       </label>
 
@@ -1635,11 +1644,11 @@ export default function WarehouseHoldingAreas() {
                           type="checkbox"
                           checked={isTempControlled}
                           onChange={e => setIsTempControlled(e.target.checked)}
-                          className="mt-0.5 w-4 h-4 rounded border-slate-300 accent-amber-400 cursor-pointer"
+                          className="mt-0.5 w-3.5 h-3.5 rounded border-slate-300 accent-amber-400 cursor-pointer"
                         />
                         <div>
-                          <div className="text-xs font-bold text-slate-800">Temperature Controlled</div>
-                          <div className="text-[9.5px] text-slate-400">This area requires temperature control</div>
+                          <div className="text-[11px] font-bold text-slate-800">Temp Controlled</div>
+                          <div className="text-[9px] text-slate-400">Requires temp control</div>
                         </div>
                       </label>
                     </div>
@@ -1648,17 +1657,17 @@ export default function WarehouseHoldingAreas() {
                 </div>
 
                 {/* FOOTER BUTTONS */}
-                <div className="flex justify-end gap-2 pt-4 border-t border-slate-200 mt-4">
+                <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 mt-3">
                   <button
                     type="button"
                     onClick={() => setAddAreaModalOpen(false)}
-                    className="px-4 py-1.5 border border-slate-300 rounded-md text-xs font-bold text-slate-700 hover:bg-slate-50"
+                    className="px-3 py-1 border border-slate-300 rounded-md text-xs font-bold text-slate-700 hover:bg-slate-50"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-1.5 bg-amber-400 hover:bg-amber-500 rounded-md text-xs font-black text-slate-900 shadow-sm"
+                    className="px-4 py-1 bg-amber-400 hover:bg-amber-500 rounded-md text-xs font-black text-slate-900 shadow-sm"
                   >
                     Save Area
                   </button>
