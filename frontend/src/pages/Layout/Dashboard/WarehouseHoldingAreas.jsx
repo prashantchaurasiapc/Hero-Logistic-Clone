@@ -258,7 +258,48 @@ export default function WarehouseHoldingAreas() {
   };
 
   const handleExport = () => {
-    showToast('Exporting staging area inventory report (CSV)...');
+    const exportData = filteredAreas.length > 0 ? filteredAreas : holdingAreas;
+
+    const headers = [
+      'Area Name',
+      'Sub Location',
+      'Area Code',
+      'Zone',
+      'Next Load Lane',
+      'Capacity',
+      'Occupancy',
+      'Occupancy Pct',
+      'Status'
+    ];
+
+    const rows = exportData.map(item => [
+      `"${item.name}"`,
+      `"${item.subLocation}"`,
+      `"${item.code}"`,
+      `"${item.zone}"`,
+      `"${item.lane}"`,
+      `"${item.capacity}"`,
+      `"${item.occupancy}"`,
+      `"${item.occupancyPct}%"`,
+      `"${item.status}"`
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(r => r.join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Holding_Areas_Inventory_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    showToast(`✓ Exported ${exportData.length} holding area records to CSV!`);
   };
 
   const handleConfirmMove = (e) => {
