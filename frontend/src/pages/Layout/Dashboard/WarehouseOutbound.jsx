@@ -164,7 +164,52 @@ export default function WarehouseOutbound() {
   };
 
   const handleExport = () => {
-    showToast('Exporting dispatch ready manifest (CSV)...');
+    const exportData = filteredLoads.length > 0 ? filteredLoads : loads;
+    
+    const headers = [
+      'Load / Reference',
+      'PO Reference',
+      'Customer',
+      'Trailer / Vehicle',
+      'Vehicle Type',
+      'Driver',
+      'Driver Phone',
+      'Load Lane',
+      'Area',
+      'Ready Since',
+      'Status'
+    ];
+
+    const rows = exportData.map(item => [
+      `"${item.loadRef}"`,
+      `"${item.poRef}"`,
+      `"${item.customer}"`,
+      `"${item.vehicle}"`,
+      `"${item.vehicleType || ''}"`,
+      `"${item.driver}"`,
+      `"${item.phone}"`,
+      `"${item.lane}"`,
+      `"${item.area}"`,
+      `"${item.readySince}"`,
+      `"${item.status}"`
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(r => r.join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Dispatch_Ready_Manifest_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    showToast(`✓ Exported ${exportData.length} dispatch ready records to CSV!`);
   };
 
   const handleConfirmDispatch = (e) => {

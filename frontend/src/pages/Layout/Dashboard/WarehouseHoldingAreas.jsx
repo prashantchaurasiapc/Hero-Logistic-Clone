@@ -258,7 +258,48 @@ export default function WarehouseHoldingAreas() {
   };
 
   const handleExport = () => {
-    showToast('Exporting staging area inventory report (CSV)...');
+    const exportData = filteredAreas.length > 0 ? filteredAreas : holdingAreas;
+
+    const headers = [
+      'Area Name',
+      'Sub Location',
+      'Area Code',
+      'Zone',
+      'Next Load Lane',
+      'Capacity',
+      'Occupancy',
+      'Occupancy Pct',
+      'Status'
+    ];
+
+    const rows = exportData.map(item => [
+      `"${item.name}"`,
+      `"${item.subLocation}"`,
+      `"${item.code}"`,
+      `"${item.zone}"`,
+      `"${item.lane}"`,
+      `"${item.capacity}"`,
+      `"${item.occupancy}"`,
+      `"${item.occupancyPct}%"`,
+      `"${item.status}"`
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(r => r.join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Holding_Areas_Inventory_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    showToast(`✓ Exported ${exportData.length} holding area records to CSV!`);
   };
 
   const handleConfirmMove = (e) => {
@@ -271,6 +312,171 @@ export default function WarehouseHoldingAreas() {
     e.preventDefault();
     setAssignModalOpen(false);
     showToast(`✓ ${selectedAreaForMove} assigned to ${targetLane}!`);
+  };
+
+  const handlePrintBarcode = (area) => {
+    if (!area) return;
+    const printWindow = window.open('', '_blank', 'width=800,height=650');
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Location Barcode Label - ${area.code}</title>
+          <style>
+            @page { size: auto; margin: 15mm; }
+            body {
+              font-family: 'Inter', system-ui, -apple-system, sans-serif;
+              color: #0F172A;
+              margin: 0;
+              padding: 20px;
+              background: #fff;
+            }
+            .label-card {
+              border: 3px solid #0F172A;
+              border-radius: 16px;
+              padding: 24px;
+              max-width: 480px;
+              margin: 0 auto;
+              text-align: center;
+              box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            }
+            .header-badge {
+              background: #FFD400;
+              color: #0F172A;
+              font-size: 28px;
+              font-weight: 900;
+              padding: 6px 18px;
+              border-radius: 8px;
+              display: inline-block;
+              letter-spacing: 1px;
+            }
+            .area-title {
+              font-size: 22px;
+              font-weight: 800;
+              margin: 12px 0 2px 0;
+              color: #0F172A;
+            }
+            .sub-loc {
+              font-size: 13px;
+              color: #64748B;
+              font-weight: 600;
+              margin-bottom: 20px;
+            }
+            .barcode-svg {
+              margin: 16px 0;
+            }
+            .details-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 12px;
+              background: #F8FAFC;
+              padding: 12px;
+              border-radius: 8px;
+              border: 1px solid #E2E8F0;
+              text-align: left;
+              font-size: 12px;
+              margin-top: 16px;
+            }
+            .detail-label {
+              font-size: 10px;
+              font-weight: 800;
+              color: #64748B;
+              text-transform: uppercase;
+            }
+            .detail-val {
+              font-size: 12px;
+              font-weight: 800;
+              color: #0F172A;
+            }
+            .footer-notes {
+              margin-top: 16px;
+              font-size: 10px;
+              color: #94A3B8;
+              font-weight: 600;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="label-card">
+            <div class="header-badge">${area.code}</div>
+            <div class="area-title">${area.name}</div>
+            <div class="sub-loc">${area.subLocation}</div>
+
+            <!-- Visual Barcode Graphic -->
+            <div class="barcode-svg">
+              <svg width="280" height="70" viewBox="0 0 280 70">
+                <rect x="10" y="0" width="4" height="50" fill="#0F172A"/>
+                <rect x="18" y="0" width="2" height="50" fill="#0F172A"/>
+                <rect x="24" y="0" width="6" height="50" fill="#0F172A"/>
+                <rect x="34" y="0" width="3" height="50" fill="#0F172A"/>
+                <rect x="40" y="0" width="8" height="50" fill="#0F172A"/>
+                <rect x="52" y="0" width="2" height="50" fill="#0F172A"/>
+                <rect x="58" y="0" width="5" height="50" fill="#0F172A"/>
+                <rect x="66" y="0" width="3" height="50" fill="#0F172A"/>
+                <rect x="73" y="0" width="7" height="50" fill="#0F172A"/>
+                <rect x="84" y="0" width="2" height="50" fill="#0F172A"/>
+                <rect x="90" y="0" width="6" height="50" fill="#0F172A"/>
+                <rect x="100" y="0" width="4" height="50" fill="#0F172A"/>
+                <rect x="108" y="0" width="2" height="50" fill="#0F172A"/>
+                <rect x="114" y="0" width="8" height="50" fill="#0F172A"/>
+                <rect x="126" y="0" width="3" height="50" fill="#0F172A"/>
+                <rect x="133" y="0" width="5" height="50" fill="#0F172A"/>
+                <rect x="142" y="0" width="2" height="50" fill="#0F172A"/>
+                <rect x="148" y="0" width="7" height="50" fill="#0F172A"/>
+                <rect x="159" y="0" width="4" height="50" fill="#0F172A"/>
+                <rect x="167" y="0" width="2" height="50" fill="#0F172A"/>
+                <rect x="173" y="0" width="6" height="50" fill="#0F172A"/>
+                <rect x="183" y="0" width="3" height="50" fill="#0F172A"/>
+                <rect x="190" y="0" width="8" height="50" fill="#0F172A"/>
+                <rect x="202" y="0" width="2" height="50" fill="#0F172A"/>
+                <rect x="208" y="0" width="5" height="50" fill="#0F172A"/>
+                <rect x="216" y="0" width="3" height="50" fill="#0F172A"/>
+                <rect x="223" y="0" width="7" height="50" fill="#0F172A"/>
+                <rect x="234" y="0" width="2" height="50" fill="#0F172A"/>
+                <rect x="240" y="0" width="6" height="50" fill="#0F172A"/>
+                <rect x="250" y="0" width="4" height="50" fill="#0F172A"/>
+                <rect x="258" y="0" width="2" height="50" fill="#0F172A"/>
+                <rect x="264" y="0" width="6" height="50" fill="#0F172A"/>
+                <text x="140" y="66" text-anchor="middle" font-family="monospace" font-size="12" font-weight="bold" fill="#0F172A">
+                  *${area.code}*
+                </text>
+              </svg>
+            </div>
+
+            <div class="details-grid">
+              <div>
+                <div class="detail-label">Zone & Lane</div>
+                <div class="detail-val">${area.zone} • ${area.lane}</div>
+              </div>
+              <div>
+                <div class="detail-label">Total Capacity</div>
+                <div class="detail-val">${area.capacity} Units</div>
+              </div>
+              <div>
+                <div class="detail-label">Current Staged</div>
+                <div class="detail-val">${area.stagedItems || 0} Items</div>
+              </div>
+              <div>
+                <div class="detail-label">Depot Facility</div>
+                <div class="detail-val">Sydney Central Depot</div>
+              </div>
+            </div>
+
+            <div class="footer-notes">
+              HERO LOGISTICS • LOCATION BARCODE LABEL SHEET
+            </div>
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   const getOccupancyBarColor = (pct) => {
@@ -287,7 +493,7 @@ export default function WarehouseHoldingAreas() {
           background: #F8FAFC;
           min-height: 100vh;
           color: #0F172A;
-          padding: 20px 24px;
+          padding: 24px 32px;
           box-sizing: border-box;
         }
 
@@ -316,9 +522,9 @@ export default function WarehouseHoldingAreas() {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 16px;
-          flex-wrap: wrap;
-          gap: 12px;
+          margin-bottom: 24px;
+          width: 100%;
+          gap: 16px;
         }
         .wh-st-title {
           font-size: 18px;
@@ -331,15 +537,17 @@ export default function WarehouseHoldingAreas() {
         .wh-st-sub {
           font-size: 12px;
           color: #64748B;
-          margin-top: 2px;
+          margin-top: 3px;
         }
         .wh-st-actions-top {
           display: flex;
           align-items: center;
           gap: 8px;
+          margin-left: auto;
+          flex-shrink: 0;
         }
         .wh-btn-export-st {
-          height: 36px;
+          height: 38px;
           padding: 0 14px;
           border-radius: 8px;
           border: 1px solid #CBD5E1;
@@ -356,7 +564,7 @@ export default function WarehouseHoldingAreas() {
         .wh-btn-export-st:hover { background: #F1F5F9; }
 
         .wh-btn-refresh-st {
-          height: 36px;
+          height: 38px;
           padding: 0 18px;
           border-radius: 8px;
           border: none;
@@ -372,7 +580,7 @@ export default function WarehouseHoldingAreas() {
         }
 
         .wh-btn-add-st {
-          height: 36px;
+          height: 38px;
           padding: 0 16px;
           border-radius: 8px;
           border: 1px solid #CBD5E1;
@@ -393,22 +601,22 @@ export default function WarehouseHoldingAreas() {
         .wh-st-stats-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
-          gap: 12px;
-          margin-bottom: 16px;
+          gap: 16px;
+          margin-bottom: 24px;
         }
         .wh-st-stat-card {
           background: #FFFFFF;
           border: 1px solid #E2E8F0;
           border-radius: 12px;
-          padding: 14px 16px;
+          padding: 16px 20px;
           display: flex;
           align-items: center;
-          gap: 14px;
-          box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+          gap: 16px;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.03);
         }
         .wh-st-icon-box {
-          width: 42px;
-          height: 42px;
+          width: 44px;
+          height: 44px;
           border-radius: 10px;
           display: flex;
           align-items: center;
@@ -416,9 +624,9 @@ export default function WarehouseHoldingAreas() {
           flex-shrink: 0;
         }
         .wh-st-icon-box.blue { background: #DBEAFE; color: #2563EB; }
-        .wh-st-icon-box.green { background: #DCFCE7; color: #16A34A; }
         .wh-st-icon-box.amber { background: #FEF3C7; color: #D97706; }
-        .wh-st-icon-box.red { background: #FEE2E2; color: #DC2626; }
+        .wh-st-icon-box.green { background: #DCFCE7; color: #16A34A; }
+        .wh-st-icon-box.purple { background: #F3E8FF; color: #9333EA; }
 
         .wh-st-stat-num {
           font-size: 22px;
@@ -442,7 +650,7 @@ export default function WarehouseHoldingAreas() {
         /* MASTER GRID LAYOUT */
         .wh-st-master-grid {
           display: flex;
-          gap: 14px;
+          gap: 18px;
           align-items: flex-start;
         }
         .wh-st-left-col {
@@ -450,21 +658,21 @@ export default function WarehouseHoldingAreas() {
           min-width: 0;
           display: flex;
           flex-direction: column;
-          gap: 12px;
+          gap: 14px;
         }
         .wh-st-right-col {
-          width: 250px;
+          width: 260px;
           flex-shrink: 0;
           display: flex;
           flex-direction: column;
-          gap: 12px;
+          gap: 14px;
         }
 
         .wh-st-main-card {
           background: #FFFFFF;
           border: 1px solid #E2E8F0;
           border-radius: 12px;
-          padding: 16px;
+          padding: 20px;
           box-shadow: 0 1px 3px rgba(0,0,0,0.03);
         }
 
@@ -1080,7 +1288,7 @@ export default function WarehouseHoldingAreas() {
                                 <div
                                   className="wh-dropdown-item"
                                   onClick={() => {
-                                    showToast(`🖨️ Barcode labels printed for ${area.code}`);
+                                    handlePrintBarcode(area);
                                     setActionMenuAreaId(null);
                                   }}
                                 >
@@ -1684,18 +1892,18 @@ export default function WarehouseHoldingAreas() {
       {viewModalArea && (
         <div className="wh-modal-overlay" onClick={() => setViewModalArea(null)}>
           <div className="wh-modal-box" style={{ maxWidth: '560px' }} onClick={e => e.stopPropagation()}>
-            <div className="wh-modal-header" style={{ background: '#0F172A', color: '#FFFFFF', padding: '14px 18px' }}>
+            <div className="wh-modal-header" style={{ background: '#FFFFFF', color: '#0F172A', padding: '14px 18px', borderBottom: '1px solid #E2E8F0' }}>
               <div className="flex items-center gap-3">
                 <div style={{ background: '#FFD400', color: '#0F172A', fontWeight: 900, fontSize: '12px', padding: '4px 8px', borderRadius: '6px' }}>
                   {viewModalArea.code}
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-sm text-white" style={{ margin: 0 }}>{viewModalArea.name}</h3>
-                  <div className="text-[10px] text-slate-400 font-medium">{viewModalArea.subLocation}</div>
+                  <h3 className="font-extrabold text-sm text-slate-900" style={{ margin: 0 }}>{viewModalArea.name}</h3>
+                  <div className="text-[10px] text-slate-500 font-medium">{viewModalArea.subLocation}</div>
                 </div>
               </div>
-              <button onClick={() => setViewModalArea(null)} className="p-1 hover:bg-slate-800 rounded">
-                <X size={18} className="text-slate-400" />
+              <button onClick={() => setViewModalArea(null)} className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-slate-600 transition">
+                <X size={18} />
               </button>
             </div>
 
@@ -1780,9 +1988,7 @@ export default function WarehouseHoldingAreas() {
 
                 <button
                   className="px-3 py-2 border border-slate-300 hover:bg-slate-100 text-slate-700 rounded-lg font-bold text-xs flex items-center gap-1.5 transition"
-                  onClick={() => {
-                    showToast(`🖨️ Barcode labels printed for ${viewModalArea.code}`);
-                  }}
+                  onClick={() => handlePrintBarcode(viewModalArea)}
                 >
                   <Printer size={14} />
                   <span>Print Barcode</span>
