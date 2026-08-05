@@ -77,15 +77,19 @@ const StagingAreaRoutes = require('./StagingAreaRoutes');
 const NetworkedPrinterRoutes = require('./NetworkedPrinterRoutes');
 const WarehouseLabelPrintRoutes = require('./WarehouseLabelPrintRoutes');
 const PrintSpoolerJobRoutes = require('./PrintSpoolerJobRoutes');
+const authRoutes = require('./AuthRoutes');
+const actionRoutes = require('./ActionRoutes');
 const DocumentRoutes = require('./DocumentRoutes');
 
 
-router.use('/users', UserRoutes);
+router.use('/auth', authRoutes);
+router.use('/actions', actionRoutes);
 router.use('/companys', CompanyRoutes);
 router.use('/subscription-plans', SubscriptionPlanRoutes);
 router.use('/support-tickets', SupportTicketRoutes);
 router.use('/billing-records', BillingRecordRoutes);
 router.use('/audit-logs', AuditLogRoutes);
+router.use('/users', UserRoutes);
 router.use('/white-label-configs', WhiteLabelConfigRoutes);
 router.use('/features', FeatureRoutes);
 router.use('/plan-features', PlanFeatureRoutes);
