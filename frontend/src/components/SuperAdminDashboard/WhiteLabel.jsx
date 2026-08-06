@@ -32,12 +32,8 @@ export default function WhiteLabel() {
 
   const [liveBranding, setLiveBranding] = useState({ ...brandingForm });
 
-  // Themes state
-  const [themes, setThemes] = useState([
-    { name: 'Dark Glassmorphism', accent: '#0ea5e9', sidebar: '#111827', header: '#161F30', status: 'Published' },
-    { name: 'Vibrant Ocean', accent: '#0284c7', sidebar: '#0f172a', header: '#1e293b', status: 'Draft' },
-    { name: 'Emerald Forest', accent: '#10b981', sidebar: '#064e3b', header: '#022c22', status: 'Draft' }
-  ]);
+  // Themes state — loaded dynamically from database
+  const [themes, setThemes] = useState([]);
   const [newThemeName, setNewThemeName] = useState('');
 
   // Domains state — loaded dynamically from database
@@ -163,6 +159,41 @@ export default function WhiteLabel() {
           health: d.healthStatus || 'Excellent',
           rules: d.routingRule
         })));
+      }
+
+      // Load themes
+      const themesRes = await api.get('/themes');
+      if (themesRes.data?.success && themesRes.data.data.length > 0) {
+        setThemes(themesRes.data.data.map(t => ({
+          id: t.id,
+          name: t.name,
+          accent: t.accentColor,
+          sidebar: t.sidebarColor,
+          header: t.headerColor,
+          status: t.status === 'PUBLISHED' ? 'Published' : 'Draft'
+        })));
+      } else {
+        // Seed default themes in UI if database has none
+        const defaults = [
+          { name: 'Dark Glassmorphism', accentColor: '#0ea5e9', sidebarColor: '#111827', headerColor: '#161F30', status: 'PUBLISHED' },
+          { name: 'Vibrant Ocean', accentColor: '#0284c7', sidebarColor: '#0f172a', headerColor: '#1e293b', status: 'DRAFT' },
+          { name: 'Emerald Forest', accentColor: '#10b981', sidebarColor: '#064e3b', headerColor: '#022c22', status: 'DRAFT' }
+        ];
+        for (const item of defaults) {
+          await api.post('/themes', item);
+        }
+        // Refetch to get IDs
+        const refetch = await api.get('/themes');
+        if (refetch.data?.success) {
+          setThemes(refetch.data.data.map(t => ({
+            id: t.id,
+            name: t.name,
+            accent: t.accentColor,
+            sidebar: t.sidebarColor,
+            header: t.headerColor,
+            status: t.status === 'PUBLISHED' ? 'Published' : 'Draft'
+          })));
+        }
       }
     } catch (err) {
       console.error('Failed to load whitelabel configuration data:', err);
@@ -295,40 +326,80 @@ export default function WhiteLabel() {
   };
 
   // Theme actions
-  const handlePublishTheme = (themeName) => {
-    setThemes(prev => prev.map(t => t.name === themeName ? { ...t, status: 'Published' } : { ...t, status: 'Draft' }));
-    showNotification(`Theme "${themeName}" published to platform.`);
+  const handlePublishTheme = async (themeId, themeName) => {
+    try {
+      // Fetch all themes to set status of others to DRAFT
+      const allThemes = await api.get('/themes');
+      if (allThemes.data?.success) {
+        for (const t of allThemes.data.data) {
+          const nextStatus = t.id === themeId ? 'PUBLISHED' : 'DRAFT';
+          await api.put(`/themes/${t.id}`, { status: nextStatus });
+        }
+      }
+      showNotification(`Theme "${themeName}" published to platform.`);
+      fetchWhiteLabelAndDomains();
+    } catch (err) {
+      console.error(err);
+      showNotification('Error publishing theme.');
+    }
   };
 
-  const handleCloneTheme = (theme) => {
-    const cloned = { ...theme, name: `${theme.name} (Copy)`, status: 'Draft' };
-    setThemes([...themes, cloned]);
-    showNotification(`Cloned theme "${theme.name}"`);
+  const handleCloneTheme = async (theme) => {
+    try {
+      const res = await api.post('/themes', {
+        name: `${theme.name} (Copy)`,
+        accentColor: theme.accent,
+        sidebarColor: theme.sidebar,
+        headerColor: theme.header,
+        status: 'DRAFT'
+      });
+      if (res.data?.success) {
+        showNotification(`Cloned theme "${theme.name}" successfully.`);
+        fetchWhiteLabelAndDomains();
+      }
+    } catch (err) {
+      console.error(err);
+      showNotification('Error cloning theme.');
+    }
   };
 
-  const handleDeleteTheme = (themeName) => {
-    const target = themes.find(t => t.name === themeName);
-    if (target && target.status === 'Published') {
+  const handleDeleteTheme = async (themeId, themeName, status) => {
+    if (status === 'Published') {
       alert('Cannot delete the active published theme.');
       return;
     }
-    setThemes(prev => prev.filter(t => t.name !== themeName));
-    showNotification(`Theme "${themeName}" deleted.`);
+    try {
+      const res = await api.delete(`/themes/${themeId}`);
+      if (res.status === 204 || res.data?.success) {
+        showNotification(`Theme "${themeName}" deleted.`);
+        fetchWhiteLabelAndDomains();
+      }
+    } catch (err) {
+      console.error(err);
+      showNotification('Error deleting theme.');
+    }
   };
 
-  const handleRegisterTheme = (e) => {
+  const handleRegisterTheme = async (e) => {
     e.preventDefault();
     if (!newThemeName) return;
-    const newTheme = {
-      name: newThemeName,
-      accent: '#' + Math.floor(Math.random() * 16777215).toString(16),
-      sidebar: '#0f172a',
-      header: '#1e293b',
-      status: 'Draft'
-    };
-    setThemes([...themes, newTheme]);
-    setNewThemeName('');
-    showNotification(`Theme skin "${newThemeName}" registered.`);
+    try {
+      const res = await api.post('/themes', {
+        name: newThemeName,
+        accentColor: '#' + Math.floor(Math.random() * 16777215).toString(16),
+        sidebarColor: '#0f172a',
+        headerColor: '#1e293b',
+        status: 'DRAFT'
+      });
+      if (res.data?.success) {
+        setNewThemeName('');
+        showNotification(`Theme skin "${newThemeName}" registered.`);
+        fetchWhiteLabelAndDomains();
+      }
+    } catch (err) {
+      console.error(err);
+      showNotification('Error registering theme.');
+    }
   };
 
   // CNAME domains actions
@@ -987,14 +1058,14 @@ export default function WhiteLabel() {
                       </button>
                       {theme.status !== 'Published' && (
                         <button
-                          onClick={() => handlePublishTheme(theme.name)}
+                          onClick={() => handlePublishTheme(theme.id, theme.name)}
                           className="bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-[10px] px-3.5 py-2 rounded-xl transition-colors cursor-pointer"
                         >
                           Publish System
                         </button>
                       )}
                       <button
-                        onClick={() => handleDeleteTheme(theme.name)}
+                        onClick={() => handleDeleteTheme(theme.id, theme.name, theme.status)}
                         className="bg-rose-50 hover:bg-rose-100 text-rose-500 p-2.5 rounded-xl border border-rose-100 transition-colors cursor-pointer ml-auto"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
