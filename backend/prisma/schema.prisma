@@ -15,6 +15,13 @@ enum Role {
   SUPER_ADMIN
   PLATFORM_OWNER
   COMPANY_ADMIN
+  SALES
+  DISPATCHER
+  DRIVER
+  WAREHOUSE
+  YARD
+  ACCOUNTS
+  CUSTOMER
   USER
 }
 
@@ -1151,10 +1158,12 @@ model UserSession {
   id         String    @id @default(uuid())
   userId     String
   user       User      @relation(fields: [userId], references: [id])
+  tokenHash  String?   @db.Text
   ipAddress  String?
   userAgent  String?   @db.Text
   loginTime  DateTime  @default(now())
   logoutTime DateTime?
+  expiresAt  DateTime?
   isActive   Boolean   @default(true)
 
   @@map("user_session")

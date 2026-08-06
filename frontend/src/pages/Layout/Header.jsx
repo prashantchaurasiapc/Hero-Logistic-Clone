@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './Header.css';
+import { useAuth } from '../../context/AuthContext';
 import { 
   Menu, Search, Bell, MessageSquare, ChevronDown, User, LogOut, X, 
   MapPin, Shield, Truck, Users, LayoutDashboard, Settings
@@ -11,10 +12,16 @@ const Header = ({ onMenuClick }) => {
   const location = useLocation();
   const navigate = useNavigate();
   
+  const { user, logout } = useAuth();
+  
   // Stacking role details
   const isAdminPath = location.pathname.startsWith('/company-admin');
   const isDispatcherPath = location.pathname.startsWith('/dispatcher');
   const getRoleLabel = () => {
+    if (user?.role) {
+      const formattedRole = user.role.replace('_', ' ');
+      return formattedRole.charAt(0) + formattedRole.slice(1).toLowerCase();
+    }
     if (location.pathname.startsWith('/driver')) return 'Driver';
     if (isDispatcherPath) return 'Dispatcher';
     if (location.pathname.startsWith('/warehouse')) return 'Warehouse';
@@ -24,44 +31,23 @@ const Header = ({ onMenuClick }) => {
     return 'Admin';
   };
 
-  // Profile details states synced with localStorage session
+  // Profile details states
   const [userName, setUserName] = useState('Admin');
   const [userEmail, setUserEmail] = useState('admin@hero.com');
   const [avatar, setAvatar] = useState('AM');
 
   useEffect(() => {
-    const syncSession = () => {
-      const sessionStr = localStorage.getItem('hero_session');
-      if (sessionStr) {
-        try {
-          const session = JSON.parse(sessionStr);
-          if (session.name) {
-            setUserName(session.name);
-            const initials = session.name.split(' ').map(n => n[0]).join('').toUpperCase();
-            setAvatar(initials);
-          } else {
-            setUserName('Admin');
-            setAvatar('AM');
-          }
-          if (session.email) {
-            setUserEmail(session.email);
-          } else {
-            setUserEmail('admin@hero.com');
-          }
-        } catch (e) {
-          console.error(e);
-        }
+    if (user) {
+      setUserName(user.name || 'Admin');
+      setUserEmail(user.email || 'admin@hero.com');
+      if (user.name) {
+        const initials = user.name.split(' ').map(n => n[0]).join('').toUpperCase();
+        setAvatar(initials.slice(0, 2));
       } else {
-        setUserName('Admin');
-        setUserEmail('admin@hero.com');
-        setAvatar('AM');
+        setAvatar('AD');
       }
-    };
-
-    syncSession();
-    window.addEventListener('storage', syncSession);
-    return () => window.removeEventListener('storage', syncSession);
-  }, [location.pathname]);
+    }
+  }, [user]);
 
   // Notification lists state
   const [showNotifications, setShowNotifications] = useState(false);
@@ -167,8 +153,8 @@ const Header = ({ onMenuClick }) => {
     item.category.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleSignOut = () => {
-    localStorage.removeItem('hero_session');
+  const handleSignOut = async () => {
+    await logout();
     setShowDropdown(false);
     navigate('/login');
   };

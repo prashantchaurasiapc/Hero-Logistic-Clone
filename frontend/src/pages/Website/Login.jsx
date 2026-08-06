@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import './Login.css';
+import { useAuth } from '../../context/AuthContext';
 import {
   FiMail, FiLock, FiEye, FiEyeOff, FiShield, FiLogIn,
   FiBarChart2, FiBriefcase, FiClipboard,
@@ -26,9 +27,11 @@ const tags = [
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [loggingInRole, setLoggingInRole] = useState('');
   const [logoSrc, setLogoSrc] = useState('/image.png');
+  const [errorMsg, setErrorMsg] = useState('');
 
   // Input states
   const [emailInput, setEmailInput] = useState('admin@hero.com');
@@ -63,93 +66,70 @@ const Login = () => {
     };
   }, []);
 
-  const handleRoleLogin = (roleId) => {
+  const handleRoleLogin = async (roleId) => {
     const roleCard = roleCards.find(r => r.id === roleId);
     const label = roleCard ? roleCard.label : 'Admin';
     setLoggingInRole(label);
     setIsAuthenticating(true);
+    setErrorMsg('');
 
-    setTimeout(() => {
-      if (roleId === 'super-admin') {
-        navigate('/admin/dashboard');
-      } else if (roleId === 'sales') {
-        navigate('/sales/dashboard');
-      } else if (roleId === 'company-admin') {
-        navigate('/company-admin/command-centre');
-      } else if (roleId === 'dispatcher') {
-        navigate('/dispatcher/command-center');
-      } else if (roleId === 'driver') {
-        navigate('/driver/dashboard');
-      } else if (roleId === 'warehouse') {
-        navigate('/warehouse/dashboard');
-      } else if (roleId === 'yard') {
-        navigate('/yard/dashboard');
-      } else if (roleId === 'accounts') {
-        navigate('/accounts/dashboard');
-      } else if (roleId === 'customer') {
-        navigate('/customer/dashboard');
-      } else {
-        navigate('/admin/dashboard');
-      }
-    }, 1600);
+    // Actually hit the backend API for login
+    // Using a convention like admin@hero.com, dispatcher@hero.com
+    const roleEmail = roleId === 'super-admin' ? 'admin@hero.com' : `${roleId}@hero.com`;
+    const res = await login(roleEmail, '123456');
+
+    if (res.success) {
+      const userRole = res.user?.role || 'SUPER_ADMIN';
+      setLoggingInRole(userRole);
+      
+      let targetPath = '/admin/dashboard';
+      if (userRole === 'DRIVER') targetPath = '/driver/dashboard';
+      else if (userRole === 'DISPATCHER') targetPath = '/dispatcher/command-center';
+      else if (userRole === 'COMPANY_ADMIN') targetPath = '/company-admin/command-centre';
+      else if (userRole === 'SALES') targetPath = '/sales/dashboard';
+      else if (userRole === 'WAREHOUSE') targetPath = '/warehouse/dashboard';
+      else if (userRole === 'YARD') targetPath = '/yard/dashboard';
+      else if (userRole === 'ACCOUNTS') targetPath = '/accounts/dashboard';
+      else if (userRole === 'CUSTOMER') targetPath = '/customer/dashboard';
+
+      setTimeout(() => {
+        navigate(targetPath);
+      }, 1000);
+    } else {
+      setIsAuthenticating(false);
+      setErrorMsg(`Demo user ${roleEmail} not found in DB! Please register this user first.`);
+    }
   };
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    const lowerEmail = emailInput.toLowerCase();
-    let userRole = 'Super Admin';
-    let targetPath = '/admin/dashboard';
-
-    // Check localStorage user database first
-    const savedUsers = localStorage.getItem('hero_user_management_users');
-    if (savedUsers) {
-      try {
-        const users = JSON.parse(savedUsers);
-        const match = users.find(u => u.email.toLowerCase() === lowerEmail);
-        if (match) {
-          userRole = match.role;
-          localStorage.setItem('hero_session', JSON.stringify({
-            name: match.name,
-            email: match.email,
-            role: match.role,
-            company: match.company
-          }));
-        }
-      } catch (err) { console.error(err); }
-    }
-
-    // Role detection fallback logic based on keywords
-    if (lowerEmail.includes('driver')) {
-      targetPath = '/driver/dashboard';
-      userRole = 'Driver';
-    } else if (lowerEmail.includes('dispatch')) {
-      targetPath = '/dispatcher/command-center';
-      userRole = 'Dispatcher';
-    } else if (lowerEmail.includes('company')) {
-      targetPath = '/company-admin/command-centre';
-      userRole = 'Company Admin';
-    } else if (lowerEmail.includes('sales')) {
-      targetPath = '/sales/dashboard';
-      userRole = 'Sales Rep';
-    } else if (lowerEmail.includes('warehouse')) {
-      targetPath = '/warehouse/dashboard';
-      userRole = 'Warehouse Manager';
-    } else if (lowerEmail.includes('yard')) {
-      targetPath = '/yard/dashboard';
-      userRole = 'Yard Attendant';
-    } else if (lowerEmail.includes('account')) {
-      targetPath = '/accounts/dashboard';
-      userRole = 'Accounts Manager';
-    } else if (lowerEmail.includes('customer')) {
-      targetPath = '/customer/dashboard';
-      userRole = 'Customer';
-    }
-
-    setLoggingInRole(userRole);
+    setErrorMsg('');
     setIsAuthenticating(true);
-    setTimeout(() => {
-      navigate(targetPath);
-    }, 1600);
+    setLoggingInRole('Loading...');
+
+    const res = await login(emailInput, passwordInput);
+    
+    if (res.success) {
+      const userRole = res.user?.role || 'SUPER_ADMIN';
+      setLoggingInRole(userRole);
+      
+      let targetPath = '/admin/dashboard';
+      if (userRole === 'DRIVER') targetPath = '/driver/dashboard';
+      else if (userRole === 'DISPATCHER') targetPath = '/dispatcher/command-center';
+      else if (userRole === 'COMPANY_ADMIN') targetPath = '/company-admin/command-centre';
+      else if (userRole === 'SALES') targetPath = '/sales/dashboard';
+      else if (userRole === 'WAREHOUSE') targetPath = '/warehouse/dashboard';
+      else if (userRole === 'YARD') targetPath = '/yard/dashboard';
+      else if (userRole === 'ACCOUNTS') targetPath = '/accounts/dashboard';
+      else if (userRole === 'CUSTOMER') targetPath = '/customer/dashboard';
+
+      setTimeout(() => {
+        navigate(targetPath);
+      }, 1600);
+    } else {
+      setIsAuthenticating(false);
+      setErrorMsg(res.message || 'Invalid email or password');
+    }
   };
 
   return (
@@ -272,6 +252,7 @@ const Login = () => {
             <p className="welcome-desc">Click any dashboard below for instant access, or sign in manually</p>
 
             <form className="login-form" onSubmit={handleLogin}>
+              {errorMsg && <div style={{ color: '#ef4444', marginBottom: '12px', fontSize: '13px', fontWeight: 'bold' }}>{errorMsg}</div>}
               <div className="form-group">
                 <label>EMAIL ADDRESS</label>
                 <div className="input-wrapper">

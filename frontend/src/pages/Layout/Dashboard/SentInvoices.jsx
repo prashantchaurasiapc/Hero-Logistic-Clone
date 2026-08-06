@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../../services/api';
 import {
   FileText, CheckCircle2, Clock, ShieldAlert, ArrowDown, ArrowUp, DollarSign,
   Search, ChevronDown, Calendar, Filter, Download, FileSpreadsheet, Eye, MoreVertical,
@@ -141,7 +142,46 @@ const SentInvoices = () => {
     }
   ];
 
-  const [invoices, setInvoices] = useState(initialInvoices);
+  const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchInvoices = async () => {
+      setLoading(true);
+      try {
+        const res = await api.get('/customer-invoices');
+        if (res.data && res.data.success && res.data.data.length > 0) {
+          const fetchedInvoices = res.data.data.map((inv, idx) => {
+            const amount = parseFloat(inv.totalAmount) || 0;
+            const paid = inv.status === 'PAID' ? amount : (inv.status === 'PARTIAL' ? amount / 2 : 0);
+            return {
+              id: inv.invoiceNumber || `INV-${inv.id?.substring(0,4)}`,
+              customer: inv.Customer?.name || 'Customer Name',
+              date: new Date(inv.invoiceDate || Date.now()).toISOString().split('T')[0],
+              dateFormatted: new Date(inv.invoiceDate || Date.now()).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+              dueDate: new Date(inv.dueDate || Date.now()).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+              amount: amount,
+              paid: paid,
+              status: inv.status === 'PAID' ? 'Paid' : (inv.status === 'PARTIAL' ? 'Part Paid' : (inv.status === 'OVERDUE' ? 'Overdue' : 'Sent')),
+              daysOutstanding: inv.status === 'PAID' ? '-' : Math.floor(Math.random() * 30),
+              loadId: inv.loadId ? `LOAD-${inv.loadId.substring(0,4)}` : '-',
+              type: 'Freight'
+            };
+          });
+          setInvoices(fetchedInvoices);
+        } else {
+          setInvoices(initialInvoices);
+        }
+      } catch (err) {
+        console.error('Error fetching invoices:', err);
+        setInvoices(initialInvoices);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchInvoices();
+  }, []);
+
   const [activeTab, setActiveTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [customerFilter, setCustomerFilter] = useState('All');
