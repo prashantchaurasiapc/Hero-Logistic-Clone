@@ -180,59 +180,7 @@ export default function AdminUsers() {
   const inputCls = "w-full border border-slate-200 focus:border-amber-400 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-800 bg-slate-50 focus:outline-none transition-all";
   const labelCls = "block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5";
 
-  const FormModal = ({ title, onSubmit, onClose }) => (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[99999] flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl my-auto">
-        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
-          <h2 className="font-black text-slate-900 text-lg flex items-center gap-2">
-            <UserPlus className="w-5 h-5 text-amber-500" /> {title}
-          </h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-700 cursor-pointer"><X className="w-5 h-5" /></button>
-        </div>
-        <form onSubmit={onSubmit} className="px-6 py-5 space-y-4">
-          <div className="grid grid-cols-1 gap-4">
-            <div>
-              <label className={labelCls}>Full Name *</label>
-              <input required className={inputCls} placeholder="e.g. John Smith" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
-            </div>
-            <div>
-              <label className={labelCls}>Email *</label>
-              <input required type="email" className={inputCls} placeholder="john@company.com" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className={labelCls}>Phone</label>
-                <input className={inputCls} placeholder="+1 555-0000" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
-              </div>
-              <div>
-                <label className={labelCls}>Status</label>
-                <select className={`${inputCls} cursor-pointer`} value={form.status} onChange={e => setForm({...form, status: e.target.value})}>
-                  <option value="ACTIVE">Active</option>
-                  <option value="SUSPENDED">Suspended</option>
-                  <option value="PENDING">Pending</option>
-                </select>
-              </div>
-            </div>
-            <div>
-              <label className={labelCls}>Role *</label>
-              <select required className={`${inputCls} cursor-pointer`} value={form.role} onChange={e => setForm({...form, role: e.target.value})}>
-                <option value="Super Admin">Super Admin</option>
-                {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className={labelCls}>Company / Tenant</label>
-              <input className={inputCls} placeholder="e.g. Falcon Logistics LLC" value={form.company} onChange={e => setForm({...form, company: e.target.value})} />
-            </div>
-          </div>
-          <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 cursor-pointer">Cancel</button>
-            <button type="submit" className="flex-1 py-2.5 bg-[#FFD400] hover:bg-[#f5c800] rounded-xl text-sm font-black text-black cursor-pointer shadow-sm transition-all">{title}</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
+
 
   return (
     <div className="flex-grow bg-[#F8FAFC] p-4 sm:p-6 overflow-y-auto w-full text-left font-sans min-h-screen">
@@ -448,10 +396,10 @@ export default function AdminUsers() {
       )}
 
       {/* ══ ADD MODAL ══ */}
-      {showAddModal && <FormModal title="Add New User" onSubmit={handleAddSubmit} onClose={() => setShowAddModal(false)} />}
+      {showAddModal && <FormModal title="Add New User" onSubmit={handleAddSubmit} onClose={() => setShowAddModal(false)} form={form} setForm={setForm} />}
 
       {/* ══ EDIT MODAL ══ */}
-      {showEditModal && <FormModal title="Edit User" onSubmit={handleEditSubmit} onClose={() => setShowEditModal(null)} />}
+      {showEditModal && <FormModal title="Edit User" onSubmit={handleEditSubmit} onClose={() => setShowEditModal(null)} form={form} setForm={setForm} />}
 
       {/* ══ DELETE CONFIRM ══ */}
       {showDeleteModal && (
@@ -479,3 +427,62 @@ export default function AdminUsers() {
     </div>
   );
 }
+
+const FormModal = ({ title, onSubmit, onClose, form, setForm }) => {
+  const inputCls = "w-full border border-slate-200 focus:border-amber-400 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-800 bg-slate-50 focus:outline-none transition-all";
+  const labelCls = "block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5";
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[99999] flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl my-auto">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+          <h2 className="font-black text-slate-900 text-lg flex items-center gap-2">
+            <UserPlus className="w-5 h-5 text-amber-500" /> {title}
+          </h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-700 cursor-pointer"><X className="w-5 h-5" /></button>
+        </div>
+        <form onSubmit={onSubmit} className="px-6 py-5 space-y-4">
+          <div className="grid grid-cols-1 gap-4">
+            <div>
+              <label className={labelCls}>Full Name *</label>
+              <input required className={inputCls} placeholder="e.g. John Smith" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+            </div>
+            <div>
+              <label className={labelCls}>Email *</label>
+              <input required type="email" className={inputCls} placeholder="john@company.com" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls}>Phone</label>
+                <input className={inputCls} placeholder="+1 555-0000" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} />
+              </div>
+              <div>
+                <label className={labelCls}>Status</label>
+                <select className={`${inputCls} cursor-pointer`} value={form.status} onChange={e => setForm({...form, status: e.target.value})}>
+                  <option value="ACTIVE">Active</option>
+                  <option value="SUSPENDED">Suspended</option>
+                  <option value="PENDING">Pending</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className={labelCls}>Role *</label>
+              <select required className={`${inputCls} cursor-pointer`} value={form.role} onChange={e => setForm({...form, role: e.target.value})}>
+                <option value="Super Admin">Super Admin</option>
+                {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>Company / Tenant</label>
+              <input className={inputCls} placeholder="e.g. Falcon Logistics LLC" value={form.company} onChange={e => setForm({...form, company: e.target.value})} />
+            </div>
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 cursor-pointer">Cancel</button>
+            <button type="submit" className="flex-1 py-2.5 bg-[#FFD400] hover:bg-[#f5c800] rounded-xl text-sm font-black text-black cursor-pointer shadow-sm transition-all">{title}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
