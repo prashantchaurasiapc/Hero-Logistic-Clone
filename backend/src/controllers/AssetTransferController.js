@@ -1,76 +1,124 @@
 const prisma = require('../utils/prismaClient');
+const { sendSuccess, sendList, sendError } = require('../utils/apiResponse');
+const { buildPrismaQuery, buildPaginationMeta } = require('../utils/queryBuilder');
+const { HTTP_STATUS, ERROR_CODES } = require('../config/constants');
 
-// Get all AssetTransfers
-exports.getAll = async (req, res) => {
+// Get all AssetTransfers with pagination, sorting and filtering
+exports.getAll = async (req, res, next) => {
   try {
-    const data = await prisma.assetTransfer.findMany();
-    res.status(200).json({ success: true, count: data.length, data });
+    const { where, skip, take, orderBy, currentPage, pageSize } = buildPrismaQuery(req.query);
+    
+    // Optional: Inject tenant scope here if applicable
+    // if (req.tenantId) where.tenantId = req.tenantId;
+
+    const [data, total] = await Promise.all([
+      prisma.assetTransfer.findMany({
+        where, skip, take, orderBy
+      }),
+      prisma.assetTransfer.count({ where })
+    ]);
+
+    const meta = buildPaginationMeta(total, currentPage, pageSize, req.query.sort);
+    return sendList(res, data, meta);
   } catch (error) {
-    console.error('Error fetching AssetTransfers:', error);
-    res.status(500).json({ success: false, message: 'Server Error', error: error.message });
+    next(error);
   }
 };
 
 // Get single AssetTransfer by ID
-exports.getById = async (req, res) => {
+exports.getById = async (req, res, next) => {
   try {
-    const data = await prisma.assetTransfer.findUnique({
-      where: { id: req.params.id }
-    });
+    const where = { id: req.params.id };
+    // if (req.tenantId) where.tenantId = req.tenantId;
+
+    const data = await prisma.assetTransfer.findFirst({ where });
     
     if (!data) {
-      return res.status(404).json({ success: false, message: 'AssetTransfer not found' });
+      return sendError(res, {
+        code: ERROR_CODES.NOT_FOUND,
+        message: 'AssetTransfer not found'
+      }, HTTP_STATUS.NOT_FOUND);
     }
     
-    res.status(200).json({ success: true, data });
+    return sendSuccess(res, data);
   } catch (error) {
-    console.error('Error fetching AssetTransfer:', error);
-    res.status(500).json({ success: false, message: 'Server Error', error: error.message });
+    next(error);
   }
 };
 
 // Create new AssetTransfer
-exports.create = async (req, res) => {
+exports.create = async (req, res, next) => {
   try {
+    const payload = { ...req.body };
+    // if (req.tenantId) payload.tenantId = req.tenantId;
+
     const data = await prisma.assetTransfer.create({
-      data: req.body
+      data: payload
     });
-    res.status(201).json({ success: true, data });
+    return sendSuccess(res, data, HTTP_STATUS.CREATED);
   } catch (error) {
-    console.error('Error creating AssetTransfer:', error);
-    res.status(400).json({ success: false, message: 'Invalid data', error: error.message });
+    next(error);
   }
 };
 
-// Update AssetTransfer
-exports.update = async (req, res) => {
+// Update AssetTransfer with Optimistic Concurrency check
+exports.update = async (req, res, next) => {
   try {
-    const data = await prisma.assetTransfer.update({
-      where: { id: req.params.id },
-      data: req.body
-    });
-    res.status(200).json({ success: true, data });
-  } catch (error) {
-    console.error('Error updating AssetTransfer:', error);
-    if (error.code === 'P2025') {
-      return res.status(404).json({ success: false, message: 'AssetTransfer not found' });
+    const { id } = req.params;
+    const updateData = { ...req.body };
+    
+    const where = { id };
+    // if (req.tenantId) where.tenantId = req.tenantId;
+
+    // Check version if optimistic concurrency is required
+    const ifMatch = req.headers['if-match'];
+    if (ifMatch) {
+      where.version = parseInt(ifMatch.replace(/"/g, ''), 10);
     }
-    res.status(400).json({ success: false, message: 'Invalid data', error: error.message });
+
+    try {
+      const data = await prisma.assetTransfer.update({
+        where,
+        data: updateData
+      });
+      return sendSuccess(res, data);
+    } catch (e) {
+      if (e.code === 'P2025') {
+        if (ifMatch) {
+          return sendError(res, {
+            code: ERROR_CODES.RESOURCE_CONFLICT,
+            message: 'Resource was updated by another user or does not exist.'
+          }, HTTP_STATUS.CONFLICT);
+        }
+        return sendError(res, {
+          code: ERROR_CODES.NOT_FOUND,
+          message: 'AssetTransfer not found'
+        }, HTTP_STATUS.NOT_FOUND);
+      }
+      throw e;
+    }
+  } catch (error) {
+    next(error);
   }
 };
 
 // Delete AssetTransfer
-exports.delete = async (req, res) => {
+exports.delete = async (req, res, next) => {
   try {
-    await prisma.assetTransfer.delete({
-      where: { id: req.params.id }
-    });
-    res.status(200).json({ success: true, message: 'AssetTransfer deleted successfully' });
+    const where = { id: req.params.id };
+    // if (req.tenantId) where.tenantId = req.tenantId;
+
+    await prisma.assetTransfer.delete({ where });
+    
+    // 204 No Content for successful delete
+    return res.status(HTTP_STATUS.NO_CONTENT).send();
   } catch (error) {
-    console.error('Error deleting AssetTransfer:', error);
     if (error.code === 'P2025') {
-      return res.status(404).json({ success: false, message: 'AssetTransfer not found' });
+      return sendError(res, {
+        code: ERROR_CODES.NOT_FOUND,
+        message: 'AssetTransfer not found'
+      }, HTTP_STATUS.NOT_FOUND);
     }
-    res.status(500).json({ success: false, message: 'Server Error', error: error.message });
+    next(error);
   }
 };
