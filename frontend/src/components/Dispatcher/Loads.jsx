@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
+import api from '../../services/api';
 import {
   Search, Plus, MapPin, Navigation, Bell, ArrowRight, User, ArrowLeft, ArrowUpRight,
   FileText, ChevronRight, MoreVertical, X, Calendar,
@@ -73,268 +74,68 @@ export default function DispatcherLoads() {
   };
 
   // Master Active Loads State
-  const [masterLoads, setMasterLoads] = useState([
-    {
-      id: 'LD-10583',
-      status: 'In Transit',
-      statusStyle: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      accentColor: 'border-l-emerald-500',
-      driver: 'John Doe',
-      driverRole: 'Car Carrier',
-      driverAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
-      driverPhone: '+61 412 345 678',
-      driverStatus: 'On Duty',
-      routeFrom: 'Melbourne',
-      routeTo: 'Geelong',
-      customer: 'BMW Australia',
-      vehicle: 'MAN TGX 26.580',
-      trailer: 'TR-01 (10 Car)',
-      rego: 'ABC-123',
-      truckPhoto: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&q=80&w=300',
-      reqDate: '23 May 2026',
-      reqTime: '05:00 PM',
-      progressStep: '3/5',
-      activeDotsCount: 3,
-      dotColor: 'bg-emerald-500',
-      lineColor: 'bg-emerald-500',
-      stopsCount: 2,
-      itemsCount: 3
-    },
-    {
-      id: 'LD-10582',
-      status: 'In Transit',
-      statusStyle: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      accentColor: 'border-l-emerald-500',
-      driver: 'Chris Lee',
-      driverRole: 'Car Carrier',
-      driverAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150',
-      driverPhone: '+61 412 987 654',
-      driverStatus: 'En Route',
-      routeFrom: 'Sydney',
-      routeTo: 'Melbourne',
-      customer: 'Pickles Auctions',
-      vehicle: 'Volvo FH16 750',
-      trailer: 'TR-02 (10 Car)',
-      rego: 'XYZ-789',
-      truckPhoto: 'https://images.unsplash.com/photo-1519003722824-194d4455a60c?auto=format&fit=crop&q=80&w=300',
-      reqDate: '22 May 2026',
-      reqTime: '04:00 PM',
-      progressStep: '3/5',
-      activeDotsCount: 3,
-      dotColor: 'bg-emerald-500',
-      lineColor: 'bg-emerald-500',
-      stopsCount: 2,
-      itemsCount: 6
-    },
-    {
-      id: 'LD-10581',
-      status: 'En Route',
-      statusStyle: 'bg-blue-50 text-blue-700 border-blue-200',
-      accentColor: 'border-l-blue-500',
-      driver: 'Michael Tan',
-      driverRole: 'Car Carrier',
-      driverAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=150',
-      driverPhone: '+61 411 222 333',
-      driverStatus: 'At Pickup',
-      routeFrom: 'Brisbane',
-      routeTo: 'Sydney',
-      customer: 'Toyota Finance',
-      vehicle: 'Scania R650',
-      trailer: 'TR-03 (10 Car)',
-      rego: 'BNE-456',
-      truckPhoto: 'https://images.unsplash.com/photo-1586190848861-99aa4a171e90?auto=format&fit=crop&q=80&w=300',
-      reqDate: '22 May 2026',
-      reqTime: '03:00 PM',
-      progressStep: '2/5',
-      activeDotsCount: 2,
-      dotColor: 'bg-blue-500',
-      lineColor: 'bg-blue-500',
-      stopsCount: 2,
-      itemsCount: 5
-    },
-    {
-      id: 'LD-10579',
-      status: 'At Pickup',
-      statusStyle: 'bg-amber-50 text-amber-700 border-amber-200',
-      accentColor: 'border-l-amber-500',
-      driver: 'David Brown',
-      driverRole: 'Car Carrier',
-      driverAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=150',
-      driverPhone: '+61 433 444 555',
-      driverStatus: 'Delayed',
-      routeFrom: 'Sydney',
-      routeTo: 'Gold Coast',
-      customer: 'Hertz Australia',
-      vehicle: 'MAN TGX 26.580',
-      trailer: 'TR-01 (10 Car)',
-      rego: 'HTZ-999',
-      truckPhoto: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&q=80&w=300',
-      reqDate: '21 May 2026',
-      reqTime: '02:00 PM',
-      progressStep: '1/5',
-      activeDotsCount: 1,
-      dotColor: 'bg-amber-500',
-      lineColor: 'bg-amber-500',
-      stopsCount: 2,
-      itemsCount: 4
-    },
-    {
-      id: 'LD-10578',
-      status: 'In Transit',
-      statusStyle: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      accentColor: 'border-l-emerald-500',
-      driver: 'Daniel Craig',
-      driverRole: 'Car Carrier',
-      driverAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150',
-      driverPhone: '+61 455 666 777',
-      driverStatus: 'En Route',
-      routeFrom: 'Melbourne',
-      routeTo: 'Sydney',
-      customer: 'Copart Australia',
-      vehicle: 'Kenworth T909',
-      trailer: 'TR-04 (10 Car)',
-      rego: 'CPT-101',
-      truckPhoto: 'https://images.unsplash.com/photo-1519003722824-194d4455a60c?auto=format&fit=crop&q=80&w=300',
-      reqDate: '21 May 2026',
-      reqTime: '06:00 PM',
-      progressStep: '3/5',
-      activeDotsCount: 3,
-      dotColor: 'bg-emerald-500',
-      lineColor: 'bg-emerald-500',
-      stopsCount: 2,
-      itemsCount: 8
-    },
-    {
-      id: 'LD-10577',
-      status: 'At Delivery',
-      statusStyle: 'bg-purple-50 text-purple-700 border-purple-200',
-      accentColor: 'border-l-purple-500',
-      driver: 'Ben Hall',
-      driverRole: 'Car Carrier',
-      driverAvatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=150',
-      driverPhone: '+61 477 888 999',
-      driverStatus: 'On Duty',
-      routeFrom: 'Townsville',
-      routeTo: 'Brisbane',
-      customer: 'Woolworths DC',
-      vehicle: 'Volvo FH16 750',
-      trailer: 'TR-02 (10 Car)',
-      rego: 'WOW-888',
-      truckPhoto: 'https://images.unsplash.com/photo-1586190848861-99aa4a171e90?auto=format&fit=crop&q=80&w=300',
-      reqDate: '24 May 2026',
-      reqTime: '02:00 PM',
-      progressStep: '4/5',
-      activeDotsCount: 4,
-      dotColor: 'bg-purple-500',
-      lineColor: 'bg-purple-500',
-      stopsCount: 3,
-      itemsCount: 12
-    },
-    {
-      id: 'LD-10576',
-      status: 'In Transit',
-      statusStyle: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      accentColor: 'border-l-emerald-500',
-      driver: 'Sarah Connor',
-      driverRole: 'Car Carrier',
-      driverAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=150',
-      driverPhone: '+61 488 999 000',
-      driverStatus: 'On Duty',
-      routeFrom: 'Sydney',
-      routeTo: 'Adelaide',
-      customer: 'JB Hi-Fi',
-      vehicle: 'Scania R650',
-      trailer: 'TR-03 (10 Car)',
-      rego: 'JBH-777',
-      truckPhoto: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&q=80&w=300',
-      reqDate: '23 May 2026',
-      reqTime: '07:00 PM',
-      progressStep: '3/5',
-      activeDotsCount: 3,
-      dotColor: 'bg-emerald-500',
-      lineColor: 'bg-emerald-500',
-      stopsCount: 2,
-      itemsCount: 10
-    },
-    {
-      id: 'LD-10575',
-      status: 'En Route',
-      statusStyle: 'bg-blue-50 text-blue-700 border-blue-200',
-      accentColor: 'border-l-blue-500',
-      driver: 'Chris Lee',
-      driverRole: 'Car Carrier',
-      driverAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150',
-      driverPhone: '+61 412 987 654',
-      driverStatus: 'En Route',
-      routeFrom: 'Adelaide',
-      routeTo: 'Perth',
-      customer: 'JAX Tyres',
-      vehicle: 'Kenworth T909',
-      trailer: 'TR-04 (10 Car)',
-      rego: 'JAX-333',
-      truckPhoto: 'https://images.unsplash.com/photo-1519003722824-194d4455a60c?auto=format&fit=crop&q=80&w=300',
-      reqDate: '25 May 2026',
-      reqTime: '09:00 AM',
-      progressStep: '2/5',
-      activeDotsCount: 2,
-      dotColor: 'bg-blue-500',
-      lineColor: 'bg-blue-500',
-      stopsCount: 2,
-      itemsCount: 4
-    },
-    {
-      id: 'LD-10574',
-      status: 'On Hold',
-      statusStyle: 'bg-slate-100 text-slate-700 border-slate-200',
-      accentColor: 'border-l-slate-400',
-      driver: 'John Doe',
-      driverRole: 'Car Carrier',
-      driverAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
-      driverPhone: '+61 412 345 678',
-      driverStatus: 'Break',
-      routeFrom: 'Sydney',
-      routeTo: 'Newcastle',
-      customer: 'GPC Asia Pacific',
-      vehicle: 'MAN TGX 26.580',
-      trailer: 'TR-01 (10 Car)',
-      rego: 'GPC-555',
-      truckPhoto: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&q=80&w=300',
-      reqDate: '25 May 2026',
-      reqTime: '10:00 AM',
-      progressStep: '1/5',
-      activeDotsCount: 1,
-      dotColor: 'bg-slate-400',
-      lineColor: 'bg-slate-400',
-      stopsCount: 2,
-      itemsCount: 6
-    },
-    {
-      id: 'LD-10573',
-      status: 'In Transit',
-      statusStyle: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      accentColor: 'border-l-emerald-500',
-      driver: 'Michael Tan',
-      driverRole: 'Car Carrier',
-      driverAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=150',
-      driverPhone: '+61 411 222 333',
-      driverStatus: 'On Duty',
-      routeFrom: 'Geelong',
-      routeTo: 'Melbourne',
-      customer: 'Toyota Finance',
-      vehicle: 'Volvo FH16 750',
-      trailer: 'TR-02 (10 Car)',
-      rego: 'TOY-111',
-      truckPhoto: 'https://images.unsplash.com/photo-1586190848861-99aa4a171e90?auto=format&fit=crop&q=80&w=300',
-      reqDate: '21 May 2026',
-      reqTime: '08:00 PM',
-      progressStep: '3/5',
-      activeDotsCount: 3,
-      dotColor: 'bg-emerald-500',
-      lineColor: 'bg-emerald-500',
-      stopsCount: 2,
-      itemsCount: 8
+  const [masterLoads, setMasterLoads] = useState([]);
+  const [isLoadingLoads, setIsLoadingLoads] = useState(true);
+
+  const fetchLoads = async () => {
+    setIsLoadingLoads(true);
+    try {
+      // Using generic /loads which retrieves loads from the backend
+      const res = await api.get('/loads');
+      if (res.data && res.data.success) {
+        // Map backend model to the frontend structure
+        const formattedLoads = res.data.data.map(dbLoad => {
+          // You might have to adjust mapping depending on your exact backend model names
+          return {
+            id: dbLoad.id || `LD-${Math.floor(Math.random() * 10000)}`,
+            dbId: dbLoad.id, // real db ID
+            status: dbLoad.status || 'In Transit',
+            statusStyle: dbLoad.status === 'In Transit' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+              dbLoad.status === 'En Route' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                dbLoad.status === 'At Pickup' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                  'bg-slate-100 text-slate-700 border-slate-200',
+            accentColor: dbLoad.status === 'In Transit' ? 'border-l-emerald-500' :
+              dbLoad.status === 'En Route' ? 'border-l-blue-500' :
+                dbLoad.status === 'At Pickup' ? 'border-l-amber-500' : 'border-l-slate-400',
+            driver: dbLoad.driverName || 'Unassigned',
+            driverRole: 'Car Carrier',
+            driverAvatar: 'https://ui-avatars.com/api/?name=' + (dbLoad.driverName || 'Unassigned'),
+            driverPhone: dbLoad.driverPhone || 'N/A',
+            driverStatus: 'On Duty',
+            routeFrom: dbLoad.pickupLocation || 'Unknown',
+            routeTo: dbLoad.deliveryLocation || 'Unknown',
+            customer: dbLoad.customerName || 'Unknown Customer',
+            vehicle: dbLoad.vehicleId || 'N/A',
+            trailer: dbLoad.trailerId || 'N/A',
+            rego: 'NEW-999',
+            truckPhoto: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&q=80&w=300',
+            reqDate: dbLoad.scheduledDate ? new Date(dbLoad.scheduledDate).toLocaleDateString() : 'N/A',
+            reqTime: '05:00 PM',
+            progressStep: '3/5',
+            activeDotsCount: 3,
+            dotColor: 'bg-emerald-500',
+            lineColor: 'bg-emerald-500',
+            stopsCount: 2,
+            itemsCount: dbLoad.loadItems?.length || 0
+          };
+        });
+        setMasterLoads(formattedLoads);
+        if (formattedLoads.length > 0) {
+          setSelectedLoadId(formattedLoads[0].id);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching loads:', error);
+      triggerToast('Error fetching loads');
+    } finally {
+      setIsLoadingLoads(false);
     }
-  ]);
+  };
+
+  useEffect(() => {
+    fetchLoads();
+  }, []);
+  // Load list end
 
   // Currently Selected Load details
   const activeLoadDetails = masterLoads.find(l => l.id === selectedLoadId) || masterLoads[0];
@@ -360,45 +161,29 @@ export default function DispatcherLoads() {
   });
 
   // Action Handlers
-  const handleCreateLoadSubmit = (e) => {
+  const handleCreateLoadSubmit = async (e) => {
     e.preventDefault();
-    const newId = `LD-105${Math.floor(84 + Math.random() * 20)}`;
-    const newEntry = {
-      id: newId,
-      status: newLoadForm.status,
-      statusStyle: newLoadForm.status === 'In Transit' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-        newLoadForm.status === 'En Route' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-          newLoadForm.status === 'At Pickup' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-            'bg-slate-100 text-slate-700 border-slate-200',
-      accentColor: newLoadForm.status === 'In Transit' ? 'border-l-emerald-500' :
-        newLoadForm.status === 'En Route' ? 'border-l-blue-500' :
-          newLoadForm.status === 'At Pickup' ? 'border-l-amber-500' : 'border-l-slate-400',
-      driver: newLoadForm.driver,
-      driverRole: 'Car Carrier',
-      driverAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
-      driverPhone: '+61 412 345 678',
-      driverStatus: 'On Duty',
-      routeFrom: newLoadForm.routeFrom,
-      routeTo: newLoadForm.routeTo,
-      customer: newLoadForm.customer,
-      vehicle: newLoadForm.vehicle,
-      trailer: newLoadForm.trailer,
-      rego: 'NEW-999',
-      truckPhoto: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&q=80&w=300',
-      reqDate: newLoadForm.reqDate,
-      reqTime: newLoadForm.reqTime,
-      progressStep: '2/5',
-      activeDotsCount: 2,
-      dotColor: 'bg-blue-500',
-      lineColor: 'bg-blue-500',
-      stopsCount: 2,
-      itemsCount: 5
-    };
+    try {
+      const res = await api.post('/loads', {
+        status: newLoadForm.status,
+        pickupLocation: newLoadForm.routeFrom,
+        deliveryLocation: newLoadForm.routeTo,
+        customerName: newLoadForm.customer,
+        driverName: newLoadForm.driver,
+        vehicleId: newLoadForm.vehicle,
+        trailerId: newLoadForm.trailer,
+        scheduledDate: newLoadForm.reqDate
+      });
 
-    setMasterLoads([newEntry, ...masterLoads]);
-    setSelectedLoadId(newId);
-    setIsCreateModalOpen(false);
-    triggerToast(`New Load ${newId} created successfully!`);
+      if (res.data && res.data.success) {
+        setIsCreateModalOpen(false);
+        triggerToast(`New Load created successfully!`);
+        fetchLoads(); // Refresh list from backend
+      }
+    } catch (error) {
+      console.error('Error creating load:', error);
+      triggerToast('Error creating load. Please try again.');
+    }
   };
 
   const handleEditLoadClick = (load) => {

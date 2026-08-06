@@ -1,6 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import ProtectedRoute from './components/ProtectedRoute';
 import DashboardLayout from './pages/Layout/DashboardLayout/DashboardLayout';
+import { AuthProvider } from './context/AuthContext';
 
 import WarehouseDashboard from './pages/Layout/Dashboard/WarehouseDashboard';
 import WarehouseInbound from './pages/Layout/Dashboard/WarehouseInbound';
@@ -183,258 +185,260 @@ import WarehouseProfile from './components/WareHouseDashboard/Profile';
    ============================================================ */
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/onboarding" element={<OnboardingWizard />} />
-        <Route path="/customer-portal" element={<Navigate to="/customer/dashboard" replace />} />
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/onboarding" element={<OnboardingWizard />} />
+          <Route path="/customer-portal" element={<Navigate to="/customer/dashboard" replace />} />
 
-        {/* ===== SUPER ADMIN ===== */}
-        <Route path="/admin" element={<DashboardLayout role="super-admin" />}>
-          <Route path="dashboard" element={<PlatformDashboard role="super-admin" />} />
-          <Route path="companies" element={<Companies />} />
-          <Route path="user-management" element={<UserManagement />} />
-          <Route path="users" element={<AdminUsers />} />
-          <Route path="roles-permissions" element={<RolesPermissions />} />
-          <Route path="subscriptions" element={<Subscriptions />} />
-          <Route path="membership-plans" element={<MembershipPlans />} />
-          <Route path="feature-access" element={<FeatureAccess />} />
-          <Route path="white-label" element={<WhiteLabel />} />
-          <Route path="support-tickets" element={<SupportTickets />} />
-          <Route path="billing" element={<Billing />} />
-          <Route path="system-analytics" element={<SystemAnalytics />} />
-          <Route path="inter-company-transfers" element={<InterCompanyTransfers />} />
-          <Route path="ai-controls" element={<AIControls />} />
-          <Route path="settings" element={<Settings />} />
-        </Route>
+          {/* ===== SUPER ADMIN ===== */}
+          <Route path="/admin" element={<ProtectedRoute><DashboardLayout role="super-admin" /></ProtectedRoute>}>
+            <Route path="dashboard" element={<PlatformDashboard role="super-admin" />} />
+            <Route path="companies" element={<Companies />} />
+            <Route path="user-management" element={<UserManagement />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="roles-permissions" element={<RolesPermissions />} />
+            <Route path="subscriptions" element={<Subscriptions />} />
+            <Route path="membership-plans" element={<MembershipPlans />} />
+            <Route path="feature-access" element={<FeatureAccess />} />
+            <Route path="white-label" element={<WhiteLabel />} />
+            <Route path="support-tickets" element={<SupportTickets />} />
+            <Route path="billing" element={<Billing />} />
+            <Route path="system-analytics" element={<SystemAnalytics />} />
+            <Route path="inter-company-transfers" element={<InterCompanyTransfers />} />
+            <Route path="ai-controls" element={<AIControls />} />
+            <Route path="settings" element={<Settings />} />
+          </Route>
 
-        {/* ===== SALES ===== */}
-        <Route path="/sales" element={<DashboardLayout role="sales" />}>
-          <Route path="dashboard" element={<SalesDashboard />} />
-          <Route path="leads" element={<Leads />} />
-          <Route path="pipeline-board" element={<PipelineBoard />} />
-          <Route path="demo-bookings" element={<DemoBookings />} />
-          <Route path="trial-companies" element={<TrialCompanies />} />
-          <Route path="proposals" element={<Proposals />} />
-          <Route path="follow-ups" element={<FollowUps />} />
-          <Route path="onboarding-handover" element={<OnboardingHandover />} />
-          <Route path="sales-reports" element={<SalesReports />} />
-          <Route path="settings" element={<SalesSettings />} />
-        </Route>
+          {/* ===== SALES ===== */}
+          <Route path="/sales" element={<ProtectedRoute><DashboardLayout role="sales" /></ProtectedRoute>}>
+            <Route path="dashboard" element={<SalesDashboard />} />
+            <Route path="leads" element={<Leads />} />
+            <Route path="pipeline-board" element={<PipelineBoard />} />
+            <Route path="demo-bookings" element={<DemoBookings />} />
+            <Route path="trial-companies" element={<TrialCompanies />} />
+            <Route path="proposals" element={<Proposals />} />
+            <Route path="follow-ups" element={<FollowUps />} />
+            <Route path="onboarding-handover" element={<OnboardingHandover />} />
+            <Route path="sales-reports" element={<SalesReports />} />
+            <Route path="settings" element={<SalesSettings />} />
+          </Route>
 
-        {/* ===== COMPANY ADMIN ===== */}
-        <Route path="/company-admin" element={<DashboardLayout role="company-admin" />}>
-          <Route path="command-centre" element={<CommandCentre />} />
-          <Route path="loads" element={<Loads />} />
-          <Route path="load-inbox" element={<LoadInbox />} />
-          <Route path="live-tracking" element={<LiveTracking />} />
-          <Route path="drivers" element={<Drivers />} />
-          <Route path="vehicles" element={<Vehicles />} />
-          <Route path="customers" element={<Customers />} />
-          <Route path="branches" element={<Branches />} />
-          <Route path="locations" element={<Branches />} />
-          <Route path="assets" element={<Assets />} />
-          <Route path="assets/new" element={<CreateAsset />} />
-          <Route path="assets/:id" element={<AssetDetails />} />
-          <Route path="warehouse" element={<Warehouse />} />
-          <Route path="pricing" element={<StandalonePricing />} />
-          <Route path="payroll" element={<StandalonePayroll />} />
-          <Route path="finance" element={<Finance />} />
-          <Route path="documents" element={<StandaloneDocuments />} />
-          <Route path="reports" element={<Reports />} />
-          <Route path="messages" element={<Messages />} />
-          <Route path="my-tickets" element={<MyTickets />} />
-          <Route path="open-tickets" element={<OpenTickets />} />
-          <Route path="knowledge-base" element={<KnowledgeBase />} />
-          <Route path="company-settings" element={<CompanySettings />} />
-          <Route path="settings" element={<CompanySettings />} />
-          <Route path="subscription-billing" element={<SubscriptionBilling />} />
-          <Route path="my-profile" element={<MyProfile />} />
-          <Route path="safety-checklists" element={<SafetyChecklists />} />
-          <Route path="delivery-issues" element={<DeliveryIssues />} />
-          <Route path="customer-pricing" element={<CustomerPricing />} />
-          <Route path="roles-permissions" element={<RolesPermissions />} />
-        </Route>
+          {/* ===== COMPANY ADMIN ===== */}
+          <Route path="/company-admin" element={<ProtectedRoute><DashboardLayout role="company-admin" /></ProtectedRoute>}>
+            <Route path="command-centre" element={<CommandCentre />} />
+            <Route path="loads" element={<Loads />} />
+            <Route path="load-inbox" element={<LoadInbox />} />
+            <Route path="live-tracking" element={<LiveTracking />} />
+            <Route path="drivers" element={<Drivers />} />
+            <Route path="vehicles" element={<Vehicles />} />
+            <Route path="customers" element={<Customers />} />
+            <Route path="branches" element={<Branches />} />
+            <Route path="locations" element={<Branches />} />
+            <Route path="assets" element={<Assets />} />
+            <Route path="assets/new" element={<CreateAsset />} />
+            <Route path="assets/:id" element={<AssetDetails />} />
+            <Route path="warehouse" element={<Warehouse />} />
+            <Route path="pricing" element={<StandalonePricing />} />
+            <Route path="payroll" element={<StandalonePayroll />} />
+            <Route path="finance" element={<Finance />} />
+            <Route path="documents" element={<StandaloneDocuments />} />
+            <Route path="reports" element={<Reports />} />
+            <Route path="messages" element={<Messages />} />
+            <Route path="my-tickets" element={<MyTickets />} />
+            <Route path="open-tickets" element={<OpenTickets />} />
+            <Route path="knowledge-base" element={<KnowledgeBase />} />
+            <Route path="company-settings" element={<CompanySettings />} />
+            <Route path="settings" element={<CompanySettings />} />
+            <Route path="subscription-billing" element={<SubscriptionBilling />} />
+            <Route path="my-profile" element={<MyProfile />} />
+            <Route path="safety-checklists" element={<SafetyChecklists />} />
+            <Route path="delivery-issues" element={<DeliveryIssues />} />
+            <Route path="customer-pricing" element={<CustomerPricing />} />
+            <Route path="roles-permissions" element={<RolesPermissions />} />
+          </Route>
 
-        {/* ===== DISPATCHER PORTAL ===== */}
-        <Route path="/dispatcher" element={<DashboardLayout role="dispatcher" />}>
-          <Route index element={<CommandCenter />} />
-          <Route path="dashboard" element={<CommandCenter />} />
-          <Route path="dispatch-dashboard" element={<CommandCenter />} />
-          <Route path="command-center" element={<CommandCenter />} />
-          <Route path="create-load" element={<Loads />} />
-          <Route path="load-inbox" element={<LoadInbox />} />
-          <Route path="active-loads" element={<DispatcherLoads />} />
-          <Route path="loads" element={<DispatcherLoads />} />
-          <Route path="planning-board" element={<TerminalWorkspace />} />
-          <Route path="terminal-workspace" element={<TerminalWorkspace />} />
-          <Route path="live-gps-map" element={<FleetMonitor />} />
-          <Route path="fleet-monitor" element={<FleetMonitor />} />
-          <Route path="drivers" element={<Drivers />} />
-          <Route path="vehicles" element={<Vehicles />} />
-          <Route path="customers" element={<Customers />} />
-          <Route path="warehouse" element={<Warehouse />} />
-          <Route path="workforce-availability" element={<RosterControl />} />
-          <Route path="roster-control" element={<RosterControl />} />
-          <Route path="messages" element={<CommunicationDepot />} />
-          <Route path="communication-depot" element={<CommunicationDepot />} />
-          <Route path="reports" element={<Reports />} />
-          <Route path="profile" element={<DispatcherProfile />} />
-          <Route path="fleet-assets" element={<FleetAssets />} />
-          <Route path="asset-inventory" element={<AssetInventory />} />
-          <Route path="system-settings" element={<SystemSettings />} />
-          {/* Backwards compatibility aliases */}
-          <Route path="live-tracking" element={<FleetMonitor />} />
-          <Route path="locations" element={<Branches />} />
-          <Route path="branches" element={<Branches />} />
-          <Route path="*" element={<CommandCenter />} />
-        </Route>
+          {/* ===== DISPATCHER PORTAL ===== */}
+          <Route path="/dispatcher" element={<ProtectedRoute><DashboardLayout role="dispatcher" /></ProtectedRoute>}>
+            <Route index element={<CommandCenter />} />
+            <Route path="dashboard" element={<CommandCenter />} />
+            <Route path="dispatch-dashboard" element={<CommandCenter />} />
+            <Route path="command-center" element={<CommandCenter />} />
+            <Route path="create-load" element={<Loads />} />
+            <Route path="load-inbox" element={<LoadInbox />} />
+            <Route path="active-loads" element={<DispatcherLoads />} />
+            <Route path="loads" element={<DispatcherLoads />} />
+            <Route path="planning-board" element={<TerminalWorkspace />} />
+            <Route path="terminal-workspace" element={<TerminalWorkspace />} />
+            <Route path="live-gps-map" element={<FleetMonitor />} />
+            <Route path="fleet-monitor" element={<FleetMonitor />} />
+            <Route path="drivers" element={<Drivers />} />
+            <Route path="vehicles" element={<Vehicles />} />
+            <Route path="customers" element={<Customers />} />
+            <Route path="warehouse" element={<Warehouse />} />
+            <Route path="workforce-availability" element={<RosterControl />} />
+            <Route path="roster-control" element={<RosterControl />} />
+            <Route path="messages" element={<CommunicationDepot />} />
+            <Route path="communication-depot" element={<CommunicationDepot />} />
+            <Route path="reports" element={<Reports />} />
+            <Route path="profile" element={<DispatcherProfile />} />
+            <Route path="fleet-assets" element={<FleetAssets />} />
+            <Route path="asset-inventory" element={<AssetInventory />} />
+            <Route path="system-settings" element={<SystemSettings />} />
+            {/* Backwards compatibility aliases */}
+            <Route path="live-tracking" element={<FleetMonitor />} />
+            <Route path="locations" element={<Branches />} />
+            <Route path="branches" element={<Branches />} />
+            <Route path="*" element={<CommandCenter />} />
+          </Route>
 
-        {/* ===== DRIVER ===== */}
-        <Route path="/driver" element={<DashboardLayout role="driver" />}>
-          <Route index element={<DriverDashboard />} />
-          <Route path="dashboard" element={<DriverDashboard />} />
-          <Route path="active-run" element={<ActiveRun />} />
-          <Route path="start-trip" element={<ActiveRun />} />
-          <Route path="pickup-loading" element={<PickupLoading />} />
-          <Route path="delivery-pod" element={<DeliveryPOD />} />
-          <Route path="delivery" element={<DeliveryPOD />} />
-          <Route path="safety-checklist" element={<StartWorkFinish />} />
-          <Route path="work-status" element={<StartWorkFinish />} />
-          <Route path="assigned-jobs" element={<Jobs />} />
-          <Route path="jobs" element={<Jobs />} />
-          <Route path="nearby-services" element={<NearbyServices />} />
-          <Route path="notifications" element={<Notifications />} />
-          <Route path="documents" element={<Documents />} />
-          <Route path="create-draft-load" element={<CreateDraftLoad />} />
-          <Route path="add-expense" element={<AddExpense />} />
-          <Route path="fuel-expenses" element={<AddExpense />} />
-          <Route path="messages" element={<DriverMessages />} />
-          <Route path="timesheets" element={<Timesheets />} />
-          <Route path="trailer-swap" element={<TrailerSwap />} />
-          <Route path="equipment-change" element={<TrailerSwap />} />
-          <Route path="offline-sync" element={<OfflineSyncQueue />} />
-          <Route path="offline-queue" element={<OfflineSyncQueue />} />
-          <Route path="my-pay" element={<MyPay />} />
-          <Route path="contact-dispatch" element={<ContactDispatch />} />
-          <Route path="leave-management" element={<LeaveManagement />} />
-          <Route path="incident-reporting" element={<IncidentReporting />} />
-          <Route path="maintenance-request" element={<MaintenanceRequest />} />
-          <Route path="settings" element={<StartWorkFinish />} />
-          <Route path="job/:id" element={<JobDetails />} />
-        </Route>
+          {/* ===== DRIVER ===== */}
+          <Route path="/driver" element={<ProtectedRoute><DashboardLayout role="driver" /></ProtectedRoute>}>
+            <Route index element={<DriverDashboard />} />
+            <Route path="dashboard" element={<DriverDashboard />} />
+            <Route path="active-run" element={<ActiveRun />} />
+            <Route path="start-trip" element={<ActiveRun />} />
+            <Route path="pickup-loading" element={<PickupLoading />} />
+            <Route path="delivery-pod" element={<DeliveryPOD />} />
+            <Route path="delivery" element={<DeliveryPOD />} />
+            <Route path="safety-checklist" element={<StartWorkFinish />} />
+            <Route path="work-status" element={<StartWorkFinish />} />
+            <Route path="assigned-jobs" element={<Jobs />} />
+            <Route path="jobs" element={<Jobs />} />
+            <Route path="nearby-services" element={<NearbyServices />} />
+            <Route path="notifications" element={<Notifications />} />
+            <Route path="documents" element={<Documents />} />
+            <Route path="create-draft-load" element={<CreateDraftLoad />} />
+            <Route path="add-expense" element={<AddExpense />} />
+            <Route path="fuel-expenses" element={<AddExpense />} />
+            <Route path="messages" element={<DriverMessages />} />
+            <Route path="timesheets" element={<Timesheets />} />
+            <Route path="trailer-swap" element={<TrailerSwap />} />
+            <Route path="equipment-change" element={<TrailerSwap />} />
+            <Route path="offline-sync" element={<OfflineSyncQueue />} />
+            <Route path="offline-queue" element={<OfflineSyncQueue />} />
+            <Route path="my-pay" element={<MyPay />} />
+            <Route path="contact-dispatch" element={<ContactDispatch />} />
+            <Route path="leave-management" element={<LeaveManagement />} />
+            <Route path="incident-reporting" element={<IncidentReporting />} />
+            <Route path="maintenance-request" element={<MaintenanceRequest />} />
+            <Route path="settings" element={<StartWorkFinish />} />
+            <Route path="job/:id" element={<JobDetails />} />
+          </Route>
 
-        {/* ===== WAREHOUSE PORTAL ===== */}
-        <Route path="/warehouse" element={<DashboardLayout role="warehouse" />}>
-          <Route index element={<WarehouseDashboard />} />
-          <Route path="dashboard" element={<WarehouseDashboard />} />
-          <Route path="find-stock" element={<WarehouseCurrentStock />} />
-          <Route path="current-stock" element={<WarehouseCurrentStock />} />
-          <Route path="find" element={<WarehouseCurrentStock />} />
-          <Route path="receive-inbound" element={<WarehouseInbound />} />
-          <Route path="inbound" element={<WarehouseInbound />} />
-          <Route path="receive" element={<WarehouseInbound />} />
-          <Route path="move-transfer" element={<WarehouseMovements />} />
-          <Route path="movement-history" element={<WarehouseMovements />} />
-          <Route path="movements" element={<WarehouseMovements />} />
-          <Route path="move" element={<WarehouseMovements />} />
-          <Route path="load-lanes" element={<WarehouseLoadLanes />} />
-          <Route path="dispatch-ready" element={<WarehouseOutbound />} />
-          <Route path="outbound" element={<WarehouseOutbound />} />
-          <Route path="messages" element={<Messages />} />
-          <Route path="my-shift" element={<StartWorkFinish />} />
-          <Route path="warehouse-yard-map" element={<WarehouseMap />} />
-          <Route path="map" element={<WarehouseMap />} />
-          <Route path="holding-areas" element={<WarehouseHoldingAreas />} />
-          <Route path="stage" element={<WarehouseHoldingAreas />} />
-          <Route path="scanning" element={<WarehouseScanning />} />
-          <Route path="labels" element={<WarehouseLabels />} />
-          <Route path="reports" element={<WarehouseReports />} />
-          <Route path="tools" element={<Tools />} />
-          <Route path="tools/:tab" element={<Tools />} />
-          <Route path="profile" element={<WarehouseProfile />} />
-          <Route path="settings" element={<CompanySettings />} />
-          <Route path="*" element={<WarehouseDashboard />} />
-        </Route>
+          {/* ===== WAREHOUSE PORTAL ===== */}
+          <Route path="/warehouse" element={<ProtectedRoute><DashboardLayout role="warehouse" /></ProtectedRoute>}>
+            <Route index element={<WarehouseDashboard />} />
+            <Route path="dashboard" element={<WarehouseDashboard />} />
+            <Route path="find-stock" element={<WarehouseCurrentStock />} />
+            <Route path="current-stock" element={<WarehouseCurrentStock />} />
+            <Route path="find" element={<WarehouseCurrentStock />} />
+            <Route path="receive-inbound" element={<WarehouseInbound />} />
+            <Route path="inbound" element={<WarehouseInbound />} />
+            <Route path="receive" element={<WarehouseInbound />} />
+            <Route path="move-transfer" element={<WarehouseMovements />} />
+            <Route path="movement-history" element={<WarehouseMovements />} />
+            <Route path="movements" element={<WarehouseMovements />} />
+            <Route path="move" element={<WarehouseMovements />} />
+            <Route path="load-lanes" element={<WarehouseLoadLanes />} />
+            <Route path="dispatch-ready" element={<WarehouseOutbound />} />
+            <Route path="outbound" element={<WarehouseOutbound />} />
+            <Route path="messages" element={<Messages />} />
+            <Route path="my-shift" element={<StartWorkFinish />} />
+            <Route path="warehouse-yard-map" element={<WarehouseMap />} />
+            <Route path="map" element={<WarehouseMap />} />
+            <Route path="holding-areas" element={<WarehouseHoldingAreas />} />
+            <Route path="stage" element={<WarehouseHoldingAreas />} />
+            <Route path="scanning" element={<WarehouseScanning />} />
+            <Route path="labels" element={<WarehouseLabels />} />
+            <Route path="reports" element={<WarehouseReports />} />
+            <Route path="tools" element={<Tools />} />
+            <Route path="tools/:tab" element={<Tools />} />
+            <Route path="profile" element={<WarehouseProfile />} />
+            <Route path="settings" element={<CompanySettings />} />
+            <Route path="*" element={<WarehouseDashboard />} />
+          </Route>
 
-        {/* ===== YARD ATTENDANT PORTAL ===== */}
-        <Route path="/yard" element={<DashboardLayout role="yard" />}>
-          <Route index element={<WarehouseDashboard />} />
-          <Route path="work-status" element={<YardWorkStatus />} />
-          <Route path="dashboard" element={<WarehouseDashboard />} />
-          <Route path="attendant-overview" element={<YardDashboard />} />
-          <Route path="inbound" element={<WarehouseInbound />} />
-          <Route path="receive" element={<WarehouseInbound />} />
-          <Route path="outbound" element={<WarehouseOutbound />} />
-          <Route path="current-stock" element={<WarehouseCurrentStock />} />
-          <Route path="find" element={<WarehouseCurrentStock />} />
-          <Route path="map" element={<WarehouseMap />} />
-          <Route path="holding-areas" element={<WarehouseHoldingAreas />} />
-          <Route path="stage" element={<WarehouseHoldingAreas />} />
-          <Route path="load-lanes" element={<WarehouseLoadLanes />} />
-          <Route path="vehicles" element={<Vehicles />} />
-          <Route path="locations" element={<Branches />} />
-          <Route path="loads" element={<Loads />} />
-          <Route path="activities" element={<WarehouseReports />} />
-          <Route path="scanning" element={<WarehouseScanning />} />
-          <Route path="qr-scan" element={<WarehouseScanning />} />
-          <Route path="labels" element={<WarehouseLabels />} />
-          <Route path="movements" element={<WarehouseMovements />} />
-          <Route path="move" element={<WarehouseMovements />} />
-          <Route path="reports" element={<WarehouseReports />} />
-          <Route path="report-issue" element={<YardReportIssue />} />
-          {/* Backwards compatibility aliases */}
-          <Route path="scan" element={<WarehouseScanning />} />
-          <Route path="move-item" element={<WarehouseMovements />} />
-          <Route path="scan-in" element={<WarehouseInbound />} />
-          <Route path="scan-out" element={<WarehouseOutbound />} />
-          <Route path="load-lane" element={<WarehouseLoadLanes />} />
-          <Route path="*" element={<WarehouseDashboard />} />
-        </Route>
+          {/* ===== YARD ATTENDANT PORTAL ===== */}
+          <Route path="/yard" element={<ProtectedRoute><DashboardLayout role="yard" /></ProtectedRoute>}>
+            <Route index element={<WarehouseDashboard />} />
+            <Route path="work-status" element={<YardWorkStatus />} />
+            <Route path="dashboard" element={<WarehouseDashboard />} />
+            <Route path="attendant-overview" element={<YardDashboard />} />
+            <Route path="inbound" element={<WarehouseInbound />} />
+            <Route path="receive" element={<WarehouseInbound />} />
+            <Route path="outbound" element={<WarehouseOutbound />} />
+            <Route path="current-stock" element={<WarehouseCurrentStock />} />
+            <Route path="find" element={<WarehouseCurrentStock />} />
+            <Route path="map" element={<WarehouseMap />} />
+            <Route path="holding-areas" element={<WarehouseHoldingAreas />} />
+            <Route path="stage" element={<WarehouseHoldingAreas />} />
+            <Route path="load-lanes" element={<WarehouseLoadLanes />} />
+            <Route path="vehicles" element={<Vehicles />} />
+            <Route path="locations" element={<Branches />} />
+            <Route path="loads" element={<Loads />} />
+            <Route path="activities" element={<WarehouseReports />} />
+            <Route path="scanning" element={<WarehouseScanning />} />
+            <Route path="qr-scan" element={<WarehouseScanning />} />
+            <Route path="labels" element={<WarehouseLabels />} />
+            <Route path="movements" element={<WarehouseMovements />} />
+            <Route path="move" element={<WarehouseMovements />} />
+            <Route path="reports" element={<WarehouseReports />} />
+            <Route path="report-issue" element={<YardReportIssue />} />
+            {/* Backwards compatibility aliases */}
+            <Route path="scan" element={<WarehouseScanning />} />
+            <Route path="move-item" element={<WarehouseMovements />} />
+            <Route path="scan-in" element={<WarehouseInbound />} />
+            <Route path="scan-out" element={<WarehouseOutbound />} />
+            <Route path="load-lane" element={<WarehouseLoadLanes />} />
+            <Route path="*" element={<WarehouseDashboard />} />
+          </Route>
 
-        {/* ===== ACCOUNTS ===== */}
-        <Route path="/accounts" element={<DashboardLayout role="accounts" />}>
-          <Route path="dashboard" element={<AccountsDashboard />} />
-          <Route path="customer-pricing" element={<CustomerPricing />} />
-          <Route path="invoice-review" element={<InvoiceReview />} />
-          <Route path="sent-invoices" element={<SentInvoices />} />
-          <Route path="payments" element={<Payments />} />
-          <Route path="payroll" element={<Payroll />} />
-          <Route path="contractor-pay" element={<ContractorPay />} />
-          <Route path="employee-pay" element={<EmployeePay />} />
-          <Route path="expenses" element={<Expenses />} />
-          <Route path="gst-payg" element={<GstPayg />} />
-          <Route path="pnl" element={<Pnl />} />
-          <Route path="vehicle-costs" element={<VehicleCosts />} />
-          <Route path="reports" element={<AccountsReports />} />
-          <Route path="profile" element={<AccountsProfile />} />
-          <Route path="settings" element={<AccountsDashboard />} />
-        </Route>
+          {/* ===== ACCOUNTS ===== */}
+          <Route path="/accounts" element={<ProtectedRoute><DashboardLayout role="accounts" /></ProtectedRoute>}>
+            <Route path="dashboard" element={<AccountsDashboard />} />
+            <Route path="customer-pricing" element={<CustomerPricing />} />
+            <Route path="invoice-review" element={<InvoiceReview />} />
+            <Route path="sent-invoices" element={<SentInvoices />} />
+            <Route path="payments" element={<Payments />} />
+            <Route path="payroll" element={<Payroll />} />
+            <Route path="contractor-pay" element={<ContractorPay />} />
+            <Route path="employee-pay" element={<EmployeePay />} />
+            <Route path="expenses" element={<Expenses />} />
+            <Route path="gst-payg" element={<GstPayg />} />
+            <Route path="pnl" element={<Pnl />} />
+            <Route path="vehicle-costs" element={<VehicleCosts />} />
+            <Route path="reports" element={<AccountsReports />} />
+            <Route path="profile" element={<AccountsProfile />} />
+            <Route path="settings" element={<AccountsDashboard />} />
+          </Route>
 
-        {/* ===== CUSTOMER ===== */}
-        <Route path="/customer" element={<DashboardLayout role="customer" />}>
-          <Route path="dashboard" element={<CustomerDashboard />} />
-          <Route path="my-loads" element={<MyLoads />} />
-          <Route path="create-booking" element={<LoadRequests />} />
-          <Route path="invoices-payments" element={<CustomerInvoices />} />
-          <Route path="documents-pods" element={<CustomerDocuments />} />
-          <Route path="messages-support" element={<CustomerSupport />} />
-          <Route path="account-users" element={<CustomerSettings />} />
-          <Route path="track-delivery" element={<TrackDelivery />} />
-          <Route path="documents" element={<CustomerDocuments />} />
-          <Route path="invoices" element={<CustomerInvoices />} />
-          <Route path="payments" element={<CustomerPayments />} />
-          <Route path="load-requests" element={<LoadRequests />} />
-          <Route path="notifications" element={<CustomerNotifications />} />
-          <Route path="dispatcher-chat" element={<CustomerDispatcherChat />} />
-          <Route path="support" element={<CustomerSupport />} />
-          <Route path="settings" element={<Navigate to="/customer/account-users" replace />} />
-        </Route>
+          {/* ===== CUSTOMER ===== */}
+          <Route path="/customer" element={<ProtectedRoute><DashboardLayout role="customer" /></ProtectedRoute>}>
+            <Route path="dashboard" element={<CustomerDashboard />} />
+            <Route path="my-loads" element={<MyLoads />} />
+            <Route path="create-booking" element={<LoadRequests />} />
+            <Route path="invoices-payments" element={<CustomerInvoices />} />
+            <Route path="documents-pods" element={<CustomerDocuments />} />
+            <Route path="messages-support" element={<CustomerSupport />} />
+            <Route path="account-users" element={<CustomerSettings />} />
+            <Route path="track-delivery" element={<TrackDelivery />} />
+            <Route path="documents" element={<CustomerDocuments />} />
+            <Route path="invoices" element={<CustomerInvoices />} />
+            <Route path="payments" element={<CustomerPayments />} />
+            <Route path="load-requests" element={<LoadRequests />} />
+            <Route path="notifications" element={<CustomerNotifications />} />
+            <Route path="dispatcher-chat" element={<CustomerDispatcherChat />} />
+            <Route path="support" element={<CustomerSupport />} />
+            <Route path="settings" element={<Navigate to="/customer/account-users" replace />} />
+          </Route>
 
-      </Routes>
-    </Router>
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 }
 
