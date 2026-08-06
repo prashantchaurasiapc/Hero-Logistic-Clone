@@ -4,6 +4,7 @@ import {
   Calendar, QrCode, Upload, Plus, Trash2, Edit2, CheckCircle2, 
   MapPin, FileText, Camera, Paperclip, ChevronDown, X, Info, FileSpreadsheet, Download, File, Image
 } from 'lucide-react';
+import api from '../../../services/api';
 
 export default function WarehouseInbound() {
   const location = useLocation();
@@ -245,9 +246,39 @@ export default function WarehouseInbound() {
     alert('Successfully imported 2 items from CSV manifest!');
   };
 
-  const handleReceiveComplete = () => {
-    alert(`Inbound Receipt ${inboundNo} confirmed & received successfully! Total ${itemsToReceive.length} items logged.`);
-    navigate(isYard ? '/yard/current-stock' : '/warehouse/find-stock');
+  const handleReceiveComplete = async () => {
+    try {
+      const payload = {
+        receiptNumber: inboundNo,
+        supplierName: supplier,
+        referenceNote: refNote,
+        transportType: transportType,
+        driverName: driver,
+        vehicleDetails: vehicleTrailer,
+        receivingDepot: receivingDepot,
+        zone: zone,
+        status: 'RECEIVED',
+        items: itemsToReceive.map(item => ({
+          vin: item.vin,
+          make: item.title,
+          condition: item.condition,
+          damageStatus: item.damage,
+          location: item.location
+        }))
+      };
+
+      const res = await api.post('/inbound-receipts', payload);
+      
+      if (res.data && res.data.success) {
+        alert(`Inbound Receipt ${inboundNo} confirmed & received successfully! Total ${itemsToReceive.length} items logged.`);
+        navigate(isYard ? '/yard/current-stock' : '/warehouse/find-stock');
+      } else {
+        alert('Failed to process inbound receipt. Check console.');
+      }
+    } catch (err) {
+      console.error('Error submitting inbound receipt:', err);
+      alert('Error submitting inbound receipt.');
+    }
   };
 
   return (

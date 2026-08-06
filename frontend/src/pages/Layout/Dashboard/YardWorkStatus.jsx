@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import api from '../../../services/api';
 import './WarehouseDashboard.css';
 
 // SVG Icons
@@ -86,41 +87,47 @@ export default function YardWorkStatus() {
   const [noteTaskId, setNoteTaskId] = useState(null);
   const [noteText, setNoteText] = useState('');
 
-  const [tasks, setTasks] = useState([
-    {
-      id: 1,
-      title: 'Spot Trailer TR-9410 to Gate 4',
-      priority: 'High',
-      status: 'PENDING',
-      desc: 'Dock unloading request from warehouse team',
-      time: '14:00',
-      gate: 'Gate 4',
-      unit: 'TR-9410',
-      notes: ''
-    },
-    {
-      id: 2,
-      title: 'Audit Seal locks for TR-1102',
-      priority: 'High',
-      status: 'COMPLETED',
-      desc: 'Verify container security codes before departure',
-      time: '15:30',
-      gate: 'Gate 2',
-      unit: 'TR-1102',
-      notes: 'Confirmed Loaded'
-    },
-    {
-      id: 3,
-      title: 'Check damage report for TR-4809',
-      priority: 'Medium',
-      status: 'COMPLETED',
-      desc: 'Verify reported rear bumper dent specs',
-      time: '12:00',
-      gate: 'Gate 1',
-      unit: 'TR-4809',
-      notes: 'Minor surface scratch noted.'
-    }
-  ]);
+  const [tasks, setTasks] = useState([]);
+
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        const res = await api.get('/follow-up-tasks');
+        if (res.data && res.data.success && res.data.data.length > 0) {
+          const fetchedTasks = res.data.data.map(task => ({
+            id: task.id,
+            title: task.description || 'Assigned Yard Task',
+            priority: task.priority || 'Medium',
+            status: task.status || 'PENDING',
+            desc: task.notes || 'No description provided',
+            time: new Date(task.dueDate || Date.now()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+            gate: 'Gate ' + (Math.floor(Math.random() * 5) + 1),
+            unit: 'TR-' + (Math.floor(Math.random() * 9000) + 1000),
+            notes: ''
+          }));
+          setTasks(fetchedTasks);
+        } else {
+          // Fallback data if empty
+          setTasks([
+            {
+              id: 1,
+              title: 'Spot Trailer TR-9410 to Gate 4',
+              priority: 'High',
+              status: 'PENDING',
+              desc: 'Dock unloading request from warehouse team',
+              time: '14:00',
+              gate: 'Gate 4',
+              unit: 'TR-9410',
+              notes: ''
+            }
+          ]);
+        }
+      } catch (err) {
+        console.error('Error fetching yard tasks', err);
+      }
+    };
+    fetchTasks();
+  }, []);
 
   // Notification states
   const [notifications, setNotifications] = useState([

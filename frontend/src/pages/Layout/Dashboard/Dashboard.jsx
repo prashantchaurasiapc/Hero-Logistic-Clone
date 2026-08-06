@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../../services/api';
 import './Dashboard.css';
 import { FiPlus, FiRefreshCcw, FiShield, FiLock, FiEdit2, FiCheckCircle, FiMaximize, FiDownload } from 'react-icons/fi';
 import { BsQrCodeScan } from 'react-icons/bs';
@@ -10,6 +11,25 @@ import AccountsDashboard from './AccountsDashboard';
 
 /* ----- Super Admin Dashboard ----- */
 const SuperAdminDashboard = () => {
+  const [companies, setCompanies] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      try {
+        const res = await api.get('/companies');
+        if (res.data && res.data.success) {
+          setCompanies(res.data.data);
+        }
+      } catch (err) {
+        console.error('Error fetching companies:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCompanies();
+  }, []);
+
   const StatCard = ({ title, value, desc, status, statusColor }) => (
     <div className="stat-card">
       <h3 className="stat-title">{title}</h3>
@@ -32,9 +52,9 @@ const SuperAdminDashboard = () => {
       </div>
 
       <div className="stats-grid stats-4">
-        <StatCard title="ACTIVE COMPANIES" value="4" desc="SaaS instances online" status="Stable" />
-        <StatCard title="TRIAL COMPANIES" value="2" desc="SaaS trial instances" status="+1 new" statusColor="text-green" />
-        <StatCard title="PAID COMPANIES" value="3" desc="Subscribed paying contracts" status="Stable" />
+        <StatCard title="ACTIVE COMPANIES" value={companies.filter(c => c.status === 'ACTIVE').length || 4} desc="SaaS instances online" status="Stable" />
+        <StatCard title="TRIAL COMPANIES" value={companies.filter(c => c.status === 'TRIAL').length || 2} desc="SaaS trial instances" status="+1 new" statusColor="text-green" />
+        <StatCard title="PAID COMPANIES" value={companies.filter(c => c.status === 'ACTIVE').length || 3} desc="Subscribed paying contracts" status="Stable" />
         <StatCard title="MONTHLY REVENUE" value="$42,910" desc="Platform cash stream baseline" status="+8%" statusColor="text-green" />
         <StatCard title="FAILED PAYMENTS" value="1" desc="Payment gateway errors" status="0 alerts" />
         <StatCard title="SUPPORT TICKETS" value="2" desc="Requires administrative response" status="Alert" statusColor="text-red" />
@@ -104,35 +124,40 @@ const SuperAdminDashboard = () => {
               <tr>
                 <th><input type="checkbox" /></th>
                 <th>COMPANY</th>
-                <th>SUBSCRIPTION PLAN</th>
+                <th>DOMAIN</th>
                 <th>STATUS</th>
-                <th>ACTIVE USERS</th>
-                <th>MONTHLY REVENUE</th>
-                <th>TRIAL EXPIRY</th>
-                <th>LAST LOGIN</th>
+                <th>TIMEZONE</th>
+                <th>JOINED</th>
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td><input type="checkbox" /></td>
-                <td><strong>Falcon Logistics LLC</strong></td>
-                <td>Professional</td>
-                <td><span className="status-badge success">ACTIVE</span></td>
-                <td>12</td>
-                <td className="text-green-dark"><strong>$8,500</strong></td>
-                <td>N/A</td>
-                <td>Today, 02:15 PM</td>
-              </tr>
-              <tr>
-                <td><input type="checkbox" /></td>
-                <td><strong>Swift Cargo Express</strong></td>
-                <td>Starter</td>
-                <td><span className="status-badge success">ACTIVE</span></td>
-                <td>2</td>
-                <td className="text-green-dark"><strong>$1,500</strong></td>
-                <td>07/15/2026</td>
-                <td>Yesterday, 04:30 PM</td>
-              </tr>
+              {loading ? (
+                <tr><td colSpan={6} className="text-center py-4">Loading companies...</td></tr>
+              ) : companies.length > 0 ? (
+                companies.map((company) => (
+                  <tr key={company.id}>
+                    <td><input type="checkbox" /></td>
+                    <td><strong>{company.name}</strong></td>
+                    <td>{company.domain || 'N/A'}</td>
+                    <td>
+                      <span className={`status-badge ${company.status === 'ACTIVE' ? 'success' : (company.status === 'SUSPENDED' ? 'danger' : 'warning')}`}>
+                        {company.status || 'ACTIVE'}
+                      </span>
+                    </td>
+                    <td>{company.timezone || 'N/A'}</td>
+                    <td>{new Date(company.createdAt).toLocaleDateString()}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td><input type="checkbox" /></td>
+                  <td><strong>Falcon Logistics LLC</strong></td>
+                  <td>falcon.herologistic.com</td>
+                  <td><span className="status-badge success">ACTIVE</span></td>
+                  <td>America/New_York</td>
+                  <td>12/10/2025</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

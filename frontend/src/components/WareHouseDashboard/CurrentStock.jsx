@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import api from '../../services/api';
 import { 
   Search, Filter, QrCode, ArrowRightLeft, Eye, 
   ChevronDown, Maximize2, X, MapPin, Tag, FileText, User, 
@@ -183,6 +184,51 @@ export default function CurrentStock() {
   const location = useLocation();
   const isYard = location.pathname ? location.pathname.startsWith('/yard') : false;
 
+  const [stockItems, setStockItems] = useState(initialStockItems);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchStock = async () => {
+      setLoading(true);
+      try {
+        const res = await api.get('/load-items');
+        if (res.data && res.data.success && res.data.data.length > 0) {
+          const formatted = res.data.data.map((item, idx) => ({
+            id: item.id || String(idx),
+            itemNo: item.identifier || `ITM-${item.id?.slice(-4)}`,
+            title: item.type === 'VEHICLE' ? `${item.make} ${item.model}` : item.description || 'Item',
+            rego: item.rego || '',
+            vin: item.vin || '',
+            type: item.type === 'VEHICLE' ? 'Vehicle' : 'Item',
+            typeBadge: item.type === 'VEHICLE' ? 'Car Carrying' : 'General',
+            typeColor: item.type === 'VEHICLE' ? 'blue' : 'green',
+            location: item.location || 'Warehouse',
+            locationDetail: item.location || 'Unassigned',
+            rowBayPos: item.location || 'Unassigned',
+            status: item.status || 'In Storage',
+            statusColor: 'green',
+            loadJob: item.loadId ? `LD-${item.loadId.slice(-4)}` : '-',
+            loadDetail: 'Unassigned',
+            customer: 'Unknown',
+            updated: new Date(item.updatedAt || Date.now()).toLocaleString(),
+            receivedDate: new Date(item.createdAt || Date.now()).toLocaleString(),
+            condition: item.condition || 'Good',
+            notes: item.damageStatus || '-',
+            image: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?auto=format&fit=crop&w=400&q=80',
+            iconType: item.type === 'VEHICLE' ? 'car' : 'pallet'
+          }));
+          setStockItems(formatted);
+          setSelectedItem(formatted[0]);
+        }
+      } catch (err) {
+        console.error('Error fetching stock items:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStock();
+  }, []);
+
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState('All Types');
@@ -225,7 +271,7 @@ export default function CurrentStock() {
   };
 
   // Filter items matching search & dropdowns
-  const filteredItems = initialStockItems.filter(item => {
+  const filteredItems = stockItems.filter(item => {
     const q = searchQuery.toLowerCase().trim();
     const matchesSearch = !q || (
       item.title.toLowerCase().includes(q) ||

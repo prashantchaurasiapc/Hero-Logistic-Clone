@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import api from '../../../services/api';
 import { 
   CreditCard, Calendar, Users, Wallet, AlertCircle, Activity, 
   Search, Filter, Download, Plus, Paperclip, Eye, MoreVertical, 
@@ -59,7 +60,43 @@ export default function Expenses() {
   ];
 
   // --- STATE MANAGEMENT ---
-  const [expensesData, setExpensesData] = useState(initialExpenses);
+  const [expensesData, setExpensesData] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchExpenses = async () => {
+      setLoading(true);
+      try {
+        const res = await api.get('/load-expenses');
+        if (res.data && res.data.success && res.data.data.length > 0) {
+          const fetched = res.data.data.map(exp => ({
+            id: exp.id,
+            date: new Date(exp.expenseDate || Date.now()).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+            description: exp.description || 'Expense',
+            category: exp.expenseType || 'Other',
+            employee: exp.Load?.Driver?.User?.name || 'Unknown',
+            reference: exp.receiptNumber || 'REF-N/A',
+            attachments: exp.attachments ? 1 : 0,
+            exGst: parseFloat(exp.amount) || 0,
+            gst: (parseFloat(exp.amount) * 0.1) || 0,
+            total: (parseFloat(exp.amount) * 1.1) || 0,
+            status: exp.status === 'APPROVED' ? 'Approved' : (exp.status === 'REJECTED' ? 'Cancelled' : 'Pending Approval'),
+            paymentStatus: exp.status === 'APPROVED' ? 'Paid' : 'Unpaid'
+          }));
+          setExpensesData(fetched);
+        } else {
+          setExpensesData(initialExpenses);
+        }
+      } catch (err) {
+        console.error('Error fetching expenses:', err);
+        setExpensesData(initialExpenses);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchExpenses();
+  }, []);
+
   const [activeTab, setActiveTab] = useState('All Expenses');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -123,7 +160,7 @@ export default function Expenses() {
   };
 
   // Submit New Expense
-  const handleCreateExpenseSubmit = (e) => {
+  const handleCreateExpenseSubmit = async (e) => {
     e.preventDefault();
     if (!newExpenseForm.description.trim() || !newExpenseForm.exGst) {
       setToastMessage('Please fill in Description and Ex GST Amount');
@@ -135,40 +172,57 @@ export default function Expenses() {
     const gstNum = parseFloat(newExpenseForm.gst) || (exGstNum * 0.1);
     const totalNum = parseFloat(newExpenseForm.total) || (exGstNum + gstNum);
 
-    const newExpenseObj = {
-      id: Date.now(),
-      date: newExpenseForm.date || '25 May 2026',
-      description: newExpenseForm.description,
-      category: newExpenseForm.category,
-      employee: newExpenseForm.employee,
-      reference: newExpenseForm.reference || `RPT-${Math.floor(1000 + Math.random() * 9000)}`,
-      attachments: Number(newExpenseForm.attachments) || 1,
-      exGst: exGstNum,
-      gst: gstNum,
-      total: totalNum,
-      status: newExpenseForm.status,
-      paymentStatus: newExpenseForm.paymentStatus
-    };
+    try {
+      const payload = {
+        loadId: null, // Depending on if we tie it to a load
+        expenseType: newExpenseForm.category,
+        amount: exGstNum,
+        description: newExpenseForm.description,
+        expenseDate: new Date().toISOString(),
+        status: 'PENDING'
+      };
 
-    setExpensesData(prev => [newExpenseObj, ...prev]);
-    setIsNewExpenseModalOpen(false);
-    setToastMessage(`Expense "${newExpenseObj.description}" created successfully!`);
-    setTimeout(() => setToastMessage(null), 3500);
+      const res = await api.post('/load-expenses', payload);
+      
+      const newExpenseObj = {
+        id: res.data?.data?.id || Date.now(),
+        date: newExpenseForm.date || '25 May 2026',
+        description: newExpenseForm.description,
+        category: newExpenseForm.category,
+        employee: newExpenseForm.employee,
+        reference: newExpenseForm.reference || `RPT-${Math.floor(1000 + Math.random() * 9000)}`,
+        attachments: Number(newExpenseForm.attachments) || 1,
+        exGst: exGstNum,
+        gst: gstNum,
+        total: totalNum,
+        status: newExpenseForm.status,
+        paymentStatus: newExpenseForm.paymentStatus
+      };
 
-    // Reset Form
-    setNewExpenseForm({
-      description: '',
-      category: 'Fuel',
-      employee: 'John Smith',
-      reference: '',
-      exGst: '',
-      gst: '',
-      total: '',
-      status: 'Pending Approval',
-      paymentStatus: 'Unpaid',
-      date: '25 May 2026',
-      attachments: 1
-    });
+      setExpensesData(prev => [newExpenseObj, ...prev]);
+      setIsNewExpenseModalOpen(false);
+      setToastMessage(`Expense "${newExpenseObj.description}" created successfully!`);
+      setTimeout(() => setToastMessage(null), 3500);
+
+      // Reset Form
+      setNewExpenseForm({
+        description: '',
+        category: 'Fuel',
+        employee: 'John Smith',
+        reference: '',
+        exGst: '',
+        gst: '',
+        total: '',
+        status: 'Pending Approval',
+        paymentStatus: 'Unpaid',
+        date: '25 May 2026',
+        attachments: 1
+      });
+    } catch (err) {
+      console.error('Error creating expense:', err);
+      setToastMessage('Failed to create expense. Please try again.');
+      setTimeout(() => setToastMessage(null), 3000);
+    }
   };
 
   // --- EXPORT TO CSV FUNCTION ---

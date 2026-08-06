@@ -67,37 +67,38 @@ const Login = () => {
   }, []);
 
   const handleRoleLogin = async (roleId) => {
-    // Note: For now, bypassing the backend auth for demo role cards 
-    // to maintain the UI's quick "demo login" functionality.
-    // In production, these buttons should either be removed or mapped to specific demo accounts.
     const roleCard = roleCards.find(r => r.id === roleId);
     const label = roleCard ? roleCard.label : 'Admin';
     setLoggingInRole(label);
     setIsAuthenticating(true);
+    setErrorMsg('');
 
-    setTimeout(() => {
-      if (roleId === 'super-admin') {
-        navigate('/admin/dashboard');
-      } else if (roleId === 'sales') {
-        navigate('/sales/dashboard');
-      } else if (roleId === 'company-admin') {
-        navigate('/company-admin/command-centre');
-      } else if (roleId === 'dispatcher') {
-        navigate('/dispatcher/command-center');
-      } else if (roleId === 'driver') {
-        navigate('/driver/dashboard');
-      } else if (roleId === 'warehouse') {
-        navigate('/warehouse/dashboard');
-      } else if (roleId === 'yard') {
-        navigate('/yard/dashboard');
-      } else if (roleId === 'accounts') {
-        navigate('/accounts/dashboard');
-      } else if (roleId === 'customer') {
-        navigate('/customer/dashboard');
-      } else {
-        navigate('/admin/dashboard');
-      }
-    }, 1600);
+    // Actually hit the backend API for login
+    // Using a convention like admin@hero.com, dispatcher@hero.com
+    const roleEmail = roleId === 'super-admin' ? 'admin@hero.com' : `${roleId}@hero.com`;
+    const res = await login(roleEmail, '123456');
+
+    if (res.success) {
+      const userRole = res.user?.role || 'SUPER_ADMIN';
+      setLoggingInRole(userRole);
+      
+      let targetPath = '/admin/dashboard';
+      if (userRole === 'DRIVER') targetPath = '/driver/dashboard';
+      else if (userRole === 'DISPATCHER') targetPath = '/dispatcher/command-center';
+      else if (userRole === 'COMPANY_ADMIN') targetPath = '/company-admin/command-centre';
+      else if (userRole === 'SALES') targetPath = '/sales/dashboard';
+      else if (userRole === 'WAREHOUSE') targetPath = '/warehouse/dashboard';
+      else if (userRole === 'YARD') targetPath = '/yard/dashboard';
+      else if (userRole === 'ACCOUNTS') targetPath = '/accounts/dashboard';
+      else if (userRole === 'CUSTOMER') targetPath = '/customer/dashboard';
+
+      setTimeout(() => {
+        navigate(targetPath);
+      }, 1000);
+    } else {
+      setIsAuthenticating(false);
+      setErrorMsg(`Demo user ${roleEmail} not found in DB! Please register this user first.`);
+    }
   };
 
   const handleLogin = async (e) => {
