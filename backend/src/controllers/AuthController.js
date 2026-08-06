@@ -54,8 +54,14 @@ exports.logout = async (req, res, next) => {
 
 exports.me = async (req, res, next) => {
   try {
-    // Assuming req.user is populated by auth middleware
-    return sendSuccess(res, { user: req.user }, HTTP_STATUS.OK);
+    const prisma = require('../utils/prismaClient');
+    const freshUser = await prisma.user.findUnique({
+      where: { id: req.user.id }
+    });
+    if (freshUser) {
+      delete freshUser.password;
+    }
+    return sendSuccess(res, { user: freshUser || req.user }, HTTP_STATUS.OK);
   } catch (error) {
     next(error);
   }

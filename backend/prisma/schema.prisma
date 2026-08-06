@@ -453,6 +453,10 @@ model User {
   phone    String?
   status   UserStatus @default(PENDING)
 
+  dob              String?
+  address          String?
+  emergencyContact String?
+
   customRoleId String?
   customRole   CustomRole? @relation(fields: [customRoleId], references: [id])
 

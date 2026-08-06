@@ -60,13 +60,20 @@ const Header = ({ onMenuClick }) => {
       try {
         const res = await api.get('/audit-logs?take=4&orderBy={"createdAt":"desc"}');
         if (res.data?.success) {
-          const mappedNotifications = res.data.data.map(log => ({
-            id: log.id,
-            type: log.action.split('_')[0] || 'SYSTEM',
-            text: log.details || `${log.action} action performed`,
-            time: new Date(log.createdAt).toLocaleString(),
-            read: false
-          }));
+          const mappedNotifications = res.data.data.map(log => {
+            const parts = log.action.split('_');
+            const type = parts[0] || 'SYSTEM';
+            // Translate action to user friendly label
+            const readableAction = log.action.toLowerCase().replace(/_/g, ' ');
+            const formattedAction = readableAction.charAt(0).toUpperCase() + readableAction.slice(1);
+            return {
+              id: log.id,
+              type: type,
+              text: `${formattedAction} by ${log.operator || 'System'}`,
+              time: new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              read: false
+            };
+          });
           setNotifications(mappedNotifications);
           setUnreadCount(mappedNotifications.length);
         }

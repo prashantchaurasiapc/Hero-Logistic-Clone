@@ -13,13 +13,29 @@ exports.getAll = async (req, res, next) => {
 
     const [data, total] = await Promise.all([
       prisma.customRole.findMany({
-        where, skip, take, orderBy
+        where, skip, take, orderBy,
+        include: { permissions: true }
       }),
       prisma.customRole.count({ where })
     ]);
 
+    // Map permissions back to frontend nested object format
+    const formattedData = data.map(role => {
+      const formattedPerms = {};
+      role.permissions.forEach(p => {
+        if (!formattedPerms[p.module]) {
+          formattedPerms[p.module] = {};
+        }
+        formattedPerms[p.module][p.actionString] = true;
+      });
+      return {
+        ...role,
+        permissions: formattedPerms
+      };
+    });
+
     const meta = buildPaginationMeta(total, currentPage, pageSize, req.query.sort);
-    return sendList(res, data, meta);
+    return sendList(res, formattedData, meta);
   } catch (error) {
     next(error);
   }
@@ -31,7 +47,10 @@ exports.getById = async (req, res, next) => {
     const where = { id: req.params.id };
     // if (req.tenantId) where.tenantId = req.tenantId;
 
-    const data = await prisma.customRole.findFirst({ where });
+    const data = await prisma.customRole.findFirst({
+      where,
+      include: { permissions: true }
+    });
     
     if (!data) {
       return sendError(res, {
@@ -40,7 +59,20 @@ exports.getById = async (req, res, next) => {
       }, HTTP_STATUS.NOT_FOUND);
     }
     
-    return sendSuccess(res, data);
+    const formattedPerms = {};
+    data.permissions.forEach(p => {
+      if (!formattedPerms[p.module]) {
+        formattedPerms[p.module] = {};
+      }
+      formattedPerms[p.module][p.actionString] = true;
+    });
+
+    const formatted = {
+      ...data,
+      permissions: formattedPerms
+    };
+
+    return sendSuccess(res, formatted);
   } catch (error) {
     next(error);
   }
@@ -49,11 +81,39 @@ exports.getById = async (req, res, next) => {
 // Create new CustomRole
 exports.create = async (req, res, next) => {
   try {
-    const payload = { ...req.body };
-    // if (req.tenantId) payload.tenantId = req.tenantId;
+    const { name, permissions } = req.body;
+    
+    // Default companyId
+    let companyId = req.body.companyId;
+    if (!companyId) {
+      const company = await prisma.company.findFirst();
+      if (company) companyId = company.id;
+    }
+
+    // Flatten permissions object to array of CustomPermission records
+    const permissionData = [];
+    if (permissions) {
+      Object.entries(permissions).forEach(([modName, actions]) => {
+        Object.entries(actions).forEach(([actName, val]) => {
+          if (val) {
+            permissionData.push({
+              module: modName,
+              actionString: actName
+            });
+          }
+        });
+      });
+    }
 
     const data = await prisma.customRole.create({
-      data: payload
+      data: {
+        name,
+        companyId,
+        permissions: {
+          create: permissionData
+        }
+      },
+      include: { permissions: true }
     });
     return sendSuccess(res, data, HTTP_STATUS.CREATED);
   } catch (error) {
@@ -65,31 +125,46 @@ exports.create = async (req, res, next) => {
 exports.update = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const updateData = { ...req.body };
+    const { name, permissions } = req.body;
     
     const where = { id };
     // if (req.tenantId) where.tenantId = req.tenantId;
 
-    // Check version if optimistic concurrency is required
-    const ifMatch = req.headers['if-match'];
-    if (ifMatch) {
-      where.version = parseInt(ifMatch.replace(/"/g, ''), 10);
+    // If permissions array was supplied, clean up old records first
+    if (permissions) {
+      await prisma.customPermission.deleteMany({
+        where: { roleId: id }
+      });
+    }
+
+    const permissionData = [];
+    if (permissions) {
+      Object.entries(permissions).forEach(([modName, actions]) => {
+        Object.entries(actions).forEach(([actName, val]) => {
+          if (val) {
+            permissionData.push({
+              module: modName,
+              actionString: actName
+            });
+          }
+        });
+      });
     }
 
     try {
       const data = await prisma.customRole.update({
         where,
-        data: updateData
+        data: {
+          name,
+          permissions: {
+            create: permissionData
+          }
+        },
+        include: { permissions: true }
       });
       return sendSuccess(res, data);
     } catch (e) {
       if (e.code === 'P2025') {
-        if (ifMatch) {
-          return sendError(res, {
-            code: ERROR_CODES.RESOURCE_CONFLICT,
-            message: 'Resource was updated by another user or does not exist.'
-          }, HTTP_STATUS.CONFLICT);
-        }
         return sendError(res, {
           code: ERROR_CODES.NOT_FOUND,
           message: 'CustomRole not found'

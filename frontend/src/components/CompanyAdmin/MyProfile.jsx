@@ -4,6 +4,8 @@ import {
   Shield, Check, Monitor, Smartphone, Tablet, Link2, ChevronRight, 
   Lock, Edit3, Grid, CalendarDays, Truck, Map, MessageSquare, History, Bell, Building
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import api from '../../services/api';
 
 export default function MyProfile() {
   const [toast, setToast] = useState(null);
@@ -12,7 +14,9 @@ export default function MyProfile() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  // Editable Profile State Variables
+  // Hydrate user profile from Auth Context on mount
+  const { user, checkAuthStatus } = useAuth();
+  const [userId, setUserId] = useState('');
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [fullName, setFullName] = useState('Alex Morgan');
   const [mobileNumber, setMobileNumber] = useState('+61 488 999 000');
@@ -22,6 +26,35 @@ export default function MyProfile() {
   const [emergencyContact, setEmergencyContact] = useState('Sarah Morgan (Spouse) +61 411 333 444');
   const [companyName, setCompanyName] = useState('Hero Logistics Solutions Pty Ltd');
   const [abn, setAbn] = useState('98 123 456 789');
+
+  const fetchProfileDetails = async () => {
+    try {
+      // 1. Set user info from auth session
+      if (user) {
+        setUserId(user.id);
+        setFullName(user.name || '');
+        setEmailAddress(user.email || '');
+        setMobileNumber(user.phone || '');
+        setDob(user.dob || '12 Aug 1985');
+        setAddress(user.address || '100 Barangaroo Avenue, Sydney NSW 2000, Australia');
+        setEmergencyContact(user.emergencyContact || 'Sarah Morgan (Spouse) +61 411 333 444');
+      }
+
+      // 2. Fetch company info from backend
+      const res = await api.get('/companys');
+      if (res.data?.success && res.data.data.length > 0) {
+        const comp = res.data.data[0];
+        setCompanyName(comp.name || '');
+        setAbn(comp.registrationNumber || '');
+      }
+    } catch (err) {
+      console.error('Failed to load profile details:', err);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchProfileDetails();
+  }, [user]);
 
   // Temporary Edit Form State Variables
   const [tempFullName, setTempFullName] = useState('');
@@ -45,18 +78,46 @@ export default function MyProfile() {
     setEditModalOpen(true);
   };
 
-  const handleSaveProfile = (e) => {
+  const handleSaveProfile = async (e) => {
     e.preventDefault();
-    setFullName(tempFullName);
-    setMobileNumber(tempMobile);
-    setEmailAddress(tempEmail);
-    setDob(tempDob);
-    setAddress(tempAddress);
-    setEmergencyContact(tempEmergency);
-    setCompanyName(tempCompany);
-    setAbn(tempAbn);
-    setEditModalOpen(false);
-    showToast('✓ Admin Profile updated successfully!');
+    try {
+      // 1. Save User personal profile updates to backend
+      if (userId) {
+        await api.put(`/users/${userId}`, {
+          name: tempFullName,
+          email: tempEmail,
+          phone: tempMobile,
+          dob: tempDob,
+          address: tempAddress,
+          emergencyContact: tempEmergency
+        });
+      }
+
+      // 2. Save Company ABN updates to backend
+      const compRes = await api.get('/companys');
+      if (compRes.data?.success && compRes.data.data.length > 0) {
+        const compId = compRes.data.data[0].id;
+        await api.put(`/companys/${compId}`, {
+          name: tempCompany,
+          registrationNumber: tempAbn
+        });
+      }
+
+      setFullName(tempFullName);
+      setMobileNumber(tempMobile);
+      setEmailAddress(tempEmail);
+      setDob(tempDob);
+      setAddress(tempAddress);
+      setEmergencyContact(tempEmergency);
+      setCompanyName(tempCompany);
+      setAbn(tempAbn);
+      setEditModalOpen(false);
+
+      showToast('✓ Admin Profile updated successfully!');
+      if (checkAuthStatus) checkAuthStatus();
+    } catch (err) {
+      showToast('✕ Error updating profile settings.');
+    }
   };
 
   return (
