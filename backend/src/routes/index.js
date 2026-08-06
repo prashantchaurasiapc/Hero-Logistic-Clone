@@ -79,7 +79,8 @@ const WarehouseLabelPrintRoutes = require('./WarehouseLabelPrintRoutes');
 const PrintSpoolerJobRoutes = require('./PrintSpoolerJobRoutes');
 const authRoutes = require('./AuthRoutes');
 const DocumentRoutes = require('./DocumentRoutes');
-
+const SuperAdminDashboardRoutes = require('./SuperAdminDashboardRoutes');
+const PaymentGatewayConfigRoutes = require('./PaymentGatewayConfigRoutes');
 
 router.use('/auth', authRoutes);
 router.use('/companys', CompanyRoutes);
@@ -106,7 +107,7 @@ router.use('/custom-domains', CustomDomainRoutes);
 router.use('/communication-templates', CommunicationTemplateRoutes);
 router.use('/white-label-release-logs', WhiteLabelReleaseLogRoutes);
 router.use('/api-integrations', ApiIntegrationRoutes);
-router.use('/ticket-replys', TicketReplyRoutes);
+router.use('/ticket-replies', TicketReplyRoutes);
 router.use('/payment-attempts', PaymentAttemptRoutes);
 router.use('/user-sessions', UserSessionRoutes);
 router.use('/api-usage-logs', ApiUsageLogRoutes);
@@ -159,5 +160,8 @@ router.use('/networked-printers', NetworkedPrinterRoutes);
 router.use('/warehouse-label-prints', WarehouseLabelPrintRoutes);
 router.use('/print-spooler-jobs', PrintSpoolerJobRoutes);
 router.use('/documents', DocumentRoutes);
+router.use('/super-admin/dashboard', SuperAdminDashboardRoutes);
+router.use('/payment-gateway-config', PaymentGatewayConfigRoutes);
+router.use('/dashboard-metrics', SuperAdminDashboardRoutes);
 
 module.exports = router;

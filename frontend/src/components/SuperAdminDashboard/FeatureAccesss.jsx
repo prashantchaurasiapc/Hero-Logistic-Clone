@@ -3,6 +3,7 @@ import {
   Shield, Plus, Search, CheckCircle, X, ChevronDown, ChevronRight,
   Download, Filter, Settings, FileText, ArrowRight, Trash2
 } from 'lucide-react';
+import api from '../../services/api';
 
 export default function FeatureAccess() {
   const [activeTab, setActiveTab] = useState('Dynamic Features Matrix');
@@ -41,293 +42,70 @@ export default function FeatureAccess() {
     Tracking: true
   });
 
-  // Features list state grouped or categorized (exactly matching all screenshots)
-  const [features, setFeatures] = useState([
-    {
-      id: 'feat-base-shell',
-      name: 'Admin Panel Base Shell',
-      version: 'v1.0.0',
-      desc: 'Global navigation, theme styling engines, and...',
-      fullDesc: 'Global navigation, theme styling engines, and sidebar layouts.',
-      category: 'Platform',
-      requiredModules: 'Platform Base',
-      apiLoad: '120,000 requests',
-      storage: '0.5 GB',
-      footprint: 'Low',
-      plans: { Starter: true, Pro: true, Enterprise: true, Custom: true },
-      addon: 'No',
-      licensing: 'Core',
-      status: 'Enabled',
-      usage: 1420,
-      companies: 5
-    },
-    {
-      id: 'feat-rbac',
-      name: 'Role-Based Access Controllers',
-      version: 'v1.0.0',
-      desc: 'Custom operator/dispatcher permissions, adm...',
-      fullDesc: 'Custom operator/dispatcher permissions, admin role matrices, and access policies.',
-      category: 'Platform',
-      requiredModules: 'Platform Base',
-      apiLoad: '85,000 requests',
-      storage: '0.3 GB',
-      footprint: 'Low',
-      plans: { Starter: true, Pro: true, Enterprise: true, Custom: true },
-      addon: 'No',
-      licensing: 'Core',
-      status: 'Enabled',
-      usage: 1500,
-      companies: 5
-    },
-    {
-      id: 'feat-ops-map',
-      name: 'Interactive Operations Map',
-      version: 'v1.2.0',
-      desc: 'Real-time coordinate plotting for routes, deliv...',
-      fullDesc: 'Real-time coordinate plotting for routes, delivery stops, and fleet movement visualization.',
-      dependsOn: 'feat-gps-pings',
-      category: 'Operations',
-      requiredModules: 'GPS Tracking',
-      apiLoad: '210,000 requests',
-      storage: '2.1 GB',
-      footprint: 'Medium',
-      plans: { Starter: true, Pro: true, Enterprise: true, Custom: true },
-      addon: 'No',
-      licensing: 'Core',
-      status: 'Enabled',
-      usage: 940,
-      companies: 4
-    },
-    {
-      id: 'feat-fleet-logs',
-      name: 'Fleet Asset Maintenance Logs',
-      version: 'v1.0.0',
-      desc: 'Vehicles, trailers, registrations, inspections an...',
-      fullDesc: 'Vehicles, trailers, registrations, inspections and maintenance scheduling logs.',
-      category: 'Fleet',
-      requiredModules: 'Fleet Management',
-      apiLoad: '95,000 requests',
-      storage: '4.8 GB',
-      footprint: 'Low',
-      plans: { Starter: true, Pro: true, Enterprise: true, Custom: true },
-      addon: 'No',
-      licensing: 'Core',
-      status: 'Enabled',
-      usage: 880,
-      companies: 4
-    },
-    {
-      id: 'feat-drivers-eld',
-      name: 'ELD Driver Log Profiles',
-      version: 'v1.1.0',
-      desc: 'Compliance, training, licenses, drug screening...',
-      fullDesc: 'Compliance, training, licenses, drug screening, and ELD trainer logs.',
-      dependsOn: 'feat-fleet-logs',
-      category: 'Drivers',
-      requiredModules: 'Driver Management',
-      apiLoad: '75,000 requests',
-      storage: '18.5 GB',
-      footprint: 'Low',
-      plans: { Starter: true, Pro: true, Enterprise: true, Custom: true },
-      addon: 'No',
-      licensing: 'Core',
-      status: 'Enabled',
-      usage: 1100,
-      companies: 5
-    },
-    {
-      id: 'feat-dispatch-board',
-      name: 'Dispatch Scheduling Board',
-      version: 'v1.3.0',
-      desc: 'Drag & drop load assignments, driver scheduli...',
-      fullDesc: 'Drag & drop load assignments, driver scheduling, and live dispatch board.',
-      dependsOn: 'feat-drivers-eld',
-      category: 'Dispatch',
-      requiredModules: 'Dispatch Core',
-      apiLoad: '140,000 requests',
-      storage: '3.2 GB',
-      footprint: 'Medium',
-      plans: { Starter: true, Pro: true, Enterprise: true, Custom: true },
-      addon: 'No',
-      licensing: 'Core',
-      status: 'Enabled',
-      usage: 780,
-      companies: 5
-    },
-    {
-      id: 'feat-load-registry',
-      name: 'Load Booking Registry',
-      version: 'v1.0.0',
-      desc: 'Loads registry, route confirmation logs, BOL, a...',
-      fullDesc: 'Loads registry, route confirmation logs, BOL, and carrier contract storage.',
-      category: 'Loads',
-      requiredModules: 'Load Management',
-      apiLoad: '160,000 requests',
-      storage: '5.5 GB',
-      footprint: 'Low',
-      plans: { Starter: true, Pro: true, Enterprise: true, Custom: true },
-      addon: 'No',
-      licensing: 'Core',
-      status: 'Enabled',
-      usage: 1200,
-      companies: 5
-    },
-    {
-      id: 'feat-white-labeling',
-      name: 'White-Label Brand Theme Configurations',
-      version: 'v1.0.0',
-      desc: 'Admin styling settings parameters (branded p...',
-      fullDesc: 'Admin styling settings parameters for branded portal themes and custom logo integrations.',
-      category: 'Administration',
-      requiredModules: 'Theme Engine',
-      apiLoad: '30,000 requests',
-      storage: '1.2 GB',
-      footprint: 'Low',
-      plans: { Starter: false, Pro: false, Enterprise: true, Custom: true },
-      addon: 'No',
-      licensing: 'Premium',
-      status: 'Enabled',
-      usage: 220,
-      companies: 3
-    },
-    {
-      id: 'feat-developer-sandbox',
-      name: 'Developer Sandbox Credentials Access',
-      version: 'v1.0.0',
-      desc: 'Generate developer credentials sandbox API k...',
-      fullDesc: 'Generate developer credentials, sandbox API keys, and test environment access.',
-      category: 'API',
-      requiredModules: 'API Gateway',
-      apiLoad: '50,000 requests',
-      storage: '0.8 GB',
-      footprint: 'Low',
-      plans: { Starter: false, Pro: false, Enterprise: true, Custom: true },
-      addon: 'No',
-      licensing: 'Enterprise Only',
-      status: 'Enabled',
-      usage: 150,
-      companies: 1
-    },
-    {
-      id: 'feat-dev-debug',
-      name: 'Live Application Event Debug Logs Logger',
-      version: 'v1.0.0',
-      desc: 'Developer debug console logging REST API ca...',
-      fullDesc: 'Developer debug console logging, REST API call tracing, and event pipeline monitoring.',
-      dependsOn: 'feat-api-gateway',
-      category: 'Developer Tools',
-      requiredModules: 'API Gateway',
-      apiLoad: '25,000 requests',
-      storage: '2.4 GB',
-      footprint: 'Low',
-      plans: { Starter: false, Pro: false, Enterprise: true, Custom: true },
-      addon: 'No',
-      licensing: 'Enterprise Only',
-      status: 'Enabled',
-      usage: 130,
-      companies: 1
-    },
-    {
-      id: 'feat-billing-ledger',
-      name: 'Billing Ledger Gateway',
-      version: 'v1.0.0',
-      desc: 'Financial invoices processing queues.',
-      fullDesc: 'Financial invoices processing queues, payment gateway webhooks, and ledger reconciliation.',
-      category: 'Billing',
-      requiredModules: 'Billing Engine',
-      apiLoad: '90,000 requests',
-      storage: '3.6 GB',
-      footprint: 'Low',
-      plans: { Starter: true, Pro: true, Enterprise: true, Custom: true },
-      addon: 'No',
-      licensing: 'Core',
-      status: 'Enabled',
-      usage: 710,
-      companies: 5
-    },
-    {
-      id: 'feat-crm-leads',
-      name: 'CRM Leads Sales Tracker',
-      version: 'v1.0.0',
-      desc: 'Prospect trackers, conversions trackers, and d...',
-      fullDesc: 'Prospect trackers, conversion pipelines, deal logs and sales performance dashboards.',
-      category: 'CRM',
-      requiredModules: 'CRM Engine',
-      apiLoad: '45,000 requests',
-      storage: '1.8 GB',
-      footprint: 'Low',
-      plans: { Starter: true, Pro: true, Enterprise: true, Custom: true },
-      addon: 'No',
-      licensing: 'Core',
-      status: 'Enabled',
-      usage: 380,
-      companies: 5
-    },
-    {
-      id: 'feat-cust-portal',
-      name: 'Shipper Customer Gateway',
-      version: 'v1.1.0',
-      desc: 'Customer load booking screens, shipment trac...',
-      fullDesc: 'Customer load booking screens, shipment tracking, and self-service support portal.',
-      category: 'Customer Portal',
-      requiredModules: 'Portal Engine',
-      apiLoad: '65,000 requests',
-      storage: '2.9 GB',
-      footprint: 'Low',
-      plans: { Starter: false, Pro: true, Enterprise: true, Custom: true },
-      addon: 'No',
-      licensing: 'Premium',
-      status: 'Enabled',
-      usage: 490,
-      companies: 4
-    },
-    {
-      id: 'feat-tracking-gateway',
-      name: 'Real-time GPS Tracking Gateway',
-      version: 'v1.0.0',
-      desc: 'High-frequency GPS ping coordinate pipelines.',
-      fullDesc: 'High-frequency GPS ping coordinate pipelines, geofencing alerts, and live map feeds.',
-      category: 'Tracking',
-      requiredModules: 'GPS Engine',
-      apiLoad: '350,000 requests',
-      storage: '7.2 GB',
-      footprint: 'Medium',
-      plans: { Starter: true, Pro: true, Enterprise: true, Custom: true },
-      addon: 'No',
-      licensing: 'Core',
-      status: 'Enabled',
-      usage: 1800,
-      companies: 5
-    }
-  ]);
+  // Features list state — loaded from API
+  const [features, setFeatures] = useState([]);
 
-  // Audit Center logs
-  const [auditLogs, setAuditLogs] = useState([
-    {
-      action: 'Feature Enabled',
-      details: 'Admin Panel Base Shell enabled for all plans.',
-      reason: 'Core module deployment',
-      timestamp: '06/20/2026, 09:00:00 AM',
-      operator: 'System Root',
-      ip: '192.168.1.1'
-    },
-    {
-      action: 'Feature Updated',
-      details: 'Operations Map upgraded to v1.2.0.',
-      reason: 'Performance upgrade',
-      timestamp: '06/22/2026, 11:30:00 AM',
-      operator: 'Alex W.',
-      ip: '192.168.1.1'
-    },
-    {
-      action: 'Company Override Created',
-      details: 'Manual override enabled for Swift Cargo Express on Payroll module.',
-      reason: 'Partner promotion extension',
-      timestamp: '06/24/2026, 02:45:00 PM',
-      operator: 'Super Admin',
-      ip: '192.168.1.5'
+  // Audit Center logs — loaded from API
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchFeatures = async () => {
+    try {
+      const res = await api.get('/features?pageSize=100');
+      if (res.data?.success) {
+        const mapped = res.data.data.map(f => ({
+          id: f.id,
+          uniqueId: f.uniqueId,
+          name: f.name,
+          version: f.version || 'v1.0.0',
+          desc: f.description ? f.description.substring(0, 45) + '...' : f.name,
+          fullDesc: f.description || f.name,
+          category: f.category || 'Platform',
+          requiredModules: f.category + ' Base',
+          apiLoad: f.apiLoadEst ? `${f.apiLoadEst.toLocaleString()} requests` : 'N/A',
+          storage: f.storageEstGB ? `${f.storageEstGB} GB` : 'N/A',
+          footprint: f.performanceFootprint || 'Low',
+          plans: { Starter: true, Pro: true, Enterprise: true, Custom: true },
+          addon: 'No',
+          licensing: f.licensingType === 'CORE' ? 'Core'
+            : f.licensingType === 'PREMIUM' ? 'Premium'
+            : f.licensingType === 'ENTERPRISE_ONLY' ? 'Enterprise Only'
+            : f.licensingType === 'ADD_ON' ? 'Add-on' : 'Core',
+          status: f.status === 'ENABLED' ? 'Enabled' : 'Disabled',
+          usage: 0,
+          companies: 0
+        }));
+        setFeatures(mapped);
+      }
+    } catch (err) {
+      console.error('Failed to load features:', err);
+    } finally {
+      setIsLoading(false);
     }
-  ]);
+  };
+
+  const fetchAuditLogs = async () => {
+    try {
+      const res = await api.get('/audit-logs?pageSize=50&sort=-createdAt');
+      if (res.data?.success) {
+        setAuditLogs(res.data.data.map(log => ({
+          action: log.action || 'System Event',
+          details: log.description || log.action || 'N/A',
+          reason: log.reason || 'N/A',
+          timestamp: new Date(log.createdAt).toLocaleString(),
+          operator: log.user?.name || log.performedBy || 'System',
+          ip: log.ipAddress || 'N/A'
+        })));
+      }
+    } catch (err) {
+      console.error('Failed to load audit logs:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchFeatures();
+    fetchAuditLogs();
+  }, []);
 
   const showNotification = (msg) => {
     setToast(msg);
@@ -353,9 +131,17 @@ export default function FeatureAccess() {
     showNotification(`Plan mapping updated for ${id}.`);
   };
 
-  const handleStatusChange = (id, newStatus) => {
-    setFeatures(prev => prev.map(f => f.id === id ? { ...f, status: newStatus } : f));
-    showNotification(`Feature gate "${id}" set to ${newStatus}.`);
+  const handleStatusChange = async (id, newStatus) => {
+    try {
+      const dbStatus = newStatus === 'Enabled' ? 'ENABLED' : 'DISABLED';
+      const res = await api.put(`/features/${id}`, { status: dbStatus });
+      if (res.data?.success) {
+        showNotification(`Feature status updated to ${newStatus}.`);
+        fetchFeatures();
+      }
+    } catch (err) {
+      showNotification('Error updating feature status.');
+    }
   };
 
   const handleAccordionToggle = (category) => {
@@ -393,62 +179,60 @@ export default function FeatureAccess() {
     showNotification(`Cloned "${feat.name}" successfully!`);
   };
 
-  const handleDelete = (featId, featName) => {
+  const handleDelete = async (featId, featName) => {
     if (window.confirm(`Are you sure you want to delete feature gate "${featName}"?`)) {
-      setFeatures(prev => prev.filter(f => f.id !== featId));
-      // Add audit log
-      const newAudit = {
-        action: 'Feature Deleted',
-        details: `Feature gate ${featName} (${featId}) permanently removed.`,
-        reason: 'Deprecation cleanup',
-        timestamp: new Date().toLocaleString(),
-        operator: 'Super Admin',
-        ip: '192.168.1.5'
-      };
-      setAuditLogs([newAudit, ...auditLogs]);
-      showNotification(`Deleted "${featName}".`);
+      try {
+        const res = await api.delete(`/features/${featId}`);
+        if (res.status === 204 || res.data?.success) {
+          showNotification(`Deleted "${featName}".`);
+          fetchFeatures();
+        }
+      } catch (err) {
+        showNotification('Error deleting feature.');
+      }
     }
   };
 
-  const handleCreateFeatureSubmit = (e) => {
+  const handleCreateFeatureSubmit = async (e) => {
     e.preventDefault();
     if (!newFeatName || !newFeatId) {
       showNotification('Feature Name and ID are required.');
       return;
     }
     const cleanId = newFeatId.startsWith('feat-') ? newFeatId : `feat-${newFeatId}`;
-    const newFeature = {
-      id: cleanId,
-      name: newFeatName,
-      version: 'v1.0.0',
-      desc: newFeatDesc || 'No description provided.',
-      category: newFeatCategory,
-      plans: { Starter: true, Pro: true, Enterprise: true, Custom: true },
-      addon: 'No',
-      licensing: newFeatLicensing,
-      status: 'Enabled',
-      usage: 0,
-      companies: 0
+    // Map frontend licensing label to DB enum
+    const licensingMap = {
+      'Core': 'CORE',
+      'Premium': 'PREMIUM',
+      'Add-on': 'ADD_ON',
+      'Enterprise Only': 'ENTERPRISE_ONLY'
     };
-    setFeatures([...features, newFeature]);
-
-    // Add audit log
-    const newAudit = {
-      action: 'Feature Created',
-      details: `Feature gate ${newFeature.name} registered.`,
-      reason: 'Manual registration wizard',
-      timestamp: new Date().toLocaleString(),
-      operator: 'Super Admin',
-      ip: '192.168.1.5'
-    };
-    setAuditLogs([newAudit, ...auditLogs]);
-
-    setShowAddModal(false);
-    setNewFeatName('');
-    setNewFeatId('');
-    setNewFeatDesc('');
-    setModalStep(1);
-    showNotification(`Feature "${newFeatName}" created successfully.`);
+    try {
+      const res = await api.post('/features', {
+        uniqueId: cleanId,
+        name: newFeatName,
+        description: newFeatDesc,
+        category: newFeatCategory,
+        licensingType: licensingMap[newFeatLicensing] || 'CORE',
+        status: 'ENABLED'
+      });
+      if (res.data?.success) {
+        showNotification(`Feature gate "${newFeatName}" registered successfully!`);
+        fetchFeatures();
+        setShowAddModal(false);
+        setModalStep(1);
+        setNewFeatName('');
+        setNewFeatId('');
+        setNewFeatDesc('');
+        setNewFeatCategory('Platform');
+        setNewFeatLicensing('Core');
+      } else {
+        showNotification('Error creating feature.');
+      }
+    } catch (err) {
+      console.error('Feature create error:', err);
+      showNotification('Error creating feature.');
+    }
   };
 
   const handleExportCSV = () => {
@@ -559,27 +343,27 @@ export default function FeatureAccess() {
         <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between min-h-[100px]">
           <div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Total Licensed Features</span>
-            <span className="text-2xl font-black text-slate-800 block mt-1.5">24</span>
+            <span className="text-2xl font-black text-slate-800 block mt-1.5">{features.length}</span>
           </div>
-          <span className="text-[10px] font-bold text-[#10B981] mt-2 block">+2 templates added today</span>
+          <span className="text-[10px] font-bold text-[#10B981] mt-2 block">{features.filter(f => f.status === 'Enabled').length} active gates</span>
         </div>
 
         {/* Metric 2 */}
         <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between min-h-[100px]">
           <div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Active Features</span>
-            <span className="text-2xl font-black text-[#10B981] block mt-1.5">24</span>
+            <span className="text-2xl font-black text-[#10B981] block mt-1.5">{features.filter(f => f.status === 'Enabled').length}</span>
           </div>
-          <span className="text-[10px] font-bold text-slate-455 mt-2 block">0 features inactive</span>
+          <span className="text-[10px] font-bold text-slate-455 mt-2 block">{features.filter(f => f.status !== 'Enabled').length} features inactive</span>
         </div>
 
         {/* Metric 3 */}
         <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between min-h-[100px]">
           <div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Premium Tier Modules</span>
-            <span className="text-2xl font-black text-slate-800 block mt-1.5">6</span>
+            <span className="text-2xl font-black text-slate-800 block mt-1.5">{features.filter(f => f.licensing === 'Premium' || f.licensing === 'Enterprise Only').length}</span>
           </div>
-          <span className="text-[10px] font-bold text-amber-555 mt-2 block">3 Enterprise only</span>
+          <span className="text-[10px] font-bold text-amber-555 mt-2 block">{features.filter(f => f.licensing === 'Enterprise Only').length} Enterprise only</span>
         </div>
 
         {/* Metric 4 */}

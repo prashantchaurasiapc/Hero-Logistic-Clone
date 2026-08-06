@@ -24,15 +24,24 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const checkAuthStatus = async () => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      // Optimistically assume authenticated if token exists to prevent layout shifting/redirects
+      setIsAuthenticated(true);
+    }
+    
     try {
       setLoading(true);
       const res = await api.get('/auth/me');
       if (res.data && res.data.success) {
         setUser(res.data.data.user);
         setIsAuthenticated(true);
+      } else {
+        throw new Error('Verification failed');
       }
     } catch (error) {
-      // 401 means not authenticated, which is normal if no session exists
+      // If validation fails, clean up token and redirect to login
+      localStorage.removeItem('token');
       setUser(null);
       setIsAuthenticated(false);
     } finally {
@@ -44,6 +53,9 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await api.post('/auth/login', { email, password });
       if (res.data && res.data.success) {
+        if (res.data.data.accessToken) {
+          localStorage.setItem('token', res.data.data.accessToken);
+        }
         setUser(res.data.data.user);
         setIsAuthenticated(true);
         return { success: true, user: res.data.data.user };
@@ -63,6 +75,7 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Logout failed on backend:', error);
     } finally {
+      localStorage.removeItem('token');
       setUser(null);
       setIsAuthenticated(false);
     }

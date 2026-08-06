@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import {
   Shield, Plus, Edit3, Trash2, Check, X, Search,
-  AlertTriangle, Building, Users, UserCheck, Key, LogIn
+  AlertTriangle, Building, Users, UserCheck, Key, LogIn, Loader2
 } from 'lucide-react';
+import api from '../../services/api';
 
 /* ─── Hero Logistics Platform Modules & Available Permissions ─── */
 const MODULES = [
@@ -228,8 +229,41 @@ const BADGE_COLORS = [
 ];
 
 export default function RolesPermissions() {
-  const [roles, setRoles]             = useState(INITIAL_ROLES);
-  const [search, setSearch]           = useState('');
+  const [roles, setRoles] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [selectedRole, setSelectedRole] = useState(null);
+
+  const fetchRoles = async () => {
+    setIsLoading(true);
+    try {
+      const res = await api.get('/custom-roles');
+      if (res.data?.success) {
+        setRoles(res.data.data.map(r => ({
+          id: r.id,
+          name: r.name,
+          permissions: r.permissions || emptyPerms(),
+          usersCount: 0 // Mock for now or fetch aggregation
+        })));
+        if (res.data.data.length > 0 && !selectedRole) {
+          setSelectedRole({
+            id: res.data.data[0].id,
+            name: res.data.data[0].name,
+            permissions: res.data.data[0].permissions || emptyPerms(),
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch custom roles', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchRoles();
+  }, []);
+
   const [perPage, setPerPage]         = useState(10);
   const [toast, setToast]             = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -276,24 +310,52 @@ export default function RolesPermissions() {
   };
 
   /* Save */
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
     if (!formName.trim()) return;
-    if (editRole) {
-      setRoles(prev => prev.map(r => r.id === editRole.id ? { ...r, name: formName.trim().toUpperCase(), permissions: formPerms } : r));
-      notify(`Role "${formName}" updated!`);
-    } else {
-      setRoles(prev => [...prev, { id: `R00${prev.length + 1}`, name: formName.trim().toUpperCase(), permissions: { ...formPerms } }]);
-      notify(`Role "${formName}" created!`);
+    try {
+      setIsLoading(true);
+      const payload = {
+        name: formName.trim().toUpperCase(),
+        permissions: formPerms
+      };
+      if (editRole) {
+        const res = await api.put(`/custom-roles/${editRole.id}`, payload);
+        if (res.data?.success) {
+          notify(`Role "${formName}" updated!`);
+          setShowAddModal(false);
+          fetchRoles();
+        }
+      } else {
+        const res = await api.post('/custom-roles', payload);
+        if (res.data?.success) {
+          notify(`Role "${formName}" created!`);
+          setShowAddModal(false);
+          fetchRoles();
+        }
+      }
+    } catch (err) {
+      notify(err.response?.data?.error?.message || 'Error saving role.');
+    } finally {
+      setIsLoading(false);
     }
-    setShowAddModal(false);
   };
 
   /* Delete */
-  const handleDelete = () => {
-    notify(`Role "${showDeleteModal.name}" deleted.`);
-    setRoles(prev => prev.filter(r => r.id !== showDeleteModal.id));
-    setShowDeleteModal(null);
+  const handleDelete = async () => {
+    try {
+      setIsLoading(true);
+      const res = await api.delete(`/custom-roles/${showDeleteModal.id}`);
+      if (res.status === 204 || res.data?.success) {
+        notify(`Role "${showDeleteModal.name}" deleted.`);
+        setShowDeleteModal(null);
+        fetchRoles();
+      }
+    } catch (err) {
+      notify('Error deleting role.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const filtered = roles.filter(r => r.name.toLowerCase().includes(search.toLowerCase()));
@@ -360,7 +422,13 @@ export default function RolesPermissions() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {filtered.slice(0, perPage).length === 0 ? (
+              {isLoading ? (
+                <tr>
+                  <td colSpan={3} className="px-5 py-12 text-center text-slate-400 font-semibold text-sm">
+                    <div className="flex justify-center items-center gap-2"><Loader2 className="w-5 h-5 animate-spin" /> Loading roles...</div>
+                  </td>
+                </tr>
+              ) : filtered.slice(0, perPage).length === 0 ? (
                 <tr>
                   <td colSpan={3} className="px-5 py-12 text-center text-slate-400 font-semibold text-sm">
                     No roles found.

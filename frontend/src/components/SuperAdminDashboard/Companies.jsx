@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search, Plus, Check, X, ShieldAlert, CheckCircle, ExternalLink,
-  Settings, Download, FileText, Filter, ChevronDown, RefreshCw, AlertCircle
+  Settings, Download, FileText, Filter, ChevronDown, RefreshCw, AlertCircle, Loader2
 } from 'lucide-react';
+import api from '../../services/api';
 
 export default function Companies() {
   const navigate = useNavigate();
@@ -93,118 +94,74 @@ export default function Companies() {
     }
   }, [toast]);
 
-  // Mock Database exactly matching the table screenshot data
-  const [companies, setCompanies] = useState([
-    {
-      id: '#TEN-1',
-      name: 'Falcon Logistics LLC',
-      plan: 'Professional',
-      status: 'ACTIVE',
-      branches: 4,
-      users: 12,
-      drivers: 3,
-      vehicles: 15,
-      loads: 8,
-      mrr: 8500,
-      lastLogin: 'Today, 02:15 PM',
-      expiry: 'N/A',
-      created: '03/12/2026',
-      manager: 'Alex W.'
-    },
-    {
-      id: '#TEN-2',
-      name: 'Swift Cargo Express',
-      plan: 'Professional',
-      status: 'ACTIVE',
-      branches: 2,
-      users: 2,
-      drivers: 3,
-      vehicles: 4,
-      loads: 2,
-      mrr: 499,
-      lastLogin: 'Yesterday, 04:30 PM',
-      expiry: '07/15/2026',
-      created: '04/19/2026',
-      manager: 'Alex W.'
-    },
-    {
-      id: '#TEN-3',
-      name: 'Global Shipping Solutions',
-      plan: 'Enterprise',
-      status: 'ACTIVE',
-      branches: 15,
-      users: 84,
-      drivers: 142,
-      vehicles: 98,
-      loads: 45,
-      mrr: 28000,
-      lastLogin: 'Today, 03:24 PM',
-      expiry: 'N/A',
-      created: '02/01/2026',
-      manager: 'Sarah K.'
-    },
-    {
-      id: '#TEN-4',
-      name: 'Texas Hotshot Carriers',
-      plan: 'Professional',
-      status: 'HOLD',
-      branches: 1,
-      users: 4,
-      drivers: 6,
-      vehicles: 2,
-      loads: 0,
-      mrr: 499,
-      lastLogin: 'Yesterday, 10:15 AM',
-      expiry: '06/15/2026',
-      created: '05/20/2026',
-      manager: 'Alex W.'
-    },
-    {
-      id: '#TEN-5',
-      name: 'Apex Logistics LLC',
-      plan: 'Professional',
-      status: 'ACTIVE',
-      branches: 3,
-      users: 16,
-      drivers: 18,
-      vehicles: 12,
-      loads: 6,
-      mrr: 4910,
-      lastLogin: 'Today, 01:10 PM',
-      expiry: 'N/A',
-      created: '06/19/2026',
-      manager: 'Sarah K.'
-    }
-  ]);
+  const [companies, setCompanies] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleProvisionTenant = (e) => {
+  const fetchCompanies = async () => {
+    setIsLoading(true);
+    try {
+      const res = await api.get('/companys');
+      if (res.data.success) {
+        const mappedData = res.data.data.map(company => {
+          const activeSub = company.tenantSubscription;
+          return {
+            id: company.id, // Or tenantId if populated
+            name: company.name,
+            plan: activeSub?.plan?.name || 'No Plan',
+            status: company.status,
+            branches: company._count?.branches || 0,
+            users: company._count?.users || 0,
+            drivers: company._count?.drivers || 0,
+            vehicles: company._count?.vehicles || 0,
+            loads: company._count?.loads || 0,
+            mrr: activeSub?.plan?.monthlyPrice || 0,
+            lastLogin: company.lastLogin ? new Date(company.lastLogin).toLocaleString() : 'N/A',
+            expiry: company.trialExpiry ? new Date(company.trialExpiry).toLocaleDateString() : 'N/A',
+            created: new Date(company.createdAt).toLocaleDateString(),
+            manager: company.accountManager || 'N/A'
+          };
+        });
+        setCompanies(mappedData);
+      }
+    } catch (err) {
+      console.error('Failed to load companies:', err);
+      showNotification('Failed to load tenants data.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCompanies();
+  }, []);
+
+  const handleProvisionTenant = async (e) => {
     e.preventDefault();
     if (!tenantName || !managerEmail) return;
 
-    const newTenant = {
-      id: `#TEN-${Math.floor(6 + Math.random() * 1000)}`,
-      name: tenantName,
-      plan: selectedPlan.replace(' Tier', ''),
-      status: 'ACTIVE',
-      branches: 1,
-      users: 1,
-      drivers: 0,
-      vehicles: 0,
-      loads: 0,
-      mrr: selectedPlan === 'Enterprise Tier' ? 28000 : selectedPlan === 'Professional Tier' ? 4910 : 499,
-      lastLogin: 'Today, ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      expiry: 'N/A',
-      created: new Date().toLocaleDateString('en-US'),
-      manager: 'Sarah K.'
-    };
-
-    setCompanies([newTenant, ...companies]);
-    setShowProvisionModal(false);
-    showNotification(`Tenant "${tenantName}" successfully provisioned!`);
-    setTenantName('');
-    setManagerEmail('');
-    setManagerPassword('');
-    setSelectedPlan('Professional Tier');
+    try {
+      setIsLoading(true);
+      const res = await api.post('/companys', {
+        name: tenantName,
+        adminEmail: managerEmail,
+        status: 'ACTIVE'
+      });
+      
+      if (res.data?.success) {
+        showNotification(`Tenant "${tenantName}" successfully provisioned!`);
+        setShowProvisionModal(false);
+        setTenantName('');
+        setManagerEmail('');
+        setManagerPassword('');
+        setSelectedPlan('Professional Tier');
+        fetchCompanies();
+      }
+    } catch (err) {
+      console.error('Failed to create company:', err);
+      showNotification('Error provisioning tenant.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleActionClick = (actionName, companyName) => {
@@ -247,7 +204,7 @@ export default function Companies() {
       ].join(','));
     });
 
-    const blob = new Blob([csvRows.join('\\n')], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -335,7 +292,7 @@ export default function Companies() {
         <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between min-h-[100px]">
           <div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">TOTAL COMPANIES</span>
-            <span className="text-2xl font-black text-slate-800 block mt-1.5">5</span>
+            <span className="text-2xl font-black text-slate-800 block mt-1.5">{companies.length}</span>
           </div>
           <span className="text-[10px] font-semibold text-slate-400 mt-2 block whitespace-nowrap">Registered tenants size Synced</span>
         </div>
@@ -344,7 +301,7 @@ export default function Companies() {
         <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between min-h-[100px]">
           <div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">ACTIVE COMPANIES</span>
-            <span className="text-2xl font-black text-slate-800 block mt-1.5">4</span>
+            <span className="text-2xl font-black text-slate-800 block mt-1.5">{companies.filter(c => c.status === 'ACTIVE').length}</span>
           </div>
           <span className="text-[10px] font-semibold text-slate-400 mt-2 block whitespace-nowrap">Active subscription sy... Stable</span>
         </div>
@@ -365,7 +322,7 @@ export default function Companies() {
         <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between min-h-[100px]">
           <div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">SUSPENDED COMPANIES</span>
-            <span className="text-2xl font-black text-slate-800 block mt-1.5">1</span>
+            <span className="text-2xl font-black text-slate-800 block mt-1.5">{companies.filter(c => c.status === 'HOLD').length}</span>
           </div>
           <div className="flex justify-between items-center mt-2">
             <span className="text-[10px] font-semibold text-slate-400 whitespace-nowrap">Suspended/On-Hold ...</span>
@@ -389,7 +346,7 @@ export default function Companies() {
         <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between min-h-[100px]">
           <div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">MONTHLY REVENUE</span>
-            <span className="text-2xl font-black text-slate-800 block mt-1.5">$41,909</span>
+            <span className="text-2xl font-black text-slate-800 block mt-1.5">${companies.reduce((sum, c) => sum + (c.mrr || 0), 0).toLocaleString()}</span>
           </div>
           <div className="flex justify-between items-center mt-2">
             <span className="text-[10px] font-semibold text-slate-400 whitespace-nowrap">MRR platform baseline</span>
@@ -401,7 +358,7 @@ export default function Companies() {
         <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between min-h-[100px]">
           <div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">ANNUAL REVENUE</span>
-            <span className="text-2xl font-black text-slate-800 block mt-1.5">$5,02,908</span>
+            <span className="text-2xl font-black text-slate-800 block mt-1.5">${(companies.reduce((sum, c) => sum + (c.mrr || 0), 0) * 12).toLocaleString()}</span>
           </div>
           <div className="flex justify-between items-center mt-2">
             <span className="text-[10px] font-semibold text-slate-400 whitespace-nowrap">ARR projection rate</span>
@@ -413,7 +370,7 @@ export default function Companies() {
         <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between min-h-[100px]">
           <div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">ACTIVE USERS</span>
-            <span className="text-2xl font-black text-slate-800 block mt-1.5">118</span>
+            <span className="text-2xl font-black text-slate-800 block mt-1.5">{companies.reduce((sum, c) => sum + (c.users || 0), 0)}</span>
           </div>
           <div className="flex justify-between items-center mt-2">
             <span className="text-[10px] font-semibold text-slate-400 whitespace-nowrap">Managers & staff a...</span>
@@ -425,7 +382,7 @@ export default function Companies() {
         <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between min-h-[100px]">
           <div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">TOTAL DRIVERS</span>
-            <span className="text-2xl font-black text-slate-800 block mt-1.5">172</span>
+            <span className="text-2xl font-black text-slate-800 block mt-1.5">{companies.reduce((sum, c) => sum + (c.drivers || 0), 0)}</span>
           </div>
           <span className="text-[10px] font-semibold text-slate-400 mt-2 block whitespace-nowrap">SaaS fleet drivers pool Stable</span>
         </div>
@@ -434,7 +391,7 @@ export default function Companies() {
         <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between min-h-[100px]">
           <div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">TOTAL LOADS</span>
-            <span className="text-2xl font-black text-slate-800 block mt-1.5">73</span>
+            <span className="text-2xl font-black text-slate-800 block mt-1.5">{companies.reduce((sum, c) => sum + (c.loads || 0), 0)}</span>
           </div>
           <div className="flex justify-between items-center mt-2">
             <span className="text-[10px] font-semibold text-slate-400 whitespace-nowrap">Loads managed all-...</span>
@@ -770,7 +727,13 @@ export default function Companies() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-xs font-bold text-slate-700 bg-white">
-              {filteredCompanies.length === 0 ? (
+              {isLoading ? (
+                 <tr>
+                  <td colSpan="17" className="py-12 text-center text-slate-400 font-semibold bg-white w-full flex items-center justify-center gap-2">
+                    <Loader2 className="w-5 h-5 animate-spin" /> Loading tenant registry...
+                  </td>
+                </tr>
+              ) : filteredCompanies.length === 0 ? (
                 <tr>
                   <td colSpan="17" className="py-12 text-center text-slate-400 font-semibold bg-white w-full">
                     No active corporate tenants found matching filters.
@@ -1097,34 +1060,48 @@ export default function Companies() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="p-6 space-y-5">
+            <form className="p-6 space-y-5" onSubmit={async (e) => {
+              e.preventDefault();
+              try {
+                setIsLoading(true);
+                const name = e.target.elements.name.value;
+                const adminEmail = e.target.elements.manager.value;
+                const res = await api.put(`/companys/${selectedActionCompany.id}`, { name, adminEmail });
+                if (res.data?.success) {
+                  showNotification(`Configurations saved for ${name}`);
+                  setShowEditCompanyModal(false);
+                  fetchCompanies();
+                }
+              } catch (err) {
+                showNotification('Error updating company.');
+              } finally {
+                setIsLoading(false);
+              }
+            }}>
               <div className="space-y-1.5">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">COMPANY NAME</label>
-                <input type="text" defaultValue={selectedActionCompany.name} className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800" />
+                <input name="name" type="text" defaultValue={selectedActionCompany.name} className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800" />
               </div>
               <div className="space-y-1.5">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">ADMINISTRATOR EMAIL</label>
-                <input type="text" defaultValue={selectedActionCompany.manager} className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800" />
+                <input name="manager" type="text" defaultValue={selectedActionCompany.manager} className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800" />
               </div>
               <div className="space-y-1.5">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SUBSCRIPTION TIER LEVEL</label>
-                <select defaultValue={selectedActionCompany.plan + ' Tier'} className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                <select name="plan" defaultValue={selectedActionCompany.plan + ' Tier'} className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
                   <option>Starter Tier</option>
                   <option>Professional Tier</option>
                   <option>Enterprise Tier</option>
                 </select>
               </div>
               <button
-                onClick={() => {
-                  showNotification(`Configurations saved for ${selectedActionCompany.name}`);
-                  setShowEditCompanyModal(false);
-                }}
+                type="submit"
                 className="w-full mt-2 bg-[#FFB020] hover:bg-[#FFC800] text-black font-extrabold text-[13px] py-4 rounded-xl transition-all cursor-pointer shadow-sm flex flex-col items-center justify-center"
               >
                 <Check className="w-4 h-4 mb-1" />
                 Save Configurations
               </button>
-            </div>
+            </form>
           </div>
         </div>
       )}
@@ -1148,10 +1125,20 @@ export default function Companies() {
                 </select>
               </div>
               <button
-                onClick={() => {
-                  setCompanies(prev => prev.map(item => item.id === selectedActionCompany.id ? { ...item, status: 'HOLD' } : item));
-                  showNotification(`Suspended license for ${selectedActionCompany.name}`);
-                  setShowSuspendCompanyModal(false);
+                onClick={async () => {
+                  try {
+                    setIsLoading(true);
+                    const res = await api.put(`/companys/${selectedActionCompany.id}`, { status: 'HOLD' });
+                    if (res.data?.success) {
+                      showNotification(`Suspended license for ${selectedActionCompany.name}`);
+                      setShowSuspendCompanyModal(false);
+                      fetchCompanies();
+                    }
+                  } catch (err) {
+                    showNotification('Error suspending company.');
+                  } finally {
+                    setIsLoading(false);
+                  }
                 }}
                 className="w-full bg-[#E11D48] hover:bg-[#BE123C] text-white font-extrabold text-[13px] py-4 rounded-xl transition-all cursor-pointer shadow-sm"
               >
@@ -1345,7 +1332,7 @@ export default function Companies() {
               <div className="flex justify-between items-start">
                 <div>
                   <h2 className="text-[22px] font-black text-slate-900">{selectedTenant?.name || 'Falcon Logistics LLC'}</h2>
-                  <p className="text-[10px] font-mono text-slate-400 mt-1 uppercase tracking-wider">Workspace ID: #TEN-{selectedTenant?.id || '1'}</p>
+                  <p className="text-[10px] font-mono text-slate-400 mt-1 uppercase tracking-wider">Workspace ID: #{selectedTenant?.id || '1'}</p>
                 </div>
                 <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-bold tracking-wider ${(selectedTenant?.status || 'ACTIVE') === 'ACTIVE'
                     ? 'text-emerald-600 bg-emerald-50 border border-emerald-200'
@@ -1390,11 +1377,11 @@ export default function Companies() {
                       </div>
                       <div>
                         <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Joined Date</p>
-                        <p className="text-slate-800 font-bold text-[12px]">03/12/2026</p>
+                        <p className="text-slate-800 font-bold text-[12px]">{selectedTenant?.created}</p>
                       </div>
                       <div>
                         <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Last Login</p>
-                        <p className="text-slate-800 font-bold text-[12px]">{selectedTenant?.lastActive || 'Today, 02:15 PM'}</p>
+                        <p className="text-slate-800 font-bold text-[12px]">{selectedTenant?.lastLogin || 'N/A'}</p>
                       </div>
                     </div>
                   </div>
@@ -1408,19 +1395,19 @@ export default function Companies() {
                     <div className="grid grid-cols-2 gap-y-3 gap-x-4">
                       <div>
                         <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Active Users</p>
-                        <p className="text-slate-800 font-black text-sm">{selectedTenant?.users || '12'}</p>
+                        <p className="text-slate-800 font-black text-sm">{selectedTenant?.users || 0}</p>
                       </div>
                       <div>
                         <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Total Drivers</p>
-                        <p className="text-slate-800 font-black text-sm">3</p>
+                        <p className="text-slate-800 font-black text-sm">{selectedTenant?.drivers || 0}</p>
                       </div>
                       <div>
                         <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Fleet Vehicles</p>
-                        <p className="text-slate-800 font-black text-sm">15</p>
+                        <p className="text-slate-800 font-black text-sm">{selectedTenant?.vehicles || 0}</p>
                       </div>
                       <div>
                         <p className="text-slate-400 text-[9px] font-bold uppercase tracking-wider mb-0.5">Branches count</p>
-                        <p className="text-slate-800 font-black text-sm">4</p>
+                        <p className="text-slate-800 font-black text-sm">{selectedTenant?.branches || 0}</p>
                       </div>
                     </div>
                   </div>
@@ -1433,23 +1420,19 @@ export default function Companies() {
                   <div className="space-y-3.5">
                     <div className="flex gap-2 items-center">
                       <span className="text-slate-400 text-[12px] font-bold">Current Tier Plan:</span>
-                      <span className="text-[#D97706] font-extrabold text-[12px]">Professional Plan</span>
+                      <span className="text-[#D97706] font-extrabold text-[12px]">{selectedTenant?.plan || 'N/A'}</span>
                     </div>
                     <div className="flex gap-2 items-center">
                       <span className="text-slate-400 text-[12px] font-bold">Contract Billing Rate:</span>
-                      <span className="text-slate-800 font-extrabold text-[12px]">$8,500 / month</span>
+                      <span className="text-slate-800 font-extrabold text-[12px]">${(selectedTenant?.mrr || 0).toLocaleString()} / month</span>
                     </div>
                     <div className="flex gap-2 items-center">
                       <span className="text-slate-400 text-[12px] font-bold">Billing Cycle Period:</span>
                       <span className="text-slate-800 font-extrabold text-[12px]">Monthly Auto-Renewal recurring</span>
                     </div>
                     <div className="flex gap-2 items-center">
-                      <span className="text-slate-400 text-[12px] font-bold">Next Renewal Invoice Date:</span>
-                      <span className="text-slate-800 font-extrabold text-[12px]">07/24/2026</span>
-                    </div>
-                    <div className="flex gap-2 items-center">
                       <span className="text-slate-400 text-[12px] font-bold">Trial Expiry:</span>
-                      <span className="text-slate-800 font-extrabold text-[12px]">N/A</span>
+                      <span className="text-slate-800 font-extrabold text-[12px]">{selectedTenant?.expiry || 'N/A'}</span>
                     </div>
                   </div>
                 </div>
@@ -1459,27 +1442,7 @@ export default function Companies() {
                 <div>
                   <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">REGISTERED ACCOUNT STAFF MEMBERS</h4>
                   <div className="bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/40 overflow-hidden divide-y divide-slate-100">
-                    {[
-                      { name: 'Alexander Wright', email: 'Alex W.', role: 'Company Admin', status: 'Active' },
-                      { name: 'Operator B', email: 'operator2@falconlogisticsllc.com', role: 'Dispatcher', status: 'Active' },
-                      { name: 'Operator C', email: 'operator3@falconlogisticsllc.com', role: 'Dispatcher', status: 'Active' },
-                      { name: 'Operator D', email: 'operator4@falconlogisticsllc.com', role: 'Dispatcher', status: 'Active' },
-                      { name: 'Operator E', email: 'operator5@falconlogisticsllc.com', role: 'Dispatcher', status: 'Active' },
-                      { name: 'Operator F', email: 'operator6@falconlogisticsllc.com', role: 'Dispatcher', status: 'Active' },
-                      { name: 'Operator G', email: 'operator7@falconlogisticsllc.com', role: 'Dispatcher', status: 'Active' },
-                      { name: 'Operator H', email: 'operator8@falconlogisticsllc.com', role: 'Dispatcher', status: 'Active' },
-                    ].map(user => (
-                      <div key={user.name} className="flex justify-between items-center p-4">
-                        <div>
-                          <p className="text-[13px] font-bold text-slate-800">{user.name}</p>
-                          <p className="text-[11px] font-mono text-slate-400 mt-0.5">{user.email}</p>
-                        </div>
-                        <div className="text-right flex flex-col items-end">
-                          <p className="text-[11px] font-bold text-slate-600 mb-1">{user.role}</p>
-                          <span className="text-[9px] font-bold text-emerald-500 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full tracking-wider">{user.status}</span>
-                        </div>
-                      </div>
-                    ))}
+                    <div className="p-4 text-center text-slate-500 text-xs">No specific user details available in this view.</div>
                   </div>
                 </div>
               )}
@@ -1488,22 +1451,7 @@ export default function Companies() {
                 <div>
                   <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">ACTIVE BRANCH TERMINALS</h4>
                   <div className="bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/40 overflow-hidden divide-y divide-slate-100">
-                    {[
-                      { name: 'Chicago HQ Terminal', loc: 'Chicago, IL', staff: '4 Staff' },
-                      { name: 'Branch Depot 2', loc: 'Los Angeles, CA', staff: '6 Staff' },
-                      { name: 'Branch Depot 3', loc: 'Los Angeles, CA', staff: '8 Staff' },
-                      { name: 'Branch Depot 4', loc: 'Los Angeles, CA', staff: '10 Staff' },
-                    ].map(branch => (
-                      <div key={branch.name} className="flex justify-between items-center p-4">
-                        <div>
-                          <p className="text-[13px] font-bold text-slate-800">{branch.name}</p>
-                          <p className="text-[11px] font-medium text-slate-400 mt-0.5">{branch.loc}</p>
-                        </div>
-                        <div>
-                          <p className="text-[12px] font-bold text-slate-600">{branch.staff}</p>
-                        </div>
-                      </div>
-                    ))}
+                    <div className="p-4 text-center text-slate-500 text-xs">No specific branch details available in this view.</div>
                   </div>
                 </div>
               )}
@@ -1512,26 +1460,7 @@ export default function Companies() {
                 <div>
                   <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">REGISTERED FLEET ASSET VEHICLES</h4>
                   <div className="bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/40 overflow-hidden divide-y divide-slate-100">
-                    {[
-                      { id: 'TX-ROAD88', type: 'Semi-Truck' },
-                      { id: 'IL-HAUL42', type: 'Flatbed Trailer' },
-                      { id: 'CA-CARRI7', type: 'Semi-Truck' },
-                      { id: 'TX-1003', type: 'Flatbed Trailer' },
-                      { id: 'TX-1004', type: 'Semi-Truck' },
-                      { id: 'TX-1005', type: 'Flatbed Trailer' },
-                      { id: 'TX-1006', type: 'Semi-Truck' },
-                      { id: 'TX-1007', type: 'Flatbed Trailer' },
-                    ].map(vehicle => (
-                      <div key={vehicle.id} className="flex justify-between items-center p-4">
-                        <div>
-                          <p className="text-[13px] font-bold text-slate-800">{vehicle.id}</p>
-                          <p className="text-[11px] font-medium text-slate-400 mt-0.5">{vehicle.type}</p>
-                        </div>
-                        <div>
-                          <span className="text-[9px] font-bold text-blue-500 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full tracking-wide">Active</span>
-                        </div>
-                      </div>
-                    ))}
+                    <div className="p-4 text-center text-slate-500 text-xs">No specific fleet details available in this view.</div>
                   </div>
                 </div>
               )}
@@ -1540,26 +1469,7 @@ export default function Companies() {
                 <div>
                   <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">LOADS MANIFEST SUMMARY</h4>
                   <div className="bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/40 overflow-hidden divide-y divide-slate-100">
-                    {[
-                      { id: 'Load LD-9400', route: 'Chicago ➔ Dallas', cargo: 'Automotive Components' },
-                      { id: 'Load LD-9401', route: 'Houston ➔ Atlanta', cargo: 'Dry Grocery Pallets' },
-                      { id: 'Load LD-9402', route: 'Chicago ➔ Dallas', cargo: 'Automotive Components' },
-                      { id: 'Load LD-9403', route: 'Houston ➔ Atlanta', cargo: 'Dry Grocery Pallets' },
-                      { id: 'Load LD-9404', route: 'Chicago ➔ Dallas', cargo: 'Automotive Components' },
-                      { id: 'Load LD-9405', route: 'Houston ➔ Atlanta', cargo: 'Dry Grocery Pallets' },
-                      { id: 'Load LD-9406', route: 'Chicago ➔ Dallas', cargo: 'Automotive Components' },
-                      { id: 'Load LD-9407', route: 'Houston ➔ Atlanta', cargo: 'Dry Grocery Pallets' },
-                    ].map(load => (
-                      <div key={load.id} className="flex justify-between items-center p-4">
-                        <div>
-                          <p className="text-[13px] font-bold text-slate-800">{load.id}</p>
-                          <p className="text-[11px] font-medium text-slate-500 mt-0.5">{load.route} ({load.cargo})</p>
-                        </div>
-                        <div>
-                          <span className="text-[9px] font-bold text-emerald-500 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full tracking-wide">In Transit</span>
-                        </div>
-                      </div>
-                    ))}
+                    <div className="p-4 text-center text-slate-500 text-xs">No specific load details available in this view.</div>
                   </div>
                 </div>
               )}
@@ -1567,46 +1477,13 @@ export default function Companies() {
               {activeInspectorTab === 'Billing' && (
                 <div>
                   <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">BILLING SUMMARY & LEDGER</h4>
-
                   <div className="bg-white border border-slate-100 rounded-2xl p-5 mb-4 shadow-sm shadow-slate-200/40">
                     <div className="space-y-3.5">
                       <div className="flex justify-between items-center">
                         <span className="text-slate-400 text-[12px] font-bold">Subscription Revenue:</span>
-                        <span className="text-emerald-500 font-extrabold text-[12px]">$8500/mo</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-slate-400 text-[12px] font-bold">Annual Projected:</span>
-                        <span className="text-slate-800 font-extrabold text-[12px]">$102000/yr</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-slate-400 text-[12px] font-bold">Billing Cycle:</span>
-                        <span className="text-slate-800 font-extrabold text-[12px]">Monthly Recurring</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-slate-400 text-[12px] font-bold">Auto Renewal:</span>
-                        <span className="text-emerald-500 font-extrabold text-[12px]">Enabled</span>
+                        <span className="text-emerald-500 font-extrabold text-[12px]">${(selectedTenant?.mrr || 0).toLocaleString()}/mo</span>
                       </div>
                     </div>
-                  </div>
-
-                  <div className="bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/40 overflow-hidden divide-y divide-slate-100">
-                    {[
-                      { id: '#INV-1001A', date: '06/12/2026 - 07/12/2026', amount: '$8500', status: 'Paid', statusClass: 'text-emerald-500 bg-emerald-50' },
-                      { id: '#INV-1002A', date: '06/15/2026 - 06/29/2026', amount: '$4200', status: 'Sent', statusClass: 'text-amber-500 bg-amber-50' },
-                      { id: '#INV-1003A', date: '06/20/2026 - 07/04/2026', amount: '$3100', status: 'Draft', statusClass: 'text-amber-500 bg-amber-50' },
-                      { id: '#INV-1004A', date: '05/10/2026 - 05/24/2026', amount: '$5000', status: 'Overdue', statusClass: 'text-amber-500 bg-amber-50' },
-                    ].map(invoice => (
-                      <div key={invoice.id} className="flex justify-between items-center p-4">
-                        <div>
-                          <p className="text-[13px] font-bold text-slate-800">Invoice {invoice.id}</p>
-                          <p className="text-[11px] font-medium text-slate-400 mt-0.5">Period: {invoice.date}</p>
-                        </div>
-                        <div className="text-right flex flex-col items-end">
-                          <p className="text-[13px] font-bold text-slate-800 mb-1">{invoice.amount}</p>
-                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full tracking-wider ${invoice.statusClass}`}>{invoice.status}</span>
-                        </div>
-                      </div>
-                    ))}
                   </div>
                 </div>
               )}
@@ -1614,67 +1491,24 @@ export default function Companies() {
               {activeInspectorTab === 'Support Tickets' && (
                 <div>
                   <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">INBOUND TICKET QUERIES RAISED</h4>
-                  <div className="bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/40 p-4 flex justify-between items-center">
-                    <div>
-                      <p className="text-[13px] font-bold text-slate-800">#1 • Invoice Factoring Delay</p>
-                      <p className="text-[11px] font-medium text-slate-400 mt-0.5">Priority: High</p>
-                    </div>
-                    <div>
-                      <span className="text-[9px] font-bold text-amber-500 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full tracking-wide">Open</span>
-                    </div>
-                  </div>
+                  <div className="bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/40 p-4 text-center text-slate-500 text-xs">No open tickets found.</div>
                 </div>
               )}
 
               {activeInspectorTab === 'Feature Access' && (
                 <div>
                   <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">VISUAL FEATURE PERMISSIONS</h4>
-                  <div className="bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/40 overflow-hidden divide-y divide-slate-50 py-1">
-                    {[
-                      { name: 'Platform Dashboard', status: 'Enabled', active: true },
-                      { name: 'Companies Workspace', status: 'Enabled', active: true },
-                      { name: 'Subscriptions Panel', status: 'Enabled', active: true },
-                      { name: 'Membership Plans', status: 'Disabled', active: false },
-                      { name: 'AI Controls Center', status: 'Disabled', active: false },
-                      { name: 'Inter-Company Transfers', status: 'Disabled', active: false },
-                      { name: 'White Label Customization', status: 'Disabled', active: false },
-                    ].map(feature => (
-                      <div key={feature.name} className="flex justify-between items-center px-5 py-3">
-                        <p className="text-[13px] font-medium text-slate-500">{feature.name}</p>
-                        <span className={`text-[12px] font-bold ${feature.active ? 'text-emerald-500' : 'text-slate-600'}`}>{feature.status}</span>
-                      </div>
-                    ))}
-                  </div>
+                  <div className="bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/40 p-4 text-center text-slate-500 text-xs">No granular permissions configured.</div>
                 </div>
               )}
 
               {activeInspectorTab === 'Audit Log' && (
                 <div>
                   <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">SUBSCRIPTION AUDIT FEED</h4>
-                  <div className="bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/40 p-5 divide-y divide-slate-100">
-                    <div className="pb-4">
-                      <p className="text-[12px] font-bold text-slate-800">Company Created</p>
-                      <p className="text-[11px] text-slate-500 mt-1">Falcon Logistics LLC provisioned successfully.</p>
-                      <p className="text-[9px] font-mono text-slate-400 mt-2">03/12/2026</p>
-                    </div>
-                    <div className="pt-4">
-                      <p className="text-[12px] font-bold text-slate-800">Database Index Sync</p>
-                      <p className="text-[11px] text-slate-500 mt-1">ElasticSearch keys auto-indexing rebuilt.</p>
-                      <p className="text-[9px] font-mono text-slate-400 mt-2">03/12/2026</p>
-                    </div>
-                  </div>
+                  <div className="bg-white border border-slate-100 rounded-2xl shadow-sm shadow-slate-200/40 p-4 text-center text-slate-500 text-xs">No activity logs recorded.</div>
                 </div>
               )}
 
-              {!['Overview', 'Subscriptions', 'Users', 'Branches', 'Fleet', 'Billing', 'Support Tickets', 'Feature Access', 'Audit Log'].includes(activeInspectorTab) && (
-                <div className="bg-white border border-slate-100 rounded-2xl p-8 text-center shadow-sm shadow-slate-200/40">
-                  <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <span className="text-slate-400 font-bold text-xl">ℹ️</span>
-                  </div>
-                  <h4 className="text-sm font-extrabold text-slate-800 mb-1">{activeInspectorTab} Data</h4>
-                  <p className="text-[11px] text-slate-500">Detailed information for {activeInspectorTab.toLowerCase()} will be displayed here.</p>
-                </div>
-              )}
             </div>
 
             {/* Footer Buttons */}
@@ -1687,12 +1521,22 @@ export default function Companies() {
                   Permanently Delete Company
                 </button>
               </div>
-              <button
-                onClick={() => setShowInspector(false)}
-                className="w-[150px] bg-white border border-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-[11px] font-bold hover:bg-slate-50 transition-colors text-center cursor-pointer"
-              >
-                Close Inspector
-              </button>
+              
+              {/* Action Buttons */}
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={fetchCompanies}
+                  className="flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-[11px] py-2 px-4 rounded-xl transition-all cursor-pointer shadow-sm"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} /> Refresh
+                </button>
+                <button
+                  onClick={() => setShowInspector(false)}
+                  className="bg-white border border-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-[11px] font-bold hover:bg-slate-50 transition-colors text-center cursor-pointer"
+                >
+                  Close Inspector
+                </button>
+              </div>
             </div>
           </div>
         </div>

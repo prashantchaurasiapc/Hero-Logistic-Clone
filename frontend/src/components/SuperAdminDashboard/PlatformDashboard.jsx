@@ -1,45 +1,54 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Plus, AlertCircle, RefreshCw, UserCheck, Pen, Hexagon, Check, XSquare, Settings, Square, FileText, X
+  Plus, AlertCircle, RefreshCw, UserCheck, Pen, Hexagon, Check, XSquare, Settings, Square, FileText, X, Loader2
 } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
+import { getSuperAdminDashboard } from '../../services/api';
 
 export default function PlatformDashboard() {
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState(null);
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      setIsLoading(true);
+      try {
+        const res = await getSuperAdminDashboard();
+        if (res.data.success) {
+          setDashboardData(res.data.data);
+        }
+      } catch (err) {
+        console.error('Failed to load super admin dashboard:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchDashboard();
+  }, []);
 
-  // KPI Data
   const kpis = [
-    { title: 'ACTIVE COMPANIES', value: '4', desc: 'SaaS instances online', status: 'Stable', statusColor: 'text-slate-400 bg-slate-100' },
-    { title: 'TRIAL COMPANIES', value: '2', desc: 'SaaS trial instances', status: '+1 mo', statusColor: 'text-emerald-500 bg-emerald-50' },
-    { title: 'PAID COMPANIES', value: '3', desc: 'Subscribed paying contracts', status: 'Stable', statusColor: 'text-slate-400 bg-slate-100' },
-    { title: 'MONTHLY REVENUE', value: '$42,910', desc: 'Platform cash stream baseline', status: '+4%', statusColor: 'text-emerald-500 bg-emerald-50' },
-    { title: 'FAILED PAYMENTS', value: '1', desc: 'Payment gateway errors', status: '0 alerts', statusColor: 'text-slate-400 bg-slate-100' },
-    { title: 'SUPPORT TICKETS', value: '2', desc: 'Requires administrative response', status: 'Alert', statusColor: 'text-rose-500 bg-rose-50' },
-    { title: 'ACTIVE USERS', value: '118', desc: 'Active platform users pool', status: '+3 active', statusColor: 'text-emerald-500 bg-emerald-50' },
-    { title: 'PLATFORM USAGE', value: '14.2%', desc: 'AWS node limits', status: 'Stable', statusColor: 'text-slate-400 bg-slate-100' },
+    { title: 'ACTIVE COMPANIES', value: dashboardData?.kpis?.activeCompanies || '0', desc: 'SaaS instances online', status: 'Stable', statusColor: 'text-slate-400 bg-slate-100' },
+    { title: 'TRIAL COMPANIES', value: dashboardData?.kpis?.trialCompanies || '0', desc: 'SaaS trial instances', status: 'Active', statusColor: 'text-emerald-500 bg-emerald-50' },
+    { title: 'PAID COMPANIES', value: dashboardData?.kpis?.paidCompanies || '0', desc: 'Subscribed paying contracts', status: 'Stable', statusColor: 'text-slate-400 bg-slate-100' },
+    { title: 'MONTHLY REVENUE', value: `$${(dashboardData?.kpis?.monthlyRevenue || 0).toLocaleString()}`, desc: 'Platform cash stream baseline', status: 'Stable', statusColor: 'text-emerald-500 bg-emerald-50' },
+    { title: 'FAILED PAYMENTS', value: dashboardData?.kpis?.failedPayments || '0', desc: 'Payment gateway errors', status: dashboardData?.kpis?.failedPayments > 0 ? 'Alert' : '0 alerts', statusColor: dashboardData?.kpis?.failedPayments > 0 ? 'text-rose-500 bg-rose-50' : 'text-slate-400 bg-slate-100' },
+    { title: 'SUPPORT TICKETS', value: dashboardData?.kpis?.openTickets || '0', desc: 'Requires administrative response', status: dashboardData?.kpis?.openTickets > 0 ? 'Alert' : 'Clear', statusColor: dashboardData?.kpis?.openTickets > 0 ? 'text-rose-500 bg-rose-50' : 'text-slate-400 bg-slate-100' },
+    { title: 'ACTIVE USERS', value: dashboardData?.kpis?.activeUsers || '0', desc: 'Active platform users pool', status: 'Stable', statusColor: 'text-emerald-500 bg-emerald-50' },
+    { title: 'PLATFORM USAGE', value: dashboardData?.kpis?.platformUsage || '0%', desc: 'AWS node limits', status: 'Stable', statusColor: 'text-slate-400 bg-slate-100' },
   ];
 
-  // Chart Data
-  const chartData = [
+  const chartData = dashboardData?.chartData || [
     { name: 'Jan', mrr: 0 },
-    { name: 'Feb', mrr: 28000 },
-    { name: 'Mar', mrr: 28000 },
-    { name: 'Apr', mrr: 30000 },
-    { name: 'May', mrr: 30000 },
-    { name: 'Jun', mrr: 43000 },
+    { name: 'Feb', mrr: 0 },
+    { name: 'Mar', mrr: 0 },
+    { name: 'Apr', mrr: 0 },
+    { name: 'May', mrr: 0 },
+    { name: 'Jun', mrr: 0 },
   ];
-
-  // Recent Tenants Data matching Image 2
-  const recentTenants = [
-    { id: 1, name: 'Falcon Logistics LLC', plan: 'Professional', status: 'ACTIVE', users: '12', mrr: '$8,500', trialExpiry: 'N/A', lastActive: 'Today, 02:15 PM' },
-    { id: 2, name: 'Swift Cargo Express', plan: 'Starter', status: 'ACTIVE', users: '2', mrr: '$1,500', trialExpiry: '07/15/2026', lastActive: 'Yesterday, 04:30 PM' },
-    { id: 3, name: 'Global Shipping Solutions', plan: 'Enterprise', status: 'ACTIVE', users: '84', mrr: '$28,000', trialExpiry: 'N/A', lastActive: 'Today, 03:24 PM' },
-    { id: 4, name: 'Texas Hotshot Carriers', plan: 'Starter', status: 'HOLD', users: '4', mrr: '$0', trialExpiry: '06/15/2026', lastActive: 'Yesterday, 10:15 AM' },
-    { id: 5, name: 'Apex Logistics LLC', plan: 'Professional', status: 'ACTIVE', users: '16', mrr: '$4,910', trialExpiry: 'N/A', lastActive: 'Today, 01:10 PM' },
-  ];
+  const recentTenants = dashboardData?.recentTenants || [];
 
   // Density and Columns states
   const [density, setDensity] = useState('DEFAULT');
@@ -132,6 +141,14 @@ export default function PlatformDashboard() {
       setTimeout(() => alertDiv.remove(), 500);
     }, 3000);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex-grow bg-[#F1F5F9] p-6 flex justify-center items-center h-full w-full">
+        <Loader2 className="w-8 h-8 text-[#FFD400] animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex-grow bg-[#F1F5F9] p-6 space-y-6 overflow-y-auto w-full text-left font-sans relative custom-scrollbar">
@@ -501,23 +518,23 @@ export default function PlatformDashboard() {
               <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2">SYSTEM STATUS</h4>
               <div className="flex justify-between items-center">
                 <span className="text-[12px] font-semibold text-slate-500">API Health</span>
-                <span className="text-[12px] font-bold text-[#10B981] flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-[#10B981]"></div> 99.98%</span>
+                <span className="text-[12px] font-bold text-[#10B981] flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-[#10B981]"></div> {dashboardData?.healthCenter?.systemStatus?.apiHealth || '99.98%'}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-[12px] font-semibold text-slate-500">Database Health</span>
-                <span className="text-[12px] font-bold text-[#10B981] flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-[#10B981]"></div> Synced</span>
+                <span className="text-[12px] font-bold text-[#10B981] flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-[#10B981]"></div> {dashboardData?.healthCenter?.systemStatus?.databaseHealth || 'Synced'}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-[12px] font-semibold text-slate-500">Storage Health</span>
-                <span className="text-[12px] font-bold text-[#10B981] flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-[#10B981]"></div> 52.3% Free</span>
+                <span className="text-[12px] font-bold text-[#10B981] flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-[#10B981]"></div> {dashboardData?.healthCenter?.systemStatus?.storageHealth || '52.3% Free'}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-[12px] font-semibold text-slate-500">Queue Health</span>
-                <span className="text-[12px] font-bold text-[#10B981] flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-[#10B981]"></div> 0 pending</span>
+                <span className="text-[12px] font-bold text-[#10B981] flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-[#10B981]"></div> {dashboardData?.healthCenter?.systemStatus?.queueHealth || '0 pending'}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-[12px] font-semibold text-slate-500">AI Processing Health</span>
-                <span className="text-[12px] font-bold text-[#10B981] flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-[#10B981]"></div> Active</span>
+                <span className="text-[12px] font-bold text-[#10B981] flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-[#10B981]"></div> {dashboardData?.healthCenter?.systemStatus?.aiProcessingHealth || 'Active'}</span>
               </div>
             </div>
 
@@ -525,19 +542,19 @@ export default function PlatformDashboard() {
               <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2">USAGE METRICS</h4>
               <div className="flex justify-between items-center">
                 <span className="text-[12px] font-semibold text-slate-500">Active Sessions</span>
-                <span className="text-[12px] font-black text-slate-900">42 active</span>
+                <span className="text-[12px] font-black text-slate-900">{dashboardData?.healthCenter?.usageMetrics?.activeSessions || '42 active'}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-[12px] font-semibold text-slate-500">Requests Per Minute</span>
-                <span className="text-[12px] font-black text-slate-900">1,250 RPM</span>
+                <span className="text-[12px] font-black text-slate-900">{dashboardData?.healthCenter?.usageMetrics?.requestsPerMinute || '1,250 RPM'}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-[12px] font-semibold text-slate-500">Storage Consumption</span>
-                <span className="text-[12px] font-black text-slate-900">4.78 TB / 10 TB</span>
+                <span className="text-[12px] font-black text-slate-900">{dashboardData?.healthCenter?.usageMetrics?.storageConsumption || '4.78 TB / 10 TB'}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-[12px] font-semibold text-slate-500">AI Jobs Processed</span>
-                <span className="text-[12px] font-black text-slate-900">14,050 runs</span>
+                <span className="text-[12px] font-black text-slate-900">{dashboardData?.healthCenter?.usageMetrics?.aiJobsProcessed || '14,050 runs'}</span>
               </div>
             </div>
           </div>
@@ -547,19 +564,19 @@ export default function PlatformDashboard() {
             <div className="grid grid-cols-2 gap-3 mb-6">
               <div className="border border-slate-100 rounded-xl p-4 text-center">
                 <div className="text-[10px] font-bold text-slate-500 mb-1">Open Tickets</div>
-                <div className="text-xl font-black text-amber-500">2</div>
+                <div className="text-xl font-black text-amber-500">{dashboardData?.tickets?.open || 0}</div>
               </div>
               <div className="border border-slate-100 rounded-xl p-4 text-center">
                 <div className="text-[10px] font-bold text-slate-500 mb-1">High Priority</div>
-                <div className="text-xl font-black text-rose-500">1</div>
+                <div className="text-xl font-black text-rose-500">{dashboardData?.tickets?.highPriority || 0}</div>
               </div>
               <div className="border border-slate-100 rounded-xl p-4 text-center">
                 <div className="text-[10px] font-bold text-slate-500 mb-1">Waiting Customer</div>
-                <div className="text-xl font-black text-blue-500">1</div>
+                <div className="text-xl font-black text-blue-500">{dashboardData?.tickets?.waitingCustomer || 0}</div>
               </div>
               <div className="border border-slate-100 rounded-xl p-4 text-center">
                 <div className="text-[10px] font-bold text-slate-500 mb-1">Waiting Internal</div>
-                <div className="text-xl font-black text-purple-500">1</div>
+                <div className="text-xl font-black text-purple-500">{dashboardData?.tickets?.waitingInternal || 0}</div>
               </div>
             </div>
             <div className="grid grid-cols-3 gap-3">
@@ -583,19 +600,19 @@ export default function PlatformDashboard() {
             <div className="space-y-4 mb-8 text-left">
               <div className="flex justify-between items-center">
                 <span className="text-[12px] font-semibold text-slate-500">Active Plans</span>
-                <span className="text-[12px] font-black text-slate-900">4 active</span>
+                <span className="text-[12px] font-black text-slate-900">{dashboardData?.subMonitoring?.activePlans || 0} active</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-[12px] font-semibold text-slate-500">Expiring This Month</span>
-                <span className="text-[12px] font-black text-amber-500">1 plan</span>
+                <span className="text-[12px] font-black text-amber-500">{dashboardData?.subMonitoring?.expiringThisMonth || 0} plan</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-[12px] font-semibold text-slate-500">Overdue Payments</span>
-                <span className="text-[12px] font-black text-[#10B981]">0 overdue</span>
+                <span className="text-[12px] font-black text-[#10B981]">{dashboardData?.subMonitoring?.overduePayments || 0} overdue</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-[12px] font-semibold text-slate-500">Upgrade Opportunities</span>
-                <span className="text-[12px] font-black text-amber-500">2 accounts</span>
+                <span className="text-[12px] font-black text-amber-500">{dashboardData?.subMonitoring?.upgradeOpportunities || 0} accounts</span>
               </div>
             </div>
 
@@ -618,18 +635,18 @@ export default function PlatformDashboard() {
             <p className="text-[11px] font-medium text-slate-400 mb-6">Real-time SaaS system administrative actions audit feed.</p>
 
             <div className="space-y-6">
-              <div className="border-b border-slate-100 pb-5">
-                <p className="text-[12px] font-bold text-slate-700 leading-relaxed mb-2">
-                  Company Created: Falcon Logistics LLC provisioned on Professional Plan. (Falcon Logistics LLC)
-                </p>
-                <p className="text-[9px] font-bold text-slate-400 tracking-wider">06/24/2026, 02:12:15 PM</p>
-              </div>
-              <div>
-                <p className="text-[12px] font-bold text-slate-700 leading-relaxed mb-2">
-                  Plan Changed: Swift Cargo Express upgraded to Professional Tier. (Swift Cargo Express)
-                </p>
-                <p className="text-[9px] font-bold text-slate-400 tracking-wider">06/24/2026, 12:45:00 PM</p>
-              </div>
+              {dashboardData?.recentActivity?.length > 0 ? (
+                dashboardData.recentActivity.map((activity) => (
+                  <div key={activity.id} className="border-b border-slate-100 pb-5">
+                    <p className="text-[12px] font-bold text-slate-700 leading-relaxed mb-2">
+                      {activity.title}
+                    </p>
+                    <p className="text-[9px] font-bold text-slate-400 tracking-wider">{activity.timestamp}</p>
+                  </div>
+                ))
+              ) : (
+                <div className="text-[11px] font-medium text-slate-400">No recent activity.</div>
+              )}
             </div>
           </div>
 

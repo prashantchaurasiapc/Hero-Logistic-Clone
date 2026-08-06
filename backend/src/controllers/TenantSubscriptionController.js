@@ -13,7 +13,15 @@ exports.getAll = async (req, res, next) => {
 
     const [data, total] = await Promise.all([
       prisma.tenantSubscription.findMany({
-        where, skip, take, orderBy
+        where, skip, take, orderBy,
+        include: {
+          company: {
+            select: { name: true, _count: { select: { users: true } } }
+          },
+          plan: {
+            select: { name: true, usersLimit: true }
+          }
+        }
       }),
       prisma.tenantSubscription.count({ where })
     ]);

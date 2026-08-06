@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, X, CheckCircle, Check } from 'lucide-react';
+import { Search, Plus, X, CheckCircle, Check, Loader2 } from 'lucide-react';
+import api from '../../services/api';
 
 export default function SupportTickets() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -43,65 +44,76 @@ export default function SupportTickets() {
     }
   }, [toast]);
 
-  // Support Tickets database
-  const [tickets, setTickets] = useState([
-    {
-      id: 1,
-      company: 'Falcon Logistics LLC',
-      subject: 'Invoice Factoring Delay',
-      priority: 'High',
-      status: 'OPEN',
-      assignee: 'Unassigned',
-      created: '2026-06-20',
-      message: 'Cannot sync payroll with factoring payment rules.'
-    },
-    {
-      id: 2,
-      company: 'Swift Cargo Express',
-      subject: 'GPS Geofencing Issues',
-      priority: 'Medium',
-      status: 'OPEN',
-      assignee: 'Unassigned',
-      created: '2026-06-20',
-      message: 'Geofencing triggers are delayed by 5-10 minutes on mobile nodes.'
+  const [tickets, setTickets] = useState([]);
+  const [responseHistory, setResponseHistory] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchTickets = async () => {
+    setIsLoading(true);
+    try {
+      const [ticketsRes, repliesRes] = await Promise.allSettled([
+        api.get('/support-tickets'),
+        api.get('/ticket-replies')
+      ]);
+
+      if (ticketsRes.status === 'fulfilled' && ticketsRes.value.data?.success) {
+        setTickets(ticketsRes.value.data.data.map(t => ({
+          id: t.id,
+          company: t.companyId || 'Unknown Company',
+          subject: t.subject,
+          priority: t.priority,
+          status: t.status,
+          assignee: t.assignedTo || 'Unassigned',
+          created: new Date(t.createdAt).toLocaleDateString(),
+          message: t.description || 'No description provided.'
+        })));
+      }
+
+      if (repliesRes.status === 'fulfilled' && repliesRes.value.data?.success) {
+        setResponseHistory(repliesRes.value.data.data.map(r => ({
+          ticketId: r.ticketId,
+          subject: `Re: Ticket #${r.ticketId}`,
+          response: r.message
+        })));
+      }
+    } catch (err) {
+      console.error('Failed to fetch tickets:', err);
+      showNotification('Failed to fetch support tickets');
+    } finally {
+      setIsLoading(false);
     }
-  ]);
+  };
 
-  // Recent Response History
-  const [responseHistory, setResponseHistory] = useState([
-    { ticketId: 1, subject: 'Invoice Factoring Delay', response: 'Checking billing logs.' }
-  ]);
+  useEffect(() => {
+    fetchTickets();
+  }, []);
 
-  const handleOpenNewTicket = (e) => {
+  const handleOpenNewTicket = async (e) => {
     e.preventDefault();
     if (!newTicketForm.subject || !newTicketForm.message) {
       alert('Please fill out all fields.');
       return;
     }
-
-    const nextId = tickets.length > 0 ? Math.max(...tickets.map(t => t.id)) + 1 : 1;
-    const newTicket = {
-      id: nextId,
-      company: newTicketForm.company,
-      subject: newTicketForm.subject,
-      priority: newTicketForm.priority,
-      status: 'OPEN',
-      assignee: 'Unassigned',
-      created: new Date().toISOString().split('T')[0],
-      message: newTicketForm.message
-    };
-
-    setTickets([newTicket, ...tickets]);
-    setShowNewTicketModal(false);
-    // Reset form
-    setNewTicketForm({
-      company: 'Falcon Logistics LLC',
-      category: 'General / Platform',
-      priority: 'Medium',
-      subject: '',
-      message: ''
-    });
-    showNotification(`Ticket #${nextId} opened successfully!`);
+    try {
+      setIsLoading(true);
+      const res = await api.post('/support-tickets', {
+        subject: newTicketForm.subject,
+        description: newTicketForm.message,
+        priority: newTicketForm.priority.toUpperCase(),
+        status: 'OPEN',
+        category: newTicketForm.category
+      });
+      if (res.data?.success) {
+        setShowNewTicketModal(false);
+        setNewTicketForm({ company: 'Falcon Logistics LLC', category: 'General / Platform', priority: 'Medium', subject: '', message: '' });
+        showNotification(`Ticket opened successfully!`);
+        fetchTickets();
+      }
+    } catch (err) {
+      showNotification(err.response?.data?.error?.message || 'Error creating ticket.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleOpenAssignModal = (ticket) => {
@@ -109,13 +121,21 @@ export default function SupportTickets() {
     setShowAssignModal(true);
   };
 
-  const handleSaveAssignment = (e) => {
+  const handleSaveAssignment = async (e) => {
     e.preventDefault();
-    setTickets(prev => prev.map(t =>
-      t.id === assignForm.ticketId ? { ...t, assignee: assignForm.assigneeTier } : t
-    ));
-    setShowAssignModal(false);
-    showNotification(`Ticket #${assignForm.ticketId} assigned to ${assignForm.assigneeTier}.`);
+    try {
+      setIsLoading(true);
+      const res = await api.put(`/support-tickets/${assignForm.ticketId}`, { assignedTo: assignForm.assigneeTier });
+      if (res.data?.success) {
+        setShowAssignModal(false);
+        showNotification(`Ticket #${assignForm.ticketId} assigned to ${assignForm.assigneeTier}.`);
+        fetchTickets();
+      }
+    } catch (err) {
+      showNotification('Error assigning ticket.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleOpenResponder = (ticket) => {
@@ -124,24 +144,28 @@ export default function SupportTickets() {
     setShowResponderModal(true);
   };
 
-  const handleSubmitResolution = (e) => {
+  const handleSubmitResolution = async (e) => {
     e.preventDefault();
     if (!replyPayload) {
       alert('Please provide resolution details.');
       return;
     }
-
-    // Update ticket status
-    setTickets(prev => prev.map(t => t.id === selectedTicket.id ? { ...t, status: 'RESOLVED', assignee: 'Super Admin' } : t));
-
-    // Add to history
-    setResponseHistory([
-      { ticketId: selectedTicket.id, subject: selectedTicket.subject, response: replyPayload },
-      ...responseHistory
-    ]);
-
-    setShowResponderModal(false);
-    showNotification(`Ticket #${selectedTicket.id} has been marked as RESOLVED.`);
+    try {
+      setIsLoading(true);
+      const [replyRes] = await Promise.all([
+        api.post('/ticket-replies', { ticketId: selectedTicket.id, message: replyPayload }),
+        api.put(`/support-tickets/${selectedTicket.id}`, { status: 'RESOLVED', assignedTo: 'Super Admin' })
+      ]);
+      if (replyRes.data?.success) {
+        setShowResponderModal(false);
+        showNotification(`Ticket #${selectedTicket.id} has been marked as RESOLVED.`);
+        fetchTickets();
+      }
+    } catch (err) {
+      showNotification('Error submitting resolution.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleOpenResolveModal = (ticket) => {
@@ -149,16 +173,22 @@ export default function SupportTickets() {
     setShowResolveModal(true);
   };
 
-  const handleSaveResolution = (e) => {
+  const handleSaveResolution = async (e) => {
     e.preventDefault();
-    setTickets(prev => prev.map(t => t.id === resolveForm.ticketId ? { ...t, status: 'RESOLVED', assignee: 'Super Admin' } : t));
-    const target = tickets.find(t => t.id === resolveForm.ticketId);
-    setResponseHistory([
-      { ticketId: resolveForm.ticketId, subject: target.subject, response: resolveForm.notes || 'Resolved directly by Super Admin.' },
-      ...responseHistory
-    ]);
-    setShowResolveModal(false);
-    showNotification(`Ticket #${resolveForm.ticketId} resolved.`);
+    try {
+      setIsLoading(true);
+      await Promise.all([
+        api.put(`/support-tickets/${resolveForm.ticketId}`, { status: 'RESOLVED', assignedTo: 'Super Admin' }),
+        api.post('/ticket-replies', { ticketId: resolveForm.ticketId, message: resolveForm.notes || 'Resolved directly by Super Admin.' })
+      ]);
+      setShowResolveModal(false);
+      showNotification(`Ticket #${resolveForm.ticketId} resolved.`);
+      fetchTickets();
+    } catch (err) {
+      showNotification('Error resolving ticket.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleExportCSV = () => {
@@ -347,7 +377,17 @@ export default function SupportTickets() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-xs font-bold text-slate-700">
-              {filteredTickets.map((t) => (
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+                  <Loader2 className="w-8 h-8 animate-spin mb-3 text-slate-300" />
+                  <div className="font-bold text-slate-500">Loading tickets...</div>
+                </div>
+              ) : filteredTickets.length === 0 ? (
+                <tr>
+                  <td colSpan="8" className="py-8 text-center text-slate-400">No tickets found.</td>
+                </tr>
+              ) : (
+                filteredTickets.map((t) => (
                 <tr key={t.id} className="hover:bg-slate-50/10">
                   <td className="py-4 text-slate-500">#{t.id}</td>
                   <td className="py-4 font-extrabold text-slate-800">{t.company}</td>
@@ -392,7 +432,8 @@ export default function SupportTickets() {
                     )}
                   </td>
                 </tr>
-              ))}
+              ))
+            )}
             </tbody>
           </table>
         </div>

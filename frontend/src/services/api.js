@@ -10,6 +10,24 @@ const api = axios.create({
   },
 });
 
+export const getSuperAdminDashboard = () => {
+  return api.get('/super-admin/dashboard');
+};
+
+// Request Interceptor to add access token header dynamically
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 // Response Interceptor for handling 401 Unauthorized
 api.interceptors.response.use(
   (response) => {
@@ -17,9 +35,13 @@ api.interceptors.response.use(
   },
   (error) => {
     if (error.response && error.response.status === 401) {
-      // If we get a 401, it means the token is invalid or expired
-      // In a more complex app, we might try to call /auth/refresh here
-      // For now, we dispatch a custom event that AuthContext can listen to for logout
+      const originalRequest = error.config;
+      // Skip interceptor loop for auth check and logout endpoints
+      if (originalRequest.url && (originalRequest.url.includes('/auth/me') || originalRequest.url.includes('/auth/logout') || originalRequest.url.includes('/auth/login'))) {
+        return Promise.reject(error);
+      }
+      
+      // If we get a 401 on a normal request, it means the token is invalid or expired
       window.dispatchEvent(new CustomEvent('auth:unauthorized'));
     }
     return Promise.reject(error);
