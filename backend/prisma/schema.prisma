@@ -2332,3 +2332,24 @@ model Document {
 
   @@map("document")
 }
+
+model PaymentGatewayConfig {
+  id String @id @default(uuid())
+  stripeEnabled Boolean @default(false)
+  stripePublishableKey String?
+  stripeSecretKey String?
+  paypalEnabled Boolean @default(false)
+  achEnabled Boolean @default(false)
+  achRoutingNumber String?
+  achAccountNumber String?
+  wireEnabled Boolean @default(false)
+  wireBankName String?
+  wireSwiftCode String?
+  wireAccountNumber String?
+  manualEnabled Boolean @default(false)
+  manualInstructions String? @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("payment_gateway_config")
+}

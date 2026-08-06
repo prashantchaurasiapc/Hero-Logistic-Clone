@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import {
   Plus, Search, Mail, Phone, Building2, Shield,
   Check, X, UserPlus, Edit3, Trash2, Eye, EyeOff,
-  LogIn, AlertTriangle, Filter, ChevronDown,
+  LogIn, AlertTriangle, Filter, ChevronDown, Loader2
 } from 'lucide-react';
+import api from '../../services/api';
 
 /* ─── Role badge colors ─── */
 const ROLE_COLORS = {
@@ -30,26 +31,13 @@ const AVATAR_COLORS = [
   '#0891b2','#dc2626','#4f46e5','#0369a1','#15803d',
 ];
 
-const INITIAL_USERS = [
-  { id:'US-1001', name:'Alexander Wright', email:'alex@herologistics.com', phone:'+1 555-0101', role:'Super Admin',       company:'Hero Logistics Global',    status:'ACTIVE',    lastLogin:'Today, 10:45 AM', created:'01/10/2026' },
-  { id:'US-1002', name:'Robert Vance',     email:'robert@vance.com',      phone:'+1 555-0123', role:'Company Admin',     company:'Vance Refrigeration',      status:'ACTIVE',    lastLogin:'Today, 09:15 AM', created:'02/14/2026' },
-  { id:'US-1003', name:'Jim Halpert',      email:'jim@bluesky.com',       phone:'+1 555-0155', role:'Company Admin',     company:'Blue Sky Cargo',           status:'ACTIVE',    lastLogin:'Yesterday, 04:30 PM', created:'03/01/2026' },
-  { id:'US-1004', name:'Michael Scott',    email:'mscott@dundermifflin.com', phone:'+1 555-0199', role:'Company Admin',  company:'Dunder Mifflin Logistics',  status:'ACTIVE',    lastLogin:'Today, 08:20 AM', created:'01/15/2026' },
-  { id:'US-1005', name:'Sarah Mitchell',   email:'sarah.m@falcon.com',    phone:'+1 555-0244', role:'Dispatcher',        company:'Falcon Logistics LLC',     status:'ACTIVE',    lastLogin:'Today, 11:02 AM', created:'02/20/2026' },
-  { id:'US-1006', name:'Noah Williams',    email:'noah.w@falcon.com',     phone:'+1 555-0311', role:'Driver',            company:'Falcon Logistics LLC',     status:'ACTIVE',    lastLogin:'Today, 07:45 AM', created:'03/10/2026' },
-  { id:'US-1007', name:'Angela Martin',    email:'angela@schrute.com',    phone:'+1 555-0422', role:'Accounts Manager',  company:'Schrute Farms Delivery',   status:'ACTIVE',    lastLogin:'Yesterday, 05:10 PM', created:'04/05/2026' },
-  { id:'US-1008', name:'Oscar Martinez',   email:'oscar@greenmile.com',   phone:'+1 555-0533', role:'Warehouse Manager', company:'Green Last-Mile',          status:'ACTIVE',    lastLogin:'Today, 10:12 AM', created:'04/12/2026' },
-  { id:'US-1009', name:'Dwight Schrute',   email:'dwight@polarexpress.com', phone:'+1 555-0644', role:'Yard Attendant',  company:'Polar Express Cold Chain',  status:'SUSPENDED', lastLogin:'3 days ago',      created:'05/01/2026' },
-  { id:'US-1010', name:'Ryan Howard',      email:'ryan.h@herologistics.com', phone:'+1 555-0755', role:'Sales Rep',      company:'Hero Logistics Global',    status:'ACTIVE',    lastLogin:'Today, 09:50 AM', created:'01/20/2026' },
-  { id:'US-1011', name:'Jo Bennett',       email:'jo@sabre.com',          phone:'+1 555-0866', role:'Customer',          company:'Sabre Logistics',          status:'ACTIVE',    lastLogin:'Yesterday, 02:15 PM', created:'05/15/2026' },
-  { id:'US-1012', name:'Brennan Huff',     email:'brennan@prestige.com',  phone:'+1 555-0977', role:'Customer',          company:'Prestige Worldwide',       status:'PENDING',   lastLogin:'Never',           created:'07/20/2026' },
-];
 
 const ROLES = ['Company Admin','Sales Rep','Dispatcher','Driver','Warehouse Manager','Yard Attendant','Accounts Manager','Customer'];
 
 export default function AdminUsers() {
   const navigate = useNavigate();
-  const [users, setUsers]     = useState(INITIAL_USERS);
+  const [users, setUsers]     = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch]   = useState('');
   const [roleFilter, setRoleFilter] = useState('All Roles');
   const [showAddModal, setShowAddModal]   = useState(false);
@@ -60,6 +48,35 @@ export default function AdminUsers() {
   const [form, setForm]       = useState({ name:'', email:'', phone:'', role:'Company Admin', company:'', status:'ACTIVE' });
 
   const notify = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
+
+  const fetchUsers = async () => {
+    setIsLoading(true);
+    try {
+      const res = await api.get('/users');
+      if (res.data?.success) {
+        setUsers(res.data.data.map(u => ({
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          phone: u.phone || 'N/A',
+          role: u.role.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' '),
+          company: u.company?.name || 'Platform Level',
+          status: u.isActive ? 'ACTIVE' : 'INACTIVE',
+          lastLogin: u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : 'Never',
+          created: new Date(u.createdAt).toLocaleDateString()
+        })));
+      }
+    } catch (err) {
+      console.error('Failed to fetch users', err);
+      notify('Failed to fetch users');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchUsers();
+  }, []);
 
   const openAdd = () => {
     setForm({ name:'', email:'', phone:'', role:'Company Admin', company:'', status:'ACTIVE' });
@@ -72,31 +89,67 @@ export default function AdminUsers() {
     setShowEditModal(user);
   };
 
-  const handleAddSubmit = (e) => {
+  const handleAddSubmit = async (e) => {
     e.preventDefault();
-    const newUser = {
-      id: `US-${Math.floor(1000 + Math.random() * 9000)}`,
-      ...form,
-      lastLogin: 'Never',
-      created: new Date().toLocaleDateString('en-US'),
-    };
-    setUsers(prev => [newUser, ...prev]);
-    setShowAddModal(false);
-    notify(`User "${form.name}" added!`);
+    try {
+      setIsLoading(true);
+      const res = await api.post('/users', {
+        name: form.name,
+        email: form.email,
+        phone: form.phone || null,
+        role: form.role.toUpperCase().replace(/ /g, '_'),
+        isActive: form.status === 'ACTIVE'
+      });
+      if (res.data?.success) {
+        setShowAddModal(false);
+        notify(`User "${form.name}" added!`);
+        fetchUsers();
+      }
+    } catch (err) {
+      notify(err.response?.data?.error?.message || 'Error adding user.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleEditSubmit = (e) => {
+  const handleEditSubmit = async (e) => {
     e.preventDefault();
-    setUsers(prev => prev.map(u => u.id === showEditModal.id ? { ...u, ...form } : u));
-    setShowEditModal(null);
-    notify(`User "${form.name}" updated!`);
+    try {
+      setIsLoading(true);
+      const res = await api.put(`/users/${showEditModal.id}`, {
+        name: form.name,
+        email: form.email,
+        phone: form.phone || null,
+        role: form.role.toUpperCase().replace(/ /g, '_'),
+        isActive: form.status === 'ACTIVE'
+      });
+      if (res.data?.success) {
+        setShowEditModal(null);
+        notify(`User "${form.name}" updated!`);
+        fetchUsers();
+      }
+    } catch (err) {
+      notify(err.response?.data?.error?.message || 'Error updating user.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleDelete = () => {
-    setUsers(prev => prev.filter(u => u.id !== showDeleteModal.id));
-    notify(`User "${showDeleteModal.name}" deleted.`);
-    setShowDeleteModal(null);
-    setShowDetailModal(null);
+  const handleDelete = async () => {
+    try {
+      setIsLoading(true);
+      const res = await api.delete(`/users/${showDeleteModal.id}`);
+      if (res.status === 204 || res.data?.success) {
+        notify(`User "${showDeleteModal.name}" deleted.`);
+        setShowDeleteModal(null);
+        setShowDetailModal(null);
+        fetchUsers();
+      }
+    } catch (err) {
+      notify('Error deleting user.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleLoginAs = (user, e) => {
@@ -225,10 +278,18 @@ export default function AdminUsers() {
 
       {/* ─── CARD GRID ─── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-
-        {filtered.map((user, idx) => {
-          const avatarColor = AVATAR_COLORS[idx % AVATAR_COLORS.length];
-          const initial = user.name.charAt(0).toUpperCase();
+        {isLoading ? (
+          <div className="col-span-full py-12 text-center text-slate-400 font-semibold flex justify-center items-center gap-2">
+            <Loader2 className="w-5 h-5 animate-spin" /> Loading users...
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="col-span-full py-12 text-center text-slate-400 font-semibold">
+            No users found.
+          </div>
+        ) : (
+          filtered.map((user, idx) => {
+            const avatarColor = AVATAR_COLORS[idx % AVATAR_COLORS.length];
+            const initial = user.name.charAt(0).toUpperCase();
           const roleCls = ROLE_COLORS[user.role] || 'bg-slate-100 text-slate-600 border-slate-200';
           const statusCls = STATUS_COLORS[user.status] || STATUS_COLORS.PENDING;
 
@@ -304,7 +365,8 @@ export default function AdminUsers() {
               </div>
             </div>
           );
-        })}
+        })
+        )}
 
         {/* ── Add New User Card ── */}
         <div
@@ -321,16 +383,6 @@ export default function AdminUsers() {
         </div>
 
       </div>
-
-      {filtered.length === 0 && (
-        <div className="text-center py-16 text-slate-400">
-          <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
-            <Search className="w-6 h-6 text-slate-300" />
-          </div>
-          <div className="font-black text-slate-500">No users found</div>
-          <div className="text-xs font-medium mt-1">Try adjusting your search or filter</div>
-        </div>
-      )}
 
       {/* ══ USER DETAIL MODAL ══ */}
       {showDetailModal && (

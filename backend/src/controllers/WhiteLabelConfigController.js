@@ -50,12 +50,50 @@ exports.getById = async (req, res, next) => {
 exports.create = async (req, res, next) => {
   try {
     const payload = { ...req.body };
-    // if (req.tenantId) payload.tenantId = req.tenantId;
+    
+    // Map frontend keys to match schema fields
+    if (payload.loaderGif) { payload.loaderGifUrl = payload.loaderGif; delete payload.loaderGif; }
+    if (payload.lightLogo) { payload.logoLightUrl = payload.lightLogo; delete payload.lightLogo; }
+    if (payload.darkLogo) { payload.logoDarkUrl = payload.darkLogo; delete payload.darkLogo; }
+    if (payload.favicon) { payload.faviconUrl = payload.favicon; delete payload.favicon; }
+    if (payload.loginBg) { payload.loginBgUrl = payload.loginBg; delete payload.loginBg; }
+    if (payload.dashboardBg) { payload.dashboardBgUrl = payload.dashboardBg; delete payload.dashboardBg; }
+    if (payload.emailLogo) { payload.emailLogoUrl = payload.emailLogo; delete payload.emailLogo; }
+    if (payload.invoiceLogo) { payload.invoiceLogoUrl = payload.invoiceLogo; delete payload.invoiceLogo; }
+    if (payload.manifestLogo) { payload.manifestLogoUrl = payload.manifestLogo; delete payload.manifestLogo; }
 
-    const data = await prisma.whiteLabelConfig.create({
-      data: payload
+    // Resolve companyId if missing
+    if (!payload.companyId) {
+      const company = await prisma.company.findFirst();
+      if (company) {
+        payload.companyId = company.id;
+      }
+    }
+
+    if (!payload.companyId) {
+      return sendError(res, {
+        code: ERROR_CODES.BAD_REQUEST,
+        message: 'A company relation is required to register branding options.'
+      }, HTTP_STATUS.BAD_REQUEST);
+    }
+
+    // Check if configuration already exists for this company
+    const existing = await prisma.whiteLabelConfig.findUnique({
+      where: { companyId: payload.companyId }
     });
-    return sendSuccess(res, data, HTTP_STATUS.CREATED);
+
+    let data;
+    if (existing) {
+      data = await prisma.whiteLabelConfig.update({
+        where: { id: existing.id },
+        data: payload
+      });
+    } else {
+      data = await prisma.whiteLabelConfig.create({
+        data: payload
+      });
+    }
+    return sendSuccess(res, data, existing ? HTTP_STATUS.OK : HTTP_STATUS.CREATED);
   } catch (error) {
     next(error);
   }

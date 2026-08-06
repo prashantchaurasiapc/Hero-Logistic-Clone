@@ -52,6 +52,18 @@ exports.create = async (req, res, next) => {
     const payload = { ...req.body };
     // if (req.tenantId) payload.tenantId = req.tenantId;
 
+    if (payload.description) {
+      payload.message = payload.description;
+      delete payload.description;
+    }
+
+    if (!payload.companyId) {
+      const company = await prisma.company.findFirst();
+      if (company) {
+        payload.companyId = company.id;
+      }
+    }
+
     const data = await prisma.supportTicket.create({
       data: payload
     });

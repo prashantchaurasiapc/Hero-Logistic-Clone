@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import {
   Settings as SettingsIcon, Palette, Clock, CreditCard, LayoutTemplate,
-  Cpu, Compass, Database, Bell, FileText, Building2, CheckCircle2
+  Cpu, Compass, Database, Bell, FileText, Building2, CheckCircle2, Loader2
 } from 'lucide-react';
+import api from '../../services/api';
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('Company Profile');
@@ -14,6 +15,28 @@ export default function Settings() {
     ipAddress: true,
     authStatus: true
   });
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [isLoadingLogs, setIsLoadingLogs] = useState(false);
+
+  React.useEffect(() => {
+    if (activeTab === 'System Audit Logs') {
+      setIsLoadingLogs(true);
+      api.get('/audit-logs')
+        .then(res => {
+          if (res.data?.success) {
+            setAuditLogs(res.data.data.map(log => ({
+              id: log.id,
+              ts: new Date(log.createdAt).toLocaleString(),
+              node: log.user?.name || 'System',
+              ev: log.action,
+              ip: log.ipAddress || 'N/A'
+            })));
+          }
+        })
+        .catch(err => console.error(err))
+        .finally(() => setIsLoadingLogs(false));
+    }
+  }, [activeTab]);
 
   const tabs = [
     { name: 'Company Profile', icon: SettingsIcon },
@@ -558,27 +581,38 @@ export default function Settings() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {[
-                    { id: 1, ts: '13/7/2026, 5:28:37 pm', node: 'Super Admin', ev: 'Successfully converted trial account', ip: '192.168.1.1' },
-                    { id: 2, ts: '13/7/2026, 5:28:30 pm', node: 'System Root', ev: 'Plan updated successfully', ip: '192.168.1.1' },
-                    { id: 3, ts: '13/7/2026, 5:20:00 pm', node: 'Super Admin', ev: 'Login successful', ip: '192.168.1.1' },
-                    { id: 4, ts: '13/7/2026, 5:10:00 pm', node: 'System Root', ev: 'Settings updated', ip: '192.168.1.1' }
-                  ].map((row, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="p-5 text-center w-16">
-                        <input type="checkbox" className="w-4.5 h-4.5 rounded border-slate-300 text-blue-600 focus:ring-blue-600 cursor-pointer" />
+                  {isLoadingLogs ? (
+                    <tr>
+                      <td colSpan={6} className="p-10 text-center text-slate-400">
+                        <div className="flex justify-center items-center gap-2">
+                          <Loader2 className="w-5 h-5 animate-spin" /> Loading audit logs...
+                        </div>
                       </td>
-                      {visibleLogCols.timestamp && <td className="p-5 text-sm font-medium text-slate-500">{row.ts}</td>}
-                      {visibleLogCols.userNode && <td className="p-5 text-sm font-bold text-slate-800">{row.node}</td>}
-                      {visibleLogCols.event && <td className="p-5 text-sm font-medium text-slate-600">{row.ev}</td>}
-                      {visibleLogCols.ipAddress && <td className="p-5 text-sm font-medium text-slate-500">{row.ip}</td>}
-                      {visibleLogCols.authStatus && (
-                        <td className="p-5 flex items-center gap-2 text-sm font-bold text-slate-700">
-                          <CheckCircle2 className="w-4.5 h-4.5 text-slate-400" /> Success
-                        </td>
-                      )}
                     </tr>
-                  ))}
+                  ) : auditLogs.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="p-10 text-center text-slate-400 font-semibold">
+                        No audit logs found.
+                      </td>
+                    </tr>
+                  ) : (
+                    auditLogs.map((row, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="p-5 text-center w-16">
+                          <input type="checkbox" className="w-4.5 h-4.5 rounded border-slate-300 text-blue-600 focus:ring-blue-600 cursor-pointer" />
+                        </td>
+                        {visibleLogCols.timestamp && <td className="p-5 text-sm font-medium text-slate-500">{row.ts}</td>}
+                        {visibleLogCols.userNode && <td className="p-5 text-sm font-bold text-slate-800">{row.node}</td>}
+                        {visibleLogCols.event && <td className="p-5 text-sm font-medium text-slate-600">{row.ev}</td>}
+                        {visibleLogCols.ipAddress && <td className="p-5 text-sm font-medium text-slate-500">{row.ip}</td>}
+                        {visibleLogCols.authStatus && (
+                          <td className="p-5 flex items-center gap-2 text-sm font-bold text-slate-700">
+                            <CheckCircle2 className="w-4.5 h-4.5 text-slate-400" /> Success
+                          </td>
+                        )}
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

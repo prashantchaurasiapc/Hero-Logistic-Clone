@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import {
   Search, Check, X, Filter, Settings,
   UserCheck, Shield, Users, UserPlus, Key, Edit3, Trash2,
-  Eye, Lock, Unlock, Mail, Phone, Building, LogIn, EyeOff
+  Eye, Lock, Unlock, Mail, Phone, Building, LogIn, EyeOff, Loader2
 } from 'lucide-react';
+import api from '../../services/api';
 
 /* ============================================================
    ROLE BADGE CONFIGURATIONS & PERMISSIONS LIST
@@ -21,184 +22,40 @@ const ROLE_OPTIONS = [
   { id: 'Customer', label: 'Customer Portal User', color: 'bg-violet-100 text-violet-700 border-violet-200', icon: Users },
 ];
 
-const INITIAL_USERS = [
-  {
-    id: 'US-1001',
-    name: 'Alexander Wright',
-    email: 'alex@herologistics.com',
-    phone: '+1 555-0101',
-    role: 'Super Admin',
-    company: 'Hero Logistics Global (Platform)',
-    password: 'admin',
-    status: 'ACTIVE',
-    lastLogin: 'Today, 10:45 AM',
-    created: '01/10/2026',
-    permissions: ['Global Control', 'Tenant Provisioning', 'Billing Control', 'System Analytics', 'AI Overrides']
-  },
-  {
-    id: 'US-1002',
-    name: 'Robert Vance',
-    email: 'robert@vance.com',
-    phone: '+1 555-0123',
-    role: 'Company Admin',
-    company: 'Vance Refrigeration',
-    password: '123',
-    status: 'ACTIVE',
-    lastLogin: 'Today, 09:15 AM',
-    created: '02/14/2026',
-    permissions: ['Company Dashboard', 'Driver Management', 'Load Booking', 'Fleet Settings']
-  },
-  {
-    id: 'US-1003',
-    name: 'Jim Halpert',
-    email: 'jim@bluesky.com',
-    phone: '+1 555-0155',
-    role: 'Company Admin',
-    company: 'Blue Sky Cargo',
-    password: '123',
-    status: 'ACTIVE',
-    lastLogin: 'Yesterday, 04:30 PM',
-    created: '03/01/2026',
-    permissions: ['Company Dashboard', 'Finance Reports', 'Customer Accounts', 'Staff Roster']
-  },
-  {
-    id: 'US-1004',
-    name: 'Michael Scott',
-    email: 'mscott@dundermifflin.com',
-    phone: '+1 555-0199',
-    role: 'Company Admin',
-    company: 'Dunder Mifflin Logistics',
-    password: '123',
-    status: 'ACTIVE',
-    lastLogin: 'Today, 08:20 AM',
-    created: '01/15/2026',
-    permissions: ['Company Dashboard', 'Branch Control', 'Live Tracking', 'Billing Overview']
-  },
-  {
-    id: 'US-1005',
-    name: 'Sarah Mitchell',
-    email: 'sarah.m@falcon.com',
-    phone: '+1 555-0244',
-    role: 'Dispatcher',
-    company: 'Falcon Logistics LLC',
-    password: '123',
-    status: 'ACTIVE',
-    lastLogin: 'Today, 11:02 AM',
-    created: '02/20/2026',
-    permissions: ['Dispatch Terminal', 'Fleet Monitor', 'Route Assignment', 'Driver Chat']
-  },
-  {
-    id: 'US-1006',
-    name: 'Noah Williams',
-    email: 'noah.w@falcon.com',
-    phone: '+1 555-0311',
-    role: 'Driver',
-    company: 'Falcon Logistics LLC',
-    password: '123',
-    status: 'ACTIVE',
-    lastLogin: 'Today, 07:45 AM',
-    created: '03/10/2026',
-    permissions: ['Driver Mobile App', 'Job Execution', 'POD Capture', 'Expense Logs']
-  },
-  {
-    id: 'US-1007',
-    name: 'Angela Martin',
-    email: 'angela@schrute.com',
-    phone: '+1 555-0422',
-    role: 'Accounts Manager',
-    company: 'Schrute Farms Delivery',
-    password: '123',
-    status: 'ACTIVE',
-    lastLogin: 'Yesterday, 05:10 PM',
-    created: '04/05/2026',
-    permissions: ['Invoice Review', 'Payroll Processing', 'GST/PAYG Audit', 'P&L Statements']
-  },
-  {
-    id: 'US-1008',
-    name: 'Oscar Martinez',
-    email: 'oscar@greenmile.com',
-    phone: '+1 555-0533',
-    role: 'Warehouse Manager',
-    company: 'Green Last-Mile',
-    password: '123',
-    status: 'ACTIVE',
-    lastLogin: 'Today, 10:12 AM',
-    created: '04/12/2026',
-    permissions: ['Inventory Stock', 'Inbound Scan', 'Yard Map', 'Movement Logs']
-  },
-  {
-    id: 'US-1009',
-    name: 'Dwight Schrute',
-    email: 'dwight@polarexpress.com',
-    phone: '+1 555-0644',
-    role: 'Yard Attendant',
-    company: 'Polar Express Cold Chain',
-    password: '123',
-    status: 'SUSPENDED',
-    lastLogin: '3 days ago',
-    created: '05/01/2026',
-    permissions: ['Yard Scanning', 'Trailer Move', 'Lane Assignment']
-  },
-  {
-    id: 'US-1010',
-    name: 'Ryan Howard',
-    email: 'ryan.h@herologistics.com',
-    phone: '+1 555-0755',
-    role: 'Sales Rep',
-    company: 'Hero Logistics Global (Platform)',
-    password: '123',
-    status: 'ACTIVE',
-    lastLogin: 'Today, 09:50 AM',
-    created: '01/20/2026',
-    permissions: ['Lead Pipeline', 'Demo Bookings', 'Proposal Generation', 'Onboarding']
-  },
-  {
-    id: 'US-1011',
-    name: 'Jo Bennett',
-    email: 'jo@sabre.com',
-    phone: '+1 555-0866',
-    role: 'Customer',
-    company: 'Sabre Logistics',
-    password: '123',
-    status: 'ACTIVE',
-    lastLogin: 'Yesterday, 02:15 PM',
-    created: '05/15/2026',
-    permissions: ['Load Creation', 'Live Delivery Tracking', 'Invoice Downloads', 'Support Tickets']
-  },
-  {
-    id: 'US-1012',
-    name: 'Brennan Huff',
-    email: 'brennan@prestige.com',
-    phone: '+1 555-0977',
-    role: 'Customer',
-    company: 'Prestige Worldwide',
-    password: '123',
-    status: 'PENDING',
-    lastLogin: 'Never',
-    created: '07/20/2026',
-    permissions: ['Pending Approval']
-  }
-];
-
 export default function UserManagement() {
   const navigate = useNavigate();
 
-  // Users state with localStorage persistence
-  const [users, setUsers] = useState(() => {
-    const saved = localStorage.getItem('hero_user_management_users');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        // Ensure passwords exist for legacy records
-        return parsed.map(u => ({ ...u, password: u.password || '123456' }));
-      } catch (e) { console.error(e); }
+  const [users, setUsers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchUsers = async () => {
+    setIsLoading(true);
+    try {
+      const res = await api.get('/users');
+      if (res.data?.success) {
+        setUsers(res.data.data.map(u => ({
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          phone: u.phone || 'N/A',
+          role: u.role.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' '),
+          company: u.company?.name || 'Platform Level',
+          status: u.isActive ? 'ACTIVE' : 'INACTIVE',
+          lastLogin: u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : 'Never',
+          created: new Date(u.createdAt).toLocaleDateString(),
+          permissions: ['Basic Access']
+        })));
+      }
+    } catch (err) {
+      console.error('Failed to fetch users', err);
+    } finally {
+      setIsLoading(false);
     }
-    return INITIAL_USERS;
-  });
+  };
 
   useEffect(() => {
-    localStorage.setItem('hero_user_management_users', JSON.stringify(users));
-  }, [users]);
+    fetchUsers();
+  }, []);
 
   // Toolbar & Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -322,63 +179,89 @@ export default function UserManagement() {
   };
 
   // Handle Add User Submit
-  const handleAddUserSubmit = (e) => {
+  const handleAddUserSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name || !formData.email) return;
-
-    const newUser = {
-      id: `US-${Math.floor(1000 + Math.random() * 9000)}`,
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone || '+1 555-0000',
-      role: formData.role,
-      company: formData.company,
-      password: formData.password || '123',
-      status: formData.status,
-      lastLogin: 'Never',
-      created: new Date().toLocaleDateString('en-US'),
-      permissions: ['Standard Access', `${formData.role} Workspace`]
-    };
-
-    setUsers([newUser, ...users]);
-    setShowAddUserModal(false);
-    showNotification(`User "${formData.name}" added successfully!`);
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      role: 'Company Admin',
-      company: 'Falcon Logistics LLC',
-      password: '123',
-      status: 'ACTIVE'
-    });
+    try {
+      setIsLoading(true);
+      const res = await api.post('/users', {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone || null,
+        role: formData.role.toUpperCase().replace(/ /g, '_'),
+        password: formData.password || '123',
+        isActive: formData.status === 'ACTIVE'
+      });
+      if (res.data?.success) {
+        showNotification(`User "${formData.name}" added successfully!`);
+        setShowAddUserModal(false);
+        setFormData({ name: '', email: '', phone: '', role: 'Company Admin', company: 'Falcon Logistics LLC', password: '123', status: 'ACTIVE' });
+        fetchUsers();
+      }
+    } catch (err) {
+      showNotification(err.response?.data?.error?.message || 'Error adding user.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Handle Edit User Submit
-  const handleEditUserSubmit = (e) => {
+  const handleEditUserSubmit = async (e) => {
     e.preventDefault();
     if (!selectedUser) return;
-
-    setUsers(users.map(u => u.id === selectedUser.id ? { ...u, ...formData } : u));
-    setShowEditUserModal(false);
-    showNotification(`User "${formData.name}" updated successfully.`);
+    try {
+      setIsLoading(true);
+      const res = await api.put(`/users/${selectedUser.id}`, {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone || null,
+        role: formData.role.toUpperCase().replace(/ /g, '_'),
+        isActive: formData.status === 'ACTIVE'
+      });
+      if (res.data?.success) {
+        showNotification(`User "${formData.name}" updated successfully.`);
+        setShowEditUserModal(false);
+        fetchUsers();
+      }
+    } catch (err) {
+      showNotification(err.response?.data?.error?.message || 'Error updating user.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Delete User
-  const handleDeleteUser = (id, name) => {
+  const handleDeleteUser = async (id, name) => {
     if (window.confirm(`Are you sure you want to delete user "${name}"?`)) {
-      setUsers(users.filter(u => u.id !== id));
-      setActiveActionsMenu(null);
-      showNotification(`User "${name}" deleted.`);
+      try {
+        setIsLoading(true);
+        const res = await api.delete(`/users/${id}`);
+        if (res.status === 204 || res.data?.success) {
+          setActiveActionsMenu(null);
+          showNotification(`User "${name}" deleted.`);
+          fetchUsers();
+        }
+      } catch (err) {
+        showNotification('Error deleting user.');
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
   // Toggle User Status
-  const handleToggleStatus = (user) => {
+  const handleToggleStatus = async (user) => {
     const nextStatus = user.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
-    setUsers(users.map(u => u.id === user.id ? { ...u, status: nextStatus } : u));
-    setActiveActionsMenu(null);
-    showNotification(`User status changed to ${nextStatus}.`);
+    try {
+      const res = await api.put(`/users/${user.id}`, { isActive: nextStatus === 'ACTIVE' });
+      if (res.data?.success) {
+        setActiveActionsMenu(null);
+        showNotification(`User status changed to ${nextStatus}.`);
+        fetchUsers();
+      }
+    } catch (err) {
+      showNotification('Error updating user status.');
+    }
   };
 
   // Open Edit Modal
@@ -865,7 +748,13 @@ export default function UserManagement() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-xs font-bold text-slate-700 bg-white">
-              {filteredUsers.length === 0 ? (
+              {isLoading ? (
+                <tr>
+                  <td colSpan="8" className="py-12 text-center text-slate-400 font-semibold bg-white w-full">
+                     <div className="flex justify-center items-center gap-2"><Loader2 className="w-5 h-5 animate-spin" /> Loading users...</div>
+                  </td>
+                </tr>
+              ) : filteredUsers.length === 0 ? (
                 <tr>
                   <td colSpan="10" className="py-12 text-center text-slate-400 font-semibold bg-white w-full">
                     No platform users found matching criteria.

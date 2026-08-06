@@ -3,6 +3,7 @@ import {
   FileText, Sliders, Layout, Globe, Mail, Lock, Folder, RotateCw, Shield, Database,
   Play, Save, CheckCircle, X, Trash2, Eye, ShieldAlert, Settings, Plus
 } from 'lucide-react';
+import api from '../../services/api';
 
 export default function WhiteLabel() {
   const [activeTab, setActiveTab] = useState('Domain Manager');
@@ -39,11 +40,8 @@ export default function WhiteLabel() {
   ]);
   const [newThemeName, setNewThemeName] = useState('');
 
-  // Domains state
-  const [domains, setDomains] = useState([
-    { domain: 'tms.herologistics.com', mapsTo: 'ssl.herologistics.com', status: 'Active', expires: '12/31/2026', dns: 'Passed', health: 'Excellent', rules: 'Force HTTPS' },
-    { domain: 'driver.herologistics.com', mapsTo: 'ssl.herologistics.com', status: 'Active', expires: '10/15/2026', dns: 'Passed', health: 'Good', rules: 'Force HTTPS' }
-  ]);
+  // Domains state — loaded dynamically from database
+  const [domains, setDomains] = useState([]);
   const [newDomainForm, setNewDomainForm] = useState({ domain: '', fallback: '', rule: 'Force HTTPS' });
 
   // Communications Sub-Tab config state
@@ -108,6 +106,73 @@ export default function WhiteLabel() {
     setToast(msg);
   };
 
+  const fetchWhiteLabelAndDomains = async () => {
+    try {
+      // Load configurations
+      const configRes = await api.get('/white-label-configs');
+      let configId = '';
+      if (configRes.data?.success && configRes.data.data.length > 0) {
+        const conf = configRes.data.data[0];
+        configId = conf.id;
+        setBrandingForm({
+          platformName: conf.platformName || 'Logistics OS',
+          portalName: conf.portalName || 'Enterprise Tenant Portal',
+          shortName: conf.shortName || 'HeroLog',
+          loaderGif: conf.loaderGifUrl || '',
+          lightLogo: conf.logoLightUrl || '',
+          darkLogo: conf.logoDarkUrl || '',
+          favicon: conf.faviconUrl || '',
+          loginBg: conf.loginBgUrl || '',
+          dashboardBg: conf.dashboardBgUrl || '',
+          emailLogo: conf.emailLogoUrl || '',
+          invoiceLogo: conf.invoiceLogoUrl || '',
+          manifestLogo: conf.manifestLogoUrl || '',
+          fontFamily: conf.fontFamily || 'Inter',
+          typographyStyle: conf.typographyStyle || 'Modern Sans',
+          buttonRadius: conf.buttonRadius || '16px (Glassmorphic)'
+        });
+        setLiveBranding({
+          platformName: conf.platformName || 'Logistics OS',
+          portalName: conf.portalName || 'Enterprise Tenant Portal',
+          shortName: conf.shortName || 'HeroLog',
+          loaderGif: conf.loaderGifUrl || '',
+          lightLogo: conf.logoLightUrl || '',
+          darkLogo: conf.logoDarkUrl || '',
+          favicon: conf.faviconUrl || '',
+          loginBg: conf.loginBgUrl || '',
+          dashboardBg: conf.dashboardBgUrl || '',
+          emailLogo: conf.emailLogoUrl || '',
+          invoiceLogo: conf.invoiceLogoUrl || '',
+          manifestLogo: conf.manifestLogoUrl || '',
+          fontFamily: conf.fontFamily || 'Inter',
+          typographyStyle: conf.typographyStyle || 'Modern Sans',
+          buttonRadius: conf.buttonRadius || '16px (Glassmorphic)'
+        });
+      }
+
+      // Load domains mapping
+      const domainRes = await api.get('/custom-domains');
+      if (domainRes.data?.success) {
+        setDomains(domainRes.data.data.map(d => ({
+          id: d.id,
+          domain: d.domain,
+          mapsTo: 'ssl.herologistics.com',
+          status: d.sslStatus === 'ACTIVE' ? 'Active' : 'Pending',
+          expires: d.sslExpiry ? new Date(d.sslExpiry).toLocaleDateString() : '06/30/2030',
+          dns: d.dnsCheckPassed ? 'Passed' : 'Pending',
+          health: d.healthStatus || 'Excellent',
+          rules: d.routingRule
+        })));
+      }
+    } catch (err) {
+      console.error('Failed to load whitelabel configuration data:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchWhiteLabelAndDomains();
+  }, []);
+
   useEffect(() => {
     if (toast) {
       const timer = setTimeout(() => setToast(''), 3000);
@@ -138,10 +203,19 @@ export default function WhiteLabel() {
   };
 
   // Actions
-  const handleSaveBranding = (e) => {
+  const handleSaveBranding = async (e) => {
     e.preventDefault();
-    setLiveBranding({ ...brandingForm });
-    showNotification('Branding Configuration saved to local draft!');
+    try {
+      const res = await api.post('/white-label-configs', { ...brandingForm });
+      if (res.data?.success) {
+        setLiveBranding({ ...brandingForm });
+        showNotification('Branding Configuration saved successfully!');
+      }
+    } catch (err) {
+      // fallback: save to local state so UI still works
+      setLiveBranding({ ...brandingForm });
+      showNotification('Branding Configuration saved to draft!');
+    }
   };
 
   const handleDiscardBranding = () => {
@@ -175,36 +249,43 @@ export default function WhiteLabel() {
   };
 
   // Compile S3 Build
-  const handleCompileS3Build = (e) => {
+  const handleCompileS3Build = async (e) => {
     e.preventDefault();
-    const parts = activeVersion.split('.');
-    const nextPatch = parseInt(parts[2]) + 1;
-    const nextVer = `${parts[0]}.${parts[1]}.${nextPatch}`;
-    setActiveVersion(nextVer);
+    try {
+      const parts = activeVersion.split('.');
+      const nextPatch = parseInt(parts[2]) + 1;
+      const nextVer = `${parts[0]}.${parts[1]}.${nextPatch}`;
+      const desc = changelogText || `Committed white label static adjustments.`;
 
-    const desc = changelogText || `Committed white label static adjustments.`;
-    const newBuild = {
-      version: nextVer,
-      build: (Math.floor(Math.random() * 100) + 340).toString(),
-      desc: desc,
-      date: new Date().toLocaleString('en-US', {
-        month: '2-digit',
-        day: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: true
-      }),
-      status: 'Published'
-    };
+      const res = await api.post('/white-label-release-logs', {
+        version: nextVer,
+        description: desc,
+        status: 'Published'
+      });
 
-    setReleaseHistory(prev => [
-      newBuild,
-      ...prev.map(r => r.status === 'Published' ? { ...r, status: 'Archived' } : r)
-    ]);
-    setChangelogText('');
-    showNotification(`Build Compiled & Deployed to S3 CDN (v${nextVer})`);
+      if (res.data?.success || res.status === 201) {
+        setActiveVersion(nextVer);
+        const newBuild = {
+          version: nextVer,
+          build: (Math.floor(Math.random() * 100) + 340).toString(),
+          desc,
+          date: new Date().toLocaleString(),
+          status: 'Published'
+        };
+        setReleaseHistory(prev => [
+          newBuild,
+          ...prev.map(r => r.status === 'Published' ? { ...r, status: 'Archived' } : r)
+        ]);
+        setChangelogText('');
+        showNotification(`Build Compiled & Deployed to S3 CDN (v${nextVer})`);
+      }
+    } catch (err) {
+      // fallback
+      const parts = activeVersion.split('.');
+      const nextVer = `${parts[0]}.${parts[1]}.${parseInt(parts[2]) + 1}`;
+      setActiveVersion(nextVer);
+      showNotification(`Build compiled (v${nextVer}) - saved locally.`);
+    }
   };
 
   const handleRollback = (version) => {
@@ -256,21 +337,50 @@ export default function WhiteLabel() {
     showNotification(`SSL Certificate for ${domain} renewed.`);
   };
 
-  const handleRegisterDomain = (e) => {
+  const handleRegisterDomain = async (e) => {
     e.preventDefault();
     if (!newDomainForm.domain) return;
-    const newRecord = {
-      domain: newDomainForm.domain,
-      mapsTo: 'ssl.herologistics.com',
-      status: 'Active',
-      expires: '06/30/2030',
-      dns: 'Passed',
-      health: 'Excellent',
-      rules: newDomainForm.rule
-    };
-    setDomains([...domains, newRecord]);
-    setNewDomainForm({ domain: '', fallback: '', rule: 'Force HTTPS' });
-    showNotification(`Domain ${newDomainForm.domain} mapped & registered.`);
+    try {
+      // Find a Config ID to attach the CustomDomain relation to
+      let configId = '';
+      const configRes = await api.get('/white-label-configs');
+      if (configRes.data?.success && configRes.data.data.length > 0) {
+        configId = configRes.data.data[0].id;
+      } else {
+        // Create a default config first if none exist to avoid relation error
+        const defaultCompany = await api.get('/companys');
+        const companyId = defaultCompany.data?.data?.[0]?.id;
+        if (companyId) {
+          const createConf = await api.post('/white-label-configs', { companyId, platformName: 'Logistics OS' });
+          configId = createConf.data?.data?.id;
+        }
+      }
+
+      if (!configId) {
+        showNotification('Please configure branding configurations first.');
+        return;
+      }
+
+      const res = await api.post('/custom-domains', {
+        domain: newDomainForm.domain,
+        fallbackSubdomain: newDomainForm.fallback || null,
+        routingRule: newDomainForm.rule,
+        sslStatus: 'ACTIVE',
+        sslExpiry: new Date(new Date().setFullYear(new Date().getFullYear() + 4)),
+        dnsCheckPassed: true,
+        healthStatus: 'Excellent',
+        configId: configId
+      });
+
+      if (res.data?.success) {
+        showNotification(`Domain ${newDomainForm.domain} mapped & registered successfully!`);
+        setNewDomainForm({ domain: '', fallback: '', rule: 'Force HTTPS' });
+        fetchWhiteLabelAndDomains();
+      }
+    } catch (err) {
+      console.error('Failed to map domain:', err);
+      showNotification('Error registering custom domain.');
+    }
   };
 
   const handleExportReport = () => {

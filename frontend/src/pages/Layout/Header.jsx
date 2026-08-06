@@ -7,6 +7,7 @@ import {
   MapPin, Shield, Truck, Users, LayoutDashboard, Settings
 } from 'lucide-react';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
+import api from '../../services/api';
 
 const Header = ({ onMenuClick }) => {
   const location = useLocation();
@@ -52,12 +53,29 @@ const Header = ({ onMenuClick }) => {
   // Notification lists state
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(12);
-  const [notifications, setNotifications] = useState([
-    { id: 1, type: 'LOAD', text: "Load LD-2041 status updated to 'IN DEPOT'", time: '2 mins ago', read: false },
-    { id: 2, type: 'SAFETY', text: "Liam Smith submitted pre-trip safety checklist", time: '15 mins ago', read: false },
-    { id: 3, type: 'FLEET', text: "Tesla Model S EV 0001 has entered Sydney Depot", time: '1 hr ago', read: false },
-    { id: 4, type: 'BILLING', text: "Strategic Account rate sheets updated for Acme Corp", time: '3 hrs ago', read: false }
-  ]);
+  const [notifications, setNotifications] = useState([]);
+  
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const res = await api.get('/audit-logs?take=4&orderBy={"createdAt":"desc"}');
+        if (res.data?.success) {
+          const mappedNotifications = res.data.data.map(log => ({
+            id: log.id,
+            type: log.action.split('_')[0] || 'SYSTEM',
+            text: log.details || `${log.action} action performed`,
+            time: new Date(log.createdAt).toLocaleString(),
+            read: false
+          }));
+          setNotifications(mappedNotifications);
+          setUnreadCount(mappedNotifications.length);
+        }
+      } catch (err) {
+        console.error('Failed to fetch notifications:', err);
+      }
+    };
+    fetchNotifications();
+  }, []);
 
   // Command Palette Quick Search state
   const [showSearchPalette, setShowSearchPalette] = useState(false);

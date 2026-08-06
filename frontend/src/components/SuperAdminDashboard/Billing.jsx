@@ -13,8 +13,10 @@ import {
   DollarSign, 
   Check, 
   ShieldCheck,
-  Edit
+  Edit,
+  Loader2
 } from 'lucide-react';
+import api from '../../services/api';
 
 export default function Billing() {
   const [activeTab, setActiveTab] = useState('INVOICES');
@@ -64,25 +66,34 @@ export default function Billing() {
     { name: 'Jun', value: 42000 }
   ];
 
-  // Invoices list database
-  const initialInvoices = [
-    { id: '#INV-1001A', company: 'Falcon Logistics LLC', plan: 'Professional', amount: 8500.00, status: 'Paid', date: '06/12/2026' },
-    { id: '#INV-1002A', company: 'Falcon Logistics LLC', plan: 'Professional', amount: 4200.00, status: 'Sent', date: '06/15/2026' },
-    { id: '#INV-1003A', company: 'Falcon Logistics LLC', plan: 'Professional', amount: 3100.00, status: 'Draft', date: '06/20/2026' },
-    { id: '#INV-1004A', company: 'Falcon Logistics LLC', plan: 'Professional', amount: 5000.00, status: 'Overdue', date: '05/10/2026' },
-    { id: '#INV-1002A', company: 'Swift Cargo Express', plan: 'Starter', amount: 1500.00, status: 'Paid', date: '06/19/2026' },
-    { id: '#INV-1002B', company: 'Swift Cargo Express', plan: 'Starter', amount: 1500.00, status: 'Paid', date: '05/19/2026' },
-    { id: '#INV-1002C', company: 'Swift Cargo Express', plan: 'Starter', amount: 1500.00, status: 'Paid', date: '04/19/2026' },
-    { id: '#INV-1003A', company: 'Global Shipping Solutions', plan: 'Enterprise', amount: 28000.00, status: 'Paid', date: '06/01/2026' },
-    { id: '#INV-1003B', company: 'Global Shipping Solutions', plan: 'Enterprise', amount: 28000.00, status: 'Paid', date: '05/01/2026' },
-    { id: '#INV-1003C', company: 'Global Shipping Solutions', plan: 'Enterprise', amount: 28000.00, status: 'Paid', date: '04/01/2026' },
-    { id: '#INV-1003D', company: 'Global Shipping Solutions', plan: 'Enterprise', amount: 28000.00, status: 'Paid', date: '03/01/2026' },
-    { id: '#INV-1003E', company: 'Global Shipping Solutions', plan: 'Enterprise', amount: 28000.00, status: 'Paid', date: '02/01/2026' },
-    { id: '#INV-1004A', company: 'Texas Hotshot Carriers', plan: 'Starter', amount: 1500.00, status: 'Unpaid', date: '05/20/2026' },
-    { id: '#INV-1005A', company: 'Apex Logistics LLC', plan: 'Professional', amount: 4910.00, status: 'Paid', date: '06/19/2026' }
-  ];
+  const [invoices, setInvoices] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [invoices, setInvoices] = useState(initialInvoices);
+  const fetchInvoices = async () => {
+    setIsLoading(true);
+    try {
+      const res = await api.get('/billing-records');
+      if (res.data?.success) {
+        setInvoices(res.data.data.map(inv => ({
+          id: inv.invoiceNumber || inv.id,
+          company: inv.tenantSubscription?.company?.name || inv.tenantSubscriptionId || 'Unknown',
+          plan: inv.tenantSubscription?.plan?.name || 'Unknown',
+          amount: inv.amount,
+          status: inv.status,
+          date: new Date(inv.createdAt).toLocaleDateString()
+        })));
+      }
+    } catch (err) {
+      console.error('Failed to load billing records:', err);
+      showNotification('Failed to load billing records');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchInvoices();
+  }, []);
 
   // Tab Filtering logic
   const getFilteredData = () => {
@@ -128,23 +139,27 @@ export default function Billing() {
   };
 
   // Save Regenerated Invoice
-  const handleSaveRegenerate = (e) => {
+  const handleSaveRegenerate = async (e) => {
     e.preventDefault();
     if (!regenerateInvoice) return;
-    const newAmt = parseFloat(regenForm.amount) || regenerateInvoice.amount;
-    setInvoices(prev => prev.map(inv => {
-      if (inv.id === regenerateInvoice.id && inv.company === regenerateInvoice.company) {
-        return {
-          ...inv,
-          amount: newAmt,
-          status: regenForm.status,
-          date: regenForm.dueDate || inv.date
-        };
+    try {
+      setIsLoading(true);
+      const newAmt = parseFloat(regenForm.amount) || regenerateInvoice.amount;
+      const res = await api.put(`/billing-records/${regenerateInvoice.id}`, {
+        amount: newAmt,
+        status: regenForm.status,
+        dueDate: regenForm.dueDate || undefined
+      });
+      if (res.data?.success) {
+        setRegenerateInvoice(null);
+        showNotification(`Invoice ${regenerateInvoice.id} regenerated successfully with new metadata!`);
+        fetchInvoices();
       }
-      return inv;
-    }));
-    setRegenerateInvoice(null);
-    showNotification(`Invoice ${regenerateInvoice.id} regenerated successfully with new metadata!`);
+    } catch (err) {
+      showNotification('Error regenerating invoice.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Export CSV
@@ -293,8 +308,19 @@ export default function Billing() {
                 <th className="pb-4 text-right pr-0 font-black">ACTIONS</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-xs font-bold text-slate-700 block lg:table-row-group">
-              {getFilteredData().map((row, idx) => (
+            <tbody className="divide-y divide-slate-100 text-xs font-bold text-slate-700 bg-white">
+              {isLoading ? (
+                <tr>
+                  <td colSpan="7" className="py-12 text-center text-slate-400 font-semibold bg-white w-full">
+                     <div className="flex justify-center items-center gap-2"><Loader2 className="w-5 h-5 animate-spin" /> Loading billing records...</div>
+                  </td>
+                </tr>
+              ) : getFilteredData().length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="py-12 text-center text-slate-400 font-semibold">No records found.</td>
+                </tr>
+              ) : (
+                getFilteredData().map((row, idx) => (
                 <tr key={idx} className="hover:bg-slate-50/50 transition-colors block lg:table-row border border-slate-100 lg:border-none rounded-xl lg:rounded-none mb-4 lg:mb-0 bg-white lg:bg-transparent shadow-sm lg:shadow-none p-4 lg:p-0">
                   <td className="flex lg:table-cell justify-between items-center py-2 lg:py-4 border-b border-slate-50 lg:border-none">
                     <span 
@@ -356,8 +382,9 @@ export default function Billing() {
                       </button>
                     </div>
                   </td>
-                </tr>
-              ))}
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

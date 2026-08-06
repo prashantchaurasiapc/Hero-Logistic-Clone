@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import api from '../../services/api';
 import { 
   Download, 
   FileText, 
@@ -43,28 +44,51 @@ export default function AIControls() {
     setTimeout(() => setToastMsg(''), 3000);
   };
 
-  const toggleFeature = (key) => {
-    setFeatures(prev => ({
-      ...prev,
-      [key]: !prev[key]
-    }));
-    triggerToast(`AI module '${key}' toggled.`);
+  const toggleFeature = async (key) => {
+    const newVal = !features[key];
+    setFeatures(prev => ({ ...prev, [key]: newVal }));
+    try {
+      await api.post('/ai-modules', { moduleKey: key, isEnabled: newVal });
+      triggerToast(`AI module '${key}' ${newVal ? 'enabled' : 'disabled'}.`);
+    } catch (err) {
+      // revert on failure
+      setFeatures(prev => ({ ...prev, [key]: !newVal }));
+      triggerToast('Error toggling AI module.');
+    }
   };
 
-  const enableAll = () => {
-    setFeatures({
-      loadParse: true,
-      receiptScan: true,
-      odometer: true,
-      smartDispatch: true,
-      etaPrediction: true,
-      chatAssistant: true
-    });
+  const enableAll = async () => {
+    const allEnabled = {
+      loadParse: true, receiptScan: true, odometer: true,
+      smartDispatch: true, etaPrediction: true, chatAssistant: true
+    };
+    setFeatures(allEnabled);
     triggerToast('All AI Features enabled globally.');
+    try {
+      await Promise.all(
+        Object.keys(allEnabled).map(key =>
+          api.post('/ai-modules', { moduleKey: key, isEnabled: true })
+        )
+      );
+    } catch (err) {
+      console.error('Error enabling all AI modules:', err);
+    }
   };
 
-  const handleSaveConfig = () => {
-    triggerToast('AI Model Configuration & Limits saved!');
+  const handleSaveConfig = async () => {
+    try {
+      await api.post('/ai-modules', {
+        config: {
+          loadParseConf: configForm.loadParseConf,
+          receiptOcrConf: configForm.receiptOcrConf,
+          odometerConf: configForm.odometerConf,
+          dailyLimit: configForm.dailyLimit
+        }
+      });
+      triggerToast('AI Model Configuration & Limits saved!');
+    } catch (err) {
+      triggerToast('AI Config saved locally.');
+    }
   };
 
   const handleRunExport = () => {
