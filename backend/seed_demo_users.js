@@ -1,6 +1,5 @@
-const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
-const prisma = new PrismaClient();
+const prisma = require('./src/utils/prismaClient');
 
 async function main() {
   const password = await bcrypt.hash('123456', 10);
