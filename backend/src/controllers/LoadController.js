@@ -2,6 +2,7 @@ const prisma = require('../utils/prismaClient');
 const { sendSuccess, sendList, sendError } = require('../utils/apiResponse');
 const { buildPrismaQuery, buildPaginationMeta } = require('../utils/queryBuilder');
 const { HTTP_STATUS, ERROR_CODES } = require('../config/constants');
+const LoadService = require('../services/LoadService');
 
 // Get all Loads with pagination, sorting and filtering
 exports.getAll = async (req, res, next) => {
@@ -119,6 +120,54 @@ exports.delete = async (req, res, next) => {
         message: 'Load not found'
       }, HTTP_STATUS.NOT_FOUND);
     }
+    next(error);
+  }
+};
+
+// Custom: Activate Load
+exports.activate = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { assignment } = req.body;
+    
+    // We would pass req.tenantId if tenantResolver was providing it
+    const data = await LoadService.activateLoad(id, assignment, req.tenantId);
+    
+    return sendSuccess(res, data, HTTP_STATUS.OK);
+  } catch (error) {
+    if (error.code === 'LOAD_ACTIVATION_FAILED') {
+      return sendError(res, error, HTTP_STATUS.UNPROCESSABLE_ENTITY);
+    }
+    next(error);
+  }
+};
+
+// Custom: Assign resources to Load
+exports.assign = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const assignment = req.body;
+    
+    const data = await LoadService.assignResources(id, assignment, req.tenantId);
+    return sendSuccess(res, data, HTTP_STATUS.OK);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Custom: Status Transition
+exports.updateStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { status, reason } = req.body;
+    
+    if (!status) {
+      return sendError(res, { code: ERROR_CODES.VALIDATION_ERROR, message: 'Status is required' }, HTTP_STATUS.BAD_REQUEST);
+    }
+
+    const data = await LoadService.updateStatus(id, status, reason, req.tenantId);
+    return sendSuccess(res, data, HTTP_STATUS.OK);
+  } catch (error) {
     next(error);
   }
 };
