@@ -15,4 +15,6 @@ router.route('/:id')
   .put(LeadController.update)
   .delete(LeadController.delete);
 
+router.post('/:id/convert-to-company', LeadController.convertToCompany);
+
 module.exports = router;

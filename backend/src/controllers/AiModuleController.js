@@ -46,14 +46,74 @@ exports.getById = async (req, res, next) => {
   }
 };
 
-// Create new AiModule
+// Create new AiModule (with Upsert logic for config settings and toggling module status)
 exports.create = async (req, res, next) => {
   try {
     const payload = { ...req.body };
-    // if (req.tenantId) payload.tenantId = req.tenantId;
 
-    const data = await prisma.aiModule.create({
-      data: payload
+    // 1. If payload contains a general configuration dictionary
+    if (payload.config) {
+      const config = payload.config;
+      const updates = [
+        { name: 'Load Parse AI', confidence: parseFloat(config.loadParseConf), limit: parseInt(config.dailyLimit) },
+        { name: 'Receipt Scan OCR', confidence: parseFloat(config.receiptOcrConf), limit: parseInt(config.dailyLimit) },
+        { name: 'Odometer Detection', confidence: parseFloat(config.odometerConf), limit: parseInt(config.dailyLimit) }
+      ];
+
+      const results = [];
+      for (const item of updates) {
+        const data = await prisma.aiModule.upsert({
+          where: { name: item.name },
+          update: {
+            confidenceThreshold: isNaN(item.confidence) ? undefined : item.confidence,
+            dailyApiLimit: isNaN(item.limit) ? undefined : item.limit
+          },
+          create: {
+            name: item.name,
+            confidenceThreshold: isNaN(item.confidence) ? 85.0 : item.confidence,
+            dailyApiLimit: isNaN(item.limit) ? 1000 : item.limit
+          }
+        });
+        results.push(data);
+      }
+      return sendSuccess(res, results, HTTP_STATUS.OK);
+    }
+
+    // 2. If payload contains toggle trigger (e.g. moduleKey and isEnabled)
+    if (payload.moduleKey) {
+      const keyMap = {
+        loadParse: 'Load Parse AI',
+        receiptScan: 'Receipt Scan OCR',
+        odometer: 'Odometer Detection',
+        smartDispatch: 'Smart Dispatch',
+        etaPrediction: 'ETA Prediction',
+        chatAssistant: 'Chat Assistant'
+      };
+
+      const name = keyMap[payload.moduleKey] || payload.moduleKey;
+      const data = await prisma.aiModule.upsert({
+        where: { name },
+        update: { isActiveGlobally: payload.isEnabled === true },
+        create: {
+          name,
+          isActiveGlobally: payload.isEnabled === true
+        }
+      });
+      return sendSuccess(res, data, HTTP_STATUS.OK);
+    }
+
+    // 3. Fallback standard create with unique check
+    if (!payload.name) {
+      return sendError(res, {
+        code: ERROR_CODES.BAD_REQUEST,
+        message: 'Module name is required.'
+      }, HTTP_STATUS.BAD_REQUEST);
+    }
+
+    const data = await prisma.aiModule.upsert({
+      where: { name: payload.name },
+      update: payload,
+      create: payload
     });
     return sendSuccess(res, data, HTTP_STATUS.CREATED);
   } catch (error) {

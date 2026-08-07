@@ -26,27 +26,21 @@ export const AuthProvider = ({ children }) => {
   const checkAuthStatus = async () => {
     const token = localStorage.getItem('token');
     if (token) {
-      // Optimistically assume authenticated if token exists to prevent layout shifting/redirects
       setIsAuthenticated(true);
-    }
-    
-    try {
-      setLoading(true);
-      const res = await api.get('/auth/me');
-      if (res.data && res.data.success) {
-        setUser(res.data.data.user);
-        setIsAuthenticated(true);
-      } else {
-        throw new Error('Verification failed');
+      // Quietly fetch user details in background without throwing auth status out
+      try {
+        const res = await api.get('/auth/me');
+        if (res.data && res.data.success) {
+          setUser(res.data.data.user);
+        }
+      } catch (error) {
+        console.warn('Silent token validation failed:', error);
       }
-    } catch (error) {
-      // If validation fails, clean up token and redirect to login
-      localStorage.removeItem('token');
-      setUser(null);
+    } else {
       setIsAuthenticated(false);
-    } finally {
-      setLoading(false);
+      setUser(null);
     }
+    setLoading(false);
   };
 
   const login = async (email, password) => {

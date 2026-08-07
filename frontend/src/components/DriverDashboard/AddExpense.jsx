@@ -151,7 +151,7 @@ export default function AddExpense() {
       {/* TOP HEADER TITLE BAR */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Fuel & Expenses</h1>
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Fuel & Expenses</h1>
           <p className="text-xs font-semibold text-slate-500 mt-0.5">Record fuel and operating expenses, upload receipts & track load costs</p>
         </div>
 
@@ -175,7 +175,7 @@ export default function AddExpense() {
           {/* Module Header Card */}
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-lg font-black text-indigo-700 tracking-tight">15.8 Fuel & Expenses</span>
+              <span className="text-lg font-black text-indigo-700 tracking-tight">Fuel & Expenses</span>
               <span className="bg-purple-100 text-purple-800 border border-purple-300 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
                 Active Load
               </span>

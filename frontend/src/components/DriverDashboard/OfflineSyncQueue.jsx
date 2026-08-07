@@ -158,7 +158,7 @@ export default function OfflineSyncQueue() {
       {/* TOP HEADER TITLE BAR */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Offline Sync Queue</h1>
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Offline Sync Queue</h1>
           <p className="text-xs font-semibold text-slate-500 mt-0.5">View and manage data captured offline. Items will sync automatically when you're back online.</p>
         </div>
 
@@ -190,7 +190,7 @@ export default function OfflineSyncQueue() {
           {/* Module Header Card */}
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-lg font-black text-indigo-700 tracking-tight">15.14 Offline Sync</span>
+              <span className="text-lg font-black text-indigo-700 tracking-tight">Offline Sync</span>
               <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
                 Auto Sync
               </span>

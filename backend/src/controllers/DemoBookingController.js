@@ -13,7 +13,10 @@ exports.getAll = async (req, res, next) => {
 
     const [data, total] = await Promise.all([
       prisma.demoBooking.findMany({
-        where, skip, take, orderBy
+        where, skip, take, orderBy,
+        include: {
+          lead: { select: { companyName: true, contactName: true } }
+        }
       }),
       prisma.demoBooking.count({ where })
     ]);
@@ -50,7 +53,25 @@ exports.getById = async (req, res, next) => {
 exports.create = async (req, res, next) => {
   try {
     const payload = { ...req.body };
-    // if (req.tenantId) payload.tenantId = req.tenantId;
+
+    // Fallback: If presenterId is not a valid UUID, find a sales user
+    let validPresenter = false;
+    if (payload.presenterId && payload.presenterId.length === 36) {
+      const userExists = await prisma.user.findUnique({
+        where: { id: payload.presenterId }
+      });
+      if (userExists) validPresenter = true;
+    }
+
+    if (!validPresenter) {
+      const defaultRep = await prisma.user.findFirst({
+        where: { role: 'SALES' }
+      }) || await prisma.user.findFirst();
+      
+      if (defaultRep) {
+        payload.presenterId = defaultRep.id;
+      }
+    }
 
     const data = await prisma.demoBooking.create({
       data: payload

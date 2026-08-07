@@ -44,6 +44,61 @@ export default function AIControls() {
     setTimeout(() => setToastMsg(''), 3000);
   };
 
+  const fetchAIModuleConfig = async () => {
+    try {
+      const res = await api.get('/ai-modules');
+      if (res.data?.success && res.data.data.length > 0) {
+        const modules = res.data.data;
+        
+        // Map feature statuses
+        const statusMap = {
+          loadParse: false,
+          receiptScan: false,
+          odometer: false,
+          smartDispatch: false,
+          etaPrediction: false,
+          chatAssistant: false
+        };
+
+        const keyMap = {
+          'Load Parse AI': 'loadParse',
+          'Receipt Scan OCR': 'receiptScan',
+          'Odometer Detection': 'odometer',
+          'Smart Dispatch': 'smartDispatch',
+          'ETA Prediction': 'etaPrediction',
+          'Chat Assistant': 'chatAssistant'
+        };
+
+        modules.forEach(m => {
+          const key = keyMap[m.name];
+          if (key) {
+            statusMap[key] = m.isActiveGlobally;
+          }
+        });
+
+        setFeatures(statusMap);
+
+        // Map config values from main thresholds
+        const loadParseModule = modules.find(m => m.name === 'Load Parse AI');
+        const receiptOCRModule = modules.find(m => m.name === 'Receipt Scan OCR');
+        const odometerModule = modules.find(m => m.name === 'Odometer Detection');
+
+        setConfigForm({
+          loadParseConf: loadParseModule?.confidenceThreshold?.toString() || '85',
+          receiptOcrConf: receiptOCRModule?.confidenceThreshold?.toString() || '90',
+          odometerConf: odometerModule?.confidenceThreshold?.toString() || '95',
+          dailyLimit: (loadParseModule?.dailyApiLimit || receiptOCRModule?.dailyApiLimit || odometerModule?.dailyApiLimit || 1000).toString()
+        });
+      }
+    } catch (err) {
+      console.error('Failed to load AI module configurations:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchAIModuleConfig();
+  }, []);
+
   const toggleFeature = async (key) => {
     const newVal = !features[key];
     setFeatures(prev => ({ ...prev, [key]: newVal }));

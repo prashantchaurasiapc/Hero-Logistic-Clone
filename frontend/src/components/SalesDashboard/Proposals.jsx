@@ -38,6 +38,9 @@ export default function Proposals() {
 
   // Subscribe to crmStore
   useEffect(() => {
+    // Sync with database
+    crmRepository.syncWithBackend();
+
     const syncDb = () => {
       const db = crmRepository.getCrmDatabase();
       const list = db.crmProposals || [];
@@ -71,23 +74,13 @@ export default function Proposals() {
   }, [toast]);
 
   // Actions
-  const handleAcceptContract = (p) => {
-    crmStore.updateDb((db) => {
-      const target = (db.crmProposals || []).find(x => x.id === p.id);
-      if (target) {
-        target.status = 'ACCEPTED';
-      }
-    });
+  const handleAcceptContract = async (p) => {
+    await crmRepository.updateProposal(p.id, { status: 'Accepted' });
     setToast({ text: `Contract ACCEPTED! Client ${p.company} converted to active account successfully.` });
   };
 
-  const handleRejectContract = (p) => {
-    crmStore.updateDb((db) => {
-      const target = (db.crmProposals || []).find(x => x.id === p.id);
-      if (target) {
-        target.status = 'REJECTED';
-      }
-    });
+  const handleRejectContract = async (p) => {
+    await crmRepository.updateProposal(p.id, { status: 'Rejected' });
     setToast({ text: `Proposal for ${p.company} marked as REJECTED.` });
   };
 
@@ -127,7 +120,7 @@ Authorized Signature: _______________________
     setToast({ text: `SaaS Licensing Agreement for ${p.company} downloaded!` });
   };
 
-  const handleSaveRevision = (e) => {
+  const handleSaveRevision = async (e) => {
     e.preventDefault();
     if (!selectedProposal) return;
 
@@ -136,15 +129,12 @@ Authorized Signature: _______________________
     const newTotal = Math.round(newVal * (1 - newDisc / 100));
     const nextVer = selectedProposal.version === 'V1' ? 'V2' : `V${parseInt((selectedProposal.version || 'V1').replace('V', '')) + 1}`;
 
-    crmStore.updateDb((db) => {
-      const target = (db.crmProposals || []).find(x => x.id === selectedProposal.id);
-      if (target) {
-        target.value = newVal;
-        target.discount = newDisc;
-        target.total = newTotal;
-        target.version = nextVer;
-        target.status = 'SENT';
-      }
+    await crmRepository.updateProposal(selectedProposal.id, {
+      value: newVal,
+      discount: newDisc,
+      total: newTotal,
+      version: nextVer,
+      status: 'Sent'
     });
 
     setToast({ text: `Proposal revised to ${nextVer} ($${newTotal.toLocaleString()}/mo) for ${selectedProposal.company}!` });
@@ -154,58 +144,29 @@ Authorized Signature: _______________________
   const repsList = ['Alex Wright', 'Sarah K.', 'Michael Scott', 'Jan Levinson', 'Ryan Howard'];
 
   const getStatusStyle = (status) => {
-    if (status === 'Accepted') return 'bg-emerald-50 border border-emerald-200 text-emerald-700';
-    if (status === 'Sent') return 'bg-amber-50 border border-amber-200 text-amber-700';
-    if (status === 'Draft') return 'bg-slate-100 border border-slate-200 text-slate-600';
-    if (status === 'Rejected') return 'bg-rose-50 border border-rose-200 text-rose-700';
+    if (status === 'Accepted' || status === 'ACCEPTED') return 'bg-emerald-50 border border-emerald-200 text-emerald-700';
+    if (status === 'Sent' || status === 'SENT') return 'bg-amber-50 border border-amber-200 text-amber-700';
+    if (status === 'Draft' || status === 'DRAFT') return 'bg-slate-100 border border-slate-200 text-slate-600';
+    if (status === 'Rejected' || status === 'REJECTED') return 'bg-rose-50 border border-rose-200 text-rose-700';
     return 'bg-slate-100 text-slate-600';
   };
 
-  const handleSendProposal = (propId) => {
-    crmStore.updateDb((db) => {
-      const p = (db.crmProposals || []).find(x => x.id === propId);
-      if (p) p.status = 'Sent';
-    });
+  const handleSendProposal = async (propId) => {
+    await crmRepository.updateProposal(propId, { status: 'Sent' });
     setToast({ text: 'Proposal dispatched to client inbox successfully.' });
   };
 
-  const handleAddProposalSubmit = (e) => {
+  const handleAddProposalSubmit = async (e) => {
     e.preventDefault();
     if (!modalForm.leadId) return;
 
     const lead = leads.find(l => l.id === modalForm.leadId);
     if (!lead) return;
 
-    const total = Math.round((modalForm.value * (1 - modalForm.discount / 100)) * 1.1);
-    const now = new Date().toISOString().split('T')[0];
-
-    crmStore.updateDb((db) => {
-      if (!db.crmProposals) db.crmProposals = [];
-      db.crmProposals.unshift({
-        id: `prop_draft_${Date.now()}`,
-        leadId: modalForm.leadId,
-        title: `SaaS License Core Agreement - ${lead.company}`,
-        company: lead.company,
-        value: Number(modalForm.value),
-        discount: Number(modalForm.discount),
-        tax: 10,
-        total,
-        validity: modalForm.validity,
-        status: 'Draft',
-        version: 'V1',
-        createdDate: now,
-        notes: modalForm.notes,
-        features: [
-          'Real-Time GPS Telematics',
-          'AI Route Optimizer',
-          'Factoring & Billing API',
-          'Driver Mobile App',
-          'ELD Compliance Module',
-          'Live Customer Portal',
-          'Dispatch Board Pro',
-          'Maintenance Scheduler'
-        ]
-      });
+    await crmRepository.createProposal({
+      leadId: modalForm.leadId,
+      value: modalForm.value,
+      discount: modalForm.discount
     });
 
     setToast({ text: `Proposal drafted for ${lead.company}.` });

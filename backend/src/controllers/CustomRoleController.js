@@ -31,8 +31,7 @@ exports.getAll = async (req, res, next) => {
 
     const [data, total] = await Promise.all([
       prisma.customRole.findMany({
-        where, skip, take, orderBy,
-        include: { permissions: true, users: { select: { id: true, name: true, email: true } } }
+        where, skip, take, orderBy
       }),
       prisma.customRole.count({ where })
     ]);
@@ -51,10 +50,7 @@ exports.getById = async (req, res, next) => {
     const where = { id: req.params.id };
     if (req.tenantId) where.companyId = req.tenantId;
 
-    const data = await prisma.customRole.findFirst({
-      where,
-      include: { permissions: true, users: { select: { id: true, name: true, email: true } } }
-    });
+    const data = await prisma.customRole.findFirst({ where });
     
     if (!data) {
       return sendError(res, {
@@ -63,7 +59,7 @@ exports.getById = async (req, res, next) => {
       }, HTTP_STATUS.NOT_FOUND);
     }
     
-    return sendSuccess(res, formatRolePermissions(data));
+    return sendSuccess(res, data);
   } catch (error) {
     next(error);
   }
@@ -72,37 +68,11 @@ exports.getById = async (req, res, next) => {
 // Create new CustomRole
 exports.create = async (req, res, next) => {
   try {
-    const { name, permissions, description, companyId } = req.body;
-
-    let targetCompanyId = req.tenantId || companyId;
-    if (!targetCompanyId) {
-      const company = await prisma.company.findFirst();
-      if (company) targetCompanyId = company.id;
-    }
-
-    const permCreates = [];
-    if (permissions && typeof permissions === 'object') {
-      for (const [moduleName, actionsObj] of Object.entries(permissions)) {
-        const actionString = typeof actionsObj === 'string' ? actionsObj : JSON.stringify(actionsObj);
-        permCreates.push({
-          module: moduleName,
-          actionString
-        });
-      }
-    }
-
-    const roleData = {
-      name: name || 'Custom Role',
-      companyId: targetCompanyId,
-    };
-
-    if (permCreates.length > 0) {
-      roleData.permissions = { create: permCreates };
-    }
+    const payload = { ...req.body };
+    // if (req.tenantId) payload.tenantId = req.tenantId;
 
     const data = await prisma.customRole.create({
-      data: roleData,
-      include: { permissions: true }
+      data: payload
     });
 
     return sendSuccess(res, formatRolePermissions(data), HTTP_STATUS.CREATED);
@@ -115,42 +85,38 @@ exports.create = async (req, res, next) => {
 exports.update = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { name, permissions, companyId } = req.body;
+    const updateData = { ...req.body };
+    
+    const where = { id };
+    // if (req.tenantId) where.tenantId = req.tenantId;
 
-    const role = await prisma.customRole.findUnique({ where: { id } });
-    if (!role) {
-      return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'CustomRole not found' }, HTTP_STATUS.NOT_FOUND);
+    // Check version if optimistic concurrency is required
+    const ifMatch = req.headers['if-match'];
+    if (ifMatch) {
+      where.version = parseInt(ifMatch.replace(/"/g, ''), 10);
     }
 
-    // Replace permissions if provided
-    if (permissions && typeof permissions === 'object') {
-      await prisma.customPermission.deleteMany({ where: { roleId: id } });
-
-      const permCreates = [];
-      for (const [moduleName, actionsObj] of Object.entries(permissions)) {
-        const actionString = typeof actionsObj === 'string' ? actionsObj : JSON.stringify(actionsObj);
-        permCreates.push({
-          roleId: id,
-          module: moduleName,
-          actionString
-        });
+    try {
+      const data = await prisma.customRole.update({
+        where,
+        data: updateData
+      });
+      return sendSuccess(res, data);
+    } catch (e) {
+      if (e.code === 'P2025') {
+        if (ifMatch) {
+          return sendError(res, {
+            code: ERROR_CODES.RESOURCE_CONFLICT,
+            message: 'Resource was updated by another user or does not exist.'
+          }, HTTP_STATUS.CONFLICT);
+        }
+        return sendError(res, {
+          code: ERROR_CODES.NOT_FOUND,
+          message: 'CustomRole not found'
+        }, HTTP_STATUS.NOT_FOUND);
       }
-
-      if (permCreates.length > 0) {
-        await prisma.customPermission.createMany({ data: permCreates });
-      }
+      throw e;
     }
-
-    const updatedRole = await prisma.customRole.update({
-      where: { id },
-      data: {
-        ...(name && { name }),
-        ...(companyId && { companyId })
-      },
-      include: { permissions: true }
-    });
-
-    return sendSuccess(res, formatRolePermissions(updatedRole));
   } catch (error) {
     next(error);
   }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Settings as SettingsIcon, Palette, Clock, CreditCard, LayoutTemplate,
   Cpu, Compass, Database, Bell, FileText, Building2, CheckCircle2, Loader2
@@ -17,6 +17,114 @@ export default function Settings() {
   });
   const [auditLogs, setAuditLogs] = useState([]);
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
+  const [companyId, setCompanyId] = useState('');
+  
+  // Profile settings state
+  const [companyName, setCompanyName] = useState('Hero Logistics Ltd');
+  const [regNumber, setRegNumber] = useState('ABN 48 901 029 421');
+  const [adminEmail, setAdminEmail] = useState('admin@herologistics.com');
+  const [planName, setPlanName] = useState('Enterprise Tier Plan');
+  const [planStatus, setPlanStatus] = useState('Active');
+  const [billingCycleText, setBillingCycleText] = useState('Your next billing cycle date: 07/20/2026 (Monthly Invoice card: visa-8812)');
+
+  // Niche settings state
+  const [nicheCar, setNicheCar] = useState(true);
+  const [nicheFreight, setNicheFreight] = useState(true);
+  const [nicheHazmat, setNicheHazmat] = useState(false);
+  const [defaultNiche, setDefaultNiche] = useState('General Freight');
+
+  // Business Hours state
+  const [businessHours, setBusinessHours] = useState({
+    mondayFriday: '08:00 AM - 06:00 PM',
+    saturday: '09:00 AM - 02:00 PM',
+    sunday: 'Closed'
+  });
+
+  const [toastMsg, setToastMsg] = useState('');
+  const triggerToast = (msg) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(''), 3000);
+  };
+
+  const fetchCompanySettings = async () => {
+    try {
+      const res = await api.get('/companys');
+      if (res.data?.success && res.data.data.length > 0) {
+        const comp = res.data.data[0];
+        setCompanyId(comp.id);
+        setCompanyName(comp.name || '');
+        setRegNumber(comp.registrationNumber || '');
+        setAdminEmail(comp.adminEmail || '');
+        
+        setNicheCar(comp.nicheCarCarrying ?? false);
+        setNicheFreight(comp.nicheGeneralFreight ?? true);
+        setNicheHazmat(comp.nicheHazmat ?? false);
+        setDefaultNiche(comp.defaultNiche || 'General Freight');
+
+        if (comp.tenantSubscription) {
+          setPlanName(comp.tenantSubscription.plan?.name || 'Standard Tier');
+          setPlanStatus(comp.tenantSubscription.status || 'Active');
+        }
+
+        if (comp.defaultBusinessHours) {
+          setBusinessHours(prev => ({ ...prev, ...comp.defaultBusinessHours }));
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load company profile settings:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchCompanySettings();
+  }, []);
+
+  const handleSaveProfile = async () => {
+    if (!companyId) return;
+    try {
+      const res = await api.put(`/companys/${companyId}`, {
+        name: companyName,
+        registrationNumber: regNumber,
+        adminEmail: adminEmail
+      });
+      if (res.data?.success) {
+        triggerToast('Company profile settings saved successfully!');
+      }
+    } catch (err) {
+      triggerToast('Error saving company profile.');
+    }
+  };
+
+  const handleSaveNiche = async () => {
+    if (!companyId) return;
+    try {
+      const res = await api.put(`/companys/${companyId}`, {
+        nicheCarCarrying: nicheCar,
+        nicheGeneralFreight: nicheFreight,
+        nicheHazmat: nicheHazmat,
+        defaultNiche: defaultNiche
+      });
+      if (res.data?.success) {
+        triggerToast('Niche configuration saved successfully!');
+      }
+    } catch (err) {
+      triggerToast('Error saving niche config.');
+    }
+  };
+
+  const handleSaveHours = async () => {
+    if (!companyId) return;
+    try {
+      const res = await api.put(`/companys/${companyId}`, {
+        defaultBusinessHours: businessHours
+      });
+      if (res.data?.success) {
+        triggerToast('Terminal business hours saved successfully!');
+      }
+    } catch (err) {
+      triggerToast('Error saving business hours.');
+    }
+  };
 
   React.useEffect(() => {
     if (activeTab === 'System Audit Logs') {
@@ -27,7 +135,7 @@ export default function Settings() {
             setAuditLogs(res.data.data.map(log => ({
               id: log.id,
               ts: new Date(log.createdAt).toLocaleString(),
-              node: log.user?.name || 'System',
+              node: log.user?.name || log.operator || 'System',
               ev: log.action,
               ip: log.ipAddress || 'N/A'
             })));
@@ -54,6 +162,12 @@ export default function Settings() {
   return (
     <div className="flex-grow bg-[#F8FAFC] p-6 w-full font-sans">
       {/* Header */}
+      {toastMsg && (
+        <div className="fixed top-6 right-6 z-[9999] bg-slate-900 text-white px-5 py-3 rounded-xl shadow-xl flex items-center gap-2 text-xs font-bold animate-bounce">
+          <CheckCircle2 size={16} className="text-emerald-400" />
+          <span>{toastMsg}</span>
+        </div>
+      )}
       <div className="mb-6">
         <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
           <SettingsIcon className="w-7 h-7 text-[#FFD400]" /> Settings
@@ -93,28 +207,28 @@ export default function Settings() {
             <div className="space-y-6">
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Registered Company Name</label>
-                <input type="text" defaultValue="Hero Logistics Ltd" className="w-full px-4 py-3 bg-white border border-slate-200 text-sm font-bold rounded-xl focus:outline-none focus:border-[#FFD400] text-slate-800" />
+                <input type="text" value={companyName} onChange={e => setCompanyName(e.target.value)} className="w-full px-4 py-3 bg-white border border-slate-200 text-sm font-bold rounded-xl focus:outline-none focus:border-[#FFD400] text-slate-800" />
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Corporate Registration Number</label>
-                <input type="text" defaultValue="ABN 48 901 029 421" className="w-full px-4 py-3 bg-white border border-slate-200 text-sm font-bold rounded-xl focus:outline-none focus:border-[#FFD400] text-slate-800" />
+                <input type="text" value={regNumber} onChange={e => setRegNumber(e.target.value)} className="w-full px-4 py-3 bg-white border border-slate-200 text-sm font-bold rounded-xl focus:outline-none focus:border-[#FFD400] text-slate-800" />
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Corporate Admin Email</label>
-                <input type="text" defaultValue="admin@herologistics.com" className="w-full px-4 py-3 bg-white border border-slate-200 text-sm font-bold rounded-xl focus:outline-none focus:border-[#FFD400] text-slate-800" />
+                <input type="text" value={adminEmail} onChange={e => setAdminEmail(e.target.value)} className="w-full px-4 py-3 bg-white border border-slate-200 text-sm font-bold rounded-xl focus:outline-none focus:border-[#FFD400] text-slate-800" />
               </div>
               <div className="pt-2">
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Platform Membership Subscription</label>
                 <div className="border border-slate-200 rounded-xl p-5 bg-slate-50/20">
                   <div className="flex justify-between items-center mb-1">
-                    <span className="font-extrabold text-slate-800 text-sm">Enterprise Tier Plan</span>
-                    <span className="text-xs font-black text-slate-900 bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">Active</span>
+                    <span className="font-extrabold text-slate-800 text-sm">{planName}</span>
+                    <span className="text-xs font-black text-slate-900 bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">{planStatus}</span>
                   </div>
-                  <p className="text-xs font-medium text-slate-400">Your next billing cycle date: 07/20/2026 (Monthly Invoice card: visa-8812)</p>
+                  <p className="text-xs font-medium text-slate-400">{billingCycleText}</p>
                 </div>
               </div>
               <div className="pt-4">
-                <button className="w-full bg-[#FFD400] text-black font-extrabold text-sm py-3.5 rounded-xl hover:bg-[#FFC800] transition-colors">
+                <button onClick={handleSaveProfile} className="w-full bg-[#FFD400] text-black font-extrabold text-sm py-3.5 rounded-xl hover:bg-[#FFC800] transition-colors">
                   Save Company Profile
                 </button>
               </div>
@@ -181,7 +295,7 @@ export default function Settings() {
               <div className="bg-slate-600 rounded-xl p-5 flex justify-between items-center text-white">
                 <div>
                   <h4 className="text-sm font-extrabold mb-1 text-slate-50">Monday - Friday</h4>
-                  <p className="text-xs font-semibold text-slate-300">08:00 AM - 06:00 PM</p>
+                  <input type="text" value={businessHours.mondayFriday} onChange={e => setBusinessHours({ ...businessHours, mondayFriday: e.target.value })} className="bg-slate-700 text-xs font-semibold text-slate-100 px-2 py-1 rounded focus:outline-none border border-slate-500 mt-1" />
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-xs font-extrabold text-slate-50">Open</span>
@@ -192,7 +306,7 @@ export default function Settings() {
               <div className="bg-slate-600 rounded-xl p-5 flex justify-between items-center text-white">
                 <div>
                   <h4 className="text-sm font-extrabold mb-1 text-slate-50">Saturday</h4>
-                  <p className="text-xs font-semibold text-slate-300">09:00 AM - 02:00 PM</p>
+                  <input type="text" value={businessHours.saturday} onChange={e => setBusinessHours({ ...businessHours, saturday: e.target.value })} className="bg-slate-700 text-xs font-semibold text-slate-100 px-2 py-1 rounded focus:outline-none border border-slate-500 mt-1" />
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-xs font-extrabold text-slate-50">Open</span>
@@ -203,7 +317,7 @@ export default function Settings() {
               <div className="bg-slate-600 rounded-xl p-5 flex justify-between items-center text-white">
                 <div>
                   <h4 className="text-sm font-extrabold mb-1 text-slate-50">Sunday</h4>
-                  <p className="text-xs font-semibold text-slate-300">Closed</p>
+                  <input type="text" value={businessHours.sunday} onChange={e => setBusinessHours({ ...businessHours, sunday: e.target.value })} className="bg-slate-700 text-xs font-semibold text-slate-100 px-2 py-1 rounded focus:outline-none border border-slate-500 mt-1" />
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-xs font-extrabold text-rose-400">Closed</span>
@@ -212,7 +326,7 @@ export default function Settings() {
               </div>
             </div>
 
-            <button className="w-full bg-[#FFD400] text-black font-extrabold text-sm py-3.5 rounded-xl hover:bg-[#FFC800] transition-colors">
+            <button onClick={handleSaveHours} className="w-full bg-[#FFD400] text-black font-extrabold text-sm py-3.5 rounded-xl hover:bg-[#FFC800] transition-colors">
               Save Default Hours
             </button>
           </div>
@@ -353,34 +467,34 @@ export default function Settings() {
                   <h4 className="text-sm font-extrabold mb-0.5 text-slate-50">Car Carrying & Transport</h4>
                   <p className="text-xs font-medium text-slate-400">Enables VIN, condition reports, holding yard flows, and asset registers.</p>
                 </div>
-                <input type="checkbox" defaultChecked className="w-5 h-5 rounded text-blue-500 focus:ring-blue-500 border-none cursor-pointer bg-white" />
+                <input type="checkbox" checked={nicheCar} onChange={e => setNicheCar(e.target.checked)} className="w-5 h-5 rounded text-blue-500 focus:ring-blue-500 border-none cursor-pointer bg-white" />
               </div>
               <div className="bg-slate-600 rounded-xl p-5 flex justify-between items-center text-white">
                 <div>
                   <h4 className="text-sm font-extrabold mb-0.5 text-slate-50">General Freight</h4>
                   <p className="text-xs font-medium text-slate-400">Enables pallet count, dimensions, cargo weight, and dry silos.</p>
                 </div>
-                <input type="checkbox" defaultChecked className="w-5 h-5 rounded text-blue-500 focus:ring-blue-500 border-none cursor-pointer bg-white" />
+                <input type="checkbox" checked={nicheFreight} onChange={e => setNicheFreight(e.target.checked)} className="w-5 h-5 rounded text-blue-500 focus:ring-blue-500 border-none cursor-pointer bg-white" />
               </div>
               <div className="bg-slate-600 rounded-xl p-5 flex justify-between items-center text-white">
                 <div>
                   <h4 className="text-sm font-extrabold mb-0.5 text-slate-50">Dangerous Goods (HAZMAT)</h4>
                   <p className="text-xs font-medium text-slate-400">Enables UN Class, Hazchem chemical codes, and trailer placards.</p>
                 </div>
-                <input type="checkbox" defaultChecked className="w-5 h-5 rounded text-blue-500 focus:ring-blue-500 border-none cursor-pointer bg-white" />
+                <input type="checkbox" checked={nicheHazmat} onChange={e => setNicheHazmat(e.target.checked)} className="w-5 h-5 rounded text-blue-500 focus:ring-blue-500 border-none cursor-pointer bg-white" />
               </div>
             </div>
 
             <div className="mb-6">
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Default Niche Selection</label>
-              <select className="w-full px-4 py-3 bg-white border border-slate-200 text-sm font-bold rounded-xl focus:outline-none focus:border-[#FFD400] text-slate-800 cursor-pointer">
-                <option>Car Carrying</option>
-                <option>General Freight</option>
-                <option>Dangerous Goods</option>
+              <select value={defaultNiche} onChange={e => setDefaultNiche(e.target.value)} className="w-full px-4 py-3 bg-white border border-slate-200 text-sm font-bold rounded-xl focus:outline-none focus:border-[#FFD400] text-slate-800 cursor-pointer">
+                <option value="Car Carrying">Car Carrying</option>
+                <option value="General Freight">General Freight</option>
+                <option value="Dangerous Goods">Dangerous Goods</option>
               </select>
             </div>
 
-            <button className="w-full bg-[#FFD400] text-black font-extrabold text-sm py-3.5 rounded-xl hover:bg-[#FFC800] transition-colors">
+            <button onClick={handleSaveNiche} className="w-full bg-[#FFD400] text-black font-extrabold text-sm py-3.5 rounded-xl hover:bg-[#FFC800] transition-colors">
               Save Niche Setup
             </button>
           </div>

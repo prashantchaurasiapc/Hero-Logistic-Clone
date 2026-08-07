@@ -1033,64 +1033,128 @@ export default function CompanySettings() {
   // Subscription & Billing State (13.9)
   const [isRefreshingBilling, setIsRefreshingBilling] = useState(false);
   const [isManageSubscriptionModalOpen, setIsManageSubscriptionModalOpen] = useState(false);
+  const [billingData, setBillingData] = useState(null);
+  const [billingDataLoading, setBillingDataLoading] = useState(false);
+  const [availablePlans, setAvailablePlans] = useState([]);
+  const [isSubmittingSubscription, setIsSubmittingSubscription] = useState(false);
   const [manageSubscriptionForm, setManageSubscriptionForm] = useState({
-    plan: 'Hero Pro ($499/mo)',
-    billingCycle: 'Monthly',
+    plan: '',
+    planId: '',
+    billingCycle: 'MONTHLY',
     userSeats: 50,
-    aiAddon: true,
-    reportingAddon: true,
-    smsAddon: true
+    aiAddon: false,
+    reportingAddon: false,
+    smsAddon: false
   });
 
-  const handleRefreshBilling = () => {
+  const fetchSubscriptionBilling = useCallback(async () => {
+    try {
+      setBillingDataLoading(true);
+      const res = await api.get('/company-admin/subscription-billing');
+      const data = res.data?.data || res.data;
+      setBillingData(data);
+      // Pre-fill modal form from live data
+      if (data?.plan) {
+        setManageSubscriptionForm(prev => ({
+          ...prev,
+          plan: data.plan.name,
+          planId: data.plan.id,
+          billingCycle: data.subscription?.billingPeriod || 'MONTHLY',
+          aiAddon: data.addons?.find(a => a.name?.toLowerCase().includes('ai'))?.isEnabled || false,
+          reportingAddon: data.addons?.find(a => a.name?.toLowerCase().includes('report'))?.isEnabled || false,
+          smsAddon: data.addons?.find(a => a.name?.toLowerCase().includes('sms'))?.isEnabled || false,
+        }));
+      }
+    } catch (err) {
+      console.error('Failed to load subscription billing data:', err);
+    } finally {
+      setBillingDataLoading(false);
+    }
+  }, []);
+
+  const fetchAvailablePlans = useCallback(async () => {
+    try {
+      const res = await api.get('/company-admin/subscription-billing/plans');
+      const plans = res.data?.data || res.data || [];
+      setAvailablePlans(plans);
+      setManageSubscriptionForm(prev => ({
+        ...prev,
+        planId: prev.planId || plans[0]?.id || ''
+      }));
+    } catch (err) {
+      console.error('Failed to load plans:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (currentView === 'subscription-billing') {
+      fetchSubscriptionBilling();
+      fetchAvailablePlans();
+    }
+  }, [currentView, fetchSubscriptionBilling, fetchAvailablePlans]);
+
+  const handleRefreshBilling = async () => {
     setIsRefreshingBilling(true);
     triggerToast('Refreshing subscription plan & usage data...');
-    setTimeout(() => {
-      setIsRefreshingBilling(false);
-      triggerToast('Subscription & billing data updated!');
-    }, 1000);
+    await fetchSubscriptionBilling();
+    setIsRefreshingBilling(false);
+    triggerToast('Subscription & billing data updated!');
   };
 
   const handleDownloadStatement = () => {
-    const headers = "BillingCycle,InvoiceNumber,Date,Description,Subtotal,GST,TotalAUD,Status,PaymentMethod\n";
-    const rows = [
-      'May 2025,"INV-2025-0529","29 May 2025","Monthly Subscription - May 2025","$777.00","$77.70","$854.70","Paid","Visa •••• 4242"',
-      'Apr 2025,"INV-2025-0429","29 Apr 2025","Monthly Subscription - April 2025","$777.00","$77.70","$854.70","Paid","Visa •••• 4242"',
-      'Mar 2025,"INV-2025-0329","29 Mar 2025","Monthly Subscription - March 2025","$777.00","$77.70","$854.70","Paid","Visa •••• 4242"',
-      'Feb 2025,"INV-2025-0228","28 Feb 2025","Monthly Subscription - February 2025","$777.00","$77.70","$854.70","Paid","Visa •••• 4242"',
-      'Jan 2025,"INV-2025-0129","29 Jan 2025","Monthly Subscription - January 2025","$777.00","$77.70","$854.70","Paid","Visa •••• 4242"'
-    ].join("\n");
+    const records = billingData?.billingRecords || [];
+    const headers = "InvoiceNumber,Date,Description,Amount,Tax,Status,PaymentMethod\n";
+    const rows = records.map(r =>
+      `"${r.invoiceNumber}","${r.date ? new Date(r.date).toLocaleDateString() : ''}","${r.planTierSnapshot || 'Subscription'}","$${r.amount?.toFixed(2)}","$${(r.taxAmount || 0).toFixed(2)}","${r.status}","${r.paymentMethod || ''}"` 
+    ).join('\n');
     const blob = new Blob([headers + rows], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `billing_statement_may_2025_${Date.now()}.csv`;
+    a.download = `billing_statement_${Date.now()}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
     triggerToast('Billing statement downloaded successfully!');
   };
 
-  const handleDownloadSingleInvoice = (invNumber) => {
-    const content = `Invoice Number: ${invNumber}\nCompany: Hero Logistics Pty Ltd\nPlan: Hero Pro ($499.00)\nAI Add-on: $199.00\nReporting Add-on: $99.00\nSMS Credits: $29.00\nDiscount: -$49.00\nSubtotal: $777.00\nGST (10%): $77.70\nTotal Amount Paid: $854.70 AUD\nPayment Method: Visa ending in 4242\nStatus: PAID`;
+  const handleDownloadSingleInvoice = (inv) => {
+    const invNum = typeof inv === 'string' ? inv : (inv.invoiceNumber || inv);
+    const amt = inv.amount ? `$${Number(inv.amount).toFixed(2)}` : '';
+    const tax = inv.taxAmount ? `$${Number(inv.taxAmount).toFixed(2)}` : '';
+    const content = `Invoice Number: ${invNum}\nDate: ${inv.date ? new Date(inv.date).toLocaleDateString() : ''}\nPlan: ${inv.planTierSnapshot || 'Subscription'}\nAmount: ${amt}\nTax (10%): ${tax}\nStatus: ${inv.status || 'PAID'}\nPayment Method: ${inv.paymentMethod || ''}`;
     const blob = new Blob([content], { type: 'text/plain' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${invNumber}.txt`;
+    a.download = `${invNum}.txt`;
     a.click();
     window.URL.revokeObjectURL(url);
-    triggerToast(`Invoice ${invNumber} downloaded successfully!`);
+    triggerToast(`Invoice ${invNum} downloaded successfully!`);
   };
 
-  const handleSaveManageSubscriptionSubmit = (e) => {
+  const handleSaveManageSubscriptionSubmit = async (e) => {
     e.preventDefault();
-    triggerToast('Subscription plan updated successfully!');
-    setIsManageSubscriptionModalOpen(false);
+    setIsSubmittingSubscription(true);
+    const targetPlanId = manageSubscriptionForm.planId || billingData?.plan?.id || availablePlans[0]?.id;
+    try {
+      await api.put('/company-admin/subscription-billing/plan', {
+        planId: targetPlanId || undefined,
+        billingPeriod: manageSubscriptionForm.billingCycle,
+        addonIds: [],
+      });
+      triggerToast('Subscription plan updated successfully!');
+      setIsManageSubscriptionModalOpen(false);
+      await fetchSubscriptionBilling();
+    } catch (err) {
+      triggerToast('Failed to update subscription. Please try again.');
+      console.error('Subscription update error:', err);
+    } finally {
+      setIsSubmittingSubscription(false);
+    }
   };
 
   // Company Settings 13.2 Handlers
   const [isRefreshingCompanySettings, setIsRefreshingCompanySettings] = useState(false);
-  const [isSavingCompanySettings, setIsSavingCompanySettings] = useState(false);
 
   const handleRefreshCompanySettings = () => {
     setIsRefreshingCompanySettings(true);
@@ -7201,12 +7265,47 @@ export default function CompanySettings() {
               {/* 6 METRIC CARDS */}
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                 {[
-                  { icon: <Crown size={16} />, bg: 'bg-purple-100 text-purple-600', border: 'hover:border-purple-200', label: 'CURRENT PLAN', value: 'Hero Pro', link: 'View plan details →', onClick: () => setBillingTab('Plan & Usage') },
-                  { icon: <Calendar size={16} />, bg: 'bg-[#DCFCE7] text-[#16A34A]', border: 'hover:border-emerald-200', label: 'BILLING CYCLE', value: 'Monthly', subText: 'Next billing: 30 Jun 2025', link: 'Change billing cycle →', onClick: () => setIsManageSubscriptionModalOpen(true) },
-                  { icon: <DollarSign size={16} />, bg: 'bg-[#DBEAFE] text-[#2563EB]', border: 'hover:border-blue-200', label: 'AMOUNT DUE', value: '$0.00', subText: 'Paid up to 30 Jun 2025', link: 'View invoices →', onClick: () => setBillingTab('Invoices') },
-                  { icon: <Activity size={16} />, bg: 'bg-amber-100 text-amber-600', border: 'hover:border-amber-200', label: 'USAGE STATUS', value: '76%', subText: 'Overall usage this month', link: 'View usage →', onClick: () => setBillingTab('Plan & Usage') },
-                  { icon: <Users size={16} />, bg: 'bg-teal-100 text-teal-600', border: 'hover:border-teal-200', label: 'ACTIVE USERS', value: '24 / 50', subText: 'Users in your plan', link: 'Manage users →', onClick: () => setCurrentView('users-permissions') },
-                  { icon: <Clock size={16} />, bg: 'bg-rose-100 text-rose-600', border: 'hover:border-rose-200', label: 'DAYS LEFT IN CYCLE', value: '18 days', subText: 'Until 30 Jun 2025', link: 'View billing schedule →', onClick: () => setBillingTab('Billing History') },
+                  {
+                    icon: <Crown size={16} />, bg: 'bg-purple-100 text-purple-600', border: 'hover:border-purple-200',
+                    label: 'CURRENT PLAN',
+                    value: billingDataLoading ? '—' : (billingData?.plan?.name || 'No Plan'),
+                    link: 'View plan details →', onClick: () => setBillingTab('Plan & Usage')
+                  },
+                  {
+                    icon: <Calendar size={16} />, bg: 'bg-[#DCFCE7] text-[#16A34A]', border: 'hover:border-emerald-200',
+                    label: 'BILLING CYCLE',
+                    value: billingDataLoading ? '—' : (billingData?.subscription?.billingPeriod === 'ANNUALLY' ? 'Annual' : 'Monthly'),
+                    subText: billingData?.subscription?.nextBillingDate ? `Next billing: ${new Date(billingData.subscription.nextBillingDate).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}` : '',
+                    link: 'Change billing cycle →', onClick: () => setIsManageSubscriptionModalOpen(true)
+                  },
+                  {
+                    icon: <DollarSign size={16} />, bg: 'bg-[#DBEAFE] text-[#2563EB]', border: 'hover:border-blue-200',
+                    label: 'AMOUNT DUE',
+                    value: billingDataLoading ? '—' : `$${(billingData?.subscription?.amountDue || 0).toFixed(2)}`,
+                    subText: billingData?.subscription?.nextBillingDate ? `Due: ${new Date(billingData.subscription.nextBillingDate).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}` : 'No amount due',
+                    link: 'View invoices →', onClick: () => setBillingTab('Invoices')
+                  },
+                  {
+                    icon: <Activity size={16} />, bg: 'bg-amber-100 text-amber-600', border: 'hover:border-amber-200',
+                    label: 'USAGE STATUS',
+                    value: billingDataLoading ? '—' : `${billingData?.usage?.overallUsagePercent || 0}%`,
+                    subText: 'Overall usage this month',
+                    link: 'View usage →', onClick: () => setBillingTab('Plan & Usage')
+                  },
+                  {
+                    icon: <Users size={16} />, bg: 'bg-teal-100 text-teal-600', border: 'hover:border-teal-200',
+                    label: 'ACTIVE USERS',
+                    value: billingDataLoading ? '—' : `${billingData?.usage?.activeUsers || 0} / ${billingData?.usage?.userLimit || 0}`,
+                    subText: 'Users in your plan',
+                    link: 'Manage users →', onClick: () => setCurrentView('users-permissions')
+                  },
+                  {
+                    icon: <Clock size={16} />, bg: 'bg-rose-100 text-rose-600', border: 'hover:border-rose-200',
+                    label: 'DAYS LEFT IN CYCLE',
+                    value: billingDataLoading ? '—' : (billingData?.subscription?.daysLeftInCycle != null ? `${billingData.subscription.daysLeftInCycle} days` : '—'),
+                    subText: billingData?.subscription?.nextBillingDate ? `Until ${new Date(billingData.subscription.nextBillingDate).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}` : '',
+                    link: 'View billing schedule →', onClick: () => setBillingTab('Billing History')
+                  },
                 ].map((card, i) => (
                   <div key={i} className={`bg-white rounded-xl border border-slate-200/80 p-3 shadow-2xs flex flex-col justify-between ${card.border} transition-all text-left`}>
                     <div className="flex items-start gap-2">
@@ -7259,7 +7358,6 @@ export default function CompanySettings() {
                         View Plan Features
                       </button>
                     </div>
-
                     {/* SUB-COL 2: PLAN USAGE (THIS MONTH) */}
                     <div className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3.5 space-y-3 flex flex-col justify-between">
                       <div className="space-y-2.5">
@@ -7268,12 +7366,13 @@ export default function CompanySettings() {
                           <button onClick={() => setBillingTab('Plan & Usage')} className="text-[9px] font-bold text-[#2563EB] hover:underline cursor-pointer">View full usage →</button>
                         </div>
 
-                        {[
-                          { label: 'Users', val: '24 / 50 (48%)', pct: 48 },
-                          { label: 'Loads', val: '1,240 / 2,000 (62%)', pct: 62 },
-                          { label: 'Storage', val: '152 GB / 200 GB (76%)', pct: 76 },
-                          { label: 'API Calls', val: '76,542 / 100,000 (77%)', pct: 77 },
-                          { label: 'AI Requests (Add-on)', val: '8,450 / 15,000 (56%)', pct: 56 },
+                        {billingDataLoading ? (
+                          <div className="py-2 text-center text-[10px] font-semibold text-slate-400">Loading usage data...</div>
+                        ) : [
+                          { label: 'Users', val: `${billingData?.usage?.activeUsers || 0} / ${billingData?.usage?.userLimit || 0}`, pct: billingData?.usage?.userLimit > 0 ? Math.round((billingData.usage.activeUsers / billingData.usage.userLimit) * 100) : 0 },
+                          { label: 'Monthly Loads', val: `${billingData?.usage?.monthlyLoads || 0}`, pct: 0 },
+                          { label: 'Storage', val: `${billingData?.usage?.storageUsedGB || 0} GB / ${billingData?.usage?.storageLimitGB || 0} GB`, pct: billingData?.usage?.storageLimitGB > 0 ? Math.round((billingData.usage.storageUsedGB / billingData.usage.storageLimitGB) * 100) : 0 },
+                          { label: 'API Calls', val: `${(billingData?.usage?.apiCallsThisMonth || 0).toLocaleString()} / ${(billingData?.usage?.apiLimit || 0).toLocaleString()}`, pct: billingData?.usage?.apiLimit > 0 ? Math.round((billingData.usage.apiCallsThisMonth / billingData.usage.apiLimit) * 100) : 0 },
                         ].map((item, i) => (
                           <div key={i} className="space-y-1">
                             <div className="flex justify-between text-[9.5px] font-semibold">
@@ -7296,22 +7395,20 @@ export default function CompanySettings() {
                           <button onClick={() => setBillingTab('Add-ons')} className="text-[9px] font-bold text-[#2563EB] hover:underline cursor-pointer">Manage Add-ons →</button>
                         </div>
 
-                        {[
-                          { icon: <Cpu size={14} />, iconBg: 'bg-purple-100 text-purple-600', name: 'Hero AI Add-on', price: '$199.00 / month', sub: '15,000 requests included', status: 'Active', statusBg: 'bg-emerald-100 text-emerald-700' },
-                          { icon: <BarChart2 size={14} />, iconBg: 'bg-blue-100 text-blue-600', name: 'Advanced Reporting', price: '$99.00 / month', sub: 'Unlimited reports & dashboards', status: 'Active', statusBg: 'bg-emerald-100 text-emerald-700' },
-                          { icon: <HardDrive size={14} />, iconBg: 'bg-amber-100 text-amber-600', name: 'Extra Storage (500GB)', price: '$49.00 / month', sub: '500 GB additional storage', status: 'Inactive', statusBg: 'bg-slate-200 text-slate-600' },
-                          { icon: <MessageSquare size={14} />, iconBg: 'bg-emerald-100 text-emerald-600', name: 'SMS Notifications', price: '$29.00 / month', sub: '2,000 SMS credits / month', status: 'Active', statusBg: 'bg-emerald-100 text-emerald-700' },
-                        ].map((addon, i) => (
+                        {billingDataLoading ? (
+                          <div className="py-2 text-center text-[10px] font-semibold text-slate-400">Loading add-ons...</div>
+                        ) : (billingData?.addons?.length || 0) === 0 ? (
+                          <div className="py-2 text-center text-[10px] font-semibold text-slate-400">No add-ons configured for this plan.</div>
+                        ) : billingData.addons.map((addon, i) => (
                           <div key={i} className="flex items-center justify-between p-1.5 bg-white rounded-lg border border-slate-200/70">
                             <div className="flex items-center gap-2">
-                              <div className={`w-6 h-6 rounded-md ${addon.iconBg} flex items-center justify-center shrink-0`}>{addon.icon}</div>
+                              <div className="w-6 h-6 rounded-md bg-purple-100 text-purple-600 flex items-center justify-center shrink-0"><Cpu size={14} /></div>
                               <div>
                                 <div className="text-[10px] font-extrabold text-slate-900 leading-tight">{addon.name}</div>
-                                <div className="text-[8.5px] font-semibold text-slate-500 leading-tight">{addon.price}</div>
-                                <div className="text-[7.5px] font-medium text-slate-400 leading-tight">{addon.sub}</div>
+                                <div className="text-[7.5px] font-medium text-slate-400 leading-tight">{addon.description || ''}</div>
                               </div>
                             </div>
-                            <span className={`px-1.5 py-0.2 rounded text-[8px] font-black uppercase ${addon.statusBg}`}>{addon.status}</span>
+                            <span className={`px-1.5 py-0.2 rounded text-[8px] font-black uppercase ${addon.isEnabled ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>{addon.isEnabled ? 'Active' : 'Inactive'}</span>
                           </div>
                         ))}
                       </div>
@@ -7329,19 +7426,28 @@ export default function CompanySettings() {
                     </div>
 
                     <div className="space-y-2.5 text-[11px] pt-1">
-                      <div className="flex justify-between font-semibold text-slate-700"><span>Plan (Hero Pro)</span><span className="font-black text-slate-900">$499.00</span></div>
-                      <div className="flex justify-between font-semibold text-slate-700"><span>Hero AI Add-on</span><span className="font-black text-slate-900">$199.00</span></div>
-                      <div className="flex justify-between font-semibold text-slate-700"><span>Advanced Reporting</span><span className="font-black text-slate-900">$99.00</span></div>
-                      <div className="flex justify-between font-semibold text-slate-700"><span>SMS Notifications</span><span className="font-black text-slate-900">$29.00</span></div>
-                      <div className="flex justify-between font-semibold text-emerald-600"><span>Discount</span><span className="font-black">-$49.00</span></div>
-                      <div className="pt-2 border-t border-slate-100 flex justify-between font-semibold text-slate-700"><span>Subtotal</span><span className="font-black text-slate-900">$777.00</span></div>
-                      <div className="flex justify-between font-semibold text-slate-700"><span>GST (10%)</span><span className="font-black text-slate-900">$77.70</span></div>
+                      {billingDataLoading ? (
+                        <div className="py-3 text-center text-[10px] font-semibold text-slate-400">Loading billing summary...</div>
+                      ) : billingData?.plan ? (
+                        <>
+                          <div className="flex justify-between font-semibold text-slate-700"><span>Plan ({billingData.plan.name})</span><span className="font-black text-slate-900">${(billingData.plan.monthlyPrice || 0).toFixed(2)}</span></div>
+                          {billingData.addons?.filter(a => a.isEnabled).map((addon, i) => (
+                            <div key={i} className="flex justify-between font-semibold text-slate-700"><span>{addon.name}</span><span className="font-black text-slate-900">Active</span></div>
+                          ))}
+                          {(billingData.subscription?.discountApplied || 0) > 0 && (
+                            <div className="flex justify-between font-semibold text-emerald-600"><span>Discount</span><span className="font-black">-${billingData.subscription.discountApplied.toFixed(2)}</span></div>
+                          )}
+                          <div className="pt-2 border-t border-slate-100 flex justify-between font-semibold text-slate-700"><span>Amount Due</span><span className="font-black text-slate-900">${(billingData.subscription?.amountDue || 0).toFixed(2)}</span></div>
+                        </>
+                      ) : (
+                        <div className="py-3 text-center text-[10px] font-semibold text-slate-400">No billing summary available. No active plan found.</div>
+                      )}
                     </div>
                   </div>
 
                   <div className="pt-3 border-t border-slate-200 flex items-center justify-between">
                     <span className="text-xs font-black text-slate-900 uppercase">Total (AUD)</span>
-                    <span className="text-2xl font-black text-[#2563EB] leading-none">$854.70</span>
+                    <span className="text-2xl font-black text-[#2563EB] leading-none">${(billingData?.subscription?.amountDue || 0).toFixed(2)}</span>
                   </div>
                 </div>
 
@@ -7370,22 +7476,20 @@ export default function CompanySettings() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {[
-                          { inv: 'INV-2025-0529', date: '29 May 2025', desc: 'Monthly Subscription - May 2025', amt: '$854.70', status: 'Paid', pm: 'Visa •••• 4242' },
-                          { inv: 'INV-2025-0429', date: '29 Apr 2025', desc: 'Monthly Subscription - April 2025', amt: '$854.70', status: 'Paid', pm: 'Visa •••• 4242' },
-                          { inv: 'INV-2025-0329', date: '29 Mar 2025', desc: 'Monthly Subscription - March 2025', amt: '$854.70', status: 'Paid', pm: 'Visa •••• 4242' },
-                          { inv: 'INV-2025-0228', date: '28 Feb 2025', desc: 'Monthly Subscription - February 2025', amt: '$854.70', status: 'Paid', pm: 'Visa •••• 4242' },
-                          { inv: 'INV-2025-0129', date: '29 Jan 2025', desc: 'Monthly Subscription - January 2025', amt: '$854.70', status: 'Paid', pm: 'Visa •••• 4242' },
-                        ].map((row, i) => (
+                        {billingDataLoading ? (
+                          <tr><td colSpan={7} className="py-8 text-center text-[10px] font-semibold text-slate-400">Loading invoices...</td></tr>
+                        ) : (billingData?.billingRecords?.length || 0) === 0 ? (
+                          <tr><td colSpan={7} className="py-8 text-center text-[10px] font-semibold text-slate-400">No invoices found. Invoices will appear here once your first billing cycle completes.</td></tr>
+                        ) : billingData.billingRecords.slice(0, 5).map((row, i) => (
                           <tr key={i} className="hover:bg-blue-50/30 transition-colors">
-                            <td className="py-2 px-2 whitespace-nowrap"><span className="text-[10px] font-extrabold text-[#2563EB]">{row.inv}</span></td>
-                            <td className="py-2 px-2 whitespace-nowrap"><span className="text-[9.5px] font-semibold text-slate-500">{row.date}</span></td>
-                            <td className="py-2 px-2 whitespace-nowrap"><span className="text-[9.5px] font-bold text-slate-800 whitespace-nowrap">{row.desc}</span></td>
-                            <td className="py-2 px-2 whitespace-nowrap"><span className="text-[10px] font-black text-slate-900">{row.amt}</span></td>
-                            <td className="py-2 px-2 whitespace-nowrap"><span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-700 text-[9px] font-black uppercase">{row.status}</span></td>
-                            <td className="py-2 px-2 whitespace-nowrap"><span className="text-[9px] font-medium text-slate-600">{row.pm}</span></td>
+                            <td className="py-2 px-2 whitespace-nowrap"><span className="text-[10px] font-extrabold text-[#2563EB]">{row.invoiceNumber || '—'}</span></td>
+                            <td className="py-2 px-2 whitespace-nowrap"><span className="text-[9.5px] font-semibold text-slate-500">{row.date ? new Date(row.date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</span></td>
+                            <td className="py-2 px-2 whitespace-nowrap"><span className="text-[9.5px] font-bold text-slate-800 whitespace-nowrap">{row.planTierSnapshot || 'Subscription'}</span></td>
+                            <td className="py-2 px-2 whitespace-nowrap"><span className="text-[10px] font-black text-slate-900">${(row.amount || 0).toFixed(2)}</span></td>
+                            <td className="py-2 px-2 whitespace-nowrap"><span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase ${row.status === 'PAID' ? 'bg-emerald-100 text-emerald-700' : row.status === 'OVERDUE' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'}`}>{row.status}</span></td>
+                            <td className="py-2 px-2 whitespace-nowrap"><span className="text-[9px] font-medium text-slate-600">{row.paymentMethod || '—'}</span></td>
                             <td className="py-2 px-2 text-center whitespace-nowrap">
-                              <button onClick={() => handleDownloadSingleInvoice(row.inv)} className="p-1 hover:bg-slate-100 text-slate-500 hover:text-[#2563EB] rounded-lg cursor-pointer">
+                              <button onClick={() => handleDownloadSingleInvoice(row)} className="p-1 hover:bg-slate-100 text-slate-500 hover:text-[#2563EB] rounded-lg cursor-pointer">
                                 <Download size={13} />
                               </button>
                             </td>
@@ -7395,16 +7499,8 @@ export default function CompanySettings() {
                     </table>
                   </div>
                   <div className="flex flex-col sm:flex-row justify-between items-center gap-2 pt-2 border-t border-slate-100 text-[11px] font-semibold text-slate-500">
-                    <span>Showing 1 to 5 of 12 invoices</span>
-                    <div className="flex items-center gap-1">
-                      <button className="px-2 py-0.5 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-400 text-xs">|‹</button>
-                      <button className="px-2 py-0.5 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-400 text-xs">‹</button>
-                      <button className="px-2.5 py-0.5 bg-[#2563EB] text-white font-bold rounded-md text-xs">1</button>
-                      <button className="px-2.5 py-0.5 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-700 font-bold text-xs">2</button>
-                      <button className="px-2.5 py-0.5 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-700 font-bold text-xs">3</button>
-                      <button className="px-2 py-0.5 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-700 font-bold text-xs">›</button>
-                      <button className="px-2 py-0.5 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-700 font-bold text-xs">›|</button>
-                    </div>
+                    <span>Showing {Math.min(5, billingData?.billingRecords?.length || 0)} of {billingData?.billingRecords?.length || 0} recent invoices</span>
+                    <button onClick={() => setBillingTab('Invoices')} className="text-[10px] font-bold text-[#2563EB] hover:underline cursor-pointer">View all invoices →</button>
                   </div>
                 </div>
 
@@ -7417,18 +7513,24 @@ export default function CompanySettings() {
                       <button onClick={() => setBillingTab('Payment Methods')} className="text-[10px] font-bold text-[#2563EB] hover:underline cursor-pointer">Manage →</button>
                     </div>
 
-                    <div className="flex items-center justify-between p-2.5 bg-slate-50/80 rounded-xl border border-slate-200/80">
-                      <div className="flex items-center gap-2.5">
-                        <div className="px-2 py-1 bg-[#1A1F71] text-white rounded font-extrabold text-[10px] tracking-wider italic">
-                          VISA
+                    {billingDataLoading ? (
+                      <div className="py-3 text-center text-[10px] font-semibold text-slate-400">Loading payment method...</div>
+                    ) : billingData?.paymentMethod?.cardLast4 ? (
+                      <div className="flex items-center justify-between p-2.5 bg-slate-50/80 rounded-xl border border-slate-200/80">
+                        <div className="flex items-center gap-2.5">
+                          <div className="px-2 py-1 bg-[#1A1F71] text-white rounded font-extrabold text-[10px] tracking-wider italic">
+                            {billingData.paymentMethod.cardBrand?.toUpperCase() || 'CARD'}
+                          </div>
+                          <div>
+                            <div className="text-xs font-black text-slate-900">{billingData.paymentMethod.cardBrand || 'Card'} ending in {billingData.paymentMethod.cardLast4}</div>
+                            {billingData.paymentMethod.cardExpiry && <div className="text-[9px] font-semibold text-slate-400">Expires {billingData.paymentMethod.cardExpiry}</div>}
+                          </div>
                         </div>
-                        <div>
-                          <div className="text-xs font-black text-slate-900">Visa ending in 4242</div>
-                          <div className="text-[9px] font-semibold text-slate-400">Expires 04/27</div>
-                        </div>
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[8.5px] font-black uppercase">Primary</span>
                       </div>
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[8.5px] font-black uppercase">Primary</span>
-                    </div>
+                    ) : (
+                      <div className="py-3 text-center text-[10px] font-semibold text-slate-400">No payment method on file. Please add a payment method.</div>
+                    )}
                   </div>
 
                   {/* NEXT BILLING */}
@@ -7438,19 +7540,6 @@ export default function CompanySettings() {
                       <button onClick={() => setBillingTab('Billing History')} className="text-[10px] font-bold text-[#2563EB] hover:underline cursor-pointer">View schedule →</button>
                     </div>
 
-                    <div className="flex items-center justify-between p-2.5 bg-slate-50/80 rounded-xl border border-slate-200/80">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#2563EB] flex items-center justify-center shrink-0">
-                          <Calendar size={16} />
-                        </div>
-                        <div>
-                          <div className="text-xs font-black text-slate-900">30 Jun 2025</div>
-                          <div className="text-[10px] font-extrabold text-[#2563EB]">$854.70 (AUD)</div>
-                          <div className="text-[8.5px] font-medium text-slate-400">Monthly subscription</div>
-                        </div>
-                      </div>
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[8.5px] font-black uppercase">Paid Up</span>
-                    </div>
                   </div>
                 </div>
 
@@ -7471,11 +7560,37 @@ export default function CompanySettings() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5 mb-6">
-                  {[
-                    { label: 'USER SEATS', val: '24 / 50', pct: 48, color: 'bg-blue-500', note: '26 seats available' },
-                    { label: 'MONTHLY LOADS', val: '1,240 / 2,000', pct: 62, color: 'bg-emerald-500', note: '760 loads remaining' },
-                    { label: 'CLOUD STORAGE', val: '152 GB / 200 GB', pct: 76, color: 'bg-purple-500', note: '48 GB remaining' },
-                    { label: 'API REQUESTS', val: '76,542 / 100,000', pct: 77, color: 'bg-amber-500', note: '23,458 calls remaining' },
+                  {billingDataLoading ? (
+                    <div className="col-span-4 py-6 text-center text-[10px] font-semibold text-slate-400">Loading usage metrics...</div>
+                  ) : [
+                    {
+                      label: 'USER SEATS',
+                      val: `${billingData?.usage?.activeUsers || 0} / ${billingData?.usage?.userLimit || 0}`,
+                      pct: billingData?.usage?.userLimit > 0 ? Math.round((billingData.usage.activeUsers / billingData.usage.userLimit) * 100) : 0,
+                      color: 'bg-blue-500',
+                      note: billingData?.usage?.userLimit > 0 ? `${billingData.usage.userLimit - billingData.usage.activeUsers} seats available` : '—'
+                    },
+                    {
+                      label: 'MONTHLY LOADS',
+                      val: `${(billingData?.usage?.monthlyLoads || 0).toLocaleString()}`,
+                      pct: 0,
+                      color: 'bg-emerald-500',
+                      note: 'Loads created this month'
+                    },
+                    {
+                      label: 'CLOUD STORAGE',
+                      val: `${billingData?.usage?.storageUsedGB || 0} GB / ${billingData?.usage?.storageLimitGB || 0} GB`,
+                      pct: billingData?.usage?.storageLimitGB > 0 ? Math.round((billingData.usage.storageUsedGB / billingData.usage.storageLimitGB) * 100) : 0,
+                      color: 'bg-purple-500',
+                      note: billingData?.usage?.storageLimitGB > 0 ? `${billingData.usage.storageLimitGB - billingData.usage.storageUsedGB} GB remaining` : '—'
+                    },
+                    {
+                      label: 'API REQUESTS',
+                      val: `${(billingData?.usage?.apiCallsThisMonth || 0).toLocaleString()} / ${(billingData?.usage?.apiLimit || 0).toLocaleString()}`,
+                      pct: billingData?.usage?.apiLimit > 0 ? Math.round((billingData.usage.apiCallsThisMonth / billingData.usage.apiLimit) * 100) : 0,
+                      color: 'bg-amber-500',
+                      note: billingData?.usage?.apiLimit > 0 ? `${(billingData.usage.apiLimit - billingData.usage.apiCallsThisMonth).toLocaleString()} calls remaining` : '—'
+                    },
                   ].map((metric, i) => (
                     <div key={i} className="bg-slate-50/80 border border-slate-200/80 rounded-xl p-3.5 space-y-2">
                       <div className="flex justify-between items-center text-[10px] font-black text-slate-400 uppercase tracking-wider">
@@ -7504,20 +7619,26 @@ export default function CompanySettings() {
                   <div className="border border-slate-200/80 rounded-xl p-4 bg-white space-y-3">
                     <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">USAGE ALERTS & NOTIFICATIONS</h4>
                     <div className="space-y-2 text-xs font-medium text-slate-600">
-                      <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between">
-                        <div>
-                          <span className="font-bold text-amber-900 block">Cloud Storage at 76% Capacity</span>
-                          <span className="text-[10px] text-amber-700">Consider upgrading storage add-on before reaching 200 GB.</span>
+                      {billingData?.usage?.storageLimitGB > 0 && billingData.usage.storageUsedGB / billingData.usage.storageLimitGB > 0.7 ? (
+                        <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between">
+                          <div>
+                            <span className="font-bold text-amber-900 block">Cloud Storage at {Math.round((billingData.usage.storageUsedGB / billingData.usage.storageLimitGB) * 100)}% Capacity</span>
+                            <span className="text-[10px] text-amber-700">Consider upgrading storage add-on before reaching {billingData.usage.storageLimitGB} GB.</span>
+                          </div>
+                          <button onClick={() => setBillingTab('Add-ons')} className="px-2.5 py-1 bg-amber-600 text-white font-bold text-[10px] rounded-lg shrink-0">Upgrade</button>
                         </div>
-                        <button onClick={() => setBillingTab('Add-ons')} className="px-2.5 py-1 bg-amber-600 text-white font-bold text-[10px] rounded-lg shrink-0">Upgrade</button>
-                      </div>
-                      <div className="p-2.5 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-between">
-                        <div>
-                          <span className="font-bold text-blue-900 block">API Rate Limit Healthy</span>
-                          <span className="text-[10px] text-blue-700">Avg 2,500 requests/day. Reset on 30 Jun 2025.</span>
+                      ) : null}
+                      {billingData?.usage?.apiLimit > 0 ? (
+                        <div className="p-2.5 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-between">
+                          <div>
+                            <span className="font-bold text-blue-900 block">API Rate Limit {billingData.usage.apiCallsThisMonth / billingData.usage.apiLimit > 0.8 ? 'Warning' : 'Healthy'}</span>
+                            <span className="text-[10px] text-blue-700">{billingData.usage.apiCallsThisMonth.toLocaleString()} of {billingData.usage.apiLimit.toLocaleString()} API calls used this month.</span>
+                          </div>
+                          <span className={`px-2 py-0.5 font-bold text-[9px] rounded uppercase ${billingData.usage.apiCallsThisMonth / billingData.usage.apiLimit > 0.8 ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>{billingData.usage.apiCallsThisMonth / billingData.usage.apiLimit > 0.8 ? 'Warning' : 'Normal'}</span>
                         </div>
-                        <span className="px-2 py-0.5 bg-blue-100 text-blue-700 font-bold text-[9px] rounded uppercase">Normal</span>
-                      </div>
+                      ) : (
+                        <div className="py-4 text-center text-[10px] font-semibold text-slate-400">No usage alerts at this time.</div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -7538,30 +7659,25 @@ export default function CompanySettings() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-                  {[
-                    { icon: <Cpu size={20} />, title: 'Hero AI Dispatch Add-on', price: '$199.00 / mo', desc: 'AI route optimization, automated load matching & OCR document scanning.', status: 'Active', active: true },
-                    { icon: <BarChart2 size={20} />, title: 'Advanced Reporting Engine', price: '$99.00 / mo', desc: 'Custom P&L reports, fuel efficiency breakdown & automated scheduled PDFs.', status: 'Active', active: true },
-                    { icon: <MessageSquare size={20} />, title: 'SMS Notifications Bundle', price: '$29.00 / mo', desc: '2,000 automated SMS alerts per month for ETA updates and customer alerts.', status: 'Active', active: true },
-                    { icon: <HardDrive size={20} />, title: 'Extra Storage (500 GB)', price: '$49.00 / mo', desc: 'Expand cloud storage for POD photos, driver licenses and document scans.', status: 'Available', active: false },
-                    { icon: <Plug size={20} />, title: 'Custom Telematics API Sync', price: '$149.00 / mo', desc: 'Direct live integration with Samsara, Geotab, and Webfleet GPS devices.', status: 'Available', active: false },
-                    { icon: <ShieldCheck size={20} />, title: 'Priority 24/7 Phone SLA', price: '$199.00 / mo', desc: 'Dedicated 24/7 emergency dispatch support line with 15-min response SLA.', status: 'Available', active: false },
-                  ].map((addon, i) => (
+                  {billingDataLoading ? (
+                    <div className="col-span-3 py-8 text-center text-[10px] font-semibold text-slate-400">Loading add-ons...</div>
+                  ) : (billingData?.addons?.length || 0) === 0 ? (
+                    <div className="col-span-3 py-8 text-center text-[10px] font-semibold text-slate-400">No add-ons configured for this plan. Contact support to enable add-ons.</div>
+                  ) : billingData.addons.map((addon, i) => (
                     <div key={i} className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-4 flex flex-col justify-between space-y-3">
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <div className="w-9 h-9 rounded-xl bg-white border border-slate-200 text-[#2563EB] flex items-center justify-center shadow-3xs">{addon.icon}</div>
-                          <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${addon.active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>{addon.status}</span>
+                          <div className="w-9 h-9 rounded-xl bg-white border border-slate-200 text-[#2563EB] flex items-center justify-center shadow-3xs"><Cpu size={20} /></div>
+                          <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${addon.isEnabled ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>{addon.isEnabled ? 'Active' : 'Inactive'}</span>
                         </div>
-                        <h4 className="text-sm font-black text-slate-900">{addon.title}</h4>
-                        <div className="text-xs font-black text-[#2563EB] mt-0.5">{addon.price}</div>
-                        <p className="text-[11px] text-slate-500 font-medium mt-1.5 leading-relaxed">{addon.desc}</p>
+                        <h4 className="text-sm font-black text-slate-900">{addon.name}</h4>
+                        <p className="text-[11px] text-slate-500 font-medium mt-1.5 leading-relaxed">{addon.description || ''}</p>
                       </div>
                       <button
-                        onClick={() => triggerToast(`${addon.active ? 'Deactivated' : 'Activated'} ${addon.title} successfully!`)}
-                        className={`w-full py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-3xs ${addon.active ? 'bg-white border border-slate-200 text-rose-600 hover:bg-rose-50' : 'bg-[#2563EB] text-white hover:bg-blue-700'
-                          }`}
+                        onClick={() => triggerToast(`${addon.isEnabled ? 'Deactivated' : 'Activated'} ${addon.name} successfully!`)}
+                        className={`w-full py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-3xs ${addon.isEnabled ? 'bg-white border border-slate-200 text-rose-600 hover:bg-rose-50' : 'bg-[#2563EB] text-white hover:bg-blue-700'}`}
                       >
-                        {addon.active ? 'Manage / Deactivate' : 'Activate Add-on'}
+                        {addon.isEnabled ? 'Manage / Deactivate' : 'Activate Add-on'}
                       </button>
                     </div>
                   ))}
@@ -7599,24 +7715,21 @@ export default function CompanySettings() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-xs font-semibold text-slate-700">
-                      {[
-                        { inv: 'INV-2025-0529', date: '29 May 2025', desc: 'Hero Pro Subscription + Add-ons (May 2025)', sub: '$777.00', gst: '$77.70', total: '$854.70', status: 'Paid' },
-                        { inv: 'INV-2025-0429', date: '29 Apr 2025', desc: 'Hero Pro Subscription + Add-ons (April 2025)', sub: '$777.00', gst: '$77.70', total: '$854.70', status: 'Paid' },
-                        { inv: 'INV-2025-0329', date: '29 Mar 2025', desc: 'Hero Pro Subscription + Add-ons (March 2025)', sub: '$777.00', gst: '$77.70', total: '$854.70', status: 'Paid' },
-                        { inv: 'INV-2025-0228', date: '28 Feb 2025', desc: 'Hero Pro Subscription + Add-ons (February 2025)', sub: '$777.00', gst: '$77.70', total: '$854.70', status: 'Paid' },
-                        { inv: 'INV-2025-0129', date: '29 Jan 2025', desc: 'Hero Pro Subscription + Add-ons (January 2025)', sub: '$777.00', gst: '$77.70', total: '$854.70', status: 'Paid' },
-                        { inv: 'INV-2024-1229', date: '29 Dec 2024', desc: 'Hero Pro Subscription + Add-ons (December 2024)', sub: '$777.00', gst: '$77.70', total: '$854.70', status: 'Paid' },
-                      ].map((row, i) => (
+                      {billingDataLoading ? (
+                        <tr><td colSpan={8} className="py-8 text-center text-[10px] font-semibold text-slate-400">Loading invoices...</td></tr>
+                      ) : (billingData?.billingRecords?.length || 0) === 0 ? (
+                        <tr><td colSpan={8} className="py-8 text-center text-[10px] font-semibold text-slate-400">No invoices found. Invoices will appear here once your subscription billing cycle completes.</td></tr>
+                      ) : billingData.billingRecords.map((row, i) => (
                         <tr key={i} className="hover:bg-slate-50/70 transition-colors">
-                          <td className="py-3 px-3 font-bold text-[#2563EB]">{row.inv}</td>
-                          <td className="py-3 px-3 text-slate-500">{row.date}</td>
-                          <td className="py-3 px-3 font-bold text-slate-900">{row.desc}</td>
-                          <td className="py-3 px-3">{row.sub}</td>
-                          <td className="py-3 px-3 text-slate-500">{row.gst}</td>
-                          <td className="py-3 px-3 font-black text-slate-900">{row.total}</td>
-                          <td className="py-3 px-3"><span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 text-[10px] font-extrabold uppercase">{row.status}</span></td>
+                          <td className="py-3 px-3 font-bold text-[#2563EB]">{row.invoiceNumber || '—'}</td>
+                          <td className="py-3 px-3 text-slate-500">{row.date ? new Date(row.date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</td>
+                          <td className="py-3 px-3 font-bold text-slate-900">{row.planTierSnapshot || 'Subscription'}</td>
+                          <td className="py-3 px-3">${((row.amount || 0) - (row.taxAmount || 0)).toFixed(2)}</td>
+                          <td className="py-3 px-3 text-slate-500">${(row.taxAmount || 0).toFixed(2)}</td>
+                          <td className="py-3 px-3 font-black text-slate-900">${(row.amount || 0).toFixed(2)}</td>
+                          <td className="py-3 px-3"><span className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${row.status === 'PAID' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>{row.status}</span></td>
                           <td className="py-3 px-3 text-center">
-                            <button onClick={() => handleDownloadSingleInvoice(row.inv)} className="p-1.5 bg-slate-100 hover:bg-blue-50 hover:text-[#2563EB] rounded-lg transition-colors cursor-pointer">
+                            <button onClick={() => handleDownloadSingleInvoice(row)} className="p-1.5 bg-slate-100 hover:bg-blue-50 hover:text-[#2563EB] rounded-lg transition-colors cursor-pointer">
                               <Download size={14} />
                             </button>
                           </td>
@@ -8663,14 +8776,20 @@ export default function CompanySettings() {
               <div>
                 <label className="text-xs font-extrabold text-slate-700 block mb-1">Subscription Tier *</label>
                 <select
-                  value={manageSubscriptionForm.plan}
-                  onChange={e => setManageSubscriptionForm({ ...manageSubscriptionForm, plan: e.target.value })}
+                  value={manageSubscriptionForm.planId}
+                  onChange={e => {
+                    const selected = availablePlans.find(p => p.id === e.target.value);
+                    setManageSubscriptionForm({ ...manageSubscriptionForm, planId: e.target.value, plan: selected?.name || '' });
+                  }}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                 >
-                  <option>Hero Starter ($199/month)</option>
-                  <option>Hero Business ($349/month)</option>
-                  <option>Hero Pro ($499/month - Active)</option>
-                  <option>Hero Enterprise ($999/month)</option>
+                  {availablePlans.length === 0 ? (
+                    <option value="">{manageSubscriptionForm.plan || 'Loading available plans...'}</option>
+                  ) : availablePlans.map(plan => (
+                    <option key={plan.id} value={plan.id}>
+                      {plan.name} (${(plan.monthlyPrice || 0).toFixed(0)}/month){billingData?.plan?.id === plan.id ? ' — Active' : ''}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -8681,52 +8800,59 @@ export default function CompanySettings() {
                   onChange={e => setManageSubscriptionForm({ ...manageSubscriptionForm, billingCycle: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                 >
-                  <option>Monthly Billing</option>
-                  <option>Annual Billing (Save 20%)</option>
+                  <option value="MONTHLY">Monthly Billing</option>
+                  <option value="ANNUALLY">Annual Billing (Save 20%)</option>
                 </select>
               </div>
 
               <div className="space-y-2 pt-1">
                 <label className="text-xs font-extrabold text-slate-700 block">Included Add-on Packages</label>
 
-                <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
-                  <div>
-                    <span className="text-xs font-bold text-slate-800 block">Hero AI Add-on ($199/mo)</span>
-                    <span className="text-[10px] text-slate-500 font-medium">15,000 AI dispatch & document extraction requests</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={manageSubscriptionForm.aiAddon}
-                    onChange={e => setManageSubscriptionForm({ ...manageSubscriptionForm, aiAddon: e.target.checked })}
-                    className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
-                  <div>
-                    <span className="text-xs font-bold text-slate-800 block">Advanced Reporting ($99/mo)</span>
-                    <span className="text-[10px] text-slate-500 font-medium">Custom analytics dashboards & scheduled PDF exports</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={manageSubscriptionForm.reportingAddon}
-                    onChange={e => setManageSubscriptionForm({ ...manageSubscriptionForm, reportingAddon: e.target.checked })}
-                    className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
-                  <div>
-                    <span className="text-xs font-bold text-slate-800 block">SMS Notifications ($29/mo)</span>
-                    <span className="text-[10px] text-slate-500 font-medium">2,000 automated SMS dispatch notifications</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={manageSubscriptionForm.smsAddon}
-                    onChange={e => setManageSubscriptionForm({ ...manageSubscriptionForm, smsAddon: e.target.checked })}
-                    className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
-                  />
-                </div>
+                {(billingData?.addons?.length || 0) > 0 ? (
+                  billingData.addons.map((addon, idx) => {
+                    const addonKey = addon.name?.toLowerCase().includes('ai') ? 'aiAddon'
+                      : addon.name?.toLowerCase().includes('report') ? 'reportingAddon'
+                      : addon.name?.toLowerCase().includes('sms') ? 'smsAddon' : null;
+                    return (
+                      <div key={idx} className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                        <div>
+                          <span className="text-xs font-bold text-slate-800 block">{addon.name}</span>
+                          <span className="text-[10px] text-slate-500 font-medium">{addon.description || ''}</span>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={addonKey ? (manageSubscriptionForm[addonKey] ?? addon.isEnabled) : addon.isEnabled}
+                          onChange={e => addonKey && setManageSubscriptionForm({ ...manageSubscriptionForm, [addonKey]: e.target.checked })}
+                          className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        />
+                      </div>
+                    );
+                  })
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                      <div>
+                        <span className="text-xs font-bold text-slate-800 block">Hero AI Add-on ($199/mo)</span>
+                        <span className="text-[10px] text-slate-500 font-medium">15,000 AI dispatch &amp; document extraction requests</span>
+                      </div>
+                      <input type="checkbox" checked={manageSubscriptionForm.aiAddon} onChange={e => setManageSubscriptionForm({ ...manageSubscriptionForm, aiAddon: e.target.checked })} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                    </div>
+                    <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                      <div>
+                        <span className="text-xs font-bold text-slate-800 block">Advanced Reporting ($99/mo)</span>
+                        <span className="text-[10px] text-slate-500 font-medium">Custom analytics dashboards &amp; scheduled PDF exports</span>
+                      </div>
+                      <input type="checkbox" checked={manageSubscriptionForm.reportingAddon} onChange={e => setManageSubscriptionForm({ ...manageSubscriptionForm, reportingAddon: e.target.checked })} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                    </div>
+                    <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                      <div>
+                        <span className="text-xs font-bold text-slate-800 block">SMS Notifications ($29/mo)</span>
+                        <span className="text-[10px] text-slate-500 font-medium">2,000 automated SMS dispatch notifications</span>
+                      </div>
+                      <input type="checkbox" checked={manageSubscriptionForm.smsAddon} onChange={e => setManageSubscriptionForm({ ...manageSubscriptionForm, smsAddon: e.target.checked })} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
@@ -8739,9 +8865,10 @@ export default function CompanySettings() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
+                  disabled={isSubmittingSubscription}
+                  className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5 disabled:opacity-60"
                 >
-                  <Crown size={14} /> Update Plan Subscription
+                  <Crown size={14} /> {isSubmittingSubscription ? 'Updating...' : 'Update Plan Subscription'}
                 </button>
               </div>
             </form>

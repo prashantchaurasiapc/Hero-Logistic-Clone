@@ -13,7 +13,10 @@ exports.getAll = async (req, res, next) => {
 
     const [data, total] = await Promise.all([
       prisma.followUpTask.findMany({
-        where, skip, take, orderBy
+        where, skip, take, orderBy,
+        include: {
+          lead: { select: { companyName: true, contactName: true } }
+        }
       }),
       prisma.followUpTask.count({ where })
     ]);
@@ -50,7 +53,35 @@ exports.getById = async (req, res, next) => {
 exports.create = async (req, res, next) => {
   try {
     const payload = { ...req.body };
-    // if (req.tenantId) payload.tenantId = req.tenantId;
+
+    // Fallback: If repId is not a valid UUID, find a sales user
+    let validRep = false;
+    if (payload.repId && payload.repId.length === 36) {
+      const userExists = await prisma.user.findUnique({
+        where: { id: payload.repId }
+      });
+      if (userExists) validRep = true;
+    }
+
+    if (!validRep) {
+      const defaultRep = await prisma.user.findFirst({
+        where: { role: 'SALES' }
+      }) || await prisma.user.findFirst();
+      
+      if (defaultRep) {
+        payload.repId = defaultRep.id;
+      }
+    }
+
+    // Ensure dueDate is a valid Date
+    if (!payload.dueDate) {
+      payload.dueDate = new Date();
+    } else {
+      payload.dueDate = new Date(payload.dueDate);
+      if (isNaN(payload.dueDate.getTime())) {
+        payload.dueDate = new Date();
+      }
+    }
 
     const data = await prisma.followUpTask.create({
       data: payload

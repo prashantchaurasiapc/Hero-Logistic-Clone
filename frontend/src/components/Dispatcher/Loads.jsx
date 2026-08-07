@@ -200,20 +200,47 @@ export default function DispatcherLoads() {
     triggerToast(`Viewing details for Load ${load.id}`);
   };
 
-  const handleEditLoadSave = (e) => {
+  const handleEditLoadSave = async (e) => {
     e.preventDefault();
-    setMasterLoads(masterLoads.map(item => item.id === editingLoad.id ? editingLoad : item));
-    setIsEditModalOpen(false);
-    triggerToast(`Load ${editingLoad.id} updated successfully!`);
+    try {
+      const payload = {
+        status: editingLoad.status === 'In Transit' ? 'IN_TRANSIT' : editingLoad.status === 'En Route' ? 'ASSIGNED' : 'PLANNED',
+        pickupLocation: editingLoad.routeFrom,
+        deliveryLocation: editingLoad.routeTo,
+        customerName: editingLoad.customer,
+        driverName: editingLoad.driver,
+        vehicleId: editingLoad.vehicle,
+        trailerId: editingLoad.trailer
+      };
+      const res = await api.put(`/loads/${editingLoad.dbId}`, payload);
+      if (res.data && res.data.success) {
+        setIsEditModalOpen(false);
+        triggerToast(`Load ${editingLoad.id} updated successfully!`);
+        fetchLoads();
+      }
+    } catch (error) {
+      console.error('Error updating load:', error);
+      triggerToast('Error updating load');
+    }
   };
 
-  const handleDeleteLoad = (loadId) => {
-    setMasterLoads(masterLoads.filter(item => item.id !== loadId));
-    setOpenActionMenuId(null);
-    if (selectedLoadId === loadId && masterLoads.length > 1) {
-      setSelectedLoadId(masterLoads.find(l => l.id !== loadId)?.id || '');
+  const handleDeleteLoad = async (loadId) => {
+    const target = masterLoads.find(item => item.id === loadId);
+    if (!target) return;
+    try {
+      const res = await api.delete(`/loads/${target.dbId}`);
+      if (res.data && res.data.success) {
+        setOpenActionMenuId(null);
+        if (selectedLoadId === loadId && masterLoads.length > 1) {
+          setSelectedLoadId(masterLoads.find(l => l.id !== loadId)?.id || '');
+        }
+        triggerToast(`Load ${loadId} deleted successfully!`);
+        fetchLoads();
+      }
+    } catch (error) {
+      console.error('Error deleting load:', error);
+      triggerToast('Error deleting load');
     }
-    triggerToast(`Load ${loadId} deleted successfully!`);
   };
 
   // Setup Leaflet map inside details drawer matching user image

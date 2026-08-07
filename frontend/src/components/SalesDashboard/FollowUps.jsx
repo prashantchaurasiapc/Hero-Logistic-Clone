@@ -32,6 +32,9 @@ export default function FollowUps() {
 
   // Subscribe to crmStore
   useEffect(() => {
+    // Sync with database
+    crmRepository.syncWithBackend();
+
     const syncDb = () => {
       const db = crmRepository.getCrmDatabase();
       setFollowups(db.crmFollowups || []);
@@ -75,38 +78,25 @@ export default function FollowUps() {
   };
 
   // Handle complete follow-up
-  const handleMarkCompleted = (followupId) => {
-    crmStore.updateDb((db) => {
-      const f = (db.crmFollowups || []).find(x => x.id === followupId);
-      if (f) f.status = 'Completed';
-    });
+  const handleMarkCompleted = async (followupId) => {
+    await crmRepository.updateFollowUpTask(followupId, { status: 'Completed' });
     setToast({ text: 'Follow-up task marked as completed.' });
   };
 
   // Handle add task form submit
-  const handleAddSubmit = (e) => {
+  const handleAddSubmit = async (e) => {
     e.preventDefault();
     if (!modalForm.notes || !modalForm.notes.trim()) return;
 
-    const lead = leads.find(l => l.id === modalForm.leadId);
-    const companyName = lead ? lead.company : 'General Task';
-    const contactName = lead ? lead.name : 'Sales Team';
+    if (!modalForm.leadId) {
+      alert('Please select a lead to associate this task with.');
+      return;
+    }
 
-    crmStore.updateDb((db) => {
-      if (!db.crmFollowups) db.crmFollowups = [];
-      db.crmFollowups.unshift({
-        id: `followup_manual_${Date.now()}`,
-        leadId: modalForm.leadId || (lead ? lead.id : 'GENERAL'),
-        company: companyName,
-        contact: contactName,
-        type: modalForm.type || 'Call',
-        priority: modalForm.priority || 'Medium',
-        dueDate: modalForm.dueDate || new Date().toISOString().split('T')[0],
-        dueTime: modalForm.dueTime || '10:00 AM',
-        status: 'Pending',
-        notes: modalForm.notes.trim()
-      });
-    });
+    const lead = leads.find(l => l.id === modalForm.leadId);
+    if (!lead) return;
+
+    await crmRepository.createFollowUpTask(modalForm);
 
     setToast({ text: `Follow-up task logged successfully.` });
     setShowAddModal(false);

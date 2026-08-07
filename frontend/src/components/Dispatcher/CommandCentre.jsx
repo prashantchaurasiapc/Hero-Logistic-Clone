@@ -9,6 +9,8 @@ import {
   Users, Container, Shield, Settings, Zap, Target, Info
 } from 'lucide-react';
 import L from 'leaflet';
+import { dispatcherRepository } from '../../services/dispatcherRepository';
+import { dispatcherStore } from '../../services/dispatcherStore';
 
 export default function CommandCentre() {
   const [view, setView] = useState('dashboard'); // 'dashboard', 'create-console', 'manage-load'
@@ -24,7 +26,7 @@ export default function CommandCentre() {
     routeTo: '',
     driver: 'John Doe',
     vehicle: 'MAN TGX 26.580',
-    reqDate: '25 May 2026',
+    reqDate: '2026-05-25',
     reqTime: '09:00 AM'
   });
 
@@ -57,427 +59,82 @@ export default function CommandCentre() {
   const [isMapToolsOpen, setIsMapToolsOpen] = useState(false);
 
   // Active Movements / Master Loads state list
-  const [loads, setLoads] = useState([
-    {
-      id: 'LD-10583',
-      customer: 'BMW Australia',
-      routeFrom: 'Sydney',
-      routeTo: 'Melbourne',
-      status: 'In Transit',
-      date: '23 May 2026',
-      vehicle: 'MAN TGX 26.580',
-      depot: 'Sydney Depot',
-      driver: 'John Doe',
-      itemsCount: 8,
-      passengers: 2,
-      tabCategory: 'Active'
-    },
-    {
-      id: 'LD-10582',
-      customer: 'Pickles Auctions',
-      routeFrom: 'Brisbane',
-      routeTo: 'Sydney',
-      status: 'In Transit',
-      date: '22 May 2026',
-      vehicle: 'Volvo FH16 750',
-      depot: 'Sydney Depot',
-      driver: 'Chris Lee',
-      itemsCount: 6,
-      passengers: 1,
-      tabCategory: 'Active'
-    },
-    {
-      id: 'LD-10581',
-      customer: 'Toyota Finance',
-      routeFrom: 'Adelaide',
-      routeTo: 'Perth',
-      status: 'Pending Dispatch',
-      date: '24 May 2026',
-      vehicle: 'Scania R650',
-      depot: 'Brisbane Depot',
-      driver: 'Michael Tan',
-      itemsCount: 12,
-      passengers: 1,
-      tabCategory: 'Planned'
-    },
-    {
-      id: 'LD-10579',
-      customer: 'Hertz Australia',
-      routeFrom: 'Sydney',
-      routeTo: 'Gold Coast',
-      status: 'Delayed',
-      date: '21 May 2026',
-      vehicle: 'MAN TGX 26.580',
-      depot: 'Sydney Depot',
-      driver: 'David Brown',
-      itemsCount: 4,
-      passengers: 1,
-      tabCategory: 'Active'
-    },
-    {
-      id: 'LD-10578',
-      customer: 'Copart Australia',
-      routeFrom: 'Melbourne',
-      routeTo: 'Sydney',
-      status: 'Planned',
-      date: '21 May 2026',
-      vehicle: 'Kenworth T909',
-      depot: 'Melbourne Depot',
-      driver: 'Ben Hall',
-      itemsCount: 8,
-      passengers: 1,
-      tabCategory: 'Planned'
-    },
-    {
-      id: 'LD-10577',
-      customer: 'Woolworths DC',
-      routeFrom: 'Brisbane',
-      routeTo: 'Townsville',
-      status: 'Pending Dispatch',
-      date: '22 May 2026',
-      vehicle: 'Volvo FH16 750',
-      depot: 'Brisbane Depot',
-      driver: 'Sarah Connor',
-      itemsCount: 12,
-      passengers: 1,
-      tabCategory: 'Planned'
-    },
-    {
-      id: 'LD-10576',
-      customer: 'JB Hi-Fi',
-      routeFrom: 'Sydney',
-      routeTo: 'Adelaide',
-      status: 'Planned',
-      date: '23 May 2026',
-      vehicle: 'Scania R650',
-      depot: 'Sydney Depot',
-      driver: 'John Smith',
-      itemsCount: 10,
-      passengers: 1,
-      tabCategory: 'Planned'
-    },
-    {
-      id: 'LD-10575',
-      customer: 'BMW Australia',
-      routeFrom: 'Melbourne',
-      routeTo: 'Brisbane',
-      status: 'In Transit',
-      date: '21 May 2026',
-      vehicle: 'Volvo FH16 750',
-      depot: 'Melbourne Depot',
-      driver: 'Daniel Craig',
-      itemsCount: 7,
-      passengers: 1,
-      tabCategory: 'Active'
-    },
-    {
-      id: 'LD-10574',
-      customer: 'JAX Tyres',
-      routeFrom: 'Adelaide',
-      routeTo: 'Darwin',
-      status: 'Planned',
-      date: '25 May 2026',
-      vehicle: 'Scania R650',
-      depot: 'Adelaide Depot',
-      driver: 'Sarah Connor',
-      itemsCount: 4,
-      passengers: 1,
-      tabCategory: 'Planned'
-    },
-    {
-      id: 'LD-10573',
-      customer: 'Toyota Finance',
-      routeFrom: 'Melbourne',
-      routeTo: 'Perth',
-      status: 'Planned',
-      date: '24 May 2026',
-      vehicle: 'MAN TGX 26.580',
-      depot: 'Melbourne Depot',
-      driver: 'David Brown',
-      itemsCount: 8,
-      passengers: 1,
-      tabCategory: 'Planned'
-    },
-    {
-      id: 'LD-10571',
-      customer: 'GPC Asia Pacific',
-      routeFrom: 'Brisbane',
-      routeTo: 'Melbourne',
-      status: 'Planned',
-      date: '23 May 2026',
-      vehicle: 'MAN TGX 26.580',
-      depot: 'Brisbane Depot',
-      driver: 'Ben Hall',
-      itemsCount: 6,
-      passengers: 1,
-      tabCategory: 'Planned'
-    },
-    {
-      id: 'LD-10580',
-      customer: 'Toyota Finance',
-      routeFrom: 'Adelaide',
-      routeTo: 'Perth',
-      status: 'Planned',
-      date: '24 May 2026',
-      vehicle: 'Scania R650',
-      depot: 'Adelaide Depot',
-      driver: 'Sarah Connor',
-      itemsCount: 7,
-      passengers: 1,
-      tabCategory: 'Planned'
-    }
-  ]);
+  const [loads, setLoads] = useState([]);
+  const [drivers, setDrivers] = useState([]);
 
-  // Handle Create Load Submit
-  const handleCreateLoadSubmit = (e) => {
-    e.preventDefault();
-    const newId = `LD-105${Math.floor(84 + Math.random() * 20)}`;
-    const newEntry = {
-      id: newId,
-      customer: newLoadForm.customer || 'BMW Australia',
-      routeFrom: newLoadForm.routeFrom || 'Sydney',
-      routeTo: newLoadForm.routeTo || 'Melbourne',
-      status: newLoadForm.status,
-      date: `${newLoadForm.reqDate} • ${newLoadForm.reqTime}`,
-      vehicle: newLoadForm.vehicle || 'MAN TGX 26.580',
-      depot: 'Sydney Depot',
-      driver: newLoadForm.driver || 'John Doe',
-      itemsCount: 8,
-      passengers: 2,
-      tabCategory: 'Active'
+  // Subscribe to dispatcherStore changes to ensure reactive database binding
+  useEffect(() => {
+    // Initial fetch from backend
+    dispatcherRepository.syncWithBackend();
+
+    const syncDb = () => {
+      const db = dispatcherRepository.getDispatcherDatabase();
+      setLoads(db.loads || []);
+      setDrivers(db.drivers || []);
     };
 
-    setLoads(prev => [newEntry, ...prev]);
+    syncDb();
+    const unsubscribe = dispatcherStore.subscribe(syncDb);
+    return () => unsubscribe();
+  }, []);
+
+  // Handle Create Load Submit
+  const handleCreateLoadSubmit = async (e) => {
+    e.preventDefault();
+    const created = await dispatcherRepository.createLoad(newLoadForm);
     setIsCreateModalOpen(false);
-    triggerToast(`Load ${newId} created and dispatched successfully!`);
-  };
-
-  // Exact Depot Datasets matching Image 1
-  const kanbanDepots = {
-    'SYDNEY DEPOT': {
-      count: 6,
-      cards: [
-        {
-          id: 'LD-10582',
-          status: 'In Transit',
-          statusStyle: 'bg-emerald-50 text-emerald-700',
-          borderStyle: 'border-l-emerald-500',
-          customer: 'BMW Australia',
-          routeFrom: 'Sydney',
-          routeTo: 'Melbourne',
-          driverDate: '23 May • John Doe',
-          users: 2,
-          packages: 8
-        },
-        {
-          id: 'LD-10579',
-          status: 'Delayed',
-          statusStyle: 'bg-rose-50 text-rose-700',
-          borderStyle: 'border-l-rose-500',
-          customer: 'Hertz Australia',
-          routeFrom: 'Sydney',
-          routeTo: 'Gold Coast',
-          driverDate: '21 May • David Brown',
-          users: 1,
-          packages: 4
-        },
-        {
-          id: 'LD-10576',
-          status: 'Planned',
-          statusStyle: 'bg-amber-50 text-amber-700',
-          borderStyle: 'border-l-amber-500',
-          customer: 'JB Hi-Fi',
-          routeFrom: 'Sydney',
-          routeTo: 'Adelaide',
-          driverDate: '23 May',
-          users: 1,
-          packages: 10
-        }
-      ]
-    },
-    'MELBOURNE DEPOT': {
-      count: 6,
-      cards: [
-        {
-          id: 'LD-10578',
-          status: 'Planned',
-          statusStyle: 'bg-amber-50 text-amber-700',
-          borderStyle: 'border-l-amber-500',
-          customer: 'Copart Australia',
-          routeFrom: 'Melbourne',
-          routeTo: 'Sydney',
-          driverDate: '21 May • Chris Lee',
-          users: 2,
-          packages: 6
-        },
-        {
-          id: 'LD-10575',
-          status: 'In Transit',
-          statusStyle: 'bg-emerald-50 text-emerald-700',
-          borderStyle: 'border-l-emerald-500',
-          customer: 'BMW Australia',
-          routeFrom: 'Melbourne',
-          routeTo: 'Brisbane',
-          driverDate: '22 May • Daniel Craig',
-          users: 1,
-          packages: 7
-        },
-        {
-          id: 'LD-10573',
-          status: 'Planned',
-          statusStyle: 'bg-amber-50 text-amber-700',
-          borderStyle: 'border-l-amber-500',
-          customer: 'Toyota Finance',
-          routeFrom: 'Melbourne',
-          routeTo: 'Perth',
-          driverDate: '24 May',
-          users: 1,
-          packages: 8
-        }
-      ]
-    },
-    'BRISBANE DEPOT': {
-      count: 5,
-      cards: [
-        {
-          id: 'LD-10581',
-          status: 'Pending',
-          statusStyle: 'bg-blue-50 text-blue-600',
-          borderStyle: 'border-l-blue-500',
-          customer: 'Pickles Auctions',
-          routeFrom: 'Brisbane',
-          routeTo: 'Sydney',
-          driverDate: '22 May • Michael Tan',
-          users: 1,
-          packages: 5
-        },
-        {
-          id: 'LD-10577',
-          status: 'Pending',
-          statusStyle: 'bg-blue-50 text-blue-600',
-          borderStyle: 'border-l-blue-500',
-          customer: 'Woolworths DC',
-          routeFrom: 'Brisbane',
-          routeTo: 'Townsville',
-          driverDate: '24 May • Ben Hall',
-          users: 1,
-          packages: 12
-        },
-        {
-          id: 'LD-10571',
-          status: 'Planned',
-          statusStyle: 'bg-amber-50 text-amber-700',
-          borderStyle: 'border-l-amber-500',
-          customer: 'GPC Asia Pacific',
-          routeFrom: 'Brisbane',
-          routeTo: 'Melbourne',
-          driverDate: '23 May',
-          users: 1,
-          packages: 6
-        }
-      ]
-    },
-    'ADELAIDE DEPOT': {
-      count: 4,
-      cards: [
-        {
-          id: 'LD-10580',
-          status: 'Planned',
-          statusStyle: 'bg-amber-50 text-amber-700',
-          borderStyle: 'border-l-amber-500',
-          customer: 'Toyota Finance',
-          routeFrom: 'Adelaide',
-          routeTo: 'Perth',
-          driverDate: '24 May • Sarah Connor',
-          users: 1,
-          packages: 7
-        },
-        {
-          id: 'LD-10574',
-          status: 'Planned',
-          statusStyle: 'bg-amber-50 text-amber-700',
-          borderStyle: 'border-l-amber-500',
-          customer: 'JAX Tyres',
-          routeFrom: 'Adelaide',
-          routeTo: 'Darwin',
-          driverDate: '25 May',
-          users: 1,
-          packages: 4
-        }
-      ]
+    if (created) {
+      triggerToast(`Load ${created.loadRef} created and dispatched successfully!`);
     }
   };
 
-  // Driver Status List
-  const [drivers, setDrivers] = useState([
-    {
-      id: 'DRV-001',
-      name: 'John Doe',
-      status: 'On Duty',
-      vehicle: 'MAN TGX 26.580',
-      loadId: 'LD-10582',
-      location: 'Near Newcastle, NSW',
-      telemetry: '82 km/h',
-      isSpeed: true,
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150'
-    },
-    {
-      id: 'DRV-002',
-      name: 'Chris Lee',
-      status: 'En Route',
-      vehicle: 'Kenworth T909',
-      loadId: 'LD-10578',
-      location: 'Near Goulburn, NSW',
-      telemetry: '76 km/h',
-      isSpeed: true,
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150'
-    },
-    {
-      id: 'DRV-003',
-      name: 'Michael Tan',
-      status: 'At Pickup',
-      vehicle: 'Scania R650',
-      loadId: 'LD-10581',
-      location: 'Brisbane, QLD',
-      telemetry: 'At Facility',
-      isSpeed: false,
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=150'
-    },
-    {
-      id: 'DRV-004',
-      name: 'David Brown',
-      status: 'Delayed',
-      vehicle: 'MAN TGX 26.580',
-      loadId: 'LD-10579',
-      location: 'Near Ballina, NSW',
-      telemetry: 'ETA +45m',
-      isSpeed: false,
-      isDelay: true,
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=150'
-    },
-    {
-      id: 'DRV-005',
-      name: 'Ben Hall',
-      status: 'Break',
-      vehicle: 'Volvo FH16 750',
-      loadId: 'No Active Load',
-      location: 'Rest Area - Dubbo, NSW',
-      telemetry: 'On Rest',
-      isSpeed: false,
-      avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=150'
-    },
-    {
-      id: 'DRV-006',
-      name: 'Sarah Connor',
-      status: 'Off Duty',
-      vehicle: 'Scania R650',
-      loadId: 'No Active Load',
-      location: 'Sydney, NSW',
-      telemetry: 'Offline',
-      isSpeed: false,
-      avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=150'
-    }
-  ]);
+  // Dynamic computed Kanban Depots from active loads state
+  const getKanbanDepots = () => {
+    const columns = {
+      'SYDNEY DEPOT': { count: 0, cards: [] },
+      'MELBOURNE DEPOT': { count: 0, cards: [] },
+      'BRISBANE DEPOT': { count: 0, cards: [] },
+      'ADELAIDE DEPOT': { count: 0, cards: [] }
+    };
+
+    loads.forEach(l => {
+      let depot = 'SYDNEY DEPOT';
+      if (l.routeFrom === 'Melbourne' || l.routeTo === 'Melbourne') depot = 'MELBOURNE DEPOT';
+      else if (l.routeFrom === 'Brisbane' || l.routeTo === 'Brisbane') depot = 'BRISBANE DEPOT';
+      else if (l.routeFrom === 'Adelaide' || l.routeTo === 'Adelaide') depot = 'ADELAIDE DEPOT';
+
+      let borderStyle = 'border-l-amber-500';
+      let statusStyle = 'bg-amber-50 text-amber-700';
+      if (l.status === 'In Transit') {
+        borderStyle = 'border-l-emerald-500';
+        statusStyle = 'bg-emerald-50 text-emerald-700';
+      } else if (l.status === 'Delayed') {
+        borderStyle = 'border-l-rose-500';
+        statusStyle = 'bg-rose-50 text-rose-700';
+      } else if (l.status === 'Pending Dispatch') {
+        borderStyle = 'border-l-blue-500';
+        statusStyle = 'bg-blue-50 text-blue-600';
+      }
+
+      columns[depot].cards.push({
+        id: l.id,
+        status: l.status,
+        statusStyle,
+        borderStyle,
+        customer: l.customer,
+        routeFrom: l.routeFrom,
+        routeTo: l.routeTo,
+        driverDate: `${l.date} • ${l.driver}`,
+        users: l.passengers || 1,
+        packages: l.itemsCount || 8
+      });
+      columns[depot].count++;
+    });
+
+    return columns;
+  };
+
+  const kanbanDepots = getKanbanDepots();
 
   // Create Load Form States
   const [customerRef, setCustomerRef] = useState('PO-12345');
@@ -844,8 +501,8 @@ export default function CommandCentre() {
                 </div>
                 <div>
                   <span className="text-[10.5px] font-medium text-slate-500 block">Total Loads</span>
-                  <h3 className="text-lg font-bold text-slate-900 leading-tight">128</h3>
-                  <span className="text-[9.5px] font-semibold text-emerald-600 block mt-0.5">↑ 12% vs yesterday</span>
+                  <h3 className="text-lg font-bold text-slate-900 leading-tight">{loads.length}</h3>
+                  <span className="text-[9.5px] font-semibold text-emerald-600 block mt-0.5">Live from database</span>
                 </div>
               </div>
 
@@ -856,7 +513,9 @@ export default function CommandCentre() {
                 </div>
                 <div>
                   <span className="text-[10.5px] font-medium text-slate-500 block">Active Loads</span>
-                  <h3 className="text-lg font-bold text-slate-900 leading-tight">63</h3>
+                  <h3 className="text-lg font-bold text-slate-900 leading-tight">
+                    {loads.filter(l => l.status === 'In Transit').length}
+                  </h3>
                   <span className="text-[9.5px] font-semibold text-emerald-600 block mt-0.5">On the road</span>
                 </div>
               </div>
@@ -868,8 +527,10 @@ export default function CommandCentre() {
                 </div>
                 <div>
                   <span className="text-[10.5px] font-medium text-slate-500 block">Planned Loads</span>
-                  <h3 className="text-lg font-bold text-slate-900 leading-tight">34</h3>
-                  <span className="text-[9.5px] font-semibold text-amber-600 block mt-0.5">Next 7 days</span>
+                  <h3 className="text-lg font-bold text-slate-900 leading-tight">
+                    {loads.filter(l => l.status === 'Planned' || l.status === 'Pending Dispatch').length}
+                  </h3>
+                  <span className="text-[9.5px] font-semibold text-amber-600 block mt-0.5">Scheduled</span>
                 </div>
               </div>
 
@@ -880,8 +541,10 @@ export default function CommandCentre() {
                 </div>
                 <div>
                   <span className="text-[10.5px] font-medium text-slate-500 block">Completed Today</span>
-                  <h3 className="text-lg font-bold text-slate-900 leading-tight">21</h3>
-                  <span className="text-[9.5px] font-semibold text-purple-600 block mt-0.5">↑ 5 vs yesterday</span>
+                  <h3 className="text-lg font-bold text-slate-900 leading-tight">
+                    {loads.filter(l => l.status === 'Completed').length}
+                  </h3>
+                  <span className="text-[9.5px] font-semibold text-purple-600 block mt-0.5">Delivered</span>
                 </div>
               </div>
 
@@ -892,7 +555,9 @@ export default function CommandCentre() {
                 </div>
                 <div>
                   <span className="text-[10.5px] font-medium text-slate-500 block">Delayed Loads</span>
-                  <h3 className="text-lg font-bold text-slate-900 leading-tight">7</h3>
+                  <h3 className="text-lg font-bold text-slate-900 leading-tight">
+                    {loads.filter(l => l.status === 'Delayed').length}
+                  </h3>
                   <span className="text-[9.5px] font-semibold text-rose-600 block mt-0.5">Requires attention</span>
                 </div>
               </div>
@@ -904,7 +569,9 @@ export default function CommandCentre() {
                 </div>
                 <div>
                   <span className="text-[10.5px] font-medium text-slate-500 block">Available Drivers</span>
-                  <h3 className="text-lg font-bold text-slate-900 leading-tight">18</h3>
+                  <h3 className="text-lg font-bold text-slate-900 leading-tight">
+                    {drivers.filter(d => d.status === 'On Duty' || d.status === 'En Route').length || 6}
+                  </h3>
                   <span className="text-[9.5px] font-semibold text-emerald-600 block mt-0.5">On duty</span>
                 </div>
               </div>
@@ -916,7 +583,9 @@ export default function CommandCentre() {
                 </div>
                 <div>
                   <span className="text-[10.5px] font-medium text-slate-500 block">Available Trucks</span>
-                  <h3 className="text-lg font-bold text-slate-900 leading-tight">12</h3>
+                  <h3 className="text-lg font-bold text-slate-900 leading-tight">
+                    {loads.filter(l => l.status !== 'Completed').map(l => l.vehicle).filter((v, i, self) => self.indexOf(v) === i).length || 4}
+                  </h3>
                   <span className="text-[9.5px] font-semibold text-teal-600 block mt-0.5">Ready to go</span>
                 </div>
               </div>

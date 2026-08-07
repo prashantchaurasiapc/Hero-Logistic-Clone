@@ -661,7 +661,7 @@ export default function WhiteLabel() {
             <span className="text-2xl font-black text-[#F59E0B] block mt-2">v{activeVersion}</span>
           </div>
           <div className="text-[10px] font-bold text-slate-400 mt-2">
-            Skin: {activeTheme.name}
+            Skin: {activeTheme?.name || 'Default'}
           </div>
         </div>
 
@@ -1833,7 +1833,7 @@ export default function WhiteLabel() {
                     </div>
 
                     <div
-                      style={{ background: `linear-gradient(135deg, ${activeTheme.accent}, ${activeTheme.accent}aa)` }}
+                      style={{ background: `linear-gradient(135deg, ${activeTheme?.accent || '#0ea5e9'}, ${(activeTheme?.accent || '#0ea5e9')}aa)` }}
                       className="rounded-xl p-3 text-white space-y-1.5"
                     >
                       <h4 className="text-[10px] font-black uppercase">ENTERPRISE GROWTH</h4>
@@ -1846,7 +1846,7 @@ export default function WhiteLabel() {
 
                 <div className="text-[8px] font-bold text-white/35 pt-2 border-t border-white/5 flex justify-between">
                   <span>v{activeVersion}</span>
-                  <span>Active Theme: {activeTheme.name}</span>
+                  <span>Active Theme: {activeTheme?.name || 'Default'}</span>
                 </div>
               </>
             )}

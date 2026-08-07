@@ -20,6 +20,9 @@ export default function SalesReports() {
 
   // Subscribe to crmStore
   useEffect(() => {
+    // Sync with database
+    crmRepository.syncWithBackend();
+
     const syncDb = () => {
       const freshLeads = crmRepository.getLeads();
       setLeads(freshLeads);

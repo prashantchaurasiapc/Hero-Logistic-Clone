@@ -114,6 +114,10 @@ exports.create = async (req, res, next) => {
       }
     });
 
+    if (data && data.password) {
+      delete data.password;
+    }
+
     return sendSuccess(res, data, HTTP_STATUS.CREATED);
   } catch (error) {
     if (error.code === 'P2002') {

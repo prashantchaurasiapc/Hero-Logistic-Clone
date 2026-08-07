@@ -109,4 +109,10 @@ router.put('/delivery-issues/:id/status', ctrl.updateDeliveryIssueStatus);
 // 20. Customers
 router.get('/customers', ctrl.getCustomers);
 
+// 21. Subscription & Billing
+router.get('/subscription-billing', ctrl.getSubscriptionBilling);
+router.get('/subscription-billing/plans', ctrl.getAvailableSubscriptionPlans);
+router.get('/subscription-billing/invoices', ctrl.getSubscriptionInvoices);
+router.put('/subscription-billing/plan', ctrl.updateSubscriptionPlan);
+
 module.exports = router;

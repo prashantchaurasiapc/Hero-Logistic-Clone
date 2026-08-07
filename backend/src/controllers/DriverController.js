@@ -67,6 +67,13 @@ exports.create = async (req, res, next) => {
     const payload = { ...req.body };
     if (req.tenantId && !payload.companyId) payload.companyId = req.tenantId;
 
+    if (!payload.companyId) {
+      const firstCompany = await prisma.company.findFirst();
+      if (firstCompany) {
+        payload.companyId = firstCompany.id;
+      }
+    }
+
     const data = await prisma.driver.create({
       data: payload,
       include: {

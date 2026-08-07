@@ -76,7 +76,7 @@ export default function ActiveRun() {
       {/* TOP TITLE & ACTIONS BAR */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Active Run</h1>
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Active Run</h1>
         </div>
 
         <div className="flex items-center gap-3 relative w-full sm:w-auto">
@@ -127,7 +127,7 @@ export default function ActiveRun() {
             {moreActionsOpen && (
               <div className="absolute right-0 mt-2 w-52 bg-white border border-slate-200 rounded-xl shadow-2xl z-50 py-2 text-xs font-bold text-slate-800">
                 <button onClick={() => { navigate('/driver/delivery-pod'); setMoreActionsOpen(false); }} className="w-full text-left px-4 py-2 hover:bg-slate-50 text-indigo-700 font-black">
-                  📦 Delivery & POD (15.7)
+                  📦 Delivery & POD
                 </button>
                 <button onClick={() => { setScanModalOpen(true); setMoreActionsOpen(false); }} className="w-full text-left px-4 py-2 hover:bg-slate-50">
                   📷 Scan / Select Vehicles
@@ -747,7 +747,7 @@ export default function ActiveRun() {
             <div className="flex justify-between items-start pb-4 border-b border-slate-100">
               <div>
                 <span className="text-[10px] font-black text-indigo-700 uppercase tracking-widest bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200">
-                  PAGE 15.5 DISPATCH CONFIRMATION
+                  DISPATCH CONFIRMATION
                 </span>
                 <h3 className="font-black text-slate-900 text-xl tracking-tight mt-1 flex items-center gap-2">
                   <FiTruck className="text-indigo-600" />
@@ -907,7 +907,7 @@ export default function ActiveRun() {
                 }}
                 className="w-full bg-[#4338ca] hover:bg-[#3730a3] text-white font-black text-sm py-3.5 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>📦 Proceed to Delivery & POD (15.7)</span>
+                <span>📦 Proceed to Delivery & POD</span>
                 <FiChevronRight className="text-lg" />
               </button>
 
