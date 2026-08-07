@@ -25,6 +25,158 @@ export default function CompanySettings() {
   const [newApiKeyForm, setNewApiKeyForm] = useState({ name: '', limit: '100,000 req/mo' });
   const [apiKeysList, setApiKeysList] = useState([]);
 
+  // Payment Methods State
+  const [isAddPaymentMethodModalOpen, setIsAddPaymentMethodModalOpen] = useState(false);
+  const [paymentMethodsList, setPaymentMethodsList] = useState([
+    {
+      id: 1,
+      type: 'Visa ending in 4242',
+      cardHolder: 'Sarah Mitchell',
+      cardNumber: '4242',
+      expDate: '04/2027',
+      isPrimary: true,
+      note: 'Used for recurring monthly billing ($854.70 AUD).',
+      badgeBg: 'bg-[#1A1F71]',
+      badgeText: 'VISA'
+    },
+    {
+      id: 2,
+      type: 'MasterCard ending in 8819',
+      cardHolder: 'Backup Card',
+      cardNumber: '8819',
+      expDate: '11/2026',
+      isPrimary: false,
+      note: 'Backup Card',
+      badgeBg: 'bg-[#EB001B]',
+      badgeText: 'MC'
+    }
+  ]);
+
+  const [newPaymentMethodForm, setNewPaymentMethodForm] = useState({
+    type: 'Credit / Debit Card',
+    cardHolder: '',
+    cardNumber: '',
+    expMonth: '05',
+    expYear: '2028',
+    cvv: '',
+    bankName: 'Commonwealth Bank of Australia',
+    accountName: '',
+    bsb: '',
+    accountNumber: '',
+    upiId: '',
+    isPrimary: false
+  });
+
+  const handleMakePrimaryPaymentMethod = (id) => {
+    setPaymentMethodsList(prev => prev.map(item => ({
+      ...item,
+      isPrimary: item.id === id,
+      note: item.id === id ? 'Used for recurring monthly billing.' : 'Backup payment method'
+    })));
+    triggerToast('Payment method set as primary!');
+  };
+
+  const handleRemovePaymentMethod = (id) => {
+    setPaymentMethodsList(prev => prev.filter(item => item.id !== id));
+    triggerToast('Payment method removed successfully.');
+  };
+
+  const handleAddPaymentMethodSubmit = (e) => {
+    e.preventDefault();
+    const type = newPaymentMethodForm.type;
+    
+    let brand = 'Visa';
+    let badgeBg = 'bg-[#1A1F71]';
+    let badgeText = 'VISA';
+    let last4 = '4242';
+    let expDateStr = `${newPaymentMethodForm.expMonth}/${newPaymentMethodForm.expYear}`;
+    let holderStr = newPaymentMethodForm.cardHolder || 'Cardholder';
+
+    if (type === 'Credit / Debit Card') {
+      const cleanNum = newPaymentMethodForm.cardNumber.replace(/\s+/g, '');
+      if (!cleanNum || cleanNum.length < 4) {
+        triggerToast('Please enter a valid card number');
+        return;
+      }
+      last4 = cleanNum.slice(-4);
+      if (cleanNum.startsWith('5') || cleanNum.startsWith('2')) {
+        brand = 'MasterCard';
+        badgeBg = 'bg-[#EB001B]';
+        badgeText = 'MC';
+      } else if (cleanNum.startsWith('3')) {
+        brand = 'American Express';
+        badgeBg = 'bg-[#006FCF]';
+        badgeText = 'AMEX';
+      } else {
+        brand = 'Visa';
+        badgeBg = 'bg-[#1A1F71]';
+        badgeText = 'VISA';
+      }
+    } else if (type === 'Direct Debit (BSB)') {
+      if (!newPaymentMethodForm.accountNumber) {
+        triggerToast('Please enter account number');
+        return;
+      }
+      brand = 'Direct Debit';
+      badgeBg = 'bg-slate-900';
+      badgeText = 'BANK';
+      last4 = newPaymentMethodForm.accountNumber.slice(-4);
+      expDateStr = `BSB ${newPaymentMethodForm.bsb || '062-000'}`;
+      holderStr = newPaymentMethodForm.accountName || newPaymentMethodForm.bankName || 'Direct Debit Account';
+    } else if (type === 'UPI / NetBanking') {
+      if (!newPaymentMethodForm.upiId) {
+        triggerToast('Please enter UPI ID');
+        return;
+      }
+      brand = 'UPI Instant Pay';
+      badgeBg = 'bg-emerald-700';
+      badgeText = 'UPI';
+      last4 = newPaymentMethodForm.upiId;
+      expDateStr = 'Instant Pay Verified';
+      holderStr = newPaymentMethodForm.upiId;
+    }
+
+    const isPrim = newPaymentMethodForm.isPrimary || paymentMethodsList.length === 0;
+
+    const newMethod = {
+      id: Date.now(),
+      type: `${brand} ending in ${last4}`,
+      cardHolder: holderStr,
+      cardNumber: last4,
+      expDate: expDateStr,
+      isPrimary: isPrim,
+      note: isPrim ? 'Used for recurring monthly billing.' : 'Backup payment method',
+      badgeBg,
+      badgeText
+    };
+
+    if (isPrim) {
+      setPaymentMethodsList(prev => [
+        newMethod,
+        ...prev.map(p => ({ ...p, isPrimary: false, note: 'Backup payment method' }))
+      ]);
+    } else {
+      setPaymentMethodsList(prev => [...prev, newMethod]);
+    }
+
+    setIsAddPaymentMethodModalOpen(false);
+    setNewPaymentMethodForm({
+      type: 'Credit / Debit Card',
+      cardHolder: '',
+      cardNumber: '',
+      expMonth: '05',
+      expYear: '2028',
+      cvv: '',
+      bankName: 'Commonwealth Bank of Australia',
+      accountName: '',
+      bsb: '',
+      accountNumber: '',
+      upiId: '',
+      isPrimary: false
+    });
+    triggerToast(`Payment method "${brand}" added successfully!`);
+  };
+
   const [newIntegrationForm, setNewIntegrationForm] = useState({
     providerName: 'Xero Accounting & Invoicing',
     name: 'Xero Accounting',
@@ -7724,7 +7876,7 @@ export default function CompanySettings() {
                           <td className="py-3 px-3 font-bold text-[#2563EB]">{row.invoiceNumber || '—'}</td>
                           <td className="py-3 px-3 text-slate-500">{row.date ? new Date(row.date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</td>
                           <td className="py-3 px-3 font-bold text-slate-900">{row.planTierSnapshot || 'Subscription'}</td>
-                          <td className="py-3 px-3">${((row.amount || 0) - (row.taxAmount || 0)).toFixed(2)}</td>
+                      <td className="py-3 px-3">${((row.amount || 0) - (row.taxAmount || 0)).toFixed(2)}</td>
                           <td className="py-3 px-3 text-slate-500">${(row.taxAmount || 0).toFixed(2)}</td>
                           <td className="py-3 px-3 font-black text-slate-900">${(row.amount || 0).toFixed(2)}</td>
                           <td className="py-3 px-3"><span className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${row.status === 'PAID' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>{row.status}</span></td>
@@ -7741,7 +7893,6 @@ export default function CompanySettings() {
               </div>
             </div>
           )}
-
           {/* 13.9 SUB-TAB 5: PAYMENT METHODS */}
           {billingTab === 'Payment Methods' && (
             <div className="space-y-4 text-left">
@@ -7749,41 +7900,75 @@ export default function CompanySettings() {
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 pb-3">
                   <div>
                     <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">SAVED PAYMENT METHODS</h3>
-                    <p className="text-xs text-slate-500 font-medium">Manage credit cards and direct debit accounts for monthly auto-billing.</p>
+                    <p className="text-xs text-slate-500 font-medium">Manage credit cards, direct debit accounts, and instant payment options for monthly auto-billing.</p>
                   </div>
-                  <button onClick={() => triggerToast('Opening Add Payment Method modal...')} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#2563EB] text-white font-bold text-xs rounded-xl shadow-2xs hover:bg-blue-700 cursor-pointer">
+                  <button onClick={() => setIsAddPaymentMethodModalOpen(true)} className="flex items-center gap-1.5 px-3.5 py-2 bg-[#2563EB] text-white font-bold text-xs rounded-xl shadow-xs hover:bg-blue-700 active:scale-95 transition-all cursor-pointer">
                     <CreditCard size={14} /> + Add Payment Method
                   </button>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="border border-blue-200 bg-blue-50/40 rounded-xl p-4 space-y-3 relative">
-                    <span className="absolute top-4 right-4 px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[9px] font-black uppercase rounded-full">Primary</span>
-                    <div className="flex items-center gap-3">
-                      <div className="px-2.5 py-1 bg-[#1A1F71] text-white rounded font-extrabold text-xs italic tracking-wider">VISA</div>
-                      <div>
-                        <h4 className="text-sm font-black text-slate-900">Visa ending in 4242</h4>
-                        <span className="text-xs text-slate-500 font-medium">Expires 04/2027 • Sarah Mitchell</span>
+                  {paymentMethodsList.map((method) => (
+                    <div
+                      key={method.id}
+                      className={`border rounded-xl p-4 space-y-3 relative transition-all ${
+                        method.isPrimary
+                          ? 'border-blue-300 bg-blue-50/40 shadow-2xs'
+                          : 'border-slate-200/80 bg-slate-50/40 hover:bg-slate-50'
+                      }`}
+                    >
+                      {method.isPrimary && (
+                        <span className="absolute top-4 right-4 px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[9px] font-black uppercase rounded-full">
+                          Primary
+                        </span>
+                      )}
+                      <div className="flex items-center gap-3">
+                        <div className={`px-2.5 py-1 text-white rounded font-extrabold text-xs italic tracking-wider shadow-2xs ${method.badgeBg}`}>
+                          {method.badgeText}
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-black text-slate-900">{method.type}</h4>
+                          <span className="text-xs text-slate-500 font-medium">
+                            {method.expDate.startsWith('BSB') || method.expDate.includes('Verified') ? method.expDate : `Expires ${method.expDate}`} • {method.cardHolder}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between text-xs font-bold pt-2 border-t border-slate-200/60">
+                        {method.isPrimary ? (
+                          <span className="text-xs text-slate-600 font-medium">
+                            {method.note}
+                          </span>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => handleMakePrimaryPaymentMethod(method.id)}
+                              className="text-[#2563EB] hover:underline cursor-pointer"
+                            >
+                              Make Primary
+                            </button>
+                            <button
+                              onClick={() => handleRemovePaymentMethod(method.id)}
+                              className="text-rose-600 hover:underline cursor-pointer"
+                            >
+                              Remove
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
-                    <div className="text-xs text-slate-600 font-medium pt-2 border-t border-blue-200/60">
-                      Used for recurring monthly billing ($854.70 AUD).
+                  ))}
+                  {paymentMethodsList.length === 0 && (
+                    <div className="col-span-2 p-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200 text-slate-400">
+                      <CreditCard className="mx-auto mb-2 opacity-50" size={32} />
+                      <p className="text-xs font-bold">No saved payment methods found.</p>
+                      <button
+                        onClick={() => setIsAddPaymentMethodModalOpen(true)}
+                        className="mt-3 text-xs text-[#2563EB] font-bold hover:underline cursor-pointer"
+                      >
+                        + Add a payment method now
+                      </button>
                     </div>
-                  </div>
-
-                  <div className="border border-slate-200/80 bg-slate-50/40 rounded-xl p-4 space-y-3 relative">
-                    <div className="flex items-center gap-3">
-                      <div className="px-2.5 py-1 bg-[#EB001B] text-white rounded font-extrabold text-xs italic tracking-wider">MC</div>
-                      <div>
-                        <h4 className="text-sm font-black text-slate-900">MasterCard ending in 8819</h4>
-                        <span className="text-xs text-slate-500 font-medium">Expires 11/2026 • Backup Card</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between text-xs font-bold pt-2 border-t border-slate-200/60">
-                      <button onClick={() => triggerToast('Set MasterCard as primary payment card.')} className="text-[#2563EB] hover:underline cursor-pointer">Make Primary</button>
-                      <button onClick={() => triggerToast('Payment card removed.')} className="text-rose-600 hover:underline cursor-pointer">Remove</button>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -9677,6 +9862,305 @@ export default function CompanySettings() {
                   className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
                 >
                   <Users size={14} /> Create Group
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+         ADD PAYMENT METHOD MODAL
+         ========================================================================= */}
+      {isAddPaymentMethodModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[99999] flex items-center justify-center p-4 animate-fade-in overflow-y-auto">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-5 text-left relative my-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3.5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-md font-bold">
+                  <CreditCard size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">Add Payment Method</h3>
+                  <p className="text-xs text-slate-500 font-medium">Add card or bank account for automated recurring subscription billing.</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsAddPaymentMethodModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleAddPaymentMethodSubmit} className="space-y-4">
+              {/* Payment Type Selection Tabs */}
+              <div>
+                <label className="text-xs font-extrabold text-slate-700 block mb-1.5">Payment Method Type</label>
+                <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-100 rounded-xl">
+                  {[
+                    { id: 'Credit / Debit Card', label: 'Card', icon: CreditCard },
+                    { id: 'Direct Debit (BSB)', label: 'Direct Debit', icon: Building },
+                    { id: 'UPI / NetBanking', label: 'UPI / VPA', icon: Zap }
+                  ].map((tab) => {
+                    const IconComponent = tab.icon;
+                    const isActive = newPaymentMethodForm.type === tab.id;
+                    return (
+                      <button
+                        type="button"
+                        key={tab.id}
+                        onClick={() => setNewPaymentMethodForm({ ...newPaymentMethodForm, type: tab.id })}
+                        className={`flex items-center justify-center gap-1.5 py-2 px-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                          isActive
+                            ? 'bg-white text-[#2563EB] shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        <IconComponent size={13} />
+                        <span>{tab.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* CARD TYPE FIELDS */}
+              {newPaymentMethodForm.type === 'Credit / Debit Card' && (
+                <>
+                  {/* Visual Card Preview */}
+                  <div className="bg-gradient-to-tr from-slate-900 via-blue-950 to-indigo-900 text-white rounded-xl p-4 shadow-lg space-y-4 border border-slate-800">
+                    <div className="flex items-center justify-between">
+                      <div className="w-9 h-6 bg-amber-400/90 rounded-md border border-amber-300/40 flex items-center justify-center">
+                        <div className="w-5 h-4 border border-amber-600/50 rounded-xs grid grid-cols-2 gap-0.5 p-0.5">
+                          <div className="bg-amber-600/30"></div>
+                          <div className="bg-amber-600/30"></div>
+                        </div>
+                      </div>
+                      <span className="px-2.5 py-0.5 bg-white/10 rounded font-black text-xs italic tracking-widest uppercase backdrop-blur-xs">
+                        {newPaymentMethodForm.cardNumber.startsWith('5') || newPaymentMethodForm.cardNumber.startsWith('2')
+                          ? 'MASTERCARD'
+                          : newPaymentMethodForm.cardNumber.startsWith('3')
+                          ? 'AMEX'
+                          : 'VISA'}
+                      </span>
+                    </div>
+
+                    <div className="font-mono text-base tracking-[0.2em] font-extrabold text-center py-1">
+                      {newPaymentMethodForm.cardNumber
+                        ? newPaymentMethodForm.cardNumber.replace(/\s?/g, '').replace(/(\d{4})/g, '$1 ').trim()
+                        : '•••• •••• •••• 4242'}
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px] font-mono tracking-wider text-slate-300 uppercase">
+                      <div>
+                        <div className="text-[8px] text-slate-400 font-sans tracking-normal">CARDHOLDER</div>
+                        <div className="font-bold text-white truncate max-w-[180px]">
+                          {newPaymentMethodForm.cardHolder || 'SARAH MITCHELL'}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[8px] text-slate-400 font-sans tracking-normal">EXPIRES</div>
+                        <div className="font-bold text-white">
+                          {newPaymentMethodForm.expMonth}/{newPaymentMethodForm.expYear}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Inputs */}
+                  <div>
+                    <label className="text-xs font-extrabold text-slate-700 block mb-1">Cardholder Name *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Sarah Mitchell"
+                      value={newPaymentMethodForm.cardHolder}
+                      onChange={(e) => setNewPaymentMethodForm({ ...newPaymentMethodForm, cardHolder: e.target.value })}
+                      className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:border-blue-500 font-medium"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-extrabold text-slate-700 block mb-1">Card Number *</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        required
+                        maxLength={19}
+                        placeholder="4242 4242 4242 4242"
+                        value={newPaymentMethodForm.cardNumber}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '').replace(/(\d{4})/g, '$1 ').trim();
+                          setNewPaymentMethodForm({ ...newPaymentMethodForm, cardNumber: val });
+                        }}
+                        className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:border-blue-500 font-mono"
+                      />
+                      <div className="absolute right-3 top-2.5 text-slate-400">
+                        <CreditCard size={16} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="text-xs font-extrabold text-slate-700 block mb-1">Exp Month</label>
+                      <select
+                        value={newPaymentMethodForm.expMonth}
+                        onChange={(e) => setNewPaymentMethodForm({ ...newPaymentMethodForm, expMonth: e.target.value })}
+                        className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none cursor-pointer font-medium"
+                      >
+                        {['01','02','03','04','05','06','07','08','09','10','11','12'].map((m) => (
+                          <option key={m} value={m}>{m}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-extrabold text-slate-700 block mb-1">Exp Year</label>
+                      <select
+                        value={newPaymentMethodForm.expYear}
+                        onChange={(e) => setNewPaymentMethodForm({ ...newPaymentMethodForm, expYear: e.target.value })}
+                        className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none cursor-pointer font-medium"
+                      >
+                        {['2025','2026','2027','2028','2029','2030','2031','2032','2033','2034','2035'].map((y) => (
+                          <option key={y} value={y}>{y}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-extrabold text-slate-700 block mb-1">CVV / CVC *</label>
+                      <div className="relative">
+                        <input
+                          type="password"
+                          required
+                          maxLength={4}
+                          placeholder="123"
+                          value={newPaymentMethodForm.cvv}
+                          onChange={(e) => setNewPaymentMethodForm({ ...newPaymentMethodForm, cvv: e.target.value.replace(/\D/g, '') })}
+                          className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:border-blue-500 font-mono"
+                        />
+                        <div className="absolute right-2.5 top-2.5 text-slate-400">
+                          <Lock size={14} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* DIRECT DEBIT FIELDS */}
+              {newPaymentMethodForm.type === 'Direct Debit (BSB)' && (
+                <>
+                  <div>
+                    <label className="text-xs font-extrabold text-slate-700 block mb-1">Account Holder Name *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Hero Logistics Pty Ltd"
+                      value={newPaymentMethodForm.accountName}
+                      onChange={(e) => setNewPaymentMethodForm({ ...newPaymentMethodForm, accountName: e.target.value })}
+                      className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:border-blue-500 font-medium"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-extrabold text-slate-700 block mb-1">Bank Name</label>
+                    <select
+                      value={newPaymentMethodForm.bankName}
+                      onChange={(e) => setNewPaymentMethodForm({ ...newPaymentMethodForm, bankName: e.target.value })}
+                      className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none cursor-pointer font-medium"
+                    >
+                      <option value="Commonwealth Bank of Australia">Commonwealth Bank of Australia</option>
+                      <option value="ANZ Bank">ANZ Bank</option>
+                      <option value="Westpac Banking Corporation">Westpac Banking Corporation</option>
+                      <option value="National Australia Bank (NAB)">National Australia Bank (NAB)</option>
+                      <option value="Macquarie Bank">Macquarie Bank</option>
+                      <option value="Bendigo Bank">Bendigo Bank</option>
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-xs font-extrabold text-slate-700 block mb-1">BSB Code *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="062-000"
+                        maxLength={7}
+                        value={newPaymentMethodForm.bsb}
+                        onChange={(e) => setNewPaymentMethodForm({ ...newPaymentMethodForm, bsb: e.target.value })}
+                        className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:border-blue-500 font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-extrabold text-slate-700 block mb-1">Account Number *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="1234 5678"
+                        maxLength={12}
+                        value={newPaymentMethodForm.accountNumber}
+                        onChange={(e) => setNewPaymentMethodForm({ ...newPaymentMethodForm, accountNumber: e.target.value })}
+                        className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:border-blue-500 font-mono"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* UPI FIELDS */}
+              {newPaymentMethodForm.type === 'UPI / NetBanking' && (
+                <>
+                  <div>
+                    <label className="text-xs font-extrabold text-slate-700 block mb-1">UPI ID / Virtual Payment Address (VPA) *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. company@okaxis or 9876543210@upi"
+                      value={newPaymentMethodForm.upiId}
+                      onChange={(e) => setNewPaymentMethodForm({ ...newPaymentMethodForm, upiId: e.target.value })}
+                      className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:border-blue-500 font-mono"
+                    />
+                    <p className="text-[10px] text-slate-500 mt-1">Accepts Google Pay, PhonePe, Paytm, BHIM, or any bank UPI handle.</p>
+                  </div>
+                </>
+              )}
+
+              {/* Primary Method Checkbox */}
+              <div className="pt-2 border-t border-slate-100">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newPaymentMethodForm.isPrimary}
+                    onChange={(e) => setNewPaymentMethodForm({ ...newPaymentMethodForm, isPrimary: e.target.checked })}
+                    className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300"
+                  />
+                  <span className="text-xs font-bold text-slate-700">Set as primary payment method for recurring monthly billing</span>
+                </label>
+              </div>
+
+              {/* Security Badge Notice */}
+              <div className="flex items-center gap-2 p-2.5 bg-slate-50 rounded-xl border border-slate-200/70 text-[11px] text-slate-600 font-medium">
+                <ShieldCheck size={16} className="text-emerald-600 shrink-0" />
+                <span>Encrypted with 256-bit SSL encryption. PCI-DSS Level 1 Compliant.</span>
+              </div>
+
+              {/* Modal Buttons */}
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsAddPaymentMethodModalOpen(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5 transition-all"
+                >
+                  <CreditCard size={14} /> Add Payment Method
                 </button>
               </div>
             </form>

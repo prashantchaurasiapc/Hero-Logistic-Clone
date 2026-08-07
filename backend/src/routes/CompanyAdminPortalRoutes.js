@@ -81,6 +81,9 @@ router.get('/reports', ctrl.getReports);
 
 // 14. Messages
 router.get('/messages', ctrl.getMessages);
+router.post('/messages/send', ctrl.sendMessage);
+router.post('/messages/broadcasts', ctrl.createBroadcast);
+router.post('/messages/communications', ctrl.createCustomerCommunication);
 
 // 15. Support & Knowledge Base
 router.get('/support-tickets', ctrl.getSupportAndKb);
