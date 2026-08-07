@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Bell, ChevronDown, Plus, Mail, Phone, Calendar, 
@@ -9,15 +9,38 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, Cell 
 } from 'recharts';
+import { 
+  getSalesDashboardSummary, 
+  updateLead, 
+  createDemoBooking, 
+  createProposal, 
+  createFollowUpTask, 
+  updateFollowUpTask, 
+  createSalesActivity, 
+  convertLeadToCompany 
+} from '../../services/api';
 
 export default function SalesDashboard() {
   const navigate = useNavigate();
   const [salesRep, setSalesRep] = useState('Alex Wright');
-  const [selectedLead, setSelectedLead] = useState('Vance Refrigeration (Robert Vance)');
-  const [leadsStatus, setLeadsStatus] = useState({
-    'Vance Refrigeration (Robert Vance)': 'NEW LEAD',
-    'Hudson Logistics Corp (Jane Doe)': 'NEW LEAD'
+  const [selectedLeadId, setSelectedLeadId] = useState('');
+  const [leads, setLeads] = useState([]);
+  const [kpis, setKpis] = useState({
+    newLeads: 0,
+    demosBooked: 0,
+    trialsActive: 0,
+    proposalsSent: 0,
+    dealsWon: 0,
+    dealsLost: 0,
+    pipelineValue: 0
   });
+  const [stages, setStages] = useState([]);
+  const [activities, setActivities] = useState([]);
+  const [tasks, setTasks] = useState([]);
+  const [monthlyData, setMonthlyData] = useState([]);
+  const [conversionData, setConversionData] = useState([]);
+  
+  // Modals state
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
   const [showDemoModal, setShowDemoModal] = useState(false);
   const [showProposalModal, setShowProposalModal] = useState(false);
@@ -31,92 +54,229 @@ export default function SalesDashboard() {
   const [wizardStep, setWizardStep] = useState(1);
   const [isProvisioning, setIsProvisioning] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState('Professional');
-  const [estimatedValue, setEstimatedValue] = useState('$2,004/mo');
   const [toastMessage, setToastMessage] = useState('');
+  const [quickNote, setQuickNote] = useState('');
+
+  // Modals form data
+  const [newTaskForm, setNewTaskForm] = useState({
+    title: '',
+    type: 'Phone Call',
+    date: new Date().toISOString().split('T')[0],
+    time: '11:00 AM',
+    priority: 'High'
+  });
+
+  const [newDemoForm, setNewDemoForm] = useState({
+    date: new Date().toISOString().split('T')[0],
+    time: '11:00 AM EST',
+    agenda: 'Walkthrough showcasing fleet telematics and factoring automation.'
+  });
+
+  const [newProposalForm, setNewProposalForm] = useState({
+    title: 'Hero Logistics SaaS License - Proposal',
+    value: 2004,
+    discount: 0,
+    validity: 30
+  });
+
+  const [newMailForm, setNewMailForm] = useState({
+    subject: 'Welcome Sandbox Invite',
+    body: 'Hi Robert,\n\nWe would love to invite you to test our Hero Logistics OS sandbox.'
+  });
+
+  const [newCallForm, setNewCallForm] = useState({
+    duration: '2m 15s',
+    outcome: 'Connected',
+    notes: 'Prospect interested in scheduling a live software walk-through.'
+  });
+
+  const [newScheduleForm, setNewScheduleForm] = useState({
+    type: '📞 Phone Call',
+    priority: '🟡 Medium',
+    date: new Date().toISOString().split('T')[0],
+    time: '10:00 AM',
+    notes: 'Urgent follow-up touchpoint.'
+  });
 
   const triggerToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(''), 3000);
   };
 
-  const [activities, setActivities] = useState([
-    { title: 'Vance Refrigeration', date: '2026-07-14 02:15 PM', desc: 'Lead Created: Inbound workspace registration processed.', user: 'SYSTEM HUB', dotColor: 'bg-amber-400' },
-    { title: 'Hudson Logistics Corp', date: '2026-07-12 11:40 AM', desc: 'Demo Scheduled: Zoom product walkthrough booked.', user: 'ALEX WRIGHT', dotColor: 'bg-indigo-500' },
-    { title: 'Apex Freight Systems', date: '2026-07-09 04:30 PM', desc: 'Proposal Sent: SaaS License Proposal sent via email.', user: 'ALEX WRIGHT', dotColor: 'bg-emerald-500' },
-    { title: 'Swift Cargo Express', date: '2026-07-07 10:15 AM', desc: 'Trial Started: 14-day Professional Trial activated.', user: 'SARAH CONNOR', dotColor: 'bg-[#00A3FF]' }
-  ]);
+  const fetchDashboardData = async () => {
+    try {
+      const response = await getSalesDashboardSummary();
+      if (response.data?.success) {
+        const { kpis, stages, monthlyData, conversionData, recentActivities, tasks, leadsList } = response.data.data;
+        setKpis(kpis);
+        setStages(stages);
+        setMonthlyData(monthlyData);
+        setConversionData(conversionData);
+        setActivities(recentActivities);
+        setTasks(tasks);
+        setLeads(leadsList);
+        
+        if (leadsList && leadsList.length > 0 && !selectedLeadId) {
+          setSelectedLeadId(leadsList[0].id);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard summary:', error);
+    }
+  };
 
-  const [tasks, setTasks] = useState([
-    { id: 1, company: 'Freight-A-Way', due: '2026-07-16 at 03:30 PM', task: 'Task + Touchpoint checklist regarding pain points: Fuel tax calculation mistakes.', status: 'OVERDUE', completed: false },
-    { id: 2, company: 'QuickLoad Logistics', due: '2026-07-17 at 10:00 AM', task: 'Call + Touchpoint checklist regarding pain points: Driver dispatch automation.', status: 'OVERDUE', completed: false },
-    { id: 3, company: 'Vance Refrigeration', due: '2026-07-19 at 02:00 PM', task: 'Demo Follow-up: Send customized pricing deck for 12 trucks.', status: 'UPCOMING', completed: false }
-  ]);
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
 
-  const [newTaskForm, setNewTaskForm] = useState({
-    title: '',
-    type: 'Phone Call',
-    date: '2026-07-22',
-    time: '11:00 AM',
-    priority: 'High'
-  });
+  const selectedLeadObj = leads.find(l => l.id === selectedLeadId) || null;
 
-  const handleCreateTask = (e) => {
+  useEffect(() => {
+    if (selectedLeadObj) {
+      setShowConvertButton(selectedLeadObj.stage === 'WON');
+    }
+  }, [selectedLeadId, leads]);
+
+  const handleUpdateLeadStage = async (newStage) => {
+    if (!selectedLeadObj) return;
+    try {
+      const res = await updateLead(selectedLeadObj.id, { stage: newStage });
+      if (res.data?.success) {
+        triggerToast(`Lead stage updated to ${newStage}!`);
+        await createSalesActivity({
+          leadId: selectedLeadObj.id,
+          title: `Stage Changed to ${newStage}`,
+          description: `Rep updated stage in details workspace.`
+        });
+        fetchDashboardData();
+      }
+    } catch (error) {
+      console.error('Error updating stage:', error);
+      triggerToast('Failed to update stage.');
+    }
+  };
+
+  const handleCreateTask = async (e) => {
     e.preventDefault();
-    const createdObj = {
-      id: Date.now(),
-      company: newTaskForm.title || 'General Follow-up Task',
-      due: `${newTaskForm.date} at ${newTaskForm.time}`,
-      task: `${newTaskForm.type} (${newTaskForm.priority} Priority): Follow-up regarding software onboarding.`,
-      status: 'UPCOMING',
-      completed: false
-    };
-    setTasks([createdObj, ...tasks]);
-    setShowAddTaskModal(false);
-    setNewTaskForm({ title: '', type: 'Phone Call', date: '2026-07-22', time: '11:00 AM', priority: 'High' });
+    if (!selectedLeadObj) return;
+    try {
+      const res = await createFollowUpTask({
+        leadId: selectedLeadObj.id,
+        repId: selectedLeadObj.repId || 'system',
+        type: newTaskForm.type,
+        description: `${newTaskForm.title} (${newTaskForm.priority} Priority)`,
+        dueDate: new Date(newTaskForm.date + 'T' + '12:00:00')
+      });
+      if (res.data?.success) {
+        triggerToast('New task added successfully!');
+        setShowAddTaskModal(false);
+        setNewTaskForm({
+          title: '',
+          type: 'Phone Call',
+          date: new Date().toISOString().split('T')[0],
+          time: '11:00 AM',
+          priority: 'High'
+        });
+        fetchDashboardData();
+      }
+    } catch (error) {
+      console.error('Error creating task:', error);
+    }
   };
 
-  const toggleTaskCompleted = (id) => {
-    setTasks(tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
+  const toggleTaskCompleted = async (taskId, currentCompleted) => {
+    try {
+      const res = await updateFollowUpTask(taskId, {
+        status: currentCompleted ? 'PENDING' : 'COMPLETED'
+      });
+      if (res.data?.success) {
+        triggerToast(currentCompleted ? 'Task marked incomplete' : 'Task marked completed');
+        fetchDashboardData();
+      }
+    } catch (error) {
+      console.error('Error updating task:', error);
+    }
   };
 
-  // Analytics Data
-  const monthlyData = [
-    { name: 'Jan', value: 0 },
-    { name: 'Feb', value: 30000 },
-    { name: 'Mar', value: 30000 },
-    { name: 'Apr', value: 45000 },
-    { name: 'May', value: 65000 },
-    { name: 'Jun', value: 306960 }
-  ];
+  const handleBookDemo = async () => {
+    if (!selectedLeadObj) return;
+    try {
+      const res = await createDemoBooking({
+        leadId: selectedLeadObj.id,
+        presenterId: selectedLeadObj.repId || 'system',
+        scheduledAt: new Date(newDemoForm.date + 'T12:00:00'),
+        status: 'UPCOMING',
+        meetingLink: 'https://zoom.us/j/987654321',
+        feedback: newDemoForm.agenda
+      });
+      if (res.data?.success) {
+        await handleUpdateLeadStage('DEMO_BOOKED');
+        setShowDemoModal(false);
+        triggerToast('Demo booked successfully!');
+      }
+    } catch (error) {
+      console.error('Error booking demo:', error);
+    }
+  };
 
-  const conversionData = [
-    { name: 'Leads', value: 50, color: '#6366F1' },
-    { name: 'Demos', value: 20, color: '#3B82F6' },
-    { name: 'Trials', value: 21, color: '#10B981' },
-    { name: 'Proposals', value: 15, color: '#F59E0B' },
-    { name: 'Won', value: 5, color: '#EF4444' }
-  ];
+  const handleSendProposal = async () => {
+    if (!selectedLeadObj) return;
+    try {
+      const res = await createProposal({
+        proposalRef: `PROP-${Math.floor(100 + Math.random() * 900)}`,
+        leadId: selectedLeadObj.id,
+        baseValue: Number(newProposalForm.value),
+        discountAmount: Number(newProposalForm.discount),
+        finalValue: Number(newProposalForm.value) - Number(newProposalForm.discount),
+        validityDays: Number(newProposalForm.validity),
+        status: 'SENT',
+        includedModules: JSON.stringify(['Real-Time GPS', 'Driver Portal'])
+      });
+      if (res.data?.success) {
+        await handleUpdateLeadStage('PROPOSAL_SENT');
+        setShowProposalModal(false);
+        triggerToast('Proposal dispatched successfully!');
+      }
+    } catch (error) {
+      console.error('Error sending proposal:', error);
+    }
+  };
 
-  const kpis = [
-    { label: 'NEW LEADS', value: '6', sub1: 'Stage: New', sub2: '6 pending' },
-    { label: 'DEMOS BOOKED', value: '12', sub1: 'Upcoming', sub2: 'slots ready', subColor: 'text-emerald-500' },
-    { label: 'TRIALS ACTIVE', value: '21', sub1: 'Active', sub2: 'usage monitored', subColor: 'text-emerald-500' },
-    { label: 'PROPOSALS SENT', value: '10', sub1: 'Negotiating', sub2: 'awaiting signature', subColor: 'text-slate-500' },
-    { label: 'DEALS WON', value: '5', sub1: 'Closed', sub2: 'syncing onboarding', subColor: 'text-emerald-500' },
-    { label: 'DEALS LOST', value: '5', sub1: 'Closed', sub2: 'needs re-engagement', subColor: 'text-rose-500' }
-  ];
+  const handleQuickNote = async () => {
+    if (!selectedLeadObj || !quickNote.trim()) return;
+    try {
+      const res = await createSalesActivity({
+        leadId: selectedLeadObj.id,
+        title: 'Note Logged',
+        description: quickNote
+      });
+      if (res.data?.success) {
+        setQuickNote('');
+        triggerToast('Note logged successfully!');
+        fetchDashboardData();
+      }
+    } catch (error) {
+      console.error('Error logging note:', error);
+    }
+  };
 
-  const stages = [
-    { name: 'NEW LEAD', count: 6 },
-    { name: 'CONTACTED', count: 6 },
-    { name: 'DEMO BOOKED', count: 6 },
-    { name: 'DEMO COMPLETED', count: 6 },
-    { name: 'TRIAL STARTED', count: 6 },
-    { name: 'PROPOSAL SENT', count: 5 },
-    { name: 'NEGOTIATING', count: 5 },
-    { name: 'WON', count: 5 },
-    { name: 'LOST', count: 5 },
-  ];
+  const handleProvisionWorkspace = async () => {
+    if (!selectedLeadObj) return;
+    setIsProvisioning(true);
+    try {
+      const res = await convertLeadToCompany(selectedLeadObj.id, {
+        selectedPlan
+      });
+      if (res.data?.success) {
+        setIsProvisioning(false);
+        setWizardStep(6);
+      }
+    } catch (error) {
+      console.error('Error provisioning company:', error);
+      setIsProvisioning(false);
+      triggerToast('Workspace provisioning failed.');
+    }
+  };
 
   return (
     <div className="flex-grow bg-[#F8FAFC] p-6 space-y-6 w-full text-left font-sans custom-scrollbar overflow-y-auto relative">
@@ -144,13 +304,13 @@ export default function SalesDashboard() {
       {/* KPI Row Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-7 gap-3 pb-1">
         {[
-          { label: 'NEW LEADS', value: '6', sub: '6 Pending', subColor: 'text-amber-600 bg-amber-50' },
-          { label: 'DEMOS BOOKED', value: '12', sub: 'Slots Ready', subColor: 'text-indigo-600 bg-indigo-50' },
-          { label: 'TRIALS ACTIVE', value: '21', sub: 'Active Usage', subColor: 'text-emerald-600 bg-emerald-50' },
-          { label: 'PROPOSALS SENT', value: '10', sub: 'Negotiating', subColor: 'text-slate-600 bg-slate-100' },
-          { label: 'DEALS WON', value: '5', sub: 'Closed & Synced', subColor: 'text-emerald-600 bg-emerald-50' },
-          { label: 'DEALS LOST', value: '5', sub: 'Needs Re-engage', subColor: 'text-rose-600 bg-rose-50' },
-          { label: 'PIPELINE VALUE', value: '$306,960', sub: 'Potential MRR', subColor: 'text-emerald-600 bg-emerald-50' }
+          { label: 'NEW LEADS', value: kpis.newLeads, sub: 'New Leads', subColor: 'text-amber-600 bg-amber-50' },
+          { label: 'DEMOS BOOKED', value: kpis.demosBooked, sub: 'Slots Active', subColor: 'text-indigo-600 bg-indigo-50' },
+          { label: 'TRIALS ACTIVE', value: kpis.trialsActive, sub: 'Active Trials', subColor: 'text-emerald-600 bg-emerald-50' },
+          { label: 'PROPOSALS SENT', value: kpis.proposalsSent, sub: 'Awaiting Sign', subColor: 'text-slate-600 bg-slate-100' },
+          { label: 'DEALS WON', value: kpis.dealsWon, sub: 'Closed Won', subColor: 'text-emerald-600 bg-emerald-50' },
+          { label: 'DEALS LOST', value: kpis.dealsLost, sub: 'Closed Lost', subColor: 'text-rose-600 bg-rose-50' },
+          { label: 'PIPELINE VALUE', value: `$${kpis.pipelineValue.toLocaleString()}`, sub: 'Potential Value', subColor: 'text-emerald-600 bg-emerald-50' }
         ].map((kpi, idx) => (
           <div key={idx} className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-3xs hover:shadow-2xs transition-all flex flex-col justify-between h-[96px]">
             <div>
@@ -176,7 +336,7 @@ export default function SalesDashboard() {
           <div className="bg-white rounded-[24px] border border-slate-100 p-6 shadow-sm">
             <div className="flex justify-between items-center mb-5">
               <h3 className="text-[11px] font-black text-amber-500 uppercase tracking-widest">PIPELINE STAGE DISTRIBUTION MATRIX</h3>
-              <span className="text-[10px] font-extrabold text-slate-500">58 Leads Active</span>
+              <span className="text-[10px] font-extrabold text-slate-500">{leads.length} Leads Active</span>
             </div>
             <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
               {stages.map((stg, i) => (
@@ -196,163 +356,153 @@ export default function SalesDashboard() {
                 <h3 className="text-[11px] font-black text-amber-500 uppercase tracking-widest">SELECTED LEAD DETAILS WORKSPACE</h3>
                 <div className="relative">
                   <select 
-                    value={selectedLead}
-                    onChange={(e) => setSelectedLead(e.target.value)}
+                    value={selectedLeadId}
+                    onChange={(e) => setSelectedLeadId(e.target.value)}
                     className="appearance-none bg-white border border-slate-200 text-slate-800 font-bold text-xs py-1.5 pl-3 pr-8 rounded-lg outline-none cursor-pointer"
                   >
-                    <option>Vance Refrigeration (Robert Vance)</option>
-                    <option>Hudson Logistics Corp (Jane Doe)</option>
+                    {leads.map(lead => (
+                      <option key={lead.id} value={lead.id}>
+                        {lead.companyName} ({lead.contactName})
+                      </option>
+                    ))}
                   </select>
                   <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-2 pointer-events-none" />
                 </div>
               </div>
-              {(() => {
-                const status = leadsStatus[selectedLead] || 'NEW LEAD';
-                let style = 'text-amber-600 bg-amber-50 border-amber-200';
-                if (status === 'DEAL WON') style = 'text-emerald-700 bg-emerald-50 border-emerald-300';
-                if (status === 'DEAL LOST') style = 'text-rose-700 bg-rose-50 border-rose-300';
-                if (status === 'CONVERTED TO COMPANY') style = 'text-amber-800 bg-amber-100 border-amber-300';
-                return (
-                  <span className={`text-[10px] font-black px-3.5 py-1.5 rounded-lg border uppercase transition-all shadow-3xs ${style}`}>
-                    {status}
-                  </span>
-                );
-              })()}
+              {selectedLeadObj && (
+                <span className={`text-[10px] font-black px-3.5 py-1.5 rounded-lg border uppercase transition-all shadow-3xs text-amber-600 bg-amber-50 border-amber-200`}>
+                  {selectedLeadObj.stage}
+                </span>
+              )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              <div>
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">FLEET SIZE</p>
-                <p className="text-xs font-extrabold text-slate-900">12 Trucks</p>
-              </div>
-              <div>
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">TRANSPORT NICHE</p>
-                <p className="text-xs font-extrabold text-slate-900">Car Carrying</p>
-              </div>
-              <div>
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">CURRENT SOFTWARE</p>
-                <p className="text-xs font-extrabold text-slate-900">Spreadsheets (Excel)</p>
-              </div>
-              <div>
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">ESTIMATED VALUE</p>
-                <p className="text-xs font-extrabold text-amber-500">$2,004/mo</p>
-              </div>
-            </div>
+            {selectedLeadObj ? (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                  <div>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">FLEET SIZE</p>
+                    <p className="text-xs font-extrabold text-slate-900">{selectedLeadObj.fleetSize || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">TRANSPORT NICHE</p>
+                    <p className="text-xs font-extrabold text-slate-900">{selectedLeadObj.transportNiche || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">CURRENT SOFTWARE</p>
+                    <p className="text-xs font-extrabold text-slate-900">{selectedLeadObj.currentSoftware || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1">ESTIMATED VALUE</p>
+                    <p className="text-xs font-extrabold text-amber-500">${(selectedLeadObj.estimatedValue || 0).toLocaleString()}/mo</p>
+                  </div>
+                </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-              <div className="border border-slate-100 rounded-xl p-4 bg-slate-50/50">
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2">CORE PAIN POINTS</p>
-                <p className="text-xs font-semibold text-slate-700 italic">"Manual route sheets take hours"</p>
-              </div>
-              <div className="border border-slate-100 rounded-xl p-4 bg-slate-50/50 flex justify-between items-center">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                  <div className="border border-slate-100 rounded-xl p-4 bg-slate-50/50">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2">CORE PAIN POINTS</p>
+                    <p className="text-xs font-semibold text-slate-700 italic">"{selectedLeadObj.painPoints || 'No pain points logged.'}"</p>
+                  </div>
+                  <div className="border border-slate-100 rounded-xl p-4 bg-slate-50/50 flex justify-between items-center">
+                    <div>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2">PROSPECT EMAIL / CONTACT</p>
+                      <p className="text-xs font-extrabold text-slate-900">{selectedLeadObj.email}</p>
+                    </div>
+                  </div>
+                </div>
+
                 <div>
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2">NEXT FOLLOW-UP TARGET</p>
-                  <p className="text-sm font-extrabold text-slate-900">2026-07-13</p>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-3">CRM DIRECT DISPATCH ACTIONS</p>
+                  <div className="flex flex-wrap items-center gap-2 mb-4">
+                    <div className="flex items-center gap-2 bg-white border border-slate-200 px-3 py-2 rounded-xl">
+                      <User className="w-3.5 h-3.5 text-amber-500" />
+                      <span className="text-[11px] font-bold text-slate-500">Rep:</span>
+                      <select 
+                        value={salesRep}
+                        onChange={(e) => setSalesRep(e.target.value)}
+                        className="text-[11px] font-extrabold text-slate-900 outline-none bg-transparent cursor-pointer pl-1 pr-4 appearance-none relative"
+                      >
+                        <option>Alex Wright</option>
+                        <option>Sarah Connor</option>
+                      </select>
+                    </div>
+                    <button onClick={() => setShowRecommendModal(true)} className="bg-[#4B0082] text-white text-[10px] font-bold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-1.5 hover:bg-purple-900 transition-all cursor-pointer active:scale-95">
+                      <Star className="w-3.5 h-3.5" /> Recommend Plan
+                    </button>
+                    <button onClick={() => setShowDemoModal(true)} className="bg-[#ffcc00] text-black text-[10px] font-bold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-1.5 hover:bg-[#e6b800] transition-all cursor-pointer active:scale-95">
+                      <Calendar className="w-3.5 h-3.5" /> Book Demo
+                    </button>
+                    <button onClick={() => setShowTrialModal(true)} className="bg-slate-800 text-white text-[10px] font-bold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-1.5 hover:bg-slate-900 transition-all cursor-pointer active:scale-95">
+                      <Play className="w-3.5 h-3.5" fill="currentColor" /> Start Trial
+                    </button>
+                    <button onClick={() => setShowProposalModal(true)} className="bg-white border border-slate-200 text-slate-700 text-[10px] font-bold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-1.5 hover:bg-slate-50 transition-all cursor-pointer active:scale-95">
+                      <Send className="w-3.5 h-3.5" /> Send Proposal
+                    </button>
+                  </div>
+                  
+                  <div className="flex flex-wrap items-center gap-2 mb-4">
+                    <button 
+                      onClick={() => handleUpdateLeadStage('WON')}
+                      className="bg-[#0F9D58] text-white text-[10px] font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5 hover:bg-[#0b8043] shadow-sm transition-all cursor-pointer active:scale-95"
+                    >
+                      <Check className="w-3.5 h-3.5" /> Mark Won
+                    </button>
+                    <button 
+                      onClick={() => handleUpdateLeadStage('LOST')}
+                      className="bg-[#990000] text-white text-[10px] font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5 hover:bg-[#800000] shadow-sm transition-all cursor-pointer active:scale-95"
+                    >
+                      <X className="w-3.5 h-3.5" /> Mark Lost
+                    </button>
+                    {showConvertButton && (
+                      <button 
+                        onClick={() => {
+                          setWizardStep(1);
+                          setShowConversionWizard(true);
+                        }}
+                        className="bg-[#E68A00] text-white text-[10px] font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5 hover:bg-[#cc7a00] shadow-sm transition-all cursor-pointer active:scale-95"
+                      >
+                        <UserPlus className="w-3.5 h-3.5" /> Convert to Company
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => setShowMailModal(true)}
+                      title="Send Email"
+                      className="p-2.5 border border-slate-200 rounded-xl text-blue-500 hover:bg-blue-50 hover:border-blue-300 transition-all"
+                    >
+                      <Mail className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => setShowCallModal(true)}
+                      title="Log Phone Call"
+                      className="p-2.5 border border-slate-200 rounded-xl text-green-500 hover:bg-green-50 hover:border-green-300 transition-all"
+                    >
+                      <Phone className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => setShowScheduleModal(true)}
+                      title="Schedule Follow-up"
+                      className="p-2.5 border border-slate-200 rounded-xl text-amber-500 hover:bg-amber-50 hover:border-amber-300 transition-all"
+                    >
+                      <Calendar className="w-4 h-4" />
+                    </button>
+                    <input 
+                      type="text" 
+                      placeholder="Quick write note and press Enter..." 
+                      value={quickNote}
+                      onChange={e => setQuickNote(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') handleQuickNote();
+                      }}
+                      className="flex-1 border border-slate-200 rounded-xl px-4 py-2 text-xs font-medium text-slate-700 focus:outline-none focus:border-amber-400 transition-colors"
+                    />
+                  </div>
                 </div>
-                <button className="text-[10px] font-black text-amber-600 uppercase tracking-widest">SCHEDULE</button>
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2">INTERNAL NOTES / LOG COMMENT</p>
-              <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 text-xs font-medium text-slate-600 flex justify-between items-end">
-                <p>Client looking to automate Car Carrying dispatch workflows. Currently using Spreadsheets (Excel).</p>
-                <span className="text-[9px] text-slate-400 font-bold">- Alex Wright on 2026-07-08</span>
-              </div>
-            </div>
-
-            <div>
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-3">CRM DIRECT DISPATCH ACTIONS</p>
-              <div className="flex flex-wrap items-center gap-2 mb-4">
-                <div className="flex items-center gap-2 bg-white border border-slate-200 px-3 py-2 rounded-xl">
-                  <User className="w-3.5 h-3.5 text-amber-500" />
-                  <span className="text-[11px] font-bold text-slate-500">Rep:</span>
-                  <select 
-                    value={salesRep}
-                    onChange={(e) => setSalesRep(e.target.value)}
-                    className="text-[11px] font-extrabold text-slate-900 outline-none bg-transparent cursor-pointer pl-1 pr-4 appearance-none relative"
-                    style={{ background: 'url("data:image/svg+xml;utf8,<svg fill=%2394A3B8 height=16 viewBox=0 0 24 24 width=16 xmlns=http://www.w3.org/2000/svg><path d=\'M7 10l5 5 5-5z\'/></svg>") no-repeat right center' }}
-                  >
-                    <option>Alex Wright</option>
-                    <option>Sarah Connor</option>
-                  </select>
-                </div>
-                <button onClick={() => setShowRecommendModal(true)} className="bg-[#4B0082] text-white text-[10px] font-bold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-1.5 hover:bg-purple-900 transition-all cursor-pointer active:scale-95">
-                  <Star className="w-3.5 h-3.5" /> Recommend Plan
-                </button>
-                <button onClick={() => setShowDemoModal(true)} className="bg-[#ffcc00] text-black text-[10px] font-bold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-1.5 hover:bg-[#e6b800] transition-all cursor-pointer active:scale-95">
-                  <Calendar className="w-3.5 h-3.5" /> Book Demo
-                </button>
-                <button onClick={() => setShowTrialModal(true)} className="bg-slate-800 text-white text-[10px] font-bold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-1.5 hover:bg-slate-900 transition-all cursor-pointer active:scale-95">
-                  <Play className="w-3.5 h-3.5" fill="currentColor" /> Start Trial
-                </button>
-                <button onClick={() => setShowProposalModal(true)} className="bg-white border border-slate-200 text-slate-700 text-[10px] font-bold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-1.5 hover:bg-slate-50 transition-all cursor-pointer active:scale-95">
-                  <Send className="w-3.5 h-3.5" /> Send Proposal
-                </button>
-              </div>
-              
-              <div className="flex flex-wrap items-center gap-2 mb-4">
-                <button 
-                  onClick={() => {
-                    setLeadsStatus(prev => ({ ...prev, [selectedLead]: 'DEAL WON' }));
-                    setShowConvertButton(true);
-                  }}
-                  className="bg-[#0F9D58] text-white text-[10px] font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5 hover:bg-[#0b8043] shadow-sm transition-all cursor-pointer active:scale-95"
-                >
-                  <Check className="w-3.5 h-3.5" /> Mark Won
-                </button>
-                <button 
-                  onClick={() => {
-                    setLeadsStatus(prev => ({ ...prev, [selectedLead]: 'DEAL LOST' }));
-                    setShowConvertButton(false);
-                  }}
-                  className="bg-[#990000] text-white text-[10px] font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5 hover:bg-[#800000] shadow-sm transition-all cursor-pointer active:scale-95"
-                >
-                  <X className="w-3.5 h-3.5" /> Mark Lost
-                </button>
-                {showConvertButton && (
-                  <button 
-                    onClick={() => {
-                      setLeadsStatus(prev => ({ ...prev, [selectedLead]: 'CONVERTED TO COMPANY' }));
-                      setWizardStep(1);
-                      setShowConversionWizard(true);
-                    }}
-                    className="bg-[#E68A00] text-white text-[10px] font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5 hover:bg-[#cc7a00] shadow-sm transition-all cursor-pointer active:scale-95"
-                  >
-                    <UserPlus className="w-3.5 h-3.5" /> Convert to Company
-                  </button>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => setShowMailModal(true)}
-                  title="Send Email"
-                  className="p-2.5 border border-slate-200 rounded-xl text-blue-500 hover:bg-blue-50 hover:border-blue-300 transition-all"
-                >
-                  <Mail className="w-4 h-4" />
-                </button>
-                <button 
-                  onClick={() => setShowCallModal(true)}
-                  title="Log Phone Call"
-                  className="p-2.5 border border-slate-200 rounded-xl text-green-500 hover:bg-green-50 hover:border-green-300 transition-all"
-                >
-                  <Phone className="w-4 h-4" />
-                </button>
-                <button 
-                  onClick={() => setShowScheduleModal(true)}
-                  title="Schedule Follow-up"
-                  className="p-2.5 border border-slate-200 rounded-xl text-amber-500 hover:bg-amber-50 hover:border-amber-300 transition-all"
-                >
-                  <Calendar className="w-4 h-4" />
-                </button>
-                <input 
-                  type="text" 
-                  placeholder="Quick write note and press Enter..." 
-                  className="flex-1 border border-slate-200 rounded-xl px-4 py-2 text-xs font-medium text-slate-700 focus:outline-none focus:border-amber-400 transition-colors"
-                />
-              </div>
-            </div>
+              </>
+            ) : (
+              <p className="text-sm font-semibold text-slate-400 text-center py-12">No active leads found.</p>
+            )}
           </div>
         </div>
 
@@ -382,7 +532,7 @@ export default function SalesDashboard() {
                   >
                     <div className="absolute right-4 top-4">
                       <button 
-                        onClick={() => toggleTaskCompleted(t.id)}
+                        onClick={() => toggleTaskCompleted(t.id, t.completed)}
                         className={`w-6 h-6 rounded-full border flex items-center justify-center transition-all cursor-pointer ${
                           t.completed 
                             ? 'bg-emerald-500 border-emerald-500 text-white' 
@@ -400,7 +550,7 @@ export default function SalesDashboard() {
                         <span className="text-[9px] font-black text-rose-600 bg-rose-50 border border-rose-200 px-1.5 py-0.2 rounded uppercase">Overdue</span>
                       )}
                     </div>
-                    <p className="text-[10px] font-bold text-slate-400 mb-1.5">Due: {t.due}</p>
+                    <p className="text-[10px] font-bold text-slate-400 mb-1.5">Due: {new Date(t.due).toLocaleDateString()}</p>
                     <p className={`text-[11px] font-semibold text-amber-700 leading-snug ${t.completed ? 'line-through text-slate-400' : ''}`}>{t.task}</p>
                   </div>
                 ))
@@ -417,55 +567,12 @@ export default function SalesDashboard() {
 
             <div className="max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
               <div className="relative border-l-2 border-slate-200 ml-2 space-y-5 py-1">
-                {[
-                  {
-                    title: 'Vance Refrigeration',
-                    date: '2026-07-14 02:15 PM',
-                    desc: 'Lead Created: Inbound workspace registration processed.',
-                    user: 'SYSTEM HUB',
-                    dotColor: 'bg-amber-400'
-                  },
-                  {
-                    title: 'Hudson Logistics Corp',
-                    date: '2026-07-12 11:40 AM',
-                    desc: 'Demo Scheduled: Zoom product walkthrough booked with Robert Vance.',
-                    user: 'ALEX WRIGHT',
-                    dotColor: 'bg-indigo-500'
-                  },
-                  {
-                    title: 'Apex Freight Systems',
-                    date: '2026-07-09 04:30 PM',
-                    desc: 'Proposal Sent: SaaS License Proposal sent via email.',
-                    user: 'ALEX WRIGHT',
-                    dotColor: 'bg-emerald-500'
-                  },
-                  {
-                    title: 'Swift Cargo Express',
-                    date: '2026-07-07 10:15 AM',
-                    desc: 'Trial Started: 14-day Professional Trial activated.',
-                    user: 'SARAH CONNOR',
-                    dotColor: 'bg-[#00A3FF]'
-                  },
-                  {
-                    title: 'Global Shipping Co.',
-                    date: '2026-07-05 03:00 PM',
-                    desc: 'Deal Won: Enterprise License tier finalized & onboarded.',
-                    user: 'ALEX WRIGHT',
-                    dotColor: 'bg-emerald-600'
-                  },
-                  {
-                    title: 'FastTrack Networks',
-                    date: '2026-07-02 09:20 AM',
-                    desc: 'Phone Call Logged: Follow-up call completed regarding fleet pricing.',
-                    user: 'SARAH CONNOR',
-                    dotColor: 'bg-purple-500'
-                  }
-                ].map((act, idx) => (
-                  <div key={idx} className="relative pl-5 group">
-                    <div className={`absolute w-2.5 h-2.5 ${act.dotColor} rounded-full -left-[6px] top-1 border-2 border-white group-hover:scale-125 transition-transform`}></div>
+                {activities.map((act, idx) => (
+                  <div key={idx} className="relative pl-5 group text-left">
+                    <div className={`absolute w-2.5 h-2.5 bg-indigo-500 rounded-full -left-[6px] top-1 border-2 border-white group-hover:scale-125 transition-transform`}></div>
                     <div className="flex items-center justify-between gap-2 mb-0.5">
                       <h4 className="text-[11px] font-black text-slate-900">{act.title}</h4>
-                      <span className="text-[9px] font-bold text-slate-400 shrink-0">{act.date}</span>
+                      <span className="text-[9px] font-bold text-slate-400 shrink-0">{new Date(act.date).toLocaleDateString()}</span>
                     </div>
                     <p className="text-[10px] font-semibold text-slate-600 mb-1 leading-snug">{act.desc}</p>
                     <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider bg-slate-100 px-1.5 py-0.5 rounded">
@@ -489,12 +596,6 @@ export default function SalesDashboard() {
           <div className="h-[220px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={monthlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10B981" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
                 <XAxis dataKey="name" stroke="#94A3B8" fontSize={10} tickLine={false} axisLine={false} />
                 <YAxis stroke="#94A3B8" fontSize={10} tickLine={false} axisLine={false} />
@@ -506,14 +607,6 @@ export default function SalesDashboard() {
                   strokeWidth={3}
                   dot={{ r: 0 }}
                   activeDot={{ r: 6, fill: '#10B981', stroke: '#fff', strokeWidth: 2 }} 
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="value" 
-                  data={monthlyData.map(d => ({...d, value: d.value * 0.4}))}
-                  stroke="#F59E0B" 
-                  strokeWidth={2}
-                  dot={false}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -547,7 +640,6 @@ export default function SalesDashboard() {
       {showAddTaskModal && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
           <div className="bg-white rounded-[24px] w-full max-w-[550px] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            {/* Modal Header */}
             <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
               <h2 className="text-lg font-bold text-slate-900">Create New Task</h2>
               <button 
@@ -558,16 +650,15 @@ export default function SalesDashboard() {
               </button>
             </div>
             
-            {/* Modal Body */}
             <form onSubmit={handleCreateTask} className="p-6 space-y-5">
               <div>
                 <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-2">
-                  Task Title / Lead Company
+                  Task Title / Description
                 </label>
                 <input 
                   type="text" 
                   required
-                  placeholder="e.g. Vance Refrigeration Follow-up"
+                  placeholder="e.g. Schedule onboarding follow-up"
                   value={newTaskForm.title}
                   onChange={e => setNewTaskForm({ ...newTaskForm, title: e.target.value })}
                   className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 focus:outline-none focus:border-amber-400 transition-colors placeholder:text-slate-400"
@@ -630,7 +721,7 @@ export default function SalesDashboard() {
       )}
 
       {/* Schedule ZOOM Product Walkthrough Modal */}
-      {showDemoModal && (
+      {showDemoModal && selectedLeadObj && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-visible animate-in fade-in zoom-in-95 duration-200">
             <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
@@ -640,18 +731,25 @@ export default function SalesDashboard() {
               </button>
             </div>
             <div className="p-6 space-y-6">
-              <p className="text-[13px] font-semibold text-slate-500">Locking a demo schedule for {selectedLead.split(' ')[0]} Refrigeration.</p>
+              <p className="text-[13px] font-semibold text-slate-500">Locking a demo schedule for {selectedLeadObj.companyName}.</p>
               
               <div className="space-y-2">
                 <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">SELECT DATE</label>
-                <div className="relative">
-                  <input type="date" defaultValue="2026-07-17" className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400] focus:ring-2 focus:ring-[#FFD400]/20 transition-colors" />
-                </div>
+                <input 
+                  type="date" 
+                  value={newDemoForm.date} 
+                  onChange={e => setNewDemoForm({ ...newDemoForm, date: e.target.value })}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400]" 
+                />
               </div>
 
               <div className="space-y-2">
                 <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">SELECT TIME BLOCK</label>
-                <select className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400] focus:ring-2 focus:ring-[#FFD400]/20 transition-colors appearance-none bg-white">
+                <select 
+                  value={newDemoForm.time}
+                  onChange={e => setNewDemoForm({ ...newDemoForm, time: e.target.value })}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400] bg-white"
+                >
                   <option>11:00 AM EST</option>
                   <option>1:00 PM EST</option>
                 </select>
@@ -659,19 +757,17 @@ export default function SalesDashboard() {
 
               <div className="space-y-2">
                 <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">MEETING AGENDA / HOST NOTES</label>
-                <textarea rows="2" className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400] focus:ring-2 focus:ring-[#FFD400]/20 transition-colors resize-none" defaultValue="Walkthrough showcasing fleet telematics and factoring automation."></textarea>
+                <textarea 
+                  rows="2" 
+                  value={newDemoForm.agenda}
+                  onChange={e => setNewDemoForm({ ...newDemoForm, agenda: e.target.value })}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400] resize-none"
+                ></textarea>
               </div>
 
               <div className="pt-2">
                 <button 
-                  onClick={() => {
-                    setShowDemoModal(false);
-                    triggerToast(`Zoom Demo scheduled for ${selectedLead.split(' ')[0]}!`);
-                    setActivities([
-                      { title: selectedLead.split(' ')[0], date: 'Just now', desc: 'Demo Booked: Zoom product walkthrough confirmed.', user: salesRep.toUpperCase(), dotColor: 'bg-indigo-500' },
-                      ...activities
-                    ]);
-                  }} 
+                  onClick={handleBookDemo} 
                   className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[13px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all cursor-pointer active:scale-95"
                 >
                   Confirm Zoom Schedule
@@ -682,8 +778,8 @@ export default function SalesDashboard() {
         </div>
       )}
 
-      {/* Start 14-Day Free Trial Modal */}
-      {showTrialModal && (
+      {/* Start Trial Modal */}
+      {showTrialModal && selectedLeadObj && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 text-left">
             <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
@@ -699,7 +795,7 @@ export default function SalesDashboard() {
             </div>
             <div className="p-6 space-y-5">
               <p className="text-xs font-semibold text-slate-500">
-                Activating free trial access for <strong className="text-slate-900">{selectedLead.split(' ')[0]} Refrigeration</strong>.
+                Activating free trial access for <strong className="text-slate-900">{selectedLeadObj.companyName}</strong>.
               </p>
 
               <div>
@@ -710,23 +806,10 @@ export default function SalesDashboard() {
                 </select>
               </div>
 
-              <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">FEATURE MODULE ACCESS</label>
-                <div className="space-y-2 text-xs font-bold text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-200">
-                  <p className="flex items-center gap-2"><Check size={14} className="text-emerald-500" /> Full Suite (Dispatch, Tracking, Accounts)</p>
-                  <p className="flex items-center gap-2"><Check size={14} className="text-emerald-500" /> Up to 15 Driver App Licenses</p>
-                </div>
-              </div>
-
               <button 
                 onClick={() => {
+                  handleUpdateLeadStage('TRIAL_STARTED');
                   setShowTrialModal(false);
-                  setLeadsStatus(prev => ({ ...prev, [selectedLead]: 'TRIAL ACTIVE' }));
-                  triggerToast(`14-Day Free Trial activated for ${selectedLead.split(' ')[0]}!`);
-                  setActivities([
-                    { title: selectedLead.split(' ')[0], date: 'Just now', desc: 'Trial Started: 14-day Free Trial activated on platform.', user: salesRep.toUpperCase(), dotColor: 'bg-[#00A3FF]' },
-                    ...activities
-                  ]);
                 }} 
                 className="w-full bg-slate-900 hover:bg-black text-white font-extrabold text-xs py-3.5 rounded-xl shadow-sm transition-all cursor-pointer active:scale-95"
               >
@@ -737,8 +820,8 @@ export default function SalesDashboard() {
         </div>
       )}
 
-      {/* Issue Licensing Agreement Proposal Modal */}
-      {showProposalModal && (
+      {/* Issue Proposal Modal */}
+      {showProposalModal && selectedLeadObj && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-visible animate-in fade-in zoom-in-95 duration-200">
             <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
@@ -751,39 +834,40 @@ export default function SalesDashboard() {
               
               <div className="space-y-2">
                 <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">PROPOSAL TITLE DOCUMENT</label>
-                <input type="text" defaultValue="Hero Logistics SaaS License - Vance Refrigeration" className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400] focus:ring-2 focus:ring-[#FFD400]/20 transition-colors" />
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">LINE ITEMS</label>
-                <div className="space-y-3">
-                  <div className="flex gap-4">
-                    <input type="text" defaultValue="Enterprise License Tier base" className="w-2/3 border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400] focus:ring-2 focus:ring-[#FFD400]/20 transition-colors" />
-                    <input type="text" defaultValue="2004" className="w-1/3 border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400] focus:ring-2 focus:ring-[#FFD400]/20 transition-colors" />
-                  </div>
-                  <div className="flex gap-4">
-                    <input type="text" defaultValue="GPS Fleet Tracking Modules API" className="w-2/3 border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400] focus:ring-2 focus:ring-[#FFD400]/20 transition-colors" />
-                    <input type="text" defaultValue="301" className="w-1/3 border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400] focus:ring-2 focus:ring-[#FFD400]/20 transition-colors" />
-                  </div>
-                </div>
-                <button className="text-[10px] font-black text-[#E68A00] mt-2 hover:text-amber-600 transition-colors">+ Add Custom Add-on item</button>
+                <input 
+                  type="text" 
+                  value={newProposalForm.title} 
+                  onChange={e => setNewProposalForm({ ...newProposalForm, title: e.target.value })}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400]" 
+                />
               </div>
 
               <div className="flex gap-4">
                 <div className="flex-1 space-y-2">
-                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">CORPORATE DISCOUNT (%)</label>
-                  <input type="text" defaultValue="0" className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400] focus:ring-2 focus:ring-[#FFD400]/20 transition-colors" />
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">BASE VALUE ($)</label>
+                  <input 
+                    type="number" 
+                    value={newProposalForm.value} 
+                    onChange={e => setNewProposalForm({ ...newProposalForm, value: Number(e.target.value) })}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400]" 
+                  />
                 </div>
                 <div className="flex-1 space-y-2">
-                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">PROPOSAL VALIDITY TERM</label>
-                  <select className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400] focus:ring-2 focus:ring-[#FFD400]/20 transition-colors appearance-none bg-white">
-                    <option>30 Days validity</option>
-                  </select>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider">DISCOUNT AMOUNT ($)</label>
+                  <input 
+                    type="number" 
+                    value={newProposalForm.discount} 
+                    onChange={e => setNewProposalForm({ ...newProposalForm, discount: Number(e.target.value) })}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400]" 
+                  />
                 </div>
               </div>
 
               <div className="pt-2">
-                <button onClick={() => setShowProposalModal(false)} className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[13px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all">
+                <button 
+                  onClick={handleSendProposal} 
+                  className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[13px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all"
+                >
                   Dispatched Proposal Email
                 </button>
               </div>
@@ -792,8 +876,8 @@ export default function SalesDashboard() {
         </div>
       )}
 
-      {/* Interactive License Tier Recommendation Modal */}
-      {showRecommendModal && (
+      {/* Recommended Plan Modal */}
+      {showRecommendModal && selectedLeadObj && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl w-full max-w-3xl shadow-2xl flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
             <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100 shrink-0">
@@ -804,135 +888,47 @@ export default function SalesDashboard() {
             </div>
             
             <div className="p-6 overflow-y-auto">
-              <div className="mb-6">
+              <div className="mb-6 text-left">
                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">LEAD DIAGNOSIS</p>
-                <h3 className="text-[17px] font-black text-slate-800 mb-1">{selectedLead.split(' ')[0]} Refrigeration</h3>
-                <p className="text-[13px] font-medium text-slate-500">Fleet Size: <span className="text-slate-700 font-bold">12 Trucks</span> &bull; Current Software: <span className="text-slate-700 font-bold">Spreadsheets (Excel)</span></p>
+                <h3 className="text-[17px] font-black text-slate-800 mb-1">{selectedLeadObj.companyName}</h3>
+                <p className="text-[13px] font-medium text-slate-500">Fleet Size: <span className="text-slate-700 font-bold">{selectedLeadObj.fleetSize}</span> &bull; Current Software: <span className="text-slate-700 font-bold">{selectedLeadObj.currentSoftware}</span></p>
               </div>
 
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-4">AVAILABLE LICENSE PLAN TIERS</p>
-              
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                
-                {/* Starter Plan (Recommended) */}
-                <div className="border border-[#FFD400] bg-[#FFFBF0] rounded-2xl p-5 flex flex-col relative overflow-hidden">
-                  <div className="mb-4">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <h4 className="text-[15px] font-black text-slate-900">Starter</h4>
-                      <span className="bg-[#FFD400] text-black text-[9px] font-black uppercase px-2 py-0.5 rounded shadow-sm">RECOMMENDED</span>
+                {[
+                  { name: 'Starter', price: 199, details: 'For small operators < 35 trucks' },
+                  { name: 'Professional', price: 499, details: 'For growing fleets 35 - 100 trucks' },
+                  { name: 'Enterprise', price: 1299, details: 'For logistics giants > 100 trucks' }
+                ].map(p => (
+                  <div key={p.name} className="border border-slate-200 rounded-2xl p-5 flex flex-col justify-between text-left">
+                    <div>
+                      <h4 className="text-[15px] font-black text-slate-750 mb-1.5">{p.name}</h4>
+                      <p className="text-[11px] font-medium text-slate-400 leading-tight mb-4">{p.details}</p>
+                      <span className="text-2xl font-black text-slate-900">${p.price}/mo</span>
                     </div>
-                    <p className="text-[11px] font-semibold text-slate-500 leading-tight">For small operators &lt; 35 trucks</p>
+                    <button 
+                      onClick={async () => {
+                        await updateLead(selectedLeadObj.id, { estimatedValue: p.price });
+                        setShowRecommendModal(false);
+                        triggerToast(`Recommended ${p.name} tier!`);
+                        fetchDashboardData();
+                      }}
+                      className="w-full bg-[#FFD400] hover:bg-[#FACC15] text-slate-900 font-black text-[11px] py-3 mt-4 rounded-xl uppercase transition-all"
+                    >
+                      Apply {p.name}
+                    </button>
                   </div>
-                  <div className="mb-5">
-                    <div className="flex items-end gap-0.5">
-                      <span className="text-2xl font-black text-slate-900">$199</span>
-                      <span className="text-[11px] font-bold text-slate-500 mb-1">/mo</span>
-                    </div>
-                  </div>
-                  
-                  <div className="h-[1px] w-full bg-slate-200/50 mb-5"></div>
-                  
-                  <ul className="space-y-3 mb-6 flex-1">
-                    <li className="flex items-center gap-2.5 text-[11px] font-bold text-slate-600">
-                      <Check className="w-3.5 h-3.5 text-amber-500 stroke-[3]" /> Core Dispatching
-                    </li>
-                    <li className="flex items-center gap-2.5 text-[11px] font-bold text-slate-600">
-                      <Check className="w-3.5 h-3.5 text-amber-500 stroke-[3]" /> Basic Driver App
-                    </li>
-                    <li className="flex items-center gap-2.5 text-[11px] font-bold text-slate-600">
-                      <Check className="w-3.5 h-3.5 text-amber-500 stroke-[3]" /> GPS Tracking (hourly)
-                    </li>
-                    <li className="flex items-center gap-2.5 text-[11px] font-bold text-slate-600">
-                      <Check className="w-3.5 h-3.5 text-amber-500 stroke-[3]" /> Email Support
-                    </li>
-                  </ul>
-                  
-                  <button onClick={() => setShowRecommendModal(false)} className="w-full bg-[#FFD400] hover:bg-[#FACC15] text-slate-900 font-black text-[11px] py-3.5 rounded-xl shadow-[0_2px_10px_rgba(255,212,0,0.4)] transition-all uppercase tracking-wider text-center">
-                    APPLY STARTER PLAN
-                  </button>
-                </div>
-
-                {/* Professional Plan */}
-                <div className="border border-slate-200 rounded-2xl p-5 flex flex-col">
-                  <div className="mb-4">
-                    <h4 className="text-[15px] font-black text-slate-700 mb-1.5">Professional</h4>
-                    <p className="text-[11px] font-medium text-slate-400 leading-tight">For growing fleets 35 - 100 trucks</p>
-                  </div>
-                  <div className="mb-5">
-                    <div className="flex items-end gap-0.5">
-                      <span className="text-2xl font-black text-slate-700">$499</span>
-                      <span className="text-[11px] font-bold text-slate-400 mb-1">/mo</span>
-                    </div>
-                  </div>
-                  
-                  <div className="h-[1px] w-full bg-slate-100 mb-5"></div>
-                  
-                  <ul className="space-y-3 mb-6 flex-1">
-                    <li className="flex items-center gap-2.5 text-[11px] font-medium text-slate-500">
-                      <Check className="w-3.5 h-3.5 text-amber-300 stroke-[3]" /> Dynamic Dispatching
-                    </li>
-                    <li className="flex items-center gap-2.5 text-[11px] font-medium text-slate-500">
-                      <Check className="w-3.5 h-3.5 text-amber-300 stroke-[3]" /> Factor Integration A...
-                    </li>
-                    <li className="flex items-center gap-2.5 text-[11px] font-medium text-slate-500">
-                      <Check className="w-3.5 h-3.5 text-amber-300 stroke-[3]" /> GPS Tracking (live H...
-                    </li>
-                    <li className="flex items-center gap-2.5 text-[11px] font-medium text-slate-500">
-                      <Check className="w-3.5 h-3.5 text-amber-300 stroke-[3]" /> Priority Support
-                    </li>
-                  </ul>
-                  
-                  <button onClick={() => setShowRecommendModal(false)} className="w-full bg-transparent text-slate-500 font-bold text-[11px] py-3.5 rounded-xl transition-all uppercase tracking-wider hover:bg-slate-50 text-center">
-                    APPLY PROFESSIONAL PLAN
-                  </button>
-                </div>
-
-                {/* Enterprise Plan */}
-                <div className="border border-slate-200 rounded-2xl p-5 flex flex-col">
-                  <div className="mb-4">
-                    <h4 className="text-[15px] font-black text-slate-700 mb-1.5">Enterprise</h4>
-                    <p className="text-[11px] font-medium text-slate-400 leading-tight">For logistics giants &gt; 100 trucks</p>
-                  </div>
-                  <div className="mb-5">
-                    <div className="flex items-end gap-0.5">
-                      <span className="text-2xl font-black text-slate-700">$1299</span>
-                      <span className="text-[11px] font-bold text-slate-400 mb-1">/mo</span>
-                    </div>
-                  </div>
-                  
-                  <div className="h-[1px] w-full bg-slate-100 mb-5"></div>
-                  
-                  <ul className="space-y-3 mb-6 flex-1">
-                    <li className="flex items-center gap-2.5 text-[11px] font-medium text-slate-500">
-                      <Check className="w-3.5 h-3.5 text-amber-300 stroke-[3]" /> AI CommandCenter ...
-                    </li>
-                    <li className="flex items-center gap-2.5 text-[11px] font-medium text-slate-500">
-                      <Check className="w-3.5 h-3.5 text-amber-300 stroke-[3]" /> Custom Billing Rules
-                    </li>
-                    <li className="flex items-center gap-2.5 text-[11px] font-medium text-slate-500">
-                      <Check className="w-3.5 h-3.5 text-amber-300 stroke-[3]" /> Unlimited Drivers/H...
-                    </li>
-                    <li className="flex items-center gap-2.5 text-[11px] font-medium text-slate-500">
-                      <Check className="w-3.5 h-3.5 text-amber-300 stroke-[3]" /> Dedicated SLA Custo...
-                    </li>
-                  </ul>
-                  
-                  <button onClick={() => setShowRecommendModal(false)} className="w-full bg-transparent text-slate-500 font-bold text-[11px] py-3.5 rounded-xl transition-all uppercase tracking-wider hover:bg-slate-50 text-center">
-                    APPLY ENTERPRISE PLAN
-                  </button>
-                </div>
-                
+                ))}
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Send Email Modal - Compose Email Touchpoint */}
+      {/* Send Email Modal */}
       {showMailModal && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-[500px] shadow-2xl overflow-hidden">
-            {/* Header */}
             <div className="px-6 py-5 flex justify-between items-center">
               <h2 className="text-[18px] font-bold text-slate-900">Compose Email Touchpoint</h2>
               <button onClick={() => setShowMailModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
@@ -940,113 +936,110 @@ export default function SalesDashboard() {
               </button>
             </div>
 
-            {/* Body */}
             <div className="px-6 pb-6 space-y-4">
-              {/* Select Template Layout */}
-              <div className="space-y-2">
-                <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">SELECT TEMPLATE LAYOUT</label>
-                <select className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 transition-colors bg-white appearance-auto">
-                  <option>Welcome Sandbox Invite</option>
-                  <option>Follow-up Outreach</option>
-                  <option>Demo Confirmation</option>
-                  <option>Proposal Follow-up</option>
-                  <option>Custom Email</option>
-                </select>
-              </div>
-
-              {/* Email Subject */}
               <div className="space-y-2">
                 <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">EMAIL SUBJECT</label>
                 <input
                   type="text"
-                  defaultValue="Welcome Sandbox Invite"
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-colors"
+                  value={newMailForm.subject}
+                  onChange={e => setNewMailForm({ ...newMailForm, subject: e.target.value })}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none"
                 />
               </div>
 
-              {/* Message Body */}
               <div className="space-y-2">
                 <label className="block text-[13px] font-semibold text-slate-700">Message Body</label>
                 <textarea
                   rows={6}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-colors resize-y"
-                  placeholder=""
+                  value={newMailForm.body}
+                  onChange={e => setNewMailForm({ ...newMailForm, body: e.target.value })}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-medium text-slate-700 focus:outline-none"
                 />
               </div>
 
-              {/* Bottom Row: Email Status + Process Mail */}
-              <div className="flex items-end gap-3 pt-1">
-                <div className="flex-1 space-y-2">
-                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">EMAIL STATUS</label>
-                  <select className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 transition-colors bg-white appearance-auto">
-                    <option>Send Immediately</option>
-                    <option>Schedule for Later</option>
-                    <option>Save as Draft</option>
-                  </select>
-                </div>
-                <button
-                  onClick={() => setShowMailModal(false)}
-                  className="bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] px-6 py-3 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all whitespace-nowrap"
-                >
-                  Process Mail
-                </button>
-              </div>
+              <button
+                onClick={async () => {
+                  if (selectedLeadObj) {
+                    await createSalesActivity({
+                      leadId: selectedLeadObj.id,
+                      title: 'Email Sent',
+                      description: `Subject: ${newMailForm.subject}`
+                    });
+                    setShowMailModal(false);
+                    triggerToast('Email logged successfully!');
+                    fetchDashboardData();
+                  }
+                }}
+                className="bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] w-full py-3 rounded-xl shadow-sm transition-all"
+              >
+                Send Email Touchpoint
+              </button>
             </div>
           </div>
         </div>
       )}
 
-
       {/* Log Phone Call Modal */}
       {showCallModal && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-[500px] shadow-2xl overflow-hidden">
-            {/* Header */}
             <div className="px-6 py-5 flex justify-between items-center">
-              <h2 className="text-[18px] font-bold text-slate-900">Log Outgoing / Incoming Phone call</h2>
+              <h2 className="text-[18px] font-bold text-slate-900">Log Phone Call</h2>
               <button onClick={() => setShowCallModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Body */}
             <div className="px-6 pb-6 space-y-4">
-              {/* Call Duration + Outcome side by side */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">CALL DURATION</label>
                   <input
                     type="text"
-                    defaultValue="2m 15s"
-                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-colors"
+                    value={newCallForm.duration}
+                    onChange={e => setNewCallForm({ ...newCallForm, duration: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none"
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">OUTCOME</label>
-                  <select className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 transition-colors bg-white appearance-auto">
+                  <select 
+                    value={newCallForm.outcome}
+                    onChange={e => setNewCallForm({ ...newCallForm, outcome: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 bg-white"
+                  >
                     <option>Connected</option>
                     <option>No Answer</option>
                     <option>Voicemail</option>
                     <option>Busy</option>
-                    <option>Wrong Number</option>
                   </select>
                 </div>
               </div>
 
-              {/* Call Notes */}
               <div className="space-y-2">
                 <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">CALL NOTES</label>
                 <input
                   type="text"
-                  placeholder=""
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-colors"
+                  value={newCallForm.notes}
+                  onChange={e => setNewCallForm({ ...newCallForm, notes: e.target.value })}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none"
                 />
               </div>
 
-              {/* Save Call Entry Button */}
               <button
-                onClick={() => setShowCallModal(false)}
-                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all mt-2"
+                onClick={async () => {
+                  if (selectedLeadObj) {
+                    await createSalesActivity({
+                      leadId: selectedLeadObj.id,
+                      title: 'Phone Call Logged',
+                      description: `Duration: ${newCallForm.duration}. Outcome: ${newCallForm.outcome}. Notes: ${newCallForm.notes}`
+                    });
+                    setShowCallModal(false);
+                    triggerToast('Phone call logged successfully!');
+                    fetchDashboardData();
+                  }
+                }}
+                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-sm transition-all"
               >
                 Save Call Entry
               </button>
@@ -1055,12 +1048,10 @@ export default function SalesDashboard() {
         </div>
       )}
 
-
       {/* Schedule Follow-up / Calendar Modal */}
       {showScheduleModal && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-[500px] shadow-2xl overflow-hidden">
-            {/* Header */}
             <div className="px-6 py-5 flex justify-between items-center">
               <h2 className="text-[18px] font-bold text-slate-900">Schedule Follow-Up Touchpoint</h2>
               <button onClick={() => setShowScheduleModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
@@ -1068,67 +1059,81 @@ export default function SalesDashboard() {
               </button>
             </div>
 
-            {/* Body */}
             <div className="px-6 pb-6 space-y-4">
-              {/* Subtitle */}
-              <p className="text-[13px] font-medium text-slate-400 -mt-2">Scheduling a follow-up action for prospect .</p>
-
-              {/* Follow-Up Action Type + Priority Tier */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">FOLLOW-UP ACTION TYPE</label>
-                  <select className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 transition-colors bg-white appearance-auto">
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">TYPE</label>
+                  <select 
+                    value={newScheduleForm.type}
+                    onChange={e => setNewScheduleForm({ ...newScheduleForm, type: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 bg-white"
+                  >
                     <option>📞 Phone Call</option>
                     <option>✉️ Email</option>
                     <option>📅 Meeting</option>
-                    <option>💬 WhatsApp</option>
-                    <option>📝 Task</option>
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">PRIORITY TIER</label>
-                  <select className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 transition-colors bg-white appearance-auto">
+                  <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">PRIORITY</label>
+                  <select 
+                    value={newScheduleForm.priority}
+                    onChange={e => setNewScheduleForm({ ...newScheduleForm, priority: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 bg-white"
+                  >
                     <option>🔴 High</option>
-                    <option selected>🟡 Medium</option>
+                    <option>🟡 Medium</option>
                     <option>🟢 Low</option>
                   </select>
                 </div>
               </div>
 
-              {/* Target Date + Time Slot */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">TARGET DATE</label>
                   <input
                     type="date"
-                    defaultValue="2026-07-15"
-                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-colors"
+                    value={newScheduleForm.date}
+                    onChange={e => setNewScheduleForm({ ...newScheduleForm, date: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none"
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">TIME SLOT</label>
                   <input
                     type="text"
-                    defaultValue="10:00 AM"
-                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-colors"
+                    value={newScheduleForm.time}
+                    onChange={e => setNewScheduleForm({ ...newScheduleForm, time: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none"
                   />
                 </div>
               </div>
 
-              {/* Follow-Up Memo / Action Notes */}
               <div className="space-y-2">
-                <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">FOLLOW-UP MEMO / ACTION NOTES</label>
+                <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">FOLLOW-UP MEMO</label>
                 <input
                   type="text"
-                  defaultValue="Urgent follow-up touchpoint."
-                  className="w-full border border-amber-400 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-400/20 transition-colors"
+                  value={newScheduleForm.notes}
+                  onChange={e => setNewScheduleForm({ ...newScheduleForm, notes: e.target.value })}
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none"
                 />
               </div>
 
-              {/* Schedule Follow-Up Task Button */}
               <button
-                onClick={() => setShowScheduleModal(false)}
-                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all mt-1"
+                onClick={async () => {
+                  if (selectedLeadObj) {
+                    await createFollowUpTask({
+                      leadId: selectedLeadObj.id,
+                      repId: selectedLeadObj.repId || 'system',
+                      type: newScheduleForm.type,
+                      description: `${newScheduleForm.notes} (Priority: ${newScheduleForm.priority})`,
+                      dueDate: new Date(newScheduleForm.date + 'T' + '12:00:00')
+                    });
+                    setShowScheduleModal(false);
+                    triggerToast('Follow-up scheduled successfully!');
+                    fetchDashboardData();
+                  }
+                }}
+                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-sm transition-all"
               >
                 Schedule Follow-Up Task
               </button>
@@ -1138,10 +1143,9 @@ export default function SalesDashboard() {
       )}
 
       {/* Company Conversion Wizard */}
-      {showConversionWizard && (
+      {showConversionWizard && selectedLeadObj && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-[600px] shadow-2xl overflow-hidden">
-            {/* Header */}
             <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
               <h2 className="text-[18px] font-bold text-slate-900">Company Conversion Wizard</h2>
               <button onClick={() => setShowConversionWizard(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
@@ -1149,7 +1153,6 @@ export default function SalesDashboard() {
               </button>
             </div>
 
-            {/* Steps Progress */}
             <div className="px-6 py-4 flex items-center justify-between border-b border-slate-100 text-[11px] font-bold">
               {[
                 { num: 1, label: 'TIER' },
@@ -1165,43 +1168,22 @@ export default function SalesDashboard() {
               ))}
             </div>
 
-            {/* Body */}
-            <div className="px-6 py-6">
+            <div className="px-6 py-6 text-left">
               {wizardStep === 1 && (
                 <div className="space-y-6">
                   <div className="space-y-3">
                     <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">CHOOSE SUBSCRIPTION LICENSE</label>
                     <div className="grid grid-cols-3 gap-4">
-                      <div 
-                        onClick={() => setSelectedPlan('Starter')}
-                        className={`rounded-xl p-4 text-center cursor-pointer transition-colors ${selectedPlan === 'Starter' ? 'border-2 border-[#FFB020] bg-yellow-50/50' : 'border border-slate-200 hover:border-[#FFB020]'}`}
-                      >
-                        <div className="font-bold text-slate-900 text-[14px]">Starter</div>
-                        <div className="text-[13px] text-slate-500">$199/mo</div>
-                      </div>
-                      <div 
-                        onClick={() => setSelectedPlan('Professional')}
-                        className={`rounded-xl p-4 text-center cursor-pointer transition-colors ${selectedPlan === 'Professional' ? 'border-2 border-[#FFB020] bg-yellow-50/50' : 'border border-slate-200 hover:border-[#FFB020]'}`}
-                      >
-                        <div className="font-bold text-slate-900 text-[14px]">Professional</div>
-                        <div className="text-[13px] text-slate-500">$499/mo</div>
-                      </div>
-                      <div 
-                        onClick={() => setSelectedPlan('Enterprise')}
-                        className={`rounded-xl p-4 text-center cursor-pointer transition-colors ${selectedPlan === 'Enterprise' ? 'border-2 border-[#FFB020] bg-yellow-50/50' : 'border border-slate-200 hover:border-[#FFB020]'}`}
-                      >
-                        <div className="font-bold text-slate-900 text-[14px]">Enterprise</div>
-                        <div className="text-[13px] text-slate-500">$1,299/mo</div>
-                      </div>
+                      {['Starter', 'Professional', 'Enterprise'].map(plan => (
+                        <div 
+                          key={plan}
+                          onClick={() => setSelectedPlan(plan)}
+                          className={`rounded-xl p-4 text-center cursor-pointer transition-colors ${selectedPlan === plan ? 'border-2 border-[#FFB020] bg-yellow-50/50' : 'border border-slate-200 hover:border-[#FFB020]'}`}
+                        >
+                          <div className="font-bold text-slate-900 text-[14px]">{plan}</div>
+                        </div>
+                      ))}
                     </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">BILLING FREQUENCY</label>
-                    <select className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFB020] transition-colors bg-white appearance-auto">
-                      <option>Monthly</option>
-                      <option>Yearly (20% Discount)</option>
-                    </select>
                   </div>
 
                   <button
@@ -1223,27 +1205,10 @@ export default function SalesDashboard() {
                         <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">LEGAL COMPANY NAME</label>
                         <input
                           type="text"
-                          className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFB020] focus:ring-2 focus:ring-[#FFB020]/20 transition-colors"
+                          value={selectedLeadObj.companyName}
+                          readOnly
+                          className="w-full border border-slate-200 bg-slate-50 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none"
                         />
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">DOT REGISTRY NUMBER</label>
-                          <input
-                            type="text"
-                            defaultValue="DOT-767684"
-                            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFB020] focus:ring-2 focus:ring-[#FFB020]/20 transition-colors"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">CORPORATE TAX ID</label>
-                          <input
-                            type="text"
-                            defaultValue="TX-43-1604692"
-                            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFB020] focus:ring-2 focus:ring-[#FFB020]/20 transition-colors"
-                          />
-                        </div>
                       </div>
                     </div>
                   </div>
@@ -1251,7 +1216,7 @@ export default function SalesDashboard() {
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => setWizardStep(3)}
-                      className="flex-1 bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all"
+                      className="flex-1 bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-sm"
                     >
                       Continue
                     </button>
@@ -1268,14 +1233,16 @@ export default function SalesDashboard() {
               {wizardStep === 3 && (
                 <div className="space-y-6">
                   <div className="space-y-3">
-                    <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">DEFINE SYSTEM ADMINISTRATOR WORKSPACE PROFILE</label>
+                    <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">SYSTEM ADMINISTRATOR WORKSPACE PROFILE</label>
                     
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">ADMIN FULL NAME</label>
                         <input
                           type="text"
-                          className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFB020] focus:ring-2 focus:ring-[#FFB020]/20 transition-colors"
+                          value={selectedLeadObj.contactName}
+                          readOnly
+                          className="w-full border border-slate-200 bg-slate-50 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none"
                         />
                       </div>
                       
@@ -1283,7 +1250,9 @@ export default function SalesDashboard() {
                         <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">ADMIN LOGIN EMAIL</label>
                         <input
                           type="email"
-                          className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFB020] focus:ring-2 focus:ring-[#FFB020]/20 transition-colors"
+                          value={selectedLeadObj.email}
+                          readOnly
+                          className="w-full border border-slate-200 bg-slate-50 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none"
                         />
                       </div>
                     </div>
@@ -1292,7 +1261,7 @@ export default function SalesDashboard() {
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => setWizardStep(4)}
-                      className="flex-1 bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all"
+                      className="flex-1 bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-sm"
                     >
                       Continue
                     </button>
@@ -1324,7 +1293,7 @@ export default function SalesDashboard() {
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => setWizardStep(5)}
-                      className="flex-1 bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all"
+                      className="flex-1 bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-sm"
                     >
                       Continue
                     </button>
@@ -1353,15 +1322,15 @@ export default function SalesDashboard() {
                         <div className="border border-slate-200 rounded-xl p-5 space-y-3">
                           <div className="flex justify-between items-center text-[13px]">
                             <span className="text-slate-500 font-medium">Subscription:</span>
-                            <span className="text-slate-700 font-bold">Professional Plan (Monthly)</span>
+                            <span className="text-slate-700 font-bold">{selectedPlan} Plan (Monthly)</span>
                           </div>
                           <div className="flex justify-between items-center text-[13px]">
                             <span className="text-slate-500 font-medium">Company:</span>
-                            <span className="text-slate-700 font-bold"></span>
+                            <span className="text-slate-700 font-bold">{selectedLeadObj.companyName}</span>
                           </div>
                           <div className="flex justify-between items-center text-[13px]">
                             <span className="text-slate-500 font-medium">Admin User:</span>
-                            <span className="text-slate-700 font-bold">()</span>
+                            <span className="text-slate-700 font-bold">{selectedLeadObj.contactName} ({selectedLeadObj.email})</span>
                           </div>
                           <div className="flex justify-between items-center text-[13px]">
                             <span className="text-slate-500 font-medium">Depot Allocation:</span>
@@ -1372,14 +1341,8 @@ export default function SalesDashboard() {
 
                       <div className="flex items-center gap-3">
                         <button
-                          onClick={() => {
-                            setIsProvisioning(true);
-                            setTimeout(() => {
-                              setIsProvisioning(false);
-                              setWizardStep(6);
-                            }, 2000);
-                          }}
-                          className="flex-1 bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all"
+                          onClick={handleProvisionWorkspace}
+                          className="flex-1 bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-sm"
                         >
                           Provision Workspace
                         </button>
@@ -1410,26 +1373,12 @@ export default function SalesDashboard() {
 
                   <button
                     onClick={() => {
-                      const companyName = selectedLead.split(' (')[0] || 'Vance Refrigeration';
-                      const adminName = selectedLead.includes('(') ? selectedLead.split('(')[1].replace(')', '') : 'Robert Vance';
-                      const mockSession = {
-                        token: `mock-jwt-token-${Date.now()}`,
-                        email: `${adminName.toLowerCase().replace(/\s/g, '')}@${companyName.toLowerCase().replace(/[^a-z]/g, '')}.com`,
-                        role: 'Company Admin',
-                        name: adminName,
-                        company: companyName,
-                        plan: selectedPlan || 'Professional',
-                        joinedAt: new Date().toLocaleDateString('en-US')
-                      };
-                      localStorage.setItem('hero_session', JSON.stringify(mockSession));
-                      window.dispatchEvent(new Event('storage'));
                       setShowConversionWizard(false);
-                      navigate('/company-admin/command-centre');
+                      navigate('/admin/companies'); // Direct to the companies list
                     }}
-                    className="bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] px-8 py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all flex items-center justify-center gap-2 mx-auto"
+                    className="bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] px-8 py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all flex items-center justify-center gap-2 mx-auto cursor-pointer"
                   >
-                    <User className="w-4 h-4" />
-                    Takeover Admin Session & Open Dashboard
+                    Go to Companies Workspace
                   </button>
                 </div>
               )}

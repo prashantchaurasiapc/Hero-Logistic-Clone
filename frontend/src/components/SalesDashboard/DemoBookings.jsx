@@ -42,6 +42,9 @@ export default function DemoBookings() {
 
   // Subscribe to crmStore changes to ensure reactive localStorage binding
   useEffect(() => {
+    // Sync with database
+    crmRepository.syncWithBackend();
+
     const syncDb = () => {
       const db = crmRepository.getCrmDatabase();
       setDemos(db.demos);

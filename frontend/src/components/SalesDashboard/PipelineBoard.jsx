@@ -57,6 +57,9 @@ export default function PipelineBoard() {
 
   // Subscribe to crmStore changes to ensure reactive localStorage binding
   useEffect(() => {
+    // Sync with database
+    crmRepository.syncWithBackend();
+
     // Initial fetch
     setLeads(crmRepository.getLeads());
     

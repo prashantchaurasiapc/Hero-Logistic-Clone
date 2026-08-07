@@ -14,6 +14,30 @@ export const getSuperAdminDashboard = () => {
   return api.get('/super-admin/dashboard');
 };
 
+// Sales / CRM APIs
+export const getSalesDashboardSummary = () => api.get('/sales-dashboard/summary');
+export const getLeads = () => api.get('/leads');
+export const getLead = (id) => api.get(`/leads/${id}`);
+export const createLead = (data) => api.post('/leads', data);
+export const updateLead = (id, data) => api.put(`/leads/${id}`, data);
+export const deleteLead = (id) => api.delete(`/leads/${id}`);
+export const createDemoBooking = (data) => api.post('/demo-bookings', data);
+export const createProposal = (data) => api.post('/proposals', data);
+export const updateProposal = (id, data) => api.put(`/proposals/${id}`, data);
+export const createFollowUpTask = (data) => api.post('/follow-up-tasks', data);
+export const updateFollowUpTask = (id, data) => api.put(`/follow-up-tasks/${id}`, data);
+export const createSalesActivity = (data) => api.post('/sales-activitys', data);
+export const convertLeadToCompany = (id, data) => api.post(`/leads/${id}/convert-to-company`, data);
+
+// Dispatcher APIs
+export const getLoads = () => api.get('/loads');
+export const createLoad = (data) => api.post('/loads', data);
+export const updateLoad = (id, data) => api.put(`/loads/${id}`, data);
+export const deleteLoad = (id) => api.delete(`/loads/${id}`);
+export const getDrivers = () => api.get('/drivers');
+export const getVehicles = () => api.get('/vehicles');
+export const getCustomersList = () => api.get('/customers');
+
 // Request Interceptor to add access token header dynamically
 api.interceptors.request.use(
   (config) => {

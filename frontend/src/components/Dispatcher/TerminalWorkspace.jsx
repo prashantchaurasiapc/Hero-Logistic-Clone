@@ -1,14 +1,71 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   ChevronLeft, ChevronRight, Calendar, Filter, Zap, Plus, Search, 
   MoreVertical, X, Phone, User, Truck, MapPin, Navigation, 
   MessageSquare, History, FileText, Settings, AlertCircle, CheckCircle, Clock
 } from 'lucide-react';
 import { mockPlanningData } from '../../data/mockPlanningData';
+import { dispatcherRepository } from '../../services/dispatcherRepository';
+import { dispatcherStore } from '../../services/dispatcherStore';
 
 export default function TerminalWorkspace() {
-  const [drivers, setDrivers] = useState(mockPlanningData);
-  const [selectedLoadId, setSelectedLoadId] = useState('LD-10588'); // Hardcoded initial to match UI mock if needed, or null
+  const [drivers, setDrivers] = useState([]);
+  const [selectedLoadId, setSelectedLoadId] = useState('LD-10583');
+
+  useEffect(() => {
+    // Initial fetch
+    dispatcherRepository.syncWithBackend();
+
+    const syncDb = () => {
+      const db = dispatcherRepository.getDispatcherDatabase();
+      const dbDrivers = db.drivers || [];
+      const dbLoads = db.loads || [];
+
+      // Map dbDrivers into the planning board format
+      const formatted = dbDrivers.map((d, index) => {
+        // Find loads assigned to this driver
+        const driverLoads = dbLoads.filter(l => l.driver === d.name);
+
+        const mappedLoads = driverLoads.map((l, lIndex) => {
+          const startTime = 8 + (lIndex * 5); // spacing them out
+          const endTime = startTime + 4;
+          return {
+            id: l.id,
+            customer: l.customer,
+            route: `${l.routeFrom} → ${l.routeTo}`,
+            startTime,
+            endTime,
+            durationText: `${startTime}:00 - ${endTime}:00`,
+            color: l.status === 'In Transit' ? 'emerald' : 'amber',
+            stops: 2,
+            progress: '50%',
+            loadType: l.type || 'General Freight',
+            reqDate: l.date,
+            driverStatus: d.status,
+            vehicle: l.vehicle,
+            trailer: 'TR-01'
+          };
+        });
+
+        return {
+          id: d.id,
+          name: d.name,
+          status: d.status,
+          statusColor: d.status === 'On Duty' ? 'emerald' : 'blue',
+          vehicleType: d.vehicle || 'Volvo FH16 750',
+          trailerType: 'Car Carrier TR-01 (10 Car)',
+          loadsCount: `${mappedLoads.length} Loads`,
+          loads: mappedLoads
+        };
+      });
+
+      setDrivers(formatted.length > 0 ? formatted : mockPlanningData);
+    };
+
+    syncDb();
+    const unsubscribe = dispatcherStore.subscribe(syncDb);
+    return () => unsubscribe();
+  }, []);
   const [isCreateLoadModalOpen, setIsCreateLoadModalOpen] = useState(false);
   const [filters, setFilters] = useState({
     branch: 'All Branches',

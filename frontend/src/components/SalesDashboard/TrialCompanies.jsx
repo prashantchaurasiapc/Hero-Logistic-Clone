@@ -26,6 +26,9 @@ export default function TrialCompanies() {
 
   // Subscribe to crmStore changes to ensure reactive localStorage binding
   useEffect(() => {
+    // Sync with database
+    crmRepository.syncWithBackend();
+
     const syncDb = () => {
       const db = crmRepository.getCrmDatabase();
       const safeTrials = db.trials || [];

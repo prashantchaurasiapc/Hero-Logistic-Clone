@@ -1,4 +1,5 @@
 const prisma = require('../utils/prismaClient');
+const bcrypt = require('bcryptjs');
 const { sendSuccess, sendList, sendError } = require('../utils/apiResponse');
 const { buildPrismaQuery, buildPaginationMeta } = require('../utils/queryBuilder');
 const { HTTP_STATUS, ERROR_CODES } = require('../config/constants');
@@ -105,10 +106,16 @@ exports.update = async (req, res, next) => {
 // Delete Lead
 exports.delete = async (req, res, next) => {
   try {
-    const where = { id: req.params.id };
-    // if (req.tenantId) where.tenantId = req.tenantId;
+    const { id } = req.params;
 
-    await prisma.lead.delete({ where });
+    // Delete related records first to avoid foreign key constraint errors
+    await prisma.$transaction([
+      prisma.demoBooking.deleteMany({ where: { leadId: id } }),
+      prisma.proposal.deleteMany({ where: { leadId: id } }),
+      prisma.followUpTask.deleteMany({ where: { leadId: id } }),
+      prisma.salesActivity.deleteMany({ where: { leadId: id } }),
+      prisma.lead.delete({ where: { id } })
+    ]);
     
     // 204 No Content for successful delete
     return res.status(HTTP_STATUS.NO_CONTENT).send();
@@ -119,6 +126,104 @@ exports.delete = async (req, res, next) => {
         message: 'Lead not found'
       }, HTTP_STATUS.NOT_FOUND);
     }
+    next(error);
+  }
+};
+
+// Convert Lead to Company tenant
+exports.convertToCompany = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { selectedPlan = 'Professional' } = req.body;
+
+    const lead = await prisma.lead.findUnique({
+      where: { id }
+    });
+
+    if (!lead) {
+      return sendError(res, {
+        code: ERROR_CODES.NOT_FOUND,
+        message: 'Lead not found'
+      }, HTTP_STATUS.NOT_FOUND);
+    }
+
+    // Hash password for company admin
+    const passwordHash = await bcrypt.hash('123456', 10);
+
+    // Find the subscription plan
+    let plan = await prisma.subscriptionPlan.findFirst({
+      where: { name: selectedPlan }
+    });
+
+    if (!plan) {
+      plan = await prisma.subscriptionPlan.findFirst();
+    }
+
+    // Create Company
+    const company = await prisma.company.create({
+      data: {
+        name: lead.companyName,
+        status: 'ACTIVE',
+        nicheCarCarrying: lead.transportNiche?.includes('Car Carrying') || false,
+        nicheGeneralFreight: !lead.transportNiche?.includes('Car Carrying'),
+        defaultNiche: lead.transportNiche || 'General Freight',
+        adminEmail: lead.email,
+        tenantId: `#TEN-${Math.floor(100 + Math.random() * 900)}`
+      }
+    });
+
+    // Create User (COMPANY_ADMIN)
+    const adminUser = await prisma.user.create({
+      data: {
+        email: lead.email,
+        password: passwordHash,
+        name: lead.contactName,
+        role: 'COMPANY_ADMIN',
+        status: 'ACTIVE',
+        companyId: company.id,
+        phone: lead.phone
+      }
+    });
+
+    // Create TenantSubscription
+    await prisma.tenantSubscription.create({
+      data: {
+        subId: `SUB-${Math.floor(1000 + Math.random() * 9000)}`,
+        companyId: company.id,
+        planId: plan.id,
+        status: 'ACTIVE',
+        amount: plan.monthlyPrice,
+        nextRenewal: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
+      }
+    });
+
+    // Update Lead to WON and associate company
+    const updatedLead = await prisma.lead.update({
+      where: { id: lead.id },
+      data: {
+        stage: 'WON',
+        painPoints: `Converted to Company: ${company.name} (Admin ID: ${adminUser.id})`
+      }
+    });
+
+    // Create a Sales Activity
+    await prisma.salesActivity.create({
+      data: {
+        leadId: lead.id,
+        title: 'Lead Converted to Company',
+        description: `Successfully created Company: ${company.name} and Admin User: ${adminUser.email}`,
+        performedById: lead.repId,
+        timestamp: new Date()
+      }
+    });
+
+    return sendSuccess(res, {
+      lead: updatedLead,
+      company,
+      adminUser
+    });
+
+  } catch (error) {
     next(error);
   }
 };

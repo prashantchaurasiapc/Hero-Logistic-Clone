@@ -14,7 +14,12 @@ exports.getAll = async (req, res, next) => {
 
     const [data, total] = await Promise.all([
       prisma.load.findMany({
-        where, skip, take, orderBy
+        where, skip, take, orderBy,
+        include: {
+          customer: true,
+          driver: true,
+          truck: true
+        }
       }),
       prisma.load.count({ where })
     ]);
@@ -52,6 +57,13 @@ exports.create = async (req, res, next) => {
   try {
     const payload = { ...req.body };
     // if (req.tenantId) payload.tenantId = req.tenantId;
+
+    if (!payload.companyId) {
+      const firstCompany = await prisma.company.findFirst();
+      if (firstCompany) {
+        payload.companyId = firstCompany.id;
+      }
+    }
 
     const data = await prisma.load.create({
       data: payload

@@ -43,6 +43,9 @@ export default function Leads() {
 
   // Subscribe to crmStore changes to ensure reactive localStorage binding
   useEffect(() => {
+    // Sync with database
+    crmRepository.syncWithBackend();
+    
     // Initial fetch
     setLeads(crmRepository.getLeads());
     
@@ -95,9 +98,9 @@ export default function Leads() {
   };
 
   // Delete lead handler
-  const handleDeleteLead = (id, companyName) => {
+  const handleDeleteLead = async (id, companyName) => {
     if (window.confirm(`Are you sure you want to delete lead for ${companyName}?`)) {
-      crmRepository.deleteLead(id);
+      await crmRepository.deleteLead(id);
       if (selectedLead && selectedLead.id === id) {
         setSelectedLead(null);
       }
@@ -142,7 +145,7 @@ export default function Leads() {
   };
 
   // Form submit handler
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
     if (!modalForm.company || !modalForm.name || !modalForm.email) {
       alert('Please fill out all required fields.');
@@ -150,15 +153,15 @@ export default function Leads() {
     }
 
     if (showModal === 'add') {
-      const newLead = crmRepository.createLead(modalForm);
+      const newLead = await crmRepository.createLead(modalForm);
       setToast({ type: 'success', text: `Intake success for ${modalForm.company}.` });
       // If stage wasn't default, trigger workflow engine stage update
-      if (modalForm.stage !== 'New Lead') {
+      if (newLead && modalForm.stage !== 'New Lead') {
         crmWorkflowEngine.handleStageChange(newLead.id, modalForm.stage, 'Initial custom intake stage');
       }
     } else if (showModal === 'edit') {
       if (selectedLead) {
-        crmRepository.updateLead(selectedLead.id, modalForm);
+        await crmRepository.updateLead(selectedLead.id, modalForm);
         // Stage trigger workflow if edited stage is different
         if (selectedLead.stage !== modalForm.stage) {
           crmWorkflowEngine.handleStageChange(selectedLead.id, modalForm.stage, 'Lifecycle stage updated via lead editor form');

@@ -29,6 +29,9 @@ export default function OnboardingHandover() {
 
   // Subscribe to crmStore
   useEffect(() => {
+    // Sync with database
+    crmRepository.syncWithBackend();
+
     const syncDb = () => {
       const db = crmRepository.getCrmDatabase();
       const newOnboarding = [...(db.crmHandovers || [])];

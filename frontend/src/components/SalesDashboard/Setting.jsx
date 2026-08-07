@@ -46,10 +46,16 @@ Best,
 };
 
 export default function Settings() {
+  const TEMPLATES_STORAGE_KEY = 'hero_crm_email_templates';
+
   // Template State
+  const [templates, setTemplates] = useState(() => {
+    const saved = localStorage.getItem(TEMPLATES_STORAGE_KEY);
+    return saved ? JSON.parse(saved) : DEFAULT_TEMPLATES;
+  });
   const [selectedTemplate, setSelectedTemplate] = useState('Welcome Sandbox Invite');
-  const [templateSubject, setTemplateSubject] = useState(DEFAULT_TEMPLATES['Welcome Sandbox Invite'].subject);
-  const [templateBody, setTemplateBody] = useState(DEFAULT_TEMPLATES['Welcome Sandbox Invite'].body);
+  const [templateSubject, setTemplateSubject] = useState('');
+  const [templateBody, setTemplateBody] = useState('');
 
   // Pipeline Stages State
   const [stages, setStages] = useState([]);
@@ -65,6 +71,15 @@ export default function Settings() {
   const [toast, setToast] = useState(null);
 
   const repsList = ['Alex Wright', 'Sarah K.', 'Michael Scott', 'Jan Levinson', 'Ryan Howard'];
+
+  // Load template details when templates state or selectedTemplate changes
+  useEffect(() => {
+    const tpl = templates[selectedTemplate];
+    if (tpl) {
+      setTemplateSubject(tpl.subject);
+      setTemplateBody(tpl.body);
+    }
+  }, [selectedTemplate, templates]);
 
   // Load from crmStore
   useEffect(() => {
@@ -94,15 +109,19 @@ export default function Settings() {
   // Handle template selection
   const handleSelectTemplate = (name) => {
     setSelectedTemplate(name);
-    const tpl = DEFAULT_TEMPLATES[name];
-    if (tpl) {
-      setTemplateSubject(tpl.subject);
-      setTemplateBody(tpl.body);
-    }
   };
 
   // Save template
   const handleSaveTemplate = () => {
+    const updated = {
+      ...templates,
+      [selectedTemplate]: {
+        subject: templateSubject,
+        body: templateBody
+      }
+    };
+    setTemplates(updated);
+    localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(updated));
     setToast({ text: `Template "${selectedTemplate}" configuration saved.` });
   };
 
