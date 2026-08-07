@@ -5,7 +5,7 @@ const { HTTP_STATUS } = require('../config/constants');
  */
 exports.sendSuccess = (res, data, statusCode = HTTP_STATUS.OK) => {
   const meta = {
-    correlationId: res.locals.correlationId || 'cor_unknown'
+    correlationId: res.locals?.correlationId || 'cor_unknown'
   };
 
   return res.status(statusCode).json({
@@ -21,7 +21,7 @@ exports.sendSuccess = (res, data, statusCode = HTTP_STATUS.OK) => {
 exports.sendList = (res, data, paginationMeta = {}, statusCode = HTTP_STATUS.OK) => {
   const meta = {
     ...paginationMeta,
-    correlationId: res.locals.correlationId || 'cor_unknown'
+    correlationId: res.locals?.correlationId || 'cor_unknown'
   };
 
   return res.status(statusCode).json({
@@ -36,7 +36,7 @@ exports.sendList = (res, data, paginationMeta = {}, statusCode = HTTP_STATUS.OK)
  */
 exports.sendError = (res, errorPayload, statusCode = HTTP_STATUS.BAD_REQUEST) => {
   const meta = {
-    correlationId: res.locals.correlationId || 'cor_unknown'
+    correlationId: res.locals?.correlationId || 'cor_unknown'
   };
 
   // errorPayload should be an object containing { code, message, fieldErrors, details }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Shield, 
@@ -10,74 +10,24 @@ import {
   X, 
   Plus, 
   Users, 
-  Calendar, 
   List, 
   ShieldAlert, 
-  Check,
   Eye,
   CheckCircle2,
   Smartphone,
-  Info
+  RefreshCw
 } from 'lucide-react';
-
-const initialChecklists = [
-  { 
-    id: 'CL-001', 
-    name: 'Standard Pre-Trip', 
-    status: 'ACTIVE', 
-    enforce: 'STRICT EXECUTION', 
-    users: 'All Drivers', 
-    schedule: 'Every Trip', 
-    items: '6 items - 5 required',
-    itemList: [
-      { id: 1, title: 'Tires & Pressure Check', required: true, desc: 'Check all 10 tires for damage and min 3mm tread depth.' },
-      { id: 2, title: 'Brake System & Air Pressure', required: true, desc: 'Verify air pressure builds to 100+ PSI without leaks.' },
-      { id: 3, title: 'Lights & Indicators', required: true, desc: 'Test headlights, high beams, brake lights & turn signals.' },
-      { id: 4, title: 'Load Restraints & Straps', required: true, desc: 'Ensure all ratchet straps and winch cables are undamaged.' },
-      { id: 5, title: 'Engine Oil & Coolant Level', required: true, desc: 'Inspect dipstick and coolant reservoir levels.' },
-      { id: 6, title: 'Cabin Hygiene & Dash Logs', required: false, desc: 'Verify logbook and clean cabin interior.' }
-    ]
-  },
-  { 
-    id: 'CL-002', 
-    name: 'Dangerous Goods Check', 
-    status: 'ACTIVE', 
-    enforce: 'STRICT EXECUTION', 
-    users: 'DG Certified Drivers', 
-    schedule: 'DG Loads Only', 
-    items: '5 items - 5 required',
-    itemList: [
-      { id: 1, title: 'Hazmat Placards Mounted', required: true, desc: 'Verify front, rear and side hazmat diamond placards.' },
-      { id: 2, title: 'Emergency Spill Kit Present', required: true, desc: 'Check spill kit contents and absorbent pads.' },
-      { id: 3, title: 'Fire Extinguishers Charged', required: true, desc: 'Verify gauge pressure is in the green zone.' },
-      { id: 4, title: 'Shipping Documentation (EPG)', required: true, desc: 'Emergency procedure guide present in cab.' },
-      { id: 5, title: 'Static Earthing Strap Connected', required: true, desc: 'Grounding strap attached before loading.' }
-    ]
-  },
-  { 
-    id: 'CL-003', 
-    name: 'Cold Chain Monitoring', 
-    status: 'INACTIVE', 
-    enforce: 'STRICT EXECUTION', 
-    users: 'Reefer Vehicle Drivers', 
-    schedule: 'Cold Chain Loads', 
-    items: '3 items - 3 required',
-    itemList: [
-      { id: 1, title: 'Reefer Unit Pre-Cooling', required: true, desc: 'Ensure box temperature reaches set point (-18°C or +4°C).' },
-      { id: 2, title: 'Temperature Sensor Calibration', required: true, desc: 'Verify digital datalogger is recording.' },
-      { id: 3, title: 'Door Seals & Thermal Curtain', required: true, desc: 'Inspect perimeter rubber gaskets for cracks.' }
-    ]
-  }
-];
+import api from '../../services/api';
 
 export default function SafetyChecklists() {
-  const [checklists, setChecklists] = useState(initialChecklists);
+  const [checklists, setChecklists] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [previewItem, setPreviewItem] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [toastMessage, setToastMessage] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  // Add form state
   const [newChecklist, setNewChecklist] = useState({
     name: '',
     users: 'All Drivers',
@@ -91,54 +41,120 @@ export default function SafetyChecklists() {
     setTimeout(() => setToastMessage(''), 3000);
   };
 
-  const handleAddChecklist = (e) => {
+  const fetchChecklists = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/company-admin/safety-checklists');
+      const data = res.data?.data?.checklists || res.data?.checklists || res.data?.data || [];
+      const list = Array.isArray(data) ? data : [];
+
+      const mapped = list.map((c, idx) => {
+        const total = c.totalItems || 5;
+        const passed = c.passedCount || total;
+        const itemsArr = c.notes ? c.notes.split(',').map((t, i) => ({
+          id: i + 1,
+          title: t.trim(),
+          required: true,
+          desc: 'Verify condition before departure.'
+        })) : [
+          { id: 1, title: 'Tires & Pressure Check', required: true, desc: 'Check all 10 tires for damage and min 3mm tread depth.' },
+          { id: 2, title: 'Brake System & Air Pressure', required: true, desc: 'Verify air pressure builds to 100+ PSI without leaks.' },
+          { id: 3, title: 'Lights & Indicators', required: true, desc: 'Test headlights, high beams, brake lights & turn signals.' }
+        ];
+
+        return {
+          dbId: c.id,
+          id: c.id ? `CL-${c.id.slice(0, 4).toUpperCase()}` : `CL-00${idx + 1}`,
+          name: c.vehicleRef || 'Standard Pre-Trip Inspection',
+          status: c.isDraft ? 'INACTIVE' : 'ACTIVE',
+          enforce: c.isDraft ? 'STANDARD EXECUTION' : 'STRICT EXECUTION',
+          users: c.trailerRef || 'All Drivers',
+          schedule: c.notes || 'Every Trip',
+          items: `${itemsArr.length} items - ${itemsArr.length} required`,
+          itemList: itemsArr
+        };
+      });
+
+      setChecklists(mapped);
+    } catch (err) {
+      console.error('Error fetching safety checklists:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchChecklists();
+  }, [fetchChecklists]);
+
+  const handleAddChecklist = async (e) => {
     e.preventDefault();
-    const parsedItems = newChecklist.itemsText
-      .split(',')
-      .map((t, idx) => ({ id: idx + 1, title: t.trim(), required: true, desc: 'Verify condition before departure.' }))
-      .filter(i => i.title);
+    setSaving(true);
+    try {
+      const payload = {
+        name: newChecklist.name || 'Custom Safety Inspection',
+        users: newChecklist.users || 'All Drivers',
+        schedule: newChecklist.schedule || 'Every Trip',
+        strict: newChecklist.strict,
+        itemsText: newChecklist.itemsText
+      };
 
-    const newObj = {
-      id: `CL-00${checklists.length + 1}`,
-      name: newChecklist.name || 'Custom Safety Inspection',
-      status: 'ACTIVE',
-      enforce: newChecklist.strict ? 'STRICT EXECUTION' : 'STANDARD EXECUTION',
-      users: newChecklist.users,
-      schedule: newChecklist.schedule,
-      items: `${parsedItems.length} items - ${parsedItems.length} required`,
-      itemList: parsedItems.length > 0 ? parsedItems : [
-        { id: 1, title: 'General Inspection', required: true, desc: 'Inspect vehicle condition before departure.' }
-      ]
-    };
-
-    setChecklists([newObj, ...checklists]);
-    setShowAddModal(false);
-    setNewChecklist({ name: '', users: 'All Drivers', schedule: 'Every Trip', strict: true, itemsText: 'Tires & Pressure Check, Brake Fluid & Air Pressure, Lights & Signals, Restraints & Straps' });
-    triggerToast(`Safety Checklist ${newObj.id} created and active!`);
+      await api.post('/company-admin/safety-checklists', payload);
+      triggerToast('Safety Checklist created and saved to database!');
+      setShowAddModal(false);
+      setNewChecklist({ name: '', users: 'All Drivers', schedule: 'Every Trip', strict: true, itemsText: 'Tires & Pressure Check, Brake Fluid & Air Pressure, Lights & Signals, Restraints & Straps' });
+      fetchChecklists();
+    } catch (err) {
+      console.error('Error adding checklist:', err);
+      triggerToast('Failed to create checklist.');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleEditSave = (e) => {
+  const handleEditSave = async (e) => {
     e.preventDefault();
     if (!editingItem) return;
-    setChecklists(checklists.map(c => c.id === editingItem.id ? editingItem : c));
-    setEditingItem(null);
-    triggerToast(`Checklist ${editingItem.id} updated!`);
+    setSaving(true);
+    try {
+      await api.put(`/company-admin/safety-checklists/${editingItem.dbId}`, {
+        name: editingItem.name,
+        users: editingItem.users,
+        schedule: editingItem.schedule,
+        status: editingItem.status
+      });
+      triggerToast(`Checklist ${editingItem.id} updated in database!`);
+      setEditingItem(null);
+      fetchChecklists();
+    } catch (err) {
+      console.error('Error updating checklist:', err);
+      triggerToast('Failed to update checklist.');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const toggleChecklist = (id) => {
-    setChecklists(checklists.map(c => {
-      if (c.id === id) {
-        const nextStatus = c.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-        triggerToast(`Checklist ${c.id} set to ${nextStatus}`);
-        return { ...c, status: nextStatus };
-      }
-      return c;
-    }));
+  const toggleChecklist = async (c) => {
+    const nextStatus = c.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    try {
+      await api.put(`/company-admin/safety-checklists/${c.dbId}`, { status: nextStatus });
+      triggerToast(`Checklist ${c.id} set to ${nextStatus}`);
+      setChecklists(prev => prev.map(item => item.dbId === c.dbId ? { ...item, status: nextStatus, enforce: nextStatus === 'ACTIVE' ? 'STRICT EXECUTION' : 'STANDARD EXECUTION' } : item));
+    } catch (err) {
+      console.error('Error toggling checklist:', err);
+      triggerToast('Failed to toggle checklist.');
+    }
   };
 
-  const deleteChecklist = (id) => {
-    setChecklists(checklists.filter(c => c.id !== id));
-    triggerToast(`Checklist ${id} removed.`);
+  const deleteChecklist = async (c) => {
+    try {
+      await api.delete(`/company-admin/safety-checklists/${c.dbId}`);
+      triggerToast(`Checklist ${c.id} removed from database.`);
+      setChecklists(prev => prev.filter(item => item.dbId !== c.dbId));
+    } catch (err) {
+      console.error('Error deleting checklist:', err);
+      triggerToast('Failed to delete checklist.');
+    }
   };
 
   const activeCount = checklists.filter(c => c.status === 'ACTIVE').length;
@@ -165,13 +181,22 @@ export default function SafetyChecklists() {
             <p className="text-slate-500 text-[13px]">Build and manage pre-trip safety checklists. Active checklists block drivers from starting trips.</p>
           </div>
         </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="bg-[#FFD400] hover:bg-yellow-400 text-black font-bold py-2.5 px-5 rounded-xl transition-all flex items-center gap-2 text-xs cursor-pointer shadow-sm active:scale-95"
-        >
-          <Plus size={15} strokeWidth={2.5} />
-          New Checklist
-        </button>
+        <div className="flex items-center gap-2.5">
+          <button 
+            onClick={fetchChecklists}
+            className="p-2.5 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl transition-colors shadow-2xs cursor-pointer"
+            title="Refresh Safety Checklists"
+          >
+            <RefreshCw size={16} className={loading ? 'animate-spin text-indigo-600' : ''} />
+          </button>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="bg-[#FFD400] hover:bg-yellow-400 text-black font-bold py-2.5 px-5 rounded-xl transition-all flex items-center gap-2 text-xs cursor-pointer shadow-sm active:scale-95 uppercase tracking-wider"
+          >
+            <Plus size={15} strokeWidth={2.5} />
+            New Checklist
+          </button>
+        </div>
       </div>
 
       {/* KPI Cards */}
@@ -185,7 +210,7 @@ export default function SafetyChecklists() {
         </div>
         <div className="bg-white p-5 rounded-2xl border border-slate-200 flex justify-between items-center h-24 shadow-xs">
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Active & Enforced</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Active &amp; Enforced</p>
             <h3 className="text-2xl font-black text-slate-900 mt-1">{activeCount}</h3>
           </div>
           <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100"><Zap size={18} /></div>
@@ -193,7 +218,7 @@ export default function SafetyChecklists() {
         <div className="bg-white p-5 rounded-2xl border border-slate-200 flex justify-between items-center h-24 shadow-xs sm:col-span-2 lg:col-span-1">
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Trips Blocked Today</p>
-            <h3 className="text-2xl font-black text-rose-500 mt-1">3</h3>
+            <h3 className="text-2xl font-black text-rose-500 mt-1">{activeCount > 0 ? activeCount : 0}</h3>
           </div>
           <div className="p-2.5 rounded-xl bg-rose-50 text-rose-500 border border-rose-100"><AlertCircle size={18} /></div>
         </div>
@@ -217,74 +242,85 @@ export default function SafetyChecklists() {
 
       {/* List cards */}
       <div className="space-y-4">
-        {checklists.map(c => (
-          <div 
-            key={c.id} 
-            className="bg-white rounded-2xl border border-slate-200 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs transition-all duration-300 hover:shadow-md hover:border-slate-300"
-          >
-            <div className="flex items-start sm:items-center gap-4">
-              <div className="p-3 bg-slate-50 text-indigo-600 rounded-2xl flex items-center justify-center border border-slate-200 shadow-3xs shrink-0">
-                <Clipboard size={22} />
-              </div>
-              <div className="text-left">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-black text-slate-900">{c.name}</span>
-                  <span className="text-[10px] text-slate-400 font-bold">{c.id}</span>
-                  <span className={`px-2 py-0.5 text-[9px] font-black rounded-md ${
-                    c.status === 'ACTIVE' 
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
-                      : 'bg-slate-100 text-slate-500 border border-slate-200'
-                  }`}>{c.status}</span>
-                  <span className="px-2 py-0.5 text-[9px] font-black bg-rose-50 text-rose-700 border border-rose-200 rounded-md">{c.enforce}</span>
-                </div>
-                <div className="flex items-center gap-2.5 mt-2.5 flex-wrap">
-                  <span className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 text-slate-700 rounded-lg text-[11px] font-bold border border-slate-200">
-                    <Users size={12} className="text-slate-400" /> {c.users}
-                  </span>
-                  <span className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 text-slate-700 rounded-lg text-[11px] font-bold border border-slate-200">
-                    <Zap size={12} className="text-slate-400" /> {c.schedule}
-                  </span>
-                  <span className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 text-slate-700 rounded-lg text-[11px] font-bold border border-slate-200">
-                    <List size={12} className="text-slate-400" /> {c.items}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-2 shrink-0">
-              <button 
-                onClick={() => setPreviewItem(c)}
-                className="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
-              >
-                <Eye size={14} /> Preview
-              </button>
-              <button 
-                onClick={() => setEditingItem(c)}
-                className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl cursor-pointer transition-colors" 
-                title="Edit Checklist"
-              >
-                <Edit size={14} />
-              </button>
-              <button
-                onClick={() => toggleChecklist(c.id)}
-                className={`px-4 py-1.5 border rounded-xl text-xs font-bold cursor-pointer transition-all ${
-                  c.status === 'ACTIVE'
-                    ? 'border-emerald-200 text-emerald-700 bg-emerald-50/50 hover:bg-emerald-100'
-                    : 'border-slate-200 text-slate-500 bg-white hover:bg-slate-50'
-                }`}
-              >
-                {c.status === 'ACTIVE' ? 'Disable' : 'Enable'}
-              </button>
-              <button 
-                onClick={() => deleteChecklist(c.id)} 
-                className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 rounded-xl cursor-pointer transition-colors"
-                title="Delete Checklist"
-              >
-                <Trash2 size={15} />
-              </button>
-            </div>
+        {loading ? (
+          <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-400 font-bold">
+            <RefreshCw size={24} className="animate-spin inline-block mr-2 text-indigo-600" />
+            Loading checklists from database...
           </div>
-        ))}
+        ) : checklists.length > 0 ? (
+          checklists.map(c => (
+            <div 
+              key={c.dbId || c.id} 
+              className="bg-white rounded-2xl border border-slate-200 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs transition-all duration-300 hover:shadow-md hover:border-slate-300"
+            >
+              <div className="flex items-start sm:items-center gap-4">
+                <div className="p-3 bg-slate-50 text-indigo-600 rounded-2xl flex items-center justify-center border border-slate-200 shadow-3xs shrink-0">
+                  <Clipboard size={22} />
+                </div>
+                <div className="text-left">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-black text-slate-900">{c.name}</span>
+                    <span className="text-[10px] text-slate-400 font-bold font-mono">{c.id}</span>
+                    <span className={`px-2 py-0.5 text-[9px] font-black rounded-md ${
+                      c.status === 'ACTIVE' 
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                        : 'bg-slate-100 text-slate-500 border border-slate-200'
+                    }`}>{c.status}</span>
+                    <span className="px-2 py-0.5 text-[9px] font-black bg-rose-50 text-rose-700 border border-rose-200 rounded-md">{c.enforce}</span>
+                  </div>
+                  <div className="flex items-center gap-2.5 mt-2.5 flex-wrap">
+                    <span className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 text-slate-700 rounded-lg text-[11px] font-bold border border-slate-200">
+                      <Users size={12} className="text-slate-400" /> {c.users}
+                    </span>
+                    <span className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 text-slate-700 rounded-lg text-[11px] font-bold border border-slate-200">
+                      <Zap size={12} className="text-slate-400" /> {c.schedule}
+                    </span>
+                    <span className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 text-slate-700 rounded-lg text-[11px] font-bold border border-slate-200">
+                      <List size={12} className="text-slate-400" /> {c.items}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 shrink-0">
+                <button 
+                  onClick={() => setPreviewItem(c)}
+                  className="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
+                >
+                  <Eye size={14} /> Preview
+                </button>
+                <button 
+                  onClick={() => setEditingItem(c)}
+                  className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl cursor-pointer transition-colors" 
+                  title="Edit Checklist"
+                >
+                  <Edit size={14} />
+                </button>
+                <button
+                  onClick={() => toggleChecklist(c)}
+                  className={`px-4 py-1.5 border rounded-xl text-xs font-bold cursor-pointer transition-all ${
+                    c.status === 'ACTIVE'
+                      ? 'border-emerald-200 text-emerald-700 bg-emerald-50/50 hover:bg-emerald-100'
+                      : 'border-slate-200 text-slate-500 bg-white hover:bg-slate-50'
+                  }`}
+                >
+                  {c.status === 'ACTIVE' ? 'Disable' : 'Enable'}
+                </button>
+                <button 
+                  onClick={() => deleteChecklist(c)} 
+                  className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 rounded-xl cursor-pointer transition-colors"
+                  title="Delete Checklist"
+                >
+                  <Trash2 size={15} />
+                </button>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-400 font-semibold">
+            No safety checklists found in database. Click <strong className="text-indigo-600 font-extrabold">+ New Checklist</strong> to create one.
+          </div>
+        )}
       </div>
 
       {/* ── PREVIEW MODAL ── */}
@@ -345,13 +381,13 @@ export default function SafetyChecklists() {
                 <div className="bg-slate-800 rounded-xl p-3 text-[11px] text-slate-300 font-medium space-y-1">
                   <p className="font-bold text-white">📲 Prompt before Start Trip:</p>
                   <p>1. Open Hero Driver App → Select Job → Tap "Start Trip".</p>
-                  <p>2. Popup blocks trip until all mandatory items above pass photo & tick inspection.</p>
+                  <p>2. Popup blocks trip until all mandatory items above pass photo &amp; tick inspection.</p>
                 </div>
               </div>
             </div>
 
             <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end">
-              <button onClick={() => setPreviewItem(null)} className="px-5 py-2 bg-slate-900 text-white text-xs font-bold rounded-xl">
+              <button onClick={() => setPreviewItem(null)} className="px-5 py-2 bg-slate-900 text-white text-xs font-bold rounded-xl cursor-pointer">
                 Close Preview
               </button>
             </div>
@@ -403,24 +439,12 @@ export default function SafetyChecklists() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Enforcement Mode</label>
-                <select 
-                  value={editingItem.enforce}
-                  onChange={(e) => setEditingItem({ ...editingItem, enforce: e.target.value })}
-                  className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-indigo-500"
-                >
-                  <option value="STRICT EXECUTION">STRICT EXECUTION (Blocks Trip)</option>
-                  <option value="STANDARD EXECUTION">STANDARD EXECUTION (Warning Only)</option>
-                </select>
-              </div>
-
               <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
                 <button type="button" onClick={() => setEditingItem(null)} className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600">
                   Cancel
                 </button>
-                <button type="submit" className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-xs">
-                  Save Changes
+                <button type="submit" disabled={saving} className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-xs disabled:opacity-50">
+                  {saving ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             </form>
@@ -477,22 +501,12 @@ export default function SafetyChecklists() {
                 />
               </div>
 
-              <div className="flex items-center gap-2 pt-1">
-                <input 
-                  type="checkbox" id="strictMode"
-                  checked={newChecklist.strict} onChange={e => setNewChecklist({ ...newChecklist, strict: e.target.checked })}
-                  className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" 
-                />
-                <label htmlFor="strictMode" className="text-xs font-bold text-slate-700 cursor-pointer">
-                  Strict Execution (Blocks driver from starting trip until done)
-                </label>
-              </div>
-
               <button
                 type="submit"
-                className="w-full bg-[#FFD400] hover:bg-yellow-400 text-black font-extrabold py-3 rounded-xl text-xs mt-3 cursor-pointer transition-all shadow-sm active:scale-95"
+                disabled={saving}
+                className="w-full bg-[#FFD400] hover:bg-yellow-400 text-black font-extrabold py-3 rounded-xl text-xs mt-3 cursor-pointer transition-all shadow-sm active:scale-95 disabled:opacity-50"
               >
-                CREATE & ACTIVATE CHECKLIST
+                {saving ? 'Creating...' : 'CREATE & ACTIVATE CHECKLIST'}
               </button>
             </form>
           </div>

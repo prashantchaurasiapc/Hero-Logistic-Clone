@@ -8,12 +8,16 @@ exports.getAll = async (req, res, next) => {
   try {
     const { where, skip, take, orderBy, currentPage, pageSize } = buildPrismaQuery(req.query);
     
-    // Optional: Inject tenant scope here if applicable
-    // if (req.tenantId) where.tenantId = req.tenantId;
+    if (req.tenantId) where.branch = { companyId: req.tenantId };
 
     const [data, total] = await Promise.all([
       prisma.asset.findMany({
-        where, skip, take, orderBy
+        where, skip, take, orderBy,
+        include: {
+          branch: true,
+          assignments: { take: 5, orderBy: { createdAt: 'desc' } },
+          maintenance: { take: 5, orderBy: { createdAt: 'desc' } }
+        }
       }),
       prisma.asset.count({ where })
     ]);
@@ -29,9 +33,16 @@ exports.getAll = async (req, res, next) => {
 exports.getById = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
-    // if (req.tenantId) where.tenantId = req.tenantId;
+    if (req.tenantId) where.branch = { companyId: req.tenantId };
 
-    const data = await prisma.asset.findFirst({ where });
+    const data = await prisma.asset.findFirst({
+      where,
+      include: {
+        branch: true,
+        assignments: true,
+        maintenance: true
+      }
+    });
     
     if (!data) {
       return sendError(res, {
@@ -50,10 +61,13 @@ exports.getById = async (req, res, next) => {
 exports.create = async (req, res, next) => {
   try {
     const payload = { ...req.body };
-    // if (req.tenantId) payload.tenantId = req.tenantId;
+    if (req.tenantId && !payload.companyId) payload.companyId = req.tenantId;
 
     const data = await prisma.asset.create({
-      data: payload
+      data: payload,
+      include: {
+        branch: true
+      }
     });
     return sendSuccess(res, data, HTTP_STATUS.CREATED);
   } catch (error) {

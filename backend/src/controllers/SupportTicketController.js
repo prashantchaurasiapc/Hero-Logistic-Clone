@@ -8,12 +8,16 @@ exports.getAll = async (req, res, next) => {
   try {
     const { where, skip, take, orderBy, currentPage, pageSize } = buildPrismaQuery(req.query);
     
-    // Optional: Inject tenant scope here if applicable
-    // if (req.tenantId) where.tenantId = req.tenantId;
+    if (req.tenantId) where.companyId = req.tenantId;
 
     const [data, total] = await Promise.all([
       prisma.supportTicket.findMany({
-        where, skip, take, orderBy
+        where, skip, take, orderBy,
+        include: {
+          assignedAgent: true,
+          company: true,
+          replies: { take: 5, orderBy: { createdAt: 'asc' } }
+        }
       }),
       prisma.supportTicket.count({ where })
     ]);
@@ -29,9 +33,16 @@ exports.getAll = async (req, res, next) => {
 exports.getById = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
-    // if (req.tenantId) where.tenantId = req.tenantId;
+    if (req.tenantId) where.companyId = req.tenantId;
 
-    const data = await prisma.supportTicket.findFirst({ where });
+    const data = await prisma.supportTicket.findFirst({
+      where,
+      include: {
+        assignedAgent: true,
+        company: true,
+        replies: { include: { author: true }, orderBy: { createdAt: 'asc' } }
+      }
+    });
     
     if (!data) {
       return sendError(res, {
@@ -50,7 +61,7 @@ exports.getById = async (req, res, next) => {
 exports.create = async (req, res, next) => {
   try {
     const payload = { ...req.body };
-    // if (req.tenantId) payload.tenantId = req.tenantId;
+    if (req.tenantId && !payload.companyId) payload.companyId = req.tenantId;
 
     if (payload.description) {
       payload.message = payload.description;
@@ -65,7 +76,11 @@ exports.create = async (req, res, next) => {
     }
 
     const data = await prisma.supportTicket.create({
-      data: payload
+      data: payload,
+      include: {
+        assignedAgent: true,
+        company: true
+      }
     });
     return sendSuccess(res, data, HTTP_STATUS.CREATED);
   } catch (error) {
@@ -131,6 +146,42 @@ exports.delete = async (req, res, next) => {
         message: 'SupportTicket not found'
       }, HTTP_STATUS.NOT_FOUND);
     }
+    next(error);
+  }
+};
+
+// Add reply to SupportTicket
+exports.addReply = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { message, text } = req.body;
+    const replyText = message || text;
+
+    if (!replyText) {
+      return sendError(res, { code: ERROR_CODES.VALIDATION_ERROR, message: 'Message text is required' }, HTTP_STATUS.BAD_REQUEST);
+    }
+
+    const ticket = await prisma.supportTicket.findUnique({ where: { id } });
+    if (!ticket) {
+      return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'SupportTicket not found' }, HTTP_STATUS.NOT_FOUND);
+    }
+
+    let user = req.user ? await prisma.user.findUnique({ where: { id: req.user.id } }) : null;
+    if (!user) {
+      user = await prisma.user.findFirst();
+    }
+
+    const reply = await prisma.ticketReply.create({
+      data: {
+        message: replyText,
+        ticketId: id,
+        authorId: user.id
+      },
+      include: { author: { select: { id: true, name: true, email: true, role: true } } }
+    });
+
+    return sendSuccess(res, reply, HTTP_STATUS.CREATED);
+  } catch (error) {
     next(error);
   }
 };

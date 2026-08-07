@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import api from '../../services/api';
 import { 
   Search, Plus, ChevronDown, Calendar, FileText, DollarSign, 
   Building, AlertTriangle, Filter, Download, RefreshCw, Eye,
@@ -8,7 +9,7 @@ import {
 } from 'lucide-react';
 
 export default function Finance() {
-  // Navigation View Mode: 'dashboard' (10.1) | 'invoices' (10.2) | 'invoice_details' (10.3) | 'payments_receipts' (10.4)
+  // Navigation View Mode: 'dashboard' () | 'invoices' () | 'invoice_details' () | 'payments_receipts' ()
   const [viewMode, setViewMode] = useState('dashboard');
 
   // Filter & UI States
@@ -21,7 +22,7 @@ export default function Finance() {
   const [currentPage, setCurrentPage] = useState(1);
   const [toast, setToast] = useState(null);
 
-  // States for 10.4 Payments & Receipts page
+  // States for Payments & Receipts page
   const [prSearchQuery, setPrSearchQuery] = useState('');
   const [prSelectedBranch, setPrSelectedBranch] = useState('All Branches');
   const [prSelectedType, setPrSelectedType] = useState('All Payment Types');
@@ -29,25 +30,13 @@ export default function Finance() {
   const [payMenuIndex, setPayMenuIndex] = useState(null);
   const [viewPaymentModal, setViewPaymentModal] = useState(null);
   const [editPaymentModal, setEditPaymentModal] = useState(null);
-  const [paymentsList, setPaymentsList] = useState([
-    { date: '24 May 2025', ref: 'PAY-2025-0567', customer: 'All Star Motors', invoice: 'INV-2025-0187', method: 'Bank Transfer', amount: '$9,625.00', status: 'Completed', branch: 'Sydney Head Office' },
-    { date: '23 May 2025', ref: 'PAY-2025-0566', customer: 'Sydney Car Sales', invoice: 'INV-2025-0182', method: 'EFTPOS', amount: '$2,860.00', status: 'Completed', branch: 'Sydney Head Office' },
-    { date: '22 May 2025', ref: 'PAY-2025-0565', customer: 'Fast Freight Pty Ltd', invoice: 'INV-2025-0180', method: 'Bank Transfer', amount: '$5,280.00', status: 'Completed', branch: 'Melbourne Depot' },
-    { date: '22 May 2025', ref: 'PAY-2025-0564', customer: 'Metro Group Sydney', invoice: 'INV-2025-0176', method: 'Credit Card', amount: '$1,650.00', status: 'Completed', branch: 'Sydney Head Office' },
-    { date: '21 May 2025', ref: 'PAY-2025-0563', customer: 'Blue Line Logistics', invoice: 'INV-2025-0173', method: 'Bank Transfer', amount: '$3,960.00', status: 'Completed', branch: 'Brisbane Hub' }
-  ]);
-  const [receiptsList, setReceiptsList] = useState([
-    { date: '24 May 2025', ref: 'REC-2025-0125', customer: 'ABC Wholesalers', for: 'Overpayment Refund', method: 'Bank Transfer', amount: '$1,250.00', status: 'Issued', branch: 'Sydney Head Office' },
-    { date: '20 May 2025', ref: 'REC-2025-0124', customer: 'All Star Motors', for: 'Security Deposit Refund', method: 'Bank Transfer', amount: '$500.00', status: 'Issued', branch: 'Sydney Head Office' },
-    { date: '18 May 2025', ref: 'REC-2025-0123', customer: 'Quick Move Transport', for: 'Job Cancellation Refund', method: 'EFTPOS', amount: '$275.00', status: 'Issued', branch: 'Melbourne Depot' },
-    { date: '16 May 2025', ref: 'REC-2025-0122', customer: 'Prime Car Carriers', for: 'Overpayment Refund', method: 'Bank Transfer', amount: '$820.00', status: 'Issued', branch: 'Sydney Head Office' },
-    { date: '12 May 2025', ref: 'REC-2025-0121', customer: 'City Link Logistics', for: 'Overpayment Refund', method: 'Bank Transfer', amount: '$430.00', status: 'Issued', branch: 'Brisbane Hub' }
-  ]);
+  const [paymentsList, setPaymentsList] = useState([]);
+  const [receiptsList, setReceiptsList] = useState([]);
   const [recMenuIndex, setRecMenuIndex] = useState(null);
   const [viewReceiptModal, setViewReceiptModal] = useState(null);
   const [editReceiptModal, setEditReceiptModal] = useState(null);
 
-  // States for 10.5 Expenses page
+  // States for Expenses page
   const [expSearchQuery, setExpSearchQuery] = useState('');
   const [expSelectedBranch, setExpSelectedBranch] = useState('All Branches');
   const [expSelectedCategory, setExpSelectedCategory] = useState('All Categories');
@@ -55,18 +44,9 @@ export default function Finance() {
   const [expMenuIndex, setExpMenuIndex] = useState(null);
   const [viewExpenseModal, setViewExpenseModal] = useState(null);
   const [editExpenseModal, setEditExpenseModal] = useState(null);
-  const [expensesList, setExpensesList] = useState([
-    { date: '24 May 2025', ref: 'EXP-2025-0567', desc: 'Diesel - Port Macquarie Run', category: 'Fuel', amount: '$1,245.60', type: 'Company Card', status: 'Approved', user: 'John Driver', branch: 'Sydney Head Office' },
-    { date: '24 May 2025', ref: 'EXP-2025-0566', desc: 'Truck Service & Oil Change', category: 'Maintenance', amount: '$620.00', type: 'Bank Transfer', status: 'Pending', user: 'John Driver', branch: 'Sydney Head Office' },
-    { date: '23 May 2025', ref: 'EXP-2025-0565', desc: 'Tyre Repair - Rear Left', category: 'Repairs', amount: '$180.00', type: 'Company Card', status: 'Approved', user: 'John Driver', branch: 'Melbourne Depot' },
-    { date: '22 May 2025', ref: 'EXP-2025-0564', desc: 'Toll Fees - Sydney', category: 'Tolls', amount: '$82.40', type: 'EFTPOS', status: 'Approved', user: 'John Driver', branch: 'Sydney Head Office' },
-    { date: '22 May 2025', ref: 'EXP-2025-0563', desc: 'Truck Wash', category: 'Maintenance', amount: '$45.00', type: 'Company Card', status: 'Approved', user: 'John Driver', branch: 'Sydney Head Office' },
-    { date: '21 May 2025', ref: 'EXP-2025-0562', desc: 'Accommodation - Tamworth', category: 'Accommodation', amount: '$210.00', type: 'Personal (Reimb.)', status: 'Pending', user: 'John Driver', branch: 'Brisbane Hub' },
-    { date: '21 May 2025', ref: 'EXP-2025-0561', desc: 'Meals - Tamworth', category: 'Meals', amount: '$78.50', type: 'Personal (Reimb.)', status: 'Approved', user: 'John Driver', branch: 'Sydney Head Office' },
-    { date: '20 May 2025', ref: 'EXP-2025-0560', desc: 'Parking - Sydney CBD', category: 'Parking', amount: '$32.00', type: 'EFTPOS', status: 'Approved', user: 'John Driver', branch: 'Melbourne Depot' }
-  ]);
+  const [expensesList, setExpensesList] = useState([]);
 
-  // States for 10.6 Payroll Runs page
+  // States for Payroll Runs page
   const [paySearchQuery, setPaySearchQuery] = useState('');
   const [paySelectedBranch, setPaySelectedBranch] = useState('All Branches');
   const [paySelectedType, setPaySelectedType] = useState('All Pay Types');
@@ -74,18 +54,9 @@ export default function Finance() {
   const [payRunMenuIndex, setPayRunMenuIndex] = useState(null);
   const [viewPayrollModal, setViewPayrollModal] = useState(null);
   const [editPayrollModal, setEditPayrollModal] = useState(null);
-  const [payrollList, setPayrollList] = useState([
-    { name: 'Weekly Run - 26 May 2025', period: '19 May - 25 May 2025', branch: 'Sydney Head Office', employees: 28, type: 'Weekly', total: '$58,420.00', status: 'Paid', user: 'Sarah Mitchell', date: '26 May 2025' },
-    { name: 'Weekly Run - 19 May 2025', period: '12 May - 18 May 2025', branch: 'Sydney Head Office', employees: 27, type: 'Weekly', total: '$55,680.00', status: 'Paid', user: 'Sarah Mitchell', date: '19 May 2025' },
-    { name: 'Fortnightly Run - 18 May 2025', period: '05 May - 18 May 2025', branch: 'Brisbane Branch', employees: 15, type: 'Fortnightly', total: '$31,240.00', status: 'Approved', user: 'James Driver', date: '18 May 2025' },
-    { name: 'Weekly Run - 12 May 2025', period: '05 May - 11 May 2025', branch: 'Sydney Head Office', employees: 26, type: 'Weekly', total: '$53,960.00', status: 'Paid', user: 'Sarah Mitchell', date: '12 May 2025' },
-    { name: 'Weekly Run - 05 May 2025', period: '28 Apr - 04 May 2025', branch: 'Sydney Head Office', employees: 26, type: 'Weekly', total: '$52,730.00', status: 'Paid', user: 'Sarah Mitchell', date: '05 May 2025' },
-    { name: 'Salary Run - May 2025', period: '01 May - 31 May 2025', branch: 'Sydney Head Office', employees: 8, type: 'Salary', total: '$64,500.00', status: 'Draft', user: 'Sarah Mitchell', date: '01 May 2025' },
-    { name: 'Fortnightly Run - 04 May 2025', period: '21 Apr - 04 May 2025', branch: 'Melbourne Branch', employees: 12, type: 'Fortnightly', total: '$24,870.00', status: 'Paid', user: 'James Driver', date: '04 May 2025' },
-    { name: 'Weekly Run - 28 Apr 2025', period: '21 Apr - 27 Apr 2025', branch: 'Sydney Head Office', employees: 25, type: 'Weekly', total: '$51,280.00', status: 'Paid', user: 'Sarah Mitchell', date: '28 Apr 2025' }
-  ]);
+  const [payrollList, setPayrollList] = useState([]);
 
-  // States for 10.7 Accounts Receivable & Overdue Invoices page
+  // States for Accounts Receivable & Overdue Invoices page
   const [recSearchQuery, setRecSearchQuery] = useState('');
   const [recSelectedBranch, setRecSelectedBranch] = useState('All Branches');
   const [recSelectedCustomer, setRecSelectedCustomer] = useState('All Customers');
@@ -93,24 +64,15 @@ export default function Finance() {
   const [ovdMenuIndex, setOvdMenuIndex] = useState(null);
   const [viewOverdueModal, setViewOverdueModal] = useState(null);
   const [editOverdueModal, setEditOverdueModal] = useState(null);
-  const [overdueList, setOverdueList] = useState([
-    { id: 'INV-2025-0180', customer: 'Fast Freight Pty Ltd', issueDate: '05 May 2025', dueDate: '19 May 2025', daysOverdue: 13, amount: '$5,280.00', status: 'Overdue' },
-    { id: 'INV-2025-0176', customer: 'Metro Group Sydney', issueDate: '05 May 2025', dueDate: '19 May 2025', daysOverdue: 13, amount: '$1,650.00', status: 'Overdue' },
-    { id: 'INV-2025-0168', customer: 'ABC Wholesalers', issueDate: '30 Apr 2025', dueDate: '15 May 2025', daysOverdue: 17, amount: '$6,820.00', status: 'Overdue' },
-    { id: 'INV-2025-0162', customer: 'Prime Car Carriers', issueDate: '28 Apr 2025', dueDate: '12 May 2025', daysOverdue: 20, amount: '$3,950.00', status: 'Overdue' },
-    { id: 'INV-2025-0159', customer: 'Quick Move Transport', issueDate: '25 Apr 2025', dueDate: '09 May 2025', daysOverdue: 23, amount: '$2,480.00', status: 'Overdue' },
-    { id: 'INV-2025-0151', customer: 'Blue Line Logistics', issueDate: '21 Apr 2025', dueDate: '05 May 2025', daysOverdue: 27, amount: '$4,230.00', status: 'Overdue' },
-    { id: 'INV-2025-0148', customer: 'City Link Logistics', issueDate: '18 Apr 2025', dueDate: '02 May 2025', daysOverdue: 30, amount: '$2,350.00', status: 'Overdue' },
-    { id: 'INV-2025-0136', customer: 'Sydney Car Sales', issueDate: '10 Apr 2025', dueDate: '24 Apr 2025', daysOverdue: 38, amount: '$2,860.00', status: 'Overdue' },
-  ]);
+  const [overdueList, setOverdueList] = useState([]);
 
-  // States for 10.8 Profit & Loss / Financial Reports page
+  // States for Profit & Loss / Financial Reports page
   const [repSearchQuery, setRepSearchQuery] = useState('');
   const [repSelectedBranch, setRepSelectedBranch] = useState('All Branches');
   const [repSelectedAccount, setRepSelectedAccount] = useState('All Accounts');
   const [repSelectedTimeframe, setRepSelectedTimeframe] = useState('This Month');
 
-  // States for 10.9 Accountant Export & Integration page
+  // States for Accountant Export & Integration page
   const [accSearchQuery, setAccSearchQuery] = useState('');
   const [accSelectedType, setAccSelectedType] = useState('All Export Types');
   const [accSelectedFormat, setAccSelectedFormat] = useState('All Formats');
@@ -118,16 +80,7 @@ export default function Finance() {
   const [accMenuIndex, setAccMenuIndex] = useState(null);
   const [viewExportModal, setViewExportModal] = useState(null);
   const [editExportModal, setEditExportModal] = useState(null);
-  const [accExportList, setAccExportList] = useState([
-    { name: 'May 2025 - Profit & Loss', type: 'P&L Statement', fmt: 'PDF', period: 'May 2025', date: '24 May 2025 10:32 AM', by: 'Sarah Mitchell', status: 'Completed' },
-    { name: 'May 2025 - Balance Sheet', type: 'Balance Sheet', fmt: 'PDF', period: 'May 2025', date: '24 May 2025 10:32 AM', by: 'Sarah Mitchell', status: 'Completed' },
-    { name: 'May 2025 - General Ledger', type: 'General Ledger', fmt: 'CSV', period: 'May 2025', date: '24 May 2025 10:32 AM', by: 'Sarah Mitchell', status: 'Completed' },
-    { name: 'May 2025 - Accounts Receivable', type: 'Receivables', fmt: 'CSV', period: 'May 2025', date: '23 May 2025 04:15 PM', by: 'James Driver', status: 'Completed' },
-    { name: 'May 2025 - Accounts Payable', type: 'Payables', fmt: 'CSV', period: 'May 2025', date: '23 May 2025 04:14 PM', by: 'James Driver', status: 'Completed' },
-    { name: 'Apr - May 2025 - Bank Reconciliation', type: 'Bank Reconciliation', fmt: 'CSV', period: 'Apr - May 2025', date: '22 May 2025 09:20 AM', by: 'Sarah Mitchell', status: 'Completed' },
-    { name: 'May 2025 - Tax Summary', type: 'Tax Summary', fmt: 'PDF', period: 'May 2025', date: '20 May 2025 11:05 AM', by: 'Sarah Mitchell', status: 'Failed' },
-    { name: 'May 2025 - Cash Flow', type: 'Cash Flow', fmt: 'PDF', period: 'May 2025', date: '19 May 2025 03:40 PM', by: 'James Driver', status: 'Completed' },
-  ]);
+  const [accExportList, setAccExportList] = useState([]);
 
   // Modals & Active Invoice Details
   const [showAddTransactionModal, setShowAddTransactionModal] = useState(false);
@@ -156,14 +109,14 @@ export default function Finance() {
 
   // Form state for Schedule Report Modal
   const [scheduleForm, setScheduleForm] = useState({
-    reportName: '10.8 Profit & Loss / Financial Reports',
+    reportName: 'Profit & Loss / Financial Reports',
     frequency: 'Monthly (1st of month)',
     recipientEmail: 'finance-admin@herologistics.com.au',
     format: 'PDF Document',
     deliveryTime: '08:00 AM AEST'
   });
 
-  // Active Detailed Invoice for Page 10.3
+  // Active Detailed Invoice for Page 
   const [activeInvoiceDetail, setActiveInvoiceDetail] = useState(null);
 
   // Form state for New Transaction / Invoice
@@ -176,26 +129,132 @@ export default function Finance() {
     notes: ''
   });
 
-  // Comprehensive Invoices Database for 10.2 Invoices List Page
-  const [invoices, setInvoices] = useState([
-    { id: 'INV-2025-0187', customer: 'All Star Motors', ref: 'LOAD-02548', issueDate: '10 May 2025', dueDate: '24 May 2025', type: 'Tax Invoice', amount: '$9,625.00', rawAmount: 9625, status: 'Paid', dueIn: '-' },
-    { id: 'INV-2025-0587', customer: 'Sydney Car Sales', ref: 'LOAD-02548', issueDate: '24 May 2025', dueDate: '07 Jun 2025', type: 'Tax Invoice', amount: '$12,650.00', rawAmount: 12650, status: 'Outstanding', dueIn: '13 days' },
-    { id: 'INV-2025-0586', customer: 'Toyota Fortitude Valley', ref: 'LOAD-02521', issueDate: '23 May 2025', dueDate: '06 Jun 2025', type: 'Tax Invoice', amount: '$18,200.00', rawAmount: 18200, status: 'Paid', dueIn: '-' },
-    { id: 'INV-2025-0585', customer: 'Motor Group Sydney', ref: 'LOAD-02497', issueDate: '23 May 2025', dueDate: '06 Jun 2025', type: 'Tax Invoice', amount: '$8,750.00', rawAmount: 8750, status: 'Paid', dueIn: '-' },
-    { id: 'INV-2025-0584', customer: 'Brake Pad Set - Front', ref: 'LOAD-02502', issueDate: '22 May 2025', dueDate: '05 Jun 2025', type: 'Tax Invoice', amount: '$1,250.00', rawAmount: 1250, status: 'Overdue', dueIn: '8 days' },
-    { id: 'INV-2025-0583', customer: 'Engine Oil 10W-40', ref: 'LOAD-02503', issueDate: '22 May 2025', dueDate: '05 Jun 2025', type: 'Tax Invoice', amount: '$2,850.00', rawAmount: 2850, status: 'Outstanding', dueIn: '8 days' },
-    { id: 'INV-2025-0582', customer: 'Fast Auto Dealers', ref: 'LOAD-02478', issueDate: '21 May 2025', dueDate: '04 Jun 2025', type: 'Tax Invoice', amount: '$9,600.00', rawAmount: 9600, status: 'Paid', dueIn: '-' },
-    { id: 'INV-2025-0581', customer: 'Parts Direct', ref: 'LOAD-02465', issueDate: '21 May 2025', dueDate: '04 Jun 2025', type: 'Tax Invoice', amount: '$4,320.00', rawAmount: 4320, status: 'Paid', dueIn: '-' },
-    { id: 'INV-2025-0580', customer: 'Sydney Car Sales', ref: 'LOAD-02450', issueDate: '20 May 2025', dueDate: '03 Jun 2025', type: 'Credit Note', amount: '-$1,200.00', rawAmount: -1200, status: 'Paid', dueIn: '-' },
-    { id: 'INV-2025-0579', customer: 'Top Gear Autos', ref: 'LOAD-02433', issueDate: '19 May 2025', dueDate: '02 Jun 2025', type: 'Tax Invoice', amount: '$15,480.00', rawAmount: 15480, status: 'Outstanding', dueIn: '5 days' }
-  ]);
+  // Comprehensive Invoices Database for Invoices List Page
+  const [invoices, setInvoices] = useState([]);
+
+  
+  const [financeStats, setFinanceStats] = useState(null);
+  const [loadingApi, setLoadingApi] = useState(false);
+
+  const fetchFinanceData = useCallback(async () => {
+    setLoadingApi(true);
+    try {
+      const res = await api.get('/company-admin/finance');
+      const data = res.data?.data || res.data || {};
+      if (data.stats) {
+        setFinanceStats(data.stats);
+      }
+      if (Array.isArray(data.invoices)) {
+        const mapped = data.invoices.map(inv => ({
+          id: inv.invoiceNumber || inv.id,
+          dbId: inv.id,
+          customer: inv.customer?.name || 'General Customer',
+          ref: inv.load?.loadRef || '—',
+          issueDate: inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' }) : '—',
+          dueDate: inv.dueDate ? new Date(inv.dueDate).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' }) : '—',
+          type: inv.entryType || 'Tax Invoice',
+          amount: `${(parseFloat(inv.amount) || 0).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          rawAmount: parseFloat(inv.amount) || 0,
+          status: inv.status === 'PAID' ? 'Paid' : (inv.status === 'OVERDUE' ? 'Overdue' : 'Outstanding'),
+          dueIn: inv.status === 'PAID' ? '-' : '14 days'
+        }));
+        setInvoices(mapped);
+
+        const mappedPayments = mapped.filter(inv => inv.type === 'Payment Received' || inv.type === 'Payment' || inv.status === 'Paid').map(inv => ({
+          date: inv.issueDate,
+          ref: `PAY-${inv.id}`,
+          customer: inv.customer,
+          invoice: inv.id,
+          method: 'Bank Transfer',
+          amount: inv.amount,
+          status: 'Completed',
+          branch: 'Sydney Head Office'
+        }));
+        setPaymentsList(mappedPayments);
+
+        const mappedReceipts = mapped.filter(inv => inv.type === 'Receipt Issued' || inv.type === 'Receipt').map(inv => ({
+          date: inv.issueDate,
+          ref: `REC-${inv.id}`,
+          customer: inv.customer,
+          for: 'Invoice Payment',
+          method: 'Bank Transfer',
+          amount: inv.amount,
+          status: 'Issued',
+          branch: 'Sydney Head Office'
+        }));
+        setReceiptsList(mappedReceipts);
+
+        const mappedExpensesFromInvoices = mapped.filter(inv => inv.type === 'Expense Claim' || inv.type === 'Expense').map(inv => ({
+          date: inv.issueDate,
+          ref: `EXP-${inv.id}`,
+          desc: `Expense - ${inv.customer}`,
+          category: 'General Expense',
+          amount: inv.amount,
+          type: 'Bank Transfer',
+          status: 'Approved',
+          user: inv.customer,
+          branch: 'Sydney Head Office'
+        }));
+
+        const billingMapped = Array.isArray(data.billingRecords) ? data.billingRecords.map(b => ({
+          date: b.createdAt ? new Date(b.createdAt).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' }) : '—',
+          ref: b.invoiceNumber || `EXP-${b.id.slice(0, 6)}`,
+          desc: `Expense Claim (${b.planTierSnapshot || 'General'})`,
+          category: b.planTierSnapshot || 'Fuel',
+          amount: `$${(parseFloat(b.amount) || 0).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          type: b.paymentMethod || 'Bank Transfer',
+          status: b.status === 'PAID' ? 'Approved' : 'Pending',
+          user: 'Company Admin',
+          branch: 'Sydney Head Office'
+        })) : [];
+
+        setExpensesList([...billingMapped, ...mappedExpensesFromInvoices]);
+
+        const mappedPayrollFromInvoices = mapped.filter(inv => inv.type === 'Payroll Run' || inv.type === 'Payroll' || (inv.type && inv.type.includes('Payroll'))).map(inv => ({
+          name: `Payroll Run - ${inv.issueDate}`,
+          period: `01 - ${inv.issueDate}`,
+          branch: 'Sydney Head Office',
+          employees: 1,
+          type: 'Driver Wages',
+          total: inv.amount,
+          status: 'Paid',
+          user: inv.customer,
+          date: inv.issueDate
+        }));
+
+        const billingPayrollMapped = Array.isArray(data.billingRecords)
+          ? data.billingRecords.filter(b => !b.planTierSnapshot || b.planTierSnapshot === 'Payroll' || b.planTierSnapshot === 'Payroll Run' || (b.planTierSnapshot && b.planTierSnapshot.includes('Payroll')) || b.planTierSnapshot === 'General').map(b => ({
+              name: `Payroll Run - ${b.createdAt ? new Date(b.createdAt).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}`,
+              period: `01 - ${b.createdAt ? new Date(b.createdAt).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}`,
+              branch: 'Sydney Head Office',
+              employees: 1,
+              type: 'Driver Wages',
+              total: `${(parseFloat(b.amount) || 0).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+              status: b.status === 'PAID' ? 'Paid' : 'Pending',
+              user: 'Company Admin',
+              date: b.createdAt ? new Date(b.createdAt).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
+            }))
+          : [];
+
+        setPayrollList([...billingPayrollMapped, ...mappedPayrollFromInvoices]);
+      }
+    } catch (err) {
+      console.error('Error fetching finance data:', err);
+    } finally {
+      setLoadingApi(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchFinanceData();
+  }, [fetchFinanceData]);
 
   const triggerToast = (msg) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3500);
   };
 
-  // Open Full Invoice Details Page 10.3
+  // Open Full Invoice Details Page 
   const handleOpenInvoiceDetail = (inv) => {
     const isPaid = inv ? inv.status === 'Paid' : true;
     const rawAmt = inv && inv.rawAmount ? Math.abs(inv.rawAmount) : 9625;
@@ -307,27 +366,48 @@ export default function Finance() {
   const paginatedInvoices = filteredInvoices.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   // Handle Add Transaction Submit
-  const handleAddTransactionSubmit = (e) => {
-    e.preventDefault();
-    if (!transactionForm.customer || !transactionForm.amount) return;
+  const handleAddTransactionSubmit = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!transactionForm.amount) return;
 
-    const newInv = {
-      id: `INV-2025-05${Math.floor(88 + Math.random() * 10)}`,
-      customer: transactionForm.customer,
-      ref: `LOAD-0${Math.floor(2500 + Math.random() * 100)}`,
-      issueDate: '24 May 2025',
-      dueDate: transactionForm.dueDate,
-      type: transactionForm.type,
-      amount: `$${Number(transactionForm.amount).toLocaleString()}.00`,
-      rawAmount: Number(transactionForm.amount),
-      status: transactionForm.status,
-      dueIn: '14 days'
-    };
+    try {
+      const payload = {
+        entryType: transactionForm.type || 'Invoice',
+        amount: parseFloat(transactionForm.amount),
+        entityName: transactionForm.customer || 'General Customer',
+        paymentMethod: transactionForm.method || 'Bank Transfer',
+        status: transactionForm.status || 'Completed',
+        dueDate: transactionForm.dueDate || undefined
+      };
 
-    setInvoices([newInv, ...invoices]);
-    setShowAddTransactionModal(false);
-    triggerToast(`Invoice for ${transactionForm.customer} created successfully!`);
-    setTransactionForm({ customer: '', amount: '', type: 'Tax Invoice', dueDate: '2025-06-15', status: 'Outstanding', notes: '' });
+      const res = await api.post('/company-admin/finance/invoices', payload);
+      triggerToast('Transaction entry recorded successfully in database!');
+      setShowAddTransactionModal(false);
+
+      const formattedDate = new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
+      const formattedAmt = `${(parseFloat(transactionForm.amount) || 0).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+      if (transactionForm.type === 'Payroll' || transactionForm.type === 'Payroll Run') {
+        const newPayItem = {
+          name: `Payroll Run - ${formattedDate}`,
+          period: `01 - ${formattedDate}`,
+          branch: 'Sydney Head Office',
+          employees: 1,
+          type: 'Driver Wages',
+          total: formattedAmt,
+          status: (transactionForm.status === 'Completed' || transactionForm.status === 'Paid') ? 'Paid' : 'Pending',
+          user: transactionForm.customer || 'Company Admin',
+          date: formattedDate
+        };
+        setPayrollList(prev => [newPayItem, ...prev]);
+      }
+
+      setTransactionForm({ customer: '', amount: '', type: 'Invoice', method: 'Bank Transfer', status: 'Completed' });
+      await fetchFinanceData();
+    } catch (err) {
+      console.error('Error recording transaction:', err);
+      triggerToast('Failed to save transaction. Please check inputs.');
+    }
   };
 
   // Download Invoice File
@@ -429,7 +509,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
       )}
 
       {/* ========================================================================= */}
-      {/* VIEW MODE 1: 10.1 FINANCE DASHBOARD - SYDNEY HEAD OFFICE                 */}
+      {/* VIEW MODE 1: FINANCE DASHBOARD - SYDNEY HEAD OFFICE                 */}
       {/* ========================================================================= */}
       {viewMode === 'dashboard' && (
         <>
@@ -486,19 +566,19 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                           <button onClick={() => setShowMoreActions(false)} className="text-slate-400 hover:text-slate-600">✕</button>
                         </div>
                         <button onClick={() => { setViewMode('dashboard'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5 text-indigo-600">
-                          📊 10.1 Finance Dashboard
+                          📊 Finance Dashboard
                         </button>
                         <button onClick={() => { setViewMode('invoices'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          📄 10.2 Invoices List
+                          📄 Invoices List
                         </button>
                         <button onClick={() => { setViewMode('payments_receipts'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          💳 10.4 Payments & Receipts
+                          💳 Payments & Receipts
                         </button>
                         <button onClick={() => { setViewMode('expenses'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          💵 10.5 Expenses
+                          💵 Expenses
                         </button>
                         <button onClick={() => { setViewMode('payroll'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          👥 10.6 Payroll Runs
+                          👥 Payroll Runs
                         </button>
                         <div className="border-t border-slate-100 my-1" />
                         <button onClick={() => { setShowExportModal(true); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
@@ -524,8 +604,8 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block truncate">TOTAL REVENUE (MTD)</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight leading-tight mt-1 whitespace-nowrap">$842,650</div>
-                <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 12.4% vs Last Month</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight leading-tight mt-1 whitespace-nowrap">{financeStats ? `${(financeStats.totalRevenue || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
+                <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">{financeStats && financeStats.totalRevenue > 0 ? "▲ Live Database" : "—"}</div>
                 <button onClick={(e) => { e.stopPropagation(); setViewMode('payments_receipts'); }} className="text-[9.5px] font-bold text-purple-600 group-hover:text-purple-800 flex items-center gap-1 mt-2 cursor-pointer">
                   <span>View report</span>
                   <span>&rarr;</span>
@@ -540,8 +620,8 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block truncate">TOTAL EXPENSES (MTD)</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight leading-tight mt-1 whitespace-nowrap">$256,430</div>
-                <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 5.6% vs Last Month</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight leading-tight mt-1 whitespace-nowrap">{financeStats ? `${(financeStats.totalExpenses || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
+                <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">{financeStats && financeStats.totalExpenses > 0 ? "▲ Live Database" : "—"}</div>
                 <button onClick={(e) => { e.stopPropagation(); setViewMode('expenses'); }} className="text-[9.5px] font-bold text-purple-600 group-hover:text-purple-800 flex items-center gap-1 mt-2 cursor-pointer">
                   <span>View report</span>
                   <span>&rarr;</span>
@@ -556,8 +636,8 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block truncate">NET PROFIT (MTD)</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight leading-tight mt-1 whitespace-nowrap">$586,220</div>
-                <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 18.7% vs Last Month</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight leading-tight mt-1 whitespace-nowrap">{financeStats ? `${(financeStats.netProfit || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
+                <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">{financeStats && financeStats.netProfit > 0 ? "▲ Live Database" : "—"}</div>
                 <button onClick={(e) => { e.stopPropagation(); setViewMode('reports'); }} className="text-[9.5px] font-bold text-purple-600 group-hover:text-purple-800 flex items-center gap-1 mt-2 cursor-pointer">
                   <span>View report</span>
                   <span>&rarr;</span>
@@ -572,8 +652,8 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block truncate">OUTSTANDING INVOICES</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight leading-tight mt-1 whitespace-nowrap">$147,890</div>
-                <div className="text-[9.5px] font-bold text-rose-500 mt-1 whitespace-nowrap">▼ 6.3% vs Last Month</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight leading-tight mt-1 whitespace-nowrap">{financeStats ? `${(financeStats.totalOutstanding || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
+                <div className="text-[9.5px] font-bold text-rose-500 mt-1 whitespace-nowrap">{financeStats && financeStats.totalOutstanding > 0 ? "▼ Live Database" : "—"}</div>
                 <button onClick={(e) => { e.stopPropagation(); setViewMode('payroll'); }} className="text-[9.5px] font-bold text-purple-600 group-hover:text-purple-800 flex items-center gap-1 mt-2 cursor-pointer">
                   <span>View report</span>
                   <span>&rarr;</span>
@@ -588,8 +668,8 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block truncate">CASH IN BANK</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight leading-tight mt-1 whitespace-nowrap">$1,245,600</div>
-                <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 9.1% vs Last Month</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight leading-tight mt-1 whitespace-nowrap">{financeStats ? `${((financeStats.totalRevenue || 0) - (financeStats.totalExpenses || 0)).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
+                <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">{financeStats && financeStats.totalRevenue > 0 ? "▲ Live Database" : "—"}</div>
                 <button onClick={(e) => { e.stopPropagation(); setViewMode('accountant'); }} className="text-[9.5px] font-bold text-purple-600 group-hover:text-purple-800 flex items-center gap-1 mt-2 cursor-pointer">
                   <span>View report</span>
                   <span>&rarr;</span>
@@ -604,8 +684,8 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block truncate">OVERDUE INVOICES</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight leading-tight mt-1 whitespace-nowrap">$42,750</div>
-                <div className="text-[9.5px] font-bold text-rose-500 mt-1 whitespace-nowrap">▼ 14.2% vs Last Month</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight leading-tight mt-1 whitespace-nowrap">{financeStats ? `${(financeStats.totalOverdue || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
+                <div className="text-[9.5px] font-bold text-rose-500 mt-1 whitespace-nowrap">{financeStats && financeStats.totalOverdue > 0 ? "▼ Live Database" : "—"}</div>
                 <button onClick={(e) => { e.stopPropagation(); setViewMode('receivables'); }} className="text-[9.5px] font-bold text-purple-600 group-hover:text-purple-800 flex items-center gap-1 mt-2 cursor-pointer">
                   <span>View report</span>
                   <span>&rarr;</span>
@@ -746,7 +826,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               <div className="relative h-48 w-full flex flex-col justify-between pt-1">
                 <div className="absolute top-1 right-12 z-10 bg-white border border-slate-200 rounded-xl p-2 shadow-lg flex flex-col items-center pointer-events-none">
                   <span className="text-[9px] font-bold text-slate-500">24 May</span>
-                  <span className="text-xs font-black text-slate-900">$845,200</span>
+                  <span className="text-xs font-black text-slate-900">{financeStats ? `${(financeStats.totalRevenue || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</span>
                   <div className="w-2 h-2 bg-white border-r border-b border-slate-200 rotate-45 -mb-3 mt-0.5"></div>
                 </div>
 
@@ -822,7 +902,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               <div className="relative h-48 w-full flex flex-col justify-between pt-1">
                 <div className="absolute top-1 right-12 z-10 bg-white border border-slate-200 rounded-xl p-2 shadow-lg flex flex-col items-center pointer-events-none">
                   <span className="text-[9px] font-bold text-slate-500">24 May</span>
-                  <span className="text-xs font-black text-slate-900">$265,400</span>
+                  <span className="text-xs font-black text-slate-900">{financeStats ? `${(financeStats.totalExpenses || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</span>
                   <div className="w-2 h-2 bg-white border-r border-b border-slate-200 rotate-45 -mb-3 mt-0.5"></div>
                 </div>
 
@@ -896,7 +976,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               <div className="relative h-48 w-full flex flex-col justify-between pt-1">
                 <div className="absolute top-1 right-12 z-10 bg-white border border-slate-200 rounded-xl p-2 shadow-lg flex flex-col items-center pointer-events-none">
                   <span className="text-[9px] font-bold text-slate-500">24 May</span>
-                  <span className="text-xs font-black text-slate-900">$586,200</span>
+                  <span className="text-xs font-black text-slate-900">{financeStats ? `${(financeStats.netProfit || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</span>
                   <div className="w-2 h-2 bg-white border-r border-b border-slate-200 rotate-45 -mb-3 mt-0.5"></div>
                 </div>
 
@@ -938,31 +1018,31 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               
               <div className="flex items-center gap-3 py-3 h-48">
-                <div className="relative w-20 h-20 shrink-0 flex items-center justify-center">
-                  <svg viewBox="0 0 36 36" className="w-20 h-20 transform -rotate-90">
+                <div className="relative w-16 h-16 shrink-0 flex items-center justify-center">
+                  <svg viewBox="0 0 36 36" className="w-16 h-16 transform -rotate-90">
                     <circle cx="18" cy="18" r="14" fill="none" stroke="#E2E8F0" strokeWidth="4.5" />
                     <circle cx="18" cy="18" r="14" fill="none" stroke="#10B981" strokeWidth="4.5" strokeDasharray="55.7 100" strokeDashoffset="0" />
                     <circle cx="18" cy="18" r="14" fill="none" stroke="#F59E0B" strokeWidth="4.5" strokeDasharray="21.5 100" strokeDashoffset="-55.7" />
-                    <circle cx="18" cy="18" r="14" fill="none" stroke="#EF4444" strokeWidth="4.5" strokeDasharray="10.8 100" strokeDashoffset="-77.2" />
+                    <circle cx="18" cy="18" r="14" fill="none" stroke="#EF4444" strokeWidth="4.5" strokeDasharray="100" strokeDashoffset="-77.2" />
                   </svg>
                   <div className="absolute flex flex-col items-center">
-                    <span className="text-sm font-black text-slate-900 leading-none">196</span>
+                    <span className="text-sm font-black text-slate-900 leading-none">{financeStats ? (financeStats.totalInvoices || 0) : 0}</span>
                     <span className="text-[8px] font-bold text-slate-400 uppercase mt-0.5">Total</span>
                   </div>
                 </div>
 
-                <div className="space-y-2.5 text-[10.5px] font-bold text-slate-700 flex-1 min-w-0">
+                <div className="space-y-2 text-[10px] sm:text-[10.5px] font-bold text-slate-700 flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-1">
                     <span className="flex items-center gap-1.5 shrink-0"><span className="w-2 h-2 rounded-full bg-[#10B981]"></span> Paid</span>
-                    <span className="font-extrabold text-slate-900 shrink-0 whitespace-nowrap">124 (63.3%)</span>
+                    <span className="font-extrabold text-slate-900 shrink-0 whitespace-nowrap">{financeStats ? `${financeStats.paidCount || 0} (${financeStats.totalInvoices ? ((financeStats.paidCount / financeStats.totalInvoices)*100).toFixed(1) : 0}%)` : "0 (0%)"}</span>
                   </div>
                   <div className="flex items-center justify-between gap-1">
                     <span className="flex items-center gap-1.5 shrink-0"><span className="w-2 h-2 rounded-full bg-[#F59E0B]"></span> Outstanding</span>
-                    <span className="font-extrabold text-slate-900 shrink-0 whitespace-nowrap">48 (24.5%)</span>
+                    <span className="font-extrabold text-slate-900 shrink-0 whitespace-nowrap">{financeStats ? `${financeStats.outstandingCount || 0} (${financeStats.totalInvoices ? ((financeStats.outstandingCount / financeStats.totalInvoices)*100).toFixed(1) : 0}%)` : "0 (0%)"}</span>
                   </div>
                   <div className="flex items-center justify-between gap-1">
                     <span className="flex items-center gap-1.5 shrink-0"><span className="w-2 h-2 rounded-full bg-[#EF4444]"></span> Overdue</span>
-                    <span className="font-extrabold text-slate-900 shrink-0 whitespace-nowrap">24 (12.2%)</span>
+                    <span className="font-extrabold text-slate-900 shrink-0 whitespace-nowrap">{financeStats ? `${financeStats.overdueCount || 0} (${financeStats.totalInvoices ? ((financeStats.overdueCount / financeStats.totalInvoices)*100).toFixed(1) : 0}%)` : "0 (0%)"}</span>
                   </div>
                 </div>
               </div>
@@ -1034,7 +1114,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
 
               {/* Table Pagination */}
               <div className="px-5 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-between text-xs font-bold text-slate-500">
-                <span>Showing 1 to 5 of 8 invoices</span>
+                <span>Showing {invoices.length === 0 ? 0 : 1} to {invoices.length} of {invoices.length} invoices</span>
                 <div className="flex items-center gap-1">
                   <button disabled className="p-1 border border-slate-200 rounded opacity-30">&lt;</button>
                   <button className="w-6 h-6 rounded text-xs font-bold bg-[#4B0082] text-white">1</button>
@@ -1063,7 +1143,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                       <circle cx="18" cy="18" r="14" fill="none" stroke="#EF4444" strokeWidth="4.5" strokeDasharray="11.7 100" strokeDashoffset="-88.3" />
                     </svg>
                     <div className="absolute flex flex-col items-center">
-                      <span className="text-xs font-black text-slate-900 leading-none">$256,430</span>
+                      <span className="text-xs font-black text-slate-900 leading-none">{financeStats ? `${(financeStats.totalExpenses || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</span>
                       <span className="text-[8px] font-bold text-slate-400 uppercase">Total</span>
                     </div>
                   </div>
@@ -1072,23 +1152,23 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <div className="space-y-2.5 text-xs font-bold text-slate-700 pt-2 border-t border-slate-100">
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-purple-600"></span> Fuel</span>
-                    <span>$98,560 (38.4%)</span>
+                    <span>{financeStats && financeStats.totalExpenses > 0 ? `${((financeStats.totalExpenses * 0.384)).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (38.4%)` : "$0.00 (0%)"}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-teal-500"></span> Staff</span>
-                    <span>$56,420 (22.0%)</span>
+                    <span>{financeStats && financeStats.totalExpenses > 0 ? `${((financeStats.totalExpenses * 0.220)).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (22.0%)` : "$0.00 (0%)"}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Maintenance</span>
-                    <span>$42,670 (16.6%)</span>
+                    <span>{financeStats && financeStats.totalExpenses > 0 ? `${((financeStats.totalExpenses * 0.166)).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (16.6%)` : "$0.00 (0%)"}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Warehouse</span>
-                    <span>$28,980 (11.3%)</span>
+                    <span>{financeStats && financeStats.totalExpenses > 0 ? `${((financeStats.totalExpenses * 0.113)).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (11.3%)` : "$0.00 (0%)"}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Other</span>
-                    <span>$29,800 (11.7%)</span>
+                    <span>{financeStats && financeStats.totalExpenses > 0 ? `${((financeStats.totalExpenses * 0.117)).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (11.7%)` : "$0.00 (0%)"}</span>
                   </div>
                 </div>
               </div>
@@ -1108,7 +1188,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                       <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><Building className="w-4 h-4" /></div>
                       <span className="text-xs font-bold text-slate-700">Cash in Bank</span>
                     </div>
-                    <span className="text-sm font-black text-slate-900">$1,245,600</span>
+                    <span className="text-sm font-black text-slate-900">{financeStats ? `${((financeStats.totalRevenue || 0) - (financeStats.totalExpenses || 0)).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</span>
                   </div>
 
                   <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100">
@@ -1116,7 +1196,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                       <div className="p-2 bg-purple-50 text-purple-600 rounded-lg"><FileText className="w-4 h-4" /></div>
                       <span className="text-xs font-bold text-slate-700">Accounts Receivable</span>
                     </div>
-                    <span className="text-sm font-black text-slate-900">$212,450</span>
+                    <span className="text-sm font-black text-slate-900">{financeStats ? `${(financeStats.totalOutstanding || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</span>
                   </div>
 
                   <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100">
@@ -1124,7 +1204,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                       <div className="p-2 bg-rose-50 text-rose-600 rounded-lg"><FileText className="w-4 h-4" /></div>
                       <span className="text-xs font-bold text-slate-700">Accounts Payable</span>
                     </div>
-                    <span className="text-sm font-black text-slate-900">$134,200</span>
+                    <span className="text-sm font-black text-slate-900">{financeStats ? `${(financeStats.totalExpenses || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</span>
                   </div>
 
                   <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100">
@@ -1132,7 +1212,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                       <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><CreditCard className="w-4 h-4" /></div>
                       <span className="text-xs font-bold text-slate-700">Available Credit</span>
                     </div>
-                    <span className="text-sm font-black text-slate-900">$850,000</span>
+                    <span className="text-sm font-black text-slate-900">$0.00</span>
                   </div>
                 </div>
               </div>
@@ -1142,7 +1222,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
       )}
 
       {/* ========================================================================= */}
-      {/* VIEW MODE 2: 10.2 INVOICES LIST - SYDNEY HEAD OFFICE                     */}
+      {/* VIEW MODE 2: INVOICES LIST - SYDNEY HEAD OFFICE                     */}
       {/* ========================================================================= */}
       {viewMode === 'invoices' && (
         <>
@@ -1160,7 +1240,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
                   <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-black text-slate-900 tracking-tight leading-snug">
-                    10.2 Invoices List
+                    Invoices List
                   </h1>
                   <span className="w-3.5 h-3.5 rounded-full bg-blue-500 text-white flex items-center justify-center text-[9px] font-black shrink-0" title="Verified Branch">✓</span>
                 </div>
@@ -1222,7 +1302,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">TOTAL INVOICES</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">196</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? (financeStats.totalInvoices || 0) : 0}</div>
                 <div className="text-[10px] text-slate-400 font-semibold mb-2">This Month</div>
                 <button onClick={() => setSelectedStatus('All Statuses')} className="text-[10px] font-bold text-purple-600 hover:text-purple-800 block cursor-pointer">
                   View all invoices &rarr;
@@ -1238,7 +1318,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">PAID INVOICES</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">124 <span className="text-xs font-bold text-slate-500">(63.3%)</span></div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${financeStats.paidCount || 0} ` : "0 "}<span className="text-xs font-bold text-slate-500">({financeStats && financeStats.totalInvoices ? ((financeStats.paidCount / financeStats.totalInvoices)*100).toFixed(1) : 0}%)</span></div>
                 <div className="text-[10px] text-slate-400 font-semibold mb-2">This Month</div>
                 <button onClick={() => setSelectedStatus('Paid')} className="text-[10px] font-bold text-purple-600 hover:text-purple-800 block cursor-pointer">
                   View paid invoices &rarr;
@@ -1254,7 +1334,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">OUTSTANDING INVOICES</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">48 <span className="text-xs font-bold text-slate-500">(24.5%)</span></div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${financeStats.outstandingCount || 0} ` : "0 "}<span className="text-xs font-bold text-slate-500">({financeStats && financeStats.totalInvoices ? ((financeStats.outstandingCount / financeStats.totalInvoices)*100).toFixed(1) : 0}%)</span></div>
                 <div className="text-[10px] text-slate-400 font-semibold mb-2">This Month</div>
                 <button onClick={() => setSelectedStatus('Outstanding')} className="text-[10px] font-bold text-purple-600 hover:text-purple-800 block cursor-pointer">
                   View outstanding &rarr;
@@ -1270,7 +1350,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">OVERDUE INVOICES</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">24 <span className="text-xs font-bold text-slate-500">(12.2%)</span></div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${financeStats.overdueCount || 0} ` : "0 "}<span className="text-xs font-bold text-slate-500">({financeStats && financeStats.totalInvoices ? ((financeStats.overdueCount / financeStats.totalInvoices)*100).toFixed(1) : 0}%)</span></div>
                 <div className="text-[10px] text-slate-400 font-semibold mb-2">This Month</div>
                 <button onClick={() => setSelectedStatus('Overdue')} className="text-[10px] font-bold text-purple-600 hover:text-purple-800 block cursor-pointer">
                   View overdue &rarr;
@@ -1286,7 +1366,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">TOTAL INVOICE VALUE</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$1,256,850.00</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${((financeStats.totalRevenue || 0) + (financeStats.totalOutstanding || 0) + (financeStats.totalOverdue || 0)).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
                 <div className="text-[10px] text-slate-400 font-semibold mb-2">This Month</div>
                 <button onClick={() => triggerToast('Opening Financial Summary')} className="text-[10px] font-bold text-purple-600 hover:text-purple-800 block cursor-pointer">
                   View summary &rarr;
@@ -1549,27 +1629,27 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <div className="space-y-2.5 text-xs font-bold text-slate-700">
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-2 text-slate-600"><FileText className="w-3.5 h-3.5 text-slate-400" /> Total Invoices</span>
-                    <span className="font-extrabold text-slate-900">196</span>
+                    <span className="font-extrabold text-slate-900">{financeStats ? (financeStats.totalInvoices || 0) : 0}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-2 text-slate-600"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Paid</span>
-                    <span className="font-extrabold text-slate-900">124 (63.3%)</span>
+                    <span className="font-extrabold text-slate-900">{financeStats ? `${financeStats.paidCount || 0} (${financeStats.totalInvoices ? ((financeStats.paidCount / financeStats.totalInvoices)*100).toFixed(1) : 0}%)` : "0 (0%)"}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-2 text-slate-600"><span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Outstanding</span>
-                    <span className="font-extrabold text-slate-900">48 (24.5%)</span>
+                    <span className="font-extrabold text-slate-900">{financeStats ? `${financeStats.outstandingCount || 0} (${financeStats.totalInvoices ? ((financeStats.outstandingCount / financeStats.totalInvoices)*100).toFixed(1) : 0}%)` : "0 (0%)"}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-2 text-slate-600"><span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Overdue</span>
-                    <span className="font-extrabold text-slate-900">24 (12.2%)</span>
+                    <span className="font-extrabold text-slate-900">{financeStats ? `${financeStats.overdueCount || 0} (${financeStats.totalInvoices ? ((financeStats.overdueCount / financeStats.totalInvoices)*100).toFixed(1) : 0}%)` : "0 (0%)"}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-2 text-slate-600"><span className="w-2.5 h-2.5 rounded-full bg-purple-400"></span> Draft</span>
-                    <span className="font-extrabold text-slate-900">6 (3.1%)</span>
+                    <span className="font-extrabold text-slate-900">0 (0%)</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-2 text-slate-600"><span className="w-2.5 h-2.5 rounded-full bg-slate-300"></span> Cancelled</span>
-                    <span className="font-extrabold text-slate-900">2 (1.0%)</span>
+                    <span className="font-extrabold text-slate-900">0 (0%)</span>
                   </div>
                 </div>
               </div>
@@ -1581,26 +1661,43 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                   <button onClick={() => triggerToast('Viewing Status Chart')} className="text-[10px] font-bold text-purple-600 hover:underline">View Chart &rarr;</button>
                 </div>
 
-                <div className="flex items-center gap-4">
-                  <div className="relative w-24 h-24 shrink-0 flex items-center justify-center">
-                    <svg viewBox="0 0 36 36" className="w-24 h-24 transform -rotate-90">
+                <div className="flex items-center gap-3">
+                  <div className="relative w-18 h-18 shrink-0 flex items-center justify-center">
+                    <svg viewBox="0 0 36 36" className="w-18 h-18 transform -rotate-90">
                       <circle cx="18" cy="18" r="14" fill="none" stroke="#E2E8F0" strokeWidth="4.5" />
                       <circle cx="18" cy="18" r="14" fill="none" stroke="#10B981" strokeWidth="4.5" strokeDasharray="63.5 100" />
                       <circle cx="18" cy="18" r="14" fill="none" stroke="#F59E0B" strokeWidth="4.5" strokeDasharray="24.5 100" strokeDashoffset="-63.5" />
                       <circle cx="18" cy="18" r="14" fill="none" stroke="#EF4444" strokeWidth="4.5" strokeDasharray="8.6 100" strokeDashoffset="-88" />
                     </svg>
                     <div className="absolute flex flex-col items-center">
-                      <span className="text-xs font-black text-slate-900 leading-none">$1.26M</span>
+                      <span className="text-[10px] font-black text-slate-900 leading-none">
+                        {financeStats ? `$${((financeStats.totalRevenue || 0) + (financeStats.totalOutstanding || 0) + (financeStats.totalOverdue || 0)).toLocaleString('en-AU', { maximumFractionDigits: 0 })}` : "$0"}
+                      </span>
                       <span className="text-[8px] font-bold text-slate-400 uppercase mt-0.5">Total</span>
                     </div>
                   </div>
 
-                  <div className="space-y-1.5 text-[10.5px] font-bold text-slate-700 flex-1 min-w-0">
-                    <div className="flex justify-between"><span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> Paid</span> <span>$798,450 (63.5%)</span></div>
-                    <div className="flex justify-between"><span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-500"></span> Outstanding</span> <span>$308,300 (24.5%)</span></div>
-                    <div className="flex justify-between"><span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-rose-500"></span> Overdue</span> <span>$108,750 (8.6%)</span></div>
-                    <div className="flex justify-between"><span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-purple-400"></span> Draft</span> <span>$31,850 (2.5%)</span></div>
-                    <div className="flex justify-between"><span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-slate-300"></span> Cancelled</span> <span>$9,500 (0.8%)</span></div>
+                  <div className="space-y-1 text-[10px] sm:text-[px] font-bold text-slate-700 flex-1 min-w-0">
+                    <div className="flex justify-between items-center gap-1">
+                      <span className="flex items-center gap-1 text-slate-600 truncate"><span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span> Paid</span> 
+                      <span className="font-mono text-slate-900 shrink-0 text-[10px]">{financeStats ? `$${(financeStats.totalRevenue || 0).toLocaleString('en-AU', { minimumFractionDigits: 2 })}` : "$0.00"}</span>
+                    </div>
+                    <div className="flex justify-between items-center gap-1">
+                      <span className="flex items-center gap-1 text-slate-600 truncate"><span className="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span> Outstanding</span> 
+                      <span className="font-mono text-slate-900 shrink-0 text-[10px]">{financeStats ? `$${(financeStats.totalOutstanding || 0).toLocaleString('en-AU', { minimumFractionDigits: 2 })}` : "$0.00"}</span>
+                    </div>
+                    <div className="flex justify-between items-center gap-1">
+                      <span className="flex items-center gap-1 text-slate-600 truncate"><span className="w-2 h-2 rounded-full bg-rose-500 shrink-0"></span> Overdue</span> 
+                      <span className="font-mono text-slate-900 shrink-0 text-[10px]">{financeStats ? `$${(financeStats.totalOverdue || 0).toLocaleString('en-AU', { minimumFractionDigits: 2 })}` : "$0.00"}</span>
+                    </div>
+                    <div className="flex justify-between items-center gap-1">
+                      <span className="flex items-center gap-1 text-slate-600 truncate"><span className="w-2 h-2 rounded-full bg-purple-400 shrink-0"></span> Draft</span> 
+                      <span className="font-mono text-slate-900 shrink-0 text-[10px]">$0.00</span>
+                    </div>
+                    <div className="flex justify-between items-center gap-1">
+                      <span className="flex items-center gap-1 text-slate-600 truncate"><span className="w-2 h-2 rounded-full bg-slate-300 shrink-0"></span> Cancelled</span> 
+                      <span className="font-mono text-slate-900 shrink-0 text-[10px]">$0.00</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1613,11 +1710,16 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 </div>
 
                 <div className="space-y-2.5 text-xs font-bold text-slate-800">
-                  <div className="flex justify-between items-center"><span className="text-slate-600">1. Sydney Car Sales</span> <span className="font-black">$245,650.00</span></div>
-                  <div className="flex justify-between items-center"><span className="text-slate-600">2. Toyota Fortitude Valley</span> <span className="font-black">$198,320.00</span></div>
-                  <div className="flex justify-between items-center"><span className="text-slate-600">3. Motor Group Sydney</span> <span className="font-black">$165,780.00</span></div>
-                  <div className="flex justify-between items-center"><span className="text-slate-600">4. Fast Auto Dealers</span> <span className="font-black">$95,610.00</span></div>
-                  <div className="flex justify-between items-center"><span className="text-slate-600">5. Top Gear Autos</span> <span className="font-black">$78,430.00</span></div>
+                  {invoices.length > 0 ? (
+                    invoices.slice(0, 5).map((inv, idx) => (
+                      <div key={inv.id || idx} className="flex justify-between items-center">
+                        <span className="text-slate-600 truncate max-w-[180px]">{idx + 1}. {inv.customer}</span> 
+                        <span className="font-black shrink-0">{inv.amount}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-4 text-slate-400 text-xs font-semibold">No customer activity yet</div>
+                  )}
                 </div>
               </div>
 
@@ -1648,74 +1750,12 @@ Hero Logistics Pty Ltd - Management System (c) 2025
             </div>
           </div>
 
-          {/* Developer Notes Footer Box */}
-          <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-xl border border-slate-800 space-y-4">
-            <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
-              <Code2 className="w-4 h-4 text-purple-400" />
-              <h4 className="text-xs font-black uppercase tracking-widest text-purple-300">DEVELOPER NOTES &ndash; INVOICES LIST</h4>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 text-[11px] font-medium leading-relaxed">
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">1. PURPOSE</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Central list of all invoices.</li>
-                  <li>&bull; Quick overview of status and amounts.</li>
-                  <li>&bull; Easy access to invoice actions and reports.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">2. KEY FEATURES</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Filter by branch, customer, status, type and date.</li>
-                  <li>&bull; Search by invoice number, customer or reference.</li>
-                  <li>&bull; Inline status, due in and actions.</li>
-                  <li>&bull; Pagination and export.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">3. AUTOMATION & ALERTS</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Overdue invoices highlighted in red.</li>
-                  <li>&bull; Auto reminders for overdue invoices.</li>
-                  <li>&bull; Payment received updates status in real time.</li>
-                  <li>&bull; Daily summary email for overdue invoices.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">4. PERMISSIONS</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Super Admin: Full access.</li>
-                  <li>&bull; Finance Manager: Full access.</li>
-                  <li>&bull; Accounts Staff: View and manage invoices.</li>
-                  <li>&bull; Read Only: View only (limited access).</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">5. DATA SOURCES</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Invoices module.</li>
-                  <li>&bull; Payments & Receipts module.</li>
-                  <li>&bull; Customers module.</li>
-                  <li>&bull; General Ledger / Accounting module.</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="border-t border-slate-800 pt-3 flex flex-col sm:flex-row justify-between items-center text-[10px] text-slate-500 font-semibold">
-              <span>All times shown in your local time (AEST)</span>
-              <span className="flex items-center gap-1.5 text-purple-400">&bull; Data auto-refreshes every 5 minutes <RefreshCw className="w-3 h-3 animate-spin" /></span>
-            </div>
-          </div>
+          
         </>
       )}
 
       {/* ========================================================================= */}
-      {/* VIEW MODE 3: 10.3 INVOICE DETAILS - SCREENSHOT 2 MATCHING                */}
+      {/* VIEW MODE 3: INVOICE DETAILS - SCREENSHOT 2 MATCHING                */}
       {/* ========================================================================= */}
       {viewMode === 'invoice_details' && activeInvoiceDetail && (
         <>
@@ -1755,7 +1795,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               <div className="min-w-0 space-y-1">
                 <div className="flex items-center gap-2">
                   <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none">
-                    10.3 Invoice Details &ndash; {activeInvoiceDetail.id}
+                    Invoice Details &ndash; {activeInvoiceDetail.id}
                   </h1>
                   <ShieldCheck className="w-5 h-5 text-indigo-600 shrink-0" />
                 </div>
@@ -2053,68 +2093,12 @@ Hero Logistics Pty Ltd - Management System (c) 2025
             </div>
           </div>
 
-          {/* Developer Notes Footer Box */}
-          <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-xl border border-slate-800 space-y-4">
-            <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
-              <Code2 className="w-4 h-4 text-purple-400" />
-              <h4 className="text-xs font-black uppercase tracking-widest text-purple-300">DEVELOPER NOTES &ndash; INVOICE DETAILS</h4>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 text-[11px] font-medium leading-relaxed">
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">1. PURPOSE</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Display full invoice details, line items, payments, attachments and related links.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">2. KEY FEATURES</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; View invoice summary, totals and status.</li>
-                  <li>&bull; Line item breakdown with GST calculation.</li>
-                  <li>&bull; Record payments and create credit notes.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">3. AUTOMATION & ALERTS</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Send invoice PDF via email.</li>
-                  <li>&bull; Payment reminders for overdue invoices.</li>
-                  <li>&bull; Auto update status on payment received.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">4. PERMISSIONS</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Admin: Full access (view, edit, send, credit).</li>
-                  <li>&bull; Accounts: View, record payment.</li>
-                  <li>&bull; Read Only: View invoice and attachments.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">5. DATA SOURCES</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Invoices, payments and receipts.</li>
-                  <li>&bull; Load, customer and job data.</li>
-                  <li>&bull; Users and audit logs.</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="border-t border-slate-800 pt-3 flex flex-col sm:flex-row justify-between items-center text-[10px] text-slate-500 font-semibold">
-              <span>All times shown in your local time (AEST)</span>
-              <span className="flex items-center gap-1.5 text-purple-400">&bull; Data auto-refreshes every 5 minutes <RefreshCw className="w-3 h-3 animate-spin" /></span>
-            </div>
-          </div>
+          
         </>
       )}
 
       {/* ========================================================================= */}
-      {/* VIEW MODE 4: 10.4 PAYMENTS & RECEIPTS                                   */}
+      {/* VIEW MODE 4: PAYMENTS & RECEIPTS                                   */}
       {/* ========================================================================= */}
       {viewMode === 'payments_receipts' && (
         <div className="flex flex-col gap-4">
@@ -2152,7 +2136,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               <div className="min-w-0 space-y-1">
                 <div className="flex items-center gap-2">
                   <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none">
-                    10.4 Payments & Receipts
+                    Payments & Receipts
                   </h1>
                   <ShieldCheck className="w-5 h-5 text-indigo-600 shrink-0" />
                 </div>
@@ -2180,19 +2164,19 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                           <button onClick={() => setShowMoreActions(false)} className="text-slate-400 hover:text-slate-600">✕</button>
                         </div>
                         <button onClick={() => { setViewMode('dashboard'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          📊 10.1 Finance Dashboard
+                          📊 Finance Dashboard
                         </button>
                         <button onClick={() => { setViewMode('invoices'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          📄 10.2 Invoices List
+                          📄 Invoices List
                         </button>
                         <button onClick={() => { setViewMode('payments_receipts'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5 text-indigo-600">
-                          💳 10.4 Payments & Receipts
+                          💳 Payments & Receipts
                         </button>
                         <button onClick={() => { setViewMode('expenses'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          💵 10.5 Expenses
+                          💵 Expenses
                         </button>
                         <button onClick={() => { setViewMode('payroll'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          👥 10.6 Payroll Runs
+                          👥 Payroll Runs
                         </button>
                         <div className="border-t border-slate-100 my-1" />
                         <button onClick={() => { triggerToast('Synchronized bank feed'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
@@ -2241,19 +2225,19 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                             <button onClick={() => setShowMoreActions(false)} className="text-slate-400 hover:text-slate-600">✕</button>
                           </div>
                           <button onClick={() => { setViewMode('dashboard'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                            📊 10.1 Finance Dashboard
+                            📊 Finance Dashboard
                           </button>
                           <button onClick={() => { setViewMode('invoices'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                            📄 10.2 Invoices List
+                            📄 Invoices List
                           </button>
                           <button onClick={() => { setViewMode('payments_receipts'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5 text-indigo-600">
-                            💳 10.4 Payments & Receipts
+                            💳 Payments & Receipts
                           </button>
                           <button onClick={() => { setViewMode('expenses'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                            💵 10.5 Expenses
+                            💵 Expenses
                           </button>
                           <button onClick={() => { setViewMode('payroll'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                            👥 10.6 Payroll Runs
+                            👥 Payroll Runs
                           </button>
                           <div className="border-t border-slate-100 my-1" />
                           <button onClick={() => { triggerToast('Synchronized bank feed'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
@@ -2279,9 +2263,9 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">PAYMENTS RECEIVED (MTD)</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$586,220</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${(financeStats.totalRevenue || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ 12.7% <span className="text-slate-400 font-normal">vs Last Month</span></span>
+                  <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ Live API <span className="text-slate-400 font-normal">Database</span></span>
                 </div>
                 <button onClick={() => triggerToast('Opening Payments Report')} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 mt-2 block cursor-pointer">
                   View report &rarr;
@@ -2297,9 +2281,9 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">RECEIPTS ISSUED (MTD)</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$256,430</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${(financeStats.totalExpenses || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ 8.5% <span className="text-slate-400 font-normal">vs Last Month</span></span>
+                  <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ Live API <span className="text-slate-400 font-normal">Database</span></span>
                 </div>
                 <button onClick={() => triggerToast('Opening Receipts Report')} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 mt-2 block cursor-pointer">
                   View report &rarr;
@@ -2315,7 +2299,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">OUTSTANDING RECEIVABLES</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$147,890</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${(financeStats.totalOutstanding || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-rose-500 flex items-center gap-0.5 font-bold">▼ 9.3% <span className="text-slate-400 font-normal">vs Last Month</span></span>
                 </div>
@@ -2333,7 +2317,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">OVERDUE AMOUNT</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$42,750</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${(financeStats.totalOverdue || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-rose-500 flex items-center gap-0.5 font-bold">▲ 14.1% <span className="text-slate-400 font-normal">vs Last Month</span></span>
                 </div>
@@ -2351,7 +2335,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">CASH IN BANK</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$1,245,600</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${((financeStats.totalRevenue || 0) - (financeStats.totalExpenses || 0)).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ 9.1% <span className="text-slate-400 font-normal">vs Last Month</span></span>
                 </div>
@@ -2490,7 +2474,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">PAYMENTS RECEIVED</h3>
-                    <span className="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full text-[10px] font-black">28</span>
+                    <span className="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full text-[10px] font-black">{paymentsList.length}</span>
                   </div>
                   <button onClick={() => triggerToast('Opening Full Payments Ledger')} className="text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer">
                     View Report &rarr;
@@ -2605,7 +2589,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 </div>
 
                 <div className="px-5 py-4 border-t border-slate-100 flex items-center justify-between text-slate-500 text-[11px] font-semibold bg-slate-50/50">
-                  <span>Showing 1 to 5 of 28 payments</span>
+                  <span>Showing {paymentsList.length === 0 ? 0 : 1} to {paymentsList.length} of {paymentsList.length} payments</span>
                   <div className="flex gap-1.5">
                     <button className="px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-slate-400 cursor-not-allowed font-bold" disabled>&lt;</button>
                     <button className="px-2.5 py-1 bg-indigo-600 text-white rounded-lg font-black">1</button>
@@ -2624,7 +2608,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">RECEIPTS ISSUED</h3>
-                    <span className="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full text-[10px] font-black">12</span>
+                    <span className="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full text-[10px] font-black">{receiptsList.length}</span>
                   </div>
                   <button onClick={() => triggerToast('Opening Full Receipts Ledger')} className="text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer">
                     View Report &rarr;
@@ -2716,7 +2700,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 </div>
 
                 <div className="px-5 py-4 border-t border-slate-100 flex items-center justify-between text-slate-500 text-[11px] font-semibold bg-slate-50/50">
-                  <span>Showing 1 to 5 of 12 receipts</span>
+                  <span>Showing {receiptsList.length === 0 ? 0 : 1} to {receiptsList.length} of {receiptsList.length} receipts</span>
                   <div className="flex gap-1.5">
                     <button className="px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-slate-400 cursor-not-allowed font-bold" disabled>&lt;</button>
                     <button className="px-2.5 py-1 bg-indigo-600 text-white rounded-lg font-black">1</button>
@@ -2756,7 +2740,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                       <circle cx="18" cy="18" r="15.915" fill="none" stroke="#ec4899" strokeWidth="4.2" strokeDasharray="3 97" strokeDashoffset="-71.9" />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                      <span className="text-[11px] font-black text-slate-800 leading-tight">$586,220</span>
+                      <span className="text-[11px] font-black text-slate-800 leading-tight">{financeStats ? `${(financeStats.totalRevenue || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</span>
                       <span className="text-[7px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Total</span>
                     </div>
                   </div>
@@ -2813,7 +2797,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-[11px]">
                       <span>Current (0-30 days)</span>
-                      <span>$105,140 (71.0%)</span>
+                      <span>{financeStats ? `${(financeStats.totalOutstanding || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (100%)` : "$0.00 (0%)"}</span>
                     </div>
                     <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                       <div className="h-full bg-emerald-500 rounded-full" style={{ width: '71%' }} />
@@ -2823,7 +2807,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-[11px]">
                       <span>31-60 days</span>
-                      <span>$22,350 (15.1%)</span>
+                      <span>{financeStats ? `${(financeStats.totalOverdue || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00 (0%)"}</span>
                     </div>
                     <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                       <div className="h-full bg-amber-500 rounded-full" style={{ width: '15.1%' }} />
@@ -2833,7 +2817,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-[11px]">
                       <span>61-90 days</span>
-                      <span>$12,600 (8.5%)</span>
+                      <span>$0.00 (0%)</span>
                     </div>
                     <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                       <div className="h-full bg-orange-400 rounded-full" style={{ width: '8.5%' }} />
@@ -2843,7 +2827,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-[11px]">
                       <span>90+ days</span>
-                      <span>$7,800 (5.4%)</span>
+                      <span>$0.00 (0%)</span>
                     </div>
                     <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                       <div className="h-full bg-red-500 rounded-full" style={{ width: '5.4%' }} />
@@ -2852,7 +2836,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
 
                   <div className="flex justify-between items-center text-slate-900 text-sm font-black border-t border-slate-100 pt-3">
                     <span>Total Outstanding</span>
-                    <span className="font-mono text-indigo-700">$147,890</span>
+                    <span className="font-mono text-indigo-700">{financeStats ? `${((financeStats.totalOutstanding || 0) + (financeStats.totalOverdue || 0)).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</span>
                   </div>
                 </div>
               </div>
@@ -2931,69 +2915,12 @@ Hero Logistics Pty Ltd - Management System (c) 2025
 
           </div>
 
-          {/* Developer Notes Footer Box */}
-          <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-xl border border-slate-800 space-y-4">
-            <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
-              <Code2 className="w-4 h-4 text-purple-400" />
-              <h4 className="text-xs font-black uppercase tracking-widest text-purple-300">DEVELOPER NOTES &ndash; PAYMENTS & RECEIPTS</h4>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 text-[11px] font-medium leading-relaxed">
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">1. PURPOSE</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Track all incoming payments and outgoing receipts.</li>
-                  <li>&bull; Provide real-time cash flow visibility.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">2. KEY FEATURES</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Record payments and receipts manually.</li>
-                  <li>&bull; Filter by date, branch, method and status.</li>
-                  <li>&bull; Track outstanding and overdue amounts.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">3. AUTOMATION & ALERTS</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Auto-match payments to invoices.</li>
-                  <li>&bull; Overdue reminders for unpaid invoices.</li>
-                  <li>&bull; Notify admin for large refunds or voids.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">4. PERMISSIONS</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Admin: Full access (view, record, edit, delete).</li>
-                  <li>&bull; Accounts: View, record and reconcile.</li>
-                  <li>&bull; Read Only: View payment & receipt history.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">5. DATA SOURCES</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Invoices, customers and payments.</li>
-                  <li>&bull; Bank feeds and manual entries.</li>
-                  <li>&bull; General ledger and cash accounts.</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="border-t border-slate-800 pt-3 flex flex-col sm:flex-row justify-between items-center text-[10px] text-slate-500 font-semibold">
-              <span>All times shown in your local time (AEST)</span>
-              <span className="flex items-center gap-1.5 text-purple-400">&bull; Data auto-refreshes every 5 minutes <RefreshCw className="w-3 h-3 animate-spin" /></span>
-            </div>
-          </div>
+          
         </div>
       )}
 
       {/* ========================================================================= */}
-      {/* VIEW MODE 5: 10.5 EXPENSES REPORT                                        */}
+      {/* VIEW MODE 5: EXPENSES REPORT                                        */}
       {/* ========================================================================= */}
       {viewMode === 'expenses' && (
         <div className="flex flex-col gap-4">
@@ -3031,7 +2958,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               <div className="min-w-0 space-y-1">
                 <div className="flex items-center gap-2">
                   <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none">
-                    10.5 Expenses
+                    Expenses
                   </h1>
                   <ShieldCheck className="w-5 h-5 text-indigo-600 shrink-0" />
                 </div>
@@ -3059,19 +2986,19 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                           <button onClick={() => setShowMoreActions(false)} className="text-slate-400 hover:text-slate-600">✕</button>
                         </div>
                         <button onClick={() => { setViewMode('dashboard'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          📊 10.1 Finance Dashboard
+                          📊 Finance Dashboard
                         </button>
                         <button onClick={() => { setViewMode('invoices'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          📄 10.2 Invoices List
+                          📄 Invoices List
                         </button>
                         <button onClick={() => { setViewMode('payments_receipts'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          💳 10.4 Payments & Receipts
+                          💳 Payments & Receipts
                         </button>
                         <button onClick={() => { setViewMode('expenses'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5 text-indigo-600">
-                          💵 10.5 Expenses
+                          💵 Expenses
                         </button>
                         <button onClick={() => { setViewMode('payroll'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          👥 10.6 Payroll Runs
+                          👥 Payroll Runs
                         </button>
                         <div className="border-t border-slate-100 my-1" />
                         <button onClick={() => { triggerToast('Synchronized bank feed'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
@@ -3120,19 +3047,19 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                             <button onClick={() => setShowMoreActions(false)} className="text-slate-400 hover:text-slate-600">✕</button>
                           </div>
                           <button onClick={() => { setViewMode('dashboard'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                            📊 10.1 Finance Dashboard
+                            📊 Finance Dashboard
                           </button>
                           <button onClick={() => { setViewMode('invoices'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                            📄 10.2 Invoices List
+                            📄 Invoices List
                           </button>
                           <button onClick={() => { setViewMode('payments_receipts'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                            💳 10.4 Payments & Receipts
+                            💳 Payments & Receipts
                           </button>
                           <button onClick={() => { setViewMode('expenses'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5 text-indigo-600">
-                            💵 10.5 Expenses
+                            💵 Expenses
                           </button>
                           <button onClick={() => { setViewMode('payroll'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                            👥 10.6 Payroll Runs
+                            👥 Payroll Runs
                           </button>
                           <div className="border-t border-slate-100 my-1" />
                           <button onClick={() => { triggerToast('Synchronized bank feed'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
@@ -3158,7 +3085,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">TOTAL EXPENSES (MTD)</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$256,430</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${(financeStats.totalExpenses || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ 8.59% <span className="text-slate-400 font-normal">vs Last Month</span></span>
                 </div>
@@ -3176,7 +3103,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">PENDING APPROVAL</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$18,750</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$0.00</div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-rose-500 flex items-center gap-0.5 font-bold">▼ 12.41% <span className="text-slate-400 font-normal">vs Last Month</span></span>
                 </div>
@@ -3194,7 +3121,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">APPROVED (MTD)</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$237,680</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${(financeStats.totalExpenses || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ 8.10% <span className="text-slate-400 font-normal">vs Last Month</span></span>
                 </div>
@@ -3212,7 +3139,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">REJECTED (MTD)</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$1,920</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$0.00</div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ 4.21% <span className="text-slate-400 font-normal">vs Last Month</span></span>
                 </div>
@@ -3230,7 +3157,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">REIMBURSEMENTS PAID</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$96,300</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$0.00</div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ 9.31% <span className="text-slate-400 font-normal">vs Last Month</span></span>
                 </div>
@@ -3375,7 +3302,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">EXPENSES</h3>
-                    <span className="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full text-[10px] font-black">36</span>
+                    <span className="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full text-[10px] font-black">{expensesList.length}</span>
                   </div>
                   <button onClick={() => triggerToast('Opening Full Expenses Ledger')} className="text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer">
                     View Report &rarr;
@@ -3471,7 +3398,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 </div>
 
                 <div className="px-5 py-4 border-t border-slate-100 flex items-center justify-between text-slate-500 text-[11px] font-semibold bg-slate-50/50">
-                  <span>Showing 1 to 8 of 36 expenses</span>
+                  <span>Showing {expensesList.length === 0 ? 0 : 1} to {expensesList.length} of {expensesList.length} expenses</span>
                   <div className="flex gap-1.5">
                     <button className="px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-slate-400 cursor-not-allowed font-bold" disabled>&lt;</button>
                     <button className="px-2.5 py-1 bg-indigo-600 text-white rounded-lg font-black">1</button>
@@ -3532,7 +3459,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                       <div className="space-y-1.5">
                         <div className="flex justify-between text-[11px] font-bold text-slate-700">
                           <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Approved</span>
-                          <span>18 <span className="text-slate-400 font-normal">(50.0%)</span></span>
+                          <span>{expensesList.length} <span className="text-slate-400 font-normal">(100%)</span></span>
                         </div>
                         <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                           <div className="h-full bg-emerald-500 rounded-full" style={{ width: '50.0%' }} />
@@ -3542,7 +3469,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                       <div className="space-y-1.5">
                         <div className="flex justify-between text-[11px] font-bold text-slate-700">
                           <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> Pending</span>
-                          <span>6 <span className="text-slate-400 font-normal">(16.7%)</span></span>
+                          <span>0 <span className="text-slate-400 font-normal">(0%)</span></span>
                         </div>
                         <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                           <div className="h-full bg-amber-500 rounded-full" style={{ width: '16.7%' }} />
@@ -3552,7 +3479,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                       <div className="space-y-1.5">
                         <div className="flex justify-between text-[11px] font-bold text-slate-700">
                           <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-rose-500" /> Rejected</span>
-                          <span>1 <span className="text-slate-400 font-normal">(2.8%)</span></span>
+                          <span>0 <span className="text-slate-400 font-normal">(0%)</span></span>
                         </div>
                         <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                           <div className="h-full bg-rose-500 rounded-full" style={{ width: '2.8%' }} />
@@ -3562,7 +3489,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                       <div className="space-y-1.5">
                         <div className="flex justify-between text-[11px] font-bold text-slate-700">
                           <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#3b82f6]" /> Draft</span>
-                          <span>11 <span className="text-slate-400 font-normal">(30.5%)</span></span>
+                          <span>0 <span className="text-slate-400 font-normal">(0%)</span></span>
                         </div>
                         <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                           <div className="h-full bg-blue-500 rounded-full" style={{ width: '30.5%' }} />
@@ -3571,7 +3498,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
 
                       <div className="border-t border-slate-100 pt-3 flex justify-between items-center text-slate-900 text-xs font-black">
                         <span>Total</span>
-                        <span className="text-slate-700 font-black">36</span>
+                        <span className="text-slate-700 font-black">{expensesList.length}</span>
                       </div>
                     </div>
                   </div>
@@ -3674,7 +3601,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-[11px]">
                       <span>Company Card</span>
-                      <span className="font-mono text-slate-600">$138,420 (53.9%)</span>
+                      <span className="font-mono text-slate-600">$0.00 (0%)</span>
                     </div>
                     <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                       <div className="h-full bg-[#8b5cf6] rounded-full" style={{ width: '53.9%' }} />
@@ -3684,7 +3611,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-[11px]">
                       <span>Bank Transfer</span>
-                      <span className="font-mono text-slate-600">$74,850 (29.2%)</span>
+                      <span className="font-mono text-slate-600">{financeStats ? `${(financeStats.totalExpenses || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (100%)` : "$0.00 (0%)"}</span>
                     </div>
                     <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                       <div className="h-full bg-[#3b82f6] rounded-full" style={{ width: '29.2%' }} />
@@ -3694,7 +3621,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-[11px]">
                       <span>EFTPOS</span>
-                      <span className="font-mono text-slate-600">$22,910 (8.9%)</span>
+                      <span className="font-mono text-slate-600">$0.00 (0%)</span>
                     </div>
                     <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                       <div className="h-full bg-[#10b981] rounded-full" style={{ width: '8.9%' }} />
@@ -3704,7 +3631,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-[11px]">
                       <span>Personal (Reimb.)</span>
-                      <span className="font-mono text-slate-600">$20,250 (7.9%)</span>
+                      <span className="font-mono text-slate-600">$0.00 (0%)</span>
                     </div>
                     <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                       <div className="h-full bg-[#f59e0b] rounded-full" style={{ width: '7.9%' }} />
@@ -3748,7 +3675,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                   <div className="flex justify-between items-center">
                     <span>Tolls</span>
                     <div className="flex items-center gap-3">
-                      <span className="font-mono text-slate-900">$21,850</span>
+                      <span className="font-mono text-slate-900">$0.00</span>
                       <span className="text-[10px] font-bold text-rose-500 font-bold">▼ 8.1%</span>
                     </div>
                   </div>
@@ -3756,7 +3683,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                   <div className="flex justify-between items-center">
                     <span>Accommodation</span>
                     <div className="flex items-center gap-3">
-                      <span className="font-mono text-slate-900">$18,320</span>
+                      <span className="font-mono text-slate-900">$0.00</span>
                       <span className="text-[10px] font-bold text-emerald-600 font-bold">▲ 2.9%</span>
                     </div>
                   </div>
@@ -3767,64 +3694,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
 
           </div>
 
-          {/* Developer Notes Footer Box */}
-          <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-xl border border-slate-800 space-y-4">
-            <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
-              <Code2 className="w-4 h-4 text-purple-400" />
-              <h4 className="text-xs font-black uppercase tracking-widest text-purple-300">DEVELOPER NOTES &ndash; EXPENSES</h4>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 text-[11px] font-medium leading-relaxed">
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">1. PURPOSE</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Capture and manage all company expenses.</li>
-                  <li>&bull; Ensure compliance and accurate reporting.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">2. KEY FEATURES</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Add expenses with receipt upload.</li>
-                  <li>&bull; Categorise and track by payment type.</li>
-                  <li>&bull; Approval workflow and reimbursement.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">3. AUTOMATION & ALERTS</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Notify approvers for pending items.</li>
-                  <li>&bull; Flag high value or duplicate expenses.</li>
-                  <li>&bull; Auto-categorise using AI (future).</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">4. PERMISSIONS</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Admin: Full access (view, add, edit, approve).</li>
-                  <li>&bull; Accounts: View, add, edit, approve.</li>
-                  <li>&bull; Drivers: Add own expenses only.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">5. DATA SOURCES</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Receipts, invoices and statements.</li>
-                  <li>&bull; Company card and bank feeds.</li>
-                  <li>&bull; Driver expense submissions.</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="border-t border-slate-800 pt-3 flex flex-col sm:flex-row justify-between items-center text-[10px] text-slate-500 font-semibold">
-              <span>All times shown in your local time (AEST)</span>
-              <span className="flex items-center gap-1.5 text-purple-400">&bull; Data auto-refreshes every 5 minutes <RefreshCw className="w-3 h-3 animate-spin" /></span>
-            </div>
-          </div>
+          
         </div>
       )}
 
@@ -3944,7 +3814,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
       )}
 
       {/* ========================================================================= */}
-      {/* VIEW MODE 6: 10.6 PAYROLL RUNS                                           */}
+      {/* VIEW MODE 6: PAYROLL RUNS                                           */}
       {/* ========================================================================= */}
       {viewMode === 'payroll' && (
         <div className="flex flex-col gap-4">
@@ -3990,7 +3860,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               <div className="min-w-0 space-y-1">
                 <div className="flex items-center gap-2">
                   <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none">
-                    10.6 Payroll Runs
+                    Payroll Runs
                   </h1>
                   <ShieldCheck className="w-5 h-5 text-indigo-600 shrink-0" />
                 </div>
@@ -4018,28 +3888,28 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                           <button onClick={() => setShowMoreActions(false)} className="text-slate-400 hover:text-slate-600">✕</button>
                         </div>
                         <button onClick={() => { setViewMode('dashboard'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          📊 10.1 Finance Dashboard
+                          📊 Finance Dashboard
                         </button>
                         <button onClick={() => { setViewMode('invoices'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          📄 10.2 Invoices List
+                          📄 Invoices List
                         </button>
                         <button onClick={() => { setViewMode('payments_receipts'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          💳 10.4 Payments &amp; Receipts
+                          💳 Payments &amp; Receipts
                         </button>
                         <button onClick={() => { setViewMode('expenses'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          💵 10.5 Expenses
+                          💵 Expenses
                         </button>
                         <button onClick={() => { setViewMode('payroll'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5 text-indigo-600">
-                          👥 10.6 Payroll Runs
+                          👥 Payroll Runs
                         </button>
                         <button onClick={() => { setViewMode('receivables'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          📈 10.7 Accounts Receivable
+                          📈 Accounts Receivable
                         </button>
                         <button onClick={() => { setViewMode('reports'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          💰 10.8 Financial Reports
+                          💰 Financial Reports
                         </button>
                         <button onClick={() => { setViewMode('accountant'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          🏛️ 10.9 Accountant Export
+                          🏛️ Accountant Export
                         </button>
                         <div className="border-t border-slate-100 my-1" />
                         <button onClick={() => { triggerToast('Synchronized bank feed'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
@@ -4088,19 +3958,19 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                             <button onClick={() => setShowMoreActions(false)} className="text-slate-400 hover:text-slate-600">✕</button>
                           </div>
                           <button onClick={() => { setViewMode('dashboard'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                            📊 10.1 Finance Dashboard
+                            📊 Finance Dashboard
                           </button>
                           <button onClick={() => { setViewMode('invoices'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                            📄 10.2 Invoices List
+                            📄 Invoices List
                           </button>
                           <button onClick={() => { setViewMode('payments_receipts'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                            💳 10.4 Payments & Receipts
+                            💳 Payments & Receipts
                           </button>
                           <button onClick={() => { setViewMode('expenses'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                            💵 10.5 Expenses
+                            💵 Expenses
                           </button>
                           <button onClick={() => { setViewMode('payroll'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5 text-indigo-600">
-                            👥 10.6 Payroll Runs
+                            👥 Payroll Runs
                           </button>
                           <div className="border-t border-slate-100 my-1" />
                           <button onClick={() => { triggerToast('Synchronized bank feed'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
@@ -4126,7 +3996,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">TOTAL PAYROLL (MTD)</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$237,680</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${(financeStats.totalExpenses || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ 8.35% <span className="text-slate-400 font-normal">vs Last Month</span></span>
                 </div>
@@ -4144,7 +4014,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">PENDING APPROVAL</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$18,750</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$0.00</div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-rose-500 flex items-center gap-0.5 font-bold">▼ 12.41% <span className="text-slate-400 font-normal">vs Last Month</span></span>
                 </div>
@@ -4162,7 +4032,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">APPROVED (MTD)</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$218,930</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${(financeStats.totalExpenses || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ 7.92% <span className="text-slate-400 font-normal">vs Last Month</span></span>
                 </div>
@@ -4180,7 +4050,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">PAID (MTD)</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$196,420</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${(financeStats.totalExpenses || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ 9.11% <span className="text-slate-400 font-normal">vs Last Month</span></span>
                 </div>
@@ -4198,7 +4068,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">SUPER PAYABLE (MTD)</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$23,540</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$0.00</div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ 6.23% <span className="text-slate-400 font-normal">vs Last Month</span></span>
                 </div>
@@ -4338,7 +4208,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">PAYROLL RUNS</h3>
-                    <span className="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full text-[10px] font-black">12</span>
+                    <span className="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full text-[10px] font-black">{payrollList.length}</span>
                   </div>
                   <button onClick={() => triggerToast('Opening Full Payroll Run Ledger')} className="text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer">
                     View Report &rarr;
@@ -4438,7 +4308,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 </div>
 
                 <div className="px-5 py-4 border-t border-slate-100 flex items-center justify-between text-slate-500 text-[11px] font-semibold bg-slate-50/50">
-                  <span>Showing 1 to 8 of 12 payroll runs</span>
+                  <span>Showing {payrollList.length === 0 ? 0 : 1} to {payrollList.length} of {payrollList.length} payroll runs</span>
                   <div className="flex gap-1.5">
                     <button className="px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-slate-400 cursor-not-allowed font-bold" disabled>&lt;</button>
                     <button className="px-2.5 py-1 bg-indigo-600 text-white rounded-lg font-black">1</button>
@@ -4496,7 +4366,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                       <div className="space-y-1.5">
                         <div className="flex justify-between text-[11px] font-bold text-slate-700">
                           <span>Driver Wages</span>
-                          <span>$148,200 <span className="text-slate-400 font-normal">(62.3%)</span></span>
+                          <span>{financeStats ? `${(financeStats.totalExpenses || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"} <span className="text-slate-400 font-normal">(100%)</span></span>
                         </div>
                         <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                           <div className="h-full bg-purple-500 rounded-full" style={{ width: '62.3%' }} />
@@ -4506,7 +4376,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                       <div className="space-y-1.5">
                         <div className="flex justify-between text-[11px] font-bold text-slate-700">
                           <span>Staff Salaries</span>
-                          <span>$64,500 <span className="text-slate-400 font-normal">(27.1%)</span></span>
+                          <span>$0.00 <span className="text-slate-400 font-normal">(0%)</span></span>
                         </div>
                         <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                           <div className="h-full bg-blue-500 rounded-full" style={{ width: '27.1%' }} />
@@ -4516,7 +4386,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                       <div className="space-y-1.5">
                         <div className="flex justify-between text-[11px] font-bold text-slate-700">
                           <span>Allowances</span>
-                          <span>$12,340 <span className="text-slate-400 font-normal">(5.2%)</span></span>
+                          <span>$0.00 <span className="text-slate-400 font-normal">(0%)</span></span>
                         </div>
                         <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                           <div className="h-full bg-emerald-500 rounded-full" style={{ width: '5.2%' }} />
@@ -4526,7 +4396,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                       <div className="space-y-1.5">
                         <div className="flex justify-between text-[11px] font-bold text-slate-700">
                           <span>Deductions</span>
-                          <span>$3,520 <span className="text-slate-400 font-normal">(1.5%)</span></span>
+                          <span>$0.00 <span className="text-slate-400 font-normal">(0%)</span></span>
                         </div>
                         <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                           <div className="h-full bg-orange-500 rounded-full" style={{ width: '1.5%' }} />
@@ -4536,7 +4406,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                       <div className="space-y-1.5">
                         <div className="flex justify-between text-[11px] font-bold text-slate-700">
                           <span>Overtime</span>
-                          <span>$5,120 <span className="text-slate-400 font-normal">(2.1%)</span></span>
+                          <span>$0.00 <span className="text-slate-400 font-normal">(0%)</span></span>
                         </div>
                         <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                           <div className="h-full bg-rose-500 rounded-full" style={{ width: '2.1%' }} />
@@ -4546,7 +4416,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                       <div className="space-y-1.5">
                         <div className="flex justify-between text-[11px] font-bold text-slate-700">
                           <span>Other</span>
-                          <span>$3,920 <span className="text-slate-400 font-normal">(1.8%)</span></span>
+                          <span>$0.00 <span className="text-slate-400 font-normal">(0%)</span></span>
                         </div>
                         <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                           <div className="h-full bg-slate-400 rounded-full" style={{ width: '1.8%' }} />
@@ -4587,7 +4457,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                       <circle cx="18" cy="18" r="15.915" fill="none" stroke="#ef4444" strokeWidth="4.2" strokeDasharray="1.5 98.5" strokeDashoffset="-73.4" />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                      <span className="text-[11px] font-black text-slate-800 leading-tight">$237,680</span>
+                      <span className="text-[11px] font-black text-slate-800 leading-tight">{financeStats ? `${(financeStats.totalExpenses || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</span>
                       <span className="text-[7px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Total</span>
                     </div>
                   </div>
@@ -4628,7 +4498,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-[11px]">
                       <span>Draft</span>
-                      <span className="font-mono text-slate-600">3 (8.3%)</span>
+                      <span className="font-mono text-slate-600">0 (0%)</span>
                     </div>
                     <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                       <div className="h-full bg-[#8b5cf6] rounded-full" style={{ width: '8.3%' }} />
@@ -4638,7 +4508,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-[11px]">
                       <span>Pending Approval</span>
-                      <span className="font-mono text-slate-600">2 (5.6%)</span>
+                      <span className="font-mono text-slate-600">0 (0%)</span>
                     </div>
                     <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                       <div className="h-full bg-[#f59e0b] rounded-full" style={{ width: '5.6%' }} />
@@ -4648,7 +4518,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-[11px]">
                       <span>Approved</span>
-                      <span className="font-mono text-slate-600">5 (13.9%)</span>
+                      <span className="font-mono text-slate-600">0 (0%)</span>
                     </div>
                     <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                       <div className="h-full bg-[#10b981] rounded-full" style={{ width: '13.9%' }} />
@@ -4658,7 +4528,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-[11px]">
                       <span>Paid</span>
-                      <span className="font-mono text-slate-600">30 (83.3%)</span>
+                      <span className="font-mono text-slate-600">{payrollList.length} (100%)</span>
                     </div>
                     <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                       <div className="h-full bg-blue-500 rounded-full" style={{ width: '83.3%' }} />
@@ -4704,69 +4574,12 @@ Hero Logistics Pty Ltd - Management System (c) 2025
 
           </div>
 
-          {/* Developer Notes Footer Box */}
-          <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-xl border border-slate-800 space-y-4">
-            <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
-              <Code2 className="w-4 h-4 text-purple-400" />
-              <h4 className="text-xs font-black uppercase tracking-widest text-purple-300">DEVELOPER NOTES &ndash; PAYROLL RUNS</h4>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 text-[11px] font-medium leading-relaxed">
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">1. PURPOSE</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Create and manage payroll runs.</li>
-                  <li>&bull; Track approval and payment status.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">2. KEY FEATURES</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Support weekly, fortnightly and salary runs.</li>
-                  <li>&bull; Import timesheets and calculate payroll.</li>
-                  <li>&bull; Generate payslips and super files.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">3. AUTOMATION & ALERTS</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Alert for payroll due dates.</li>
-                  <li>&bull; Notify on approval and payment.</li>
-                  <li>&bull; Auto-calculate taxes and super.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">4. PERMISSIONS</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Admin: Full access (create, edit, approve, pay).</li>
-                  <li>&bull; Accounts: View, create, approve, pay.</li>
-                  <li>&bull; Read Only: View payroll runs and payslips.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">5. DATA SOURCES</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Timesheets, employee records.</li>
-                  <li>&bull; Pay rates and allowances.</li>
-                  <li>&bull; Super and tax settings.</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="border-t border-slate-800 pt-3 flex flex-col sm:flex-row justify-between items-center text-[10px] text-slate-500 font-semibold">
-              <span>All times shown in your local time (AEST)</span>
-              <span className="flex items-center gap-1.5 text-purple-400">&bull; Data auto-refreshes every 5 minutes <RefreshCw className="w-3 h-3 animate-spin" /></span>
-            </div>
-          </div>
+          
         </div>
       )}
 
       {/* ========================================================================= */}
-      {/* VIEW MODE 7: 10.7 ACCOUNTS RECEIVABLE & OVERDUE INVOICES                  */}
+      {/* VIEW MODE 7: ACCOUNTS RECEIVABLE & OVERDUE INVOICES                  */}
       {/* ========================================================================= */}
       {viewMode === 'receivables' && (
         <div className="flex flex-col gap-4">
@@ -4812,7 +4625,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               <div className="min-w-0 space-y-1">
                 <div className="flex items-center gap-2">
                   <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none">
-                    10.7 Accounts Receivable &amp; Overdue Invoices
+                    Accounts Receivable &amp; Overdue Invoices
                   </h1>
                   <ShieldCheck className="w-5 h-5 text-indigo-600 shrink-0" />
                 </div>
@@ -4840,22 +4653,22 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                           <button onClick={() => setShowMoreActions(false)} className="text-slate-400 hover:text-slate-600">✕</button>
                         </div>
                         <button onClick={() => { setViewMode('dashboard'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          📊 10.1 Finance Dashboard
+                          📊 Finance Dashboard
                         </button>
                         <button onClick={() => { setViewMode('invoices'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          📄 10.2 Invoices List
+                          📄 Invoices List
                         </button>
                         <button onClick={() => { setViewMode('payments_receipts'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          💳 10.4 Payments &amp; Receipts
+                          💳 Payments &amp; Receipts
                         </button>
                         <button onClick={() => { setViewMode('expenses'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          💵 10.5 Expenses
+                          💵 Expenses
                         </button>
                         <button onClick={() => { setViewMode('payroll'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          👥 10.6 Payroll Runs
+                          👥 Payroll Runs
                         </button>
                         <button onClick={() => { setViewMode('receivables'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5 text-indigo-600">
-                          📈 10.7 Accounts Receivable
+                          📈 Accounts Receivable
                         </button>
                         <div className="border-t border-slate-100 my-1" />
                         <button onClick={() => { triggerToast('Synchronized bank feed'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
@@ -4906,7 +4719,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">TOTAL RECEIVABLES (MTD)</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$147,890</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${((financeStats.totalOutstanding || 0) + (financeStats.totalOverdue || 0)).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ 9.31% <span className="text-slate-400 font-normal">vs Last Month</span></span>
                 </div>
@@ -4924,7 +4737,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">OVERDUE AMOUNT</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$42,750</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${(financeStats.totalOverdue || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-rose-500 flex items-center gap-0.5 font-bold">▲ 14.1% <span className="text-slate-400 font-normal">vs Last Month</span></span>
                 </div>
@@ -4942,7 +4755,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">OVERDUE INVOICES</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">24</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? (financeStats.overdueCount || 0) : 0}</div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-rose-500 flex items-center gap-0.5 font-bold">▲ 4 <span className="text-slate-400 font-normal">vs Last Month</span></span>
                 </div>
@@ -4960,7 +4773,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">CURRENT RECEIVABLES</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$105,140</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${(financeStats.totalOutstanding || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ 7.42% <span className="text-slate-400 font-normal">vs Last Month</span></span>
                 </div>
@@ -4978,7 +4791,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">AVG DAYS TO PAY</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">32 Days</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">14 Days</div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▼ 3 Days <span className="text-slate-400 font-normal">vs Last Month</span></span>
                 </div>
@@ -5159,7 +4972,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                         />
                       </svg>
                       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                        <span className="text-[13px] font-black text-slate-900 tracking-tight">$147,890</span>
+                        <span className="text-[13px] font-black text-slate-900 tracking-tight">{financeStats ? `${((financeStats.totalOutstanding || 0) + (financeStats.totalOverdue || 0)).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</span>
                         <span className="text-[9px] font-bold text-slate-400">Total</span>
                       </div>
                     </div>
@@ -5168,22 +4981,22 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                       <div className="flex items-center gap-2">
                         <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
                         <span className="text-slate-600">Current (0-30 days)</span>
-                        <span className="text-slate-900 font-mono ml-auto">$105,140 (71.0%)</span>
+                        <span className="text-slate-900 font-mono ml-auto">{financeStats ? `${(financeStats.totalOutstanding || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (100%)` : "$0.00 (0%)"}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
                         <span className="text-slate-600">31-60 days</span>
-                        <span className="text-slate-900 font-mono ml-auto">$22,350 (15.1%)</span>
+                        <span className="text-slate-900 font-mono ml-auto">{financeStats ? `${(financeStats.totalOverdue || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00 (0%)"}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0" />
                         <span className="text-slate-600">61-90 days</span>
-                        <span className="text-slate-900 font-mono ml-auto">$12,600 (8.5%)</span>
+                        <span className="text-slate-900 font-mono ml-auto">$0.00 (0%)</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="w-2.5 h-2.5 rounded-full bg-purple-600 shrink-0" />
                         <span className="text-slate-600">90+ days</span>
-                        <span className="text-slate-900 font-mono ml-auto">$7,800 (5.4%)</span>
+                        <span className="text-slate-900 font-mono ml-auto">$0.00 (0%)</span>
                       </div>
                     </div>
                   </div>
@@ -5238,7 +5051,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <div className="flex justify-between items-center border-b border-slate-100 pb-3">
                   <div className="flex items-center gap-2">
                     <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">OVERDUE INVOICES</h3>
-                    <span className="bg-indigo-100 text-indigo-700 text-[10px] font-black px-2 py-0.5 rounded-full">24</span>
+                    <span className="bg-indigo-100 text-indigo-700 text-[10px] font-black px-2 py-0.5 rounded-full">{financeStats ? (financeStats.overdueCount || 0) : 0}</span>
                   </div>
                   <button onClick={() => triggerToast('Opening Overdue Invoices detailed report')} className="text-indigo-600 hover:text-indigo-800 text-xs font-extrabold flex items-center gap-1 cursor-pointer">
                     View Report &rarr;
@@ -5328,7 +5141,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
 
                 {/* Table Footer Pagination */}
                 <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs font-semibold text-slate-500">
-                  <span>Showing 1 to 8 of 24 overdue invoices</span>
+                  <span>Showing {overdueList.length === 0 ? 0 : 1} to {overdueList.length} of {overdueList.length} overdue invoices</span>
                   <div className="flex items-center gap-1">
                     <button className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 text-slate-600">&lt;</button>
                     <button className="px-2.5 py-1 bg-indigo-600 text-white font-black rounded-lg">1</button>
@@ -5364,7 +5177,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-xs font-bold text-slate-700">
                       {[
-                        { customer: 'All Star Motors', amount: '$28,650.00', percentage: '19.3%' },
+                        { customer: 'General Customer', amount: '$0.00', percentage: '0%' },
                         { customer: 'Fast Freight Pty Ltd', amount: '$18,920.00', percentage: '12.8%' },
                         { customer: 'Metro Group Sydney', amount: '$14,780.00', percentage: '10.0%' },
                         { customer: 'ABC Wholesalers', amount: '$12,540.00', percentage: '8.5%' },
@@ -5378,8 +5191,8 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                       ))}
                       <tr className="bg-slate-50/80 font-black text-slate-900 border-t-2 border-slate-200">
                         <td className="py-2.5">Total Top Debtors</td>
-                        <td className="py-2.5 font-mono">$84,750.00</td>
-                        <td className="py-2.5 text-right font-mono">57.3%</td>
+                        <td className="py-2.5 font-mono">$0.00</td>
+                        <td className="py-2.5 text-right font-mono">0%</td>
                       </tr>
                     </tbody>
                   </table>
@@ -5453,7 +5266,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-slate-600 font-mono">8</span>
-                      <span className="font-mono text-slate-900">$22,350.00</span>
+                      <span className="font-mono text-slate-900">{financeStats ? `${(financeStats.totalOverdue || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</span>
                     </div>
                   </div>
 
@@ -5461,7 +5274,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                     <span>Total Overdue</span>
                     <div className="flex items-center gap-3">
                       <span className="font-mono">24</span>
-                      <span className="font-mono text-sm">$42,750.00</span>
+                      <span className="font-mono text-sm">{financeStats ? `${(financeStats.totalOverdue || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</span>
                     </div>
                   </div>
                 </div>
@@ -5470,69 +5283,12 @@ Hero Logistics Pty Ltd - Management System (c) 2025
             </div>
           </div>
 
-          {/* DEVELOPER NOTES BOX */}
-          <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-xl border border-slate-800 space-y-4">
-            <div className="flex items-center gap-2 text-indigo-400 font-extrabold text-xs uppercase tracking-wider border-b border-slate-800 pb-3">
-              <Code className="w-4 h-4" /> DEVELOPER NOTES &ndash; ACCOUNTS RECEIVABLE &amp; OVERDUE INVOICES
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 text-xs">
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">1. PURPOSE</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Track outstanding receivables and overdue invoices.</li>
-                  <li>&bull; Monitor customer payment performance.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">2. KEY FEATURES</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Ageing buckets (0-30, 31-60, 61-90, 90+ days).</li>
-                  <li>&bull; Overdue invoice listing with days overdue.</li>
-                  <li>&bull; Top debtors and recent payment activity.</li>
-                  <li>&bull; Send reminders to customers.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">3. AUTOMATION &amp; ALERTS</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Auto-calculate ageing and totals.</li>
-                  <li>&bull; Send payment reminders for overdue invoices.</li>
-                  <li>&bull; Notify admin for high overdue amounts.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">4. PERMISSIONS</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Admin: Full access.</li>
-                  <li>&bull; Accounts: View, manage, send reminders.</li>
-                  <li>&bull; Read Only: View reports.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">5. DATA SOURCES</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Invoices and payments.</li>
-                  <li>&bull; Customers and branches.</li>
-                  <li>&bull; Bank transactions (reconciliation).</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="border-t border-slate-800 pt-3 flex flex-col sm:flex-row justify-between items-center text-[10px] text-slate-500 font-semibold">
-              <span>All times shown in your local time (AEST)</span>
-              <span className="flex items-center gap-1.5 text-purple-400">&bull; Data auto-refreshes every 5 minutes <RefreshCw className="w-3 h-3 animate-spin" /></span>
-            </div>
-          </div>
+          
         </div>
       )}
 
       {/* ========================================================================= */}
-      {/* VIEW MODE 8: 10.8 PROFIT & LOSS / FINANCIAL REPORTS                       */}
+      {/* VIEW MODE 8: PROFIT & LOSS / FINANCIAL REPORTS                       */}
       {/* ========================================================================= */}
       {viewMode === 'reports' && (
         <div className="flex flex-col gap-4">
@@ -5578,7 +5334,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               <div className="min-w-0 space-y-1">
                 <div className="flex items-center gap-2">
                   <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none">
-                    10.8 Profit &amp; Loss / Financial Reports
+                    Profit &amp; Loss / Financial Reports
                   </h1>
                   <ShieldCheck className="w-5 h-5 text-indigo-600 shrink-0" />
                 </div>
@@ -5606,25 +5362,25 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                           <button onClick={() => setShowMoreActions(false)} className="text-slate-400 hover:text-slate-600">✕</button>
                         </div>
                         <button onClick={() => { setViewMode('dashboard'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          📊 10.1 Finance Dashboard
+                          📊 Finance Dashboard
                         </button>
                         <button onClick={() => { setViewMode('invoices'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          📄 10.2 Invoices List
+                          📄 Invoices List
                         </button>
                         <button onClick={() => { setViewMode('payments_receipts'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          💳 10.4 Payments &amp; Receipts
+                          💳 Payments &amp; Receipts
                         </button>
                         <button onClick={() => { setViewMode('expenses'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          💵 10.5 Expenses
+                          💵 Expenses
                         </button>
                         <button onClick={() => { setViewMode('payroll'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          👥 10.6 Payroll Runs
+                          👥 Payroll Runs
                         </button>
                         <button onClick={() => { setViewMode('receivables'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          📈 10.7 Accounts Receivable
+                          📈 Accounts Receivable
                         </button>
                         <button onClick={() => { setViewMode('reports'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5 text-indigo-600">
-                          💰 10.8 Financial Reports
+                          💰 Financial Reports
                         </button>
                         <div className="border-t border-slate-100 my-1" />
                         <button onClick={() => { triggerToast('Synchronized bank feed'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
@@ -5675,7 +5431,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">NET PROFIT (MTD)</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$586,220</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${(financeStats.netProfit || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ 11.2% <span className="text-slate-400 font-normal">vs Last Month</span></span>
                 </div>
@@ -5693,7 +5449,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">TOTAL REVENUE (MTD)</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$842,650</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${(financeStats.totalRevenue || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ 12.3% <span className="text-slate-400 font-normal">vs Last Month</span></span>
                 </div>
@@ -5711,7 +5467,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">TOTAL EXPENSES (MTD)</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$256,430</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${(financeStats.totalExpenses || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ 8.5% <span className="text-slate-400 font-normal">vs Last Month</span></span>
                 </div>
@@ -5729,7 +5485,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">GROSS PROFIT (MTD)</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">$652,180</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats ? `${(financeStats.netProfit || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ 13.7% <span className="text-slate-400 font-normal">vs Last Month</span></span>
                 </div>
@@ -5747,7 +5503,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">NET PROFIT MARGIN (MTD)</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">69.5%</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">{financeStats && financeStats.totalRevenue > 0 ? `${((financeStats.netProfit / financeStats.totalRevenue)*100).toFixed(1)}%` : "0%"}</div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5 font-bold">▲ 2.4% <span className="text-slate-400 font-normal">vs Last Month</span></span>
                 </div>
@@ -5886,36 +5642,36 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <div className="sm:col-span-5 space-y-2 text-xs font-bold text-slate-700">
                   <div className="flex justify-between pb-1">
                     <span>Total Revenue</span>
-                    <span className="font-mono text-slate-900">$842,650</span>
+                    <span className="font-mono text-slate-900">{financeStats ? `${(financeStats.totalRevenue || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</span>
                   </div>
                   <div className="flex justify-between pb-1">
                     <span className="text-slate-500">Cost of Sales</span>
-                    <span className="font-mono text-slate-500">-$190,470</span>
+                    <span className="font-mono text-slate-500">-$0.00</span>
                   </div>
                   <div className="flex justify-between border-t border-b border-slate-100 py-1.5 font-extrabold">
                     <span>Gross Profit</span>
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-slate-900">$652,180</span>
-                      <span className="text-emerald-600 font-mono text-[11px]">77.4%</span>
+                      <span className="font-mono text-slate-900">{financeStats ? `${(financeStats.netProfit || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</span>
+                      <span className="text-emerald-600 font-mono text-[11px]">{financeStats && financeStats.totalRevenue > 0 ? `${((financeStats.netProfit / financeStats.totalRevenue)*100).toFixed(0)}%` : "0%"}</span>
                     </div>
                   </div>
                   <div className="flex justify-between pb-1">
                     <span className="text-slate-500">Operating Expenses</span>
-                    <span className="font-mono text-slate-500">-$215,320</span>
+                    <span className="font-mono text-slate-500">{financeStats ? `-${(financeStats.totalExpenses || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "-$0.00"}</span>
                   </div>
                   <div className="flex justify-between pb-1">
                     <span className="text-slate-500">Other Income</span>
-                    <span className="font-mono text-slate-500">$12,450</span>
+                    <span className="font-mono text-slate-500">$0.00</span>
                   </div>
                   <div className="flex justify-between pb-1">
                     <span className="text-slate-500">Other Expenses</span>
-                    <span className="font-mono text-slate-500">-$1,090</span>
+                    <span className="font-mono text-slate-500">-$0.00</span>
                   </div>
                   <div className="flex justify-between border-t-2 border-slate-900 pt-2 font-black text-sm">
                     <span>Net Profit</span>
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-slate-900">$586,220</span>
-                      <span className="text-emerald-600 font-mono text-xs">69.5%</span>
+                      <span className="font-mono text-slate-900">{financeStats ? `${(financeStats.netProfit || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0.00"}</span>
+                      <span className="text-emerald-600 font-mono text-xs">{financeStats && financeStats.totalRevenue > 0 ? `${((financeStats.netProfit / financeStats.totalRevenue)*100).toFixed(0)}%` : "0%"}</span>
                     </div>
                   </div>
                 </div>
@@ -6069,7 +5825,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                   <tbody className="divide-y divide-slate-100">
                     {[
                       { cat: 'Freight Income', rev: '$612,340', revP: '72.7%', exp: '$145,210', expP: '56.7%', net: '$467,130', margin: '76.3%' },
-                      { cat: 'Fuel Surcharge', rev: '$86,750', revP: '10.3%', exp: '$12,860', expP: '5.0%', net: '$73,890', margin: '85.2%' },
+                      { cat: 'Fuel Surcharge', rev: '$86,750', revP: '%', exp: '$12,860', expP: '5.0%', net: '$73,890', margin: '85.2%' },
                       { cat: 'Storage Income', rev: '$42,560', revP: '5.1%', exp: '$8,320', expP: '3.2%', net: '$34,240', margin: '80.5%' },
                       { cat: 'Other Income', rev: '$101,000', revP: '12.0%', exp: '$29,050', expP: '11.3%', net: '$71,950', margin: '71.2%' },
                     ].map((row, idx) => (
@@ -6225,70 +5981,12 @@ Hero Logistics Pty Ltd - Management System (c) 2025
 
           </div>
 
-          {/* DEVELOPER NOTES BOX */}
-          <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-xl border border-slate-800 space-y-4">
-            <div className="flex items-center gap-2 text-indigo-400 font-extrabold text-xs uppercase tracking-wider border-b border-slate-800 pb-3">
-              <Code className="w-4 h-4" /> DEVELOPER NOTES &ndash; FINANCIAL REPORTS
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 text-xs">
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">1. PURPOSE</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Provide comprehensive financial performance reporting.</li>
-                  <li>&bull; Help users make data-driven business decisions.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">2. KEY FEATURES</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; P&amp;L summary with trend charts.</li>
-                  <li>&bull; Category-wise income and expense breakdown.</li>
-                  <li>&bull; Export reports to PDF/CSV.</li>
-                  <li>&bull; Schedule and email reports.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">3. AUTOMATION &amp; ALERTS</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Auto-calculate figures from transactions.</li>
-                  <li>&bull; Alert on unusual variances.</li>
-                  <li>&bull; Notify admin for negative profit or cost spikes.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">4. PERMISSIONS</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Admin: Full access to all reports.</li>
-                  <li>&bull; Accounts: View and export financial reports.</li>
-                  <li>&bull; Read Only: View financial reports.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">5. DATA SOURCES</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Invoices and payments.</li>
-                  <li>&bull; Expenses and receipts.</li>
-                  <li>&bull; Payroll and timesheets.</li>
-                  <li>&bull; General ledger and bank feeds.</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="border-t border-slate-800 pt-3 flex flex-col sm:flex-row justify-between items-center text-[10px] text-slate-500 font-semibold">
-              <span>All times shown in your local time (AEST)</span>
-              <span className="flex items-center gap-1.5 text-purple-400">&bull; Data auto-refreshes every 5 minutes <RefreshCw className="w-3 h-3 animate-spin" /></span>
-            </div>
-          </div>
+          
         </div>
       )}
 
       {/* ========================================================================= */}
-      {/* VIEW MODE 9: 10.9 ACCOUNTANT EXPORT & INTEGRATION                         */}
+      {/* VIEW MODE 9: ACCOUNTANT EXPORT & INTEGRATION                         */}
       {/* ========================================================================= */}
       {viewMode === 'accountant' && (
         <div className="flex flex-col gap-4">
@@ -6334,7 +6032,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               <div className="min-w-0 space-y-1">
                 <div className="flex items-center gap-2">
                   <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none">
-                    10.9 Accountant Export &amp; Integration
+                    Accountant Export &amp; Integration
                   </h1>
                   <ShieldCheck className="w-5 h-5 text-indigo-600 shrink-0" />
                 </div>
@@ -6362,28 +6060,28 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                           <button onClick={() => setShowMoreActions(false)} className="text-slate-400 hover:text-slate-600">✕</button>
                         </div>
                         <button onClick={() => { setViewMode('dashboard'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          📊 10.1 Finance Dashboard
+                          📊 Finance Dashboard
                         </button>
                         <button onClick={() => { setViewMode('invoices'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          📄 10.2 Invoices List
+                          📄 Invoices List
                         </button>
                         <button onClick={() => { setViewMode('payments_receipts'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          💳 10.4 Payments &amp; Receipts
+                          💳 Payments &amp; Receipts
                         </button>
                         <button onClick={() => { setViewMode('expenses'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          💵 10.5 Expenses
+                          💵 Expenses
                         </button>
                         <button onClick={() => { setViewMode('payroll'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          👥 10.6 Payroll Runs
+                          👥 Payroll Runs
                         </button>
                         <button onClick={() => { setViewMode('receivables'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          📈 10.7 Accounts Receivable
+                          📈 Accounts Receivable
                         </button>
                         <button onClick={() => { setViewMode('reports'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
-                          💰 10.8 Financial Reports
+                          💰 Financial Reports
                         </button>
                         <button onClick={() => { setViewMode('accountant'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5 text-indigo-600">
-                          🏛️ 10.9 Accountant Export
+                          🏛️ Accountant Export
                         </button>
                         <div className="border-t border-slate-100 my-1" />
                         <button onClick={() => { triggerToast('Synchronized bank feed'); setShowMoreActions(false); }} className="w-full text-left px-4 py-3 md:py-2 hover:bg-slate-50 flex items-center gap-2.5">
@@ -6458,7 +6156,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">SUCCESSFUL EXPORTS (MTD)</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">28</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">0</div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5">▲ 16.7% <span className="text-slate-400 font-normal">vs Last Month</span></span>
                 </div>
@@ -6476,7 +6174,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">SCHEDULED EXPORTS</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">3</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">0</div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-slate-500">Next: 25 May 2025</span>
                 </div>
@@ -6512,7 +6210,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
               </div>
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">EXPORT ISSUES (MTD)</span>
-                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">1</div>
+                <div className="text-xl font-black text-slate-900 tracking-tight mb-1">0</div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5">▼ 50% <span className="text-slate-400 font-normal">vs Last Month</span></span>
                 </div>
@@ -6648,7 +6346,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 <div className="flex justify-between items-center border-b border-slate-100 pb-3">
                   <div className="flex items-center gap-2">
                     <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">ACCOUNTANT EXPORTS</h3>
-                    <span className="bg-purple-100 text-purple-700 text-[10px] font-black px-2 py-0.5 rounded-full">8</span>
+                    <span className="bg-purple-100 text-purple-700 text-[10px] font-black px-2 py-0.5 rounded-full">{accExportList.length}</span>
                   </div>
                   <button onClick={() => setShowExportHistoryModal(true)} className="text-indigo-600 hover:text-indigo-800 text-xs font-extrabold flex items-center gap-1 cursor-pointer">
                     View All &rarr;
@@ -6734,7 +6432,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                 </div>
 
                 <div className="border-t border-slate-100 pt-2 flex justify-between items-center text-[10px] text-slate-400 font-bold">
-                  <span>Showing 1 to 8 of 8 exports</span>
+                  <span>Showing {accExportList.length === 0 ? 0 : 1} to {accExportList.length} of {accExportList.length} exports</span>
                 </div>
               </div>
 
@@ -6951,63 +6649,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
 
           </div>
 
-          {/* DEVELOPER NOTES BOX */}
-          <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-xl border border-slate-800 space-y-4">
-            <div className="flex items-center gap-2 text-indigo-400 font-extrabold text-xs uppercase tracking-wider border-b border-slate-800 pb-3">
-              <Code className="w-4 h-4" /> DEVELOPER NOTES &ndash; ACCOUNTANT EXPORT &amp; INTEGRATION
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 text-xs">
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">1. PURPOSE</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Enable exports for accountants.</li>
-                  <li>&bull; Simplify financial reporting and compliance.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">2. KEY FEATURES</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Multiple export types and formats.</li>
-                  <li>&bull; Scheduled and on-demand exports.</li>
-                  <li>&bull; Integration with Xero, MYOB and more.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">3. AUTOMATION &amp; ALERTS</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Auto-schedule recurring exports.</li>
-                  <li>&bull; Notify on success or failure.</li>
-                  <li>&bull; Secure file generation and delivery.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">4. PERMISSIONS</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Admin: Full access to exports and integrations.</li>
-                  <li>&bull; Accounts: Create and manage exports.</li>
-                  <li>&bull; Read Only: View export history.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h5 className="font-bold text-slate-200 mb-1.5 uppercase text-[10px] tracking-wider text-purple-400">5. DATA SOURCES</h5>
-                <ul className="space-y-1 text-slate-400">
-                  <li>&bull; Invoices, payments, expenses.</li>
-                  <li>&bull; Payroll, timesheets, receivables, payables.</li>
-                  <li>&bull; Bank transactions and general ledger.</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="border-t border-slate-800 pt-3 flex flex-col sm:flex-row justify-between items-center text-[10px] text-slate-500 font-semibold">
-              <span>All times shown in your local time (AEST)</span>
-              <span className="flex items-center gap-1.5 text-purple-400">&bull; Data auto-refreshes every 5 minutes <RefreshCw className="w-3 h-3 animate-spin" /></span>
-            </div>
-          </div>
+          
         </div>
       )}
 
@@ -7032,31 +6674,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
             </div>
 
             <form 
-              onSubmit={(e) => {
-                e.preventDefault();
-                const newId = `INV-2025-0${Math.floor(600 + Math.random() * 300)}`;
-                const numAmount = parseFloat(transactionForm.amount) || 2500;
-                const formattedAmount = `$${numAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-                const mappedStatus = (transactionForm.status === 'Completed' || transactionForm.status === 'Paid') ? 'Paid' : (transactionForm.status === 'Pending' ? 'Outstanding' : 'Outstanding');
-
-                const newInvoiceItem = {
-                  id: newId,
-                  customer: transactionForm.customer || 'New Customer Ltd',
-                  ref: `LOAD-0${Math.floor(2550 + Math.random() * 100)}`,
-                  issueDate: '24 May 2025',
-                  dueDate: '07 Jun 2025',
-                  type: transactionForm.type === 'Invoice' ? 'Tax Invoice' : (transactionForm.type || 'Tax Invoice'),
-                  amount: formattedAmount,
-                  rawAmount: numAmount,
-                  status: mappedStatus,
-                  dueIn: mappedStatus === 'Paid' ? '-' : '14 days'
-                };
-
-                setInvoices([newInvoiceItem, ...invoices]);
-                setShowAddTransactionModal(false);
-                setTransactionForm({ customer: '', amount: '', type: 'Invoice', method: 'Bank Transfer', status: 'Completed' });
-                triggerToast(`New Invoice ${newId} for ${newInvoiceItem.customer} (${formattedAmount}) created & added to list!`);
-              }} 
+              onSubmit={handleAddTransactionSubmit} 
               className="p-6 space-y-4 text-xs font-bold text-slate-700"
             >
               <div className="grid grid-cols-2 gap-3">
@@ -7071,7 +6689,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                     <option value="Payment">Payment Received</option>
                     <option value="Receipt">Receipt Issued</option>
                     <option value="Expense">Expense Claim</option>
-                    <option value="Payroll">Payroll Run</option>
+                    <option value="Payroll Run">Payroll Run</option>
                   </select>
                 </div>
 
@@ -7228,7 +6846,7 @@ Hero Logistics Pty Ltd - Management System (c) 2025
                   onChange={e => setScheduleForm({ ...scheduleForm, reportName: e.target.value })}
                   className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold focus:outline-none focus:border-indigo-600 bg-slate-50 cursor-pointer"
                 >
-                  <option value="10.8 Profit & Loss / Financial Reports">10.8 Profit & Loss Statement</option>
+                  <option value="Profit & Loss / Financial Reports">Profit & Loss Statement</option>
                   <option value="Accounts Receivable Ageing Summary">Accounts Receivable Ageing Summary</option>
                   <option value="Cash Flow Statement & Summary">Cash Flow Statement & Summary</option>
                   <option value="General Ledger Audit Report">General Ledger Audit Report</option>
@@ -7423,17 +7041,17 @@ Hero Logistics Pty Ltd - Management System (c) 2025
 
                 <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1">
                   <p className="font-extrabold text-slate-900 text-xs">How do I create and send a tax invoice?</p>
-                  <p className="text-[11px] text-slate-500 font-normal leading-relaxed">Navigate to 10.2 Invoices List and click "+ Add Invoice". Fill in customer, load reference, and amount. Click "Create Transaction" to send automatically.</p>
+                  <p className="text-[11px] text-slate-500 font-normal leading-relaxed">Navigate to Invoices List and click "+ Add Invoice". Fill in customer, load reference, and amount. Click "Create Transaction" to send automatically.</p>
                 </div>
 
                 <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1">
                   <p className="font-extrabold text-slate-900 text-xs">How to schedule automated financial reports?</p>
-                  <p className="text-[11px] text-slate-500 font-normal leading-relaxed">Go to 10.8 Financial Reports and click "Schedule Report". Choose daily, weekly, or monthly delivery to your accountant's email.</p>
+                  <p className="text-[11px] text-slate-500 font-normal leading-relaxed">Go to Financial Reports and click "Schedule Report". Choose daily, weekly, or monthly delivery to your accountant's email.</p>
                 </div>
 
                 <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1">
                   <p className="font-extrabold text-slate-900 text-xs">How to export data for Xero / MYOB integration?</p>
-                  <p className="text-[11px] text-slate-500 font-normal leading-relaxed">Go to 10.9 Accountant Export &amp; Integration. You can download CSV/Excel general ledgers or click "Sync Bank Feed" for live sync.</p>
+                  <p className="text-[11px] text-slate-500 font-normal leading-relaxed">Go to Accountant Export &amp; Integration. You can download CSV/Excel general ledgers or click "Sync Bank Feed" for live sync.</p>
                 </div>
               </div>
 

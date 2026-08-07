@@ -10,6 +10,8 @@ router.route('/')
   .get(SupportTicketController.getAll)
   .post(SupportTicketController.create);
 
+router.post('/:id/replies', SupportTicketController.addReply);
+
 router.route('/:id')
   .get(SupportTicketController.getById)
   .put(SupportTicketController.update)
