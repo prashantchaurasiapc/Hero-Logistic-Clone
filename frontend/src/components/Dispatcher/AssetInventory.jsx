@@ -4,71 +4,36 @@ import {
   ChevronRight, Calendar, AlertTriangle, ShieldCheck, HelpCircle,
   Truck, ArrowRight, Eye, RefreshCw
 } from 'lucide-react';
+import api from '../../services/api';
 
 export default function AssetInventory() {
   // State for Assets Data (matching screenshot exactly)
-  const [assets, setAssets] = useState([
-    { 
-      id: '1', 
-      name: '2022 Toyota Camry', 
-      desc: 'White · Sedan · 1,450 kg', 
-      vin: '1HFCKP7633APM4352', 
-      plate: 'ABC 123', 
-      status: 'IN DEPOT', 
-      task: 'LD-2041', 
-      target: 'Brisbane QLD', 
-      targetSub: 'AutoDeal Pty Ltd', 
-      img: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=150&h=150&fit=crop&q=80' 
-    },
-    { 
-      id: '2', 
-      name: '2023 Honda CR-V', 
-      desc: 'Black · SUV · 1,720 kg', 
-      vin: '2T3RUDF87CR543210', 
-      plate: 'XYZ 987', 
-      status: 'IN TRANSIT', 
-      task: 'LD-2039', 
-      target: 'Melbourne VIC', 
-      targetSub: 'Smith Motors', 
-      img: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=150&h=150&fit=crop&q=80' 
-    },
-    { 
-      id: '3', 
-      name: '2024 Tesla Model S', 
-      desc: 'Red · Sedan · 2,162 kg', 
-      vin: '5YJSA1DP9F712345', 
-      plate: 'EV 0001', 
-      status: 'DELIVERED', 
-      task: 'LD-2031', 
-      target: 'Sydney NSW', 
-      targetSub: 'EV Fleet Co', 
-      img: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?w=150&h=150&fit=crop&q=80' 
-    },
-    { 
-      id: '4', 
-      name: '2021 Ford Ranger', 
-      desc: 'Silver · Ute · 2,030 kg', 
-      vin: '3FADP4827FM123456', 
-      plate: 'TRK 444', 
-      status: 'AWAITING LOAD', 
-      task: 'Available', 
-      target: 'Perth WA', 
-      targetSub: 'WA Motors', 
-      img: 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=150&h=150&fit=crop&q=80' 
-    },
-    { 
-      id: '5', 
-      name: '2022 Nissan X-Trail', 
-      desc: 'Blue · SUV · 1,680 kg', 
-      vin: '1N4AL2AP72C234567', 
-      plate: 'NIS 202', 
-      status: 'IN DEPOT', 
-      task: 'LD-2042', 
-      target: 'Adelaide SA', 
-      targetSub: 'SA Auto Group', 
-      img: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=150&h=150&fit=crop&q=80' 
-    }
-  ]);
+  const [assets, setAssets] = useState([]);
+
+  useEffect(() => {
+    const fetchAssets = async () => {
+      try {
+        const res = await api.get('/load-items');
+        const dbItems = res.data?.data || [];
+        const formatted = dbItems.map(item => ({
+          id: item.id,
+          name: `${item.rego || 'Unknown'} ${item.vin ? `(VIN: ${item.vin.substring(0,6)})` : ''}`,
+          desc: 'Load Item · ' + (item.vin || 'N/A'),
+          vin: item.vin || 'N/A',
+          plate: item.rego || 'N/A',
+          status: item.load?.status === 'DELIVERED' ? 'DELIVERED' : item.load?.status === 'IN_TRANSIT' ? 'IN TRANSIT' : 'AWAITING LOAD',
+          task: item.load?.loadRef || 'Available',
+          target: item.dropoffStop?.location || 'Unknown Location',
+          targetSub: item.customer?.name || 'Unknown Customer',
+          img: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=150&h=150&fit=crop&q=80'
+        }));
+        setAssets(formatted);
+      } catch (error) {
+        console.error('Error fetching assets:', error);
+      }
+    };
+    fetchAssets();
+  }, []);
 
   // UI Interactive States
   const [searchQuery, setSearchQuery] = useState('');

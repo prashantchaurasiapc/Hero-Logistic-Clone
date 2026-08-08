@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import api from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import {
   Inbox, Search, Plus, Clock, X, Check,
@@ -580,8 +581,68 @@ export default function LoadInbox() {
   const navigate = useNavigate();
   const [search, setSearch]             = useState('');
   const [tab, setTab]                   = useState('ALL');
-  const [data, setData]                 = useState(DRAFTS);
+  const [data, setData]                 = useState([]);
   const [selected, setSelected]         = useState(null);
+
+  useEffect(() => {
+    const fetchDraftLoads = async () => {
+      try {
+        const res = await api.get('/loads?status=DRAFT');
+        const dbLoads = res.data?.data || [];
+        
+        const formatted = dbLoads.map((load, i) => {
+          const sourceLabels = ['portal', 'email', 'file'];
+          const sourceColors = {
+            portal: { color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
+            email: { color: '#4f46e5', bg: '#eef2ff', border: '#c7d2fe' },
+            file: { color: '#db2777', bg: '#fdf2f8', border: '#fbcfe8' }
+          };
+          
+          const source = sourceLabels[i % sourceLabels.length];
+          const driver = load.driver || {};
+          const vehicle = load.truck || {};
+          
+          return {
+            id: load.id,
+            ref: `PO-${1000 + i}`,
+            source,
+            sourceLabel: source === 'portal' ? 'Customer Portal' : source === 'email' ? 'Email Booking' : 'PDF Upload',
+            sourceIcon: source === 'portal' ? Globe : source === 'email' ? Mail : FileText,
+            sourceColor: sourceColors[source],
+            time: 'Recently',
+            urgent: load.priority === 'HIGH' || load.priority === 'URGENT',
+            confidence: 'High',
+            driver: driver.firstName ? `${driver.firstName} ${driver.lastName}` : 'Unassigned',
+            avatar: driver.firstName ? `${driver.firstName[0]}${driver.lastName?.[0] || ''}` : 'U',
+            avatarColor: '#2563eb',
+            driverPhone: driver.contactNumber || 'N/A',
+            driverLicence: driver.licenseType || 'N/A',
+            vehicle: vehicle.rego ? `${vehicle.rego} · ${vehicle.make}` : 'Unassigned',
+            trailer: 'Trailer TBD',
+            volume: `${load.loadItems?.length || 0} Vehicles`,
+            from: load.pickupStop?.address || 'Pickup TBD',
+            to: load.dropoffStop?.address || 'Dropoff TBD',
+            pickupDate: load.pickupStop?.scheduledTime ? new Date(load.pickupStop.scheduledTime).toLocaleString() : 'TBD',
+            deliveryDate: load.dropoffStop?.scheduledTime ? new Date(load.dropoffStop.scheduledTime).toLocaleString() : 'TBD',
+            accentColor: '#4f46e5',
+            notes: load.notes || 'No notes provided.',
+            manifests: load.loadItems?.map((item, idx) => ({
+              rego: item.rego || `TBD-${idx}`,
+              vin: item.vin || 'N/A',
+              model: `${item.make || ''} ${item.model || ''}`.trim() || 'Unknown Vehicle',
+              colour: item.color || 'Unknown',
+              conf: 'High'
+            })) || []
+          };
+        });
+        
+        setData(formatted);
+      } catch (error) {
+        console.error('Failed to fetch draft loads:', error);
+      }
+    };
+    fetchDraftLoads();
+  }, []);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [toast, setToast]               = useState(null);
 
@@ -590,13 +651,26 @@ export default function LoadInbox() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleApprove = (id) => {
-    setData(prev => prev.filter(d => d.id !== id));
-    showToast(`Load ${id} approved & dispatched!`, 'success');
+  const handleApprove = async (id) => {
+    try {
+      await api.put(`/loads/${id}`, { status: 'ASSIGNED' });
+      setData(prev => prev.filter(d => d.id !== id));
+      showToast(`Load ${id} approved & dispatched!`, 'success');
+      setSelected(null);
+    } catch (error) {
+      showToast(`Failed to approve Load ${id}`, 'error');
+    }
   };
-  const handleReject = (id) => {
-    setData(prev => prev.filter(d => d.id !== id));
-    showToast(`Load ${id} rejected.`, 'error');
+  
+  const handleReject = async (id) => {
+    try {
+      await api.put(`/loads/${id}`, { status: 'CANCELLED' });
+      setData(prev => prev.filter(d => d.id !== id));
+      showToast(`Load ${id} rejected.`, 'error');
+      setSelected(null);
+    } catch (error) {
+      showToast(`Failed to reject Load ${id}`, 'error');
+    }
   };
 
   const handleCreateManualLoad = (newLoad) => {

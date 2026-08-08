@@ -18,7 +18,8 @@ exports.getAll = async (req, res, next) => {
         include: {
           customer: true,
           driver: true,
-          truck: true
+          truck: true,
+          activities: true
         }
       }),
       prisma.load.count({ where })
@@ -64,6 +65,43 @@ exports.create = async (req, res, next) => {
         payload.companyId = firstCompany.id;
       }
     }
+
+    // Fallback/Generate loadRef
+    if (!payload.loadRef) {
+      payload.loadRef = `LD-${Math.floor(10000 + Math.random() * 90000)}`;
+    }
+
+    // Fallback type
+    if (!payload.type) {
+      payload.type = 'General Freight';
+    }
+
+    // Map status string to valid db enum
+    if (payload.status) {
+      if (payload.status === 'In Transit') payload.status = 'IN_TRANSIT';
+      else if (payload.status === 'En Route') payload.status = 'ASSIGNED';
+      else if (payload.status === 'At Pickup') payload.status = 'ASSIGNED';
+      else if (payload.status === 'Planned') payload.status = 'PLANNED';
+      else if (payload.status === 'On Hold') payload.status = 'ASSIGNED';
+      else if (!['DRAFT', 'PLANNED', 'ASSIGNED', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED'].includes(payload.status)) {
+        payload.status = 'PLANNED';
+      }
+    }
+
+    // Map scheduledDate or reqDate to loadDate
+    if (payload.scheduledDate && !payload.loadDate) {
+      const parsedDate = new Date(payload.scheduledDate);
+      payload.loadDate = isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+      delete payload.scheduledDate;
+    }
+
+    // Clean up frontend only parameters that are not in schema
+    delete payload.pickupLocation;
+    delete payload.deliveryLocation;
+    delete payload.customerName;
+    delete payload.driverName;
+    delete payload.vehicleId;
+    delete payload.trailerId;
 
     const data = await prisma.load.create({
       data: payload

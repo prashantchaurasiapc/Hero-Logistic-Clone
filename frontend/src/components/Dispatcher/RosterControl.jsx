@@ -1,11 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Users, CheckCircle, Clock, Palmtree, AlertCircle, Calendar, 
   ChevronLeft, ChevronRight, Filter, Search, Phone, Mail, 
   MoreVertical, X, Download, Plus, Star, Shield, AlertTriangle,
   FileText, MessageSquare, CheckSquare, UserPlus, RefreshCw
 } from 'lucide-react';
-import { mockWorkers, mockStats } from '../../data/mockWorkforceData';
+import api from '../../services/api';
 
 const MODAL_STYLE = {
   overlay: {
@@ -157,8 +157,43 @@ function AutoFillModal({ onClose, onConfirm }) {
 
 /* ---------- MAIN COMPONENT ---------- */
 export default function RosterControl() {
-  const [workers, setWorkers] = useState(mockWorkers);
-  const [selectedWorker, setSelectedWorker] = useState(mockWorkers[0]);
+  const [workers, setWorkers] = useState([]);
+  const [selectedWorker, setSelectedWorker] = useState(null);
+
+  useEffect(() => {
+    const fetchDrivers = async () => {
+      try {
+        const res = await api.get('/drivers');
+        const dbDrivers = res.data?.data || [];
+        const formatted = dbDrivers.map(d => ({
+          id: d.id,
+          name: d.firstName ? `${d.firstName} ${d.lastName}` : d.driverCode,
+          role: 'Car Carrier Driver',
+          category: 'Drivers',
+          skills: [d.licenseType || 'Standard'],
+          phone: d.contactNumber || 'N/A',
+          email: d.email || 'N/A',
+          certifications: [
+            { name: 'Driver License', status: 'valid', detail: 'Active' }
+          ],
+          schedule: {
+            'Mon 18 May': { status: 'Available' },
+            'Tue 19 May': { status: 'Available' },
+            'Wed 20 May': { status: 'Available' },
+            'Thu 21 May': { status: 'Available' },
+            'Fri 22 May': { status: 'Available' },
+            'Sat 23 May': { status: 'Available' },
+            'Sun 24 May': { status: 'Available' }
+          }
+        }));
+        setWorkers(formatted);
+        if (formatted.length > 0) setSelectedWorker(formatted[0]);
+      } catch (error) {
+        console.error('Error fetching drivers for roster:', error);
+      }
+    };
+    fetchDrivers();
+  }, []);
   const [activeTab, setActiveTab] = useState('Schedule View');
   const [sidebarTab, setSidebarTab] = useState('Overview');
   const [showAssignModal, setShowAssignModal] = useState(false);
@@ -194,7 +229,9 @@ export default function RosterControl() {
   }, [workers, filters]);
 
   const stats = useMemo(() => {
-    if (filteredWorkers.length === 0) return mockStats;
+    if (filteredWorkers.length === 0) {
+      return { totalWorkforce: 0, availableToday: 0, availablePercentage: 0, onShift: 0, onShiftPercentage: 0, onLeave: 0, onLeavePercentage: 0, absent: 0, absentPercentage: 0 };
+    }
     const total = filteredWorkers.length;
     let available = 0, onShift = 0, onLeave = 0, absent = 0;
     filteredWorkers.forEach(w => {

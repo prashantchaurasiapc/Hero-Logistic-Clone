@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import api from '../../services/api';
 import {
   Package, Truck, DollarSign, Globe, Users, Box, Zap, Activity,
   Plus, SlidersHorizontal, Search, FileText, AlertCircle, CheckCircle2, UserCheck,
@@ -185,16 +186,65 @@ const VehicleDocUploadBox = ({ title }) => {
 };
 
 const Vehicles = () => {
-  const [vehicles, setVehicles] = React.useState([
-    { id: 'T101', reg: 'NSW - YXZ 123', branch: 'SYDNEY', driver: 'Mike Thompson', driverId: 'DR001', driverImg: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60', type: 'Prime Mover', make: 'Volvo FH540', year: '2021', status: 'ACTIVE', odometer: '125,450 km', compliance: 'Compliant', nextServiceDate: '15/08/2025', nextServiceDays: 'in 21 days', img: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60' },
-    { id: 'C201', reg: 'NSW - CAA 456', branch: 'SYDNEY', driver: 'James Carter', driverId: 'DR005', driverImg: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60', type: 'Car Carrier', make: 'Hino 700', year: '2019', status: 'ACTIVE', odometer: '318,900 km', compliance: 'Expiring Soon', nextServiceDate: '28/07/2025', nextServiceDays: 'in 3 days', img: 'https://images.unsplash.com/photo-1592838064575-70ed626d3a44?w=600&auto=format&fit=crop&q=60' },
-    { id: 'G305', reg: 'NSW - BXZ 789', branch: 'SYDNEY', driver: 'Sarah Johnson', driverId: 'DR008', driverImg: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=60', type: 'General Freight', make: 'Isuzu FSR', year: '2020', status: 'ACTIVE', odometer: '189,230 km', compliance: 'Compliant', nextServiceDate: '05/08/2025', nextServiceDays: 'in 11 days', img: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=600&auto=format&fit=crop&q=60' },
-    { id: 'T405', reg: 'VIC - 1AB 2CD', branch: 'MELBOURNE', driver: '–', driverId: '', driverImg: '', type: 'Prime Mover', make: 'Scania R500', year: '2022', status: 'MAINTENANCE', odometer: '98,120 km', compliance: 'Expiring Soon', nextServiceDate: '10/08/2025', nextServiceDays: 'in 16 days', img: 'https://images.unsplash.com/photo-1563720223185-11003d516935?w=600&auto=format&fit=crop&q=60' },
-    { id: 'D501', reg: 'QLD - 777 XYZ', branch: 'BRISBANE', driver: '–', driverId: '', driverImg: '', type: 'Dangerous Goods', make: 'Volvo FMX', year: '2018', status: 'OUT OF SERVICE', odometer: '412,560 km', compliance: 'Overdue', nextServiceDate: 'Overdue', nextServiceDays: '12 days', img: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=600&auto=format&fit=crop&q=60' },
-    { id: 'C601', reg: 'NSW - MBZ 321', branch: 'SYDNEY', driver: 'Daniel Lee', driverId: 'DR003', driverImg: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=100&auto=format&fit=crop&q=60', type: 'Car Carrier', make: 'Mercedes Actros', year: '2021', status: 'ACTIVE', odometer: '156,870 km', compliance: 'Compliant', nextServiceDate: '22/08/2025', nextServiceDays: 'in 28 days', img: 'https://images.unsplash.com/photo-1592838064575-70ed626d3a44?w=600&auto=format&fit=crop&q=60' },
-    { id: 'G701', reg: 'NSW - QUO 654', branch: 'SYDNEY', driver: '–', driverId: '', driverImg: '', type: 'General Freight', make: 'UD Quon', year: '2017', status: 'OUT OF SERVICE', odometer: '532,100 km', compliance: 'Overdue', nextServiceDate: 'Overdue', nextServiceDays: '35 days', img: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=600&auto=format&fit=crop&q=60' },
-    { id: 'U801', reg: 'SA - SAH 987', branch: 'ADELAIDE', driver: 'Mark Wilson', driverId: 'DR010', driverImg: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60', type: 'Utilities', make: 'Hino 500', year: '2020', status: 'ACTIVE', odometer: '87,650 km', compliance: 'Compliant', nextServiceDate: '18/08/2025', nextServiceDays: 'in 24 days', img: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60' }
-  ]);
+  const [vehicles, setVehicles] = React.useState([]);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [toast, setToast] = React.useState(null);
+
+  const showToast = (msg, type = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
+  };
+
+  const fetchVehicles = async () => {
+    setIsLoading(true);
+    try {
+      const res = await api.get('/vehicles');
+      if (res.data && res.data.success) {
+        const mapped = res.data.data.map(v => ({
+          id: v.id,
+          displayId: v.rego || v.id.slice(0, 6).toUpperCase(),
+          reg: v.rego || v.plate || '—',
+          branch: v.branch || 'N/A',
+          driver: v.driver ? `${v.driver.firstName || ''} ${v.driver.lastName || ''}`.trim() || v.driver.driverCode : '—',
+          driverId: v.driver?.driverCode || '',
+          driverImg: v.driver?.avatarUrl || '',
+          type: v.category || v.type || 'Vehicle',
+          make: v.make ? `${v.make} ${v.model || ''}`.trim() : v.model || 'Unknown',
+          year: v.year ? String(v.year) : '—',
+          status: v.status || 'ACTIVE',
+          odometer: v.odometerKm ? `${v.odometerKm.toLocaleString()} km` : '—',
+          compliance: v.compliance || 'Compliant',
+          nextServiceDate: v.maintenanceDueKm ? `${v.maintenanceDueKm.toLocaleString()} km` : '—',
+          nextServiceDays: '',
+          img: v.photoUrl || 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60',
+          color: v.color || '',
+          vin: v.vin || '',
+          engineNumber: v.engineNumber || '',
+          fuelType: v.fuelType || '',
+          regType: v.regType || '',
+          regState: v.regState || '',
+          regIssueDate: v.regIssueDate || '',
+          regExpiryDate: v.regExpiryDate || '',
+          primaryMechanic: v.primaryMechanic || '',
+          preferredRoutes: v.preferredRoutes || '',
+          preferredRegions: v.preferredRegions || '',
+          maxDistPerTripKm: v.maxDistPerTripKm || '',
+          dgCertified: v.dgCertified || false,
+          notes: v.notes || '',
+          _raw: v
+        }));
+        setVehicles(mapped);
+      }
+    } catch (err) {
+      console.error('Error fetching vehicles:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchVehicles();
+  }, []);
 
   const [search, setSearch] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState('ALL');
@@ -203,66 +253,14 @@ const Vehicles = () => {
   const [editVehicleModal, setEditVehicleModal] = React.useState(null);
 
   // Current Trailer Assignment & Modal States
-  const [currentTrailer, setCurrentTrailer] = React.useState({
-    id: 'TRL201',
-    name: 'TRL201 – 8 Car Carrier',
-    type: 'Car Carrier Trailer',
-    reg: 'TRL201',
-    vin: '6T9T25A21NOTR1201',
-    axles: '3',
-    depot: 'Sydney Depot',
-    status: 'Available',
-    isPrimary: true,
-    img: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=600&auto=format&fit=crop&q=60'
-  });
+  const [currentTrailer, setCurrentTrailer] = React.useState(null);
   const [showSwapTrailerModal, setShowSwapTrailerModal] = React.useState(false);
   const [showUnassignTrailerModal, setShowUnassignTrailerModal] = React.useState(false);
   const [showViewTrailerModal, setShowViewTrailerModal] = React.useState(false);
-  const [selectedSwapTrailer, setSelectedSwapTrailer] = React.useState('TRL105');
+  const [selectedSwapTrailer, setSelectedSwapTrailer] = React.useState('');
   const [swapReason, setSwapReason] = React.useState('');
   const [unassignReason, setUnassignReason] = React.useState('');
-  const [assignmentHistory, setAssignmentHistory] = React.useState([
-    {
-      fromDate: '15 May 2025 08:30 AM',
-      toDate: '- Current -',
-      trailer: 'TRL201 - 8 Car Carrier',
-      type: 'Car Carrier',
-      reg: 'TRL201',
-      assignedBy: 'Admin User',
-      reason: 'Regular Assignment',
-      notes: '-'
-    },
-    {
-      fromDate: '01 May 2025 07:15 AM',
-      toDate: '15 May 2025 08:30 AM',
-      trailer: 'TRL102 - 8 Car Carrier',
-      type: 'Car Carrier',
-      reg: 'TRL102',
-      assignedBy: 'Admin User',
-      reason: 'Regular Assignment',
-      notes: '-'
-    },
-    {
-      fromDate: '20 Apr 2025 06:45 AM',
-      toDate: '01 May 2025 07:15 AM',
-      trailer: 'TRL305 - 6 Car Carrier',
-      type: 'Car Carrier',
-      reg: 'TRL305',
-      assignedBy: 'Admin User',
-      reason: 'Regular Assignment',
-      notes: '-'
-    },
-    {
-      fromDate: '10 Apr 2025 09:10 AM',
-      toDate: '20 Apr 2025 06:45 AM',
-      trailer: 'Unassigned',
-      type: '-',
-      reg: '-',
-      assignedBy: 'Admin User',
-      reason: 'Maintenance',
-      notes: '-'
-    }
-  ]);
+  const [assignmentHistory, setAssignmentHistory] = React.useState([]);
 
   // Add/Edit Modals state
   const [showAddModal, setShowAddModal] = React.useState(false);
@@ -297,15 +295,7 @@ const Vehicles = () => {
   const [viewingExpenseModal, setViewingExpenseModal] = React.useState(null);
   const [activeExpenseMenuId, setActiveExpenseMenuId] = React.useState(null);
 
-  const [expensesList, setExpensesList] = React.useState([
-    { id: 1, date: '15 May 2025', category: 'Fuel', description: 'Diesel Fill - BP Eastern Creek', details: '437.0 L @ $1.75/L', ref: 'BP-INV-55421', amount: '$764.75', rawAmount: 764.75, odometer: '256,450 km', addedBy: 'Mike Thompson', addedRole: '(DR001)', paymentMethod: 'Company Card', notes: 'Full tank fill up at BP station' },
-    { id: 2, date: '10 May 2025', category: 'Maintenance', description: 'Routine Service - Oil & Filter Change', details: 'Engine oil, oil filter, air filter replaced', ref: 'SRV-10458', amount: '$350.00', rawAmount: 350.00, odometer: '252,120 km', addedBy: 'Admin User', addedRole: '', paymentMethod: 'Bank Transfer', notes: 'Completed at Sydney Fleet Workshop' },
-    { id: 3, date: '05 May 2025', category: 'Tolls', description: 'M5 Toll - Eastern Creek to Port Botany', details: 'Heavy Vehicle Toll Rate', ref: 'TOLL-M5-4512', amount: '$28.40', rawAmount: 28.40, odometer: '252,000 km', addedBy: 'Mike Thompson', addedRole: '(DR001)', paymentMethod: 'Company Card', notes: 'Auto e-tag charge' },
-    { id: 4, date: '01 May 2025', category: 'Repairs', description: 'Brake Pads Replacement', details: 'Front brake pads replaced', ref: 'RPR-7788', amount: '$1,250.00', rawAmount: 1250.00, odometer: '248,560 km', addedBy: 'Admin User', addedRole: '', paymentMethod: 'Bank Transfer', notes: 'Scheduled brake maintenance' },
-    { id: 5, date: '28 Apr 2025', category: 'Insurance', description: 'Insurance Premium - Q2 2025', details: 'Comprehensive Heavy Vehicle Cover', ref: 'INS-TRK-5577', amount: '$1,100.00', rawAmount: 1100.00, odometer: '248,000 km', addedBy: 'Admin User', addedRole: '', paymentMethod: 'Bank Transfer', notes: 'Quarterly policy payment' },
-    { id: 6, date: '20 Apr 2025', category: 'Registration', description: 'Registration Renewal', details: 'NSW Transport 6 Months', ref: 'REG-ABC123', amount: '$660.00', rawAmount: 660.00, odometer: '246,789 km', addedBy: 'Admin User', addedRole: '', paymentMethod: 'Bank Transfer', notes: 'Approved by fleet manager' },
-    { id: 7, date: '15 Apr 2025', category: 'Other', description: 'Truck Wash', details: 'Exterior & Interior Detail', ref: 'WASH-0021', amount: '$55.00', rawAmount: 55.00, odometer: '246,200 km', addedBy: 'Mike Thompson', addedRole: '(DR001)', paymentMethod: 'Cash', notes: 'Depot wash station' },
-  ]);
+  const [expensesList, setExpensesList] = React.useState([]);
 
   const filteredExpenses = React.useMemo(() => {
     return expensesList.filter(item => {
@@ -335,24 +325,24 @@ const Vehicles = () => {
   const [editVehicleForm, setEditVehicleForm] = React.useState({
     id: '',
     reg: '',
-    make: 'Kenworth',
-    model: 'T610',
-    year: '2023',
-    engine: 'PACCAR MX-13',
-    transmission: 'Eaton Fuller',
-    vin: '1XKDP4TXBEJ123456',
-    branch: 'SYDNEY',
-    driver: 'Jack Taylor',
-    type: 'HEAVY TRUCK',
-    payload: 'PAYLOAD: 20T',
+    make: '',
+    model: '',
+    year: '',
+    engine: '',
+    transmission: '',
+    vin: '',
+    branch: '',
+    driver: '',
+    type: '',
+    payload: '',
     status: 'ACTIVE',
-    odometer: '184,220',
-    efficiency: '18.4',
-    fuelLevel: '68',
-    engineHours: '4,120',
-    homeDepot: 'Sydney Central Depot',
-    nextService: 'In 4,500 km (~188,720 km)',
-    notes: 'Vehicle primarily used for long-haul routes. No smoking in cabin.'
+    odometer: '',
+    efficiency: '',
+    fuelLevel: '',
+    engineHours: '',
+    homeDepot: '',
+    nextService: '',
+    notes: ''
   });
 
   // Documents & Compliance State
@@ -375,22 +365,7 @@ const Vehicles = () => {
     docName: '', category: 'Truck Documents', asset: 'Truck', docNo: '', issueDate: '', expiryDate: '', status: 'Valid', notes: ''
   });
 
-  const [documentsList, setDocumentsList] = React.useState([
-    { id: 1, doc: 'Registration', category: 'Truck Documents', asset: 'Truck', no: 'REG-ABC123', issue: '16/08/2024', exp: '15/08/2025', status: 'Valid', days: '21 days', color: 'text-green-600 bg-green-50', reminderEnabled: true },
-    { id: 2, doc: 'Insurance Certificate', category: 'Insurance', asset: 'Truck', no: 'INS-TRK-5577', issue: '18/07/2024', exp: '18/07/2025', status: 'Valid', days: '24 days', color: 'text-green-600 bg-green-50', reminderEnabled: true },
-    { id: 3, doc: 'Roadworthy Certificate', category: 'Compliance & Licences', asset: 'Truck', no: 'RWC-TRK-8899', issue: '22/01/2025', exp: '22/07/2025', status: 'Expiring Soon', days: '28 days', color: 'text-orange-500 bg-orange-50', reminderEnabled: true },
-    { id: 4, doc: 'Heavy Vehicle Inspection', category: 'Compliance & Licences', asset: 'Truck', no: 'HVI-TRK-1122', issue: '05/02/2025', exp: '05/08/2025', status: 'Expiring Soon', days: '31 days', color: 'text-orange-500 bg-orange-50', reminderEnabled: true },
-    { id: 5, doc: 'Green Slip (CTP)', category: 'Insurance', asset: 'Truck', no: 'CTP-334455', issue: '01/10/2024', exp: '30/09/2025', status: 'Valid', days: '67 days', color: 'text-green-600 bg-green-50', reminderEnabled: true },
-    { id: 6, doc: 'National Heavy Vehicle Reg.', category: 'Truck Documents', asset: 'Truck', no: 'NHVR-8877', issue: '12/06/2024', exp: '12/06/2028', status: 'Valid', days: '324 days', color: 'text-green-600 bg-green-50', reminderEnabled: true },
-    { id: 7, doc: 'Engine Emissions Test', category: 'Certificates', asset: 'Truck', no: 'EMI-7788', issue: '10/12/2024', exp: '10/12/2025', status: 'Valid', days: '109 days', color: 'text-green-600 bg-green-50', reminderEnabled: false },
-    { id: 8, doc: 'Fire Extinguisher Cert.', category: 'Certificates', asset: 'Truck', no: 'FIRE-5566', issue: '11/01/2025', exp: '11/01/2026', status: 'Valid', days: '141 days', color: 'text-green-600 bg-green-50', reminderEnabled: true },
-    { id: 9, doc: 'Trailer Registration', category: 'Trailer Documents', asset: 'Trailer TRL201', no: 'TRL-REG-991', issue: '05/03/2024', exp: '04/03/2026', status: 'Valid', days: '223 days', color: 'text-green-600 bg-green-50', reminderEnabled: true },
-    { id: 10, doc: 'Trailer Annual Inspection', category: 'Trailer Documents', asset: 'Trailer TRL201', no: 'TAI-7712', issue: '12/01/2025', exp: '12/01/2026', status: 'Valid', days: '172 days', color: 'text-green-600 bg-green-50', reminderEnabled: true },
-    { id: 11, doc: 'Mass Management Permit', category: 'Compliance & Licences', asset: 'Truck', no: 'MMP-7721', issue: '01/01/2024', exp: '01/01/2025', status: 'Overdue', days: '-204 days', color: 'text-rose-600 bg-rose-50', reminderEnabled: true },
-    { id: 12, doc: 'Dangerous Goods Permit', category: 'Certificates', asset: 'Truck', no: 'DGP-3311', issue: '15/05/2024', exp: '14/05/2025', status: 'Overdue', days: '-71 days', color: 'text-rose-600 bg-rose-50', reminderEnabled: true },
-    { id: 13, doc: 'Speed Limiter Calibration', category: 'Other', asset: 'Truck', no: 'SLC-0091', issue: '20/09/2024', exp: '20/09/2025', status: 'Valid', days: '58 days', color: 'text-green-600 bg-green-50', reminderEnabled: false },
-    { id: 14, doc: 'Noise Level Audit', category: 'Other', asset: 'Truck', no: 'NLA-4412', issue: '10/02/2025', exp: '10/02/2026', status: 'Valid', days: '201 days', color: 'text-green-600 bg-green-50', reminderEnabled: true },
-  ]);
+  const [documentsList, setDocumentsList] = React.useState([]);
 
   const showDocToast = (msg) => {
     setDocToastMessage(msg);
@@ -490,33 +465,27 @@ const Vehicles = () => {
     setIsEditingVehicle(true);
   };
 
-  const saveVehicleEdits = () => {
-    const updated = {
-      ...managingVehicle,
-      id: editVehicleForm.id.toUpperCase(),
-      reg: editVehicleForm.reg.toUpperCase(),
-      make: editVehicleForm.make,
-      model: editVehicleForm.model,
-      year: editVehicleForm.year,
-      engine: editVehicleForm.engine,
-      transmission: editVehicleForm.transmission,
-      vin: editVehicleForm.vin,
-      branch: editVehicleForm.branch,
-      driver: editVehicleForm.driver,
-      type: editVehicleForm.type,
-      payload: editVehicleForm.payload,
-      status: editVehicleForm.status,
-      odometer: editVehicleForm.odometer,
-      efficiency: editVehicleForm.efficiency,
-      fuelLevel: editVehicleForm.fuelLevel,
-      engineHours: editVehicleForm.engineHours,
-      homeDepot: editVehicleForm.homeDepot,
-      nextService: editVehicleForm.nextService,
-      notes: editVehicleForm.notes
-    };
-    setManagingVehicle(updated);
-    setVehicles(prev => prev.map(v => v.id === managingVehicle.id ? updated : v));
-    setIsEditingVehicle(false);
+  const saveVehicleEdits = async () => {
+    try {
+      await api.put(`/vehicles/${managingVehicle.id}`, {
+        rego: editVehicleForm.reg,
+        make: editVehicleForm.make,
+        model: editVehicleForm.model,
+        year: editVehicleForm.year ? parseInt(editVehicleForm.year) : undefined,
+        engineNumber: editVehicleForm.engine,
+        vin: editVehicleForm.vin,
+        branch: editVehicleForm.branch,
+        status: editVehicleForm.status,
+        odometerKm: editVehicleForm.odometer ? parseInt(editVehicleForm.odometer.replace(/,/g, '')) : undefined,
+        notes: editVehicleForm.notes
+      });
+      fetchVehicles();
+      setIsEditingVehicle(false);
+      showToast('Vehicle updated successfully!');
+    } catch (err) {
+      console.error('Error updating vehicle:', err);
+      showToast('Failed to update vehicle.', 'error');
+    }
   };
 
   const handleSwapTrailer = (trailerId, reason) => {
@@ -613,11 +582,15 @@ const Vehicles = () => {
     setManagingVehicle(duplicated);
   };
 
-  const handleReactivateVehicle = (vehicle) => {
+  const handleReactivateVehicle = async (vehicle) => {
     if (!vehicle) return;
-    const updated = { ...vehicle, status: 'ACTIVE' };
-    setVehicles(prev => prev.map(v => v.id === vehicle.id ? updated : v));
-    setManagingVehicle(updated);
+    try {
+      await api.put(`/vehicles/${vehicle.id}`, { status: 'ACTIVE' });
+      fetchVehicles();
+      showToast('Vehicle reactivated successfully!');
+    } catch (err) {
+      console.error('Error reactivating vehicle:', err);
+    }
   };
 
   const closeEditModal = (e) => {
@@ -640,44 +613,49 @@ const Vehicles = () => {
     }, 50);
   };
 
-  const handleAddVehicle = (e) => {
+  const handleAddVehicle = async (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
-    const reg = fd.get('reg') || '';
-    const id = fd.get('id') || `VEH${Math.floor(Math.random() * 1000)}`;
-
-    const randomAvatars = [
-      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60',
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60',
-      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=60',
-    ];
-
-    const randomTrucks = [
-      'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60',
-      'https://images.unsplash.com/photo-1563720223185-11003d516935?w=600&auto=format&fit=crop&q=60'
-    ];
-
-    const entry = {
-      ...newVehicle,
-      id: id.toUpperCase(),
-      reg: reg.toUpperCase() || 'NEW REG',
-      driver: 'Unassigned Driver',
-      make: fd.get('make') || '',
-      type: fd.get('type') || 'Prime Mover',
-      year: fd.get('year') || '2023',
-      branch: 'SYDNEY',
-      status: 'ACTIVE',
-      odometer: fd.get('odometer') || '0 km',
-      driverImg: randomAvatars[Math.floor(Math.random() * randomAvatars.length)],
-      img: randomTrucks[Math.floor(Math.random() * randomTrucks.length)]
-    };
-
-    setVehicles(prev => [entry, ...prev]);
-    setShowAddModal(false);
+    try {
+      const payload = {
+        rego: (fd.get('reg') || '').toUpperCase(),
+        make: fd.get('make') || '',
+        model: fd.get('model') || '',
+        year: fd.get('year') ? parseInt(fd.get('year')) : undefined,
+        category: fd.get('type') || 'TRUCK',
+        color: fd.get('color') || '',
+        vin: fd.get('vin') || '',
+        engineNumber: fd.get('engine') || '',
+        odometerKm: fd.get('odometer') ? parseInt(String(fd.get('odometer')).replace(/[^0-9]/g, '')) : 0,
+        fuelType: fd.get('fuelType') || 'Diesel',
+        regType: fd.get('regType') || '',
+        regState: fd.get('regState') || '',
+        primaryMechanic: fd.get('primaryMechanic') || '',
+        preferredRoutes: fd.get('preferredRoutes') || '',
+        preferredRegions: fd.get('preferredRegions') || '',
+        maxDistPerTripKm: fd.get('maxDist') ? parseInt(fd.get('maxDist')) : undefined,
+        dgCertified: fd.get('dgCertified') === 'Yes',
+        notes: fd.get('notes') || ''
+      };
+      await api.post('/vehicles', payload);
+      fetchVehicles();
+      setShowAddModal(false);
+      showToast('Vehicle added successfully!');
+    } catch (err) {
+      console.error('Error creating vehicle:', err);
+      showToast('Failed to save vehicle to database.', 'error');
+    }
   };
 
-  const deleteVehicle = (id) => {
-    setVehicles(prev => prev.filter(v => v.id !== id));
+  const deleteVehicle = async (id) => {
+    try {
+      await api.delete(`/vehicles/${id}`);
+      fetchVehicles();
+      showToast('Vehicle deleted successfully!');
+    } catch (err) {
+      console.error('Error deleting vehicle:', err);
+      showToast('Failed to delete vehicle.', 'error');
+    }
   };
 
   const filteredVehicles = vehicles.filter(v => {
@@ -694,7 +672,23 @@ const Vehicles = () => {
     return (
       <div className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto bg-white min-h-screen text-left font-sans flex flex-col gap-6">
         
-        {/* Header Section */}
+        {/* Toast Notification */}
+        {toast && (
+          <div className={`fixed bottom-6 right-6 z-[9999] flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-xl text-white text-sm font-semibold transition-all animate-in slide-in-from-bottom-4 duration-300 ${toast.type === 'error' ? 'bg-rose-600' : 'bg-emerald-600'}`}>
+            <CheckCircle2 size={18} />
+            {toast.msg}
+          </div>
+        )}
+
+        {/* Loading Overlay */}
+        {isLoading && (
+          <div className="fixed inset-0 bg-white/60 backdrop-blur-sm z-[9990] flex items-center justify-center">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm font-semibold text-purple-700">Loading vehicles...</p>
+            </div>
+          </div>
+        )}
         <div className="flex flex-row justify-between items-center gap-4 border-b border-gray-100 pb-4 flex-wrap sm:flex-nowrap">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -3205,14 +3199,20 @@ const Vehicles = () => {
               <button
                 type="button"
                 disabled={deactivateConfirmText !== 'DEACTIVATE' || !deactivateReason}
-                onClick={() => {
+                onClick={async () => {
                   if (deactivateConfirmText === 'DEACTIVATE' && deactivateReason) {
-                    const updated = { ...managingVehicle, status: 'OUT OF SERVICE' };
-                    setVehicles(prev => prev.map(v => v.id === managingVehicle.id ? updated : v));
-                    setManagingVehicle(updated);
-                    setShowDeactivateModal(false);
-                    setDeactivateReason('');
-                    setDeactivateConfirmText('');
+                    try {
+                      await api.put(`/vehicles/${managingVehicle.id}`, { status: 'OUT_OF_SERVICE' });
+                      fetchVehicles();
+                      setManagingVehicle(prev => ({ ...prev, status: 'OUT_OF_SERVICE' }));
+                      setShowDeactivateModal(false);
+                      setDeactivateReason('');
+                      setDeactivateConfirmText('');
+                      showToast('Vehicle deactivated successfully.');
+                    } catch (err) {
+                      console.error('Error deactivating:', err);
+                      showToast('Failed to deactivate vehicle.', 'error');
+                    }
                   }
                 }}
                 className={`px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${deactivateConfirmText === 'DEACTIVATE' && deactivateReason ? 'bg-rose-600 hover:bg-rose-700 text-white cursor-pointer shadow-sm' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}
@@ -3501,12 +3501,22 @@ const Vehicles = () => {
             </div>
             <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-2">
               <button onClick={closeEditModal} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 font-bold hover:bg-white text-xs cursor-pointer">Cancel</button>
-              <button onClick={(e) => {
-                setVehicles(prev => prev.map(v => v.id === editVehicleModal.id ? editVehicleModal : v));
-                if (managingVehicle && managingVehicle.id === editVehicleModal.id) {
-                  setManagingVehicle(editVehicleModal);
-                }
-                closeEditModal(e);
+              <button onClick={async (e) => {
+                try {
+                  await api.put(`/vehicles/${editVehicleModal.id}`, {
+                    rego: editVehicleModal.reg,
+                    make: editVehicleModal.make,
+                    model: editVehicleModal.model,
+                    year: editVehicleModal.year ? parseInt(editVehicleModal.year) : undefined,
+                    status: editVehicleModal.status,
+                    odometerKm: editVehicleModal.odometer ? parseInt(String(editVehicleModal.odometer).replace(/[^0-9]/g,'')) : undefined,
+                    notes: editVehicleModal.notes
+                  });
+                  fetchVehicles();
+                  if (managingVehicle && managingVehicle.id === editVehicleModal.id) setManagingVehicle(editVehicleModal);
+                  closeEditModal(e);
+                  showToast('Vehicle updated successfully!');
+                } catch (err) { showToast('Failed to update vehicle.', 'error'); }
               }} className="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 text-xs shadow-sm cursor-pointer">Save Changes</button>
             </div>
           </div>
@@ -3846,7 +3856,7 @@ const Vehicles = () => {
             </div>
             <div>
                <p className="text-[11px] text-gray-500 font-medium">Total Vehicles</p>
-               <h3 className="text-2xl font-bold text-gray-900 mt-0.5 leading-none">32</h3>
+               <h3 className="text-2xl font-bold text-gray-900 mt-0.5 leading-none">{vehicles.length}</h3>
                <p className="text-[10px] text-gray-400 mt-1">All vehicles in fleet</p>
             </div>
          </div>
@@ -3856,8 +3866,8 @@ const Vehicles = () => {
             </div>
             <div>
                <p className="text-[11px] text-gray-500 font-medium">Active</p>
-               <h3 className="text-2xl font-bold text-gray-900 mt-0.5 leading-none">28</h3>
-               <p className="text-[10px] text-gray-400 mt-1">87.5% of total</p>
+               <h3 className="text-2xl font-bold text-gray-900 mt-0.5 leading-none">{vehicles.filter(v => v.status === 'ACTIVE').length}</h3>
+               <p className="text-[10px] text-gray-400 mt-1">{vehicles.length ? Math.round(vehicles.filter(v => v.status === 'ACTIVE').length / vehicles.length * 100) : 0}% of total</p>
             </div>
          </div>
          <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm flex items-center gap-4">
@@ -3866,8 +3876,8 @@ const Vehicles = () => {
             </div>
             <div>
                <p className="text-[11px] text-gray-500 font-medium">In Maintenance</p>
-               <h3 className="text-2xl font-bold text-gray-900 mt-0.5 leading-none">2</h3>
-               <p className="text-[10px] text-gray-400 mt-1">6.3% of total</p>
+               <h3 className="text-2xl font-bold text-gray-900 mt-0.5 leading-none">{vehicles.filter(v => v.status === 'MAINTENANCE' || v.status === 'IN_MAINTENANCE').length}</h3>
+               <p className="text-[10px] text-gray-400 mt-1">{vehicles.length ? Math.round(vehicles.filter(v => v.status === 'MAINTENANCE' || v.status === 'IN_MAINTENANCE').length / vehicles.length * 100) : 0}% of total</p>
             </div>
          </div>
          <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm flex items-center gap-4">
@@ -3876,8 +3886,8 @@ const Vehicles = () => {
             </div>
             <div>
                <p className="text-[11px] text-gray-500 font-medium">Out of Service</p>
-               <h3 className="text-2xl font-bold text-gray-900 mt-0.5 leading-none">2</h3>
-               <p className="text-[10px] text-gray-400 mt-1">6.3% of total</p>
+               <h3 className="text-2xl font-bold text-gray-900 mt-0.5 leading-none">{vehicles.filter(v => v.status === 'OUT OF SERVICE' || v.status === 'OUT_OF_SERVICE').length}</h3>
+               <p className="text-[10px] text-gray-400 mt-1">{vehicles.length ? Math.round(vehicles.filter(v => v.status === 'OUT OF SERVICE' || v.status === 'OUT_OF_SERVICE').length / vehicles.length * 100) : 0}% of total</p>
             </div>
          </div>
          <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm flex items-center gap-4 col-span-2 sm:col-span-1 lg:col-span-1">
@@ -3886,8 +3896,8 @@ const Vehicles = () => {
              </div>
              <div>
                 <p className="text-[11px] text-gray-500 font-medium">Compliance Due</p>
-                <h3 className="text-2xl font-bold text-gray-900 mt-0.5 leading-none">6</h3>
-                <p className="text-[10px] text-gray-400 mt-1">18.8% of total</p>
+                <h3 className="text-2xl font-bold text-gray-900 mt-0.5 leading-none">{vehicles.filter(v => v.compliance === 'Expiring Soon' || v.compliance === 'Overdue').length}</h3>
+                <p className="text-[10px] text-gray-400 mt-1">{vehicles.length ? Math.round(vehicles.filter(v => v.compliance === 'Expiring Soon' || v.compliance === 'Overdue').length / vehicles.length * 100) : 0}% of total</p>
              </div>
           </div>
        </div>
@@ -4229,12 +4239,22 @@ const Vehicles = () => {
             </div>
             <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-2">
               <button onClick={closeEditModal} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 font-bold hover:bg-white text-xs cursor-pointer">Cancel</button>
-              <button onClick={(e) => {
-                setVehicles(prev => prev.map(v => v.id === editVehicleModal.id ? editVehicleModal : v));
-                if (managingVehicle && managingVehicle.id === editVehicleModal.id) {
-                  setManagingVehicle(editVehicleModal);
-                }
-                closeEditModal(e);
+              <button onClick={async (e) => {
+                try {
+                  await api.put(`/vehicles/${editVehicleModal.id}`, {
+                    rego: editVehicleModal.reg,
+                    make: editVehicleModal.make,
+                    model: editVehicleModal.model,
+                    year: editVehicleModal.year ? parseInt(editVehicleModal.year) : undefined,
+                    status: editVehicleModal.status,
+                    odometerKm: editVehicleModal.odometer ? parseInt(String(editVehicleModal.odometer).replace(/[^0-9]/g,'')) : undefined,
+                    notes: editVehicleModal.notes
+                  });
+                  fetchVehicles();
+                  if (managingVehicle && managingVehicle.id === editVehicleModal.id) setManagingVehicle(editVehicleModal);
+                  closeEditModal(e);
+                  showToast('Vehicle updated successfully!');
+                } catch (err) { showToast('Failed to update vehicle.', 'error'); }
               }} className="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 text-xs shadow-sm cursor-pointer">Save Changes</button>
             </div>
           </div>
@@ -4592,11 +4612,15 @@ const Vehicles = () => {
             </div>
             <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-2">
               <button onClick={() => setShowDeactivateModal(false)} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 font-bold hover:bg-white text-xs cursor-pointer">Cancel</button>
-              <button disabled={deactivateConfirmText !== 'DEACTIVATE' || !deactivateReason} onClick={() => {
-                setVehicles(prev => prev.map(v => v.id === managingVehicle?.id ? {...v, status: 'OUT OF SERVICE'} : v));
-                setShowDeactivateModal(false);
-                setDeactivateConfirmText('');
-                setDeactivateReason('');
+              <button disabled={deactivateConfirmText !== 'DEACTIVATE' || !deactivateReason} onClick={async () => {
+                try {
+                  await api.put(`/vehicles/${managingVehicle?.id}`, { status: 'OUT_OF_SERVICE' });
+                  fetchVehicles();
+                  setShowDeactivateModal(false);
+                  setDeactivateConfirmText('');
+                  setDeactivateReason('');
+                  showToast('Vehicle deactivated.');
+                } catch (err) { showToast('Failed to deactivate.', 'error'); }
               }} className="px-4 py-2 bg-rose-600 text-white rounded-lg font-bold hover:bg-rose-700 text-xs shadow-sm cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5">
                 <Power size={12} /> Deactivate
               </button>

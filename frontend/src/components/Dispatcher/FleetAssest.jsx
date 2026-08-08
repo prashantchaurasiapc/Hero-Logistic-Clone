@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Search, Plus, MapPin, Truck, Wrench, Droplet, Activity, X, 
   ShieldAlert, FileText, CheckCircle2, ChevronRight, ArrowLeft, Star, Radio
 } from 'lucide-react';
 import truckMaintenanceImg from '../../assets/truck_maintenance.png';
+import api from '../../services/api';
 
 export default function FleetAssest() {
   const [activeTab, setActiveTab] = useState('All');
@@ -11,135 +12,70 @@ export default function FleetAssest() {
   const [toastMsg, setToastMsg] = useState('');
   const [selectedAsset, setSelectedAsset] = useState(null);
 
-  // Fleet Assets Mock Database matching layout requirements
-  const [assets, setAssets] = useState([
-    {
-      id: 'TRK-102',
-      reg: 'XQC-984',
-      type: 'Heavy Truck',
-      payload: '20T PAYLOAD',
-      status: 'ACTIVE',
-      location: 'Hume Highway, Goulburn NSW',
-      fuel: '72%',
-      statusBg: 'bg-emerald-50 text-emerald-700 border-emerald-100/50',
-      fuelVal: 72,
-      makeModel: 'Freightliner Cascadia',
-      vehicleType: 'Semi Truck',
-      year: '2021',
-      vin: 'TRK-102-2020-004-984',
-      totalTrips: 412,
-      mileage: '128,440 km',
-      gvmCapacity: '28t',
-      rating: '4.8',
-      lastService: 'Jan 15, 2026',
-      nextService: 'April 22, 2026',
-      compliance: 'Valid',
-      drivers: [
-        { name: 'Jack Taylor', id: 'DRV - 022', shift: 'DAY SHIFT | 06:00 - 18:00', initials: 'JT', shiftType: 'day' },
-        { name: 'Oliver Brown', id: 'DRV - 114', shift: 'NIGHT SHIFT | 18:00 - 06:00', initials: 'OB', shiftType: 'night' }
-      ]
-    },
-    {
-      id: 'VAN-08',
-      reg: 'BZX-441',
-      type: 'Delivery Van',
-      payload: '2.5T PAYLOAD',
-      status: 'MAINTENANCE',
-      location: 'Depot A, Sydney NSW',
-      fuel: '45%',
-      statusBg: 'bg-rose-50 text-rose-700 border-rose-100/50',
-      fuelVal: 45,
-      makeModel: 'Toyota HiAce',
-      vehicleType: 'Delivery Van',
-      year: '2022',
-      vin: 'VAN-08-2021-009-441',
-      totalTrips: 280,
-      mileage: '45,210 km',
-      gvmCapacity: '2.5t',
-      rating: '4.6',
-      lastService: 'Feb 10, 2026',
-      nextService: 'May 15, 2026',
-      compliance: 'Valid',
-      drivers: [
-        { name: 'Lucas Smith', id: 'DRV - 089', shift: 'DAY SHIFT | 06:00 - 18:00', initials: 'LS', shiftType: 'day' }
-      ]
-    },
-    {
-      id: 'TRL-44',
-      reg: 'T-9921',
-      type: 'Trailer Flatbed',
-      payload: '40T PAYLOAD',
-      status: 'ACTIVE',
-      location: 'Warehouse B, Melbourne VIC',
-      fuel: '-',
-      statusBg: 'bg-emerald-50 text-emerald-700 border-emerald-100/50',
-      fuelVal: null,
-      makeModel: 'Krone Flatbed',
-      vehicleType: 'Trailer Flatbed',
-      year: '2019',
-      vin: 'TRL-44-2019-012-104',
-      totalTrips: 156,
-      mileage: '98,400 km',
-      gvmCapacity: '40t',
-      rating: '4.7',
-      lastService: 'Dec 20, 2025',
-      nextService: 'Mar 20, 2026',
-      compliance: 'Valid',
-      drivers: [
-        { name: 'Mia Wong', id: 'DRV - 044', shift: 'DAY SHIFT | 06:00 - 18:00', initials: 'MW', shiftType: 'day' }
-      ]
-    },
-    {
-      id: 'TRK-09',
-      reg: 'XYY-112',
-      type: 'Heavy Truck',
-      payload: '20T PAYLOAD',
-      status: 'ACTIVE',
-      location: 'Pacific Highway, Coffs Harbour NSW',
-      fuel: '88%',
-      statusBg: 'bg-emerald-50 text-emerald-700 border-emerald-100/50',
-      fuelVal: 88,
-      makeModel: 'Volvo FH16',
-      vehicleType: 'Heavy Truck',
-      year: '2020',
-      vin: 'TRK-09-2020-002-112',
-      totalTrips: 389,
-      mileage: '112,900 km',
-      gvmCapacity: '20t',
-      rating: '4.9',
-      lastService: 'Jan 22, 2026',
-      nextService: 'Apr 25, 2026',
-      compliance: 'Valid',
-      drivers: [
-        { name: 'Noah Davies', id: 'DRV - 009', shift: 'NIGHT SHIFT | 18:00 - 06:00', initials: 'ND', shiftType: 'night' }
-      ]
-    },
-    {
-      id: 'VAN-14',
-      reg: 'VAN-14-SYD',
-      type: 'Cargo Van',
-      payload: '3.5T PAYLOAD',
-      status: 'LOADING',
-      location: 'George St, Sydney CBD NSW',
-      fuel: '55%',
-      statusBg: 'bg-amber-50 text-amber-700 border-amber-100/50',
-      fuelVal: 55,
-      makeModel: 'Mercedes-Benz Sprinter',
-      vehicleType: 'Cargo Van',
-      year: '2023',
-      vin: 'VAN-14-2023-014-998',
-      totalTrips: 120,
-      mileage: '18,500 km',
-      gvmCapacity: '3.5t',
-      rating: '4.5',
-      lastService: 'Mar 01, 2026',
-      nextService: 'Jun 01, 2026',
-      compliance: 'Valid',
-      drivers: [
-        { name: 'Sophia Patel', id: 'DRV - 014', shift: 'DAY SHIFT | 06:00 - 18:00', initials: 'SP', shiftType: 'day' }
-      ]
+  const [assets, setAssets] = useState([]);
+  const [dbDrivers, setDbDrivers] = useState([]);
+
+  const fetchAssets = async () => {
+    try {
+      const [vehiclesRes, driversRes] = await Promise.all([
+        api.get('/vehicles'),
+        api.get('/drivers')
+      ]);
+      const dbVehicles = vehiclesRes.data?.data || [];
+      const loadedDrivers = driversRes.data?.data || [];
+      setDbDrivers(loadedDrivers);
+
+      const formatted = dbVehicles.map((v, index) => {
+        let status = 'ACTIVE';
+        let statusBg = 'bg-emerald-50 text-emerald-700 border-emerald-100/50';
+        if (v.status === 'MAINTENANCE') {
+          status = 'MAINTENANCE';
+          statusBg = 'bg-rose-50 text-rose-700 border-rose-100/50';
+        } else if (v.status === 'OFFLINE') {
+          status = 'OFFLINE';
+          statusBg = 'bg-slate-50 text-slate-700 border-slate-100/50';
+        }
+
+        return {
+          id: v.rego || `TRK-${100 + index}`,
+          dbId: v.id,
+          reg: v.plate || v.rego || 'Unknown Reg',
+          type: v.category === 'TRUCK' ? 'Heavy Truck' : v.category === 'TRAILER' ? 'Trailer' : 'Vehicle',
+          payload: v.payloadCapacity ? `${v.payloadCapacity}T PAYLOAD` : '20T PAYLOAD',
+          status,
+          location: 'Depot (Pending)',
+          fuel: `${60 + (index * 7) % 35}%`,
+          statusBg,
+          fuelVal: 60 + (index * 7) % 35,
+          makeModel: `${v.make || 'Unknown'} ${v.model || ''}`.trim(),
+          vehicleType: v.category === 'TRUCK' ? 'Semi Truck' : 'Equipment',
+          year: v.year || '2023',
+          vin: v.vin || 'N/A',
+          totalTrips: v.odometerKm ? Math.floor(v.odometerKm / 500) : 100,
+          mileage: `${v.odometerKm || 0} km`,
+          gvmCapacity: v.gvm ? `${v.gvm}t` : '28t',
+          rating: '4.8',
+          lastService: 'Recently',
+          nextService: 'In 3 months',
+          compliance: 'Valid',
+          drivers: loadedDrivers.slice(index % 2, (index % 2) + 2).map(d => ({
+            name: d.firstName || d.lastName ? `${d.firstName || ''} ${d.lastName || ''}`.trim() : d.driverCode,
+            id: d.id,
+            shift: 'DAY SHIFT',
+            initials: (d.firstName?.[0] || '') + (d.lastName?.[0] || ''),
+            shiftType: 'day'
+          }))
+        };
+      });
+      setAssets(formatted);
+    } catch (error) {
+      console.error('Error fetching fleet assets:', error);
     }
-  ]);
+  };
+
+  useEffect(() => {
+    fetchAssets();
+  }, []);
 
   const triggerToast = (msg) => {
     setToastMsg(msg);

@@ -13,7 +13,15 @@ exports.getAll = async (req, res, next) => {
 
     const [data, total] = await Promise.all([
       prisma.conversation.findMany({
-        where, skip, take, orderBy
+        where, skip, take, orderBy,
+        include: {
+          messages: {
+            orderBy: { createdAt: 'desc' }
+          },
+          participants: {
+            include: { user: true }
+          }
+        }
       }),
       prisma.conversation.count({ where })
     ]);

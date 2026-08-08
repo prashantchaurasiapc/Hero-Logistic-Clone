@@ -5,7 +5,7 @@ import {
   Download, User, Navigation, ChevronRight, Filter, History, UserPlus, Bell, BellOff,
   Archive, Trash2, MessageSquare, CheckCircle
 } from 'lucide-react';
-import { mockConversationsData } from '../../data/mockMessagesData';
+import api from '../../services/api';
 
 const MODAL_STYLE = {
   overlay: {
@@ -249,8 +249,61 @@ function NewGroupModal({ onClose, conversations, onCreate }) {
 
 /* ───────────── MAIN COMPONENT ───────────── */
 export default function CommunicationDepot() {
-  const [conversations, setConversations] = useState(mockConversationsData);
-  const [selectedConvId, setSelectedConvId] = useState(mockConversationsData[0].id);
+  const [conversations, setConversations] = useState([]);
+  const [selectedConvId, setSelectedConvId] = useState(null);
+
+  useEffect(() => {
+    const fetchConversations = async () => {
+      try {
+        const [convRes, driversRes] = await Promise.all([
+          api.get('/conversations'),
+          api.get('/drivers')
+        ]);
+        const dbConvs = convRes.data?.data || [];
+        const drivers = driversRes.data?.data || [];
+        
+        let formattedConvs = dbConvs.map(conv => {
+          const mainParticipant = conv.participants?.find(p => p.userId !== 'me');
+          const driverId = mainParticipant?.userId;
+          const driver = drivers.find(d => d.id === driverId) || {};
+          
+          return {
+            id: conv.id,
+            name: conv.title || (driver.firstName ? `${driver.firstName} ${driver.lastName}` : 'Unknown Participant'),
+            type: conv.type === 'GROUP' ? 'group' : 'individual',
+            status: 'Active',
+            statusColor: 'emerald',
+            loadId: conv.loadId || 'N/A',
+            time: new Date(conv.updatedAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            unreadCount: 0,
+            messages: conv.messages?.map(m => ({
+              id: m.id,
+              senderId: m.senderId === 'me' ? 'me' : m.senderId,
+              text: m.content,
+              time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              type: m.senderId === 'me' ? 'outgoing' : 'incoming',
+              dateGroup: new Date(m.createdAt).toLocaleDateString()
+            })) || [],
+            driverInfo: {
+              mobile: driver.contactNumber || 'N/A',
+              email: driver.email || 'N/A',
+              empId: driver.driverCode || 'N/A',
+              license: driver.licenseType || 'N/A'
+            },
+            currentLoad: null
+          };
+        });
+
+        if (formattedConvs.length > 0) {
+          setConversations(formattedConvs);
+          setSelectedConvId(formattedConvs[0].id);
+        }
+      } catch (error) {
+        console.error('Error fetching conversations:', error);
+      }
+    };
+    fetchConversations();
+  }, []);
   const [filterTab, setFilterTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [newMessageText, setNewMessageText] = useState('');
@@ -466,145 +519,114 @@ export default function CommunicationDepot() {
           </div>
         </div>
 
-        {/* Middle Column: Chat Window */}
-        <div className="flex-1 flex flex-col bg-white min-h-[500px] lg:min-h-0">
-          {/* Chat Header */}
-          <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center flex-shrink-0">
-            <div className="flex items-center gap-3">
-              {selectedConversation.type === 'group' ? (
-                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
-                  <Users size={16} />
-                </div>
-              ) : (
-                <img src={`https://ui-avatars.com/api/?name=${selectedConversation.name.replace(' ', '+')}&background=f1f5f9`}
-                  alt={selectedConversation.name} className="w-10 h-10 rounded-full border border-slate-200" />
-              )}
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-sm font-bold text-slate-900">{selectedConversation.name}</h2>
-                  {selectedConversation.status && (
-                    <span className={`text-[9px] font-bold text-${selectedConversation.statusColor}-600 bg-${selectedConversation.statusColor}-50 px-1.5 py-0.5 rounded border border-${selectedConversation.statusColor}-100`}>
-                      {selectedConversation.status}
-                    </span>
-                  )}
-                </div>
-                {selectedConversation.loadId && (
-                  <p className="text-[10px] text-slate-500 font-medium mt-0.5">
-                    {selectedConversation.loadId} {selectedConversation.currentLoad ? `• ${selectedConversation.currentLoad.vehicle}` : ''}
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <button title="Call" className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all"><Phone size={14} /></button>
-              <button title="Video" className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all"><Video size={14} /></button>
-              <button title="Info" className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all"><Info size={14} /></button>
-              <button title="More" className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 transition-all"><MoreVertical size={14} /></button>
-            </div>
-          </div>
-
-          {/* Chat Messages */}
-          <div className="flex-1 overflow-y-auto custom-scrollbar p-6 bg-slate-50/50">
-            {selectedConversation.messages.map((msg, index) => {
-              const showDate = index === 0 || selectedConversation.messages[index - 1].dateGroup !== msg.dateGroup;
-              return (
-                <React.Fragment key={msg.id}>
-                  {showDate && (
-                    <div className="flex justify-center mb-6">
-                      <span className="text-[10px] font-bold text-slate-400 bg-white px-3 py-1 rounded-full border border-slate-100">{msg.dateGroup}</span>
-                    </div>
-                  )}
-                  {msg.type === 'incoming' ? (
-                    <div className="flex items-start gap-3 mb-6">
-                      {selectedConversation.type === 'group' ? (
-                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-slate-600 border border-slate-200 mt-1"><User size={12} /></div>
-                      ) : (
-                        <img src={`https://ui-avatars.com/api/?name=${selectedConversation.name.replace(' ', '+')}&background=f1f5f9`}
-                          alt={selectedConversation.name} className="w-8 h-8 rounded-full border border-slate-200 mt-1" />
-                      )}
-                      <div>
-                        {selectedConversation.type === 'group' && <span className="text-[10px] font-bold text-slate-500 mb-1 block">{msg.senderId}</span>}
-                        <div className="bg-white border border-slate-200 p-3 rounded-2xl rounded-tl-sm shadow-sm max-w-[400px]">
-                          <p className={`text-xs ${msg.isUnread ? 'text-slate-900 font-bold' : 'text-slate-700'}`}>{msg.text}</p>
-                        </div>
-                        <span className="text-[9px] font-medium text-slate-400 mt-1.5 ml-1 block">{msg.time}</span>
-                      </div>
+        {selectedConversation ? (
+          <>
+            {/* Middle Column: Chat Window */}
+            <div className="flex-1 flex flex-col bg-white min-h-[500px] lg:min-h-0">
+              {/* Chat Header */}
+              <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center flex-shrink-0">
+                <div className="flex items-center gap-3">
+                  {selectedConversation.type === 'group' ? (
+                    <div className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                      <Users size={16} />
                     </div>
                   ) : (
-                    <div className="flex flex-col items-end mb-6">
-                      <div className="bg-blue-600 p-3 rounded-2xl rounded-tr-sm shadow-sm max-w-[400px]">
-                        <p className="text-xs text-white">{msg.text}</p>
-                      </div>
-                      <div className="flex items-center gap-1 mt-1.5 mr-1">
-                        <span className="text-[9px] font-medium text-slate-400">{msg.time}</span>
-                        {msg.status === 'read' ? <CheckCheck size={12} className="text-blue-500" /> : <Check size={12} className="text-slate-400" />}
-                      </div>
+                    <img src={`https://ui-avatars.com/api/?name=${selectedConversation.name.replace(' ', '+')}&background=f1f5f9`}
+                      alt={selectedConversation.name} className="w-10 h-10 rounded-full border border-slate-200" />
+                  )}
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-sm font-bold text-slate-900">{selectedConversation.name}</h2>
+                      {selectedConversation.status && (
+                        <span className={`text-[9px] font-bold text-${selectedConversation.statusColor}-600 bg-${selectedConversation.statusColor}-50 px-1.5 py-0.5 rounded border border-${selectedConversation.statusColor}-100`}>
+                          {selectedConversation.status}
+                        </span>
+                      )}
                     </div>
-                  )}
-                </React.Fragment>
-              );
-            })}
-            <div ref={chatEndRef} />
-          </div>
-
-          {/* Chat Input */}
-          <div className="p-4 border-t border-slate-200 bg-white">
-            <div className="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
-              <textarea
-                value={newMessageText}
-                onChange={(e) => setNewMessageText(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
-                className="w-full h-16 p-3 text-xs text-slate-700 resize-none focus:outline-none"
-                placeholder="Type your message... (Enter to send, Shift+Enter for new line)" />
-              <div className="bg-slate-50 px-3 py-2 border-t border-slate-100 flex justify-between items-center">
-                <div className="flex gap-1">
-                  {[
-                    { icon: Paperclip, title: 'Attach file' },
-                    { icon: ImageIcon, title: 'Attach image' },
-                    { icon: FileText, title: 'Attach document' },
-                    { icon: MapPin, title: 'Attach location' },
-                  ].map(({ icon: Icon, title }) => (
-                    <button key={title} title={title}
-                      className="p-1.5 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors">
-                      <Icon size={15} />
-                    </button>
-                  ))}
+                    {selectedConversation.loadId && (
+                      <p className="text-[10px] font-semibold text-slate-500 mt-0.5">Load: {selectedConversation.loadId}</p>
+                    )}
+                  </div>
                 </div>
-                <button onClick={handleSendMessage}
-                  className="px-4 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 flex items-center gap-1.5 shadow-sm transition-colors">
-                  <Send size={13} /> Send
-                </button>
+                <div className="flex gap-2">
+                  <button title="Call" className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all"><Phone size={14} /></button>
+                  <button title="Video" className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all"><Video size={14} /></button>
+                  <button title="Info" className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-all"><Info size={14} /></button>
+                  <button title="More" className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 transition-all"><MoreVertical size={14} /></button>
+                </div>
               </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Right Column: Conversation Details */}
-        <div className="w-full lg:w-[300px] bg-white lg:border-l border-t lg:border-t-0 border-slate-200 flex flex-col flex-shrink-0 min-h-[400px] lg:min-h-0">
-          <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-            <h2 className="text-xs font-bold text-slate-900">Conversation Details</h2>
-            <button className="text-slate-400 hover:text-slate-600 transition-colors"><X size={16} /></button>
-          </div>
+              {/* Chat Messages */}
+              <div className="flex-1 overflow-y-auto custom-scrollbar p-6 bg-slate-50/50">
+                {selectedConversation.messages.map((msg, index) => {
+                  const showDate = index === 0 || selectedConversation.messages[index - 1].dateGroup !== msg.dateGroup;
+                  return (
+                    <React.Fragment key={msg.id}>
+                      {showDate && (
+                        <div className="flex justify-center mb-6">
+                          <span className="text-[10px] font-bold text-slate-400 bg-white px-3 py-1 rounded-full border border-slate-100">{msg.dateGroup}</span>
+                        </div>
+                      )}
+                      {msg.type === 'incoming' ? (
+                        <div className="flex items-start gap-3 mb-6">
+                          {selectedConversation.type === 'group' ? (
+                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-slate-600 border border-slate-200 mt-1"><User size={12} /></div>
+                          ) : (
+                            <img src={`https://ui-avatars.com/api/?name=${selectedConversation.name.replace(' ', '+')}&background=f1f5f9`}
+                              alt={selectedConversation.name} className="w-8 h-8 rounded-full border border-slate-200 mt-1" />
+                          )}
+                          <div>
+                            {selectedConversation.type === 'group' && <span className="text-[10px] font-bold text-slate-500 mb-1 block">{msg.senderId}</span>}
+                            <div className="bg-white border border-slate-200 p-3 rounded-2xl rounded-tl-sm shadow-sm max-w-[400px]">
+                              <p className={`text-xs ${msg.isUnread ? 'text-slate-900 font-bold' : 'text-slate-700'}`}>{msg.text}</p>
+                            </div>
+                            <span className="text-[9px] font-medium text-slate-400 mt-1.5 ml-1 block">{msg.time}</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-end mb-6">
+                          <div className="bg-blue-600 p-3 rounded-2xl rounded-tr-sm shadow-sm max-w-[400px]">
+                            <p className="text-xs text-white">{msg.text}</p>
+                          </div>
+                          <div className="flex items-center gap-1 mt-1.5 mr-1">
+                            <span className="text-[9px] font-medium text-slate-400">{msg.time}</span>
+                            {msg.status === 'read' ? <CheckCheck size={12} className="text-blue-500" /> : <Check size={12} className="text-slate-400" />}
+                          </div>
+                        </div>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+                <div ref={chatEndRef} />
+              </div>
 
-          <div className="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-5">
-            {/* Profile */}
-            <div className="flex items-center gap-3">
-              {selectedConversation.type === 'group' ? (
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 text-slate-600 border-2 border-white shadow-sm">
-                  <Users size={18} />
-                </div>
-              ) : (
-                <img src={`https://ui-avatars.com/api/?name=${selectedConversation.name.replace(' ', '+')}&background=f1f5f9`}
-                  alt={selectedConversation.name} className="w-12 h-12 rounded-full border-2 border-white shadow-sm" />
-              )}
-              <div>
-                <div className="flex items-center gap-2 mb-0.5">
-                  <h3 className="text-sm font-bold text-slate-900">{selectedConversation.name}</h3>
-                  {selectedConversation.status && (
-                    <span className={`text-[9px] font-bold text-${selectedConversation.statusColor}-600 bg-${selectedConversation.statusColor}-50 px-1.5 py-0.5 rounded border border-${selectedConversation.statusColor}-100`}>
-                      {selectedConversation.status}
-                    </span>
-                  )}
+              {/* Chat Input */}
+              <div className="p-4 border-t border-slate-200 bg-white">
+                <div className="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+                  <textarea
+                    value={newMessageText}
+                    onChange={(e) => setNewMessageText(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
+                    className="w-full h-16 p-3 text-xs text-slate-700 resize-none focus:outline-none"
+                    placeholder="Type your message... (Enter to send, Shift+Enter for new line)" />
+                  <div className="bg-slate-50 px-3 py-2 border-t border-slate-100 flex justify-between items-center">
+                    <div className="flex gap-1">
+                      {[
+                        { icon: Paperclip, title: 'Attach file' },
+                        { icon: ImageIcon, title: 'Attach image' },
+                        { icon: FileText, title: 'Attach document' },
+                        { icon: MapPin, title: 'Attach location' },
+                      ].map(({ icon: Icon, title }) => (
+                        <button key={title} title={title}
+                          className="p-1.5 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors">
+                          <Icon size={15} />
+                        </button>
+                      ))}
+                    </div>
+                    <button onClick={handleSendMessage}
+                      className="px-4 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 flex items-center gap-1.5 shadow-sm transition-colors">
+                      <Send size={13} /> Send
+                    </button>
                 </div>
                 <p className="text-[11px] text-slate-500 font-medium">
                   {selectedConversation.type === 'group' ? `${selectedConversation.memberCount || '—'} Members` : 'Car Carrier Driver'}
@@ -612,7 +634,40 @@ export default function CommunicationDepot() {
               </div>
             </div>
 
-            {/* Action Buttons */}
+            {/* Right Column: Conversation Details */}
+            <div className="w-full lg:w-[300px] bg-white lg:border-l border-t lg:border-t-0 border-slate-200 flex flex-col flex-shrink-0 min-h-[400px] lg:min-h-0">
+              <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                <h2 className="text-xs font-bold text-slate-900">Conversation Details</h2>
+                <button className="text-slate-400 hover:text-slate-600 transition-colors"><X size={16} /></button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-5">
+                {/* Profile */}
+                <div className="flex items-center gap-3">
+                  {selectedConversation.type === 'group' ? (
+                    <div className="flex items-center justify-center w-12 h-12 rounded-full bg-slate-100 text-slate-600 border-2 border-white shadow-sm">
+                      <Users size={18} />
+                    </div>
+                  ) : (
+                    <img src={`https://ui-avatars.com/api/?name=${selectedConversation.name.replace(' ', '+')}&background=f1f5f9`}
+                      alt={selectedConversation.name} className="w-12 h-12 rounded-full border-2 border-white shadow-sm" />
+                  )}
+                  <div>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <h3 className="text-sm font-bold text-slate-900">{selectedConversation.name}</h3>
+                      {selectedConversation.status && (
+                        <span className={`text-[9px] font-bold text-${selectedConversation.statusColor}-600 bg-${selectedConversation.statusColor}-50 px-1.5 py-0.5 rounded border border-${selectedConversation.statusColor}-100`}>
+                          {selectedConversation.status}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-500 font-medium">
+                      {selectedConversation.type === 'group' ? `${selectedConversation.memberCount || '—'} Members` : 'Car Carrier Driver'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
             <div className="grid grid-cols-4 gap-2 border-b border-slate-100 pb-5">
               {[
                 { icon: Phone, label: 'Call' },
@@ -719,8 +774,17 @@ export default function CommunicationDepot() {
             </div>
           </div>
         </div>
-      </div>
-
+      </>
+      ) : (
+        <div className="flex-1 flex flex-col items-center justify-center bg-white min-h-[500px]">
+          <MessageSquare size={48} className="text-slate-200 mb-4" />
+          <h3 className="text-lg font-bold text-slate-700 mb-2">No conversation selected</h3>
+          <p className="text-xs text-slate-500 max-w-[250px] text-center">
+            Select a conversation from the sidebar or start a new one to begin messaging.
+          </p>
+        </div>
+      )}
+    </div>
       <style>{`@keyframes modalPop{from{opacity:0;transform:scale(.93) translateY(18px)}to{opacity:1;transform:scale(1) translateY(0)}}`}</style>
     </div>
   );
