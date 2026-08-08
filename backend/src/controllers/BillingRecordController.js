@@ -13,7 +13,8 @@ exports.getAll = async (req, res, next) => {
 
     const [data, total] = await Promise.all([
       prisma.billingRecord.findMany({
-        where, skip, take, orderBy
+        where, skip, take, orderBy,
+        include: { company: true }
       }),
       prisma.billingRecord.count({ where })
     ]);
