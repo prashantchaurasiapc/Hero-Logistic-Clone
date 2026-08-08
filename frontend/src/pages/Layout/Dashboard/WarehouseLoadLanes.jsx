@@ -167,7 +167,7 @@ export default function WarehouseLoadLanes() {
             body { font-family: 'Helvetica Neue', Arial, sans-serif; padding: 32px; color: #0F172A; line-height: 1.5; }
             .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #0F172A; padding-bottom: 16px; margin-bottom: 24px; }
             .company { font-size: 22px; font-weight: 900; letter-spacing: -0.5px; color: #0F172A; }
-            .badge { background: #FFD400; color: #0F172A; padding: 6px 14px; font-size: 12px; font-weight: 800; border-radius: 6px; display: inline-block; text-transform: uppercase; }
+            .badge { background: var(--primary-color); color: #0F172A; padding: 6px 14px; font-size: 12px; font-weight: 800; border-radius: 6px; display: inline-block; text-transform: uppercase; }
             .meta-date { font-size: 11px; color: #64748B; margin-top: 6px; text-align: right; }
             .title-area { margin-bottom: 24px; background: #F8FAFC; padding: 16px; border-radius: 8px; border: 1px solid #E2E8F0; }
             .title-area h2 { font-size: 20px; font-weight: 900; margin: 0 0 4px 0; color: #0F172A; }
@@ -406,7 +406,7 @@ export default function WarehouseLoadLanes() {
           padding: 0 18px;
           border-radius: 8px;
           border: none;
-          background: #FFD400;
+          background: var(--primary-color);
           font-size: 12px;
           font-weight: 800;
           color: #0F172A;
@@ -528,7 +528,7 @@ export default function WarehouseLoadLanes() {
           outline: none;
           box-sizing: border-box;
         }
-        .wh-ll-search-inp:focus { border-color: #FFD400; }
+        .wh-ll-search-inp:focus { border-color: var(--primary-color); }
         .wh-ll-search-icon {
           position: absolute;
           left: 10px;
@@ -705,8 +705,8 @@ export default function WarehouseLoadLanes() {
           color: #0F172A;
         }
         .wh-pager-btn.active {
-          background: #FFD400;
-          border-color: #FFD400;
+          background: var(--primary-color);
+          border-color: var(--primary-color);
           font-weight: 800;
         }
 
@@ -813,7 +813,7 @@ export default function WarehouseLoadLanes() {
           margin-bottom: 6px;
           transition: background 0.15s;
         }
-        .wh-qa-btn:hover { background: #FFFFFF; border-color: #FFD400; }
+        .wh-qa-btn:hover { background: #FFFFFF; border-color: var(--primary-color); }
 
         /* HELP */
         .wh-help-text {
@@ -1418,7 +1418,7 @@ export default function WarehouseLoadLanes() {
           <div className="wh-modal-box" style={{ maxWidth: '560px' }} onClick={e => e.stopPropagation()}>
             <div className="wh-modal-header" style={{ background: '#0F172A', color: '#FFFFFF', padding: '14px 18px' }}>
               <div className="flex items-center gap-3">
-                <div style={{ background: '#FFD400', color: '#0F172A', fontWeight: 900, fontSize: '13px', padding: '4px 10px', borderRadius: '6px' }}>
+                <div style={{ background: 'var(--primary-color)', color: '#0F172A', fontWeight: 900, fontSize: '13px', padding: '4px 10px', borderRadius: '6px' }}>
                   {viewLaneModal.name}
                 </div>
                 <div>
@@ -1604,7 +1604,7 @@ export default function WarehouseLoadLanes() {
                   style={{
                     padding: '10px 14px',
                     borderRadius: '8px',
-                    border: editStatusModal.status === st ? '2px solid #FFD400' : '1px solid #CBD5E1',
+                    border: editStatusModal.status === st ? '2px solid var(--primary-color)' : '1px solid #CBD5E1',
                     background: editStatusModal.status === st ? '#FEF3C7' : '#FFFFFF',
                     fontSize: '12px',
                     fontWeight: 800,

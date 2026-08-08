@@ -383,7 +383,7 @@ export default function FollowUps() {
 
               <button
                 type="submit"
-                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all mt-2 cursor-pointer active:scale-95"
+                className="w-full bg-[#FFB020] hover:bg-brand-600 text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all mt-2 cursor-pointer active:scale-95"
               >
                 Create Task checklist
               </button>

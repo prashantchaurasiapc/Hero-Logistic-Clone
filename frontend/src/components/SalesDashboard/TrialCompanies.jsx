@@ -307,7 +307,7 @@ export default function TrialCompanies() {
                     setToast({ type: 'success', text: `Trial for ${showExtendModal.company} extended by 7 days.` });
                     setShowExtendModal(null);
                   }}
-                  className="flex-1 bg-[#FFD500] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[13px] py-3.5 rounded-xl transition-all shadow-sm"
+                  className="flex-1 bg-[#FFD500] hover:bg-brand-600 text-slate-900 font-extrabold text-[13px] py-3.5 rounded-xl transition-all shadow-sm"
                 >
                   Extend +7 Days
                 </button>

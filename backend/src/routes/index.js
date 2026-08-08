@@ -83,7 +83,9 @@ const DocumentRoutes = require('./DocumentRoutes');
 const SuperAdminDashboardRoutes = require('./SuperAdminDashboardRoutes');
 const PaymentGatewayConfigRoutes = require('./PaymentGatewayConfigRoutes');
 const WorkflowRuleRoutes = require('./WorkflowRuleRoutes');
+const UploadRoutes = require('./UploadRoutes');
 
+router.use('/upload', UploadRoutes);
 router.use('/auth', authRoutes);
 router.use('/workflow-rules', WorkflowRuleRoutes);
 router.use('/companys', CompanyRoutes);

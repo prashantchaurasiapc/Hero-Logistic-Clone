@@ -2847,7 +2847,7 @@ export default function CompanySettings() {
                           <img src={logoUrl} alt="Company Logo" className="max-h-full max-w-full object-contain" />
                         ) : (
                           <div className="flex items-center gap-1.5">
-                            <Zap size={20} className="text-[#FFD400] fill-[#FFD400]" />
+                            <Zap size={20} className="text-brand-500 fill-brand-500" />
                             <span className="text-xl font-black text-slate-900 tracking-tight">Hero</span>
                           </div>
                         )}

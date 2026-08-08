@@ -850,7 +850,7 @@ export default function CommandCentre() {
                         </div>
                       </div>
 
-                      <div className="text-[11.5px] font-semibold text-slate-800">{load.customer}</div>
+                      <div className="text-[11.5px] font-semibold text-slate-800">{typeof load.customer === 'object' ? load.customer?.name : load.customer}</div>
 
                       <div className="flex items-center gap-1 text-[11px] text-slate-600">
                         <span>{load.routeFrom}</span>
@@ -958,7 +958,7 @@ export default function CommandCentre() {
                                 </span>
                               </div>
 
-                              <div className="text-[10.5px] font-bold text-slate-800 truncate" title={card.customer}>{card.customer}</div>
+                              <div className="text-[10.5px] font-bold text-slate-800 truncate" title={typeof card.customer === 'object' ? card.customer?.name : card.customer}>{typeof card.customer === 'object' ? card.customer?.name : card.customer}</div>
 
                               <div className="text-[9.5px] text-slate-500 font-medium flex items-center gap-1 overflow-hidden">
                                 <span className="truncate">{card.routeFrom}</span>
@@ -1278,7 +1278,7 @@ export default function CommandCentre() {
               </button>
               <button 
                 onClick={handleActivateLoad}
-                className="bg-[#0B0F17] hover:bg-slate-800 text-[#FFD400] font-bold text-xs py-2 px-4 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 uppercase tracking-wider"
+                className="bg-[#0B0F17] hover:bg-slate-800 text-brand-500 font-bold text-xs py-2 px-4 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 uppercase tracking-wider"
               >
                 ⚡ ACTIVATE LOAD
               </button>

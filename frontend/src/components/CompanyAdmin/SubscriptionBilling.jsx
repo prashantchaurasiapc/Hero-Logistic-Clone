@@ -194,7 +194,7 @@ export default function SubscriptionBilling() {
             <div className="flex justify-between items-start mb-5">
               <div>
                 <span className={`inline-block px-2.5 py-0.5 text-[9px] font-extrabold uppercase tracking-widest rounded mb-3 ${
-                  currentPlan.status === 'CANCELLED_SCHEDULED' ? 'bg-rose-500 text-white' : 'bg-[#FFD400] text-black'
+                  currentPlan.status === 'CANCELLED_SCHEDULED' ? 'bg-rose-500 text-white' : 'bg-brand-500 text-black'
                 }`}>
                   {currentPlan.status === 'CANCELLED_SCHEDULED' ? 'Cancels 14 Sep' : 'Active Plan'}
                 </span>
@@ -264,7 +264,7 @@ export default function SubscriptionBilling() {
                 <div className="bg-white px-2 py-0.5 rounded-[4px] text-[9px] font-black text-[#1A1F71] tracking-widest">
                   {defaultCard.type}
                 </div>
-                <Shield size={14} className="text-[#FFD400] fill-[#FFD400]" strokeWidth={0} />
+                <Shield size={14} className="text-brand-500 fill-brand-500" strokeWidth={0} />
               </div>
               
               <div className="text-white text-[15px] tracking-[0.25em] font-mono mt-3">

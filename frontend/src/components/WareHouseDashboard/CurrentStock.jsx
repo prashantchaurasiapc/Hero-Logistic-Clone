@@ -358,7 +358,7 @@ export default function CurrentStock() {
         .wh-btn-yellow {
           height: 38px;
           padding: 0 18px;
-          background: #FFD400;
+          background: var(--primary-color);
           border: none;
           border-radius: 10px;
           font-size: 12px;
@@ -446,7 +446,7 @@ export default function CurrentStock() {
         }
 
         .wh-stock-search-input:focus {
-          border-color: #FFD400;
+          border-color: var(--primary-color);
           box-shadow: 0 0 0 3px rgba(255, 212, 0, 0.2);
         }
 
@@ -477,7 +477,7 @@ export default function CurrentStock() {
         .wh-stock-filter-toggle-btn.active,
         .wh-stock-filter-toggle-btn:hover {
           background: #FFFFFF;
-          border-color: #FFD400;
+          border-color: var(--primary-color);
           color: #0F172A;
         }
 
@@ -626,7 +626,7 @@ export default function CurrentStock() {
         .wh-stock-data-table tr:hover { background-color: #F8FAFC; }
         .wh-stock-data-table tr.selected-row {
           background-color: #FEFCE8;
-          border-left: 3px solid #FFD400;
+          border-left: 3px solid var(--primary-color);
         }
 
         .wh-empty-stock-td { text-align: center; padding: 32px; color: #94A3B8; font-size: 12px; }
@@ -704,7 +704,7 @@ export default function CurrentStock() {
           cursor: pointer;
         }
 
-        .wh-view-row-btn:hover { background: #FFD400; color: #0F172A; border-color: #FFD400; }
+        .wh-view-row-btn:hover { background: var(--primary-color); color: #0F172A; border-color: var(--primary-color); }
 
         .wh-stock-right-col .wh-item-details-drawer {
           width: 100%;
@@ -794,7 +794,7 @@ export default function CurrentStock() {
         .wh-drawer-btn-primary {
           height: 40px;
           width: 100%;
-          background: #FFD400;
+          background: var(--primary-color);
           border: none;
           border-radius: 10px;
           font-size: 12px;
@@ -891,7 +891,7 @@ export default function CurrentStock() {
         }
 
         .wh-modal-btn-cancel { padding: 8px 16px; border-radius: 8px; border: 1px solid #E2E8F0; background: #FFFFFF; font-size: 12px; font-weight: 700; color: #64748B; cursor: pointer; }
-        .wh-modal-btn-submit { padding: 8px 18px; border-radius: 8px; border: none; background: #FFD400; font-size: 12px; font-weight: 800; color: #0F172A; cursor: pointer; }
+        .wh-modal-btn-submit { padding: 8px 18px; border-radius: 8px; border: none; background: var(--primary-color); font-size: 12px; font-weight: 800; color: #0F172A; cursor: pointer; }
 
         .wh-history-timeline { display: flex; flex-direction: column; gap: 16px; }
         .timeline-event { display: flex; align-items: flex-start; gap: 12px; }
@@ -908,7 +908,7 @@ export default function CurrentStock() {
           position: relative;
           width: 160px;
           height: 160px;
-          border: 2px dashed #FFD400;
+          border: 2px dashed var(--primary-color);
           border-radius: 16px;
           display: flex;
           align-items: center;

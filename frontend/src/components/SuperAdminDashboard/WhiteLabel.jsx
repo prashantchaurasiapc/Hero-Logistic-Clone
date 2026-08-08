@@ -709,7 +709,7 @@ export default function WhiteLabel() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`px-5 py-2.5 font-bold rounded-full text-xs transition-all flex items-center gap-1.5 cursor-pointer border ${isActive
-                    ? 'bg-[#FFD400] text-black border-2 border-black font-extrabold shadow-sm'
+                    ? 'bg-brand-500 text-black border-2 border-black font-extrabold shadow-sm'
                     : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
                   }`}
               >
@@ -729,7 +729,7 @@ export default function WhiteLabel() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`px-5 py-2.5 font-bold rounded-full text-xs transition-all flex items-center gap-1.5 cursor-pointer border ${isActive
-                    ? 'bg-[#FFD400] text-black border-2 border-black font-extrabold shadow-sm'
+                    ? 'bg-brand-500 text-black border-2 border-black font-extrabold shadow-sm'
                     : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
                   }`}
               >
@@ -749,7 +749,7 @@ export default function WhiteLabel() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`px-5 py-2.5 font-bold rounded-full text-xs transition-all flex items-center gap-1.5 cursor-pointer border ${isActive
-                    ? 'bg-[#FFD400] text-black border-2 border-black font-extrabold shadow-sm'
+                    ? 'bg-brand-500 text-black border-2 border-black font-extrabold shadow-sm'
                     : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
                   }`}
               >
@@ -777,7 +777,7 @@ export default function WhiteLabel() {
                   <h3 className="text-xs font-black text-slate-400 uppercase mb-4 tracking-wider">THEME DISTRIBUTION</h3>
                   <div className="space-y-4">
                     {[
-                      { name: 'Dark Theme', value: 60, color: 'bg-[#FFD400]' },
+                      { name: 'Dark Theme', value: 60, color: 'bg-brand-500' },
                       { name: 'Light Theme', value: 30, color: 'bg-emerald-500' },
                       { name: 'Auto System sync', value: 10, color: 'bg-indigo-500' }
                     ].map((row, idx) => (
@@ -799,8 +799,8 @@ export default function WhiteLabel() {
                   <div className="space-y-4">
                     {[
                       { name: 'Company Portal', value: 100, color: 'bg-emerald-500' },
-                      { name: 'Driver Mobile ELD', value: 85, color: 'bg-[#FFD400]' },
-                      { name: 'Shipper Customer Portal', value: 90, color: 'bg-[#FFD400]' }
+                      { name: 'Driver Mobile ELD', value: 85, color: 'bg-brand-500' },
+                      { name: 'Shipper Customer Portal', value: 90, color: 'bg-brand-500' }
                     ].map((row, idx) => (
                       <div key={idx} className="space-y-1">
                         <div className="flex justify-between text-xs font-bold text-slate-600">
@@ -851,7 +851,7 @@ export default function WhiteLabel() {
                     required
                     value={brandingForm.platformName}
                     onChange={(e) => setBrandingForm({ ...brandingForm, platformName: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none text-slate-800"
                   />
                 </div>
 
@@ -862,7 +862,7 @@ export default function WhiteLabel() {
                     required
                     value={brandingForm.portalName}
                     onChange={(e) => setBrandingForm({ ...brandingForm, portalName: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none text-slate-800"
                   />
                 </div>
 
@@ -873,7 +873,7 @@ export default function WhiteLabel() {
                     required
                     value={brandingForm.shortName}
                     onChange={(e) => setBrandingForm({ ...brandingForm, shortName: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none text-slate-800"
                   />
                 </div>
 
@@ -883,7 +883,7 @@ export default function WhiteLabel() {
                     type="text"
                     value={brandingForm.loaderGif}
                     onChange={(e) => setBrandingForm({ ...brandingForm, loaderGif: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800 font-mono"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none text-slate-800 font-mono"
                   />
                 </div>
 
@@ -893,7 +893,7 @@ export default function WhiteLabel() {
                     type="text"
                     value={brandingForm.lightLogo}
                     onChange={(e) => setBrandingForm({ ...brandingForm, lightLogo: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800 font-mono"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none text-slate-800 font-mono"
                   />
                 </div>
 
@@ -903,7 +903,7 @@ export default function WhiteLabel() {
                     type="text"
                     value={brandingForm.darkLogo}
                     onChange={(e) => setBrandingForm({ ...brandingForm, darkLogo: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800 font-mono"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none text-slate-800 font-mono"
                   />
                 </div>
 
@@ -913,7 +913,7 @@ export default function WhiteLabel() {
                     type="text"
                     value={brandingForm.favicon}
                     onChange={(e) => setBrandingForm({ ...brandingForm, favicon: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800 font-mono"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none text-slate-800 font-mono"
                   />
                 </div>
 
@@ -923,7 +923,7 @@ export default function WhiteLabel() {
                     type="text"
                     value={brandingForm.loginBg}
                     onChange={(e) => setBrandingForm({ ...brandingForm, loginBg: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800 font-mono"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none text-slate-800 font-mono"
                   />
                 </div>
 
@@ -933,7 +933,7 @@ export default function WhiteLabel() {
                     type="text"
                     value={brandingForm.dashboardBg}
                     onChange={(e) => setBrandingForm({ ...brandingForm, dashboardBg: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800 font-mono"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none text-slate-800 font-mono"
                   />
                 </div>
 
@@ -943,7 +943,7 @@ export default function WhiteLabel() {
                     type="text"
                     value={brandingForm.emailLogo}
                     onChange={(e) => setBrandingForm({ ...brandingForm, emailLogo: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800 font-mono"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none text-slate-800 font-mono"
                   />
                 </div>
 
@@ -953,7 +953,7 @@ export default function WhiteLabel() {
                     type="text"
                     value={brandingForm.invoiceLogo}
                     onChange={(e) => setBrandingForm({ ...brandingForm, invoiceLogo: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800 font-mono"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none text-slate-800 font-mono"
                   />
                 </div>
 
@@ -963,7 +963,7 @@ export default function WhiteLabel() {
                     type="text"
                     value={brandingForm.manifestLogo}
                     onChange={(e) => setBrandingForm({ ...brandingForm, manifestLogo: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800 font-mono"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none text-slate-800 font-mono"
                   />
                 </div>
 
@@ -972,7 +972,7 @@ export default function WhiteLabel() {
                   <select
                     value={brandingForm.fontFamily}
                     onChange={(e) => setBrandingForm({ ...brandingForm, fontFamily: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 text-xs font-bold rounded-xl focus:border-[#FFD400] focus:outline-none text-slate-800 cursor-pointer"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 text-xs font-bold rounded-xl focus:border-brand-500 focus:outline-none text-slate-800 cursor-pointer"
                   >
                     <option value="Inter">Inter</option>
                     <option value="Outfit">Outfit</option>
@@ -985,7 +985,7 @@ export default function WhiteLabel() {
                   <select
                     value={brandingForm.typographyStyle}
                     onChange={(e) => setBrandingForm({ ...brandingForm, typographyStyle: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 text-xs font-bold rounded-xl focus:border-[#FFD400] focus:outline-none text-slate-800 cursor-pointer"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 text-xs font-bold rounded-xl focus:border-brand-500 focus:outline-none text-slate-800 cursor-pointer"
                   >
                     <option value="Modern Sans">Modern Sans</option>
                     <option value="Serif">Serif</option>
@@ -998,7 +998,7 @@ export default function WhiteLabel() {
                   <select
                     value={brandingForm.buttonRadius}
                     onChange={(e) => setBrandingForm({ ...brandingForm, buttonRadius: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 text-xs font-bold rounded-xl focus:border-[#FFD400] focus:outline-none text-slate-800 cursor-pointer"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 text-xs font-bold rounded-xl focus:border-brand-500 focus:outline-none text-slate-800 cursor-pointer"
                   >
                     <option value="16px (Glassmorphic)">16px (Glassmorphic)</option>
                     <option value="8px (Standard)">8px (Standard)</option>
@@ -1016,7 +1016,7 @@ export default function WhiteLabel() {
                   </button>
                   <button
                     type="submit"
-                    className="w-full sm:w-auto bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer text-center"
+                    className="w-full sm:w-auto bg-brand-500 hover:bg-brand-600 text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer text-center"
                   >
                     Save Branding Configuration
                   </button>
@@ -1059,7 +1059,7 @@ export default function WhiteLabel() {
                       {theme.status !== 'Published' && (
                         <button
                           onClick={() => handlePublishTheme(theme.id, theme.name)}
-                          className="bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-[10px] px-3.5 py-2 rounded-xl transition-colors cursor-pointer"
+                          className="bg-brand-500 hover:bg-brand-600 text-black font-extrabold text-[10px] px-3.5 py-2 rounded-xl transition-colors cursor-pointer"
                         >
                           Publish System
                         </button>
@@ -1084,11 +1084,11 @@ export default function WhiteLabel() {
                     placeholder="Enter custom theme name (e.g. Amber Minimalist)..."
                     value={newThemeName}
                     onChange={(e) => setNewThemeName(e.target.value)}
-                    className="flex-grow w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800"
+                    className="flex-grow w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none text-slate-800"
                   />
                   <button
                     type="submit"
-                    className="w-full sm:w-auto justify-center bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1 shrink-0"
+                    className="w-full sm:w-auto justify-center bg-brand-500 hover:bg-brand-600 text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1 shrink-0"
                   >
                     <Plus className="w-4 h-4" /> Register Theme
                   </button>
@@ -1139,7 +1139,7 @@ export default function WhiteLabel() {
                         placeholder="e.g. tms.falconcarriers.com"
                         value={newDomainForm.domain}
                         onChange={(e) => setNewDomainForm({ ...newDomainForm, domain: e.target.value })}
-                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800"
+                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none text-slate-800"
                       />
                     </div>
 
@@ -1150,7 +1150,7 @@ export default function WhiteLabel() {
                         placeholder="e.g. portal.falconcarriers.com"
                         value={newDomainForm.fallback}
                         onChange={(e) => setNewDomainForm({ ...newDomainForm, fallback: e.target.value })}
-                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800"
+                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none text-slate-800"
                       />
                     </div>
                   </div>
@@ -1160,7 +1160,7 @@ export default function WhiteLabel() {
                     <select
                       value={newDomainForm.rule}
                       onChange={(e) => setNewDomainForm({ ...newDomainForm, rule: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 text-xs font-bold rounded-xl focus:border-[#FFD400] focus:outline-none text-slate-800 cursor-pointer"
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 text-xs font-bold rounded-xl focus:border-brand-500 focus:outline-none text-slate-800 cursor-pointer"
                     >
                       <option value="Force HTTPS">Force HTTPS</option>
                       <option value="Redirect HTTP to HTTPS">Redirect HTTP to HTTPS</option>
@@ -1170,7 +1170,7 @@ export default function WhiteLabel() {
 
                   <button
                     type="submit"
-                    className="bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1"
+                    className="bg-brand-500 hover:bg-brand-600 text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1"
                   >
                     <Plus className="w-4 h-4" /> Register Domain
                   </button>
@@ -1210,7 +1210,7 @@ export default function WhiteLabel() {
                     type="text"
                     value={commEmailSubject}
                     onChange={(e) => setCommEmailSubject(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none text-slate-800"
                   />
                 </div>
 
@@ -1220,7 +1220,7 @@ export default function WhiteLabel() {
                     type="text"
                     value={commGreeting}
                     onChange={(e) => setCommGreeting(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none text-slate-800"
                   />
                 </div>
 
@@ -1230,7 +1230,7 @@ export default function WhiteLabel() {
                     rows="4"
                     value={commMessageBody}
                     onChange={(e) => setCommMessageBody(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800 placeholder:text-slate-400 font-sans"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none text-slate-800 placeholder:text-slate-400 font-sans"
                   />
                 </div>
 
@@ -1247,7 +1247,7 @@ export default function WhiteLabel() {
                   </div>
                   <button
                     onClick={handleSendTestEnvelope}
-                    className="w-full md:w-auto bg-[#FFD400] hover:bg-[#FFC800] text-black font-black text-xs px-5 py-2.5 rounded-xl transition-all cursor-pointer flex justify-center items-center gap-1.5 shrink-0"
+                    className="w-full md:w-auto bg-brand-500 hover:bg-brand-600 text-black font-black text-xs px-5 py-2.5 rounded-xl transition-all cursor-pointer flex justify-center items-center gap-1.5 shrink-0"
                   >
                     <Play className="w-3.5 h-3.5 fill-black" /> Send Test Envelope
                   </button>
@@ -1266,7 +1266,7 @@ export default function WhiteLabel() {
                   </div>
                   <button
                     onClick={handleSendTestSms}
-                    className="w-full md:w-auto bg-[#FFD400] hover:bg-[#FFC800] text-black font-black text-xs px-5 py-2.5 rounded-xl transition-all cursor-pointer flex justify-center items-center gap-1.5 shrink-0"
+                    className="w-full md:w-auto bg-brand-500 hover:bg-brand-600 text-black font-black text-xs px-5 py-2.5 rounded-xl transition-all cursor-pointer flex justify-center items-center gap-1.5 shrink-0"
                   >
                     <Play className="w-3.5 h-3.5 fill-black" /> Send Test SMS
                   </button>
@@ -1289,7 +1289,7 @@ export default function WhiteLabel() {
                     type="text"
                     value={pdfHeader}
                     onChange={(e) => setPdfHeader(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none text-slate-800"
                   />
                 </div>
 
@@ -1299,7 +1299,7 @@ export default function WhiteLabel() {
                     type="text"
                     value={pdfFooter}
                     onChange={(e) => setPdfFooter(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none text-slate-800"
                   />
                 </div>
 
@@ -1341,7 +1341,7 @@ export default function WhiteLabel() {
                   </button>
                   <button
                     type="submit"
-                    className="w-full sm:w-auto bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex justify-center items-center gap-1.5"
+                    className="w-full sm:w-auto bg-brand-500 hover:bg-brand-600 text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex justify-center items-center gap-1.5"
                   >
                     <Save className="w-4 h-4" /> Save PDF Layout
                   </button>
@@ -1364,7 +1364,7 @@ export default function WhiteLabel() {
                     type="text"
                     value={loginGreeting}
                     onChange={(e) => setLoginGreeting(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none text-slate-800"
                   />
                 </div>
 
@@ -1374,7 +1374,7 @@ export default function WhiteLabel() {
                     <select
                       value={loginIllustration}
                       onChange={(e) => setLoginIllustration(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 text-xs font-bold rounded-xl focus:border-[#FFD400] focus:outline-none text-slate-800 cursor-pointer"
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 text-xs font-bold rounded-xl focus:border-brand-500 focus:outline-none text-slate-800 cursor-pointer"
                     >
                       <option value="Global Logistics Net">Global Logistics Net</option>
                       <option value="Abstract Shapes">Abstract Shapes</option>
@@ -1388,7 +1388,7 @@ export default function WhiteLabel() {
                       type="text"
                       value={loginSupportUrl}
                       onChange={(e) => setLoginSupportUrl(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800"
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none text-slate-800"
                     />
                   </div>
                 </div>
@@ -1439,7 +1439,7 @@ export default function WhiteLabel() {
                   </button>
                   <button
                     type="submit"
-                    className="w-full sm:w-auto bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex justify-center items-center gap-1.5"
+                    className="w-full sm:w-auto bg-brand-500 hover:bg-brand-600 text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex justify-center items-center gap-1.5"
                   >
                     <Save className="w-4 h-4" /> Save Login Options
                   </button>
@@ -1466,13 +1466,13 @@ export default function WhiteLabel() {
                       placeholder="Detail the changes in this build (e.g. Unified portal theme, updated lights logos, redirected SMTP relays)..."
                       value={changelogText}
                       onChange={(e) => setChangelogText(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800 placeholder:text-slate-400 font-sans"
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none text-slate-800 placeholder:text-slate-400 font-sans"
                     />
                   </div>
 
                   <button
                     type="submit"
-                    className="bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs py-3.5 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 w-full text-center"
+                    className="bg-brand-500 hover:bg-brand-600 text-black font-extrabold text-xs py-3.5 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 w-full text-center"
                   >
                     <Play className="w-4 h-4 fill-black" /> Compile static assets & Deploy Build to S3 CDN
                   </button>
@@ -1545,12 +1545,12 @@ export default function WhiteLabel() {
                     placeholder="Search action or details..."
                     value={auditSearch}
                     onChange={(e) => setAuditSearch(e.target.value)}
-                    className="flex-grow px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800"
+                    className="flex-grow px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none text-slate-800"
                   />
                   <select
                     value={auditFilter}
                     onChange={(e) => setAuditFilter(e.target.value)}
-                    className="px-3.5 py-2.5 bg-white border border-slate-200 text-xs font-bold rounded-xl focus:border-[#FFD400] focus:outline-none text-slate-800 cursor-pointer min-w-[150px]"
+                    className="px-3.5 py-2.5 bg-white border border-slate-200 text-xs font-bold rounded-xl focus:border-brand-500 focus:outline-none text-slate-800 cursor-pointer min-w-[150px]"
                   >
                     <option value="All Actions">All Actions</option>
                     <option value="Config">Config</option>
@@ -1626,7 +1626,7 @@ export default function WhiteLabel() {
                     <select
                       value={sessionTimeout}
                       onChange={(e) => setSessionTimeout(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 text-xs font-bold rounded-xl focus:border-[#FFD400] focus:outline-none text-slate-800 cursor-pointer"
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 text-xs font-bold rounded-xl focus:border-brand-500 focus:outline-none text-slate-800 cursor-pointer"
                     >
                       <option value="30 Minutes">30 Minutes</option>
                       <option value="1 Hour">1 Hour</option>
@@ -1641,7 +1641,7 @@ export default function WhiteLabel() {
                       type="text"
                       value={allowedIps}
                       onChange={(e) => setAllowedIps(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800 font-mono"
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none text-slate-800 font-mono"
                     />
                   </div>
                 </div>
@@ -1688,11 +1688,11 @@ export default function WhiteLabel() {
                     placeholder="Add key name context (e.g. Stripe client secret)..."
                     value={newKeyName}
                     onChange={(e) => setNewKeyName(e.target.value)}
-                    className="flex-grow w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800"
+                    className="flex-grow w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none text-slate-800"
                   />
                   <button
                     type="submit"
-                    className="w-full sm:w-auto justify-center bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1 shrink-0"
+                    className="w-full sm:w-auto justify-center bg-brand-500 hover:bg-brand-600 text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1 shrink-0"
                   >
                     <Plus className="w-4 h-4" /> Add Key
                   </button>
@@ -1777,7 +1777,7 @@ export default function WhiteLabel() {
                   key={pt}
                   onClick={() => setPreviewTab(pt)}
                   className={`px-3 py-1.5 font-bold rounded-lg text-[10px] transition-colors cursor-pointer border ${previewTab === pt
-                      ? 'border-[#FFD400] text-yellow-600 bg-yellow-50/10'
+                      ? 'border-brand-500 text-yellow-600 bg-yellow-50/10'
                       : 'border-slate-100 text-slate-400 bg-white hover:bg-slate-50/50'
                     }`}
                 >
@@ -1928,7 +1928,7 @@ export default function WhiteLabel() {
                     {loginToggles.customerPortal && <span>• Customer</span>}
                   </div>
 
-                  <button className="w-full bg-[#FFD400] text-black text-[8px] font-extrabold py-1.5 rounded-lg shadow-sm">
+                  <button className="w-full bg-brand-500 text-black text-[8px] font-extrabold py-1.5 rounded-lg shadow-sm">
                     Access Portal
                   </button>
                   <a href={loginSupportUrl} target="_blank" rel="noreferrer" className="text-[7px] font-black text-blue-500 block hover:underline">Help Center</a>

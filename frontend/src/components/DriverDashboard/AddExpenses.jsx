@@ -174,7 +174,7 @@ export default function AddExpenses() {
               placeholder="e.g. 150"
               value={amount}
               onChange={e => setAmount(e.target.value)}
-              className="w-full px-4 py-2.5 border border-gray-250 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
+              className="w-full px-4 py-2.5 border border-gray-250 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
           </div>
 
@@ -203,7 +203,7 @@ export default function AddExpenses() {
           <div className="grid grid-cols-2 gap-4">
             <button 
               type="submit"
-              className="bg-[#FFD400] hover:bg-yellow-400 text-black font-bold text-xs py-3 rounded-xl transition-all shadow-xs cursor-pointer text-center uppercase"
+              className="bg-brand-500 hover:bg-yellow-400 text-black font-bold text-xs py-3 rounded-xl transition-all shadow-xs cursor-pointer text-center uppercase"
             >
               Add Expense
             </button>
@@ -238,7 +238,7 @@ export default function AddExpenses() {
                   </button>
                   <button 
                     onClick={handleConfirmAI}
-                    className="py-1 px-3 bg-[#FFD400] text-black font-bold text-[9px] rounded-lg cursor-pointer hover:bg-yellow-455 uppercase shrink-0"
+                    className="py-1 px-3 bg-brand-500 text-black font-bold text-[9px] rounded-lg cursor-pointer hover:bg-yellow-455 uppercase shrink-0"
                   >
                     Confirm
                   </button>
@@ -269,7 +269,7 @@ export default function AddExpenses() {
                   onClick={() => setSpacing(sp.toLowerCase())}
                   className={`px-2.5 py-1 rounded text-[8px] font-black tracking-wider transition-all cursor-pointer ${
                     spacing === sp.toLowerCase() 
-                      ? 'bg-[#FFD400] text-black shadow-3xs' 
+                      ? 'bg-brand-500 text-black shadow-3xs' 
                       : 'text-gray-400 hover:text-gray-655 bg-transparent'
                   }`}
                 >
@@ -338,7 +338,7 @@ export default function AddExpenses() {
         {/* Floating Hotline toggle shortcut button */}
         <button 
           onClick={() => hotlineOpen ? setHotlineOpen(false) : setHotlineOpen(true)}
-          className="w-12 h-12 bg-[#FFD400] hover:bg-yellow-400 text-black rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all z-[120]"
+          className="w-12 h-12 bg-brand-500 hover:bg-yellow-400 text-black rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all z-[120]"
         >
           {hotlineOpen ? <X className="w-5 h-5 text-black" strokeWidth={2.5} /> : <MessageSquare className="w-5 h-5" />}
         </button>
@@ -457,7 +457,7 @@ export default function AddExpenses() {
             {/* Circular Close X Button underneath */}
             <button 
               onClick={() => setHotlineOpen(false)}
-              className="w-12 h-12 bg-[#FFD400] hover:bg-yellow-400 text-black rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all shrink-0"
+              className="w-12 h-12 bg-brand-500 hover:bg-yellow-400 text-black rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all shrink-0"
             >
               <X className="w-5 h-5" strokeWidth={2.5} />
             </button>

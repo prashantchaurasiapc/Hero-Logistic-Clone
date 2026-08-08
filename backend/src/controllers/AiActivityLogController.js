@@ -13,7 +13,8 @@ exports.getAll = async (req, res, next) => {
 
     const [data, total] = await Promise.all([
       prisma.aiActivityLog.findMany({
-        where, skip, take, orderBy
+        where, skip, take, orderBy,
+        include: { module: true }
       }),
       prisma.aiActivityLog.count({ where })
     ]);

@@ -326,7 +326,7 @@ export default function SupportTickets() {
                 placeholder="Search tickets..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none placeholder:text-slate-400 font-sans text-slate-800"
+                className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none placeholder:text-slate-400 font-sans text-slate-800"
               />
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
             </div>
@@ -418,7 +418,7 @@ export default function SupportTickets() {
                       <>
                         <button
                           onClick={() => handleOpenAssignModal(t)}
-                          className="border border-[#FFD400] bg-white hover:bg-slate-50 text-[#CC7B00] font-extrabold text-[10px] px-3 py-1.5 rounded-lg shadow-xs transition-colors cursor-pointer"
+                          className="border border-brand-500 bg-white hover:bg-slate-50 text-[#CC7B00] font-extrabold text-[10px] px-3 py-1.5 rounded-lg shadow-xs transition-colors cursor-pointer"
                         >
                           Assign
                         </button>
@@ -444,7 +444,7 @@ export default function SupportTickets() {
         <h2 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-4">RECENT RESPONSE HISTORY</h2>
         <div className="space-y-4">
           {responseHistory.map((h, idx) => (
-            <div key={idx} className="border-l-4 border-[#FFD400] pl-4 py-1">
+            <div key={idx} className="border-l-4 border-brand-500 pl-4 py-1">
               <h4 className="text-xs font-extrabold text-slate-800">Ticket #{h.ticketId} — {h.subject}</h4>
               <p className="text-xs font-semibold text-slate-500 mt-1">{h.response}</p>
             </div>
@@ -472,7 +472,7 @@ export default function SupportTickets() {
                 <select
                   value={newTicketForm.company}
                   onChange={(e) => setNewTicketForm({ ...newTicketForm, company: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 text-xs font-bold rounded-xl focus:border-[#FFD400] focus:outline-none text-slate-800 cursor-pointer"
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 text-xs font-bold rounded-xl focus:border-brand-500 focus:outline-none text-slate-800 cursor-pointer"
                 >
                   <option value="Falcon Logistics LLC">Falcon Logistics LLC</option>
                   <option value="Swift Cargo Express">Swift Cargo Express</option>
@@ -488,7 +488,7 @@ export default function SupportTickets() {
                   <select
                     value={newTicketForm.category}
                     onChange={(e) => setNewTicketForm({ ...newTicketForm, category: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 text-xs font-bold rounded-xl focus:border-[#FFD400] focus:outline-none text-slate-800 cursor-pointer"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 text-xs font-bold rounded-xl focus:border-brand-500 focus:outline-none text-slate-800 cursor-pointer"
                   >
                     <option value="General / Platform">General / Platform</option>
                     <option value="Billing">Billing</option>
@@ -502,7 +502,7 @@ export default function SupportTickets() {
                   <select
                     value={newTicketForm.priority}
                     onChange={(e) => setNewTicketForm({ ...newTicketForm, priority: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 text-xs font-bold rounded-xl focus:border-[#FFD400] focus:outline-none text-slate-800 cursor-pointer"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 text-xs font-bold rounded-xl focus:border-brand-500 focus:outline-none text-slate-800 cursor-pointer"
                   >
                     <option value="High">High</option>
                     <option value="Medium">Medium</option>
@@ -519,7 +519,7 @@ export default function SupportTickets() {
                   placeholder="e.g. GPS Geofencing synchronization error"
                   value={newTicketForm.subject}
                   onChange={(e) => setNewTicketForm({ ...newTicketForm, subject: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800"
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none text-slate-800"
                 />
               </div>
 
@@ -531,7 +531,7 @@ export default function SupportTickets() {
                   placeholder="Describe the issue or request in detail..."
                   value={newTicketForm.message}
                   onChange={(e) => setNewTicketForm({ ...newTicketForm, message: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none text-slate-800 placeholder:text-slate-400 font-sans"
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none text-slate-800 placeholder:text-slate-400 font-sans"
                 />
               </div>
 
@@ -608,7 +608,7 @@ export default function SupportTickets() {
                     placeholder="Provide developer / administrative instructions..."
                     value={replyPayload}
                     onChange={(e) => setReplyPayload(e.target.value)}
-                    className="w-full px-4 py-4 bg-white border border-slate-200 focus:border-[#FFD400] text-[13px] rounded-xl focus:outline-none text-slate-700 placeholder:text-slate-400 font-semibold shadow-sm resize-none transition-colors"
+                    className="w-full px-4 py-4 bg-white border border-slate-200 focus:border-brand-500 text-[13px] rounded-xl focus:outline-none text-slate-700 placeholder:text-slate-400 font-semibold shadow-sm resize-none transition-colors"
                   />
                 </div>
 
@@ -616,7 +616,7 @@ export default function SupportTickets() {
                 <div className="pt-2">
                   <button
                     type="submit"
-                    className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold py-3.5 rounded-xl shadow-[0_2px_15px_rgba(255,176,32,0.3)] text-center text-sm transition-all cursor-pointer"
+                    className="w-full bg-[#FFB020] hover:bg-brand-600 text-slate-900 font-extrabold py-3.5 rounded-xl shadow-[0_2px_15px_rgba(255,176,32,0.3)] text-center text-sm transition-all cursor-pointer"
                   >
                     Submit Resolution
                   </button>
@@ -651,7 +651,7 @@ export default function SupportTickets() {
                 <select
                   value={assignForm.ticketId}
                   onChange={(e) => setAssignForm({ ...assignForm, ticketId: Number(e.target.value) })}
-                  className="w-full px-4 py-3.5 bg-white border border-slate-200 text-[13px] font-semibold rounded-xl focus:border-[#FFD400] focus:ring-2 focus:ring-[#FFD400]/20 focus:outline-none text-slate-700 cursor-pointer shadow-sm transition-all"
+                  className="w-full px-4 py-3.5 bg-white border border-slate-200 text-[13px] font-semibold rounded-xl focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none text-slate-700 cursor-pointer shadow-sm transition-all"
                 >
                   {tickets.filter(t => t.status === 'OPEN').map(t => (
                     <option key={t.id} value={t.id}>
@@ -668,7 +668,7 @@ export default function SupportTickets() {
                 <select
                   value={assignForm.assigneeTier}
                   onChange={(e) => setAssignForm({ ...assignForm, assigneeTier: e.target.value })}
-                  className="w-full px-4 py-3.5 bg-white border border-slate-200 text-[13px] font-semibold rounded-xl focus:border-[#FFD400] focus:ring-2 focus:ring-[#FFD400]/20 focus:outline-none text-slate-700 cursor-pointer shadow-sm transition-all"
+                  className="w-full px-4 py-3.5 bg-white border border-slate-200 text-[13px] font-semibold rounded-xl focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none text-slate-700 cursor-pointer shadow-sm transition-all"
                 >
                   <option value="L1 General Support">L1 General Support</option>
                   <option value="L2 Senior Specialist">L2 Senior Specialist</option>
@@ -681,7 +681,7 @@ export default function SupportTickets() {
               <div className="pt-2">
                 <button
                   type="submit"
-                  className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold py-3 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] text-center text-[13px] transition-all flex flex-col items-center justify-center gap-0.5 cursor-pointer"
+                  className="w-full bg-[#FFB020] hover:bg-brand-600 text-slate-900 font-extrabold py-3 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] text-center text-[13px] transition-all flex flex-col items-center justify-center gap-0.5 cursor-pointer"
                 >
                   <Check className="w-4 h-4" strokeWidth={3} />
                   <span>Save Assignment</span>
@@ -715,7 +715,7 @@ export default function SupportTickets() {
                 <select
                   value={resolveForm.ticketId}
                   onChange={(e) => setResolveForm({ ...resolveForm, ticketId: Number(e.target.value) })}
-                  className="w-full px-4 py-3.5 bg-white border border-slate-200 text-[13px] font-semibold rounded-xl focus:border-[#FFD400] focus:ring-2 focus:ring-[#FFD400]/20 focus:outline-none text-slate-700 cursor-pointer shadow-sm transition-all"
+                  className="w-full px-4 py-3.5 bg-white border border-slate-200 text-[13px] font-semibold rounded-xl focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none text-slate-700 cursor-pointer shadow-sm transition-all"
                 >
                   {tickets.filter(t => t.status === 'OPEN').map(t => (
                     <option key={t.id} value={t.id}>
@@ -734,7 +734,7 @@ export default function SupportTickets() {
                   value={resolveForm.notes}
                   onChange={(e) => setResolveForm({ ...resolveForm, notes: e.target.value })}
                   placeholder="Provide summary of resolution or notes for the customer..."
-                  className="w-full px-4 py-3.5 bg-white border border-slate-200 text-[13px] font-semibold rounded-xl focus:border-[#FFD400] focus:ring-2 focus:ring-[#FFD400]/20 focus:outline-none text-slate-700 placeholder:text-slate-400 shadow-sm transition-all resize-none"
+                  className="w-full px-4 py-3.5 bg-white border border-slate-200 text-[13px] font-semibold rounded-xl focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none text-slate-700 placeholder:text-slate-400 shadow-sm transition-all resize-none"
                 />
               </div>
 

@@ -168,7 +168,7 @@ export default function NearbyServices() {
 
             <button
               onClick={() => triggerToast(`Routing path to ${service.name} loaded.`)}
-              className="bg-[#FFD400] border border-[#FEF3C7] text-black font-black text-xs py-2 px-4 rounded-full flex items-center justify-center gap-1 shadow-md hover:bg-yellow-400 transition-all cursor-pointer select-none w-full sm:w-auto shrink-0 self-stretch sm:self-auto"
+              className="bg-brand-500 border border-[#FEF3C7] text-black font-black text-xs py-2 px-4 rounded-full flex items-center justify-center gap-1 shadow-md hover:bg-yellow-400 transition-all cursor-pointer select-none w-full sm:w-auto shrink-0 self-stretch sm:self-auto"
             >
               <Navigation className="w-3.5 h-3.5 rotate-45" fill="black" />
               <span>Route</span>
@@ -187,7 +187,7 @@ export default function NearbyServices() {
         </button>
         <button
           onClick={() => setHotlineOpen(true)}
-          className="w-12 h-12 bg-[#FFD400] hover:bg-yellow-400 text-black rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all"
+          className="w-12 h-12 bg-brand-500 hover:bg-yellow-400 text-black rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all"
         >
           <MessageSquare className="w-5 h-5" />
         </button>
@@ -268,7 +268,7 @@ export default function NearbyServices() {
             </div>
             <button
               onClick={() => setHotlineOpen(false)}
-              className="w-12 h-12 bg-[#FFD400] hover:bg-yellow-400 text-black rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all shrink-0"
+              className="w-12 h-12 bg-brand-500 hover:bg-yellow-400 text-black rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all shrink-0"
             >
               <X className="w-5 h-5" strokeWidth={2.5} />
             </button>

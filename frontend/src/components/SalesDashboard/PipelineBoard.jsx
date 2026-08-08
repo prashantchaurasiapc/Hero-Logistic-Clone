@@ -999,7 +999,7 @@ export default function PipelineBoard() {
                   setShowZoomModal(false);
                   setToast({ type: 'success', text: selectedLead.company, actionText: 'Zoom scheduled!' });
                 }}
-                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all mt-2"
+                className="w-full bg-[#FFB020] hover:bg-brand-600 text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all mt-2"
               >
                 Confirm Zoom Schedule
               </button>
@@ -1085,7 +1085,7 @@ export default function PipelineBoard() {
                   setShowProposalModal(false);
                   setToast({ type: 'success', text: selectedLead.company, actionText: 'Proposal dispatched!' });
                 }}
-                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all mt-2"
+                className="w-full bg-[#FFB020] hover:bg-brand-600 text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all mt-2"
               >
                 Dispatched Proposal Email
               </button>
@@ -1162,7 +1162,7 @@ export default function PipelineBoard() {
                   setShowScheduleModal(false);
                   setToast({ type: 'success', text: selectedLead.company, actionText: 'follow-up scheduled!' });
                 }}
-                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all mt-2"
+                className="w-full bg-[#FFB020] hover:bg-brand-600 text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all mt-2"
               >
                 Schedule Follow-Up Task
               </button>
@@ -1261,7 +1261,7 @@ export default function PipelineBoard() {
                     </ul>
                     <button
                       onClick={() => { setShowRecommendModal(false); setToast({ type: 'success', text: selectedLead.company, actionText: 'Enterprise plan applied!' }); }}
-                      className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 text-[10px] font-black py-2.5 rounded-xl shadow-[0_4px_12px_rgba(255,176,32,0.4)] transition-all tracking-wider uppercase"
+                      className="w-full bg-[#FFB020] hover:bg-brand-600 text-slate-900 text-[10px] font-black py-2.5 rounded-xl shadow-[0_4px_12px_rgba(255,176,32,0.4)] transition-all tracking-wider uppercase"
                     >
                       Apply Enterprise Plan
                     </button>

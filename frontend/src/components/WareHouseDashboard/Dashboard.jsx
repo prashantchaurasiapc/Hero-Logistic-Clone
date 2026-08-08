@@ -280,7 +280,7 @@ export default function Dashboard() {
 
         .wh-metric-card:hover {
           transform: translateY(-2px);
-          border-color: #FFD400;
+          border-color: var(--primary-color);
         }
 
         .wh-metric-header {
@@ -385,7 +385,7 @@ export default function Dashboard() {
         }
 
         .wh-filter-search-input:focus {
-          border-color: #FFD400;
+          border-color: var(--primary-color);
           box-shadow: 0 0 0 3px rgba(255, 212, 0, 0.2);
         }
 
@@ -434,9 +434,9 @@ export default function Dashboard() {
         }
 
         .wh-reset-filter-btn:hover {
-          background: #FFD400;
+          background: var(--primary-color);
           color: #000000;
-          border-color: #FFD400;
+          border-color: var(--primary-color);
         }
 
         .wh-middle-grid {
@@ -564,7 +564,7 @@ export default function Dashboard() {
 
         .wh-quick-action-btn:hover {
           transform: translateY(-2px);
-          border-color: #FFD400;
+          border-color: var(--primary-color);
           background-color: #FFFFFF;
         }
 
@@ -1052,7 +1052,7 @@ export default function Dashboard() {
                   cy="60" 
                   r="48" 
                   fill="none" 
-                  stroke="#FFD400" 
+                  stroke="var(--primary-color)" 
                   strokeWidth="12" 
                   strokeDasharray="301.59" 
                   strokeDashoffset="84.44" 

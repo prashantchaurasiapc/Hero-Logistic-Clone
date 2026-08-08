@@ -240,7 +240,7 @@ export default function MaintenanceRequest() {
                   onClick={() => setViewMode(mode)}
                   className={`px-2.5 py-1.5 text-[10px] sm:text-xs font-bold rounded-lg transition-colors cursor-pointer text-center ${
                     viewMode === mode
-                      ? 'bg-[#FFD400] border border-black text-black shadow-sm'
+                      ? 'bg-brand-500 border border-black text-black shadow-sm'
                       : 'text-[#64748B] hover:text-[#0F172A]'
                   }`}
                 >
@@ -313,7 +313,7 @@ export default function MaintenanceRequest() {
                 <div 
                   key={index} 
                   className={`bg-white border rounded-2xl shadow-sm transition-all duration-200 ${cardPadding} ${spaceBetween} ${
-                    isSelected ? 'bg-[#FFFDF4] border-[#FFD400] ring-1 ring-[#FFD400]' : 'border-gray-150'
+                    isSelected ? 'bg-[#FFFDF4] border-brand-500 ring-1 ring-brand-500' : 'border-gray-150'
                   }`}
                 >
                   <div className="flex justify-between items-start gap-2">
@@ -434,7 +434,7 @@ export default function MaintenanceRequest() {
         </button>
         <button
           onClick={() => setHotlineOpen(true)}
-          className="w-12 h-12 bg-[#FFD400] hover:bg-yellow-400 text-[#0F172A] rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all"
+          className="w-12 h-12 bg-brand-500 hover:bg-yellow-400 text-[#0F172A] rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all"
         >
           <MessageSquare className="w-5 h-5" />
         </button>
@@ -515,7 +515,7 @@ export default function MaintenanceRequest() {
             </div>
             <button
               onClick={() => setHotlineOpen(false)}
-              className="w-12 h-12 bg-[#FFD400] hover:bg-yellow-400 text-[#0F172A] rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all shrink-0"
+              className="w-12 h-12 bg-brand-500 hover:bg-yellow-400 text-[#0F172A] rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all shrink-0"
             >
               <X className="w-5 h-5" strokeWidth={2.5} />
             </button>

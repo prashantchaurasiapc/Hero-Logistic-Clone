@@ -156,7 +156,7 @@ export default function OpenTickets() {
               placeholder="Search across all open tickets..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-755 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
+              className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-755 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
           </div>
           

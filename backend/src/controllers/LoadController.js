@@ -17,14 +17,11 @@ exports.getAll = async (req, res, next) => {
         include: {
           driver: true,
           truck: true,
-<<<<<<< HEAD
-          activities: true
-=======
+          activities: true,
           trailer: true,
           customer: true,
           stops: true,
           items: true
->>>>>>> 2c8add2501eee633a274bcb05ac2253a8c837d8d
         }
       }),
       prisma.load.count({ where })

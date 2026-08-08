@@ -17,8 +17,8 @@ export default {
           200: '#FFF59D',
           300: '#FFEE58',
           400: '#FFE082',
-          500: '#FFD400', // Premium Brand Yellow
-          600: '#FF9A00', // Premium Brand Orange
+          500: 'var(--primary-color, #FFD400)', // Dynamic Theme Color
+          600: 'var(--primary-color-hover, #FFC800)', // Dynamic Theme Hover Color
           700: '#E68A00',
           800: '#CC7B00',
           900: '#995C00',

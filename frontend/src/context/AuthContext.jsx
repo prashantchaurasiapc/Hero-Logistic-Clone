@@ -27,14 +27,21 @@ export const AuthProvider = ({ children }) => {
     const token = localStorage.getItem('token');
     if (token) {
       setIsAuthenticated(true);
-      // Quietly fetch user details in background without throwing auth status out
+      // Quietly fetch user details in background
       try {
         const res = await api.get('/auth/me');
         if (res.data && res.data.success) {
           setUser(res.data.data.user);
+        } else {
+          // If the backend returns success: false
+          logout();
         }
       } catch (error) {
         console.warn('Silent token validation failed:', error);
+        // If it's a 401, log them out immediately
+        if (error.response && error.response.status === 401) {
+          logout();
+        }
       }
     } else {
       setIsAuthenticated(false);

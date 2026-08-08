@@ -70,7 +70,7 @@ export default function Notification() {
       {/* Dispatch Alerts Intro Card */}
       <div className="bg-white border border-gray-150 rounded-3xl p-5 shadow-3xs flex items-center gap-4 relative overflow-hidden">
         {/* Yellow Accent Border Left */}
-        <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#FFD400]"></div>
+        <div className="absolute left-0 top-0 bottom-0 w-1 bg-brand-500"></div>
         <div className="pl-2">
           <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
             <Bell className="w-4 h-4 text-amber-500" />
@@ -122,7 +122,7 @@ export default function Notification() {
         {/* Chat / hotline button */}
         <button 
           onClick={() => setHotlineOpen(true)}
-          className="w-12 h-12 bg-[#FFD400] hover:bg-yellow-400 text-black rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all"
+          className="w-12 h-12 bg-brand-500 hover:bg-yellow-400 text-black rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all"
         >
           <MessageSquare className="w-5 h-5" />
         </button>
@@ -241,7 +241,7 @@ export default function Notification() {
             {/* Circular Close X Button underneath */}
             <button 
               onClick={() => setHotlineOpen(false)}
-              className="w-12 h-12 bg-[#FFD400] hover:bg-yellow-400 text-black rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all shrink-0"
+              className="w-12 h-12 bg-brand-500 hover:bg-yellow-400 text-black rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all shrink-0"
             >
               <X className="w-5 h-5" strokeWidth={2.5} />
             </button>

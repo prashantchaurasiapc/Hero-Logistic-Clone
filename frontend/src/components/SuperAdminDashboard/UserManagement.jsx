@@ -439,7 +439,7 @@ export default function UserManagement() {
 
           <button
             onClick={() => setShowAddUserModal(true)}
-            className="bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs px-4 sm:px-5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm whitespace-nowrap flex-1 sm:flex-none"
+            className="bg-brand-500 hover:bg-brand-600 text-black font-extrabold text-xs px-4 sm:px-5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm whitespace-nowrap flex-1 sm:flex-none"
           >
             <UserPlus className="w-4 h-4" /> Add Platform User
           </button>
@@ -518,7 +518,7 @@ export default function UserManagement() {
                 placeholder="Search users by name, email..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none placeholder:text-slate-400 text-slate-800 font-bold"
+                className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none placeholder:text-slate-400 text-slate-800 font-bold"
               />
               <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
             </div>
@@ -566,7 +566,7 @@ export default function UserManagement() {
                     onClick={() => setDensity(mode)}
                     className={`px-3 py-1.5 text-[9px] font-black rounded-lg transition-all cursor-pointer ${
                       density === mode
-                        ? 'bg-[#FFD400] text-black shadow-xs font-black'
+                        ? 'bg-brand-500 text-black shadow-xs font-black'
                         : 'text-black hover:bg-slate-200/50'
                     }`}
                   >
@@ -596,7 +596,7 @@ export default function UserManagement() {
                         type="checkbox"
                         checked={visibleColumns.user}
                         onChange={() => setVisibleColumns(prev => ({ ...prev, user: !prev.user }))}
-                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                        className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                       />
                       <span>User Details</span>
                     </label>
@@ -606,7 +606,7 @@ export default function UserManagement() {
                         type="checkbox"
                         checked={visibleColumns.contact}
                         onChange={() => setVisibleColumns(prev => ({ ...prev, contact: !prev.contact }))}
-                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                        className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                       />
                       <span>Contact Info</span>
                     </label>
@@ -616,7 +616,7 @@ export default function UserManagement() {
                         type="checkbox"
                         checked={visibleColumns.role}
                         onChange={() => setVisibleColumns(prev => ({ ...prev, role: !prev.role }))}
-                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                        className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                       />
                       <span>Assigned Role</span>
                     </label>
@@ -626,7 +626,7 @@ export default function UserManagement() {
                         type="checkbox"
                         checked={visibleColumns.company}
                         onChange={() => setVisibleColumns(prev => ({ ...prev, company: !prev.company }))}
-                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                        className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                       />
                       <span>Company Tenant</span>
                     </label>
@@ -636,7 +636,7 @@ export default function UserManagement() {
                         type="checkbox"
                         checked={visibleColumns.password}
                         onChange={() => setVisibleColumns(prev => ({ ...prev, password: !prev.password }))}
-                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                        className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                       />
                       <span>Password</span>
                     </label>
@@ -646,7 +646,7 @@ export default function UserManagement() {
                         type="checkbox"
                         checked={visibleColumns.status}
                         onChange={() => setVisibleColumns(prev => ({ ...prev, status: !prev.status }))}
-                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                        className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                       />
                       <span>Status</span>
                     </label>
@@ -656,7 +656,7 @@ export default function UserManagement() {
                         type="checkbox"
                         checked={visibleColumns.lastLogin}
                         onChange={() => setVisibleColumns(prev => ({ ...prev, lastLogin: !prev.lastLogin }))}
-                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                        className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                       />
                       <span>Last Login</span>
                     </label>
@@ -666,7 +666,7 @@ export default function UserManagement() {
                         type="checkbox"
                         checked={visibleColumns.created}
                         onChange={() => setVisibleColumns(prev => ({ ...prev, created: !prev.created }))}
-                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                        className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                       />
                       <span>Created Date</span>
                     </label>
@@ -685,7 +685,7 @@ export default function UserManagement() {
               <select
                 value={selectedRoleFilter}
                 onChange={(e) => setSelectedRoleFilter(e.target.value)}
-                className="w-full px-3 py-2 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
+                className="w-full px-3 py-2 bg-white border border-slate-200 focus:border-brand-500 text-xs font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
               >
                 <option value="All Roles">All System Roles</option>
                 {ROLE_OPTIONS.map(r => (
@@ -699,7 +699,7 @@ export default function UserManagement() {
               <select
                 value={selectedStatusFilter}
                 onChange={(e) => setSelectedStatusFilter(e.target.value)}
-                className="w-full px-3 py-2 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
+                className="w-full px-3 py-2 bg-white border border-slate-200 focus:border-brand-500 text-xs font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
               >
                 <option value="All Statuses">All Account Statuses</option>
                 <option value="ACTIVE">ACTIVE</option>
@@ -713,7 +713,7 @@ export default function UserManagement() {
               <select
                 value={selectedCompanyFilter}
                 onChange={(e) => setSelectedCompanyFilter(e.target.value)}
-                className="w-full px-3 py-2 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
+                className="w-full px-3 py-2 bg-white border border-slate-200 focus:border-brand-500 text-xs font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
               >
                 <option value="All Companies">All Companies</option>
                 {uniqueCompanies.map(c => (
@@ -776,7 +776,7 @@ export default function UserManagement() {
                       {visibleColumns.user && (
                         <td className={`${pyPadding} px-4`}>
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-slate-900 text-[#FFD400] flex items-center justify-center font-black text-xs shrink-0 shadow-xs">
+                            <div className="w-9 h-9 rounded-full bg-slate-900 text-brand-500 flex items-center justify-center font-black text-xs shrink-0 shadow-xs">
                               {user.name.charAt(0).toUpperCase()}
                             </div>
                             <div>
@@ -864,7 +864,7 @@ export default function UserManagement() {
                           <div className="absolute right-6 top-10 w-52 bg-white border border-slate-200 rounded-2xl shadow-xl p-2 z-50 space-y-1 text-left text-xs font-bold text-slate-700">
                             <button
                               onClick={() => handleLoginAsUser(user)}
-                              className="w-full flex items-center gap-2 px-3 py-2 bg-[#FFD400] text-black font-black hover:bg-[#FFC800] rounded-xl cursor-pointer shadow-xs"
+                              className="w-full flex items-center gap-2 px-3 py-2 bg-brand-500 text-black font-black hover:bg-brand-600 rounded-xl cursor-pointer shadow-xs"
                             >
                               <LogIn className="w-3.5 h-3.5 text-black" /> Login As User
                             </button>
@@ -926,7 +926,7 @@ export default function UserManagement() {
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-6 text-left relative animate-in fade-in zoom-in-95 my-auto">
             <div className="flex justify-between items-center pb-4 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-2xl bg-[#FFD400] text-black flex items-center justify-center font-black">
+                <div className="w-9 h-9 rounded-2xl bg-brand-500 text-black flex items-center justify-center font-black">
                   <UserPlus className="w-5 h-5" />
                 </div>
                 <div>
@@ -951,7 +951,7 @@ export default function UserManagement() {
                   placeholder="e.g. John Doe"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-[#FFD400] focus:outline-none"
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-brand-500 focus:outline-none"
                 />
               </div>
 
@@ -964,7 +964,7 @@ export default function UserManagement() {
                     placeholder="john@company.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-[#FFD400] focus:outline-none"
+                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-brand-500 focus:outline-none"
                   />
                 </div>
 
@@ -975,7 +975,7 @@ export default function UserManagement() {
                     placeholder="+1 555-0000"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-[#FFD400] focus:outline-none"
+                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-brand-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -986,7 +986,7 @@ export default function UserManagement() {
                   <select
                     value={formData.role}
                     onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-[#FFD400] focus:outline-none cursor-pointer"
+                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-brand-500 focus:outline-none cursor-pointer"
                   >
                     {ROLE_OPTIONS.map(r => (
                       <option key={r.id} value={r.id}>{r.label}</option>
@@ -999,7 +999,7 @@ export default function UserManagement() {
                   <select
                     value={formData.company}
                     onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-[#FFD400] focus:outline-none cursor-pointer"
+                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-brand-500 focus:outline-none cursor-pointer"
                   >
                     <option value="Hero Logistics Global (Platform)">Hero Logistics Global (Platform)</option>
                     {uniqueCompanies.map(c => (
@@ -1018,7 +1018,7 @@ export default function UserManagement() {
                     placeholder="e.g. 123"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-[#FFD400] focus:outline-none"
+                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-brand-500 focus:outline-none"
                   />
                 </div>
 
@@ -1027,7 +1027,7 @@ export default function UserManagement() {
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-[#FFD400] focus:outline-none cursor-pointer"
+                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-brand-500 focus:outline-none cursor-pointer"
                   >
                     <option value="ACTIVE">ACTIVE</option>
                     <option value="SUSPENDED">SUSPENDED</option>
@@ -1046,7 +1046,7 @@ export default function UserManagement() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-[#FFD400] hover:bg-[#FFC800] text-black font-black text-xs rounded-xl shadow-xs cursor-pointer"
+                  className="px-5 py-2.5 bg-brand-500 hover:bg-brand-600 text-black font-black text-xs rounded-xl shadow-xs cursor-pointer"
                 >
                   Save User
                 </button>
@@ -1088,7 +1088,7 @@ export default function UserManagement() {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-[#FFD400] focus:outline-none"
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-brand-500 focus:outline-none"
                 />
               </div>
 
@@ -1100,7 +1100,7 @@ export default function UserManagement() {
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-[#FFD400] focus:outline-none"
+                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-brand-500 focus:outline-none"
                   />
                 </div>
 
@@ -1110,7 +1110,7 @@ export default function UserManagement() {
                     type="text"
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-[#FFD400] focus:outline-none"
+                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-brand-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -1121,7 +1121,7 @@ export default function UserManagement() {
                   <select
                     value={formData.role}
                     onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-[#FFD400] focus:outline-none cursor-pointer"
+                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-brand-500 focus:outline-none cursor-pointer"
                   >
                     {ROLE_OPTIONS.map(r => (
                       <option key={r.id} value={r.id}>{r.label}</option>
@@ -1134,7 +1134,7 @@ export default function UserManagement() {
                   <select
                     value={formData.company}
                     onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-[#FFD400] focus:outline-none cursor-pointer"
+                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-brand-500 focus:outline-none cursor-pointer"
                   >
                     <option value="Hero Logistics Global (Platform)">Hero Logistics Global (Platform)</option>
                     {uniqueCompanies.map(c => (
@@ -1151,7 +1151,7 @@ export default function UserManagement() {
                     type="text"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-[#FFD400] focus:outline-none"
+                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-brand-500 focus:outline-none"
                   />
                 </div>
 
@@ -1160,7 +1160,7 @@ export default function UserManagement() {
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-[#FFD400] focus:outline-none cursor-pointer"
+                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-brand-500 focus:outline-none cursor-pointer"
                   >
                     <option value="ACTIVE">ACTIVE</option>
                     <option value="SUSPENDED">SUSPENDED</option>
@@ -1179,7 +1179,7 @@ export default function UserManagement() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-[#FFD400] hover:bg-[#FFC800] text-black font-black text-xs rounded-xl shadow-xs cursor-pointer"
+                  className="px-5 py-2.5 bg-brand-500 hover:bg-brand-600 text-black font-black text-xs rounded-xl shadow-xs cursor-pointer"
                 >
                   Update User
                 </button>
@@ -1197,7 +1197,7 @@ export default function UserManagement() {
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-6 text-left relative animate-in fade-in zoom-in-95 my-auto">
             <div className="flex justify-between items-center pb-4 border-b border-slate-100">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-slate-900 text-[#FFD400] flex items-center justify-center font-black text-sm shadow-xs">
+                <div className="w-10 h-10 rounded-full bg-slate-900 text-brand-500 flex items-center justify-center font-black text-sm shadow-xs">
                   {selectedUser.name.charAt(0).toUpperCase()}
                 </div>
                 <div>
@@ -1255,7 +1255,7 @@ export default function UserManagement() {
             <div className="pt-4 flex items-center justify-between border-t border-slate-100 gap-3">
               <button
                 onClick={() => handleLoginAsUser(selectedUser)}
-                className="px-4 py-2.5 bg-[#FFD400] hover:bg-[#FFC800] text-black font-black text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
+                className="px-4 py-2.5 bg-brand-500 hover:bg-brand-600 text-black font-black text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
               >
                 <LogIn className="w-4 h-4" /> Login As User
               </button>

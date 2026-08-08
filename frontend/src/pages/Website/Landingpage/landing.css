@@ -12,7 +12,7 @@
   --brand-200: #FFF59D;
   --brand-300: #FFEE58;
   --brand-400: #FFE082;
-  --brand-500: #FFD400; /* Premium Brand Yellow */
+  --brand-500: var(--primary-color); /* Premium Brand Yellow */
   --brand-600: #FF9A00; /* Premium Brand Orange */
   --brand-700: #E68A00;
   --brand-800: #CC7B00;

@@ -135,12 +135,12 @@ export default function Holding({
           {/* Logistics Niche Toggle */}
           <div className="flex bg-slate-100 border border-slate-200 rounded-xl p-1 text-xs font-bold">
             <button
-              className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ${logisticsMode === 'car_carrying' ? 'bg-[#FFD400] text-slate-955 font-extrabold shadow-xs' : 'text-slate-500'}`}
+              className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ${logisticsMode === 'car_carrying' ? 'bg-brand-500 text-slate-955 font-extrabold shadow-xs' : 'text-slate-500'}`}
             >
               Car Carrying Yard
             </button>
             <button
-              className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ${logisticsMode === 'general_freight' ? 'bg-[#FFD400] text-slate-955 font-extrabold shadow-xs' : 'text-slate-500'}`}
+              className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ${logisticsMode === 'general_freight' ? 'bg-brand-500 text-slate-955 font-extrabold shadow-xs' : 'text-slate-500'}`}
             >
               General Freight
             </button>
@@ -162,7 +162,7 @@ export default function Holding({
           
           <button
             onClick={onExportStockClick}
-            className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-black bg-gradient-to-r from-[#FFD400] to-[#FF9A00] text-slate-950 rounded-xl transition-all hover:scale-[1.03] active:scale-[0.97] cursor-pointer shadow-md select-none hover:shadow-lg focus:outline-none"
+            className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-black bg-gradient-to-r from-brand-500 to-[#FF9A00] text-slate-950 rounded-xl transition-all hover:scale-[1.03] active:scale-[0.97] cursor-pointer shadow-md select-none hover:shadow-lg focus:outline-none"
           >
             <span>Export Stock List</span>
           </button>
@@ -204,7 +204,7 @@ export default function Holding({
                       <button
                         key={mode}
                         onClick={() => setLeftDensity(mode.toLowerCase())}
-                        className={`px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer ${isActive ? 'bg-[#FFD400] text-slate-955 font-extrabold shadow-xs' : 'text-slate-500'}`}
+                        className={`px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer ${isActive ? 'bg-brand-500 text-slate-955 font-extrabold shadow-xs' : 'text-slate-500'}`}
                       >
                         {mode}
                       </button>
@@ -335,7 +335,7 @@ export default function Holding({
                       <button
                         key={mode}
                         onClick={() => setRightDensity(mode.toLowerCase())}
-                        className={`px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer ${isActive ? 'bg-[#FFD400] text-slate-950 font-extrabold shadow-xs' : 'text-slate-500'}`}
+                        className={`px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer ${isActive ? 'bg-brand-500 text-slate-950 font-extrabold shadow-xs' : 'text-slate-500'}`}
                       >
                         {mode}
                       </button>

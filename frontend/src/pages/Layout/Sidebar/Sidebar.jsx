@@ -15,6 +15,7 @@ import {
   FiSliders
 } from 'react-icons/fi';
 import { BsQrCodeScan } from 'react-icons/bs';
+import { useTheme } from '../../../context/ThemeProvider';
 
 /* ============================================================
    ROLE CONFIGS - Add/remove menu items here for each role
@@ -285,6 +286,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const config = roleConfigs[role];
+  const { logoUrl } = useTheme();
 
   // Helper to check if path matches current location robustly
   const isPathActive = (itemPath) => {
@@ -415,7 +417,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
            </button>
         )}
         <div className="logo-container">
-          <img src="/image.png" alt="Logo" className="sidebar-logo" />
+          <img src={logoUrl || "/image.png"} alt="Logo" className="sidebar-logo" />
         </div>
         <div className="portal-badge">
           <FiShield className="portal-icon" />

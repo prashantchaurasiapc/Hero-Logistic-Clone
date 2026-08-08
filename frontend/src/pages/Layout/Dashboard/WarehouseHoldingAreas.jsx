@@ -343,7 +343,7 @@ export default function WarehouseHoldingAreas() {
               box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
             }
             .header-badge {
-              background: #FFD400;
+              background: var(--primary-color);
               color: #0F172A;
               font-size: 28px;
               font-weight: 900;
@@ -568,7 +568,7 @@ export default function WarehouseHoldingAreas() {
           padding: 0 18px;
           border-radius: 8px;
           border: none;
-          background: #FFD400;
+          background: var(--primary-color);
           font-size: 12px;
           font-weight: 800;
           color: #0F172A;
@@ -698,7 +698,7 @@ export default function WarehouseHoldingAreas() {
         }
         .wh-st-tab-btn.active {
           color: #0F172A;
-          border-bottom-color: #FFD400;
+          border-bottom-color: var(--primary-color);
           font-weight: 800;
         }
 
@@ -728,7 +728,7 @@ export default function WarehouseHoldingAreas() {
           outline: none;
           box-sizing: border-box;
         }
-        .wh-st-search-inp:focus { border-color: #FFD400; }
+        .wh-st-search-inp:focus { border-color: var(--primary-color); }
         .wh-st-search-icon {
           position: absolute;
           left: 10px;
@@ -948,7 +948,7 @@ export default function WarehouseHoldingAreas() {
           margin-bottom: 6px;
           transition: background 0.15s;
         }
-        .wh-qa-btn:hover { background: #FFFFFF; border-color: #FFD400; }
+        .wh-qa-btn:hover { background: #FFFFFF; border-color: var(--primary-color); }
 
         /* MODAL */
         .wh-modal-overlay {
@@ -1894,7 +1894,7 @@ export default function WarehouseHoldingAreas() {
           <div className="wh-modal-box" style={{ maxWidth: '560px' }} onClick={e => e.stopPropagation()}>
             <div className="wh-modal-header" style={{ background: '#FFFFFF', color: '#0F172A', padding: '14px 18px', borderBottom: '1px solid #E2E8F0' }}>
               <div className="flex items-center gap-3">
-                <div style={{ background: '#FFD400', color: '#0F172A', fontWeight: 900, fontSize: '12px', padding: '4px 8px', borderRadius: '6px' }}>
+                <div style={{ background: 'var(--primary-color)', color: '#0F172A', fontWeight: 900, fontSize: '12px', padding: '4px 8px', borderRadius: '6px' }}>
                   {viewModalArea.code}
                 </div>
                 <div>

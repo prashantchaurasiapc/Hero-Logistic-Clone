@@ -365,7 +365,7 @@ export default function Subscriptions() {
             placeholder="Search Company Name"
             value={searchCompany}
             onChange={(e) => setSearchCompany(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none placeholder:text-slate-400 text-slate-800 font-bold"
+            className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none placeholder:text-slate-400 text-slate-800 font-bold"
           />
           <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
         </div>
@@ -376,7 +376,7 @@ export default function Subscriptions() {
             placeholder="Search Sub ID"
             value={searchSubId}
             onChange={(e) => setSearchSubId(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none placeholder:text-slate-400 text-slate-800 font-bold"
+            className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none placeholder:text-slate-400 text-slate-800 font-bold"
           />
           <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
         </div>
@@ -385,7 +385,7 @@ export default function Subscriptions() {
           <select
             value={selectedPlanFilter}
             onChange={(e) => setSelectedPlanFilter(e.target.value)}
-            className="w-full sm:w-auto border border-slate-200 bg-white px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-[#FFD400] text-slate-800 font-black cursor-pointer min-w-[120px]"
+            className="w-full sm:w-auto border border-slate-200 bg-white px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-brand-500 text-slate-800 font-black cursor-pointer min-w-[120px]"
           >
             <option value="All Plans">All Plans</option>
             <option value="Starter">Starter</option>
@@ -398,7 +398,7 @@ export default function Subscriptions() {
           <select
             value={selectedStatusFilter}
             onChange={(e) => setSelectedStatusFilter(e.target.value)}
-            className="w-full sm:w-auto border border-slate-200 bg-white px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-[#FFD400] text-slate-800 font-black cursor-pointer min-w-[120px]"
+            className="w-full sm:w-auto border border-slate-200 bg-white px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-brand-500 text-slate-800 font-black cursor-pointer min-w-[120px]"
           >
             <option value="All Statuses">All Statuses</option>
             <option value="ACTIVE">ACTIVE</option>
@@ -680,7 +680,7 @@ export default function Subscriptions() {
                     key={tab}
                     onClick={() => setActiveViewTab(tab)}
                     className={`shrink-0 px-4 py-1.5 text-[11px] rounded-xl whitespace-nowrap cursor-pointer transition-colors ${activeViewTab === tab
-                        ? 'bg-[#FFD400] text-slate-900 font-black shadow-sm border-2 border-slate-900'
+                        ? 'bg-brand-500 text-slate-900 font-black shadow-sm border-2 border-slate-900'
                         : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 font-bold border-2 border-transparent'
                       }`}
                   >
@@ -849,7 +849,7 @@ export default function Subscriptions() {
                   setShowViewModal(false);
                   setShowUpgradeModal(true);
                 }}
-                className="flex-1 bg-[#FFB020] hover:bg-[#FFC800] text-black font-extrabold text-xs py-3 rounded-xl transition-all cursor-pointer shadow-sm text-center"
+                className="flex-1 bg-[#FFB020] hover:bg-brand-600 text-black font-extrabold text-xs py-3 rounded-xl transition-all cursor-pointer shadow-sm text-center"
               >
                 Upgrade Plan Tier
               </button>
@@ -901,7 +901,7 @@ export default function Subscriptions() {
                   name="nextRenewal"
                   type="date"
                   defaultValue={selectedSub.nextRenewal}
-                  className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-2xl focus:outline-none text-slate-800"
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-sm font-bold rounded-2xl focus:outline-none text-slate-800"
                 />
               </div>
               <div className="flex items-center gap-3 pt-0.5">
@@ -917,7 +917,7 @@ export default function Subscriptions() {
               </div>
               <button
                 type="submit"
-                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-sm py-3 rounded-2xl shadow-sm transition-all cursor-pointer mt-1"
+                className="w-full bg-[#FFB020] hover:bg-brand-600 text-slate-900 font-extrabold text-sm py-3 rounded-2xl shadow-sm transition-all cursor-pointer mt-1"
               >
                 Save Subscription Settings
               </button>
@@ -973,7 +973,7 @@ export default function Subscriptions() {
               </div>
               <div>
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">SELECT NEW LOWER TIER</label>
-                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800">
+                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-xs font-semibold rounded-xl focus:outline-none text-slate-800">
                   <option>Starter Tier - $499/mo</option>
                   <option>Basic Plan - $299/mo</option>
                 </select>
@@ -1051,7 +1051,7 @@ export default function Subscriptions() {
             <div className="p-6 space-y-4">
               <div>
                 <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">SELECT SUBSCRIPTION PLAN TIER</label>
-                <select className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-2xl focus:outline-none text-slate-800">
+                <select className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-sm font-bold rounded-2xl focus:outline-none text-slate-800">
                   <option>Enterprise Tier - $1,299/mo</option>
                   <option>Professional Tier - $699/mo</option>
                   <option>Starter Tier - $299/mo</option>
@@ -1063,7 +1063,7 @@ export default function Subscriptions() {
                   showNotification(`Subscription plan tier updated successfully for ${selectedSub.company}.`);
                   setShowAssignPlanModal(false);
                 }}
-                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-sm py-3 rounded-2xl shadow-sm transition-all cursor-pointer mt-1"
+                className="w-full bg-[#FFB020] hover:bg-brand-600 text-slate-900 font-extrabold text-sm py-3 rounded-2xl shadow-sm transition-all cursor-pointer mt-1"
               >
                 Update Subscription
               </button>
@@ -1088,7 +1088,7 @@ export default function Subscriptions() {
                 <input
                   type="number"
                   defaultValue={selectedSub.amount}
-                  className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-2xl focus:outline-none text-slate-800 font-mono"
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-sm font-bold rounded-2xl focus:outline-none text-slate-800 font-mono"
                 />
               </div>
               <div>
@@ -1096,7 +1096,7 @@ export default function Subscriptions() {
                 <input
                   type="text"
                   defaultValue="Custom Administrative Invoice"
-                  className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-2xl focus:outline-none text-slate-800"
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-sm font-bold rounded-2xl focus:outline-none text-slate-800"
                 />
               </div>
               <button
@@ -1104,7 +1104,7 @@ export default function Subscriptions() {
                   showNotification(`Generated custom administrative invoice for ${selectedSub.company}.`);
                   setShowGenerateInvoiceModal(false);
                 }}
-                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-sm py-3 rounded-2xl shadow-sm transition-all cursor-pointer mt-1"
+                className="w-full bg-[#FFB020] hover:bg-brand-600 text-slate-900 font-extrabold text-sm py-3 rounded-2xl shadow-sm transition-all cursor-pointer mt-1"
               >
                 Generate Invoice
               </button>
@@ -1128,7 +1128,7 @@ export default function Subscriptions() {
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">EMAIL MESSAGE TEMPLATE</label>
                 <textarea
                   defaultValue={`Hello Administrator of ${selectedSub.company},\n\nThis is a friendly reminder that your ${selectedSub.plan} Tier subscription (#${selectedSub.id}) is scheduled for renewal on ${selectedSub.nextRenewal} for the amount of $${selectedSub.amount}.\n\nPlease ensure your payment method is up to date.\n\nBest,\nHero Logistics Billing Team`}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-medium rounded-xl focus:outline-none text-slate-800 h-36 resize-none"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-xs font-medium rounded-xl focus:outline-none text-slate-800 h-36 resize-none"
                 />
               </div>
               <button
@@ -1136,7 +1136,7 @@ export default function Subscriptions() {
                   showNotification(`Sent renewal notification email to ${selectedSub.company}.`);
                   setShowSendReminderModal(false);
                 }}
-                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-black font-extrabold text-[13px] py-4 rounded-xl transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2"
+                className="w-full bg-[#FFB020] hover:bg-brand-600 text-black font-extrabold text-[13px] py-4 rounded-xl transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2"
               >
                 <Send className="w-4 h-4" /> Send Reminder Notification
               </button>

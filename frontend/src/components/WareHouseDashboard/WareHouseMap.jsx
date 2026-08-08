@@ -78,13 +78,13 @@ export default function WarehouseMap({
           <div className="flex bg-slate-100 border border-slate-200 rounded-xl p-1 text-xs font-bold">
             <button
               onClick={() => setLogisticsMode('car_carrying')}
-              className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ${logisticsMode === 'car_carrying' ? 'bg-[#FFD400] text-slate-955 font-extrabold shadow-xs' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ${logisticsMode === 'car_carrying' ? 'bg-brand-500 text-slate-955 font-extrabold shadow-xs' : 'text-slate-500 hover:text-slate-700'}`}
             >
               Car Carrying Yard
             </button>
             <button
               onClick={() => setLogisticsMode('general_freight')}
-              className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ${logisticsMode === 'general_freight' ? 'bg-[#FFD400] text-slate-955 font-extrabold shadow-xs' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ${logisticsMode === 'general_freight' ? 'bg-brand-500 text-slate-955 font-extrabold shadow-xs' : 'text-slate-500 hover:text-slate-700'}`}
             >
               General Freight
             </button>
@@ -108,7 +108,7 @@ export default function WarehouseMap({
           
           <button
             onClick={onExportStockClick}
-            className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-black bg-gradient-to-r from-[#FFD400] to-[#FF9A00] text-slate-950 rounded-xl transition-all hover:scale-[1.03] active:scale-[0.97] cursor-pointer shadow-md select-none hover:shadow-lg focus:outline-none"
+            className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-black bg-gradient-to-r from-brand-500 to-[#FF9A00] text-slate-950 rounded-xl transition-all hover:scale-[1.03] active:scale-[0.97] cursor-pointer shadow-md select-none hover:shadow-lg focus:outline-none"
           >
             <Download className="h-4 w-4" />
             <span>Export Stock List</span>
@@ -124,7 +124,7 @@ export default function WarehouseMap({
           <div className="space-y-4 flex-1 flex flex-col">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Independent Assets</h3>
-              <span className="text-[10px] bg-[#FFD400]/20 text-[#FF9A00] border border-[#FFD400]/30 px-2 py-0.5 rounded-full font-bold">
+              <span className="text-[10px] bg-brand-500/20 text-[#FF9A00] border border-brand-500/30 px-2 py-0.5 rounded-full font-bold">
                 {filteredAssets.length} Units
               </span>
             </div>
@@ -404,7 +404,7 @@ export default function WarehouseMap({
 
                 <button
                   onClick={onMovementHistoryClick}
-                  className="w-full inline-flex items-center justify-center py-3.5 bg-[#FFD400] hover:bg-[#FF9A00] text-slate-955 font-black text-xs rounded-xl transition-all shadow-xs cursor-pointer focus:outline-none"
+                  className="w-full inline-flex items-center justify-center py-3.5 bg-brand-500 hover:bg-[#FF9A00] text-slate-955 font-black text-xs rounded-xl transition-all shadow-xs cursor-pointer focus:outline-none"
                 >
                   <ClipboardList className="h-4 w-4 mr-2" />
                   <span>View Movement History</span>

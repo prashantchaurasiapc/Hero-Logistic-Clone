@@ -236,7 +236,7 @@ const WarehouseLabels = () => {
                     onClick={() => setDensity(mode.toLowerCase())}
                     style={{
                       ...S.densityBtn,
-                      backgroundColor: isActive ? '#ffd400' : 'transparent',
+                      backgroundColor: isActive ? 'var(--primary-color)' : 'transparent',
                       color: isActive ? '#0f172a' : '#64748b',
                       border: isActive ? '1px solid #000' : '1px solid transparent'
                     }}

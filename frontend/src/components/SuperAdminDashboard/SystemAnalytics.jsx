@@ -35,58 +35,28 @@ export default function SystemAnalytics() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const [dashRes, compRes] = await Promise.allSettled([
-          api.get('/dashboard-metrics'),
-          api.get('/companys')
-        ]);
-        
-        let fetchedCompanies = [];
-        if (compRes.status === 'fulfilled' && compRes.value.data?.success) {
-          fetchedCompanies = compRes.value.data.data;
-        }
+        const dashRes = await api.get('/super-admin/dashboard');
 
-        if (dashRes.status === 'fulfilled' && dashRes.value.data?.success) {
-          const m = dashRes.value.data.data;
+        if (dashRes.data?.success) {
+          const m = dashRes.data.data;
           
           setMetrics([
-            { name: 'PLATFORM REVENUE', value: `$${m.metrics?.monthlyRevenue || '0'}`, desc: 'Monthly recurring revenue', change: '+12%', isPositive: true },
+            { name: 'PLATFORM REVENUE', value: `$${m.kpis?.monthlyRevenue || '0'}`, desc: 'Monthly recurring revenue', change: '+12%', isPositive: true },
             { name: 'MRR GROWTH', value: '+8.2%', desc: 'Month-over-month', change: 'Growing', isPositive: true },
-            { name: 'COMPANY GROWTH', value: `${m.metrics?.totalCompanies || 0}`, desc: 'Total registered tenants', change: '+2 MTD', isPositive: true },
-            { name: 'ACTIVE USERS', value: `${m.metrics?.activeUsers || 0}`, desc: 'Platform users online', change: '+3 active', isPositive: true },
+            { name: 'COMPANY GROWTH', value: `${m.kpis?.totalCompanies || m.kpis?.activeCompanies || 0}`, desc: 'Total registered tenants', change: '+2 MTD', isPositive: true },
+            { name: 'ACTIVE USERS', value: `${m.kpis?.activeUsers || 0}`, desc: 'Platform users online', change: '+3 active', isPositive: true },
             { name: 'API REQUESTS/MIN', value: m.healthCenter?.usageMetrics?.requestsPerMinute || '0 RPM', desc: 'Current throughput rate', change: 'Stable', isPositive: false },
             { name: 'STORAGE USED', value: m.healthCenter?.usageMetrics?.storageConsumption?.split('/')[0]?.trim() || '0 TB', desc: 'Total of 10 TB capacity', change: 'Normal', isPositive: false },
-            { name: 'OPEN TICKETS', value: `${m.tickets?.open || 0}`, desc: 'Active support tickets', change: 'Needs action', isPositive: false },
+            { name: 'OPEN TICKETS', value: `${m.kpis?.openTickets || m.tickets?.open || 0}`, desc: 'Active support tickets', change: 'Needs action', isPositive: false },
             { name: 'SLA SCORE', value: m.healthCenter?.systemStatus?.apiHealth || '99.9%', desc: 'Monthly uptime performance', change: 'Target Met', isPositive: true }
           ]);
 
           setRevenueData(m.chartData || []);
-          
-          // Generate placeholder charts for growth and api usage if not present
-          setGrowthData([
-            { name: 'Jan', value: 1 }, { name: 'Feb', value: 2 }, { name: 'Mar', value: 1 },
-            { name: 'Apr', value: 3 }, { name: 'May', value: 2 }, { name: 'Jun', value: 5 }
-          ]);
-          setApiUsageData([
-            { name: 'Mon', value: 850 }, { name: 'Tue', value: 950 }, { name: 'Wed', value: 890 },
-            { name: 'Thu', value: 1150 }, { name: 'Fri', value: 1100 }, { name: 'Today', value: 1150 }
-          ]);
+          setGrowthData(m.growthData || []);
+          setApiUsageData(m.apiUsageData || []);
+          setStorageData(m.storageData || []);
+          setLoginAnalytics(m.loginAnalytics || []);
         }
-        
-        setStorageData(fetchedCompanies.map((c, i) => ({
-          company: c.name,
-          storage: `${(Math.random() * 2).toFixed(2)} TB`,
-          percentage: `${Math.floor(Math.random() * 20) + 1}%`,
-          limit: Math.floor(Math.random() * 20) + 1,
-          color: i % 3 === 0 ? 'bg-rose-500' : 'bg-[#FFD400]'
-        })));
-        
-        setLoginAnalytics(fetchedCompanies.map(c => ({
-          company: c.name,
-          monthlyLogins: Math.floor(Math.random() * 500) + 10,
-          activeUsers: Math.floor(Math.random() * 50) + 1,
-          lastLogin: new Date().toLocaleString(),
-          score: Math.floor(Math.random() * 40) + 60
-        })));
 
       } catch (err) {
         console.error("Failed to fetch system analytics", err);
@@ -260,7 +230,7 @@ export default function SystemAnalytics() {
 
         <div className="space-y-4">
           {[
-            { name: 'Dispatch / Load Management', percentage: 94, color: 'bg-[#FFD400]' },
+            { name: 'Dispatch / Load Management', percentage: 94, color: 'bg-brand-500' },
             { name: 'Live GPS Tracking', percentage: 87, color: 'bg-[#10B981]' },
             { name: 'Driver Management', percentage: 82, color: 'bg-[#6366F1]' },
             { name: 'Vehicle / Fleet', percentage: 76, color: 'bg-[#F97316]' },
@@ -468,7 +438,7 @@ export default function SystemAnalytics() {
               <button 
                 onClick={handleRunExport}
                 disabled={isExporting}
-                className="px-5 py-2 bg-[#FFD400] hover:bg-yellow-400 text-black text-xs font-black rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer active:scale-95 disabled:opacity-50"
+                className="px-5 py-2 bg-brand-500 hover:bg-yellow-400 text-black text-xs font-black rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer active:scale-95 disabled:opacity-50"
               >
                 {isExporting ? <span className="animate-pulse">Generating...</span> : <><Download size={14} /> Download {exportFormat.toUpperCase()}</>}
               </button>

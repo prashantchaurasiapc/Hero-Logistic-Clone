@@ -56,7 +56,7 @@ exports.me = async (req, res, next) => {
   try {
     const prisma = require('../utils/prismaClient');
     const freshUser = await prisma.user.findUnique({
-      where: { id: req.user.id }
+      where: { id: req.user.userId }
     });
     if (freshUser) {
       delete freshUser.password;

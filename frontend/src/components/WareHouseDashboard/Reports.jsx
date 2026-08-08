@@ -151,13 +151,13 @@ export default function Reports({
           <div className="flex bg-slate-100 border border-slate-200 rounded-xl p-1 text-xs font-bold">
             <button
               onClick={() => setLogisticsMode('car_carrying')}
-              className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ${logisticsMode === 'car_carrying' ? 'bg-[#FFD400] text-slate-955 font-extrabold shadow-xs' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ${logisticsMode === 'car_carrying' ? 'bg-brand-500 text-slate-955 font-extrabold shadow-xs' : 'text-slate-500 hover:text-slate-700'}`}
             >
               Car Carrying Yard
             </button>
             <button
               onClick={() => setLogisticsMode('general_freight')}
-              className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ${logisticsMode === 'general_freight' ? 'bg-[#FFD400] text-slate-955 font-extrabold shadow-xs' : 'text-slate-500'}`}
+              className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ${logisticsMode === 'general_freight' ? 'bg-brand-500 text-slate-955 font-extrabold shadow-xs' : 'text-slate-500'}`}
             >
               General Freight
             </button>
@@ -179,7 +179,7 @@ export default function Reports({
           
           <button
             onClick={onExportStockClick}
-            className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-black bg-gradient-to-r from-[#FFD400] to-[#FF9A00] text-slate-950 rounded-xl transition-all hover:scale-[1.03] active:scale-[0.97] cursor-pointer shadow-md select-none hover:shadow-lg focus:outline-none"
+            className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-black bg-gradient-to-r from-brand-500 to-[#FF9A00] text-slate-950 rounded-xl transition-all hover:scale-[1.03] active:scale-[0.97] cursor-pointer shadow-md select-none hover:shadow-lg focus:outline-none"
           >
             <span>Export Stock List</span>
           </button>
@@ -271,7 +271,7 @@ export default function Reports({
           </button>
           <button
             onClick={() => handleExport('pdf')}
-            className="inline-flex items-center gap-1.5 px-4.5 py-2.5 bg-[#FFD400] hover:bg-[#FF9A00] text-slate-955 text-xs font-black rounded-xl transition-all cursor-pointer focus:outline-none"
+            className="inline-flex items-center gap-1.5 px-4.5 py-2.5 bg-brand-500 hover:bg-[#FF9A00] text-slate-955 text-xs font-black rounded-xl transition-all cursor-pointer focus:outline-none"
           >
             <FileText className="h-3.5 w-3.5" />
             <span>Export PDF</span>
@@ -296,7 +296,7 @@ export default function Reports({
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 py-3.5 px-5 font-black text-xs border-b-2 transition-all cursor-pointer ${
                 isActive 
-                  ? 'border-[#FFD400] text-[#f59e0b]' 
+                  ? 'border-brand-500 text-[#f59e0b]' 
                   : 'border-transparent text-slate-400 hover:text-slate-700'
               }`}
             >
@@ -324,7 +324,7 @@ export default function Reports({
                 <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} />
                 <YAxis stroke="#94a3b8" fontSize={10} />
                 <Tooltip />
-                <Area type="monotone" dataKey="revenue" stroke="#f59e0b" fill="#FFD400" fillOpacity={0.1} />
+                <Area type="monotone" dataKey="revenue" stroke="#f59e0b" fill="var(--primary-color)" fillOpacity={0.1} />
                 <Area type="monotone" dataKey="profit" stroke="#10b981" fill="#10b981" fillOpacity={0.05} />
               </AreaChart>
             ) : activeTab === 'customer-growth' ? (
@@ -341,7 +341,7 @@ export default function Reports({
                 <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} />
                 <YAxis stroke="#94a3b8" fontSize={10} />
                 <Tooltip />
-                <Bar dataKey={activeTab === 'driver-performance' ? 'trips' : activeTab === 'vehicle-utilization' ? 'rate' : 'occupancy'} fill="#FFD400" radius={[6, 6, 0, 0]} />
+                <Bar dataKey={activeTab === 'driver-performance' ? 'trips' : activeTab === 'vehicle-utilization' ? 'rate' : 'occupancy'} fill="var(--primary-color)" radius={[6, 6, 0, 0]} />
               </BarChart>
             )}
           </ResponsiveContainer>
@@ -361,7 +361,7 @@ export default function Reports({
                     <button
                       key={mode}
                       onClick={() => setDensity(mode.toLowerCase())}
-                      className={`px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer ${isActive ? 'bg-[#FFD400] text-slate-950 font-extrabold shadow-xs' : 'text-slate-500'}`}
+                      className={`px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer ${isActive ? 'bg-brand-500 text-slate-950 font-extrabold shadow-xs' : 'text-slate-500'}`}
                     >
                       {mode}
                     </button>

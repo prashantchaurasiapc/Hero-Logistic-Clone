@@ -294,7 +294,7 @@ export default function WarehouseOutbound() {
           padding: 0 18px;
           border-radius: 8px;
           border: none;
-          background: #FFD400;
+          background: var(--primary-color);
           font-size: 12px;
           font-weight: 800;
           color: #0F172A;
@@ -410,7 +410,7 @@ export default function WarehouseOutbound() {
           outline: none;
           box-sizing: border-box;
         }
-        .wh-dp-search-inp:focus { border-color: #FFD400; }
+        .wh-dp-search-inp:focus { border-color: var(--primary-color); }
         .wh-dp-search-icon {
           position: absolute;
           left: 10px;
@@ -596,8 +596,8 @@ export default function WarehouseOutbound() {
           color: #0F172A;
         }
         .wh-pager-btn.active {
-          background: #FFD400;
-          border-color: #FFD400;
+          background: var(--primary-color);
+          border-color: var(--primary-color);
           font-weight: 800;
         }
 
@@ -703,7 +703,7 @@ export default function WarehouseOutbound() {
           margin-bottom: 6px;
           transition: background 0.15s;
         }
-        .wh-qa-btn:hover { background: #FFFFFF; border-color: #FFD400; }
+        .wh-qa-btn:hover { background: #FFFFFF; border-color: var(--primary-color); }
 
         /* HELP */
         .wh-help-text {

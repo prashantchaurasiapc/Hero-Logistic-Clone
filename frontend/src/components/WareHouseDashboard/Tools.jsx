@@ -400,7 +400,7 @@ export default function Tools() {
           left: 0;
           right: 0;
           height: 3px;
-          background: #FFD400;
+          background: var(--primary-color);
           border-radius: 2px;
         }
 
@@ -532,7 +532,7 @@ export default function Tools() {
           background: #F1F5F9;
         }
         .wh-type-btn.selected {
-          border-color: #FFD400;
+          border-color: var(--primary-color);
           background: #FFFBEB;
         }
         .wh-type-btn.selected::after {
@@ -599,7 +599,7 @@ export default function Tools() {
           padding: 0 16px;
           border-radius: 6px;
           border: none;
-          background: #FFD400;
+          background: var(--primary-color);
           font-size: 11.5px;
           font-weight: 800;
           color: #0F172A;
@@ -670,7 +670,7 @@ export default function Tools() {
         }
         .wh-pill-btn.active {
           background: #FFFBEB;
-          border-color: #FFD400;
+          border-color: var(--primary-color);
           color: #D97706;
           box-shadow: 0 1px 3px rgba(255,212,0,0.2);
         }

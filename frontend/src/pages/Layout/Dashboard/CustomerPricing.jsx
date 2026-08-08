@@ -289,7 +289,7 @@ export default function CustomerPricing() {
       {/* Quick Configure & Edit Section Card */}
       <div style={S.configureCard}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-          <Sliders size={18} style={{ color: '#ffd400' }} />
+          <Sliders size={18} style={{ color: 'var(--primary-color)' }} />
           <h2 style={{ fontSize: 16, fontWeight: '800', color: '#0f172a', margin: 0 }}>
             Configure &amp; Edit Customer Pricing Rule
           </h2>
@@ -335,7 +335,7 @@ export default function CustomerPricing() {
                   onClick={() => setTopPricingMode('By Load')}
                   style={{
                     ...S.segmentedBtn,
-                    backgroundColor: topPricingMode === 'By Load' ? '#ffd400' : '#ffffff',
+                    backgroundColor: topPricingMode === 'By Load' ? 'var(--primary-color)' : '#ffffff',
                     color: topPricingMode === 'By Load' ? '#0f172a' : '#64748b',
                     border: topPricingMode === 'By Load' ? '1.5px solid #000000' : '1px solid #cbd5e1'
                   }}
@@ -347,7 +347,7 @@ export default function CustomerPricing() {
                   onClick={() => setTopPricingMode('By Kilometer')}
                   style={{
                     ...S.segmentedBtn,
-                    backgroundColor: topPricingMode === 'By Kilometer' ? '#ffd400' : '#ffffff',
+                    backgroundColor: topPricingMode === 'By Kilometer' ? 'var(--primary-color)' : '#ffffff',
                     color: topPricingMode === 'By Kilometer' ? '#0f172a' : '#64748b',
                     border: topPricingMode === 'By Kilometer' ? '1.5px solid #000000' : '1px solid #cbd5e1'
                   }}
@@ -566,7 +566,7 @@ export default function CustomerPricing() {
                   onClick={() => setEditForm({ ...editForm, pricingMode: 'By Load' })}
                   style={{
                     ...S.segmentedBtn,
-                    backgroundColor: editForm.pricingMode === 'By Load' ? '#ffd400' : '#ffffff',
+                    backgroundColor: editForm.pricingMode === 'By Load' ? 'var(--primary-color)' : '#ffffff',
                     color: editForm.pricingMode === 'By Load' ? '#0f172a' : '#64748b',
                     border: editForm.pricingMode === 'By Load' ? '1.5px solid #000000' : '1px solid #cbd5e1'
                   }}
@@ -578,7 +578,7 @@ export default function CustomerPricing() {
                   onClick={() => setEditForm({ ...editForm, pricingMode: 'By Kilometer' })}
                   style={{
                     ...S.segmentedBtn,
-                    backgroundColor: editForm.pricingMode === 'By Kilometer' ? '#ffd400' : '#ffffff',
+                    backgroundColor: editForm.pricingMode === 'By Kilometer' ? 'var(--primary-color)' : '#ffffff',
                     color: editForm.pricingMode === 'By Kilometer' ? '#0f172a' : '#64748b',
                     border: editForm.pricingMode === 'By Kilometer' ? '1.5px solid #000000' : '1px solid #cbd5e1'
                   }}
@@ -783,7 +783,7 @@ const S = {
     display: 'flex',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#ffd400',
+    backgroundColor: 'var(--primary-color)',
     color: '#0f172a',
     border: 'none',
     borderRadius: 12,
@@ -1040,7 +1040,7 @@ const S = {
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#ffd400',
+    backgroundColor: 'var(--primary-color)',
     color: '#0f172a',
     border: 'none',
     borderRadius: 14,

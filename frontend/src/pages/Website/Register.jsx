@@ -125,13 +125,13 @@ const Register = () => {
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', marginTop: '0.5rem' }}>
-              <input type="checkbox" id="terms" required style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: '#FFD400' }} />
+              <input type="checkbox" id="terms" required style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: 'var(--primary-color)' }} />
               <label htmlFor="terms" style={{ color: '#a1a1aa', fontSize: '13px', cursor: 'pointer' }}>
                 I agree to the <span className="text-yellow" style={{fontWeight: 600}}>Terms of Service</span> and <span className="text-yellow" style={{fontWeight: 600}}>Privacy Policy</span>
               </label>
             </div>
 
-            <button type="submit" className="w-full py-3.5 px-4 font-bold text-slate-950 bg-yellow rounded-lg shadow-lg hover:bg-yellow/90 transition-all cursor-pointer flex items-center justify-center gap-2" style={{ backgroundColor: '#FFD400', borderRadius: '8px', fontSize: '15px' }}>
+            <button type="submit" className="w-full py-3.5 px-4 font-bold text-slate-950 bg-yellow rounded-lg shadow-lg hover:bg-yellow/90 transition-all cursor-pointer flex items-center justify-center gap-2" style={{ backgroundColor: 'var(--primary-color)', borderRadius: '8px', fontSize: '15px' }}>
               Create Account & Start Trial &rarr;
             </button>
 

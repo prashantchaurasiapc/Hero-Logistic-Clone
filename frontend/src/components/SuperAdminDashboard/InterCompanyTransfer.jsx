@@ -264,7 +264,7 @@ export default function InterCompanyTransfers() {
                 placeholder="Search transfers..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none placeholder:text-slate-400 font-sans text-slate-800 font-bold"
+                className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none placeholder:text-slate-400 font-sans text-slate-800 font-bold"
               />
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
             </div>
@@ -463,7 +463,7 @@ export default function InterCompanyTransfers() {
               <button 
                 onClick={handleRunExport}
                 disabled={isExporting}
-                className="px-5 py-2 bg-[#FFD400] hover:bg-yellow-400 text-black text-xs font-black rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer active:scale-95 disabled:opacity-50"
+                className="px-5 py-2 bg-brand-500 hover:bg-yellow-400 text-black text-xs font-black rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer active:scale-95 disabled:opacity-50"
               >
                 {isExporting ? <span className="animate-pulse">Generating...</span> : <><Download size={14} /> Download {exportFormat.toUpperCase()}</>}
               </button>

@@ -9,8 +9,8 @@
   --color-brand-200: #FFF59D;
   --color-brand-300: #FFEE58;
   --color-brand-400: #FFE082;
-  --color-brand-500: #FFD400;
-  --color-brand-600: #FF9A00;
+  --color-brand-500: var(--primary-color, #FFD400);
+  --color-brand-600: var(--primary-color-hover, #FF9A00);
   --color-brand-700: #E68A00;
   --color-brand-800: #CC7B00;
   --color-brand-900: #995C00;

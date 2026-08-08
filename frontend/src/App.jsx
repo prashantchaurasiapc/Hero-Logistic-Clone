@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import ProtectedRoute from './components/ProtectedRoute';
 import DashboardLayout from './pages/Layout/DashboardLayout/DashboardLayout';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeProvider';
 
 import WarehouseDashboard from './pages/Layout/Dashboard/WarehouseDashboard';
 import WarehouseInbound from './pages/Layout/Dashboard/WarehouseInbound';
@@ -185,8 +186,9 @@ import WarehouseProfile from './components/WareHouseDashboard/Profile';
    ============================================================ */
 function App() {
   return (
-    <AuthProvider>
-      <Router>
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
@@ -438,7 +440,8 @@ function App() {
 
         </Routes>
       </Router>
-    </AuthProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
