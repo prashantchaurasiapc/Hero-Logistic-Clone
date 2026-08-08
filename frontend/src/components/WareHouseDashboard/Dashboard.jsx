@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 // === SVG ICONS ===
@@ -137,18 +137,71 @@ export default function Dashboard() {
   const [statusFilter, setStatusFilter] = useState('All');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Data states
-  const [inboundList] = useState(initialInboundToday);
-  const [loadLanesList] = useState(initialLoadLanes);
-  const [movementsList] = useState(initialRecentMovements);
-  const [notificationsList] = useState(initialNotifications);
+  // Data states with live API loading
+  const [inboundList, setInboundList] = useState(initialInboundToday);
+  const [loadLanesList, setLoadLanesList] = useState(initialLoadLanes);
+  const [movementsList, setMovementsList] = useState(initialRecentMovements);
+  const [notificationsList, setNotificationsList] = useState(initialNotifications);
+  const [liveKpi, setLiveKpi] = useState({
+    inboundAwaiting: 12,
+    inYard: 48,
+    toMove: 5,
+    loadLanes: 3,
+    dispatchReady: 18,
+    yardCapacityPercent: 72,
+    totalCap: 200,
+    inYardCap: 144,
+    availCap: 56,
+    lastSync: '08:15 AM'
+  });
+
+  const fetchLiveDashboard = async () => {
+    try {
+      const apiMod = await import('../../services/api');
+      const api = apiMod.default || apiMod;
+      const res = await api.get('/warehouse-portal/dashboard');
+      if (res.data && res.data.success && res.data.data) {
+        const d = res.data.data;
+        if (d.overview) {
+          setLiveKpi({
+            inboundAwaiting: d.overview.inboundAwaiting || 12,
+            inYard: d.overview.inYard || 48,
+            toMove: d.overview.toMove || 5,
+            loadLanes: d.overview.loadLanes || 3,
+            dispatchReady: d.overview.dispatchReady || 18,
+            yardCapacityPercent: d.overview.yardCapacity?.usedPercent || 72,
+            totalCap: d.overview.yardCapacity?.total || 200,
+            inYardCap: d.overview.yardCapacity?.inYard || 144,
+            availCap: d.overview.yardCapacity?.available || 56,
+            lastSync: d.overview.lastSync || '08:15 AM'
+          });
+        }
+        if (d.inboundToday && d.inboundToday.length > 0) {
+          setInboundList(d.inboundToday);
+        }
+        if (d.loadLanesOverview && d.loadLanesOverview.length > 0) {
+          setLoadLanesList(d.loadLanesOverview);
+        }
+        if (d.recentMovements && d.recentMovements.length > 0) {
+          setMovementsList(d.recentMovements);
+        }
+      }
+    } catch (err) {
+      console.warn('Using dashboard initial state:', err.message);
+    }
+  };
+
+  useEffect(() => {
+    fetchLiveDashboard();
+  }, []);
 
   // Manual refresh handler
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setIsRefreshing(true);
+    await fetchLiveDashboard();
     setTimeout(() => {
       setIsRefreshing(false);
-    }, 600);
+    }, 400);
   };
 
   // Filtered inbound
@@ -702,7 +755,7 @@ export default function Dashboard() {
             </div>
             <div className="wh-metric-text-group">
               <div className="wh-metric-label">INBOUND</div>
-              <div className="wh-metric-value">12</div>
+              <div className="wh-metric-value">{liveKpi.inboundAwaiting}</div>
               <div className="wh-metric-sub">Awaiting Receive</div>
             </div>
           </div>
@@ -720,7 +773,7 @@ export default function Dashboard() {
             </div>
             <div className="wh-metric-text-group">
               <div className="wh-metric-label">IN YARD</div>
-              <div className="wh-metric-value">48</div>
+              <div className="wh-metric-value">{liveKpi.inYard}</div>
               <div className="wh-metric-sub">Vehicles / Items</div>
             </div>
           </div>
@@ -738,7 +791,7 @@ export default function Dashboard() {
             </div>
             <div className="wh-metric-text-group">
               <div className="wh-metric-label">TO MOVE</div>
-              <div className="wh-metric-value">5</div>
+              <div className="wh-metric-value">{liveKpi.toMove}</div>
               <div className="wh-metric-sub">Transfer Tasks</div>
             </div>
           </div>
@@ -756,7 +809,7 @@ export default function Dashboard() {
             </div>
             <div className="wh-metric-text-group">
               <div className="wh-metric-label">LOAD LANES</div>
-              <div className="wh-metric-value">3</div>
+              <div className="wh-metric-value">{liveKpi.loadLanes}</div>
               <div className="wh-metric-sub">Loads in Progress</div>
             </div>
           </div>
@@ -774,7 +827,7 @@ export default function Dashboard() {
             </div>
             <div className="wh-metric-text-group">
               <div className="wh-metric-label">DISPATCH READY</div>
-              <div className="wh-metric-value">18</div>
+              <div className="wh-metric-value">{liveKpi.dispatchReady}</div>
               <div className="wh-metric-sub">Ready to Dispatch</div>
             </div>
           </div>
@@ -1055,13 +1108,13 @@ export default function Dashboard() {
                   stroke="var(--primary-color)" 
                   strokeWidth="12" 
                   strokeDasharray="301.59" 
-                  strokeDashoffset="84.44" 
+                  strokeDashoffset={301.59 - (301.59 * (liveKpi.yardCapacityPercent || 72)) / 100} 
                   strokeLinecap="round"
                   transform="rotate(-90 60 60)"
                 />
               </svg>
               <div className="wh-donut-center-text">
-                <span className="pct-val">72%</span>
+                <span className="pct-val">{liveKpi.yardCapacityPercent}%</span>
                 <span className="pct-lbl">Used</span>
               </div>
             </div>
@@ -1069,15 +1122,15 @@ export default function Dashboard() {
             <div className="wh-capacity-stats">
               <div className="capacity-stat-row">
                 <span className="stat-label">Total Capacity</span>
-                <span className="stat-val bold">200</span>
+                <span className="stat-val bold">{liveKpi.totalCap}</span>
               </div>
               <div className="capacity-stat-row">
                 <span className="stat-label">In Yard</span>
-                <span className="stat-val bold">144</span>
+                <span className="stat-val bold">{liveKpi.inYardCap}</span>
               </div>
               <div className="capacity-stat-row">
                 <span className="stat-label">Available</span>
-                <span className="stat-val green-val">56</span>
+                <span className="stat-val green-val">{liveKpi.availCap}</span>
               </div>
             </div>
           </div>

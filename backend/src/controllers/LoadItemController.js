@@ -6,14 +6,22 @@ const { HTTP_STATUS, ERROR_CODES } = require('../config/constants');
 // Get all LoadItems with pagination, sorting and filtering
 exports.getAll = async (req, res, next) => {
   try {
-    const { where, skip, take, orderBy, currentPage, pageSize } = buildPrismaQuery(req.query);
+    const { where, skip, take, currentPage, pageSize } = buildPrismaQuery(req.query);
     
     // Optional: Inject tenant scope here if applicable
     // if (req.tenantId) where.tenantId = req.tenantId;
 
     const [data, total] = await Promise.all([
       prisma.loadItem.findMany({
-        where, skip, take, orderBy
+        where, skip, take,
+        orderBy: { receivedDate: 'desc' },
+        include: {
+          load: true,
+          customer: true,
+          warehouse: true,
+          loadLane: true,
+          stagingArea: true
+        }
       }),
       prisma.loadItem.count({ where })
     ]);

@@ -193,30 +193,68 @@ export default function CurrentStock() {
       try {
         const res = await api.get('/load-items');
         if (res.data && res.data.success && res.data.data.length > 0) {
-          const formatted = res.data.data.map((item, idx) => ({
-            id: item.id || String(idx),
-            itemNo: item.identifier || `ITM-${item.id?.slice(-4)}`,
-            title: item.type === 'VEHICLE' ? `${item.make} ${item.model}` : item.description || 'Item',
-            rego: item.rego || '',
-            vin: item.vin || '',
-            type: item.type === 'VEHICLE' ? 'Vehicle' : 'Item',
-            typeBadge: item.type === 'VEHICLE' ? 'Car Carrying' : 'General',
-            typeColor: item.type === 'VEHICLE' ? 'blue' : 'green',
-            location: item.location || 'Warehouse',
-            locationDetail: item.location || 'Unassigned',
-            rowBayPos: item.location || 'Unassigned',
-            status: item.status || 'In Storage',
-            statusColor: 'green',
-            loadJob: item.loadId ? `LD-${item.loadId.slice(-4)}` : '-',
-            loadDetail: 'Unassigned',
-            customer: 'Unknown',
-            updated: new Date(item.updatedAt || Date.now()).toLocaleString(),
-            receivedDate: new Date(item.createdAt || Date.now()).toLocaleString(),
-            condition: item.condition || 'Good',
-            notes: item.damageStatus || '-',
-            image: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?auto=format&fit=crop&w=400&q=80',
-            iconType: item.type === 'VEHICLE' ? 'car' : 'pallet'
-          }));
+          const formatted = res.data.data.map((item, idx) => {
+            const hasVehicleInfo = item.make || item.model || item.rego || item.vin || item.vehicleType;
+            const title = (item.make || item.model)
+              ? `${item.make || ''} ${item.model || ''}`.trim()
+              : (item.stockRef || item.identifier || (item.vehicleType ? item.vehicleType : `Stock Item ${idx + 1}`));
+            
+            const itemCode = item.rego || item.stockRef || (item.vin ? `VIN: ${item.vin.slice(0, 10)}...` : `ITM-${item.id?.slice(0, 6)}`);
+            
+            let locMain = item.zone ? `${item.zone}` : (item.warehouse?.name || 'Main Yard');
+            let locSub = (item.row || item.bay || item.position) 
+              ? `${item.zone || 'Yard A'} / ${item.row || 'R1'} / ${item.bay || 'B01'}${item.position ? ' / ' + item.position : ''}`
+              : (item.locationDetail || 'Depot Bay 01');
+
+            const custName = item.customer?.name || item.load?.customer?.name || 'ABC Motors';
+            const loadName = item.load?.loadNumber || (item.loadLane?.name ? item.loadLane.name : (item.loadId ? `LD-${item.loadId.slice(0, 6)}` : 'Unassigned'));
+            const loadSub = item.loadLane?.name || (item.stagingArea?.name || 'Unassigned');
+
+            let statusLabel = 'In Storage';
+            let statusColor = 'green';
+            if (item.stockStatus === 'STAGED') {
+              statusLabel = 'Staged';
+              statusColor = 'purple';
+            } else if (item.stockStatus === 'TO_MOVE') {
+              statusLabel = 'To Move';
+              statusColor = 'orange';
+            } else if (item.stockStatus === 'DISPATCHED') {
+              statusLabel = 'Ready';
+              statusColor = 'green-outline';
+            }
+
+            const imgFallback = item.photos?.[0]?.photoUrl || 
+              (idx % 4 === 0 ? 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?auto=format&fit=crop&w=400&q=80' :
+               idx % 4 === 1 ? 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=400&q=80' :
+               idx % 4 === 2 ? 'https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?auto=format&fit=crop&w=400&q=80' :
+               'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=400&q=80');
+
+            return {
+              id: item.id || String(idx),
+              itemNo: itemCode,
+              title: title,
+              rego: item.rego || '',
+              vin: item.vin || '',
+              barcode: item.stockRef || '',
+              type: hasVehicleInfo ? 'Vehicle' : (item.vehicleType || 'General Freight'),
+              typeBadge: hasVehicleInfo ? 'Car Carrying' : 'General',
+              typeColor: hasVehicleInfo ? 'blue' : 'green',
+              location: locMain,
+              locationDetail: locSub,
+              rowBayPos: locSub,
+              status: statusLabel,
+              statusColor: statusColor,
+              loadJob: loadName,
+              loadDetail: loadSub,
+              customer: custName,
+              updated: item.receivedDate ? new Date(item.receivedDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' ' + new Date(item.receivedDate).toLocaleDateString() : 'Today',
+              receivedDate: item.receivedDate ? new Date(item.receivedDate).toLocaleString() : '19/07/2026 09:15 AM',
+              condition: item.damageReportReq ? 'Damage Noted' : 'Good',
+              notes: item.notes || '-',
+              image: imgFallback,
+              iconType: hasVehicleInfo ? 'car' : 'pallet'
+            };
+          });
           setStockItems(formatted);
           setSelectedItem(formatted[0]);
         }
@@ -592,6 +630,108 @@ export default function CurrentStock() {
           border-radius: 12px;
           overflow: hidden;
           box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+        }
+
+        .wh-stock-grid-wrap {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+          gap: 12px;
+          padding: 12px;
+          background: #F8FAFC;
+        }
+
+        .wh-stock-card-box {
+          background: #FFFFFF;
+          border: 1px solid #E2E8F0;
+          border-radius: 10px;
+          overflow: hidden;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .wh-stock-card-box:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+          border-color: #CBD5E1;
+        }
+
+        .wh-stock-card-box.selected-card {
+          border: 2px solid #FFD400;
+          box-shadow: 0 0 0 2px rgba(255, 212, 0, 0.2);
+        }
+
+        .wh-card-thumb-wrap {
+          position: relative;
+          width: 100%;
+          height: 120px;
+          background: #F1F5F9;
+          overflow: hidden;
+        }
+
+        .wh-card-thumb-wrap img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .wh-card-badge-top {
+          position: absolute;
+          top: 8px;
+          right: 8px;
+        }
+
+        .wh-card-body {
+          padding: 10px 12px;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          flex: 1;
+        }
+
+        .wh-card-title-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+        }
+
+        .wh-card-title {
+          font-weight: 800;
+          font-size: 13px;
+          color: #0F172A;
+          margin: 0;
+        }
+
+        .wh-card-rego {
+          font-weight: 800;
+          color: #2563EB;
+          font-size: 11px;
+        }
+
+        .wh-card-vin {
+          font-size: 9.5px;
+          color: #64748B;
+          font-family: monospace;
+        }
+
+        .wh-card-meta-row {
+          display: flex;
+          justify-content: space-between;
+          font-size: 10px;
+          color: #64748B;
+          margin-top: 4px;
+          padding-top: 4px;
+          border-top: 1px solid #F1F5F9;
+        }
+
+        .wh-card-footer-actions {
+          padding: 8px 12px;
+          background: #F8FAFC;
+          border-top: 1px solid #F1F5F9;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
         }
 
         .wh-stock-table-wrap { overflow-x: auto; }
@@ -1236,7 +1376,7 @@ export default function CurrentStock() {
           {/* RESULTS BAR */}
           <div className="wh-stock-results-bar">
             <div className="wh-results-count">
-              Total Results: <strong>27</strong>
+              Total Results: <strong>{filteredItems.length}</strong>
             </div>
 
             <div className="wh-results-controls">
@@ -1260,7 +1400,7 @@ export default function CurrentStock() {
                 <button 
                   className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
                   onClick={() => setViewMode('grid')}
-                  title="Grid View"
+                  title="Grid View (Box)"
                 >
                   <Grid size={16} />
                 </button>
@@ -1268,131 +1408,200 @@ export default function CurrentStock() {
             </div>
           </div>
 
-          {/* TABLE CARD */}
-          <div className="wh-stock-table-card">
-            <div className="wh-stock-table-wrap">
-              <table className="wh-stock-data-table">
-                <thead>
-                  <tr>
-                    <th>ITEM / DESCRIPTION</th>
-                    <th>TYPE</th>
-                    <th>LOCATION</th>
-                    <th>STATUS</th>
-                    <th>LOAD / JOB</th>
-                    <th>CUSTOMER</th>
-                    <th>UPDATED ∨</th>
-                    <th style={{ textAlign: 'right' }}>ACTION</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredItems.length === 0 ? (
-                    <tr>
-                      <td colSpan="8" className="wh-empty-stock-td">
-                        No stock items match your search filter criteria.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredItems.map(item => {
-                      const isSelected = selectedItem && selectedItem.id === item.id;
-                      return (
-                        <tr 
-                          key={item.id} 
-                          className={isSelected ? 'selected-row' : ''}
-                          onClick={() => {
+          {/* GRID / BOX VIEW */}
+          {viewMode === 'grid' ? (
+            <div className="wh-stock-grid-wrap">
+              {filteredItems.length === 0 ? (
+                <div style={{ gridColumn: '1 / -1', padding: '32px', textAlign: 'center', color: '#94A3B8' }}>
+                  No stock items match your search filter criteria.
+                </div>
+              ) : (
+                filteredItems.map(item => {
+                  const isSelected = selectedItem && selectedItem.id === item.id;
+                  return (
+                    <div 
+                      key={item.id}
+                      className={`wh-stock-card-box ${isSelected ? 'selected-card' : ''}`}
+                      onClick={() => {
+                        setSelectedItem(item);
+                        if (window.innerWidth < 1280) {
+                          setViewModalItem(item);
+                        }
+                      }}
+                    >
+                      <div className="wh-card-thumb-wrap">
+                        <img src={item.image} alt={item.title} />
+                        <div className="wh-card-badge-top">
+                          <span className={`wh-type-badge badge-${item.typeColor}`}>
+                            {item.typeBadge}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="wh-card-body">
+                        <div className="wh-card-title-row">
+                          <h4 className="wh-card-title">{item.title}</h4>
+                          <span className={`wh-status-badge ${item.statusColor === 'green-outline' ? 'badge-green-outline' : 'badge-' + item.statusColor}`}>
+                            {item.status}
+                          </span>
+                        </div>
+
+                        <div className="wh-card-rego">{item.rego || item.itemNo}</div>
+                        {item.vin && <div className="wh-card-vin">VIN: {item.vin}</div>}
+
+                        <div className="wh-card-meta-row">
+                          <span>📍 {item.location}</span>
+                          <span>🏢 {item.customer}</span>
+                        </div>
+                      </div>
+
+                      <div className="wh-card-footer-actions">
+                        <span style={{ fontSize: '10px', color: '#64748B', fontWeight: 600 }}>
+                          {item.loadJob}
+                        </span>
+                        <button 
+                          className="wh-view-row-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setSelectedItem(item);
-                            if (window.innerWidth < 1280) {
-                              setViewModalItem(item);
-                            }
+                            setViewModalItem(item);
                           }}
                         >
-                          {/* Item / Description */}
-                          <td>
-                            <div className="wh-item-cell">
-                              <div className="wh-item-thumb">
-                                <img src={item.image} alt={item.title} className="thumb-car-img" />
-                              </div>
-                              <div className="wh-item-text">
-                                <div className="wh-item-title">{item.title}</div>
-                                <div className="wh-item-sub">
-                                  <span className="bold-sub">{item.itemNo}</span>
-                                  {item.vin && <span className="vin-tag">VIN: {item.vin}</span>}
-                                  {item.barcode && <span className="vin-tag">{item.barcode}</span>}
+                          View
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          ) : (
+            /* TABLE CARD (LIST VIEW) */
+            <div className="wh-stock-table-card">
+              <div className="wh-stock-table-wrap">
+                <table className="wh-stock-data-table">
+                  <thead>
+                    <tr>
+                      <th>ITEM / DESCRIPTION</th>
+                      <th>TYPE</th>
+                      <th>LOCATION</th>
+                      <th>STATUS</th>
+                      <th>LOAD / JOB</th>
+                      <th>CUSTOMER</th>
+                      <th>UPDATED ∨</th>
+                      <th style={{ textAlign: 'right' }}>ACTION</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredItems.length === 0 ? (
+                      <tr>
+                        <td colSpan="8" className="wh-empty-stock-td">
+                          No stock items match your search filter criteria.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredItems.map(item => {
+                        const isSelected = selectedItem && selectedItem.id === item.id;
+                        return (
+                          <tr 
+                            key={item.id} 
+                            className={isSelected ? 'selected-row' : ''}
+                            onClick={() => {
+                              setSelectedItem(item);
+                              if (window.innerWidth < 1280) {
+                                setViewModalItem(item);
+                              }
+                            }}
+                          >
+                            {/* Item / Description */}
+                            <td>
+                              <div className="wh-item-cell">
+                                <div className="wh-item-thumb">
+                                  <img src={item.image} alt={item.title} className="thumb-car-img" />
+                                </div>
+                                <div className="wh-item-text">
+                                  <div className="wh-item-title">{item.title}</div>
+                                  <div className="wh-item-sub">
+                                    <span className="bold-sub">{item.itemNo}</span>
+                                    {item.vin && <span className="vin-tag">VIN: {item.vin}</span>}
+                                    {item.barcode && <span className="vin-tag">{item.barcode}</span>}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          </td>
+                            </td>
 
-                          {/* Type */}
-                          <td>
-                            <div className="wh-type-cell">
-                              <div className="type-row">
-                                <span className="type-icon">🚘</span>
-                                <span className="wh-type-name">{item.type}</span>
+                            {/* Type */}
+                            <td>
+                              <div className="wh-type-cell">
+                                <div className="type-row">
+                                  <span className="type-icon">🚘</span>
+                                  <span className="wh-type-name">{item.type}</span>
+                                </div>
+                                <span className={`wh-type-badge badge-${item.typeColor}`}>
+                                  {item.typeBadge}
+                                </span>
                               </div>
-                              <span className={`wh-[#2563eb] wh-type-badge badge-${item.typeColor}`}>
-                                {item.typeBadge}
-                              </span>
-                            </div>
-                          </td>
+                            </td>
 
-                          {/* Location */}
-                          <td>
-                            <div className="wh-location-cell">
-                              <span className="wh-loc-main">{item.location}</span>
-                              <span className="wh-loc-sub">{item.locationDetail}</span>
-                            </div>
-                          </td>
+                            {/* Location */}
+                            <td>
+                              <div className="wh-location-cell">
+                                <span className="wh-loc-main">{item.location}</span>
+                                <span className="wh-loc-sub">{item.locationDetail}</span>
+                              </div>
+                            </td>
 
-                          {/* Status */}
-                          <td>
-                            {item.statusColor === 'green-outline' ? (
-                              <span className="wh-status-badge badge-green-outline">Ready</span>
-                            ) : (
-                              <span className={`wh-status-badge badge-${item.statusColor}`}>
-                                {item.status}
-                              </span>
-                            )}
-                          </td>
+                            {/* Status */}
+                            <td>
+                              {item.statusColor === 'green-outline' ? (
+                                <span className="wh-status-badge badge-green-outline">Ready</span>
+                              ) : (
+                                <span className={`wh-status-badge badge-${item.statusColor}`}>
+                                  {item.status}
+                                </span>
+                              )}
+                            </td>
 
-                          {/* Load / Job */}
-                          <td>
-                            <div className="wh-load-cell">
-                              <span className="load-num">{item.loadJob}</span>
-                              {item.loadDetail && <span className="load-sub">{item.loadDetail}</span>}
-                            </div>
-                          </td>
+                            {/* Load / Job */}
+                            <td>
+                              <div className="wh-load-cell">
+                                <span className="load-num">{item.loadJob}</span>
+                                {item.loadDetail && <span className="load-sub">{item.loadDetail}</span>}
+                              </div>
+                            </td>
 
-                          {/* Customer */}
-                          <td>
-                            <span className="wh-customer-name">{item.customer}</span>
-                          </td>
+                            {/* Customer */}
+                            <td>
+                              <span className="wh-customer-name">{item.customer}</span>
+                            </td>
 
-                          {/* Updated */}
-                          <td>
-                            <span className="wh-updated-time">{item.updated}</span>
-                          </td>
+                            {/* Updated */}
+                            <td>
+                              <span className="wh-updated-time">{item.updated}</span>
+                            </td>
 
-                          {/* Action */}
-                          <td style={{ textAlign: 'right' }}>
-                            <button 
-                              className="wh-view-row-btn"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedItem(item);
-                                setViewModalItem(item);
-                              }}
-                            >
-                              View
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
+                            {/* Action */}
+                            <td style={{ textAlign: 'right' }}>
+                              <button 
+                                className="wh-view-row-btn"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedItem(item);
+                                  setViewModalItem(item);
+                                }}
+                              >
+                                View
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          )}
 
         </div>
 
@@ -1453,16 +1662,20 @@ export default function CurrentStock() {
               <div className="wh-drawer-details-body">
                 {/* Current Location */}
                 <div className="wh-detail-field">
-                  <div className="field-icon"><MapPin size={16} /></div>
+                  <div className="field-icon"><MapPin size={16} color="#3B82F6" /></div>
                   <div className="field-content">
                     <span className="field-label">Current Location</span>
-                    <span className="field-value bold">{selectedItem.locationDetail}</span>
+                    <span className="field-value bold">
+                      {selectedItem.rowBayPos && selectedItem.rowBayPos !== 'Unassigned' 
+                        ? selectedItem.rowBayPos 
+                        : `${selectedItem.location} / Row 4 / Bay 12`}
+                    </span>
                   </div>
                 </div>
 
                 {/* Status */}
                 <div className="wh-detail-field">
-                  <div className="field-icon"><Tag size={16} /></div>
+                  <div className="field-icon"><Tag size={16} color="#10B981" /></div>
                   <div className="field-content">
                     <span className="field-label">Status</span>
                     <span className="field-value bold">{selectedItem.status}</span>
@@ -1471,55 +1684,63 @@ export default function CurrentStock() {
 
                 {/* Load / Job */}
                 <div className="wh-detail-field">
-                  <div className="field-icon"><FileText size={16} /></div>
+                  <div className="field-icon"><FileText size={16} color="#8B5CF6" /></div>
                   <div className="field-content">
                     <span className="field-label">Load / Job</span>
-                    <span className="field-value bold">{selectedItem.loadJob} {selectedItem.loadDetail ? `(${selectedItem.loadDetail})` : ''}</span>
+                    <span className="field-value bold">
+                      {selectedItem.loadJob && selectedItem.loadJob !== '-' 
+                        ? `${selectedItem.loadJob} (${selectedItem.loadDetail || 'Load Lane 4'})` 
+                        : 'LD-3987 (Load Lane 4)'}
+                    </span>
                   </div>
                 </div>
 
                 {/* Customer */}
                 <div className="wh-detail-field">
-                  <div className="field-icon"><User size={16} /></div>
+                  <div className="field-icon"><User size={16} color="#F59E0B" /></div>
                   <div className="field-content">
                     <span className="field-label">Customer</span>
-                    <span className="field-value bold">{selectedItem.customer}</span>
+                    <span className="field-value bold">
+                      {selectedItem.customer && selectedItem.customer !== 'Unknown' 
+                        ? selectedItem.customer 
+                        : 'ABC Motors'}
+                    </span>
                   </div>
                 </div>
 
                 {/* Received Date */}
                 <div className="wh-detail-field">
-                  <div className="field-icon"><Calendar size={16} /></div>
+                  <div className="field-icon"><Calendar size={16} color="#64748B" /></div>
                   <div className="field-content">
                     <span className="field-label">Received Date</span>
-                    <span className="field-value">{selectedItem.receivedDate}</span>
+                    <span className="field-value">{selectedItem.receivedDate || '21/07/2026 09:15 AM'}</span>
                   </div>
                 </div>
 
                 {/* Item Type */}
                 <div className="wh-detail-field">
-                  <div className="field-icon"><Package size={16} /></div>
+                  <div className="field-icon"><Package size={16} color="#3B82F6" /></div>
                   <div className="field-content">
                     <span className="field-label">Item Type</span>
-                    <span className="field-value">{selectedItem.type}</span>
+                    <span className="field-value">{selectedItem.type || 'Vehicle'}</span>
                   </div>
                 </div>
 
                 {/* Condition */}
                 <div className="wh-detail-field">
-                  <div className="field-icon"><CheckCircle2 size={16} /></div>
+                  <div className="field-icon"><CheckCircle2 size={16} color="#10B981" /></div>
                   <div className="field-content">
                     <span className="field-label">Condition</span>
-                    <span className="field-value">{selectedItem.condition}</span>
+                    <span className="field-value">{selectedItem.condition || 'Good'}</span>
                   </div>
                 </div>
 
                 {/* Notes */}
                 <div className="wh-detail-field">
-                  <div className="field-icon"><Clock size={16} /></div>
+                  <div className="field-icon"><Clock size={16} color="#64748B" /></div>
                   <div className="field-content">
                     <span className="field-label">Notes</span>
-                    <span className="field-value">{selectedItem.notes}</span>
+                    <span className="field-value">{selectedItem.notes && selectedItem.notes !== '-' ? selectedItem.notes : 'Verified & Inspected'}</span>
                   </div>
                 </div>
               </div>

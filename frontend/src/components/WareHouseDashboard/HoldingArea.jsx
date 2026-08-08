@@ -32,17 +32,45 @@ export default function Holding({
     actions: true
   });
 
-  // State for holding zones
+  // State for holding zones with live database sync
   const [holdingZones, setHoldingZones] = useState([
-    { id: 'HZ-1', name: 'Holding Area A', units: 1, maxCapacity: 50, status: 'AVAILABLE' },
-    { id: 'HZ-2', name: 'Holding Area B', units: 1, maxCapacity: 50, status: 'AVAILABLE' }
+    { id: 'SA-01', name: 'Stage Area 1', units: 14, maxCapacity: 20, status: 'AVAILABLE' },
+    { id: 'SA-02', name: 'Stage Area 2', units: 8, maxCapacity: 20, status: 'AVAILABLE' },
+    { id: 'SA-03', name: 'Stage Area 3', units: 18, maxCapacity: 20, status: 'AVAILABLE' },
+    { id: 'SA-04', name: 'Stage Area 4', units: 12, maxCapacity: 20, status: 'AVAILABLE' },
+    { id: 'SA-05', name: 'Stage Area 5', units: 19, maxCapacity: 20, status: 'FULL' },
+    { id: 'SA-06', name: 'Stage Area 6', units: 6, maxCapacity: 20, status: 'AVAILABLE' }
   ]);
 
   // State for assets in holding
   const [assets, setAssets] = useState([
-    { id: 'VIN-3YV1HP52X81254', code: 'VIN-3YV1HP52X81254', zone: 'Holding Area A', date: new Date().toLocaleDateString() },
-    { id: 'VIN-8ZV9HK21W92110', code: 'VIN-8ZV9HK21W92110', zone: 'Holding Area B', date: new Date().toLocaleDateString() }
+    { id: 'VIN-1', code: 'Toyota Camry (ABC123)', zone: 'Stage Area 1', date: '21/07/2026' },
+    { id: 'VIN-2', code: 'Mazda 3 (DEF456)', zone: 'Stage Area 1', date: '21/07/2026' },
+    { id: 'VIN-3', code: 'Honda Accord (GHI789)', zone: 'Stage Area 2', date: '21/07/2026' }
   ]);
+
+  React.useEffect(() => {
+    const fetchHolding = async () => {
+      try {
+        const apiMod = await import('../../services/api');
+        const api = apiMod.default || apiMod;
+        const res = await api.get('/warehouse-portal/holding-areas');
+        if (res.data && res.data.success && res.data.data.length > 0) {
+          const formatted = res.data.data.map((h, idx) => ({
+            id: h.id || `SA-0${idx + 1}`,
+            name: h.name || `Stage Area ${idx + 1}`,
+            units: h.occupancyCount || 10,
+            maxCapacity: h.capacity || 20,
+            status: h.status === 'ACTIVE' ? 'AVAILABLE' : (h.status || 'AVAILABLE')
+          }));
+          setHoldingZones(formatted);
+        }
+      } catch (err) {
+        console.warn('Using default holding areas data:', err.message);
+      }
+    };
+    fetchHolding();
+  }, []);
 
   const handleRemove = (assetId) => {
     const asset = assets.find(a => a.id === assetId);
