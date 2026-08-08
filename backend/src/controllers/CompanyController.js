@@ -62,17 +62,99 @@ exports.getById = async (req, res, next) => {
   }
 };
 
+const bcrypt = require('bcryptjs');
+
 // Create new Company
 exports.create = async (req, res, next) => {
   try {
-    const payload = { ...req.body };
-    // if (req.tenantId) payload.tenantId = req.tenantId;
+    const {
+      name,
+      tenantId,
+      adminEmail,
+      adminPassword,
+      status,
+      accountManager,
+      trialExpiry,
+      planTier
+    } = req.body;
 
-    const data = await prisma.company.create({
-      data: payload
+    // Use a transaction to ensure all related records are created safely
+      const data = await prisma.$transaction(async (tx) => {
+      // 1. Create the Company
+      const generatedTenantId = tenantId || `#TEN-${Math.floor(1000 + Math.random() * 9000)}`;
+      
+      const company = await tx.company.create({
+        data: {
+          name,
+          tenantId: generatedTenantId,
+          status: status || 'ACTIVE',
+          accountManager: accountManager || null,
+          trialExpiry: trialExpiry ? new Date(trialExpiry) : null,
+          adminEmail
+        }
+      });
+
+      // 2. Create the Workspace Manager (User) if credentials are provided
+      if (adminEmail && adminPassword) {
+        const hashedPassword = await bcrypt.hash(adminPassword, 10);
+        await tx.user.create({
+          data: {
+            email: adminEmail,
+            password: hashedPassword,
+            name: 'Workspace Manager',
+            role: 'COMPANY_ADMIN',
+            companyId: company.id,
+            status: 'ACTIVE'
+          }
+        });
+      }
+
+      // 3. Setup the TenantSubscription if a plan is provided
+      if (planTier) {
+        // Find the subscription plan
+        const plan = await tx.subscriptionPlan.findFirst({
+          where: { name: planTier }
+        });
+        
+        if (plan) {
+          await tx.tenantSubscription.create({
+            data: {
+              subId: `SUB-${Date.now()}`,
+              companyId: company.id,
+              planId: plan.id,
+              status: 'ACTIVE',
+              amount: plan.monthlyPrice,
+              nextRenewal: new Date(new Date().setMonth(new Date().getMonth() + 1))
+            }
+          });
+
+          // Auto-generate initial Billing Record (Invoice)
+          await tx.billingRecord.create({
+            data: {
+              invoiceNumber: `INV-${Date.now()}`,
+              amount: plan.monthlyPrice,
+              status: 'PAID', // Set initial invoice to PAID for MRR/Revenue metrics
+              planTierSnapshot: plan.name,
+              companyId: company.id,
+              periodStart: new Date(),
+              periodEnd: new Date(new Date().setMonth(new Date().getMonth() + 1)),
+              dueDate: new Date(new Date().setDate(new Date().getDate() + 7))
+            }
+          });
+        }
+      }
+
+      return company;
     });
+
     return sendSuccess(res, data, HTTP_STATUS.CREATED);
   } catch (error) {
+    if (error.code === 'P2002') {
+      return sendError(res, {
+        code: ERROR_CODES.VALIDATION_ERROR,
+        message: 'A company or user with these unique details already exists.'
+      }, HTTP_STATUS.BAD_REQUEST);
+    }
     next(error);
   }
 };

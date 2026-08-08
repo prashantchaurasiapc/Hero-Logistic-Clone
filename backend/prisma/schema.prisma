@@ -551,9 +551,9 @@ model Company {
   equipmentSwaps     EquipmentSwap[]
   offlineSyncItems   OfflineSyncItem[]
 
-  lanePricingRules  LanePricingRule[]
-  vehicleTypeRates  VehicleTypeRate[]
-  fuelSurchargeLogs FuelSurchargeLog[]
+  lanePricingRules      LanePricingRule[]
+  vehicleTypeRates      VehicleTypeRate[]
+  fuelSurchargeLogs     FuelSurchargeLog[]
   workflowRules         WorkflowRule[]
   aiModelRegistries     AiModelRegistry[]
   notificationTemplates NotificationTemplate[]
@@ -2376,22 +2376,22 @@ model Document {
 }
 
 model PaymentGatewayConfig {
-  id String @id @default(uuid())
-  stripeEnabled Boolean @default(false)
+  id                   String   @id @default(uuid())
+  stripeEnabled        Boolean  @default(false)
   stripePublishableKey String?
-  stripeSecretKey String?
-  paypalEnabled Boolean @default(false)
-  achEnabled Boolean @default(false)
-  achRoutingNumber String?
-  achAccountNumber String?
-  wireEnabled Boolean @default(false)
-  wireBankName String?
-  wireSwiftCode String?
-  wireAccountNumber String?
-  manualEnabled Boolean @default(false)
-  manualInstructions String? @db.Text
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  stripeSecretKey      String?
+  paypalEnabled        Boolean  @default(false)
+  achEnabled           Boolean  @default(false)
+  achRoutingNumber     String?
+  achAccountNumber     String?
+  wireEnabled          Boolean  @default(false)
+  wireBankName         String?
+  wireSwiftCode        String?
+  wireAccountNumber    String?
+  manualEnabled        Boolean  @default(false)
+  manualInstructions   String?  @db.Text
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   @@map("payment_gateway_config")
 }
@@ -2401,15 +2401,15 @@ model PaymentGatewayConfig {
 // ----------------------------------------------------------------------
 
 model LanePricingRule {
-  id              String   @id @default(uuid())
-  origin          String   // e.g., "Sydney, NSW"
-  destination     String   // e.g., "Melbourne, VIC"
-  minCharge       Float    @default(400)  // $AUD
-  baseLinehaulRate Float   @default(1500) // $AUD
-  perKmRate       Float    @default(2.50) // $AUD per km
-  fuelSurcharge   Float    @default(14.5) // %
-  status          String   @default("Active") // Active | Inactive
-  effectiveDate   DateTime @default(now())
+  id               String   @id @default(uuid())
+  origin           String // e.g., "Sydney, NSW"
+  destination      String // e.g., "Melbourne, VIC"
+  minCharge        Float    @default(400) // $AUD
+  baseLinehaulRate Float    @default(1500) // $AUD
+  perKmRate        Float    @default(2.50) // $AUD per km
+  fuelSurcharge    Float    @default(14.5) // %
+  status           String   @default("Active") // Active | Inactive
+  effectiveDate    DateTime @default(now())
 
   companyId String
   company   Company @relation(fields: [companyId], references: [id])
@@ -2422,11 +2422,11 @@ model LanePricingRule {
 
 model VehicleTypeRate {
   id          String  @id @default(uuid())
-  vehicleType String  // e.g., "B-Double Combination"
+  vehicleType String // e.g., "B-Double Combination"
   capacity    String? // e.g., "34 Pallets / 44T"
   hourlyRate  Float   @default(150) // $AUD/hr
   perKmRate   Float   @default(2.50) // $AUD/km
-  minHours    Int     @default(4)   // Minimum billable hours
+  minHours    Int     @default(4) // Minimum billable hours
   status      String  @default("Active") // Active | Inactive
 
   companyId String
@@ -2439,12 +2439,12 @@ model VehicleTypeRate {
 }
 
 model FuelSurchargeLog {
-  id             String   @id @default(uuid())
-  rate           Float    // e.g., 14.50 (%)
-  effectiveDate  DateTime @default(now())
-  setBy          String?  // name of operator
-  notes          String?  @db.Text
-  isActive       Boolean  @default(false)
+  id            String   @id @default(uuid())
+  rate          Float // e.g., 14.50 (%)
+  effectiveDate DateTime @default(now())
+  setBy         String? // name of operator
+  notes         String?  @db.Text
+  isActive      Boolean  @default(false)
 
   companyId String
   company   Company @relation(fields: [companyId], references: [id])
@@ -2455,93 +2455,92 @@ model FuelSurchargeLog {
 }
 
 model WorkflowRule {
-  id           String   @id @default(uuid())
+  id           String  @id @default(uuid())
   name         String
-  description  String?  @db.Text
-  category     String   @default("Invoice Automation")
+  description  String? @db.Text
+  category     String  @default("Invoice Automation")
   trigger      String?
   action       String?
-  status       String   @default("Active")
-  lastExecuted String?  @default("Never")
-  executions   Int      @default(0)
-  createdBy    String?  @default("Sarah Mitchell")
-  
-  companyId    String?
-  company      Company? @relation(fields: [companyId], references: [id])
+  status       String  @default("Active")
+  lastExecuted String? @default("Never")
+  executions   Int     @default(0)
+  createdBy    String? @default("Sarah Mitchell")
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("workflow_rule")
 }
 
 model AiModelRegistry {
-  id           String   @id @default(uuid())
-  name         String
-  provider     String   @default("OpenAI")
-  version      String   @default("v1.0")
-  latencySla   String?  @default("120ms")
-  costRate     String?  @default("$0.002 / 1k tokens")
-  status       String   @default("Active")
-  lastUpdated  String?  @default("Today")
-  
-  companyId    String?
-  company      Company? @relation(fields: [companyId], references: [id])
+  id          String  @id @default(uuid())
+  name        String
+  provider    String  @default("OpenAI")
+  version     String  @default("v1.0")
+  latencySla  String? @default("120ms")
+  costRate    String? @default("$0.002 / 1k tokens")
+  status      String  @default("Active")
+  lastUpdated String? @default("Today")
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("ai_model_registry")
 }
 
 model NotificationTemplate {
-  id           String   @id @default(uuid())
-  title        String
-  channel      String   @default("Email")
-  body         String?  @db.Text
-  category     String?  @default("General")
-  status       String   @default("Active")
-  
-  companyId    String?
-  company      Company? @relation(fields: [companyId], references: [id])
+  id       String  @id @default(uuid())
+  title    String
+  channel  String  @default("Email")
+  body     String? @db.Text
+  category String? @default("General")
+  status   String  @default("Active")
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("notification_template")
 }
 
 model NotificationRule {
-  id          String   @id @default(uuid())
-  name        String
-  trigger     String
-  channels    String   @default("SMS + Email")
-  recipient   String?  @default("Customer & Accounts")
-  priority    String   @default("High")
-  status      String   @default("Enabled")
-  
-  companyId   String?
-  company     Company? @relation(fields: [companyId], references: [id])
+  id        String  @id @default(uuid())
+  name      String
+  trigger   String
+  channels  String  @default("SMS + Email")
+  recipient String? @default("Customer & Accounts")
+  priority  String  @default("High")
+  status    String  @default("Enabled")
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("notification_rule")
 }
 
 model RecipientGroup {
-  id          String   @id @default(uuid())
+  id          String  @id @default(uuid())
   name        String
-  count       String?  @default("0 members")
-  description String?  @db.Text
-  status      String   @default("Active")
+  count       String? @default("0 members")
+  description String? @db.Text
+  status      String  @default("Active")
 
-  companyId   String?
-  company     Company? @relation(fields: [companyId], references: [id])
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("recipient_group")
 }
-

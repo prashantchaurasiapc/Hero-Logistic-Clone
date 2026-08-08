@@ -13,7 +13,15 @@ exports.getAll = async (req, res, next) => {
 
     const [data, total] = await Promise.all([
       prisma.feature.findMany({
-        where, skip, take, orderBy
+        where, skip, take, orderBy,
+        include: {
+          planFeatures: {
+            include: { subscriptionPlan: true }
+          },
+          _count: {
+            select: { usageLogs: true, companyOverrides: true }
+          }
+        }
       }),
       prisma.feature.count({ where })
     ]);
@@ -49,11 +57,26 @@ exports.getById = async (req, res, next) => {
 // Create new Feature
 exports.create = async (req, res, next) => {
   try {
-    const payload = { ...req.body };
+    const { plans, ...payload } = req.body;
     // if (req.tenantId) payload.tenantId = req.tenantId;
 
     const data = await prisma.feature.create({
-      data: payload
+      data: {
+        ...payload,
+        ...(plans && plans.length > 0 ? {
+          planFeatures: {
+            create: plans.map(planId => ({
+              subscriptionPlan: { connect: { id: planId } },
+              isEnabled: true
+            }))
+          }
+        } : {})
+      },
+      include: {
+        planFeatures: {
+          include: { subscriptionPlan: true }
+        }
+      }
     });
     return sendSuccess(res, data, HTTP_STATUS.CREATED);
   } catch (error) {

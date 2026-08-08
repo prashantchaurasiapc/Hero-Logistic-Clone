@@ -45,7 +45,11 @@ export default function Companies() {
   const [tenantName, setTenantName] = useState('');
   const [managerEmail, setManagerEmail] = useState('');
   const [managerPassword, setManagerPassword] = useState('');
-  const [selectedPlan, setSelectedPlan] = useState('Professional Tier');
+  const [selectedPlan, setSelectedPlan] = useState('');
+  const [tenantId, setTenantId] = useState('');
+  const [status, setStatus] = useState('ACTIVE');
+  const [accountManager, setAccountManager] = useState('');
+  const [trialExpiry, setTrialExpiry] = useState('');
 
   // Action Menu dropdown state
   const [activeActionsMenu, setActiveActionsMenu] = useState(null); // ID of company whose menu is open
@@ -95,17 +99,22 @@ export default function Companies() {
   }, [toast]);
 
   const [companies, setCompanies] = useState([]);
+  const [availablePlans, setAvailablePlans] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchCompanies = async () => {
+  const fetchCompaniesAndPlans = async () => {
     setIsLoading(true);
     try {
-      const res = await api.get('/companys');
-      if (res.data.success) {
-        const mappedData = res.data.data.map(company => {
+      const [companiesRes, plansRes] = await Promise.all([
+        api.get('/companys'),
+        api.get('/subscription-plans')
+      ]);
+
+      if (companiesRes.data.success) {
+        const mappedData = companiesRes.data.data.map(company => {
           const activeSub = company.tenantSubscription;
           return {
-            id: company.id, // Or tenantId if populated
+            id: company.tenantId || company.id, // Or tenantId if populated
             name: company.name,
             plan: activeSub?.plan?.name || 'No Plan',
             status: company.status,
@@ -123,17 +132,38 @@ export default function Companies() {
         });
         setCompanies(mappedData);
       }
+
+      if (plansRes.data.success) {
+        setAvailablePlans(plansRes.data.data);
+        if (plansRes.data.data.length > 0) {
+          setSelectedPlan(plansRes.data.data[0].name);
+        }
+      }
+
     } catch (err) {
-      console.error('Failed to load companies:', err);
-      showNotification('Failed to load tenants data.');
+      console.error('Failed to load data:', err);
+      showNotification('Failed to load tenants or plans data.');
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchCompanies();
+    fetchCompaniesAndPlans();
   }, []);
+
+  useEffect(() => {
+    if (selectedPlan && availablePlans.length > 0) {
+      const plan = availablePlans.find(p => p.name === selectedPlan);
+      if (plan && plan.trialDays) {
+        const expiry = new Date();
+        expiry.setDate(expiry.getDate() + plan.trialDays);
+        setTrialExpiry(expiry.toISOString().split('T')[0]);
+      } else {
+        setTrialExpiry('');
+      }
+    }
+  }, [selectedPlan, availablePlans]);
 
   const handleProvisionTenant = async (e) => {
     e.preventDefault();
@@ -144,7 +174,12 @@ export default function Companies() {
       const res = await api.post('/companys', {
         name: tenantName,
         adminEmail: managerEmail,
-        status: 'ACTIVE'
+        adminPassword: managerPassword,
+        planTier: selectedPlan,
+        tenantId: tenantId,
+        status: status,
+        accountManager: accountManager,
+        trialExpiry: trialExpiry || null
       });
       
       if (res.data?.success) {
@@ -153,12 +188,16 @@ export default function Companies() {
         setTenantName('');
         setManagerEmail('');
         setManagerPassword('');
-        setSelectedPlan('Professional Tier');
-        fetchCompanies();
+        if (availablePlans.length > 0) setSelectedPlan(availablePlans[0].name);
+        setTenantId('');
+        setStatus('ACTIVE');
+        setAccountManager('');
+        setTrialExpiry('');
+        fetchCompaniesAndPlans();
       }
     } catch (err) {
       console.error('Failed to create company:', err);
-      showNotification('Error provisioning tenant.');
+      showNotification(err.response?.data?.error?.message || 'Error provisioning tenant.');
     } finally {
       setIsLoading(false);
     }
@@ -294,7 +333,6 @@ export default function Companies() {
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">TOTAL COMPANIES</span>
             <span className="text-2xl font-black text-slate-800 block mt-1.5">{companies.length}</span>
           </div>
-          <span className="text-[10px] font-semibold text-slate-400 mt-2 block whitespace-nowrap">Registered tenants size Synced</span>
         </div>
 
         {/* Card 2 */}
@@ -303,18 +341,13 @@ export default function Companies() {
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">ACTIVE COMPANIES</span>
             <span className="text-2xl font-black text-slate-800 block mt-1.5">{companies.filter(c => c.status === 'ACTIVE').length}</span>
           </div>
-          <span className="text-[10px] font-semibold text-slate-400 mt-2 block whitespace-nowrap">Active subscription sy... Stable</span>
         </div>
 
         {/* Card 3 */}
         <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between min-h-[100px]">
           <div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">TRIAL COMPANIES</span>
-            <span className="text-2xl font-black text-slate-800 block mt-1.5">0</span>
-          </div>
-          <div className="flex justify-between items-center mt-2">
-            <span className="text-[10px] font-semibold text-slate-400 whitespace-nowrap">SaaS trial instances</span>
-            <span className="text-[9px] font-black text-emerald-500 bg-emerald-50 px-1.5 py-0.5 rounded-md shrink-0">+1 new</span>
+            <span className="text-2xl font-black text-slate-800 block mt-1.5">{companies.filter(c => c.status === 'TRIAL').length}</span>
           </div>
         </div>
 
@@ -324,21 +357,15 @@ export default function Companies() {
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">SUSPENDED COMPANIES</span>
             <span className="text-2xl font-black text-slate-800 block mt-1.5">{companies.filter(c => c.status === 'HOLD').length}</span>
           </div>
-          <div className="flex justify-between items-center mt-2">
-            <span className="text-[10px] font-semibold text-slate-400 whitespace-nowrap">Suspended/On-Hold ...</span>
-            <span className="text-[9px] font-black text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md shrink-0">0 alerts</span>
-          </div>
         </div>
 
         {/* Card 5 */}
         <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between min-h-[100px]">
           <div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">EXPIRING THIS MONTH</span>
-            <span className="text-2xl font-black text-slate-800 block mt-1.5">0</span>
-          </div>
-          <div className="flex justify-between items-center mt-2">
-            <span className="text-[10px] font-semibold text-slate-400 whitespace-nowrap">Trial instances expir...</span>
-            <span className="text-[9px] font-black text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded-md shrink-0">1 warning</span>
+            <span className="text-2xl font-black text-slate-800 block mt-1.5">
+              {companies.filter(c => c.expiry && new Date(c.expiry) > new Date() && new Date(c.expiry) <= new Date(new Date().setMonth(new Date().getMonth() + 1))).length}
+            </span>
           </div>
         </div>
 
@@ -348,10 +375,6 @@ export default function Companies() {
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">MONTHLY REVENUE</span>
             <span className="text-2xl font-black text-slate-800 block mt-1.5">${companies.reduce((sum, c) => sum + (c.mrr || 0), 0).toLocaleString()}</span>
           </div>
-          <div className="flex justify-between items-center mt-2">
-            <span className="text-[10px] font-semibold text-slate-400 whitespace-nowrap">MRR platform baseline</span>
-            <span className="text-[9px] font-black text-emerald-500 bg-emerald-50 px-1.5 py-0.5 rounded-md shrink-0">+8%</span>
-          </div>
         </div>
 
         {/* Card 7 */}
@@ -359,10 +382,6 @@ export default function Companies() {
           <div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">ANNUAL REVENUE</span>
             <span className="text-2xl font-black text-slate-800 block mt-1.5">${(companies.reduce((sum, c) => sum + (c.mrr || 0), 0) * 12).toLocaleString()}</span>
-          </div>
-          <div className="flex justify-between items-center mt-2">
-            <span className="text-[10px] font-semibold text-slate-400 whitespace-nowrap">ARR projection rate</span>
-            <span className="text-[9px] font-black text-emerald-500 bg-emerald-50 px-1.5 py-0.5 rounded-md shrink-0">+12%</span>
           </div>
         </div>
 
@@ -372,10 +391,6 @@ export default function Companies() {
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">ACTIVE USERS</span>
             <span className="text-2xl font-black text-slate-800 block mt-1.5">{companies.reduce((sum, c) => sum + (c.users || 0), 0)}</span>
           </div>
-          <div className="flex justify-between items-center mt-2">
-            <span className="text-[10px] font-semibold text-slate-400 whitespace-nowrap">Managers & staff a...</span>
-            <span className="text-[9px] font-black text-emerald-500 bg-emerald-50 px-1.5 py-0.5 rounded-md shrink-0">+3 active</span>
-          </div>
         </div>
 
         {/* Card 9 */}
@@ -384,7 +399,6 @@ export default function Companies() {
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">TOTAL DRIVERS</span>
             <span className="text-2xl font-black text-slate-800 block mt-1.5">{companies.reduce((sum, c) => sum + (c.drivers || 0), 0)}</span>
           </div>
-          <span className="text-[10px] font-semibold text-slate-400 mt-2 block whitespace-nowrap">SaaS fleet drivers pool Stable</span>
         </div>
 
         {/* Card 10 */}
@@ -393,19 +407,14 @@ export default function Companies() {
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">TOTAL LOADS</span>
             <span className="text-2xl font-black text-slate-800 block mt-1.5">{companies.reduce((sum, c) => sum + (c.loads || 0), 0)}</span>
           </div>
-          <div className="flex justify-between items-center mt-2">
-            <span className="text-[10px] font-semibold text-slate-400 whitespace-nowrap">Loads managed all-...</span>
-            <span className="text-[9px] font-black text-emerald-500 bg-emerald-50 px-1.5 py-0.5 rounded-md shrink-0">+4 today</span>
-          </div>
         </div>
 
         {/* Card 11 */}
         <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col justify-between min-h-[100px]">
           <div>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">STORAGE USAGE</span>
-            <span className="text-xl font-black text-slate-800 block mt-1.5">4.78 TB / 10 TB</span>
+            <span className="text-xl font-black text-slate-800 block mt-1.5">N/A</span>
           </div>
-          <span className="text-[10px] font-semibold text-slate-400 mt-2 block whitespace-nowrap">Total data usage pool Normal</span>
         </div>
 
         {/* 12th grid space (empty/blank in mockup) */}
@@ -660,9 +669,9 @@ export default function Companies() {
                 className="w-full px-3 py-2 bg-white border border-slate-200 focus:border-brand-500 text-xs font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
               >
                 <option value="All Plans">All Plans</option>
-                <option value="Starter">Starter</option>
-                <option value="Professional">Professional</option>
-                <option value="Enterprise">Enterprise</option>
+                {availablePlans.map(plan => (
+                  <option key={plan.id} value={plan.name}>{plan.name}</option>
+                ))}
               </select>
             </div>
 
@@ -973,7 +982,7 @@ export default function Companies() {
       {/* Provision New SaaS Tenant Modal */}
       {showProvisionModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[999] p-4">
-          <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-[420px] overflow-hidden shadow-2xl animate-fade-in text-left">
+          <div className="bg-white rounded-3xl border border-slate-200 w-full max-w-[420px] max-h-[90vh] overflow-y-auto custom-scrollbar shadow-2xl animate-fade-in text-left">
 
             <div className="flex justify-between items-center px-6 py-5 border-b border-slate-100">
               <h3 className="text-sm font-black text-slate-800">Provision New SaaS Tenant</h3>
@@ -1029,10 +1038,57 @@ export default function Companies() {
                   onChange={(e) => setSelectedPlan(e.target.value)}
                   className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-xs font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
                 >
-                  <option value="Professional Tier">Professional Tier</option>
-                  <option value="Starter Tier">Starter Tier</option>
-                  <option value="Enterprise Tier">Enterprise Tier</option>
+                  {availablePlans.map(plan => (
+                    <option key={plan.id} value={plan.name}>{plan.name}</option>
+                  ))}
                 </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">COMPANY ID (Optional)</label>
+                <input
+                  type="text"
+                  value={tenantId}
+                  onChange={(e) => setTenantId(e.target.value)}
+                  placeholder="e.g. #TEN-001"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-xs font-semibold rounded-xl focus:outline-none text-slate-800"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">STATUS</label>
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-xs font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
+                >
+                  <option value="ACTIVE">ACTIVE</option>
+                  <option value="TRIAL">TRIAL</option>
+                  <option value="HOLD">HOLD</option>
+                </select>
+              </div>
+
+              {status === 'TRIAL' && (
+                <div className="space-y-1.5">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">TRIAL EXPIRY DATE</label>
+                  <input
+                    type="date"
+                    value={trialExpiry}
+                    onChange={(e) => setTrialExpiry(e.target.value)}
+                    className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-xs font-semibold rounded-xl focus:outline-none text-slate-800"
+                  />
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">ACCOUNT MANAGER (Optional)</label>
+                <input
+                  type="text"
+                  value={accountManager}
+                  onChange={(e) => setAccountManager(e.target.value)}
+                  placeholder="e.g. John Smith"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-xs font-semibold rounded-xl focus:outline-none text-slate-800"
+                />
               </div>
 
               <div className="pt-2">

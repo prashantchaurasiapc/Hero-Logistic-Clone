@@ -60,12 +60,8 @@ exports.me = async (req, res, next) => {
       return sendError(res, { code: ERROR_CODES.UNAUTHORIZED_ACCESS, message: 'Invalid session context' }, HTTP_STATUS.UNAUTHORIZED);
     }
     const freshUser = await prisma.user.findUnique({
-<<<<<<< HEAD
-      where: { id: req.user.userId }
-=======
       where: { id: targetId },
       include: { customRole: true, company: true }
->>>>>>> ef4b31c53df7141ef1e7f83d808c35533b4c4db6
     });
     if (freshUser) {
       delete freshUser.password;

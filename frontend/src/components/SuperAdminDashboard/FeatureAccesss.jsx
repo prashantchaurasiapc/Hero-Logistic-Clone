@@ -24,6 +24,7 @@ export default function FeatureAccess() {
   const [newFeatDesc, setNewFeatDesc] = useState('');
   const [newFeatCategory, setNewFeatCategory] = useState('Platform');
   const [newFeatLicensing, setNewFeatLicensing] = useState('Core');
+  const [newFeatPlans, setNewFeatPlans] = useState({});
 
   // Group Accordion States (Open by default, Billing closed by default)
   const [accordions, setAccordions] = useState({
@@ -44,37 +45,61 @@ export default function FeatureAccess() {
 
   // Features list state — loaded from API
   const [features, setFeatures] = useState([]);
+  const [availablePlans, setAvailablePlans] = useState([]);
 
   // Audit Center logs — loaded from API
   const [auditLogs, setAuditLogs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchFeatures = async () => {
+  const fetchFeaturesAndPlans = async () => {
+    setIsLoading(true);
     try {
-      const res = await api.get('/features?pageSize=100');
-      if (res.data?.success) {
-        const mapped = res.data.data.map(f => ({
-          id: f.id,
-          uniqueId: f.uniqueId,
-          name: f.name,
-          version: f.version || 'v1.0.0',
-          desc: f.description ? f.description.substring(0, 45) + '...' : f.name,
-          fullDesc: f.description || f.name,
-          category: f.category || 'Platform',
-          requiredModules: f.category + ' Base',
-          apiLoad: f.apiLoadEst ? `${f.apiLoadEst.toLocaleString()} requests` : 'N/A',
-          storage: f.storageEstGB ? `${f.storageEstGB} GB` : 'N/A',
-          footprint: f.performanceFootprint || 'Low',
-          plans: { Starter: true, Pro: true, Enterprise: true, Custom: true },
-          addon: 'No',
-          licensing: f.licensingType === 'CORE' ? 'Core'
-            : f.licensingType === 'PREMIUM' ? 'Premium'
-            : f.licensingType === 'ENTERPRISE_ONLY' ? 'Enterprise Only'
-            : f.licensingType === 'ADD_ON' ? 'Add-on' : 'Core',
-          status: f.status === 'ENABLED' ? 'Enabled' : 'Disabled',
-          usage: 0,
-          companies: 0
-        }));
+      const [featRes, plansRes] = await Promise.all([
+        api.get('/features?pageSize=100'),
+        api.get('/subscription-plans')
+      ]);
+      
+      let fetchedPlans = [];
+      if (plansRes.data?.success) {
+        fetchedPlans = plansRes.data.data;
+        setAvailablePlans(fetchedPlans);
+      }
+
+      if (featRes.data?.success) {
+        const mapped = featRes.data.data.map(f => {
+          // Determine which plans are enabled from the planFeatures relation
+          const planMap = {};
+          if (f.planFeatures) {
+            f.planFeatures.forEach(pf => {
+              if (pf.isEnabled && pf.subscriptionPlan) {
+                planMap[pf.subscriptionPlan.id] = true;
+              }
+            });
+          }
+
+          return {
+            id: f.id,
+            uniqueId: f.uniqueId,
+            name: f.name,
+            version: f.version || 'v1.0.0',
+            desc: f.description ? f.description.substring(0, 45) + '...' : f.name,
+            fullDesc: f.description || f.name,
+            category: f.category || 'Platform',
+            requiredModules: f.category + ' Base',
+            apiLoad: f.apiLoadEst ? `${f.apiLoadEst.toLocaleString()} requests` : 'N/A',
+            storage: f.storageEstGB ? `${f.storageEstGB} GB` : 'N/A',
+            footprint: f.performanceFootprint || 'Low',
+            plans: planMap,
+            addon: 'No',
+            licensing: f.licensingType === 'CORE' ? 'Core'
+              : f.licensingType === 'PREMIUM' ? 'Premium'
+              : f.licensingType === 'ENTERPRISE_ONLY' ? 'Enterprise Only'
+              : f.licensingType === 'ADD_ON' ? 'Add-on' : 'Core',
+            status: f.status === 'ENABLED' ? 'Enabled' : 'Disabled',
+            usage: f._count?.usageLogs || 0,
+            companies: f._count?.companyOverrides || 0
+          };
+        });
         setFeatures(mapped);
       }
     } catch (err) {
@@ -103,7 +128,7 @@ export default function FeatureAccess() {
   };
 
   useEffect(() => {
-    fetchFeatures();
+    fetchFeaturesAndPlans();
     fetchAuditLogs();
   }, []);
 
@@ -137,7 +162,7 @@ export default function FeatureAccess() {
       const res = await api.put(`/features/${id}`, { status: dbStatus });
       if (res.data?.success) {
         showNotification(`Feature status updated to ${newStatus}.`);
-        fetchFeatures();
+        fetchFeaturesAndPlans();
       }
     } catch (err) {
       showNotification('Error updating feature status.');
@@ -185,7 +210,7 @@ export default function FeatureAccess() {
         const res = await api.delete(`/features/${featId}`);
         if (res.status === 204 || res.data?.success) {
           showNotification(`Deleted "${featName}".`);
-          fetchFeatures();
+          fetchFeaturesAndPlans();
         }
       } catch (err) {
         showNotification('Error deleting feature.');
@@ -208,17 +233,20 @@ export default function FeatureAccess() {
       'Enterprise Only': 'ENTERPRISE_ONLY'
     };
     try {
+      const selectedPlanIds = Object.keys(newFeatPlans).filter(pid => newFeatPlans[pid]);
+
       const res = await api.post('/features', {
         uniqueId: cleanId,
         name: newFeatName,
         description: newFeatDesc,
         category: newFeatCategory,
         licensingType: licensingMap[newFeatLicensing] || 'CORE',
-        status: 'ENABLED'
+        status: 'ENABLED',
+        plans: selectedPlanIds
       });
       if (res.data?.success) {
         showNotification(`Feature gate "${newFeatName}" registered successfully!`);
-        fetchFeatures();
+        fetchFeaturesAndPlans();
         setShowAddModal(false);
         setModalStep(1);
         setNewFeatName('');
@@ -226,6 +254,7 @@ export default function FeatureAccess() {
         setNewFeatDesc('');
         setNewFeatCategory('Platform');
         setNewFeatLicensing('Core');
+        setNewFeatPlans({});
       } else {
         showNotification('Error creating feature.');
       }
@@ -540,10 +569,9 @@ export default function FeatureAccess() {
                               </th>
                               <th className="py-3 px-4 font-black w-[220px] min-w-[220px] max-w-[220px]">Feature Name</th>
                               <th className="py-3 px-4 font-black w-[300px] min-w-[300px] max-w-[300px]">Description</th>
-                              <th className="py-3 px-2 text-center font-black w-[70px] min-w-[70px] max-w-[70px]">Starter</th>
-                              <th className="py-3 px-2 text-center font-black w-[70px] min-w-[70px] max-w-[70px]">Pro</th>
-                              <th className="py-3 px-2 text-center font-black w-[80px] min-w-[80px] max-w-[80px]">Enterprise</th>
-                              <th className="py-3 px-2 text-center font-black w-[70px] min-w-[70px] max-w-[70px]">Custom</th>
+                              {availablePlans.map(plan => (
+                                <th key={plan.id} className="py-3 px-2 text-center font-black w-[80px] min-w-[80px] max-w-[80px] truncate">{plan.name}</th>
+                              ))}
                               <th className="py-3 px-4 text-center font-black w-[70px] min-w-[70px] max-w-[70px]">Add-on</th>
                               <th className="py-3 px-4 font-black w-[110px] min-w-[110px] max-w-[110px]">Licensing</th>
                               <th className="py-3 px-4 font-black w-[110px] min-w-[110px] max-w-[110px]">Status</th>
@@ -581,38 +609,16 @@ export default function FeatureAccess() {
                                       )}
                                     </div>
                                   </td>
-                                  <td className="py-4 px-2 text-center w-[70px] min-w-[70px] max-w-[70px]">
-                                    <input
-                                      type="checkbox"
-                                      checked={feat.plans.Starter}
-                                      onChange={() => handleTogglePlan(feat.id, 'Starter')}
-                                      className="w-4 h-4 rounded text-[#00A3FF] focus:ring-[#00A3FF] cursor-pointer"
-                                    />
-                                  </td>
-                                  <td className="py-4 px-2 text-center w-[70px] min-w-[70px] max-w-[70px]">
-                                    <input
-                                      type="checkbox"
-                                      checked={feat.plans.Pro}
-                                      onChange={() => handleTogglePlan(feat.id, 'Pro')}
-                                      className="w-4 h-4 rounded text-[#00A3FF] focus:ring-[#00A3FF] cursor-pointer"
-                                    />
-                                  </td>
-                                  <td className="py-4 px-2 text-center w-[80px] min-w-[80px] max-w-[80px]">
-                                    <input
-                                      type="checkbox"
-                                      checked={feat.plans.Enterprise}
-                                      onChange={() => handleTogglePlan(feat.id, 'Enterprise')}
-                                      className="w-4 h-4 rounded text-[#00A3FF] focus:ring-[#00A3FF] cursor-pointer"
-                                    />
-                                  </td>
-                                  <td className="py-4 px-2 text-center w-[70px] min-w-[70px] max-w-[70px]">
-                                    <input
-                                      type="checkbox"
-                                      checked={feat.plans.Custom}
-                                      onChange={() => handleTogglePlan(feat.id, 'Custom')}
-                                      className="w-4 h-4 rounded text-[#00A3FF] focus:ring-[#00A3FF] cursor-pointer"
-                                    />
-                                  </td>
+                                  {availablePlans.map(plan => (
+                                    <td key={plan.id} className="py-4 px-2 text-center w-[80px] min-w-[80px] max-w-[80px]">
+                                      <input
+                                        type="checkbox"
+                                        checked={feat.plans[plan.id] || false}
+                                        onChange={() => handleTogglePlan(feat.id, plan.id)}
+                                        className="w-4 h-4 rounded text-[#00A3FF] focus:ring-[#00A3FF] cursor-pointer"
+                                      />
+                                    </td>
+                                  ))}
                                   <td className="py-4 px-4 text-center w-[70px] min-w-[70px] max-w-[70px] font-semibold text-slate-500 whitespace-nowrap">
                                     {feat.addon}
                                   </td>
@@ -961,12 +967,17 @@ export default function FeatureAccess() {
                     </p>
 
                     <div className="space-y-3 bg-[#F8FAFC] border border-slate-200 rounded-2xl p-4">
-                      {['Starter', 'Pro', 'Enterprise', 'Custom'].map((pln) => (
-                        <label key={pln} className="flex items-center gap-3 cursor-pointer select-none">
-                          <input type="checkbox" defaultChecked className="w-4 h-4 rounded text-blue-650 cursor-pointer" />
+                      {availablePlans.map((pln) => (
+                        <label key={pln.id} className="flex items-center gap-3 cursor-pointer select-none">
+                          <input 
+                            type="checkbox" 
+                            checked={newFeatPlans[pln.id] || false}
+                            onChange={(e) => setNewFeatPlans(prev => ({...prev, [pln.id]: e.target.checked}))}
+                            className="w-4 h-4 rounded text-blue-650 cursor-pointer" 
+                          />
                           <div>
-                            <span className="text-xs font-black text-slate-855 block">{pln} tier</span>
-                            <span className="text-[10px] text-slate-400 font-bold block">Entitle nodes under {pln} subscription profiles.</span>
+                            <span className="text-xs font-black text-slate-855 block">{pln.name}</span>
+                            <span className="text-[10px] text-slate-400 font-bold block">Entitle nodes under {pln.name} subscription profiles.</span>
                           </div>
                         </label>
                       ))}
