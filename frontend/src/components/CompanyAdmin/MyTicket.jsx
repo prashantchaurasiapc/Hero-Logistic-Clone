@@ -68,7 +68,7 @@ export default function MyTickets() {
           </div>
         </div>
         <div className="p-4 border-t border-gray-100 bg-gray-50 flex gap-3">
-          <input type="text" placeholder="Type a message..." className="flex-1 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[#FFD400]" />
+          <input type="text" placeholder="Type a message..." className="flex-1 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-brand-500" />
           <button className="px-4 py-2 bg-gray-900 text-white rounded-xl hover:bg-black transition-colors flex items-center justify-center cursor-pointer">
             <Send className="w-4 h-4" />
           </button>
@@ -107,7 +107,7 @@ export default function MyTickets() {
             <input 
               type="text" 
               placeholder="E.g. Unable to view latest invoice" 
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[#FFD400] focus:bg-white transition-colors"
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-brand-500 focus:bg-white transition-colors"
             />
           </div>
 
@@ -115,7 +115,7 @@ export default function MyTickets() {
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-gray-700 uppercase tracking-wide">Category <span className="text-red-500">*</span></label>
               <div className="relative">
-                <select className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[#FFD400] focus:bg-white transition-colors appearance-none cursor-pointer">
+                <select className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-brand-500 focus:bg-white transition-colors appearance-none cursor-pointer">
                   <option value="">Select Category</option>
                   <option value="billing">Billing & Subscriptions</option>
                   <option value="fleet">Fleet Management</option>
@@ -159,7 +159,7 @@ export default function MyTickets() {
             <textarea 
               rows="4"
               placeholder="Please describe your issue in detail..." 
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[#FFD400] focus:bg-white transition-colors resize-none"
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-brand-500 focus:bg-white transition-colors resize-none"
             ></textarea>
           </div>
 
@@ -210,7 +210,7 @@ export default function MyTickets() {
         </div>
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-1.5 px-5 py-2.5 bg-[#FFD400] hover:bg-yellow-400 rounded-xl text-xs font-bold text-black transition-all shadow-xs cursor-pointer"
+          className="flex items-center gap-1.5 px-5 py-2.5 bg-brand-500 hover:bg-yellow-400 rounded-xl text-xs font-bold text-black transition-all shadow-xs cursor-pointer"
         >
           <Plus className="h-4 w-4" /> Raise New Ticket
         </button>
@@ -224,7 +224,7 @@ export default function MyTickets() {
             <input 
               type="text" 
               placeholder="Search by ticket ID or subject..." 
-              className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-750 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
+              className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-750 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
           </div>
           <div className="relative">

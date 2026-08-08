@@ -180,9 +180,23 @@ exports.update = async (req, res, next) => {
 exports.delete = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
+    
+    // Clean up safe dependent records
+    await prisma.userSession.deleteMany({ where: { userId: req.params.id } });
+    await prisma.shift.deleteMany({ where: { userId: req.params.id } });
+    
+    // Disconnect optional relations
+    await prisma.driver.updateMany({ where: { userId: req.params.id }, data: { userId: null } });
+
     await prisma.user.delete({ where });
     return res.status(HTTP_STATUS.NO_CONTENT).send();
   } catch (error) {
+    if (error.code === 'P2003') {
+      return sendError(res, {
+        code: ERROR_CODES.VALIDATION_ERROR,
+        message: 'Cannot delete user because they have associated records (e.g. support tickets, messages, or reports). Please suspend the user instead.'
+      }, HTTP_STATUS.BAD_REQUEST);
+    }
     if (error.code === 'P2025') {
       return sendError(res, {
         code: ERROR_CODES.NOT_FOUND,

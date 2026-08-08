@@ -39,7 +39,7 @@ const CompanySettingsDashboardView = () => {
         </div>
         <button 
           onClick={() => triggerToast('Profile saved successfully!')} 
-          className="flex items-center gap-1.5 px-5 py-2.5 bg-[#FFD400] hover:bg-yellow-400 rounded-xl text-xs font-bold text-black transition-all cursor-pointer shadow-sm"
+          className="flex items-center gap-1.5 px-5 py-2.5 bg-brand-500 hover:bg-yellow-400 rounded-xl text-xs font-bold text-black transition-all cursor-pointer shadow-sm"
         >
           <Save className="h-4 w-4" /> Save Profile
         </button>
@@ -62,7 +62,7 @@ const CompanySettingsDashboardView = () => {
                 type="text"
                 value={entityName}
                 onChange={e => setEntityName(e.target.value)}
-                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
+                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:outline-none focus:ring-1 focus:ring-brand-500"
               />
               <p className="text-[10px] text-gray-400 font-medium">Official company name used for all legal invoicing and POD documents.</p>
             </div>
@@ -101,7 +101,7 @@ const CompanySettingsDashboardView = () => {
                   type="text"
                   value={phone}
                   onChange={e => setPhone(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-950 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
+                  className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-950 focus:outline-none focus:ring-1 focus:ring-brand-500"
                 />
               </div>
             </div>
@@ -116,7 +116,7 @@ const CompanySettingsDashboardView = () => {
                 type="text"
                 value={address}
                 onChange={e => setAddress(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-950 focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
+                className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-950 focus:outline-none focus:ring-1 focus:ring-brand-500"
               />
             </div>
           </div>
@@ -144,7 +144,7 @@ const CompanySettingsDashboardView = () => {
                   <button
                     onClick={() => setRegions({ ...regions, [region.key]: !regions[region.key] })}
                     className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer ${
-                      regions[region.key] ? 'bg-[#FFD400]' : 'bg-gray-200'
+                      regions[region.key] ? 'bg-brand-500' : 'bg-gray-200'
                     }`}
                   >
                     <span
@@ -168,7 +168,7 @@ const CompanySettingsDashboardView = () => {
               <select
                 value={currency}
                 onChange={e => setCurrency(e.target.value)}
-                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#FFD400]"
+                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 cursor-pointer focus:outline-none focus:ring-1 focus:ring-brand-500"
               >
                 <option value="AUD">AUD - Australian Dollar ($)</option>
                 <option value="USD">USD - US Dollar ($)</option>

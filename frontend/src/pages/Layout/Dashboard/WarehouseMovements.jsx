@@ -612,7 +612,7 @@ export default function WarehouseMovements() {
             padding: 0 16px;
             border-radius: 8px;
             border: none;
-            background: #FFD400;
+            background: var(--primary-color);
             font-size: 12px;
             font-weight: 800;
             color: #0F172A;
@@ -676,7 +676,7 @@ export default function WarehouseMovements() {
             outline: none;
             box-sizing: border-box;
           }
-          .wh-mh-search-inp:focus { border-color: #FFD400; }
+          .wh-mh-search-inp:focus { border-color: var(--primary-color); }
           .wh-mh-search-icon {
             position: absolute;
             left: 10px;
@@ -947,7 +947,7 @@ export default function WarehouseMovements() {
                 <div className="flex items-center gap-2">
                   <button 
                     className="wh-btn-export-mh" 
-                    style={{ height: '34px', background: showHistoryFilters ? '#FFD400' : '#FFFFFF', borderColor: showHistoryFilters ? '#FFD400' : '#CBD5E1' }}
+                    style={{ height: '34px', background: showHistoryFilters ? 'var(--primary-color)' : '#FFFFFF', borderColor: showHistoryFilters ? 'var(--primary-color)' : '#CBD5E1' }}
                     onClick={() => setShowHistoryFilters(!showHistoryFilters)}
                   >
                     <Filter size={13} />
@@ -1380,7 +1380,7 @@ export default function WarehouseMovements() {
           padding: 0 20px;
           border-radius: 8px;
           border: none;
-          background: #FFD400;
+          background: var(--primary-color);
           font-size: 12px;
           font-weight: 900;
           color: #0F172A;
@@ -1422,14 +1422,14 @@ export default function WarehouseMovements() {
           border-radius: 10px; padding: 12px; cursor: pointer;
           border: 2px solid #E2E8F0; background: #FFFFFF; margin-bottom: 8px;
         }
-        .mvt-type-card.active { border-color: #FFD400; background: #FFFDE7; }
+        .mvt-type-card.active { border-color: var(--primary-color); background: #FFFDE7; }
         .mvt-type-inner { display: flex; align-items: flex-start; gap: 10px; }
         .mvt-type-icon {
           width: 34px; height: 34px; border-radius: 8px; background: #F8FAFC;
           display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid #E2E8F0;
         }
         .mvt-radio-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #CBD5E1; margin-top: 2px; }
-        .mvt-type-card.active .mvt-radio-dot { border: 5px solid #FFD400; }
+        .mvt-type-card.active .mvt-radio-dot { border: 5px solid var(--primary-color); }
 
         .mvt-details-col { flex: 1; min-width: 0; }
         .mvt-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; margin-bottom: 6px; }

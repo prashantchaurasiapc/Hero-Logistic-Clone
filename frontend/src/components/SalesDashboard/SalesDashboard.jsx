@@ -739,7 +739,7 @@ export default function SalesDashboard() {
                   type="date" 
                   value={newDemoForm.date} 
                   onChange={e => setNewDemoForm({ ...newDemoForm, date: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400]" 
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-brand-500" 
                 />
               </div>
 
@@ -748,7 +748,7 @@ export default function SalesDashboard() {
                 <select 
                   value={newDemoForm.time}
                   onChange={e => setNewDemoForm({ ...newDemoForm, time: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400] bg-white"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-brand-500 bg-white"
                 >
                   <option>11:00 AM EST</option>
                   <option>1:00 PM EST</option>
@@ -761,14 +761,14 @@ export default function SalesDashboard() {
                   rows="2" 
                   value={newDemoForm.agenda}
                   onChange={e => setNewDemoForm({ ...newDemoForm, agenda: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400] resize-none"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-brand-500 resize-none"
                 ></textarea>
               </div>
 
               <div className="pt-2">
                 <button 
                   onClick={handleBookDemo} 
-                  className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[13px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all cursor-pointer active:scale-95"
+                  className="w-full bg-[#FFB020] hover:bg-brand-600 text-slate-900 font-extrabold text-[13px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all cursor-pointer active:scale-95"
                 >
                   Confirm Zoom Schedule
                 </button>
@@ -838,7 +838,7 @@ export default function SalesDashboard() {
                   type="text" 
                   value={newProposalForm.title} 
                   onChange={e => setNewProposalForm({ ...newProposalForm, title: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400]" 
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-brand-500" 
                 />
               </div>
 
@@ -849,7 +849,7 @@ export default function SalesDashboard() {
                     type="number" 
                     value={newProposalForm.value} 
                     onChange={e => setNewProposalForm({ ...newProposalForm, value: Number(e.target.value) })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400]" 
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-brand-500" 
                   />
                 </div>
                 <div className="flex-1 space-y-2">
@@ -858,7 +858,7 @@ export default function SalesDashboard() {
                     type="number" 
                     value={newProposalForm.discount} 
                     onChange={e => setNewProposalForm({ ...newProposalForm, discount: Number(e.target.value) })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#FFD400]" 
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-brand-500" 
                   />
                 </div>
               </div>
@@ -866,7 +866,7 @@ export default function SalesDashboard() {
               <div className="pt-2">
                 <button 
                   onClick={handleSendProposal} 
-                  className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[13px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all"
+                  className="w-full bg-[#FFB020] hover:bg-brand-600 text-slate-900 font-extrabold text-[13px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all"
                 >
                   Dispatched Proposal Email
                 </button>
@@ -913,7 +913,7 @@ export default function SalesDashboard() {
                         triggerToast(`Recommended ${p.name} tier!`);
                         fetchDashboardData();
                       }}
-                      className="w-full bg-[#FFD400] hover:bg-[#FACC15] text-slate-900 font-black text-[11px] py-3 mt-4 rounded-xl uppercase transition-all"
+                      className="w-full bg-brand-500 hover:bg-[#FACC15] text-slate-900 font-black text-[11px] py-3 mt-4 rounded-xl uppercase transition-all"
                     >
                       Apply {p.name}
                     </button>
@@ -970,7 +970,7 @@ export default function SalesDashboard() {
                     fetchDashboardData();
                   }
                 }}
-                className="bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] w-full py-3 rounded-xl shadow-sm transition-all"
+                className="bg-[#FFB020] hover:bg-brand-600 text-slate-900 font-extrabold text-[14px] w-full py-3 rounded-xl shadow-sm transition-all"
               >
                 Send Email Touchpoint
               </button>
@@ -1039,7 +1039,7 @@ export default function SalesDashboard() {
                     fetchDashboardData();
                   }
                 }}
-                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-sm transition-all"
+                className="w-full bg-[#FFB020] hover:bg-brand-600 text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-sm transition-all"
               >
                 Save Call Entry
               </button>
@@ -1133,7 +1133,7 @@ export default function SalesDashboard() {
                     fetchDashboardData();
                   }
                 }}
-                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-sm transition-all"
+                className="w-full bg-[#FFB020] hover:bg-brand-600 text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-sm transition-all"
               >
                 Schedule Follow-Up Task
               </button>
@@ -1188,7 +1188,7 @@ export default function SalesDashboard() {
 
                   <button
                     onClick={() => setWizardStep(2)}
-                    className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all"
+                    className="w-full bg-[#FFB020] hover:bg-brand-600 text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all"
                   >
                     Continue
                   </button>
@@ -1216,7 +1216,7 @@ export default function SalesDashboard() {
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => setWizardStep(3)}
-                      className="flex-1 bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-sm"
+                      className="flex-1 bg-[#FFB020] hover:bg-brand-600 text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-sm"
                     >
                       Continue
                     </button>
@@ -1261,7 +1261,7 @@ export default function SalesDashboard() {
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => setWizardStep(4)}
-                      className="flex-1 bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-sm"
+                      className="flex-1 bg-[#FFB020] hover:bg-brand-600 text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-sm"
                     >
                       Continue
                     </button>
@@ -1293,7 +1293,7 @@ export default function SalesDashboard() {
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => setWizardStep(5)}
-                      className="flex-1 bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-sm"
+                      className="flex-1 bg-[#FFB020] hover:bg-brand-600 text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-sm"
                     >
                       Continue
                     </button>
@@ -1342,7 +1342,7 @@ export default function SalesDashboard() {
                       <div className="flex items-center gap-3">
                         <button
                           onClick={handleProvisionWorkspace}
-                          className="flex-1 bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-sm"
+                          className="flex-1 bg-[#FFB020] hover:bg-brand-600 text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-sm"
                         >
                           Provision Workspace
                         </button>
@@ -1376,7 +1376,7 @@ export default function SalesDashboard() {
                       setShowConversionWizard(false);
                       navigate('/admin/companies'); // Direct to the companies list
                     }}
-                    className="bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] px-8 py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all flex items-center justify-center gap-2 mx-auto cursor-pointer"
+                    className="bg-[#FFB020] hover:bg-brand-600 text-slate-900 font-extrabold text-[14px] px-8 py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all flex items-center justify-center gap-2 mx-auto cursor-pointer"
                   >
                     Go to Companies Workspace
                   </button>

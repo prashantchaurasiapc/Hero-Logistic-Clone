@@ -317,7 +317,7 @@ export default function Billing() {
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`px-4 py-2 font-black rounded-xl text-xs transition-colors cursor-pointer border ${activeTab === tab
-                ? 'bg-[#FFD400] text-black border-[#FFD400]'
+                ? 'bg-brand-500 text-black border-brand-500'
                 : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
               }`}
           >
@@ -409,7 +409,7 @@ export default function Billing() {
                       </button>
                       <button
                         onClick={() => openRegenerateModal(row)}
-                        className="border border-[#FFD400] bg-amber-50/50 hover:bg-amber-100 text-[#B06000] font-extrabold text-[11px] px-3.5 py-1.5 rounded-lg shadow-2xs transition-all cursor-pointer active:scale-95 flex items-center gap-1"
+                        className="border border-brand-500 bg-amber-50/50 hover:bg-amber-100 text-[#B06000] font-extrabold text-[11px] px-3.5 py-1.5 rounded-lg shadow-2xs transition-all cursor-pointer active:scale-95 flex items-center gap-1"
                       >
                         <RefreshCw size={12} /> Regenerate
                       </button>
@@ -544,7 +544,7 @@ export default function Billing() {
 
               <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
                 <button type="button" onClick={() => setRegenerateInvoice(null)} className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600">Cancel</button>
-                <button type="submit" className="px-5 py-2 bg-[#FFD400] text-black text-xs font-black rounded-xl hover:bg-yellow-400 shadow-xs">
+                <button type="submit" className="px-5 py-2 bg-brand-500 text-black text-xs font-black rounded-xl hover:bg-yellow-400 shadow-xs">
                   Regenerate & Update
                 </button>
               </div>
@@ -595,7 +595,7 @@ export default function Billing() {
 
             <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2">
               <button onClick={() => setShowExportModal(false)} className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-600">Cancel</button>
-              <button onClick={handleRunModalExport} className="px-5 py-2 bg-[#FFD400] text-black text-xs font-black rounded-xl hover:bg-yellow-400 shadow-xs flex items-center gap-1.5">
+              <button onClick={handleRunModalExport} className="px-5 py-2 bg-brand-500 text-black text-xs font-black rounded-xl hover:bg-yellow-400 shadow-xs flex items-center gap-1.5">
                 <Download size={14} /> Download File
               </button>
             </div>

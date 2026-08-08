@@ -114,7 +114,7 @@ export default function WarehouseMap() {
           padding: 0 18px;
           border-radius: 8px;
           border: none;
-          background: #FFD400;
+          background: var(--primary-color);
           font-size: 12px;
           font-weight: 800;
           color: #0F172A;
@@ -166,7 +166,7 @@ export default function WarehouseMap() {
         }
         .wh-mode-tab.active {
           color: #0F172A;
-          border-bottom-color: #FFD400;
+          border-bottom-color: var(--primary-color);
         }
 
         /* MAP CANVAS BOARD */
@@ -222,7 +222,7 @@ export default function WarehouseMap() {
           cursor: pointer;
           transition: border-color 0.15s;
         }
-        .wh-op-box:hover { border-color: #FFD400; }
+        .wh-op-box:hover { border-color: var(--primary-color); }
         .wh-op-title { font-size: 10px; font-weight: 800; color: #64748B; text-transform: uppercase; }
         .wh-op-num { font-size: 16px; font-weight: 900; color: #0F172A; }
 
@@ -426,7 +426,7 @@ export default function WarehouseMap() {
           cursor: pointer;
           transition: background 0.15s;
         }
-        .wh-qa-circle-btn:hover { background: #FFFFFF; border-color: #FFD400; }
+        .wh-qa-circle-btn:hover { background: #FFFFFF; border-color: var(--primary-color); }
 
         /* MODAL */
         .wh-modal-overlay {

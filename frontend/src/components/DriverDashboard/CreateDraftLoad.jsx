@@ -193,7 +193,7 @@ export default function CreateDraftLoad() {
         </button>
         <button
           onClick={() => setHotlineOpen(true)}
-          className="w-12 h-12 bg-[#FFD400] hover:bg-yellow-400 text-black rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all"
+          className="w-12 h-12 bg-brand-500 hover:bg-yellow-400 text-black rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all"
         >
           <MessageSquare className="w-5 h-5" />
         </button>
@@ -274,7 +274,7 @@ export default function CreateDraftLoad() {
             </div>
             <button
               onClick={() => setHotlineOpen(false)}
-              className="w-12 h-12 bg-[#FFD400] hover:bg-yellow-400 text-black rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all shrink-0"
+              className="w-12 h-12 bg-brand-500 hover:bg-yellow-400 text-black rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all shrink-0"
             >
               <X className="w-5 h-5" strokeWidth={2.5} />
             </button>

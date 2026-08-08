@@ -52,25 +52,26 @@ exports.create = async (req, res, next) => {
     const payload = { ...req.body };
     
     // Map frontend keys to match schema fields
-    if (payload.loaderGif) { payload.loaderGifUrl = payload.loaderGif; delete payload.loaderGif; }
-    if (payload.lightLogo) { payload.logoLightUrl = payload.lightLogo; delete payload.lightLogo; }
-    if (payload.darkLogo) { payload.logoDarkUrl = payload.darkLogo; delete payload.darkLogo; }
-    if (payload.favicon) { payload.faviconUrl = payload.favicon; delete payload.favicon; }
-    if (payload.loginBg) { payload.loginBgUrl = payload.loginBg; delete payload.loginBg; }
-    if (payload.dashboardBg) { payload.dashboardBgUrl = payload.dashboardBg; delete payload.dashboardBg; }
-    if (payload.emailLogo) { payload.emailLogoUrl = payload.emailLogo; delete payload.emailLogo; }
-    if (payload.invoiceLogo) { payload.invoiceLogoUrl = payload.invoiceLogo; delete payload.invoiceLogo; }
-    if (payload.manifestLogo) { payload.manifestLogoUrl = payload.manifestLogo; delete payload.manifestLogo; }
+    if ('loaderGif' in payload) { payload.loaderGifUrl = payload.loaderGif; delete payload.loaderGif; }
+    if ('lightLogo' in payload) { payload.logoLightUrl = payload.lightLogo; delete payload.lightLogo; }
+    if ('darkLogo' in payload) { payload.logoDarkUrl = payload.darkLogo; delete payload.darkLogo; }
+    if ('favicon' in payload) { payload.faviconUrl = payload.favicon; delete payload.favicon; }
+    if ('loginBg' in payload) { payload.loginBgUrl = payload.loginBg; delete payload.loginBg; }
+    if ('dashboardBg' in payload) { payload.dashboardBgUrl = payload.dashboardBg; delete payload.dashboardBg; }
+    if ('emailLogo' in payload) { payload.emailLogoUrl = payload.emailLogo; delete payload.emailLogo; }
+    if ('invoiceLogo' in payload) { payload.invoiceLogoUrl = payload.invoiceLogo; delete payload.invoiceLogo; }
+    if ('manifestLogo' in payload) { payload.manifestLogoUrl = payload.manifestLogo; delete payload.manifestLogo; }
 
     // Resolve companyId if missing
-    if (!payload.companyId) {
+    let companyId = payload.companyId;
+    if (!companyId) {
       const company = await prisma.company.findFirst();
       if (company) {
-        payload.companyId = company.id;
+        companyId = company.id;
       }
     }
 
-    if (!payload.companyId) {
+    if (!companyId) {
       return sendError(res, {
         code: ERROR_CODES.BAD_REQUEST,
         message: 'A company relation is required to register branding options.'
@@ -79,8 +80,12 @@ exports.create = async (req, res, next) => {
 
     // Check if configuration already exists for this company
     const existing = await prisma.whiteLabelConfig.findUnique({
-      where: { companyId: payload.companyId }
+      where: { companyId: companyId }
     });
+
+    // For Prisma update, we remove companyId scalar and use relation if needed,
+    // but since it's 1:1 and already belongs to the company, we just delete it from update payload.
+    delete payload.companyId;
 
     let data;
     if (existing) {
@@ -89,6 +94,7 @@ exports.create = async (req, res, next) => {
         data: payload
       });
     } else {
+      payload.company = { connect: { id: companyId } };
       data = await prisma.whiteLabelConfig.create({
         data: payload
       });

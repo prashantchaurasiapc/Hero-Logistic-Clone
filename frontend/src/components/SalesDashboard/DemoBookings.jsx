@@ -359,7 +359,7 @@ export default function DemoBookings() {
 
                 {/* Row 2: Action Bar */}
                 <div className="flex items-center gap-3">
-                  <button className="flex items-center gap-1.5 bg-[#FFD500] hover:bg-[#FFC800] text-slate-900 px-3 py-1.5 rounded-md text-[10px] font-bold transition-all shadow-xs">
+                  <button className="flex items-center gap-1.5 bg-[#FFD500] hover:bg-brand-600 text-slate-900 px-3 py-1.5 rounded-md text-[10px] font-bold transition-all shadow-xs">
                     <Play className="w-3.5 h-3.5" /> Join Zoom
                   </button>
                   <button 
@@ -472,7 +472,7 @@ export default function DemoBookings() {
 
               <button
                 type="submit"
-                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all mt-2"
+                className="w-full bg-[#FFB020] hover:bg-brand-600 text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all mt-2"
               >
                 Confirm Zoom Schedule
               </button>

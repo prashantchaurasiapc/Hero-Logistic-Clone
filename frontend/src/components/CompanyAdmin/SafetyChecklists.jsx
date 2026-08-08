@@ -191,7 +191,7 @@ export default function SafetyChecklists() {
           </button>
           <button
             onClick={() => setShowAddModal(true)}
-            className="bg-[#FFD400] hover:bg-yellow-400 text-black font-bold py-2.5 px-5 rounded-xl transition-all flex items-center gap-2 text-xs cursor-pointer shadow-sm active:scale-95 uppercase tracking-wider"
+            className="bg-brand-500 hover:bg-yellow-400 text-black font-bold py-2.5 px-5 rounded-xl transition-all flex items-center gap-2 text-xs cursor-pointer shadow-sm active:scale-95 uppercase tracking-wider"
           >
             <Plus size={15} strokeWidth={2.5} />
             New Checklist
@@ -504,7 +504,7 @@ export default function SafetyChecklists() {
               <button
                 type="submit"
                 disabled={saving}
-                className="w-full bg-[#FFD400] hover:bg-yellow-400 text-black font-extrabold py-3 rounded-xl text-xs mt-3 cursor-pointer transition-all shadow-sm active:scale-95 disabled:opacity-50"
+                className="w-full bg-brand-500 hover:bg-yellow-400 text-black font-extrabold py-3 rounded-xl text-xs mt-3 cursor-pointer transition-all shadow-sm active:scale-95 disabled:opacity-50"
               >
                 {saving ? 'Creating...' : 'CREATE & ACTIVATE CHECKLIST'}
               </button>

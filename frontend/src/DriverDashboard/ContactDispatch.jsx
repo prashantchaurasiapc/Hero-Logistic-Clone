@@ -155,7 +155,7 @@ export default function ContactDispatch() {
             {messages.map((msg) => (
               <div key={msg.id} className={`w-full max-w-[85%] sm:max-w-md ${msg.sender === 'YOU' ? 'self-end' : 'self-start'}`}>
                 {msg.sender === 'YOU' ? (
-                  <div className="bg-[#FFD400] rounded-2xl rounded-tr-sm p-3.5 sm:p-4 shadow-sm relative">
+                  <div className="bg-brand-500 rounded-2xl rounded-tr-sm p-3.5 sm:p-4 shadow-sm relative">
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-[10px] font-black text-black uppercase tracking-widest">YOU</span>
                       <span className="text-[10px] font-bold text-black/80">{msg.time}</span>
@@ -184,7 +184,7 @@ export default function ContactDispatch() {
 
           {/* Unified Input Area */}
           <div className="pt-4 border-t border-gray-100 mt-2">
-            <div className="flex items-center gap-1 sm:gap-2 bg-gray-50 border border-gray-200 rounded-2xl p-1.5 focus-within:ring-2 focus-within:ring-[#FFD400] focus-within:border-transparent transition-all">
+            <div className="flex items-center gap-1 sm:gap-2 bg-gray-50 border border-gray-200 rounded-2xl p-1.5 focus-within:ring-2 focus-within:ring-brand-500 focus-within:border-transparent transition-all">
               <button 
                 onClick={handleShareImage}
                 title="Share Image"
@@ -209,7 +209,7 @@ export default function ContactDispatch() {
               />
               <button 
                 onClick={handleSend}
-                className="bg-[#FFD400] hover:bg-yellow-400 text-black font-black text-xs sm:text-sm py-2 px-4 sm:px-6 rounded-xl transition-colors shrink-0 cursor-pointer"
+                className="bg-brand-500 hover:bg-yellow-400 text-black font-black text-xs sm:text-sm py-2 px-4 sm:px-6 rounded-xl transition-colors shrink-0 cursor-pointer"
               >
                 Send
               </button>
@@ -228,7 +228,7 @@ export default function ContactDispatch() {
         </button>
         <button
           onClick={() => setHotlineOpen(true)}
-          className="w-12 h-12 bg-[#FFD400] hover:bg-yellow-400 text-black rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all"
+          className="w-12 h-12 bg-brand-500 hover:bg-yellow-400 text-black rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all"
         >
           <MessageSquare className="w-5 h-5" />
         </button>
@@ -309,7 +309,7 @@ export default function ContactDispatch() {
             </div>
             <button
               onClick={() => setHotlineOpen(false)}
-              className="w-12 h-12 bg-[#FFD400] hover:bg-yellow-400 text-black rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all shrink-0"
+              className="w-12 h-12 bg-brand-500 hover:bg-yellow-400 text-black rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-all shrink-0"
             >
               <X className="w-5 h-5" strokeWidth={2.5} />
             </button>

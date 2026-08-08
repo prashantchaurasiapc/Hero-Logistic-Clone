@@ -4,69 +4,131 @@ import {
   MoreVertical, X, Phone, User, Truck, MapPin, Navigation, 
   MessageSquare, History, FileText, Settings, AlertCircle, CheckCircle, Clock
 } from 'lucide-react';
-import { mockPlanningData } from '../../data/mockPlanningData';
+
 import { dispatcherRepository } from '../../services/dispatcherRepository';
 import { dispatcherStore } from '../../services/dispatcherStore';
+import api from '../../services/api';
 
 export default function TerminalWorkspace() {
   const [drivers, setDrivers] = useState([]);
   const [selectedLoadId, setSelectedLoadId] = useState('LD-10583');
 
   useEffect(() => {
-    // Initial fetch
-    dispatcherRepository.syncWithBackend();
+    const fetchPlanningData = async () => {
+      try {
+        const [driversRes, loadsRes] = await Promise.all([
+          api.get('/drivers'),
+          api.get('/loads')
+        ]);
+        const dbDrivers = driversRes.data?.data || [];
+        const dbLoads = loadsRes.data?.data || [];
 
-    const syncDb = () => {
-      const db = dispatcherRepository.getDispatcherDatabase();
-      const dbDrivers = db.drivers || [];
-      const dbLoads = db.loads || [];
+        const formatted = dbDrivers.map(d => {
+          const driverName = d.firstName || d.lastName ? `${d.firstName || ''} ${d.lastName || ''}`.trim() : d.driverCode;
+          const driverLoads = dbLoads.filter(l => l.driverId === d.id);
 
-      // Map dbDrivers into the planning board format
-      const formatted = dbDrivers.map((d, index) => {
-        // Find loads assigned to this driver
-        const driverLoads = dbLoads.filter(l => l.driver === d.name);
+          const mappedLoads = driverLoads.map((l, lIndex) => {
+            const startTime = 8 + (lIndex * 5); // spacing them out
+            const endTime = startTime + 4;
+            return {
+              id: l.loadRef || l.id.substring(0, 8),
+              customer: l.customer?.name || 'Unknown Customer',
+              route: l.notes?.includes(' to ') ? l.notes : 'Route Pending',
+              startTime,
+              endTime,
+              durationText: `${startTime}:00 - ${endTime}:00`,
+              color: l.status === 'IN_TRANSIT' ? 'emerald' : l.status === 'ASSIGNED' ? 'blue' : 'amber',
+              stops: 2,
+              progress: '50%',
+              loadType: l.type || 'General Freight',
+              reqDate: l.scheduledDate ? new Date(l.scheduledDate).toLocaleDateString() : 'N/A',
+              driverStatus: 'On Duty',
+              vehicle: l.truck ? `${l.truck.make} ${l.truck.model}` : 'Unknown Vehicle',
+              trailer: l.trailerId || 'N/A'
+            };
+          });
 
-        const mappedLoads = driverLoads.map((l, lIndex) => {
-          const startTime = 8 + (lIndex * 5); // spacing them out
-          const endTime = startTime + 4;
           return {
-            id: l.id,
-            customer: l.customer,
-            route: `${l.routeFrom} → ${l.routeTo}`,
-            startTime,
-            endTime,
-            durationText: `${startTime}:00 - ${endTime}:00`,
-            color: l.status === 'In Transit' ? 'emerald' : 'amber',
-            stops: 2,
-            progress: '50%',
-            loadType: l.type || 'General Freight',
-            reqDate: l.date,
-            driverStatus: d.status,
-            vehicle: l.vehicle,
-            trailer: 'TR-01'
+            id: d.id,
+            name: driverName,
+            status: mappedLoads.some(l => l.color === 'emerald') ? 'On Duty' : 'Standby',
+            statusColor: mappedLoads.some(l => l.color === 'emerald') ? 'emerald' : 'blue',
+            vehicleType: 'Volvo FH16 750',
+            trailerType: 'Car Carrier TR-01 (10 Car)',
+            loadsCount: `${mappedLoads.length} Loads`,
+            loads: mappedLoads
           };
         });
 
-        return {
-          id: d.id,
-          name: d.name,
-          status: d.status,
-          statusColor: d.status === 'On Duty' ? 'emerald' : 'blue',
-          vehicleType: d.vehicle || 'Volvo FH16 750',
-          trailerType: 'Car Carrier TR-01 (10 Car)',
-          loadsCount: `${mappedLoads.length} Loads`,
-          loads: mappedLoads
-        };
-      });
-
-      setDrivers(formatted.length > 0 ? formatted : mockPlanningData);
+        setDrivers(formatted);
+      } catch (error) {
+        console.error('Error fetching terminal workspace data:', error);
+      }
     };
 
-    syncDb();
-    const unsubscribe = dispatcherStore.subscribe(syncDb);
-    return () => unsubscribe();
+    fetchPlanningData();
   }, []);
   const [isCreateLoadModalOpen, setIsCreateLoadModalOpen] = useState(false);
+  const [dbCustomers, setDbCustomers] = useState([]);
+  const [newLoadForm, setNewLoadForm] = useState({
+    customer: '',
+    loadType: 'Car Carrying',
+    pickupLocation: '',
+    deliveryLocation: '',
+    startTime: '',
+    endTime: '',
+    driver: '',
+    notes: ''
+  });
+
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        const res = await api.get('/customers');
+        setDbCustomers(res.data?.data || []);
+      } catch (error) {
+        console.error('Error fetching customers:', error);
+      }
+    };
+    fetchCustomers();
+  }, []);
+
+  const handleCreateLoadSubmit = async () => {
+    if (!newLoadForm.customer || !newLoadForm.pickupLocation || !newLoadForm.deliveryLocation) {
+      alert('Please fill in all required fields.');
+      return;
+    }
+    try {
+      const res = await api.post('/loads', {
+        customerName: newLoadForm.customer,
+        status: 'IN_TRANSIT',
+        pickupLocation: newLoadForm.pickupLocation,
+        deliveryLocation: newLoadForm.deliveryLocation,
+        driverName: newLoadForm.driver,
+        scheduledDate: new Date()
+      });
+      if (res.data?.success) {
+        setIsCreateLoadModalOpen(false);
+        setNewLoadForm({
+          customer: '',
+          loadType: 'Car Carrying',
+          pickupLocation: '',
+          deliveryLocation: '',
+          startTime: '',
+          endTime: '',
+          driver: '',
+          notes: ''
+        });
+        alert('Load created successfully!');
+      } else {
+        alert('Failed to save load. Check fields.');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error creating load.');
+    }
+  };
+
   const [filters, setFilters] = useState({
     branch: 'All Branches',
     date: '22 May 2026',
@@ -540,20 +602,29 @@ export default function TerminalWorkspace() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-slate-600">Customer <span className="text-red-500">*</span></label>
-                    <input
-                      type="text"
-                      className="w-full h-10 px-3 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
-                      placeholder="e.g. BMW Australia"
-                    />
+                    <select
+                      value={newLoadForm.customer}
+                      onChange={e => setNewLoadForm({ ...newLoadForm, customer: e.target.value })}
+                      className="w-full h-10 px-3 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all cursor-pointer font-semibold"
+                    >
+                      <option value="" style={{ color: '#0f172a' }}>Select Customer...</option>
+                      {dbCustomers.map(c => (
+                        <option key={c.id} value={c.name} style={{ color: '#0f172a' }}>{c.name}</option>
+                      ))}
+                    </select>
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-slate-600">Load Type <span className="text-red-500">*</span></label>
-                    <select className="w-full h-10 px-3 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all">
-                      <option>Car Carrying</option>
-                      <option>General Freight</option>
-                      <option>Refrigerated</option>
-                      <option>Oversized Load</option>
-                      <option>Hazardous Goods</option>
+                    <select
+                      value={newLoadForm.loadType}
+                      onChange={e => setNewLoadForm({ ...newLoadForm, loadType: e.target.value })}
+                      className="w-full h-10 px-3 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all cursor-pointer font-semibold"
+                    >
+                      <option style={{ color: '#0f172a' }}>Car Carrying</option>
+                      <option style={{ color: '#0f172a' }}>General Freight</option>
+                      <option style={{ color: '#0f172a' }}>Refrigerated</option>
+                      <option style={{ color: '#0f172a' }}>Oversized Load</option>
+                      <option style={{ color: '#0f172a' }}>Hazardous Goods</option>
                     </select>
                   </div>
                 </div>
@@ -574,7 +645,9 @@ export default function TerminalWorkspace() {
                     </label>
                     <input
                       type="text"
-                      className="w-full h-10 px-3 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all"
+                      value={newLoadForm.pickupLocation}
+                      onChange={e => setNewLoadForm({ ...newLoadForm, pickupLocation: e.target.value })}
+                      className="w-full h-10 px-3 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-900 font-semibold focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 transition-all"
                       placeholder="e.g. Sydney"
                     />
                   </div>
@@ -584,7 +657,9 @@ export default function TerminalWorkspace() {
                     </label>
                     <input
                       type="text"
-                      className="w-full h-10 px-3 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100 transition-all"
+                      value={newLoadForm.deliveryLocation}
+                      onChange={e => setNewLoadForm({ ...newLoadForm, deliveryLocation: e.target.value })}
+                      className="w-full h-10 px-3 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-900 font-semibold focus:outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100 transition-all"
                       placeholder="e.g. Melbourne"
                     />
                   </div>
@@ -604,14 +679,18 @@ export default function TerminalWorkspace() {
                     <label className="text-xs font-semibold text-slate-600">Start Time <span className="text-red-500">*</span></label>
                     <input
                       type="time"
-                      className="w-full h-10 px-3 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition-all"
+                      value={newLoadForm.startTime}
+                      onChange={e => setNewLoadForm({ ...newLoadForm, startTime: e.target.value })}
+                      className="w-full h-10 px-3 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-900 font-semibold focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition-all"
                     />
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-slate-600">End Time <span className="text-red-500">*</span></label>
                     <input
                       type="time"
-                      className="w-full h-10 px-3 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition-all"
+                      value={newLoadForm.endTime}
+                      onChange={e => setNewLoadForm({ ...newLoadForm, endTime: e.target.value })}
+                      className="w-full h-10 px-3 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-900 font-semibold focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 transition-all"
                     />
                   </div>
                 </div>
@@ -628,12 +707,15 @@ export default function TerminalWorkspace() {
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-slate-600">Assign Driver</label>
-                  <select className="w-full h-10 px-3 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition-all">
-                    <option value="">— Leave Unassigned —</option>
-                    <option>John Doe · Volvo FH16 750 · On Duty</option>
-                    <option>Chris Lee · Volvo FH16 750 · En Route</option>
-                    <option>Michael Tan · Scania R500 · On Duty</option>
-                    <option>Daniel Craig · Available</option>
+                  <select
+                    value={newLoadForm.driver}
+                    onChange={e => setNewLoadForm({ ...newLoadForm, driver: e.target.value })}
+                    className="w-full h-10 px-3 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-900 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition-all cursor-pointer font-semibold"
+                  >
+                    <option value="" style={{ color: '#0f172a' }}>— Leave Unassigned —</option>
+                    {drivers.map(d => (
+                      <option key={d.id} value={d.name} style={{ color: '#0f172a' }}>{d.name}</option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -649,7 +731,9 @@ export default function TerminalWorkspace() {
                 </div>
                 <textarea
                   rows={3}
-                  className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all resize-none"
+                  value={newLoadForm.notes}
+                  onChange={e => setNewLoadForm({ ...newLoadForm, notes: e.target.value })}
+                  className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-900 font-semibold focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all resize-none"
                   placeholder="Any special instructions or notes for this load..."
                 />
               </div>
@@ -661,13 +745,15 @@ export default function TerminalWorkspace() {
               <p className="text-[11px] text-slate-400"><span className="text-red-500">*</span> Required fields</p>
               <div className="flex gap-3">
                 <button
+                  type="button"
                   onClick={() => setIsCreateLoadModalOpen(false)}
                   className="px-5 py-2.5 border border-slate-200 text-slate-700 font-semibold rounded-xl text-sm hover:bg-slate-50 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={() => setIsCreateLoadModalOpen(false)}
+                  type="button"
+                  onClick={handleCreateLoadSubmit}
                   className="px-6 py-2.5 font-bold rounded-xl text-sm text-white shadow-md transition-all hover:opacity-90 active:scale-95 flex items-center gap-2"
                   style={{ background: 'linear-gradient(135deg, #1e40af, #3b82f6)' }}
                 >

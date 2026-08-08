@@ -7,6 +7,7 @@ import {
   FiBarChart2, FiBriefcase, FiClipboard,
   FiTruck, FiBox, FiMap, FiFileText, FiShoppingCart, FiArrowLeft
 } from 'react-icons/fi';
+import { useTheme } from '../../context/ThemeProvider';
 
 const roleCards = [
   { id: 'super-admin', label: 'Super Admin', icon: <FiShield />, color: '#a855f7', bg: 'rgba(168, 85, 247, 0.1)' },
@@ -28,6 +29,7 @@ const tags = [
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { logoUrl } = useTheme();
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [loggingInRole, setLoggingInRole] = useState('');
   const [logoSrc, setLogoSrc] = useState('/image.png');
@@ -122,11 +124,13 @@ const Login = () => {
         <div className="grid-overlay"></div>
         <div className="left-content">
           <div className="login-logo" style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0px' }}>
-            <img src={logoSrc} alt="Logo" style={{ height: '70px', width: 'auto', objectFit: 'contain', marginLeft: '-38px', marginRight: '-32px' }} />
-            <div className="logo-text-group" style={{ display: 'flex', flexDirection: 'column' }}>
-              <span className="logo-title" style={{ fontSize: '18px', fontWeight: 805, color: '#ffffff', fontFamily: "'Outfit', system-ui, sans-serif", lineHeight: '1.1' }}>Hero Logistics</span>
-              <span className="logo-subtitle" style={{ fontSize: '9px', fontWeight: 700, color: '#64748b', letterSpacing: '2px', textTransform: 'uppercase', marginTop: '4px', lineHeight: '1' }}>Enterprise Suite</span>
-            </div>
+            <img src={logoUrl || logoSrc} alt="Logo" style={{ height: '70px', width: 'auto', objectFit: 'contain', marginLeft: '-38px', marginRight: '-32px' }} />
+            {!logoUrl && (
+              <div className="logo-text-group" style={{ display: 'flex', flexDirection: 'column' }}>
+                <span className="logo-title" style={{ fontSize: '18px', fontWeight: 805, color: '#ffffff', fontFamily: "'Outfit', system-ui, sans-serif", lineHeight: '1.1' }}>Hero Logistics</span>
+                <span className="logo-subtitle" style={{ fontSize: '9px', fontWeight: 700, color: '#64748b', letterSpacing: '2px', textTransform: 'uppercase', marginTop: '4px', lineHeight: '1' }}>Enterprise Suite</span>
+              </div>
+            )}
           </div>
 
           <h1 className="hero-headline">

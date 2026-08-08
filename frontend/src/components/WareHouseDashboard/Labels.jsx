@@ -150,13 +150,13 @@ export default function Labels({
           <div className="flex bg-slate-100 border border-slate-200 rounded-xl p-1 text-xs font-bold">
             <button
               onClick={() => setLogisticsMode('car_carrying')}
-              className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ${logisticsMode === 'car_carrying' ? 'bg-[#FFD400] text-slate-955 font-extrabold shadow-xs' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ${logisticsMode === 'car_carrying' ? 'bg-brand-500 text-slate-955 font-extrabold shadow-xs' : 'text-slate-500 hover:text-slate-700'}`}
             >
               Car Carrying Yard
             </button>
             <button
               onClick={() => setLogisticsMode('general_freight')}
-              className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ${logisticsMode === 'general_freight' ? 'bg-[#FFD400] text-slate-955 font-extrabold shadow-xs' : 'text-slate-500'}`}
+              className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ${logisticsMode === 'general_freight' ? 'bg-brand-500 text-slate-955 font-extrabold shadow-xs' : 'text-slate-500'}`}
             >
               General Freight
             </button>
@@ -178,7 +178,7 @@ export default function Labels({
 
           <button
             onClick={onExportStockClick}
-            className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-black bg-gradient-to-r from-[#FFD400] to-[#FF9A00] text-slate-950 rounded-xl transition-all hover:scale-[1.03] active:scale-[0.97] cursor-pointer shadow-md select-none hover:shadow-lg focus:outline-none"
+            className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-black bg-gradient-to-r from-brand-500 to-[#FF9A00] text-slate-950 rounded-xl transition-all hover:scale-[1.03] active:scale-[0.97] cursor-pointer shadow-md select-none hover:shadow-lg focus:outline-none"
           >
             <span>Export Stock List</span>
           </button>
@@ -241,7 +241,7 @@ export default function Labels({
 
             <button
               onClick={handlePrintAllPending}
-              className="inline-flex items-center justify-center px-4 py-2.5 bg-[#FFD400] hover:bg-[#FF9A00] text-slate-955 text-xs font-black rounded-xl transition-all cursor-pointer shadow-xs select-none active:scale-[0.98]"
+              className="inline-flex items-center justify-center px-4 py-2.5 bg-brand-500 hover:bg-[#FF9A00] text-slate-955 text-xs font-black rounded-xl transition-all cursor-pointer shadow-xs select-none active:scale-[0.98]"
             >
               Print All Pending
             </button>
@@ -259,7 +259,7 @@ export default function Labels({
                 <button
                   key={mode}
                   onClick={() => setDensity(mode.toLowerCase())}
-                  className={`px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer ${isActive ? 'bg-[#FFD400] text-slate-950 font-extrabold shadow-xs' : 'text-slate-500'}`}
+                  className={`px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer ${isActive ? 'bg-brand-500 text-slate-950 font-extrabold shadow-xs' : 'text-slate-500'}`}
                 >
                   {mode}
                 </button>
@@ -505,7 +505,7 @@ export default function Labels({
                 handlePrint(previewLabel.id);
                 setPreviewLabel(null);
               }}
-              className="w-full inline-flex items-center justify-center py-2.5 bg-[#FFD400] hover:bg-[#FF9A00] text-slate-955 font-black text-xs rounded-xl transition-all cursor-pointer"
+              className="w-full inline-flex items-center justify-center py-2.5 bg-brand-500 hover:bg-[#FF9A00] text-slate-955 font-black text-xs rounded-xl transition-all cursor-pointer"
             >
               <Printer className="h-4 w-4 mr-1.5" />
               <span>Print Sticker Tag</span>

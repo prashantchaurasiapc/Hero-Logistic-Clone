@@ -67,7 +67,7 @@
 .wh-btn-yellow {
   height: 38px;
   padding: 0 18px;
-  background: #FFD400;
+  background: var(--primary-color);
   border: none;
   border-radius: 10px;
   font-size: 12px;
@@ -157,7 +157,7 @@
 }
 
 .wh-stock-search-input:focus {
-  border-color: #FFD400;
+  border-color: var(--primary-color);
   box-shadow: 0 0 0 3px rgba(255, 212, 0, 0.2);
 }
 
@@ -192,7 +192,7 @@
 .wh-stock-filter-toggle-btn.active,
 .wh-stock-filter-toggle-btn:hover {
   background: #FFFFFF;
-  border-color: #FFD400;
+  border-color: var(--primary-color);
   color: #0F172A;
 }
 
@@ -253,7 +253,7 @@
 }
 
 .wh-filter-group select:focus {
-  border-color: #FFD400;
+  border-color: var(--primary-color);
   background: #FFFFFF;
 }
 
@@ -272,7 +272,7 @@
 }
 
 .wh-date-input:focus {
-  border-color: #FFD400;
+  border-color: var(--primary-color);
   background: #FFFFFF;
 }
 
@@ -403,7 +403,7 @@
 
 .wh-stock-data-table tr.selected-row {
   background-color: #FEFCE8;
-  border-left: 3px solid #FFD400;
+  border-left: 3px solid var(--primary-color);
 }
 
 .wh-empty-stock-td {
@@ -574,9 +574,9 @@
 }
 
 .wh-view-row-btn:hover {
-  background: #FFD400;
+  background: var(--primary-color);
   color: #0F172A;
-  border-color: #FFD400;
+  border-color: var(--primary-color);
 }
 
 /* Full Height Item Details Drawer */
@@ -748,7 +748,7 @@
 .wh-drawer-btn-primary {
   height: 40px;
   width: 100%;
-  background: #FFD400;
+  background: var(--primary-color);
   border: none;
   border-radius: 10px;
   font-size: 12px;
@@ -924,7 +924,7 @@
   padding: 8px 18px;
   border-radius: 8px;
   border: none;
-  background: #FFD400;
+  background: var(--primary-color);
   font-size: 12px;
   font-weight: 800;
   color: #0F172A;
@@ -977,7 +977,7 @@
   position: relative;
   width: 160px;
   height: 160px;
-  border: 2px dashed #FFD400;
+  border: 2px dashed var(--primary-color);
   border-radius: 16px;
   display: flex;
   align-items: center;

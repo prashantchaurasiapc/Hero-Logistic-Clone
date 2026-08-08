@@ -1,17 +1,20 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   ArrowLeft, Save, Zap, Plus, Trash2, GripVertical,
   MapPin, User, Calendar, Clock, Package, Truck,
   Upload, ChevronDown, ChevronLeft, AlertCircle, CheckCircle, Info,
   Camera, X, Search, Flag, MoreVertical
 } from 'lucide-react';
+<<<<<<< HEAD
 import api from '../../services/api';
+=======
+import { dispatcherRepository } from '../../services/dispatcherRepository';
+import { dispatcherStore } from '../../services/dispatcherStore';
+>>>>>>> 510360406c49ef37ec9df0a02865d4b64f4a0264
 
 const STOP_TYPES = ['Pickup', 'Drop-off'];
 const PRIORITIES  = ['Normal', 'Urgent', 'High'];
 const LOAD_TYPES  = ['Car Carrying', 'General Freight', 'Dangerous Goods', 'Refrigerated'];
-const DRIVERS     = ['Mike Thompson (DRVK)', 'John Smith (DRVJ)', 'Sarah Mitchell (DRVS)', 'David Wilson (DRVD)'];
-const TRUCKS      = ['TRK-101 · Volvo FH 540', 'TRK-117 · Scania T500', 'TRK-104 · Kenworth T680'];
 const TRAILERS    = ['TRL-201 · B Car Carrier', 'TRL-202 · Flatbed', 'TRL-203 · Refrigerated'];
 
 function SectionHeader({ number, title, subtitle, action, colorCls = "bg-indigo-600" }) {
@@ -43,6 +46,23 @@ const inputCls = "w-full px-3.5 py-2.5 sm:py-3 bg-white border border-slate-200 
 const selectCls = "w-full px-3.5 py-2.5 sm:py-3 bg-white border border-slate-200 focus:border-indigo-400 rounded-xl focus:outline-none text-xs sm:text-[13px] font-bold text-slate-800 cursor-pointer transition-colors appearance-none shadow-xs";
 
 export default function CreateLoad({ onBack }) {
+  const [dbDrivers, setDbDrivers] = useState([]);
+  const [dbTrucks, setDbTrucks] = useState([]);
+  const [dbCustomers, setDbCustomers] = useState([]);
+
+  useEffect(() => {
+    dispatcherRepository.syncWithBackend();
+    const syncDb = () => {
+      const db = dispatcherRepository.getDispatcherDatabase();
+      setDbDrivers(db.drivers || []);
+      setDbTrucks(db.vehicles || []);
+      setDbCustomers(db.customers || []);
+    };
+    syncDb();
+    const unsubscribe = dispatcherStore.subscribe(syncDb);
+    return () => unsubscribe();
+  }, []);
+
   const [stops, setStops] = useState([
     { id: 1, type: 'Pickup', address: '123 Smith St, Melbou', contactName: 'John Smith', contactPhone: '+61 412 345 670', date: '2025-07-15', time: '08:00' },
     { id: 2, type: 'Pickup', address: '45 Industrial Rd, Geel', contactName: 'Mark Davis', contactPhone: '+61 400 123 456', date: '2025-07-15', time: '10:30' },
@@ -233,6 +253,7 @@ export default function CreateLoad({ onBack }) {
   const updateItem = (id, field, value) =>
     setItems(prev => prev.map(i => i.id === id ? { ...i, [field]: value } : i));
 
+<<<<<<< HEAD
   const [submitting, setSubmitting] = useState(false);
 
   const saveLoadToDatabase = async (targetStatus = 'ACTIVE') => {
@@ -285,6 +306,31 @@ export default function CreateLoad({ onBack }) {
   const handleActivate = (e) => {
     if (e) e.preventDefault();
     saveLoadToDatabase('ACTIVE');
+=======
+  const handleActivate = async (e) => {
+    e.preventDefault();
+    try {
+      const created = await dispatcherRepository.createLoad({
+        customer: formData.customer,
+        status: 'In Transit',
+        routeFrom: stops[0]?.address || 'Sydney',
+        routeTo: stops[stops.length - 1]?.address || 'Melbourne',
+        driver: formData.driver,
+        vehicle: formData.truck,
+        reqDate: formData.loadDate
+      });
+
+      if (created) {
+        alert('Load activated and saved to database successfully!');
+        onBack();
+      } else {
+        alert('Failed to save load. Please check form fields.');
+      }
+    } catch (error) {
+      console.error('Error activating load:', error);
+      alert('Error saving load to database.');
+    }
+>>>>>>> 510360406c49ef37ec9df0a02865d4b64f4a0264
   };
 
   return (
@@ -342,14 +388,16 @@ export default function CreateLoad({ onBack }) {
             <div className="col-span-1">
               <FieldLabel>Booking Customer (Optional)</FieldLabel>
               <div className="relative">
-                <input
-                  type="text"
+                <select
                   value={formData.customer}
                   onChange={e => setFormData({ ...formData, customer: e.target.value })}
-                  className={`${inputCls} pr-10`}
-                  placeholder="Search customer..."
-                />
-                <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  className={selectCls}
+                >
+                  <option value="">Select Customer...</option>
+                  {dbCustomers.map(c => (
+                    <option key={c.id} value={c.name}>{c.name}</option>
+                  ))}
+                </select>
               </div>
               <p className="text-[10.5px] font-bold text-emerald-500 mt-1.5 leading-snug">
                 Fields below will change based on load type
@@ -1094,7 +1142,10 @@ export default function CreateLoad({ onBack }) {
                   onChange={e => setFormData({ ...formData, truck: e.target.value })}
                   className={`${selectCls} pl-8`}
                 >
-                  {TRUCKS.map(t => <option key={t}>{t}</option>)}
+                  <option value="">Select Truck...</option>
+                  {dbTrucks.map(t => (
+                    <option key={t.id} value={`${t.make} ${t.model}`}>{t.make} {t.model} ({t.rego})</option>
+                  ))}
                 </select>
                 <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
               </div>
@@ -1124,7 +1175,10 @@ export default function CreateLoad({ onBack }) {
                   onChange={e => setFormData({ ...formData, driver: e.target.value })}
                   className={`${selectCls} pl-8`}
                 >
-                  {DRIVERS.map(d => <option key={d}>{d}</option>)}
+                  <option value="">Select Driver...</option>
+                  {dbDrivers.map(d => (
+                    <option key={d.id} value={d.name}>{d.name}</option>
+                  ))}
                 </select>
                 <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
               </div>

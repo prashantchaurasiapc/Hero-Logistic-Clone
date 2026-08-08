@@ -80,8 +80,8 @@
 }
 
 .wh-refresh-btn:hover {
-  color: #FFD400;
-  border-color: #FFD400;
+  color: var(--primary-color);
+  border-color: var(--primary-color);
 }
 
 .wh-refresh-btn.spinning svg {
@@ -124,7 +124,7 @@
 
 .wh-metric-card:hover {
   transform: translateY(-2px);
-  border-color: #FFD400;
+  border-color: var(--primary-color);
 }
 
 .wh-metric-header {
@@ -256,7 +256,7 @@
 }
 
 .wh-filter-search-input:focus {
-  border-color: #FFD400;
+  border-color: var(--primary-color);
   box-shadow: 0 0 0 3px rgba(255, 212, 0, 0.2);
 }
 
@@ -321,7 +321,7 @@
 }
 
 .wh-status-filter-select:focus {
-  border-color: #FFD400;
+  border-color: var(--primary-color);
 }
 
 .wh-reset-filter-btn {
@@ -351,9 +351,9 @@
 }
 
 .wh-reset-filter-btn:hover {
-  background: #FFD400;
+  background: var(--primary-color);
   color: #000000;
-  border-color: #FFD400;
+  border-color: var(--primary-color);
 }
 
 /* ── MIDDLE ROW: 3 CARDS ── */
@@ -626,7 +626,7 @@
 
 .wh-quick-action-btn:hover {
   transform: translateY(-2px);
-  border-color: #FFD400;
+  border-color: var(--primary-color);
 }
 
 .wh-light .wh-quick-action-btn:hover { background-color: #FFFFFF; }
@@ -865,7 +865,7 @@
 }
 
 .wh-date-input:focus {
-  border-color: #FFD400;
+  border-color: var(--primary-color);
   background: #FFFFFF;
 }
 
@@ -949,7 +949,7 @@
 .wh-btn-yellow {
   height: 38px;
   padding: 0 18px;
-  background: #FFD400;
+  background: var(--primary-color);
   border: none;
   border-radius: 10px;
   font-size: 12px;

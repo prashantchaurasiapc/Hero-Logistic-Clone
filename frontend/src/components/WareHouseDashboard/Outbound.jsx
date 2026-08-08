@@ -41,7 +41,7 @@ export default function Outbound({ outboundData, setOutboundData, onScanOutClick
                 <button
                   key={mode}
                   onClick={() => setDensity(mode.toLowerCase())}
-                  className={`px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer ${isActive ? 'bg-[#FFD400] text-slate-950 font-extrabold shadow-xs' : 'text-slate-500 hover:text-slate-700'} whitespace-nowrap`}
+                  className={`px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer ${isActive ? 'bg-brand-500 text-slate-950 font-extrabold shadow-xs' : 'text-slate-500 hover:text-slate-700'} whitespace-nowrap`}
                 >
                   {mode}
                 </button>

@@ -83,7 +83,9 @@ const DocumentRoutes = require('./DocumentRoutes');
 const SuperAdminDashboardRoutes = require('./SuperAdminDashboardRoutes');
 const PaymentGatewayConfigRoutes = require('./PaymentGatewayConfigRoutes');
 const WorkflowRuleRoutes = require('./WorkflowRuleRoutes');
+const UploadRoutes = require('./UploadRoutes');
 
+router.use('/upload', UploadRoutes);
 router.use('/auth', authRoutes);
 router.use('/workflow-rules', WorkflowRuleRoutes);
 router.use('/companys', CompanyRoutes);
@@ -170,6 +172,8 @@ const NotificationTemplateRoutes = require('./NotificationTemplateRoutes');
 const NotificationRuleRoutes = require('./NotificationRuleRoutes');
 const RecipientGroupRoutes = require('./RecipientGroupRoutes');
 
+const WarehousePortalRoutes = require('./WarehousePortalRoutes');
+
 router.use('/ai-models', AiModelRoutes);
 router.use('/notification-templates', NotificationTemplateRoutes);
 router.use('/notification-rules', NotificationRuleRoutes);
@@ -180,6 +184,9 @@ router.use('/company-admin/dashboard', CompanyAdminDashboardRoutes);
 router.use('/super-admin/dashboard', SuperAdminDashboardRoutes);
 router.use('/payment-gateway-config', PaymentGatewayConfigRoutes);
 router.use('/dashboard-metrics', SuperAdminDashboardRoutes);
+
+// Warehouse Portal routes & aliases
+router.use('/warehouse-portal', WarehousePortalRoutes);
 
 // Direct menu aliases for top-level routes
 router.use('/live-tracking', CompanyAdminPortalRoutes);
@@ -193,3 +200,4 @@ router.use('/safety-checklists', CompanyAdminPortalRoutes);
 router.use('/delivery-issues', CompanyAdminPortalRoutes);
 
 module.exports = router;
+

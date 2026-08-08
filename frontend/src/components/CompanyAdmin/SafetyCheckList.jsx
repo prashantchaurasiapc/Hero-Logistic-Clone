@@ -51,7 +51,7 @@ const SafetyChecklistsDashboardView = () => {
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="bg-[#FFD400] hover:bg-yellow-400 text-black font-bold py-2.5 px-5 rounded-xl transition-all flex items-center gap-2 text-xs cursor-pointer shadow-sm"
+          className="bg-brand-500 hover:bg-yellow-400 text-black font-bold py-2.5 px-5 rounded-xl transition-all flex items-center gap-2 text-xs cursor-pointer shadow-sm"
         >
           <Plus size={14} strokeWidth={2.5} />
           New Checklist
@@ -169,7 +169,7 @@ const SafetyChecklistsDashboardView = () => {
                 <input
                   type="text" required placeholder="e.g. Hazardous Materials Check"
                   value={newChecklist.name} onChange={(e) => setNewChecklist({ ...newChecklist, name: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-xs font-semibold focus:ring-1 focus:ring-[#FFD400] focus:outline-none"
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-xs font-semibold focus:ring-1 focus:ring-brand-500 focus:outline-none"
                 />
               </div>
               <div>
@@ -177,7 +177,7 @@ const SafetyChecklistsDashboardView = () => {
                 <input
                   type="text" required placeholder="e.g. DG Certified Drivers"
                   value={newChecklist.users} onChange={(e) => setNewChecklist({ ...newChecklist, users: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-xs font-semibold focus:ring-1 focus:ring-[#FFD400] focus:outline-none"
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-xs font-semibold focus:ring-1 focus:ring-brand-500 focus:outline-none"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -186,7 +186,7 @@ const SafetyChecklistsDashboardView = () => {
                   <input
                     type="text" required placeholder="e.g. Every DG Load"
                     value={newChecklist.schedule} onChange={(e) => setNewChecklist({ ...newChecklist, schedule: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-xs font-semibold focus:ring-1 focus:ring-[#FFD400] focus:outline-none"
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-xs font-semibold focus:ring-1 focus:ring-brand-500 focus:outline-none"
                   />
                 </div>
                 <div>
@@ -194,13 +194,13 @@ const SafetyChecklistsDashboardView = () => {
                   <input
                     type="text" required placeholder="e.g. 5 items - 5 required"
                     value={newChecklist.items} onChange={(e) => setNewChecklist({ ...newChecklist, items: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-xs font-semibold focus:ring-1 focus:ring-[#FFD400] focus:outline-none"
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-xs font-semibold focus:ring-1 focus:ring-brand-500 focus:outline-none"
                   />
                 </div>
               </div>
               <button
                 type="submit"
-                className="w-full bg-[#FFD400] hover:bg-yellow-400 text-black font-bold py-3 rounded-xl text-xs mt-2 cursor-pointer transition-colors shadow-sm"
+                className="w-full bg-brand-500 hover:bg-yellow-400 text-black font-bold py-3 rounded-xl text-xs mt-2 cursor-pointer transition-colors shadow-sm"
               >
                 CREATE & ACTIVATE CHECKLIST
               </button>

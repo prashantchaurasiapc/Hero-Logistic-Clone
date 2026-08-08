@@ -61,7 +61,7 @@ export default function AdminUsers() {
           phone: u.phone || 'N/A',
           role: u.role.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' '),
           company: u.company?.name || 'Platform Level',
-          status: u.isActive ? 'ACTIVE' : 'INACTIVE',
+          status: u.status || 'ACTIVE',
           lastLogin: u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : 'Never',
           created: new Date(u.createdAt).toLocaleDateString()
         })));
@@ -98,7 +98,7 @@ export default function AdminUsers() {
         email: form.email,
         phone: form.phone || null,
         role: form.role.toUpperCase().replace(/ /g, '_'),
-        isActive: form.status === 'ACTIVE'
+        status: form.status
       });
       if (res.data?.success) {
         setShowAddModal(false);
@@ -121,7 +121,7 @@ export default function AdminUsers() {
         email: form.email,
         phone: form.phone || null,
         role: form.role.toUpperCase().replace(/ /g, '_'),
-        isActive: form.status === 'ACTIVE'
+        status: form.status
       });
       if (res.data?.success) {
         setShowEditModal(null);
@@ -146,7 +146,7 @@ export default function AdminUsers() {
         fetchUsers();
       }
     } catch (err) {
-      notify('Error deleting user.');
+      notify(err.response?.data?.error?.message || 'Error deleting user.');
     } finally {
       setIsLoading(false);
     }
@@ -199,7 +199,7 @@ export default function AdminUsers() {
           <p className="text-xs text-slate-400 font-semibold mt-0.5">{users.length} platform users across all roles</p>
         </div>
         <button onClick={openAdd}
-          className="flex items-center gap-2 bg-[#FFD400] hover:bg-[#f5c800] text-black font-black text-xs px-5 py-2.5 rounded-xl shadow-sm transition-all cursor-pointer whitespace-nowrap self-start sm:self-auto">
+          className="flex items-center gap-2 bg-brand-500 hover:bg-[#f5c800] text-black font-black text-xs px-5 py-2.5 rounded-xl shadow-sm transition-all cursor-pointer whitespace-nowrap self-start sm:self-auto">
           <Plus className="w-4 h-4" /> Add New User
         </button>
       </div>
@@ -479,7 +479,7 @@ const FormModal = ({ title, onSubmit, onClose, form, setForm }) => {
           </div>
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 cursor-pointer">Cancel</button>
-            <button type="submit" className="flex-1 py-2.5 bg-[#FFD400] hover:bg-[#f5c800] rounded-xl text-sm font-black text-black cursor-pointer shadow-sm transition-all">{title}</button>
+            <button type="submit" className="flex-1 py-2.5 bg-brand-500 hover:bg-[#f5c800] rounded-xl text-sm font-black text-black cursor-pointer shadow-sm transition-all">{title}</button>
           </div>
         </form>
       </div>

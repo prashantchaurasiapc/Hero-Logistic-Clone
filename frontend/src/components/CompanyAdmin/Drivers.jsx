@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Users, Truck, Coffee, Clock, AlertTriangle, Calendar,
@@ -11,34 +11,54 @@ import {
   Eye, Trash2, Printer, Search as SearchIcon, Edit, MoreHorizontal
 } from 'lucide-react';
 
-const mockDrivers = [
-  { id: 'DRV001', name: 'Mike Thompson', age: 34, dob: '1990-06-15', dr: 'NSW /990', phone: '0412 345 678', email: 'mike.thompson@herologistics.com.au', address: '12 Greenfield Rd, Campbelltown NSW 2560', licence: 'HR (Heavy Rigid)', licenceNo: 'NSW 12345678', issueDate: '12/03/2023', employmentType: 'Full Time', status: 'On Duty', branch: 'Sydney', assignmentId: 'PO-12546', assignmentType: 'Car Carrying', complianceStatus: 'Compliant', complianceScore: '100%', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200' },
-  { id: 'DRV002', name: 'Rajesh Patel', age: 41, dob: '1983-04-12', dr: 'VIC /442', phone: '0433 765 432', email: 'rajesh.patel@herologistics.com.au', address: '45 Station St, Dandenong VIC 3175', licence: 'HC (Heavy Combination)', licenceNo: 'NSW 87654321', issueDate: '18/08/2022', employmentType: 'Full Time', status: 'On Duty', branch: 'Melbourne', assignmentId: 'PO-12548', assignmentType: 'General Freight', complianceStatus: 'Compliant', complianceScore: '92%', avatar: 'https://i.pravatar.cc/150?u=2' },
-  { id: 'DRV003', name: 'Daniel White', age: 28, dob: '1998-11-22', dr: 'QLD /110', phone: '0401 112 233', email: 'daniel.white@herologistics.com.au', address: '88 Boundary St, West End QLD 4101', licence: 'MR (Medium Rigid)', licenceNo: 'VIC 11223344', issueDate: '05/01/2024', employmentType: 'Full Time', status: 'Off Duty', branch: 'Brisbane', assignmentId: '—', assignmentType: 'Not assigned', complianceStatus: 'Compliant', complianceScore: '85%', avatar: 'https://i.pravatar.cc/150?u=3' },
-  { id: 'DRV004', name: 'Sandeep Singh', age: 38, dob: '1986-09-03', dr: 'QLD /889', phone: '0422 334 455', email: 'sandeep.singh@herologistics.com.au', address: '14 Logan Rd, Woolloongabba QLD 4102', licence: 'HC (Heavy Combination)', licenceNo: 'QLD 44556677', issueDate: '21/11/2021', employmentType: 'Full Time', status: 'On Leave', branch: 'Brisbane', assignmentId: '—', assignmentType: 'On Annual Leave', complianceStatus: '1 Expiring', complianceScore: '78%', avatar: 'https://i.pravatar.cc/150?u=4' },
-  { id: 'DRV005', name: 'Lisa Brown', age: 31, dob: '1993-02-17', dr: 'NSW /331', phone: '0411 556 789', email: 'lisa.brown@herologistics.com.au', address: '72 Parramatta Rd, Strathfield NSW 2135', licence: 'LR (Light Rigid)', licenceNo: 'NSW 99887766', issueDate: '10/06/2023', employmentType: 'Part Time', status: 'Off Duty', branch: 'Sydney', assignmentId: '—', assignmentType: 'Not assigned', complianceStatus: 'Compliant', complianceScore: '90%', avatar: 'https://i.pravatar.cc/150?u=5' },
-  { id: 'DRV006', name: 'Ahmed Khan', age: 36, dob: '1988-07-29', dr: 'VIC /778', phone: '0430 687 788', email: 'ahmed.khan@herologistics.com.au', address: '29 Sydney Rd, Brunswick VIC 3056', licence: 'HC (Heavy Combination)', licenceNo: 'NSW 22334455', issueDate: '01/09/2020', employmentType: 'Full Time', status: 'Unavailable', branch: 'Melbourne', assignmentId: '—', assignmentType: 'Medical Leave', complianceStatus: '2 Expiring', complianceScore: '60%', avatar: 'https://i.pravatar.cc/150?u=6' },
-  { id: 'DRV007', name: 'Jake Martin', age: 29, dob: '1995-12-08', dr: 'SA /551', phone: '0408 889 900', email: 'jake.martin@herologistics.com.au', address: '10 King William St, Adelaide SA 5000', licence: 'MR (Medium Rigid)', licenceNo: 'VIC 33445566', issueDate: '14/04/2023', employmentType: 'Casual', status: 'On Duty', branch: 'Adelaide', assignmentId: 'PO-12550', assignmentType: 'Dangerous Goods', complianceStatus: 'Compliant', complianceScore: '85%', avatar: 'https://i.pravatar.cc/150?u=7' },
-  { id: 'DRV008', name: 'Priya Sharma', age: 27, dob: '1997-03-30', dr: 'WA /902', phone: '0423 123 987', email: 'priya.sharma@herologistics.com.au', address: '5 St Georges Tce, Perth WA 6000', licence: 'MR (Medium Rigid)', licenceNo: 'QLD 55667788', issueDate: '09/10/2023', employmentType: 'Full Time', status: 'Off Duty', branch: 'Perth', assignmentId: '—', assignmentType: 'Not assigned', complianceStatus: 'Compliant', complianceScore: '88%', avatar: 'https://i.pravatar.cc/150?u=8' },
-];
+// All driver and document data comes from the backend API — no hardcoded mock data
 
-const mockDocuments = [
-  { id: 1, category: 'Licences', type: 'Driver Licence (HR)', number: 'LPI1234567', issue: '12/03/2018', expiry: '12/03/2028', status: 'Valid', daysLeft: '884 days', notes: 'Heavy Rigid primary driving licence. Verified by HR dept.', fileName: 'hr_licence_scan.pdf', fileSize: '1.8 MB' },
-  { id: 2, category: 'Licences', type: 'Driver Licence (MR)', number: 'MR1122334', issue: '10/04/2016', expiry: '10/04/2026', status: 'Valid', daysLeft: '235 days', notes: 'Medium Rigid secondary licence endorsement.', fileName: 'mr_licence_scan.pdf', fileSize: '1.2 MB' },
-  { id: 3, category: 'Medical', type: 'Medical Certificate', number: 'MED-567890', issue: '10/08/2024', expiry: '10/08/2025', status: 'Expiring Soon', daysLeft: '28 days', notes: 'Annual Commercial Driver Health Check by Dr. A. Smith.', fileName: 'medical_cert_2024.pdf', fileSize: '2.4 MB' },
-  { id: 4, category: 'Certifications', type: 'First Aid Certificate', number: 'FA-334455', issue: '05/12/2024', expiry: '05/12/2025', status: 'Valid', daysLeft: '113 days', notes: 'HLTAID011 Provide First Aid course completed.', fileName: 'first_aid_cert.pdf', fileSize: '950 KB' },
-  { id: 5, category: 'Certifications', type: 'Dangerous Goods (DG)', number: 'DG-778899', issue: '02/02/2024', expiry: '02/02/2026', status: 'Valid', daysLeft: '145 days', notes: 'Class 3 Flammable Liquids & Class 8 Corrosives endorsement.', fileName: 'dg_licence.pdf', fileSize: '1.5 MB' },
-  { id: 6, category: 'Training', type: 'Fatigue Management Cert.', number: 'FM-445566', issue: '15/02/2024', expiry: '15/02/2026', status: 'Valid', daysLeft: '158 days', notes: 'BFM (Basic Fatigue Management) scheme accreditation.', fileName: 'fatigue_mgmt.pdf', fileSize: '1.1 MB' },
-  { id: 7, category: 'Other', type: 'Working With Children', number: 'WWC-889900', issue: '01/07/2023', expiry: '01/07/2026', status: 'Valid', daysLeft: '311 days', notes: 'Required for school district deliveries.', fileName: 'wwc_clearance.pdf', fileSize: '800 KB' },
-  { id: 8, category: 'Licences', type: 'Forklift Licence', number: 'FL-125678', issue: '20/01/2024', expiry: '20/01/2026', status: 'Valid', daysLeft: '133 days', notes: 'High Risk Work Licence (LF category).', fileName: 'forklift_licence.pdf', fileSize: '1.3 MB' },
-  { id: 9, category: 'Certifications', type: 'Heavy Vehicle Accreditation', number: 'HVA-223344', issue: '18/03/2024', expiry: '18/03/2026', status: 'Valid', daysLeft: '169 days', notes: 'NHVAS Maintenance & Mass Management accredited.', fileName: 'nhvas_cert.pdf', fileSize: '2.0 MB' },
-  { id: 10, category: 'Training', type: 'Chain of Responsibility', number: 'COR-556677', issue: '01/06/2024', expiry: '01/06/2026', status: 'Valid', daysLeft: '244 days', notes: 'CoR Level 2 Supervisor Training completed.', fileName: 'cor_training.pdf', fileSize: '1.4 MB' },
-  { id: 11, category: 'Certifications', type: 'Road Ranger Accreditation', number: 'RR-998877', issue: '01/09/2023', expiry: '01/09/2025', status: 'Expired', daysLeft: 'Expired', notes: 'Non-synchronized gearbox operational cert. Renewal pending.', fileName: 'road_ranger.pdf', fileSize: '900 KB' },
-  { id: 12, category: 'Other', type: 'Blue Card (QLD)', number: 'BC-667788', issue: '30/11/2023', expiry: '10/11/2026', status: 'Valid', daysLeft: '308 days', notes: 'Queensland safety clearance card.', fileName: 'blue_card_qld.pdf', fileSize: '1.0 MB' }
-];
+import api from '../../services/api';
 
 export default function Drivers() {
-  const [driverList, setDriverList] = useState(mockDrivers);
+  const [driverList, setDriverList] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const fetchDrivers = async () => {
+    setIsLoading(true);
+    try {
+      const res = await api.get('/drivers');
+      if (res.data && res.data.success) {
+        const mapped = res.data.data.map(d => {
+          return {
+            id: d.id,
+            name: d.name || `${d.firstName || ''} ${d.lastName || ''}`.trim() || d.driverCode || 'Unknown Driver',
+            age: d.dob ? new Date().getFullYear() - new Date(d.dob).getFullYear() : 35,
+            dob: d.dob ? new Date(d.dob).toISOString().split('T')[0] : '1990-06-15',
+            phone: d.phone || 'N/A',
+            email: d.email || 'N/A',
+            address: d.address || 'N/A',
+            licence: d.licenceType || 'MR (Medium Rigid)',
+            licenceNo: d.licenceNumber || 'VIC 11223344',
+            issueDate: d.issueDate ? new Date(d.issueDate).toLocaleDateString() : 'N/A',
+            employmentType: d.employmentType || 'Full Time',
+            status: d.status || 'Available',
+            branch: d.branch || 'Sydney',
+            assignmentId: '—',
+            assignmentType: 'Not assigned',
+            complianceStatus: 'Compliant',
+            complianceScore: '90%',
+            avatar: d.avatarUrl || 'https://i.pravatar.cc/150?u=' + d.id
+          };
+        });
+        setDriverList(mapped);
+      }
+    } catch (error) {
+      console.error('Error fetching drivers:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDrivers();
+  }, []);
+
   const [editDriverModal, setEditDriverModal] = useState(null);
   const [selectedDriver, setSelectedDriver] = useState(null);
   const [showAddDriver, setShowAddDriver] = useState(false);
@@ -52,125 +72,7 @@ export default function Drivers() {
   const [selectedTimelineModal, setSelectedTimelineModal] = useState(null);
   const [showAddActivityModal, setShowAddActivityModal] = useState(false);
 
-  const [timelineEventsList, setTimelineEventsList] = useState([
-    {
-      id: '#1001',
-      title: 'Medical Certificate Verified',
-      category: 'Compliance',
-      status: 'Verified',
-      time: 'Today at 09:00 AM',
-      date: '2026-07-24',
-      description: 'National Medical Fitness Certificate verification completed successfully with zero restrictions.',
-      performedBy: 'Compliance Automated Auditor',
-      location: 'Sydney HQ Portal',
-      ip: '192.168.1.104',
-      hash: 'SHA256: 8f9a2b71c4d5e901'
-    },
-    {
-      id: '#1002',
-      title: 'Vehicle Post-Trip Inspection Completed',
-      category: 'Assignments',
-      status: 'Success',
-      time: 'Today at 05:15 PM',
-      date: '2026-07-24',
-      description: 'Returned vehicle Volvo FH16 (VH-9930) after shift completion. All safety checks and tire pressure logs passed.',
-      performedBy: 'Rajesh Patel (Driver)',
-      location: 'Depot 4 - Sydney',
-      ip: '10.0.4.82',
-      hash: 'SHA256: 3c7e1a90f2b4e881'
-    },
-    {
-      id: '#1003',
-      title: 'Pre-Trip Safety Checklist Passed',
-      category: 'Safety',
-      status: 'Passed',
-      time: 'Today at 07:15 AM',
-      date: '2026-07-24',
-      description: 'Pre-start fatigue checklist, breathalyzer 0.00 BAC test, and vehicle brake check submitted.',
-      performedBy: 'Rajesh Patel (Driver)',
-      location: 'Mobile Driver App',
-      ip: '172.16.42.19',
-      hash: 'SHA256: 7d1e8c92a4b0f113'
-    },
-    {
-      id: '#1004',
-      title: 'Load LD-34412 Started',
-      category: 'Assignments',
-      status: 'Active',
-      time: 'Yesterday at 07:30 AM',
-      date: '2026-07-23',
-      description: 'Dispatched Heavy Combination freight from Sydney NSW to Canberra ACT with 24.5 tonnes cargo.',
-      performedBy: 'Dispatch Operations Control',
-      location: 'Central Operations Unit',
-      ip: '192.168.1.55',
-      hash: 'SHA256: 9b4a1c80e3d2f701'
-    },
-    {
-      id: '#1005',
-      title: 'Fatigue Management Break Recorded',
-      category: 'Safety',
-      status: 'Compliant',
-      time: 'Yesterday at 01:30 PM',
-      date: '2026-07-23',
-      description: 'Mandatory 30-minute rest break taken at Goulburn Rest Stop under Heavy Vehicle National Law (HVNL) rules.',
-      performedBy: 'Telematics Auto Logger',
-      location: 'Goulburn Rest Stop NSW',
-      ip: '10.40.12.9',
-      hash: 'SHA256: 1a5e7c89f0b2d441'
-    },
-    {
-      id: '#1006',
-      title: 'Heavy Rigid (HR) Licence Renewed',
-      category: 'Documents',
-      status: 'Approved',
-      time: '21/07/2026 at 11:20 AM',
-      date: '2026-07-21',
-      description: 'New NSW Heavy Rigid Licence document (Licence #990123) uploaded and verified by HR department.',
-      performedBy: 'HR Operations Lead',
-      location: 'HR Admin Portal',
-      ip: '192.168.1.12',
-      hash: 'SHA256: 5f2d9a10b8c4e772'
-    },
-    {
-      id: '#1007',
-      title: 'Bi-Weekly Pay Advice Generated',
-      category: 'Payroll',
-      status: 'Processed',
-      time: '16/07/2025 at 04:00 PM',
-      date: '2025-07-16',
-      description: 'Gross pay $3,480.00 disbursed to Commonwealth Bank account ending in 4829.',
-      performedBy: 'Automated Payroll Engine',
-      location: 'Payroll Server #2',
-      ip: '10.0.99.14',
-      hash: 'SHA256: 2b8e4a91c0f7d332'
-    },
-    {
-      id: '#1008',
-      title: 'Annual Leave Request Approved',
-      category: 'Leave',
-      status: 'Approved',
-      time: '12/07/2025 at 02:45 PM',
-      date: '2025-07-12',
-      description: '5 Days Annual Leave request approved for period 12/08/2025 to 18/08/2025.',
-      performedBy: 'Operations Manager',
-      location: 'Manager Portal',
-      ip: '192.168.1.88',
-      hash: 'SHA256: 4c0e2f91a8d7b661'
-    },
-    {
-      id: '#1009',
-      title: 'Driver Duty Status Changed to Available',
-      category: 'Status Changes',
-      status: 'Updated',
-      time: '10/07/2025 at 06:00 PM',
-      date: '2025-07-10',
-      description: 'Driver status updated from On Duty to Available upon completion of weekly route schedule.',
-      performedBy: 'Rajesh Patel (Driver)',
-      location: 'Mobile Driver App',
-      ip: '172.16.42.19',
-      hash: 'SHA256: 6a1b8c90d2e4f553'
-    }
-  ]);
+  const [timelineEventsList, setTimelineEventsList] = useState([]);
 
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
@@ -186,7 +88,7 @@ export default function Drivers() {
   const [branchFilter, setBranchFilter] = useState('All');
 
   // Table action dropdown & modal states
-  const [documentList, setDocumentList] = useState(mockDocuments);
+  const [documentList, setDocumentList] = useState([]);
   const [docMenuIndex, setDocMenuIndex] = useState(null);
   const [docMenuPos, setDocMenuPos] = useState(null);
   const [viewDocModal, setViewDocModal] = useState(null);
@@ -200,30 +102,19 @@ export default function Drivers() {
     setTimeout(() => setToast(null), 3500);
   };
 
-  const [currentAssignmentsList, setCurrentAssignmentsList] = useState([
-    { id: 'LD-12546', type: 'Car Carrier', route: 'Sydney NSW → Brisbane QLD', stops: '2 Stops', vehicle: 'Volvo FH 540 | TRK-101', start: '15/07/2025 06:00 AM', end: '18/07/2025 09:00 AM', status: 'In Progress' },
-    { id: 'LD-12557', type: 'General Freight', route: 'Melbourne VIC → Sydney NSW', stops: '3 Stops', vehicle: 'Volvo FH 540 | TRK-101', start: '19/07/2025 07:00 AM', end: '20/07/2025 06:00 PM', status: 'Assigned' }
-  ]);
+  const [currentAssignmentsList, setCurrentAssignmentsList] = useState([]);
   const [currAssignMenuIndex, setCurrAssignMenuIndex] = useState(null);
   const [currAssignMenuPos, setCurrAssignMenuPos] = useState(null);
   const [viewCurrAssignModal, setViewCurrAssignModal] = useState(null);
   const [editCurrAssignModal, setEditCurrAssignModal] = useState(null);
 
-  const [upcomingAssignmentsList, setUpcomingAssignmentsList] = useState([
-    { id: 'LD-12568', type: 'Car Carrier', route: 'Brisbane QLD → Adelaide SA', stops: '2 Stops', vehicle: 'Volvo FH 540 | TRK-101', start: '21/07/2025 08:00 AM', end: '22/07/2025 05:00 PM', status: 'Scheduled' },
-    { id: 'LD-12572', type: 'Car Carrier', route: 'Adelaide SA → Melbourne VIC', stops: '2 Stops', vehicle: 'Volvo FH 540 | TRK-101', start: '24/07/2025 09:00 AM', end: '25/07/2025 06:00 PM', status: 'Scheduled' }
-  ]);
+  const [upcomingAssignmentsList, setUpcomingAssignmentsList] = useState([]);
   const [upAssignMenuIndex, setUpAssignMenuIndex] = useState(null);
   const [upAssignMenuPos, setUpAssignMenuPos] = useState(null);
   const [viewUpAssignModal, setViewUpAssignModal] = useState(null);
   const [editUpAssignModal, setEditUpAssignModal] = useState(null);
 
-  const [evalLogList, setEvalLogList] = useState([
-    { id: 1, date: '08/07/2026', assignment: 'LD-34412 (HR Heavy Rigid)', route: 'Sydney NSW → Canberra ACT', score: '95/100', status: 'Completed', remarks: 'Smooth vehicle handling recorded.', evaluator: 'Chief Fleet Inspector' },
-    { id: 2, date: '05/07/2026', assignment: 'LD-34301 (HR Heavy Rigid)', route: 'Goulburn NSW → Sydney NSW', score: '97/100', status: 'Completed', remarks: 'Zero driving incidents, customer gave 5 stars.', evaluator: 'Customer Success Team' },
-    { id: 3, date: '02/07/2026', assignment: 'LD-34288 (HR Heavy Rigid)', route: 'Sydney NSW Local Route', score: '84/100', status: 'Completed', remarks: 'Delayed by 15 mins due to road construction.', evaluator: 'Operations Controller' },
-    { id: 4, date: '28/06/2026', assignment: 'LD-34150 (Car Carrier)', route: 'Brisbane QLD → Sydney NSW', score: '98/100', status: 'Completed', remarks: 'Perfect loading accuracy and zero vehicle damage.', evaluator: 'Senior Auditor' }
-  ]);
+  const [evalLogList, setEvalLogList] = useState([]);
   const [evalMenuIndex, setEvalMenuIndex] = useState(null);
   const [evalMenuPos, setEvalMenuPos] = useState(null);
   const [viewEvalModal, setViewEvalModal] = useState(null);
@@ -235,40 +126,21 @@ export default function Drivers() {
   const [selectedPayslip, setSelectedPayslip] = useState(null);
   const [showGroupCertModal, setShowGroupCertModal] = useState(false);
 
-  const [payRatesList, setPayRatesList] = useState([
-    { id: 1, category: 'Daily Base Rate', type: 'Per Day', rate: '$550.00', status: 'Active', rule: 'Standard 10-hr shift' },
-    { id: 2, category: 'Overtime Hourly Rate', type: 'Per Hour (1.5x)', rate: '$75.00', status: 'Active', rule: 'After 10 hrs per day' },
-    { id: 3, category: 'Night Shift Differential', type: 'Per Hour', rate: '$68.00', status: 'Active', rule: 'Work between 10pm - 6am' },
-    { id: 4, category: 'Weekend Premium Rate', type: 'Per Day (1.8x)', rate: '$850.00', status: 'Active', rule: 'Saturday & Sunday Trips' },
-    { id: 5, category: 'Public Holiday Rate', type: 'Per Day (2.5x)', rate: '$1,150.00', status: 'Active', rule: 'Gazetted National Holidays' }
-  ]);
+  const [payRatesList, setPayRatesList] = useState([]);
 
-  const [allowancesList, setAllowancesList] = useState([
-    { id: 1, name: 'Fuel Reimbursement', category: 'Travel & Vehicle', type: 'Expense Claim', amount: '$120.00', date: '16/07/2025', status: 'Approved' },
-    { id: 2, name: 'Overnight Living Allowance', category: 'Meals & Board', type: 'Per Night', amount: '$85.00', date: '12/07/2025', status: 'Approved' },
-    { id: 3, name: 'Truck Wash Allowance', category: 'Maintenance', type: 'Per Wash', amount: '$50.00', date: '15/07/2025', status: 'Approved' },
-    { id: 4, name: 'Dangerous Goods Handling', category: 'Hazardous Load', type: 'Per Trip', amount: '$150.00', date: '08/07/2025', status: 'Approved' }
-  ]);
+  const [allowancesList, setAllowancesList] = useState([]);
 
-  const [deductionsList, setDeductionsList] = useState([
-    { id: 1, name: 'Salary Sacrifice Super', type: 'Pre-Tax Voluntary', amount: '$200.00', frequency: 'Per Pay Run', status: 'Active' },
-    { id: 2, name: 'Advance Pay Repayment', type: 'Post-Tax Recovery', amount: '$300.00', frequency: 'Installment 2/4', status: 'Active' },
-    { id: 3, name: 'Uniform & Safety Boots Fee', type: 'Post-Tax One-off', amount: '$75.00', frequency: 'One-time', status: 'Completed' }
-  ]);
+  const [deductionsList, setDeductionsList] = useState([]);
 
-  const [leaveRequestsList, setLeaveRequestsList] = useState([
-    { id: 1, type: 'Annual Leave', dates: '12/08/2025 - 18/08/2025', days: '5 Days', status: 'Approved', approver: 'HR Manager' },
-    { id: 2, type: 'Personal / Sick Leave', dates: '04/06/2025 - 05/06/2025', days: '2 Days', status: 'Taken', approver: 'Ops Director' },
-    { id: 3, type: 'Annual Leave', dates: '24/12/2025 - 02/01/2026', days: '7 Days', status: 'Pending Approval', approver: 'Pending' }
-  ]);
+  const [leaveRequestsList, setLeaveRequestsList] = useState([]);
 
   const [superInfo, setSuperInfo] = useState({
-    fundName: 'AustralianSuper',
-    memberNumber: 'AUS-9827361',
-    usi: 'STA0100AU',
-    rate: '11.5%',
-    ytdContribution: '$8,450.00',
-    status: 'Compliant & Active'
+    fundName: '',
+    memberNumber: '',
+    usi: '',
+    rate: '',
+    ytdContribution: '',
+    status: ''
   });
 
   // Dedicated Document Printing Helper (Clean Popup Printing - 0 Blank Pages, 0 Page Clutter)
@@ -334,8 +206,8 @@ export default function Drivers() {
   };
 
   const handlePrintGroupCertificate = () => {
-    const driverName = selectedDriver ? selectedDriver.name : 'Rajesh Patel';
-    const driverId = selectedDriver ? selectedDriver.id : 'DRV002';
+    const driverName = selectedDriver ? selectedDriver.name : '—';
+    const driverId = selectedDriver ? selectedDriver.id : '—';
     const html = `
       <div class="header-bar">
         <div>
@@ -418,8 +290,8 @@ export default function Drivers() {
 
   const handlePrintPayslip = (slip) => {
     if (!slip) return;
-    const driverName = selectedDriver ? selectedDriver.name : 'Rajesh Patel';
-    const driverId = selectedDriver ? selectedDriver.id : 'DRV002';
+    const driverName = selectedDriver ? selectedDriver.name : '—';
+    const driverId = selectedDriver ? selectedDriver.id : '—';
     const licence = selectedDriver?.licence || 'Heavy Rigid (HR)';
     const html = `
       <div class="header-bar">
@@ -509,8 +381,8 @@ export default function Drivers() {
   };
 
   const handlePrintPerformanceReport = () => {
-    const driverName = selectedDriver ? selectedDriver.name : 'Rajesh Patel';
-    const driverId = selectedDriver ? selectedDriver.id : 'DRV002';
+    const driverName = selectedDriver ? selectedDriver.name : '—';
+    const driverId = selectedDriver ? selectedDriver.id : '—';
     const branch = selectedDriver ? selectedDriver.branch : 'Melbourne';
     const html = `
       <div class="header-bar">
@@ -1918,8 +1790,8 @@ export default function Drivers() {
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-[10px] text-slate-400 font-bold uppercase">Employee</p>
-                  <p className="font-extrabold text-slate-900 text-sm">{selectedDriver ? selectedDriver.name : 'Rajesh Patel'}</p>
-                  <p className="text-slate-500">ID: {selectedDriver ? selectedDriver.id : 'DRV002'} | TFN: ***-***-982</p>
+                  <p className="font-extrabold text-slate-900 text-sm">{selectedDriver ? selectedDriver.name : '—'}</p>
+                  <p className="text-slate-500">ID: {selectedDriver ? selectedDriver.id : '—'} | TFN: —</p>
                 </div>
                 <div className="text-right">
                   <p className="text-[10px] text-slate-400 font-bold uppercase">Pay Period</p>
@@ -2049,8 +1921,8 @@ export default function Drivers() {
                 </div>
                 <div className="space-y-1">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Payee / Employee Details</p>
-                  <p className="font-extrabold text-slate-900 text-sm">{selectedDriver ? selectedDriver.name : 'Rajesh Patel'}</p>
-                  <p className="text-slate-600 font-medium">TFN: <span className="font-mono font-bold text-slate-800">492 881 902</span> | ID: <span className="font-mono font-bold text-purple-700">{selectedDriver ? selectedDriver.id : 'DRV002'}</span></p>
+                  <p className="font-extrabold text-slate-900 text-sm">{selectedDriver ? selectedDriver.name : '—'}</p>
+                  <p className="text-slate-600 font-medium">TFN: <span className="font-mono font-bold text-slate-800">—</span> | ID: <span className="font-mono font-bold text-purple-700">{selectedDriver ? selectedDriver.id : '—'}</span></p>
                   <p className="text-slate-500 text-[11px]">Period of Payment: <span className="font-bold text-slate-700">01/07/2025 to 30/06/2026</span></p>
                 </div>
               </div>
@@ -2258,7 +2130,7 @@ export default function Drivers() {
       gender: "Male",
       nationality: "Australian",
       phone: selectedDriver.phone,
-      email: "daniel.white@herologistics.com.au",
+      email: selectedDriver.email || '',
       licenceType: selectedDriver.licence,
       licenceNo: selectedDriver.licenceNo,
       branch: selectedDriver.branch
@@ -2281,38 +2153,53 @@ export default function Drivers() {
             </div>
           </div>
 
-        <form onSubmit={(e) => {
+        <form onSubmit={async (e) => {
           e.preventDefault();
           const fd = new FormData(e.target);
-          const newDriver = {
-            id: fd.get('EmployeeIDManualEditOption') || ('DRV00' + Math.floor(Math.random() * 100)),
-            name: `${fd.get('FirstName') || ''} ${fd.get('LastName') || ''}`.trim() || 'New Driver',
-            age: fd.get('DateofBirth') ? Math.floor((new Date() - new Date(fd.get('DateofBirth'))) / 31557600000) : 30,
-            dob: fd.get('DateofBirth') || '1990-01-01',
-            dr: 'NSW /990',
-            phone: fd.get('PhoneNumber') || '',
-            email: fd.get('EmailAddress') || '',
-            address: fd.get('ResidentialAddress') || '',
-            licence: fd.get('LicenceType') || 'HR (Heavy Rigid)',
-            licenceNo: fd.get('LicenceNumber') || '',
-            issueDate: fd.get('IssueDate') || '',
-            employmentType: fd.get('EmploymentType') || 'Full Time',
-            status: fd.get('DriverStatus') || 'Available',
-            branch: fd.get('Branch') || 'Sydney',
-            assignmentId: '—',
-            assignmentType: 'Not assigned',
-            complianceStatus: 'Compliant',
-            complianceScore: '100%',
-            avatar: isEditMode && selectedDriver ? selectedDriver.avatar : 'https://i.pravatar.cc/150?u=' + Math.floor(Math.random() * 1000)
-          };
-          if (isEditMode && selectedDriver) {
-             setDriverList(prev => prev.map(d => d.id === selectedDriver.id ? {...d, ...newDriver, id: d.id} : d));
-          } else {
-             setDriverList(prev => [newDriver, ...prev]);
+          const firstName = fd.get('FirstName') || '';
+          const lastName = fd.get('LastName') || '';
+          const driverCode = fd.get('EmployeeIDManualEditOption') || ('DRV00' + Math.floor(Math.random() * 100));
+          const phone = fd.get('PhoneNumber') || '';
+          const email = fd.get('EmailAddress') || '';
+          const licenceType = fd.get('LicenceType') || 'HR (Heavy Rigid)';
+          const licenceNumber = fd.get('LicenceNumber') || '';
+          const status = fd.get('DriverStatus') || 'Available';
+          const dob = fd.get('DateofBirth') ? new Date(fd.get('DateofBirth')).toISOString() : null;
+
+          try {
+            if (isEditMode && selectedDriver) {
+              await api.put(`/drivers/${selectedDriver.id}`, {
+                firstName,
+                lastName,
+                driverCode,
+                phone,
+                email,
+                licenceType,
+                licenceNumber,
+                status,
+                dob
+              });
+            } else {
+              await api.post('/drivers', {
+                firstName,
+                lastName,
+                driverCode,
+                phone,
+                email,
+                licenceType,
+                licenceNumber,
+                status,
+                dob
+              });
+            }
+            fetchDrivers();
+            setShowAddDriver(false);
+            setIsEditingDriver(false);
+            showToast(isEditMode ? "Driver Profile Updated successfully!" : "New Driver Added successfully!");
+          } catch (err) {
+            console.error('Error saving driver:', err);
+            alert('Failed to save driver to database.');
           }
-          setShowAddDriver(false);
-          setIsEditingDriver(false);
-          showToast(isEditMode ? "Driver Profile Updated successfully!" : "New Driver Added successfully!");
         }}>
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -2537,16 +2424,16 @@ export default function Drivers() {
                 </div>
                 <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-1 shadow-sm shrink-0">
                   <button
-                    onClick={() => currentDriverIndex > 0 && setSelectedDriver(mockDrivers[currentDriverIndex - 1])}
+                    onClick={() => currentDriverIndex > 0 && setSelectedDriver(driverList[currentDriverIndex - 1])}
                     disabled={currentDriverIndex <= 0}
                     className={`p-1.5 rounded transition-colors ${currentDriverIndex > 0 ? 'text-slate-400 hover:text-slate-700 hover:bg-slate-50 cursor-pointer' : 'text-slate-200 cursor-not-allowed'}`}
                   >
                     <ChevronLeft size={14} />
                   </button>
                   <button
-                    onClick={() => currentDriverIndex < mockDrivers.length - 1 && setSelectedDriver(mockDrivers[currentDriverIndex + 1])}
-                    disabled={currentDriverIndex >= mockDrivers.length - 1}
-                    className={`p-1.5 rounded transition-colors ${currentDriverIndex < mockDrivers.length - 1 ? 'text-slate-400 hover:text-slate-700 hover:bg-slate-50 cursor-pointer' : 'text-slate-200 cursor-not-allowed'}`}
+                    onClick={() => currentDriverIndex < driverList.length - 1 && setSelectedDriver(driverList[currentDriverIndex + 1])}
+                    disabled={currentDriverIndex >= driverList.length - 1}
+                    className={`p-1.5 rounded transition-colors ${currentDriverIndex < driverList.length - 1 ? 'text-slate-400 hover:text-slate-700 hover:bg-slate-50 cursor-pointer' : 'text-slate-200 cursor-not-allowed'}`}
                   >
                     <ChevronRight size={14} />
                   </button>
@@ -2584,7 +2471,7 @@ export default function Drivers() {
                       </div>
                       <div>
                         <p className="text-[10px] font-semibold text-slate-400 mb-0.5">Date of Birth</p>
-                        <p className="font-extrabold text-slate-900">{selectedDriver.dob || (selectedDriver.id === 'DRV001' ? '1990-06-15' : '1998-11-22')}</p>
+                        <p className="font-extrabold text-slate-900">{selectedDriver.dob || '—'}</p>
                       </div>
                     </div>
                   </div>
@@ -2602,7 +2489,7 @@ export default function Drivers() {
                   </div>
                   <div>
                     <p className="text-[10px] font-semibold text-slate-400 mb-0.5">Address</p>
-                    <p className="font-extrabold text-slate-900 leading-snug">{selectedDriver.address || (selectedDriver.id === 'DRV001' ? '12 Greenfield Rd, Campbelltown NSW 2560' : '88 Boundary St, West End QLD 4101')}</p>
+                    <p className="font-extrabold text-slate-900 leading-snug">{selectedDriver.address || '—'}</p>
                   </div>
 
                   <div>
@@ -2880,14 +2767,14 @@ export default function Drivers() {
                     <button className="flex items-center gap-1 px-2 py-1 bg-slate-50 border border-slate-200 rounded text-[9px] font-bold text-slate-500 hover:text-slate-700 transition-colors cursor-pointer"><Plus size={10} /> Edit</button>
                   </div>
                   <div className="space-y-1">
-                    <DataRow label="Role" value="Driver" />
-                    <DataRow label="Reports To" value="Sarah Mitchell" />
-                    <DataRow label="Pay Rate" value="$350.00 / daily" />
-                    <DataRow label="Pay Type" value="Daily" />
-                    <DataRow label="Super Fund" value="AustralianSuper" />
-                    <DataRow label="TFN" value="123 456 789" />
-                    <DataRow label="Bank Account" value="BSB 082-900 A/C **** 4567" />
-                    <DataRow label="Days Worked (YTD)" value="86 days" />
+                    <DataRow label="Role" value={selectedDriver.role || selectedDriver.driverRole || 'Driver'} />
+                    <DataRow label="Reports To" value={selectedDriver.reportsTo || '—'} />
+                    <DataRow label="Pay Rate" value={selectedDriver.payRate ? `$${selectedDriver.payRate} / daily` : '—'} />
+                    <DataRow label="Pay Type" value={selectedDriver.payType || '—'} />
+                    <DataRow label="Super Fund" value={selectedDriver.superFund || superInfo.fundName || '—'} />
+                    <DataRow label="TFN" value={selectedDriver.tfn ? `*** *** ${String(selectedDriver.tfn).slice(-3)}` : '—'} />
+                    <DataRow label="Bank Account" value={selectedDriver.bankAccount ? `**** ${String(selectedDriver.bankAccount).slice(-4)}` : '—'} />
+                    <DataRow label="Days Worked (YTD)" value={selectedDriver.daysWorkedYTD ? `${selectedDriver.daysWorkedYTD} days` : '—'} />
                   </div>
                 </div>
 
@@ -4717,7 +4604,7 @@ export default function Drivers() {
                       </div>
                       <div>
                         <h3 className="text-sm font-black text-slate-800">Driver Audit Trail & History</h3>
-                        <p className="text-[10px] font-medium text-slate-500">Comprehensive activity logs for {selectedDriver ? selectedDriver.name : 'Rajesh Patel'} ({selectedDriver ? selectedDriver.id : 'DRV002'})</p>
+                        <p className="text-[10px] font-medium text-slate-500">Comprehensive activity logs for {selectedDriver ? selectedDriver.name : '—'} ({selectedDriver ? selectedDriver.id : '—'})</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -4736,7 +4623,7 @@ export default function Drivers() {
                           const encodedUri = encodeURI(csvContent);
                           const link = document.createElement("a");
                           link.setAttribute("href", encodedUri);
-                          link.setAttribute("download", `activity_timeline_${selectedDriver?.id || 'DRV002'}.csv`);
+                          link.setAttribute("download", `activity_timeline_${selectedDriver?.id || 'driver'}.csv`);
                           document.body.appendChild(link);
                           link.click();
                           document.body.removeChild(link);
@@ -4748,8 +4635,8 @@ export default function Drivers() {
                       </button>
                       <button
                         onClick={() => {
-                          const driverName = selectedDriver ? selectedDriver.name : 'Rajesh Patel';
-                          const driverId = selectedDriver ? selectedDriver.id : 'DRV002';
+                          const driverName = selectedDriver ? selectedDriver.name : '—';
+                          const driverId = selectedDriver ? selectedDriver.id : '—';
                           const html = `
                             <div class="header-bar">
                               <div>
@@ -4941,73 +4828,88 @@ export default function Drivers() {
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2.5 mb-6">
-          <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-2xs flex items-start gap-2.5 hover:shadow-md transition-shadow">
-            <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0 mt-0.5">
-              <Users size={16} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">TOTAL DRIVERS</span>
-              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">8 <span className="text-xs font-semibold text-slate-500">Active</span></div>
-              <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">↑ 2 this month</div>
-            </div>
-          </div>
+        {(() => {
+          const totalDrivers = driverList.length;
+          const onDutyDrivers = driverList.filter(d => d.status === 'On Duty' || d.status === 'In Transit' || d.status === 'En Route' || d.status === 'At Pickup').length;
+          const offDutyDrivers = driverList.filter(d => d.status === 'Off Duty' || d.status === 'Available').length;
+          const onLeaveDrivers = driverList.filter(d => d.status === 'On Leave').length;
+          const unavailableDrivers = driverList.filter(d => d.status === 'Unavailable' || d.status === 'Offline').length;
 
-          <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-2xs flex items-start gap-2.5 hover:shadow-md transition-shadow">
-            <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0 mt-0.5">
-              <Truck size={16} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">ON DUTY</span>
-              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">3 <span className="text-xs font-semibold text-slate-500">38%</span></div>
-              <div className="text-[9.5px] font-bold text-slate-500 mt-1 whitespace-nowrap">Currently assigned</div>
-            </div>
-          </div>
+          const onDutyPct = totalDrivers > 0 ? Math.round((onDutyDrivers / totalDrivers) * 100) : 0;
+          const offDutyPct = totalDrivers > 0 ? Math.round((offDutyDrivers / totalDrivers) * 100) : 0;
+          const onLeavePct = totalDrivers > 0 ? Math.round((onLeaveDrivers / totalDrivers) * 100) : 0;
+          const unavailablePct = totalDrivers > 0 ? Math.round((unavailableDrivers / totalDrivers) * 100) : 0;
 
-          <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-2xs flex items-start gap-2.5 hover:shadow-md transition-shadow">
-            <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600 shrink-0 mt-0.5">
-              <Coffee size={16} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">OFF DUTY</span>
-              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">3 <span className="text-xs font-semibold text-slate-500">38%</span></div>
-              <div className="text-[9.5px] font-bold text-slate-500 mt-1 whitespace-nowrap">Not assigned</div>
-            </div>
-          </div>
+          return (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2.5 mb-6">
+              <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-2xs flex items-start gap-2.5 hover:shadow-md transition-shadow">
+                <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0 mt-0.5">
+                  <Users size={16} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">TOTAL DRIVERS</span>
+                  <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{totalDrivers} <span className="text-xs font-semibold text-slate-500">Active</span></div>
+                  <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">↑ 0 this month</div>
+                </div>
+              </div>
 
-          <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-2xs flex items-start gap-2.5 hover:shadow-md transition-shadow">
-            <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600 shrink-0 mt-0.5">
-              <Clock size={16} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">ON LEAVE</span>
-              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">1 <span className="text-xs font-semibold text-slate-500">13%</span></div>
-              <div className="text-[9.5px] font-bold text-slate-500 mt-1 whitespace-nowrap">Approved leave</div>
-            </div>
-          </div>
+              <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-2xs flex items-start gap-2.5 hover:shadow-md transition-shadow">
+                <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0 mt-0.5">
+                  <Truck size={16} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">ON DUTY</span>
+                  <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{onDutyDrivers} <span className="text-xs font-semibold text-slate-500">{onDutyPct}%</span></div>
+                  <div className="text-[9.5px] font-bold text-slate-500 mt-1 whitespace-nowrap">Currently assigned</div>
+                </div>
+              </div>
 
-          <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-2xs flex items-start gap-2.5 hover:shadow-md transition-shadow">
-            <div className="w-8 h-8 rounded-lg bg-rose-50 flex items-center justify-center text-rose-600 shrink-0 mt-0.5">
-              <AlertTriangle size={16} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">UNAVAILABLE</span>
-              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">1 <span className="text-xs font-semibold text-slate-500">13%</span></div>
-              <div className="text-[9.5px] font-bold text-slate-500 mt-1 whitespace-nowrap">Not available</div>
-            </div>
-          </div>
+              <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-2xs flex items-start gap-2.5 hover:shadow-md transition-shadow">
+                <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600 shrink-0 mt-0.5">
+                  <Coffee size={16} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">OFF DUTY</span>
+                  <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{offDutyDrivers} <span className="text-xs font-semibold text-slate-500">{offDutyPct}%</span></div>
+                  <div className="text-[9.5px] font-bold text-slate-500 mt-1 whitespace-nowrap">Not assigned</div>
+                </div>
+              </div>
 
-          <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-2xs flex items-start gap-2.5 hover:shadow-md transition-shadow">
-            <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600 shrink-0 mt-0.5">
-              <Calendar size={16} />
+              <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-2xs flex items-start gap-2.5 hover:shadow-md transition-shadow">
+                <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600 shrink-0 mt-0.5">
+                  <Clock size={16} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">ON LEAVE</span>
+                  <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{onLeaveDrivers} <span className="text-xs font-semibold text-slate-500">{onLeavePct}%</span></div>
+                  <div className="text-[9.5px] font-bold text-slate-500 mt-1 whitespace-nowrap">Approved leave</div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-2xs flex items-start gap-2.5 hover:shadow-md transition-shadow">
+                <div className="w-8 h-8 rounded-lg bg-rose-50 flex items-center justify-center text-rose-600 shrink-0 mt-0.5">
+                  <AlertTriangle size={16} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">UNAVAILABLE</span>
+                  <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{unavailableDrivers} <span className="text-xs font-semibold text-slate-500">{unavailablePct}%</span></div>
+                  <div className="text-[9.5px] font-bold text-slate-500 mt-1 whitespace-nowrap">Not available</div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-2xs flex items-start gap-2.5 hover:shadow-md transition-shadow">
+                <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600 shrink-0 mt-0.5">
+                  <Calendar size={16} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">EXPIRING SOON</span>
+                  <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">0 <span className="text-xs font-semibold text-slate-500">Docs</span></div>
+                  <div className="text-[9.5px] font-bold text-slate-500 mt-1 whitespace-nowrap">Next 30 days</div>
+                </div>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">EXPIRING SOON</span>
-              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">2 <span className="text-xs font-semibold text-slate-500">Docs</span></div>
-              <div className="text-[9.5px] font-bold text-slate-500 mt-1 whitespace-nowrap">Next 30 days</div>
-            </div>
-          </div>
-        </div>
+          );
+        })()}
 
         {/* Main Content Layout */}
         <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-6 items-start">

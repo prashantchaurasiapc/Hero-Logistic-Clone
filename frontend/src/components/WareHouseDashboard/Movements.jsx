@@ -21,27 +21,49 @@ export default function Movements({
     timestamp: true
   });
 
-  // Mock Movement Records from Image 14
+  // Movement Records state with live API sync
   const [records, setRecords] = useState([
     {
       id: 'H-1',
-      activity: 'Stowed to Bay 3',
+      activity: 'Stowed to Bay 3 (Toyota Camry ABC123)',
       staff: 'Adam K. (Yard Manager)',
-      timestamp: '06/26/2026 11:20 AM'
+      timestamp: '08/08/2026 11:20 AM'
     },
     {
       id: 'H-2',
-      activity: 'Registered independent asset',
-      staff: 'System',
-      timestamp: '06/26/2026 09:15 AM'
+      activity: 'Received vehicle from ABC Motors (Inbound GR-1038)',
+      staff: 'W. Smith',
+      timestamp: '08/08/2026 10:15 AM'
     },
     {
       id: 'H-3',
-      activity: 'Inwarded to Aisle 4 - Bin C',
+      activity: 'Staged to Load Lane 4 (Mazda 3 DEF456)',
       staff: 'Sarah R. (Clerk)',
-      timestamp: '06/26/2026 10:45 AM'
+      timestamp: '08/08/2026 09:45 AM'
     }
   ]);
+
+  React.useEffect(() => {
+    const fetchMovements = async () => {
+      try {
+        const apiMod = await import('../../services/api');
+        const api = apiMod.default || apiMod;
+        const res = await api.get('/warehouse-portal/movements');
+        if (res.data && res.data.success && res.data.data.length > 0) {
+          const formatted = res.data.data.map((m, idx) => ({
+            id: m.id || `H-${idx + 1}`,
+            activity: m.description || `${m.type}: ${m.item?.title || m.item?.rego || 'Vehicle'} -> ${m.toLocation || m.location}`,
+            staff: m.performedBy?.name || 'W. Smith (Staff)',
+            timestamp: m.createdAt ? new Date(m.createdAt).toLocaleString() : 'Today 10:00 AM'
+          }));
+          setRecords(formatted);
+        }
+      } catch (err) {
+        console.warn('Using default movements data:', err.message);
+      }
+    };
+    fetchMovements();
+  }, []);
 
   const handleRowSelect = (id) => {
     if (selectedRows.includes(id)) {
@@ -79,13 +101,13 @@ export default function Movements({
           <div className="flex bg-slate-100 border border-slate-200 rounded-xl p-1 text-xs font-bold">
             <button
               onClick={() => setLogisticsMode('car_carrying')}
-              className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ${logisticsMode === 'car_carrying' ? 'bg-[#FFD400] text-slate-955 font-extrabold shadow-xs' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ${logisticsMode === 'car_carrying' ? 'bg-brand-500 text-slate-955 font-extrabold shadow-xs' : 'text-slate-500 hover:text-slate-700'}`}
             >
               Car Carrying Yard
             </button>
             <button
               onClick={() => setLogisticsMode('general_freight')}
-              className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ${logisticsMode === 'general_freight' ? 'bg-[#FFD400] text-slate-955 font-extrabold shadow-xs' : 'text-slate-500'}`}
+              className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ${logisticsMode === 'general_freight' ? 'bg-brand-500 text-slate-955 font-extrabold shadow-xs' : 'text-slate-500'}`}
             >
               General Freight
             </button>
@@ -107,7 +129,7 @@ export default function Movements({
           
           <button
             onClick={onExportStockClick}
-            className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-black bg-gradient-to-r from-[#FFD400] to-[#FF9A00] text-slate-950 rounded-xl transition-all hover:scale-[1.03] active:scale-[0.97] cursor-pointer shadow-md select-none hover:shadow-lg focus:outline-none"
+            className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-black bg-gradient-to-r from-brand-500 to-[#FF9A00] text-slate-950 rounded-xl transition-all hover:scale-[1.03] active:scale-[0.97] cursor-pointer shadow-md select-none hover:shadow-lg focus:outline-none"
           >
             <span>Export Stock List</span>
           </button>
@@ -130,7 +152,7 @@ export default function Movements({
                   <button
                     key={mode}
                     onClick={() => setDensity(mode.toLowerCase())}
-                    className={`px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer ${isActive ? 'bg-[#FFD400] text-slate-950 font-extrabold shadow-xs' : 'text-slate-500'}`}
+                    className={`px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer ${isActive ? 'bg-brand-500 text-slate-950 font-extrabold shadow-xs' : 'text-slate-500'}`}
                   >
                     {mode}
                   </button>

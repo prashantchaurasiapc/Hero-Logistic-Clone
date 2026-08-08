@@ -37,6 +37,9 @@ export const deleteLoad = (id) => api.delete(`/loads/${id}`);
 export const getDrivers = () => api.get('/drivers');
 export const getVehicles = () => api.get('/vehicles');
 export const getCustomersList = () => api.get('/customers');
+export const createCustomer = (data) => api.post('/customers', data);
+export const updateCustomer = (id, data) => api.put(`/customers/${id}`, data);
+export const deleteCustomer = (id) => api.delete(`/customers/${id}`);
 
 // Request Interceptor to add access token header dynamically
 api.interceptors.request.use(

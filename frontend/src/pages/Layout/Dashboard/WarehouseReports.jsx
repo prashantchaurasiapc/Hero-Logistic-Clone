@@ -41,7 +41,7 @@ export default function WarehouseReports() {
             <style>
               @page { size: landscape; margin: 10mm; }
               body { font-family: 'Inter', system-ui, sans-serif; padding: 20px; color: #0F172A; }
-              .header { display: flex; justify-content: space-between; border-bottom: 2px solid #FFD400; padding-bottom: 12px; margin-bottom: 20px; }
+              .header { display: flex; justify-content: space-between; border-bottom: 2px solid var(--primary-color); padding-bottom: 12px; margin-bottom: 20px; }
               h1 { font-size: 20px; font-weight: 900; text-transform: uppercase; margin: 0; }
               p { font-size: 11px; color: #64748B; margin: 2px 0 0 0; }
               .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
@@ -264,7 +264,7 @@ export default function WarehouseReports() {
           padding: 0 16px;
           border-radius: 8px;
           border: none;
-          background: #FFD400;
+          background: var(--primary-color);
           font-size: 11.5px;
           font-weight: 800;
           color: #0F172A;
@@ -306,7 +306,7 @@ export default function WarehouseReports() {
           left: 0;
           right: 0;
           height: 3px;
-          background: #FFD400;
+          background: var(--primary-color);
           border-radius: 2px;
         }
 

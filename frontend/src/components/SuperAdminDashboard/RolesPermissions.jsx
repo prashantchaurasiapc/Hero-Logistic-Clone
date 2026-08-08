@@ -382,7 +382,7 @@ export default function RolesPermissions() {
         </div>
         <button
           onClick={openAdd}
-          className="flex items-center justify-center gap-2 bg-[#FFD400] hover:bg-[#f5c800] text-black font-black text-xs px-5 py-2.5 rounded-xl shadow-sm transition-all cursor-pointer whitespace-nowrap w-full sm:w-auto"
+          className="flex items-center justify-center gap-2 bg-brand-500 hover:bg-[#f5c800] text-black font-black text-xs px-5 py-2.5 rounded-xl shadow-sm transition-all cursor-pointer whitespace-nowrap w-full sm:w-auto"
         >
           <Plus className="w-4 h-4" /> + Create Role
         </button>
@@ -499,7 +499,7 @@ export default function RolesPermissions() {
           <span>Showing 1 – {Math.min(perPage, filtered.length)} of {filtered.length} entries</span>
           <div className="flex items-center gap-1">
             <button className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 cursor-pointer transition-all">Previous</button>
-            <button className="px-3 py-1.5 rounded-lg bg-[#FFD400] text-black font-black cursor-pointer">1</button>
+            <button className="px-3 py-1.5 rounded-lg bg-brand-500 text-black font-black cursor-pointer">1</button>
             <button className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 cursor-pointer transition-all">Next</button>
           </div>
         </div>
@@ -593,7 +593,7 @@ export default function RolesPermissions() {
                   Cancel
                 </button>
                 <button type="submit"
-                  className="px-6 py-2.5 bg-[#FFD400] hover:bg-[#f5c800] rounded-xl text-sm font-black text-black cursor-pointer transition-all shadow-sm">
+                  className="px-6 py-2.5 bg-brand-500 hover:bg-[#f5c800] rounded-xl text-sm font-black text-black cursor-pointer transition-all shadow-sm">
                   {editRole ? 'Save Changes' : 'Create Role'}
                 </button>
               </div>

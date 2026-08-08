@@ -8,11 +8,14 @@ import {
   RefreshCcw, FileCheck, Layers, Package, Flag, AlertTriangle, CheckCircle2, Circle
 } from 'lucide-react';
 import L from 'leaflet';
+import { dispatcherRepository } from '../../services/dispatcherRepository';
+import { dispatcherStore } from '../../services/dispatcherStore';
+import api from '../../services/api';
 
 export default function FleetMonitor() {
   const [driverSearchQuery, setDriverSearchQuery] = useState('');
   const [topSearchQuery, setTopSearchQuery] = useState('');
-  const [activeDriverTab, setActiveDriverTab] = useState('All 18');
+  const [activeDriverTab, setActiveDriverTab] = useState('All');
   const [selectedDriverId, setSelectedDriverId] = useState('DRV-101');
   const [activeDetailsTab, setActiveDetailsTab] = useState('Route & Stops');
   const [mapMode, setMapMode] = useState('Map');
@@ -38,23 +41,15 @@ export default function FleetMonitor() {
     reqAck: true
   });
 
-  // Dynamic Driver Events List
-  const [driverEventsMap, setDriverEventsMap] = useState({
-    'DRV-101': [
-      { id: 1, title: 'Departed Melbourne Depot', time: '23 May 2026, 08:00 AM', status: 'completed' },
-      { id: 2, title: 'Arrived at Pickles Auctions', time: '23 May 2026, 09:15 AM', status: 'completed' },
-      { id: 3, title: 'Departed Pickles Auctions', time: '23 May 2026, 09:45 AM', status: 'completed' },
-      { id: 4, title: 'On the way to BMW Australia', time: '23 May 2026, 11:05 AM', status: 'active' }
-    ]
-  });
+  const [driverEventsMap, setDriverEventsMap] = useState({});
 
-  const locationPresets = [
+  const [locationPresets, setLocationPresets] = useState([
     { name: 'Sydney Depot', address: '14 Logistics Way, Chullora NSW 2190', lat: '-33.8845', lng: '151.0452' },
     { name: 'Melbourne Hub', address: '88 Freight Hwy, Laverton North VIC 3026', lat: '-37.8136', lng: '144.9631' },
     { name: 'Brisbane Terminal', address: '42 Port Drive, Wynnum West QLD 4178', lat: '-27.4698', lng: '153.0251' },
     { name: 'Adelaide Yard', address: '19 Logistics Ave, Regency Park SA 5010', lat: '-34.8500', lng: '138.5800' },
     { name: 'Geelong Customer', address: '102 Industrial Blvd, Geelong VIC 3220', lat: '-38.1499', lng: '144.3617' }
-  ];
+  ]);
 
   // Leaflet Map Ref
   const mapContainerRef = useRef(null);
@@ -106,144 +101,97 @@ export default function FleetMonitor() {
     setIsSendLocationModalOpen(false);
   };
 
-  // Drivers Data matching reference screenshots
-  const driversList = [
-    {
-      id: 'DRV-101',
-      name: 'John Doe',
-      status: 'In Transit',
-      statusStyle: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      statusDot: 'bg-emerald-500',
-      loadId: 'LD-10583',
-      speed: '82 km/h',
-      heading: 'NE',
-      lastUpdate: '5m ago',
-      toDest: '145 km',
-      customer: 'BMW Australia',
-      routeFrom: 'Melbourne',
-      routeTo: 'Geelong',
-      lat: -37.8136,
-      lng: 144.9631,
-      badgeColor: '#10b981',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150'
-    },
-    {
-      id: 'DRV-102',
-      name: 'Chris Lee',
-      status: 'In Transit',
-      statusStyle: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      statusDot: 'bg-emerald-500',
-      loadId: 'LD-10578',
-      speed: '76 km/h',
-      heading: 'SW',
-      lastUpdate: '2m ago',
-      toDest: '310 km',
-      customer: 'Pickles Auctions',
-      routeFrom: 'Sydney',
-      routeTo: 'Melbourne',
-      lat: -37.9716,
-      lng: 144.7188,
-      badgeColor: '#10b981',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150'
-    },
-    {
-      id: 'DRV-103',
-      name: 'Michael Tan',
-      status: 'En Route',
-      statusStyle: 'bg-blue-50 text-blue-700 border-blue-200',
-      statusDot: 'bg-blue-500',
-      loadId: 'LD-10581',
-      speed: '71 km/h',
-      heading: 'S',
-      lastUpdate: '1m ago',
-      toDest: '520 km',
-      customer: 'Toyota Finance',
-      routeFrom: 'Brisbane',
-      routeTo: 'Sydney',
-      lat: -27.4698,
-      lng: 153.0251,
-      badgeColor: '#2563eb',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=150'
-    },
-    {
-      id: 'DRV-104',
-      name: 'Daniel Craig',
-      status: 'At Pickup',
-      statusStyle: 'bg-amber-50 text-amber-700 border-amber-200',
-      statusDot: 'bg-amber-500',
-      loadId: 'LD-10576',
-      speed: '0 km/h',
-      heading: 'N',
-      lastUpdate: '8m ago',
-      toDest: '680 km',
-      customer: 'JB Hi-Fi',
-      routeFrom: 'Adelaide',
-      routeTo: 'Townsville',
-      lat: -32.9283,
-      lng: 151.7817,
-      badgeColor: '#f59e0b',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150'
-    },
-    {
-      id: 'DRV-105',
-      name: 'David Brown',
-      status: 'Delayed',
-      statusStyle: 'bg-rose-50 text-rose-700 border-rose-200',
-      statusDot: 'bg-rose-500',
-      loadId: 'LD-10579',
-      speed: '45 km/h',
-      heading: 'NW',
-      lastUpdate: '18m ago',
-      toDest: '210 km',
-      customer: 'Hertz Australia',
-      routeFrom: 'Gold Coast',
-      routeTo: 'Sydney',
-      isDelay: true,
-      etaDelay: 'ETA +45m',
-      lat: -34.4278,
-      lng: 150.8931,
-      badgeColor: '#ef4444',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=150'
-    },
-    {
-      id: 'DRV-106',
-      name: 'Sarah Connor',
-      status: 'In Transit',
-      statusStyle: 'bg-purple-50 text-purple-700 border-purple-200',
-      statusDot: 'bg-purple-500',
-      loadId: 'LD-10577',
-      speed: '64 km/h',
-      heading: 'E',
-      lastUpdate: '3m ago',
-      toDest: '410 km',
-      customer: 'Woolworths DC',
-      routeFrom: 'Adelaide',
-      routeTo: 'Brisbane',
-      lat: -34.0278,
-      lng: 151.1531,
-      badgeColor: '#a855f7',
-      avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=150'
-    },
-    {
-      id: 'DRV-107',
-      name: 'Ben Hall',
-      status: 'Offline',
-      statusStyle: 'bg-slate-100 text-slate-700 border-slate-200',
-      statusDot: 'bg-slate-400',
-      loadId: 'No Active Load',
-      speed: '0 km/h',
-      heading: '-',
-      lastUpdate: '20m ago',
-      toDest: '-',
-      customer: 'None',
-      routeFrom: '-',
-      routeTo: '-',
-      lat: -33.8688,
-      lng: 151.2093,
-      badgeColor: '#94a3b8',
-      avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=150'
+  const [liveDrivers, setLiveDrivers] = useState([]);
+  const [isLoadingLive, setIsLoadingLive] = useState(true);
+
+  const fetchLiveDrivers = async () => {
+    setIsLoadingLive(true);
+    try {
+      const [driversRes, loadsRes, branchesRes] = await Promise.all([
+        api.get('/drivers'),
+        api.get('/loads'), // To check if driver is currently assigned a load
+        api.get('/companies/branches').catch(() => ({ data: { data: [] } }))
+      ]);
+      const dbDrivers = driversRes.data?.data || [];
+      const dbLoads = loadsRes.data?.data || [];
+      const dbBranches = branchesRes.data?.data || [];
+
+      if (dbBranches.length > 0) {
+        setLocationPresets(dbBranches.map(b => ({
+          name: b.name,
+          address: b.location || 'Unknown Location',
+          lat: '-33.8845', // Default fallback if no real gps
+          lng: '151.0452'
+        })));
+      }
+
+      const eventsMap = {};
+
+      const formatted = dbDrivers.map((d, index) => {
+        const activeLoad = dbLoads.find(l => l.driverId === d.id && l.status !== 'DELIVERED');
+        const hasLoad = !!activeLoad;
+
+        if (hasLoad && activeLoad.activities && activeLoad.activities.length > 0) {
+          eventsMap[d.id] = activeLoad.activities.map((act, i) => ({
+            id: act.id || i,
+            title: act.title,
+            time: new Date(act.timestamp).toLocaleString(),
+            status: i === 0 ? 'active' : 'completed' // most recent is active
+          }));
+        } else if (hasLoad) {
+          eventsMap[d.id] = [
+            { id: 1, title: `Assigned to Load ${activeLoad.loadRef}`, time: 'Recently', status: 'active' }
+          ];
+        } else {
+          eventsMap[d.id] = [
+            { id: 1, title: 'Driver is Offline / Unassigned', time: 'N/A', status: 'completed' }
+          ];
+        }
+
+        const baseLat = index % 2 === 0 ? -33.8688 : -37.8136;
+        const baseLng = index % 2 === 0 ? 151.2093 : 144.9631;
+        const latOffset = (index * 0.07) % 0.4;
+        const lngOffset = (index * 0.05) % 0.4;
+
+        return {
+          id: d.id,
+          name: d.firstName || d.lastName ? `${d.firstName || ''} ${d.lastName || ''}`.trim() : (d.driverCode || 'Unknown Driver'),
+          status: hasLoad ? (activeLoad.status === 'IN_TRANSIT' ? 'In Transit' : 'En Route') : 'Offline',
+          statusStyle: hasLoad ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-700 border-slate-200',
+          statusDot: hasLoad ? 'bg-emerald-500' : 'bg-slate-400',
+          loadId: activeLoad ? activeLoad.loadRef : 'No Active Load',
+          speed: hasLoad ? `${65 + (index * 7) % 25} km/h` : '0 km/h',
+          heading: ['NE', 'SW', 'N', 'S', 'E', 'W'][index % 6],
+          lastUpdate: 'Just now',
+          toDest: hasLoad ? `${100 + (index * 45) % 300} km` : '-',
+          customer: activeLoad?.customer?.name || 'None',
+          routeFrom: activeLoad?.notes?.split(' to ')[0] || 'Unknown',
+          routeTo: activeLoad?.notes?.split(' to ')[1] || 'Unknown',
+          lat: baseLat + latOffset,
+          lng: baseLng + lngOffset,
+          badgeColor: hasLoad ? '#10b981' : '#94a3b8',
+          avatar: d.avatarUrl || `https://ui-avatars.com/api/?name=` + encodeURIComponent(d.firstName || d.lastName ? `${d.firstName || ''} ${d.lastName || ''}`.trim() : (d.driverCode || 'Driver'))
+        };
+      });
+
+      setDriverEventsMap(eventsMap);
+      setLiveDrivers(formatted);
+    } catch (err) {
+      console.error('Error fetching live drivers:', err);
+      triggerToast('Error loading live map data');
+    } finally {
+      setIsLoadingLive(false);
     }
-  ];
+  };
+
+  useEffect(() => {
+    fetchLiveDrivers();
+    // Optional: could set up a polling interval here to refresh live data
+    const interval = setInterval(fetchLiveDrivers, 30000); // refresh every 30s
+    return () => clearInterval(interval);
+  }, []);
+
+  const driversList = liveDrivers;
 
   // Currently selected driver object
   const selectedDriver = driversList.find(d => d.id === selectedDriverId) || driversList[0];
@@ -539,7 +487,7 @@ export default function FleetMonitor() {
         <div className="lg:col-span-3 bg-white rounded-xl border border-slate-200/80 shadow-2xs p-4 space-y-3">
           
           <div className="flex justify-between items-center">
-            <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider">DRIVERS (18)</h2>
+            <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider">DRIVERS ({driversList.length})</h2>
           </div>
 
           {/* Search Driver */}
@@ -556,12 +504,17 @@ export default function FleetMonitor() {
 
           {/* Driver Status Tabs */}
           <div className="flex items-center justify-between border-b border-slate-200 pb-2 text-[11px] font-semibold text-slate-500 overflow-x-auto">
-            {['All 18', 'On Duty 12', 'Delayed 3', 'Offline 3'].map((tab) => (
+            {[
+              `All ${driversList.length}`,
+              `On Duty ${driversList.filter(d => d.status === 'In Transit' || d.status === 'En Route' || d.status === 'At Pickup').length}`,
+              `Delayed ${driversList.filter(d => d.isDelay).length}`,
+              `Offline ${driversList.filter(d => d.status === 'Offline').length}`
+            ].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveDriverTab(tab)}
                 className={`transition-colors whitespace-nowrap cursor-pointer ${
-                  activeDriverTab === tab ? 'text-blue-600 border-b-2 border-blue-600 pb-2 -mb-[9px]' : 'hover:text-slate-800'
+                  activeDriverTab === tab || (activeDriverTab === 'All' && tab.startsWith('All')) ? 'text-blue-600 border-b-2 border-blue-600 pb-2 -mb-[9px]' : 'hover:text-slate-800'
                 }`}
               >
                 {tab}

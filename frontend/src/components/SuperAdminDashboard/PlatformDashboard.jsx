@@ -145,7 +145,7 @@ export default function PlatformDashboard() {
   if (isLoading) {
     return (
       <div className="flex-grow bg-[#F1F5F9] p-6 flex justify-center items-center h-full w-full">
-        <Loader2 className="w-8 h-8 text-[#FFD400] animate-spin" />
+        <Loader2 className="w-8 h-8 text-brand-500 animate-spin" />
       </div>
     );
   }
@@ -243,7 +243,7 @@ export default function PlatformDashboard() {
                       key={mode}
                       onClick={() => setDensity(mode)}
                       className={`px-3 py-1.5 text-[9px] font-black rounded-lg transition-all cursor-pointer ${density === mode
-                        ? 'bg-[#FFD400] text-black shadow-xs font-black'
+                        ? 'bg-brand-500 text-black shadow-xs font-black'
                         : 'text-black hover:bg-slate-200/50'
                         }`}
                     >
@@ -271,7 +271,7 @@ export default function PlatformDashboard() {
                           type="checkbox"
                           checked={visibleColumns.companyName}
                           onChange={() => setVisibleColumns(prev => ({ ...prev, companyName: !prev.companyName }))}
-                          className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                          className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                         />
                         <span>Company Name</span>
                       </label>
@@ -281,7 +281,7 @@ export default function PlatformDashboard() {
                           type="checkbox"
                           checked={visibleColumns.subscriptionPlan}
                           onChange={() => setVisibleColumns(prev => ({ ...prev, subscriptionPlan: !prev.subscriptionPlan }))}
-                          className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                          className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                         />
                         <span>Subscription Plan</span>
                       </label>
@@ -291,7 +291,7 @@ export default function PlatformDashboard() {
                           type="checkbox"
                           checked={visibleColumns.status}
                           onChange={() => setVisibleColumns(prev => ({ ...prev, status: !prev.status }))}
-                          className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                          className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                         />
                         <span>Status</span>
                       </label>
@@ -301,7 +301,7 @@ export default function PlatformDashboard() {
                           type="checkbox"
                           checked={visibleColumns.activeUsers}
                           onChange={() => setVisibleColumns(prev => ({ ...prev, activeUsers: !prev.activeUsers }))}
-                          className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                          className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                         />
                         <span>Active Users</span>
                       </label>
@@ -311,7 +311,7 @@ export default function PlatformDashboard() {
                           type="checkbox"
                           checked={visibleColumns.monthlyRevenue}
                           onChange={() => setVisibleColumns(prev => ({ ...prev, monthlyRevenue: !prev.monthlyRevenue }))}
-                          className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                          className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                         />
                         <span>Monthly Revenue</span>
                       </label>
@@ -321,7 +321,7 @@ export default function PlatformDashboard() {
                           type="checkbox"
                           checked={visibleColumns.trialExpiry}
                           onChange={() => setVisibleColumns(prev => ({ ...prev, trialExpiry: !prev.trialExpiry }))}
-                          className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                          className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                         />
                         <span>Trial Expiry</span>
                       </label>
@@ -331,7 +331,7 @@ export default function PlatformDashboard() {
                           type="checkbox"
                           checked={visibleColumns.lastLogin}
                           onChange={() => setVisibleColumns(prev => ({ ...prev, lastLogin: !prev.lastLogin }))}
-                          className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                          className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                         />
                         <span>Last Login</span>
                       </label>
@@ -346,7 +346,7 @@ export default function PlatformDashboard() {
                 <thead className="hidden lg:table-header-group">
                   <tr className="border-b border-slate-100 bg-slate-50/50">
                     <th className="py-3.5 px-6 w-10">
-                      <input type="checkbox" className="w-4 h-4 text-[#FFD400] rounded focus:ring-0 cursor-pointer" />
+                      <input type="checkbox" className="w-4 h-4 text-brand-500 rounded focus:ring-0 cursor-pointer" />
                     </th>
                     {visibleColumns.companyName && <th className="py-3.5 px-2 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-left">COMPANY</th>}
                     {visibleColumns.subscriptionPlan && <th className="py-3.5 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-left">SUBSCRIPTION PLAN</th>}
@@ -363,7 +363,7 @@ export default function PlatformDashboard() {
                     <tr key={tenant.id} className="block lg:table-row hover:bg-slate-50/50 transition-colors border-b border-slate-100 lg:border-none p-4 lg:p-0 space-y-3 lg:space-y-0 relative">
                       <td className={`block lg:table-cell ${getDensityPadding()} lg:px-6`}>
                         <span className="lg:hidden text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">SELECT</span>
-                        <input type="checkbox" className="w-4 h-4 text-[#FFD400] rounded focus:ring-0 cursor-pointer" />
+                        <input type="checkbox" className="w-4 h-4 text-brand-500 rounded focus:ring-0 cursor-pointer" />
                       </td>
                       {visibleColumns.companyName && (
                         <td className={`block lg:table-cell ${getDensityPadding()} lg:px-2`}>
@@ -432,7 +432,7 @@ export default function PlatformDashboard() {
                               Suspend
                             </button>
                           )}
-                          <button onClick={() => setShowLoginAsModal(true)} className="flex-1 lg:w-full py-1.5 px-4 lg:px-2 border border-[#FFD400] text-[#D97706] font-bold text-[10px] rounded-full hover:bg-amber-50 transition-colors bg-white">
+                          <button onClick={() => setShowLoginAsModal(true)} className="flex-1 lg:w-full py-1.5 px-4 lg:px-2 border border-brand-500 text-[#D97706] font-bold text-[10px] rounded-full hover:bg-amber-50 transition-colors bg-white">
                             Login As
                           </button>
                           <button onClick={() => navigate('/admin/billing')} className="flex-1 lg:w-full py-1.5 px-4 lg:px-2 border border-slate-200 text-slate-700 font-bold text-[10px] rounded-full hover:bg-slate-50 transition-colors bg-white cursor-pointer">
@@ -580,7 +580,7 @@ export default function PlatformDashboard() {
               </div>
             </div>
             <div className="grid grid-cols-3 gap-3">
-              <button onClick={() => setShowOpenTicketModal(true)} className="bg-[#FFD400] text-slate-900 hover:bg-[#F0C800] font-bold text-[11px] py-3 rounded-xl transition-all shadow-sm cursor-pointer">
+              <button onClick={() => setShowOpenTicketModal(true)} className="bg-brand-500 text-slate-900 hover:bg-[#F0C800] font-bold text-[11px] py-3 rounded-xl transition-all shadow-sm cursor-pointer">
                 Open Ticket
               </button>
               <button onClick={() => setShowAssignTicketModal(true)} className="bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 font-bold text-[11px] py-3 rounded-xl transition-all shadow-sm cursor-pointer">
@@ -617,7 +617,7 @@ export default function PlatformDashboard() {
             </div>
 
             <div className="grid grid-cols-3 gap-3">
-              <button onClick={() => setShowChangeSubModal(true)} className="bg-[#FFD400] text-slate-900 hover:bg-[#F0C800] font-bold text-[11px] py-3 rounded-xl transition-all shadow-sm cursor-pointer">
+              <button onClick={() => setShowChangeSubModal(true)} className="bg-brand-500 text-slate-900 hover:bg-[#F0C800] font-bold text-[11px] py-3 rounded-xl transition-all shadow-sm cursor-pointer">
                 Change Sub
               </button>
               <button onClick={() => setShowRenewSubModal(true)} className="bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 font-bold text-[11px] py-3 rounded-xl transition-all shadow-sm cursor-pointer">
@@ -667,7 +667,7 @@ export default function PlatformDashboard() {
             <div className="p-6 space-y-5">
               <div className="space-y-2 text-left">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">TENANT COMPANY</label>
-                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
                   <option>Falcon Logistics LLC</option>
                   <option>Swift Cargo Express</option>
                   <option>Apex Logistics LLC</option>
@@ -677,7 +677,7 @@ export default function PlatformDashboard() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2 text-left">
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">CATEGORY</label>
-                  <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                  <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
                     <option>General / Platform</option>
                     <option>Billing / Payment</option>
                     <option>Technical / Bug</option>
@@ -686,7 +686,7 @@ export default function PlatformDashboard() {
                 </div>
                 <div className="space-y-2 text-left">
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">PRIORITY</label>
-                  <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                  <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
                     <option>Medium</option>
                     <option>Low</option>
                     <option>High</option>
@@ -696,15 +696,15 @@ export default function PlatformDashboard() {
               </div>
               <div className="space-y-2 text-left">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SUBJECT HEADING</label>
-                <input type="text" placeholder="e.g. GPS Geofencing synchronization error" className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-medium rounded-xl focus:outline-none text-slate-800 placeholder:text-slate-300" />
+                <input type="text" placeholder="e.g. GPS Geofencing synchronization error" className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-sm font-medium rounded-xl focus:outline-none text-slate-800 placeholder:text-slate-300" />
               </div>
               <div className="space-y-2 text-left">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">DETAILED MESSAGE PAYLOAD</label>
-                <textarea rows={4} placeholder="Describe the issue or request in detail..." className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-medium rounded-xl focus:outline-none text-slate-800 resize-y placeholder:text-slate-300" />
+                <textarea rows={4} placeholder="Describe the issue or request in detail..." className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-sm font-medium rounded-xl focus:outline-none text-slate-800 resize-y placeholder:text-slate-300" />
               </div>
               <button
                 onClick={() => setShowOpenTicketModal(false)}
-                className="w-full py-3.5 bg-gradient-to-r from-[#FFD400] to-[#FFB300] hover:from-[#F0C800] hover:to-[#FFA000] text-slate-900 font-extrabold text-xs rounded-xl transition-all shadow-sm cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-3.5 bg-gradient-to-r from-brand-500 to-[#FFB300] hover:from-[#F0C800] hover:to-[#FFA000] text-slate-900 font-extrabold text-xs rounded-xl transition-all shadow-sm cursor-pointer flex items-center justify-center gap-2"
               >
                 <Check className="w-4 h-4" /> Open Ticket
               </button>
@@ -726,14 +726,14 @@ export default function PlatformDashboard() {
             <div className="p-6 space-y-5">
               <div className="space-y-2 text-left">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SELECT OPEN TICKET</label>
-                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
                   <option>#1 - Invoice Factoring Delay (Falcon Logistics LLC)</option>
                   <option>#2 - GPS Sync Issue (Swift Cargo Express)</option>
                 </select>
               </div>
               <div className="space-y-2 text-left">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SUPPORT ASSIGNEE TIER</label>
-                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
                   <option>L2 Senior Specialist</option>
                   <option>L1 Support Agent</option>
                   <option>L3 Engineering</option>
@@ -741,7 +741,7 @@ export default function PlatformDashboard() {
               </div>
               <button
                 onClick={() => setShowAssignTicketModal(false)}
-                className="w-full py-3.5 bg-gradient-to-r from-[#FFD400] to-[#FFB300] hover:from-[#F0C800] hover:to-[#FFA000] text-slate-900 font-extrabold text-xs rounded-xl transition-all shadow-sm cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-3.5 bg-gradient-to-r from-brand-500 to-[#FFB300] hover:from-[#F0C800] hover:to-[#FFA000] text-slate-900 font-extrabold text-xs rounded-xl transition-all shadow-sm cursor-pointer flex items-center justify-center gap-2"
               >
                 <Check className="w-4 h-4" /> Save Assignment
               </button>
@@ -763,14 +763,14 @@ export default function PlatformDashboard() {
             <div className="p-6 space-y-5">
               <div className="space-y-2 text-left">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SELECT TICKET TO RESOLVE</label>
-                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
                   <option>#1 - Invoice Factoring Delay (Falcon Logistics LLC)</option>
                   <option>#2 - GPS Sync Issue (Swift Cargo Express)</option>
                 </select>
               </div>
               <div className="space-y-2 text-left">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">RESOLUTION NOTE (OPTIONAL)</label>
-                <textarea rows={4} placeholder="Provide summary of resolution or notes for the customer..." className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-medium rounded-xl focus:outline-none text-slate-800 resize-y placeholder:text-slate-300" />
+                <textarea rows={4} placeholder="Provide summary of resolution or notes for the customer..." className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-sm font-medium rounded-xl focus:outline-none text-slate-800 resize-y placeholder:text-slate-300" />
               </div>
               <button
                 onClick={() => setShowResolveTicketModal(false)}
@@ -796,7 +796,7 @@ export default function PlatformDashboard() {
             <div className="p-6 space-y-5">
               <div className="space-y-2 text-left">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SELECT TENANT COMPANY</label>
-                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
                   <option>Falcon Logistics LLC</option>
                   <option>Swift Cargo Express</option>
                   <option>Apex Logistics LLC</option>
@@ -805,7 +805,7 @@ export default function PlatformDashboard() {
               </div>
               <button
                 onClick={() => setShowRenewSubModal(false)}
-                className="w-full py-3.5 bg-gradient-to-r from-[#FFD400] to-[#FFB300] hover:from-[#F0C800] hover:to-[#FFA000] text-slate-900 font-extrabold text-xs rounded-xl transition-all shadow-sm cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-3.5 bg-gradient-to-r from-brand-500 to-[#FFB300] hover:from-[#F0C800] hover:to-[#FFA000] text-slate-900 font-extrabold text-xs rounded-xl transition-all shadow-sm cursor-pointer flex items-center justify-center gap-2"
               >
                 <Check className="w-4 h-4" /> Renew License Subscription
               </button>
@@ -827,7 +827,7 @@ export default function PlatformDashboard() {
             <div className="p-6 space-y-5">
               <div className="space-y-2 text-left">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SELECT TENANT COMPANY</label>
-                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
                   <option>Falcon Logistics LLC (Current: Professional)</option>
                   <option>Swift Cargo Express (Current: Professional)</option>
                   <option>Apex Logistics LLC (Current: Enterprise)</option>
@@ -836,7 +836,7 @@ export default function PlatformDashboard() {
               </div>
               <div className="space-y-2 text-left">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">UPGRADE TARGET TIER PLAN</label>
-                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
                   <option>Enterprise Tier - $1,299/mo</option>
                   <option>Professional Tier - $499/mo</option>
                   <option>Premium Tier - $2,499/mo</option>
@@ -939,7 +939,7 @@ export default function PlatformDashboard() {
             <div className="p-6 space-y-4">
               <div className="space-y-1.5">
                 <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">SELECT COMPANY TO SUSPEND</label>
-                <select className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-[13px] font-medium rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                <select className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-[13px] font-medium rounded-xl focus:outline-none text-slate-800 cursor-pointer">
                   <option>-- Select Active Company --</option>
                   <option>Falcon Logistics LLC</option>
                   <option>Swift Cargo Express</option>
@@ -1001,7 +1001,7 @@ export default function PlatformDashboard() {
             <div className="p-6 space-y-4">
               <div className="space-y-1.5">
                 <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">SELECT COMPANY WORKSPACE</label>
-                <select className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-[13px] font-medium rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                <select className="w-full px-4 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-[13px] font-medium rounded-xl focus:outline-none text-slate-800 cursor-pointer">
                   <option>-- Select Company --</option>
                   <option>Falcon Logistics LLC</option>
                   <option>Swift Cargo Express</option>
@@ -1305,7 +1305,7 @@ export default function PlatformDashboard() {
                     key={tab}
                     onClick={() => setActiveInspectorTab(tab)}
                     className={`shrink-0 px-4 py-1.5 text-[11px] rounded-xl whitespace-nowrap cursor-pointer transition-colors ${activeInspectorTab === tab
-                      ? 'bg-[#FFD400] text-slate-900 font-black shadow-sm border-2 border-slate-900'
+                      ? 'bg-brand-500 text-slate-900 font-black shadow-sm border-2 border-slate-900'
                       : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 font-bold border-2 border-transparent'
                       }`}
                   >

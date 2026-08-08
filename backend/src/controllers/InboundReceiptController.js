@@ -49,12 +49,51 @@ exports.getById = async (req, res, next) => {
 // Create new InboundReceipt
 exports.create = async (req, res, next) => {
   try {
-    const payload = { ...req.body };
-    // if (req.tenantId) payload.tenantId = req.tenantId;
+    const {
+      receiptNumber, receiptNo,
+      supplierName, supplier,
+      referenceNote,
+      transportType,
+      driverName,
+      vehicleDetails, vehicleRef,
+      receivingDepot,
+      zone, row, bay,
+      items = [],
+      status = 'Completed'
+    } = req.body;
+
+    const targetReceiptNo = receiptNumber || receiptNo || `GR-${Math.floor(1000 + Math.random() * 9000)}`;
+    const targetSupplier = supplierName || supplier || 'ABC Motors';
+    const targetVehicle = vehicleDetails || vehicleRef || 'TRK-101 / TRL-309';
+
+    // Get default warehouse
+    let defaultWh = await prisma.warehouse.findFirst();
+    if (!defaultWh) {
+      const comp = await prisma.company.findFirst();
+      const br = await prisma.branch.findFirst();
+      defaultWh = await prisma.warehouse.create({
+        data: {
+          code: 'WH-001',
+          name: receivingDepot || 'Sydney Depot Main Yard',
+          branchId: br?.id || (await prisma.branch.create({ data: { name: 'Main Hub', companyId: comp.id } })).id
+        }
+      });
+    }
 
     const data = await prisma.inboundReceipt.create({
-      data: payload
+      data: {
+        receiptNo: targetReceiptNo,
+        supplier: targetSupplier,
+        referenceNote: referenceNote || 'DEL-887654',
+        transportType: transportType || 'Truck',
+        driverName: driverName || 'John Smith',
+        vehicleRef: targetVehicle,
+        status,
+        warehouseId: defaultWh.id,
+        receivingDate: new Date()
+      }
     });
+
     return sendSuccess(res, data, HTTP_STATUS.CREATED);
   } catch (error) {
     next(error);

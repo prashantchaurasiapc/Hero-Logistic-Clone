@@ -145,7 +145,7 @@ export default function CustomerPortal() {
                 <div className="flex gap-4">
                   <div className="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-center min-w-[90px]">
                     <span className="block text-[8px] font-extrabold text-slate-400 uppercase">ACTIVE LOADS</span>
-                    <span className="block text-xl font-black text-[#FFD400]">03</span>
+                    <span className="block text-xl font-black text-brand-500">03</span>
                   </div>
                   <div className="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-center min-w-[90px]">
                     <span className="block text-[8px] font-extrabold text-slate-455 uppercase">MONTHLY VOLUME</span>

@@ -4,6 +4,7 @@ import {
   Cpu, Compass, Database, Bell, FileText, Building2, CheckCircle2, Loader2
 } from 'lucide-react';
 import api from '../../services/api';
+import { useTheme } from '../../context/ThemeProvider';
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('Company Profile');
@@ -39,6 +40,12 @@ export default function Settings() {
     saturday: '09:00 AM - 02:00 PM',
     sunday: 'Closed'
   });
+
+  // Branding & Theme state
+  const { themeColor: globalThemeColor, logoUrl: globalLogoUrl, updateThemeContext } = useTheme();
+  const [themeColor, setThemeColor] = useState(globalThemeColor || '#FFD400');
+  const [logoPreview, setLogoPreview] = useState(globalLogoUrl || null);
+  const [logoFileBase64, setLogoFileBase64] = useState(null);
 
   const [toastMsg, setToastMsg] = useState('');
   const triggerToast = (msg) => {
@@ -126,6 +133,58 @@ export default function Settings() {
     }
   };
 
+  const handleSaveBranding = async () => {
+    try {
+      let finalLogoUrl = globalLogoUrl;
+
+      // Upload logo if there's a new base64 image selected
+      if (logoFileBase64) {
+        const uploadRes = await api.post('/upload', { image: logoFileBase64 });
+        if (uploadRes.data?.success) {
+          finalLogoUrl = uploadRes.data.data.url;
+          // Note: our API standard is uploadRes.data.data.url if using sendSuccess, or sometimes it's direct.
+          // Wait, UploadController returns sendSuccess(res, { url: fileUrl }). So it's res.data.data.url or res.data.url depending on interceptor.
+          if (uploadRes.data.url) finalLogoUrl = uploadRes.data.url;
+        }
+      }
+
+      // Save Theme Color
+      await api.post('/themes', {
+        name: 'Workspace_Theme',
+        accentColor: themeColor,
+        sidebarColor: '#1F1F1F',
+        headerColor: '#ffffff'
+      });
+
+      // Save to WhiteLabelConfig
+      await api.post('/white-label-configs', {
+        companyId: companyId,
+        lightLogo: finalLogoUrl
+      });
+
+      // Update Global Context
+      updateThemeContext(themeColor, finalLogoUrl);
+      
+      triggerToast('Company branding & theme saved to backend!');
+      setLogoFileBase64(null); // Reset new upload state
+    } catch (err) {
+      console.error('Failed to save branding', err);
+      triggerToast('Error saving branding to backend.');
+    }
+  };
+
+  const handleLogoUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setLogoPreview(ev.target.result);
+        setLogoFileBase64(ev.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   React.useEffect(() => {
     if (activeTab === 'System Audit Logs') {
       setIsLoadingLogs(true);
@@ -170,7 +229,7 @@ export default function Settings() {
       )}
       <div className="mb-6">
         <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
-          <SettingsIcon className="w-7 h-7 text-[#FFD400]" /> Settings
+          <SettingsIcon className="w-7 h-7 text-brand-500" /> Settings
         </h1>
         <p className="text-sm font-medium text-slate-500">
           Configure company defaults, connect ELD/accounting APIs, and view security audit registries.
@@ -188,7 +247,7 @@ export default function Settings() {
               onClick={() => setActiveTab(tab.name)}
               className={`flex items-center gap-2 text-xs transition-all px-3.5 py-2 rounded-xl cursor-pointer outline-none focus:outline-none focus:ring-0 select-none ${
                 isActive
-                  ? 'bg-slate-900 text-[#FFD400] font-black shadow-xs'
+                  ? 'bg-slate-900 text-brand-500 font-black shadow-xs'
                   : 'bg-white text-slate-600 font-bold hover:bg-slate-100 hover:text-slate-900 border border-slate-200/80'
               }`}
             >
@@ -207,15 +266,15 @@ export default function Settings() {
             <div className="space-y-6">
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Registered Company Name</label>
-                <input type="text" value={companyName} onChange={e => setCompanyName(e.target.value)} className="w-full px-4 py-3 bg-white border border-slate-200 text-sm font-bold rounded-xl focus:outline-none focus:border-[#FFD400] text-slate-800" />
+                <input type="text" value={companyName} onChange={e => setCompanyName(e.target.value)} className="w-full px-4 py-3 bg-white border border-slate-200 text-sm font-bold rounded-xl focus:outline-none focus:border-brand-500 text-slate-800" />
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Corporate Registration Number</label>
-                <input type="text" value={regNumber} onChange={e => setRegNumber(e.target.value)} className="w-full px-4 py-3 bg-white border border-slate-200 text-sm font-bold rounded-xl focus:outline-none focus:border-[#FFD400] text-slate-800" />
+                <input type="text" value={regNumber} onChange={e => setRegNumber(e.target.value)} className="w-full px-4 py-3 bg-white border border-slate-200 text-sm font-bold rounded-xl focus:outline-none focus:border-brand-500 text-slate-800" />
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Corporate Admin Email</label>
-                <input type="text" value={adminEmail} onChange={e => setAdminEmail(e.target.value)} className="w-full px-4 py-3 bg-white border border-slate-200 text-sm font-bold rounded-xl focus:outline-none focus:border-[#FFD400] text-slate-800" />
+                <input type="text" value={adminEmail} onChange={e => setAdminEmail(e.target.value)} className="w-full px-4 py-3 bg-white border border-slate-200 text-sm font-bold rounded-xl focus:outline-none focus:border-brand-500 text-slate-800" />
               </div>
               <div className="pt-2">
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Platform Membership Subscription</label>
@@ -228,7 +287,7 @@ export default function Settings() {
                 </div>
               </div>
               <div className="pt-4">
-                <button onClick={handleSaveProfile} className="w-full bg-[#FFD400] text-black font-extrabold text-sm py-3.5 rounded-xl hover:bg-[#FFC800] transition-colors">
+                <button onClick={handleSaveProfile} className="w-full bg-brand-500 text-black font-extrabold text-sm py-3.5 rounded-xl hover:bg-brand-600 transition-colors">
                   Save Company Profile
                 </button>
               </div>
@@ -245,40 +304,45 @@ export default function Settings() {
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Primary Workspace Theme Color</label>
                 <div className="flex items-center gap-6">
-                  <div className="flex flex-col items-center gap-1.5 cursor-pointer">
-                    <div className="w-10 h-10 rounded-full bg-[#FFD400] border-2 border-slate-800"></div>
-                    <span className="text-xs font-bold text-slate-600">Default</span>
-                  </div>
-                  <div className="flex flex-col items-center gap-1.5 cursor-pointer opacity-80 hover:opacity-100">
-                    <div className="w-10 h-10 rounded-full bg-[#8B5CF6] border border-transparent"></div>
-                    <span className="text-xs font-bold text-slate-500">Purple</span>
-                  </div>
-                  <div className="flex flex-col items-center gap-1.5 cursor-pointer opacity-80 hover:opacity-100">
-                    <div className="w-10 h-10 rounded-full bg-[#10B981] border border-transparent"></div>
-                    <span className="text-xs font-bold text-slate-500">Green</span>
-                  </div>
-                  <div className="flex flex-col items-center gap-1.5 cursor-pointer opacity-80 hover:opacity-100">
-                    <div className="w-10 h-10 rounded-full bg-[#F97316] border border-transparent"></div>
-                    <span className="text-xs font-bold text-slate-500">Orange</span>
-                  </div>
-                  <div className="flex flex-col items-center gap-1.5 cursor-pointer opacity-80 hover:opacity-100">
-                    <div className="w-10 h-10 rounded-full bg-[#3B82F6] border border-transparent"></div>
-                    <span className="text-xs font-bold text-slate-500">Blue</span>
-                  </div>
+                  {[
+                    { name: 'Default', hex: '#FFD400' },
+                    { name: 'Purple', hex: '#8B5CF6' },
+                    { name: 'Green', hex: '#10B981' },
+                    { name: 'Orange', hex: '#F97316' },
+                    { name: 'Blue', hex: '#3B82F6' },
+                  ].map(color => (
+                    <div key={color.name} onClick={() => setThemeColor(color.hex)} className={`flex flex-col items-center gap-1.5 cursor-pointer transition-all ${themeColor === color.hex ? 'opacity-100 scale-110' : 'opacity-60 hover:opacity-100'}`}>
+                      <div className={`w-10 h-10 rounded-full border-2 ${themeColor === color.hex ? 'border-slate-900 shadow-md' : 'border-transparent'}`} style={{ backgroundColor: color.hex }}></div>
+                      <span className={`text-xs font-bold ${themeColor === color.hex ? 'text-slate-800' : 'text-slate-500'}`}>{color.name}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
 
               <div className="border-t border-slate-100 pt-6">
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Company Logo Upload</label>
-                <div className="border-2 border-dashed border-slate-200 rounded-xl p-10 flex flex-col items-center justify-center bg-slate-50/50 cursor-pointer hover:bg-slate-50 transition-colors">
-                  <Building2 className="w-8 h-8 text-slate-400 mb-3" />
-                  <p className="text-sm font-extrabold text-slate-700">Click or drag logo file here</p>
-                  <p className="text-xs font-medium text-slate-400">Supports SVG, PNG, JPG up to 5MB</p>
-                </div>
+                <label className="border-2 border-dashed border-slate-200 rounded-xl p-10 flex flex-col items-center justify-center bg-slate-50/50 cursor-pointer hover:bg-slate-50 transition-colors relative overflow-hidden group">
+                  <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+                  {logoPreview ? (
+                    <>
+                      <img src={logoPreview} alt="Company Logo" className="h-16 object-contain z-10" />
+                      <div className="absolute inset-0 bg-white/80 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-opacity z-20">
+                        <Building2 className="w-6 h-6 text-slate-600 mb-2" />
+                        <span className="text-xs font-bold text-slate-800">Change Logo</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <Building2 className="w-8 h-8 text-slate-400 mb-3" />
+                      <p className="text-sm font-extrabold text-slate-700">Click or drag logo file here</p>
+                      <p className="text-xs font-medium text-slate-400">Supports SVG, PNG, JPG up to 5MB</p>
+                    </>
+                  )}
+                </label>
               </div>
 
-              <div className="pt-2">
-                <button className="w-full bg-[#FFD400] text-black font-extrabold text-sm py-3.5 rounded-xl hover:bg-[#FFC800] transition-colors">
+              <div className="pt-4">
+                <button onClick={handleSaveBranding} className="w-full text-black font-extrabold text-sm py-3.5 rounded-xl transition-colors cursor-pointer" style={{ backgroundColor: themeColor }}>
                   Apply Branding & Themes
                 </button>
               </div>
@@ -326,7 +390,7 @@ export default function Settings() {
               </div>
             </div>
 
-            <button onClick={handleSaveHours} className="w-full bg-[#FFD400] text-black font-extrabold text-sm py-3.5 rounded-xl hover:bg-[#FFC800] transition-colors">
+            <button onClick={handleSaveHours} className="w-full bg-brand-500 text-black font-extrabold text-sm py-3.5 rounded-xl hover:bg-brand-600 transition-colors">
               Save Default Hours
             </button>
           </div>
@@ -429,11 +493,11 @@ export default function Settings() {
             <div className="space-y-6">
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Custom Domain Hostname</label>
-                <input type="text" defaultValue="logistics.herologistics.com" className="w-full px-4 py-3 bg-white border border-slate-200 text-sm font-bold rounded-xl focus:outline-none focus:border-[#FFD400] text-slate-800" />
+                <input type="text" defaultValue="logistics.herologistics.com" className="w-full px-4 py-3 bg-white border border-slate-200 text-sm font-bold rounded-xl focus:outline-none focus:border-brand-500 text-slate-800" />
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Login Screen Welcome Header Title</label>
-                <input type="text" defaultValue="Hero Logistics Operate System" className="w-full px-4 py-3 bg-white border border-slate-200 text-sm font-bold rounded-xl focus:outline-none focus:border-[#FFD400] text-slate-800" />
+                <input type="text" defaultValue="Hero Logistics Operate System" className="w-full px-4 py-3 bg-white border border-slate-200 text-sm font-bold rounded-xl focus:outline-none focus:border-brand-500 text-slate-800" />
               </div>
 
               <div className="pt-2">
@@ -448,7 +512,7 @@ export default function Settings() {
               </div>
 
               <div className="pt-4">
-                <button className="w-full bg-[#FFD400] text-black font-extrabold text-sm py-3.5 rounded-xl hover:bg-[#FFC800] transition-colors">
+                <button className="w-full bg-brand-500 text-black font-extrabold text-sm py-3.5 rounded-xl hover:bg-brand-600 transition-colors">
                   Save White Labeling Setup
                 </button>
               </div>
@@ -487,14 +551,14 @@ export default function Settings() {
 
             <div className="mb-6">
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Default Niche Selection</label>
-              <select value={defaultNiche} onChange={e => setDefaultNiche(e.target.value)} className="w-full px-4 py-3 bg-white border border-slate-200 text-sm font-bold rounded-xl focus:outline-none focus:border-[#FFD400] text-slate-800 cursor-pointer">
+              <select value={defaultNiche} onChange={e => setDefaultNiche(e.target.value)} className="w-full px-4 py-3 bg-white border border-slate-200 text-sm font-bold rounded-xl focus:outline-none focus:border-brand-500 text-slate-800 cursor-pointer">
                 <option value="Car Carrying">Car Carrying</option>
                 <option value="General Freight">General Freight</option>
                 <option value="Dangerous Goods">Dangerous Goods</option>
               </select>
             </div>
 
-            <button onClick={handleSaveNiche} className="w-full bg-[#FFD400] text-black font-extrabold text-sm py-3.5 rounded-xl hover:bg-[#FFC800] transition-colors">
+            <button onClick={handleSaveNiche} className="w-full bg-brand-500 text-black font-extrabold text-sm py-3.5 rounded-xl hover:bg-brand-600 transition-colors">
               Save Niche Setup
             </button>
           </div>
@@ -515,7 +579,7 @@ export default function Settings() {
                 </div>
                 <div className="flex items-center gap-4">
                   <button className="text-xs font-black text-slate-600 hover:text-slate-800">Edit API Key</button>
-                  <button className="bg-[#FFD400] text-black font-black text-xs px-5 py-2.5 rounded-xl hover:bg-[#FFC800] transition-colors">Test Link</button>
+                  <button className="bg-brand-500 text-black font-black text-xs px-5 py-2.5 rounded-xl hover:bg-brand-600 transition-colors">Test Link</button>
                 </div>
               </div>
 
@@ -529,7 +593,7 @@ export default function Settings() {
                 </div>
                 <div className="flex items-center gap-4">
                   <button className="text-xs font-black text-slate-600 hover:text-slate-800">Edit API Key</button>
-                  <button className="bg-[#FFD400] text-black font-black text-xs px-5 py-2.5 rounded-xl hover:bg-[#FFC800] transition-colors">Test Link</button>
+                  <button className="bg-brand-500 text-black font-black text-xs px-5 py-2.5 rounded-xl hover:bg-brand-600 transition-colors">Test Link</button>
                 </div>
               </div>
 
@@ -563,7 +627,7 @@ export default function Settings() {
                   <p className="text-xs font-semibold text-slate-500">Last synced ledger logs: 10 min ago</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <button className="bg-[#FFD400] text-black font-black text-xs px-5 py-2.5 rounded-xl hover:bg-[#FFC800] transition-colors">Sync Invoices Now</button>
+                  <button className="bg-brand-500 text-black font-black text-xs px-5 py-2.5 rounded-xl hover:bg-brand-600 transition-colors">Sync Invoices Now</button>
                   <button className="bg-rose-50 text-rose-600 font-black text-xs px-5 py-2.5 rounded-xl border border-rose-100 hover:bg-rose-100 transition-colors">Disconnect</button>
                 </div>
               </div>
@@ -577,7 +641,7 @@ export default function Settings() {
                   <p className="text-xs font-semibold text-slate-500">Last synced ledger logs: Never</p>
                 </div>
                 <div className="flex items-center gap-4">
-                  <button className="bg-[#FFD400] text-black font-black text-xs px-5 py-2.5 rounded-xl hover:bg-[#FFC800] transition-colors">Authenticate Link</button>
+                  <button className="bg-brand-500 text-black font-black text-xs px-5 py-2.5 rounded-xl hover:bg-brand-600 transition-colors">Authenticate Link</button>
                 </div>
               </div>
             </div>
@@ -634,7 +698,7 @@ export default function Settings() {
                   {['COMPACT', 'DEFAULT', 'RELAXED'].map(view => (
                     <button
                       key={view}
-                      className={`px-4 py-2 rounded-xl text-xs font-black tracking-wide transition-colors ${view === 'DEFAULT' ? 'bg-[#FFD400] text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
+                      className={`px-4 py-2 rounded-xl text-xs font-black tracking-wide transition-colors ${view === 'DEFAULT' ? 'bg-brand-500 text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}
                     >
                       {view}
                     </button>
@@ -644,7 +708,7 @@ export default function Settings() {
                 <div className="relative">
                   <button 
                     onClick={() => setShowLogColsDropdown(prev => !prev)}
-                    className={`flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-600 rounded-xl text-xs font-black tracking-wide hover:bg-slate-200 transition-colors border ${showLogColsDropdown ? 'border-[#FFD400]' : 'border-slate-200'}`}
+                    className={`flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-600 rounded-xl text-xs font-black tracking-wide hover:bg-slate-200 transition-colors border ${showLogColsDropdown ? 'border-brand-500' : 'border-slate-200'}`}
                   >
                     <SettingsIcon className="w-4 h-4" /> COLUMNS
                   </button>

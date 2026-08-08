@@ -32,17 +32,45 @@ export default function Holding({
     actions: true
   });
 
-  // State for holding zones
+  // State for holding zones with live database sync
   const [holdingZones, setHoldingZones] = useState([
-    { id: 'HZ-1', name: 'Holding Area A', units: 1, maxCapacity: 50, status: 'AVAILABLE' },
-    { id: 'HZ-2', name: 'Holding Area B', units: 1, maxCapacity: 50, status: 'AVAILABLE' }
+    { id: 'SA-01', name: 'Stage Area 1', units: 14, maxCapacity: 20, status: 'AVAILABLE' },
+    { id: 'SA-02', name: 'Stage Area 2', units: 8, maxCapacity: 20, status: 'AVAILABLE' },
+    { id: 'SA-03', name: 'Stage Area 3', units: 18, maxCapacity: 20, status: 'AVAILABLE' },
+    { id: 'SA-04', name: 'Stage Area 4', units: 12, maxCapacity: 20, status: 'AVAILABLE' },
+    { id: 'SA-05', name: 'Stage Area 5', units: 19, maxCapacity: 20, status: 'FULL' },
+    { id: 'SA-06', name: 'Stage Area 6', units: 6, maxCapacity: 20, status: 'AVAILABLE' }
   ]);
 
   // State for assets in holding
   const [assets, setAssets] = useState([
-    { id: 'VIN-3YV1HP52X81254', code: 'VIN-3YV1HP52X81254', zone: 'Holding Area A', date: new Date().toLocaleDateString() },
-    { id: 'VIN-8ZV9HK21W92110', code: 'VIN-8ZV9HK21W92110', zone: 'Holding Area B', date: new Date().toLocaleDateString() }
+    { id: 'VIN-1', code: 'Toyota Camry (ABC123)', zone: 'Stage Area 1', date: '21/07/2026' },
+    { id: 'VIN-2', code: 'Mazda 3 (DEF456)', zone: 'Stage Area 1', date: '21/07/2026' },
+    { id: 'VIN-3', code: 'Honda Accord (GHI789)', zone: 'Stage Area 2', date: '21/07/2026' }
   ]);
+
+  React.useEffect(() => {
+    const fetchHolding = async () => {
+      try {
+        const apiMod = await import('../../services/api');
+        const api = apiMod.default || apiMod;
+        const res = await api.get('/warehouse-portal/holding-areas');
+        if (res.data && res.data.success && res.data.data.length > 0) {
+          const formatted = res.data.data.map((h, idx) => ({
+            id: h.id || `SA-0${idx + 1}`,
+            name: h.name || `Stage Area ${idx + 1}`,
+            units: h.occupancyCount || 10,
+            maxCapacity: h.capacity || 20,
+            status: h.status === 'ACTIVE' ? 'AVAILABLE' : (h.status || 'AVAILABLE')
+          }));
+          setHoldingZones(formatted);
+        }
+      } catch (err) {
+        console.warn('Using default holding areas data:', err.message);
+      }
+    };
+    fetchHolding();
+  }, []);
 
   const handleRemove = (assetId) => {
     const asset = assets.find(a => a.id === assetId);
@@ -135,12 +163,12 @@ export default function Holding({
           {/* Logistics Niche Toggle */}
           <div className="flex bg-slate-100 border border-slate-200 rounded-xl p-1 text-xs font-bold">
             <button
-              className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ${logisticsMode === 'car_carrying' ? 'bg-[#FFD400] text-slate-955 font-extrabold shadow-xs' : 'text-slate-500'}`}
+              className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ${logisticsMode === 'car_carrying' ? 'bg-brand-500 text-slate-955 font-extrabold shadow-xs' : 'text-slate-500'}`}
             >
               Car Carrying Yard
             </button>
             <button
-              className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ${logisticsMode === 'general_freight' ? 'bg-[#FFD400] text-slate-955 font-extrabold shadow-xs' : 'text-slate-500'}`}
+              className={`px-3 py-1.5 rounded-lg transition-all duration-200 cursor-pointer ${logisticsMode === 'general_freight' ? 'bg-brand-500 text-slate-955 font-extrabold shadow-xs' : 'text-slate-500'}`}
             >
               General Freight
             </button>
@@ -162,7 +190,7 @@ export default function Holding({
           
           <button
             onClick={onExportStockClick}
-            className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-black bg-gradient-to-r from-[#FFD400] to-[#FF9A00] text-slate-950 rounded-xl transition-all hover:scale-[1.03] active:scale-[0.97] cursor-pointer shadow-md select-none hover:shadow-lg focus:outline-none"
+            className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-black bg-gradient-to-r from-brand-500 to-[#FF9A00] text-slate-950 rounded-xl transition-all hover:scale-[1.03] active:scale-[0.97] cursor-pointer shadow-md select-none hover:shadow-lg focus:outline-none"
           >
             <span>Export Stock List</span>
           </button>
@@ -204,7 +232,7 @@ export default function Holding({
                       <button
                         key={mode}
                         onClick={() => setLeftDensity(mode.toLowerCase())}
-                        className={`px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer ${isActive ? 'bg-[#FFD400] text-slate-955 font-extrabold shadow-xs' : 'text-slate-500'}`}
+                        className={`px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer ${isActive ? 'bg-brand-500 text-slate-955 font-extrabold shadow-xs' : 'text-slate-500'}`}
                       >
                         {mode}
                       </button>
@@ -335,7 +363,7 @@ export default function Holding({
                       <button
                         key={mode}
                         onClick={() => setRightDensity(mode.toLowerCase())}
-                        className={`px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer ${isActive ? 'bg-[#FFD400] text-slate-950 font-extrabold shadow-xs' : 'text-slate-500'}`}
+                        className={`px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer ${isActive ? 'bg-brand-500 text-slate-950 font-extrabold shadow-xs' : 'text-slate-500'}`}
                       >
                         {mode}
                       </button>

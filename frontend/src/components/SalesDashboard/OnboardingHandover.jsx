@@ -374,7 +374,7 @@ export default function OnboardingHandover() {
                     setShowAddTaskModal(false);
                   }
                 }}
-                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all cursor-pointer"
+                className="w-full bg-[#FFB020] hover:bg-brand-600 text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all cursor-pointer"
               >
                 Add Onboarding Task
               </button>
@@ -433,7 +433,7 @@ export default function OnboardingHandover() {
                   setToast({ type: 'success', text: `Handover package dispatched to ${targetRep.split(' ')[0]}!` });
                   setShowDispatchModal(false);
                 }}
-                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all cursor-pointer"
+                className="w-full bg-[#FFB020] hover:bg-brand-600 text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all cursor-pointer"
               >
                 Confirm & Dispatch Handover Package
               </button>

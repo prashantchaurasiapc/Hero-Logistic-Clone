@@ -192,7 +192,7 @@ export default function SuperAdminDashboard() {
                       key={mode}
                       onClick={() => setDensity(mode)}
                       className={`px-3 py-1.5 text-[9px] font-black rounded-lg transition-all cursor-pointer ${density === mode
-                        ? 'bg-[#FFD400] text-black shadow-xs font-black'
+                        ? 'bg-brand-500 text-black shadow-xs font-black'
                         : 'text-black hover:bg-slate-200/50'
                         }`}
                     >
@@ -220,7 +220,7 @@ export default function SuperAdminDashboard() {
                           type="checkbox"
                           checked={visibleColumns.companyName}
                           onChange={() => setVisibleColumns(prev => ({ ...prev, companyName: !prev.companyName }))}
-                          className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                          className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                         />
                         <span>Company Name</span>
                       </label>
@@ -230,7 +230,7 @@ export default function SuperAdminDashboard() {
                           type="checkbox"
                           checked={visibleColumns.subscriptionPlan}
                           onChange={() => setVisibleColumns(prev => ({ ...prev, subscriptionPlan: !prev.subscriptionPlan }))}
-                          className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                          className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                         />
                         <span>Subscription Plan</span>
                       </label>
@@ -240,7 +240,7 @@ export default function SuperAdminDashboard() {
                           type="checkbox"
                           checked={visibleColumns.status}
                           onChange={() => setVisibleColumns(prev => ({ ...prev, status: !prev.status }))}
-                          className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                          className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                         />
                         <span>Status</span>
                       </label>
@@ -250,7 +250,7 @@ export default function SuperAdminDashboard() {
                           type="checkbox"
                           checked={visibleColumns.activeUsers}
                           onChange={() => setVisibleColumns(prev => ({ ...prev, activeUsers: !prev.activeUsers }))}
-                          className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                          className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                         />
                         <span>Active Users</span>
                       </label>
@@ -260,7 +260,7 @@ export default function SuperAdminDashboard() {
                           type="checkbox"
                           checked={visibleColumns.monthlyRevenue}
                           onChange={() => setVisibleColumns(prev => ({ ...prev, monthlyRevenue: !prev.monthlyRevenue }))}
-                          className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                          className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                         />
                         <span>Monthly Revenue</span>
                       </label>
@@ -270,7 +270,7 @@ export default function SuperAdminDashboard() {
                           type="checkbox"
                           checked={visibleColumns.trialExpiry}
                           onChange={() => setVisibleColumns(prev => ({ ...prev, trialExpiry: !prev.trialExpiry }))}
-                          className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                          className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                         />
                         <span>Trial Expiry</span>
                       </label>
@@ -280,7 +280,7 @@ export default function SuperAdminDashboard() {
                           type="checkbox"
                           checked={visibleColumns.lastLogin}
                           onChange={() => setVisibleColumns(prev => ({ ...prev, lastLogin: !prev.lastLogin }))}
-                          className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                          className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                         />
                         <span>Last Login</span>
                       </label>
@@ -295,7 +295,7 @@ export default function SuperAdminDashboard() {
                 <thead className="hidden lg:table-header-group">
                   <tr className="border-b border-slate-100">
                     <th className="py-4 px-6 w-10">
-                      <input type="checkbox" className="w-4 h-4 text-[#FFD400] rounded focus:ring-0 cursor-pointer" />
+                      <input type="checkbox" className="w-4 h-4 text-brand-500 rounded focus:ring-0 cursor-pointer" />
                     </th>
                     {visibleColumns.companyName && <th className="py-4 px-2 text-[11px] font-bold text-slate-500 uppercase tracking-wider">COMPANY</th>}
                     {visibleColumns.subscriptionPlan && <th className="py-4 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">SUBSCRIPTION PLAN</th>}
@@ -311,7 +311,7 @@ export default function SuperAdminDashboard() {
                     <tr key={tenant.id} className="block lg:table-row hover:bg-slate-50/50 transition-colors border-b border-slate-100 lg:border-none p-4 lg:p-0 space-y-3 lg:space-y-0 relative">
                       <td className={`block lg:table-cell ${getDensityPadding()} lg:px-6`}>
                         <span className="lg:hidden text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-1">SELECT</span>
-                        <input type="checkbox" className="w-4 h-4 text-[#FFD400] rounded focus:ring-0 cursor-pointer" />
+                        <input type="checkbox" className="w-4 h-4 text-brand-500 rounded focus:ring-0 cursor-pointer" />
                       </td>
                       {visibleColumns.companyName && (
                         <td className={`block lg:table-cell ${getDensityPadding()} lg:px-2`}>
@@ -494,7 +494,7 @@ export default function SuperAdminDashboard() {
               </div>
             </div>
             <div className="grid grid-cols-3 gap-3">
-              <button onClick={() => setShowOpenTicketModal(true)} className="bg-[#FFD400] text-slate-900 hover:bg-[#F0C800] font-bold text-[11px] py-3 rounded-xl transition-all shadow-sm cursor-pointer">
+              <button onClick={() => setShowOpenTicketModal(true)} className="bg-brand-500 text-slate-900 hover:bg-[#F0C800] font-bold text-[11px] py-3 rounded-xl transition-all shadow-sm cursor-pointer">
                 Open Ticket
               </button>
               <button onClick={() => setShowAssignTicketModal(true)} className="bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 font-bold text-[11px] py-3 rounded-xl transition-all shadow-sm cursor-pointer">
@@ -531,7 +531,7 @@ export default function SuperAdminDashboard() {
             </div>
 
             <div className="grid grid-cols-3 gap-3">
-              <button onClick={() => setShowChangeSubModal(true)} className="bg-[#FFD400] text-slate-900 hover:bg-[#F0C800] font-bold text-[11px] py-3 rounded-xl transition-all shadow-sm cursor-pointer">
+              <button onClick={() => setShowChangeSubModal(true)} className="bg-brand-500 text-slate-900 hover:bg-[#F0C800] font-bold text-[11px] py-3 rounded-xl transition-all shadow-sm cursor-pointer">
                 Change Sub
               </button>
               <button onClick={() => setShowRenewSubModal(true)} className="bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 font-bold text-[11px] py-3 rounded-xl transition-all shadow-sm cursor-pointer">
@@ -589,7 +589,7 @@ export default function SuperAdminDashboard() {
                 <select
                   value={selectedCompany}
                   onChange={(e) => setSelectedCompany(e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
                 >
                   <option value="Falcon Logistics LLC">Falcon Logistics LLC</option>
                   <option value="Swift Cargo Express">Swift Cargo Express</option>
@@ -603,7 +603,7 @@ export default function SuperAdminDashboard() {
                 <select
                   value={selectedPlanTier}
                   onChange={(e) => setSelectedPlanTier(e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
                 >
                   <option value="Starter Tier - $99/mo">Starter Tier - $99/mo</option>
                   <option value="Professional Tier - $499/mo">Professional Tier - $499/mo</option>
@@ -613,7 +613,7 @@ export default function SuperAdminDashboard() {
 
               <button
                 onClick={() => setShowChangeSubModal(false)}
-                className="w-full py-3.5 bg-gradient-to-r from-[#FFD400] to-[#FFB300] hover:from-[#F0C800] hover:to-[#FFA000] text-slate-900 font-extrabold text-xs rounded-xl transition-all shadow-sm mt-4 cursor-pointer"
+                className="w-full py-3.5 bg-gradient-to-r from-brand-500 to-[#FFB300] hover:from-[#F0C800] hover:to-[#FFA000] text-slate-900 font-extrabold text-xs rounded-xl transition-all shadow-sm mt-4 cursor-pointer"
               >
                 Update Subscription
               </button>
@@ -635,7 +635,7 @@ export default function SuperAdminDashboard() {
             <div className="p-6 space-y-5">
               <div className="space-y-2 text-left">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">TENANT COMPANY</label>
-                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
                   <option>Falcon Logistics LLC</option>
                   <option>Swift Cargo Express</option>
                   <option>Apex Logistics LLC</option>
@@ -645,7 +645,7 @@ export default function SuperAdminDashboard() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2 text-left">
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">CATEGORY</label>
-                  <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                  <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
                     <option>General / Platform</option>
                     <option>Billing / Payment</option>
                     <option>Technical / Bug</option>
@@ -654,7 +654,7 @@ export default function SuperAdminDashboard() {
                 </div>
                 <div className="space-y-2 text-left">
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">PRIORITY</label>
-                  <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                  <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
                     <option>Medium</option>
                     <option>Low</option>
                     <option>High</option>
@@ -664,15 +664,15 @@ export default function SuperAdminDashboard() {
               </div>
               <div className="space-y-2 text-left">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SUBJECT HEADING</label>
-                <input type="text" placeholder="e.g. GPS Geofencing synchronization error" className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-medium rounded-xl focus:outline-none text-slate-800 placeholder:text-slate-300" />
+                <input type="text" placeholder="e.g. GPS Geofencing synchronization error" className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-sm font-medium rounded-xl focus:outline-none text-slate-800 placeholder:text-slate-300" />
               </div>
               <div className="space-y-2 text-left">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">DETAILED MESSAGE PAYLOAD</label>
-                <textarea rows={4} placeholder="Describe the issue or request in detail..." className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-medium rounded-xl focus:outline-none text-slate-800 resize-y placeholder:text-slate-300" />
+                <textarea rows={4} placeholder="Describe the issue or request in detail..." className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-sm font-medium rounded-xl focus:outline-none text-slate-800 resize-y placeholder:text-slate-300" />
               </div>
               <button
                 onClick={() => setShowOpenTicketModal(false)}
-                className="w-full py-3.5 bg-gradient-to-r from-[#FFD400] to-[#FFB300] hover:from-[#F0C800] hover:to-[#FFA000] text-slate-900 font-extrabold text-xs rounded-xl transition-all shadow-sm cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-3.5 bg-gradient-to-r from-brand-500 to-[#FFB300] hover:from-[#F0C800] hover:to-[#FFA000] text-slate-900 font-extrabold text-xs rounded-xl transition-all shadow-sm cursor-pointer flex items-center justify-center gap-2"
               >
                 <Check className="w-4 h-4" /> Open Ticket
               </button>
@@ -694,14 +694,14 @@ export default function SuperAdminDashboard() {
             <div className="p-6 space-y-5">
               <div className="space-y-2 text-left">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SELECT OPEN TICKET</label>
-                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
                   <option>#1 - Invoice Factoring Delay (Falcon Logistics LLC)</option>
                   <option>#2 - GPS Sync Issue (Swift Cargo Express)</option>
                 </select>
               </div>
               <div className="space-y-2 text-left">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SUPPORT ASSIGNEE TIER</label>
-                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
                   <option>L2 Senior Specialist</option>
                   <option>L1 Support Agent</option>
                   <option>L3 Engineering</option>
@@ -709,7 +709,7 @@ export default function SuperAdminDashboard() {
               </div>
               <button
                 onClick={() => setShowAssignTicketModal(false)}
-                className="w-full py-3.5 bg-gradient-to-r from-[#FFD400] to-[#FFB300] hover:from-[#F0C800] hover:to-[#FFA000] text-slate-900 font-extrabold text-xs rounded-xl transition-all shadow-sm cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-3.5 bg-gradient-to-r from-brand-500 to-[#FFB300] hover:from-[#F0C800] hover:to-[#FFA000] text-slate-900 font-extrabold text-xs rounded-xl transition-all shadow-sm cursor-pointer flex items-center justify-center gap-2"
               >
                 <Check className="w-4 h-4" /> Save Assignment
               </button>
@@ -731,14 +731,14 @@ export default function SuperAdminDashboard() {
             <div className="p-6 space-y-5">
               <div className="space-y-2 text-left">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SELECT TICKET TO RESOLVE</label>
-                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
                   <option>#1 - Invoice Factoring Delay (Falcon Logistics LLC)</option>
                   <option>#2 - GPS Sync Issue (Swift Cargo Express)</option>
                 </select>
               </div>
               <div className="space-y-2 text-left">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">RESOLUTION NOTE (OPTIONAL)</label>
-                <textarea rows={4} placeholder="Provide summary of resolution or notes for the customer..." className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-medium rounded-xl focus:outline-none text-slate-800 resize-y placeholder:text-slate-300" />
+                <textarea rows={4} placeholder="Provide summary of resolution or notes for the customer..." className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-sm font-medium rounded-xl focus:outline-none text-slate-800 resize-y placeholder:text-slate-300" />
               </div>
               <button
                 onClick={() => setShowResolveTicketModal(false)}
@@ -764,7 +764,7 @@ export default function SuperAdminDashboard() {
             <div className="p-6 space-y-5">
               <div className="space-y-2 text-left">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SELECT TENANT COMPANY</label>
-                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
                   <option>Falcon Logistics LLC</option>
                   <option>Swift Cargo Express</option>
                   <option>Apex Logistics LLC</option>
@@ -773,7 +773,7 @@ export default function SuperAdminDashboard() {
               </div>
               <button
                 onClick={() => setShowRenewSubModal(false)}
-                className="w-full py-3.5 bg-gradient-to-r from-[#FFD400] to-[#FFB300] hover:from-[#F0C800] hover:to-[#FFA000] text-slate-900 font-extrabold text-xs rounded-xl transition-all shadow-sm cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-3.5 bg-gradient-to-r from-brand-500 to-[#FFB300] hover:from-[#F0C800] hover:to-[#FFA000] text-slate-900 font-extrabold text-xs rounded-xl transition-all shadow-sm cursor-pointer flex items-center justify-center gap-2"
               >
                 <Check className="w-4 h-4" /> Renew License Subscription
               </button>
@@ -795,7 +795,7 @@ export default function SuperAdminDashboard() {
             <div className="p-6 space-y-5">
               <div className="space-y-2 text-left">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SELECT TENANT COMPANY</label>
-                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
                   <option>Falcon Logistics LLC (Current: Professional)</option>
                   <option>Swift Cargo Express (Current: Professional)</option>
                   <option>Apex Logistics LLC (Current: Enterprise)</option>
@@ -804,7 +804,7 @@ export default function SuperAdminDashboard() {
               </div>
               <div className="space-y-2 text-left">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">UPGRADE TARGET TIER PLAN</label>
-                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-sm font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
                   <option>Enterprise Tier - $1,299/mo</option>
                   <option>Professional Tier - $499/mo</option>
                   <option>Premium Tier - $2,499/mo</option>
@@ -843,7 +843,7 @@ export default function SuperAdminDashboard() {
                   value={tenantName}
                   onChange={(e) => setTenantName(e.target.value)}
                   placeholder="e.g. Titan Freightlines LLC"
-                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-xs font-semibold rounded-xl focus:outline-none text-slate-800"
                 />
               </div>
               <div className="space-y-1.5">
@@ -854,7 +854,7 @@ export default function SuperAdminDashboard() {
                   value={managerEmail}
                   onChange={(e) => setManagerEmail(e.target.value)}
                   placeholder="e.g. admin@titan.com"
-                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-xs font-semibold rounded-xl focus:outline-none text-slate-800"
                 />
               </div>
               <div className="space-y-1.5">
@@ -865,7 +865,7 @@ export default function SuperAdminDashboard() {
                   value={managerPassword}
                   onChange={(e) => setManagerPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-xs font-semibold rounded-xl focus:outline-none text-slate-800"
                 />
               </div>
               <div className="space-y-1.5">
@@ -873,7 +873,7 @@ export default function SuperAdminDashboard() {
                 <select
                   value={selectedPlan}
                   onChange={(e) => setSelectedPlan(e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-xs font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
                 >
                   <option value="Professional Tier">Professional Tier</option>
                   <option value="Starter Tier">Starter Tier</option>
@@ -907,7 +907,7 @@ export default function SuperAdminDashboard() {
             <div className="p-6 space-y-5">
               <div className="space-y-2">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SELECT COMPANY TO SUSPEND</label>
-                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-xs font-semibold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
                   <option>Falcon Logistics LLC</option>
                   <option>Swift Cargo Express</option>
                   <option>Apex Logistics LLC</option>
@@ -937,7 +937,7 @@ export default function SuperAdminDashboard() {
             <div className="p-6 space-y-5">
               <div className="space-y-2">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SELECT COMPANY TO REACTIVATE</label>
-                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-xs font-semibold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
                   <option>Texas Hotshot Carriers</option>
                   <option>Blue Sky Shipping</option>
                 </select>
@@ -966,7 +966,7 @@ export default function SuperAdminDashboard() {
             <div className="p-6 space-y-5">
               <div className="space-y-2">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SELECT COMPANY WORKSPACE</label>
-                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                <select className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-xs font-semibold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
                   <option>Falcon Logistics LLC</option>
                   <option>Swift Cargo Express</option>
                   <option>Apex Logistics LLC</option>
@@ -996,11 +996,11 @@ export default function SuperAdminDashboard() {
             <div className="p-6 space-y-5">
               <div className="space-y-2">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">PLAN NAME</label>
-                <input type="text" placeholder="e.g. Enterprise Tier" className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800" />
+                <input type="text" placeholder="e.g. Enterprise Tier" className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-xs font-semibold rounded-xl focus:outline-none text-slate-800" />
               </div>
               <div className="space-y-2">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">MONTHLY PRICE ($)</label>
-                <input type="number" placeholder="e.g. 1999" className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800" />
+                <input type="number" placeholder="e.g. 1999" className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-xs font-semibold rounded-xl focus:outline-none text-slate-800" />
               </div>
               <button
                 onClick={() => setShowCreatePlanModal(false)}

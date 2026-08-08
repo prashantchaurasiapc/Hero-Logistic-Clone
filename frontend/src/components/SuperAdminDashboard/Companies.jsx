@@ -279,7 +279,7 @@ export default function Companies() {
 
           <button
             onClick={() => setShowProvisionModal(true)}
-            className="bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs px-4 sm:px-5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm whitespace-nowrap flex-1 sm:flex-none"
+            className="bg-brand-500 hover:bg-brand-600 text-black font-extrabold text-xs px-4 sm:px-5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm whitespace-nowrap flex-1 sm:flex-none"
           >
             <Plus className="w-4 h-4" /> Provision Tenant
           </button>
@@ -422,7 +422,7 @@ export default function Companies() {
                 placeholder="Search workspaces..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none placeholder:text-slate-400 text-slate-800 font-bold"
+                className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none placeholder:text-slate-400 text-slate-800 font-bold"
               />
               <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
             </div>
@@ -469,7 +469,7 @@ export default function Companies() {
                     key={mode}
                     onClick={() => setDensity(mode)}
                     className={`px-3 py-1.5 text-[9px] font-black rounded-lg transition-all cursor-pointer ${density === mode
-                        ? 'bg-[#FFD400] text-black shadow-xs font-black'
+                        ? 'bg-brand-500 text-black shadow-xs font-black'
                         : 'text-black hover:bg-slate-200/50'
                       }`}
                   >
@@ -498,7 +498,7 @@ export default function Companies() {
                         type="checkbox"
                         checked={visibleColumns.checkboxes}
                         onChange={() => setVisibleColumns(prev => ({ ...prev, checkboxes: !prev.checkboxes }))}
-                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                        className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                       />
                       <div className="w-3.5 h-3.5 border border-slate-300 rounded" />
                     </label>
@@ -508,7 +508,7 @@ export default function Companies() {
                         type="checkbox"
                         checked={visibleColumns.companyName}
                         onChange={() => setVisibleColumns(prev => ({ ...prev, companyName: !prev.companyName }))}
-                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                        className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                       />
                       <span>Company Name</span>
                     </label>
@@ -518,7 +518,7 @@ export default function Companies() {
                         type="checkbox"
                         checked={visibleColumns.companyId}
                         onChange={() => setVisibleColumns(prev => ({ ...prev, companyId: !prev.companyId }))}
-                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                        className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                       />
                       <span>Company ID</span>
                     </label>
@@ -528,7 +528,7 @@ export default function Companies() {
                         type="checkbox"
                         checked={visibleColumns.subscriptionPlan}
                         onChange={() => setVisibleColumns(prev => ({ ...prev, subscriptionPlan: !prev.subscriptionPlan }))}
-                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                        className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                       />
                       <span>Subscription Plan</span>
                     </label>
@@ -538,7 +538,7 @@ export default function Companies() {
                         type="checkbox"
                         checked={visibleColumns.status}
                         onChange={() => setVisibleColumns(prev => ({ ...prev, status: !prev.status }))}
-                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                        className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                       />
                       <span>Status</span>
                     </label>
@@ -548,7 +548,7 @@ export default function Companies() {
                         type="checkbox"
                         checked={visibleColumns.branches}
                         onChange={() => setVisibleColumns(prev => ({ ...prev, branches: !prev.branches }))}
-                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                        className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                       />
                       <span>Branches</span>
                     </label>
@@ -558,7 +558,7 @@ export default function Companies() {
                         type="checkbox"
                         checked={visibleColumns.users}
                         onChange={() => setVisibleColumns(prev => ({ ...prev, users: !prev.users }))}
-                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                        className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                       />
                       <span>Users</span>
                     </label>
@@ -568,7 +568,7 @@ export default function Companies() {
                         type="checkbox"
                         checked={visibleColumns.drivers}
                         onChange={() => setVisibleColumns(prev => ({ ...prev, drivers: !prev.drivers }))}
-                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                        className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                       />
                       <span>Drivers</span>
                     </label>
@@ -578,7 +578,7 @@ export default function Companies() {
                         type="checkbox"
                         checked={visibleColumns.fleetVehicles}
                         onChange={() => setVisibleColumns(prev => ({ ...prev, fleetVehicles: !prev.fleetVehicles }))}
-                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                        className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                       />
                       <span>Fleet Vehicles</span>
                     </label>
@@ -588,7 +588,7 @@ export default function Companies() {
                         type="checkbox"
                         checked={visibleColumns.activeLoads}
                         onChange={() => setVisibleColumns(prev => ({ ...prev, activeLoads: !prev.activeLoads }))}
-                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                        className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                       />
                       <span>Active Loads</span>
                     </label>
@@ -598,7 +598,7 @@ export default function Companies() {
                         type="checkbox"
                         checked={visibleColumns.monthlyRevenue}
                         onChange={() => setVisibleColumns(prev => ({ ...prev, monthlyRevenue: !prev.monthlyRevenue }))}
-                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                        className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                       />
                       <span>Monthly Revenue</span>
                     </label>
@@ -608,7 +608,7 @@ export default function Companies() {
                         type="checkbox"
                         checked={visibleColumns.lastLogin}
                         onChange={() => setVisibleColumns(prev => ({ ...prev, lastLogin: !prev.lastLogin }))}
-                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                        className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                       />
                       <span>Last Login</span>
                     </label>
@@ -618,7 +618,7 @@ export default function Companies() {
                         type="checkbox"
                         checked={visibleColumns.trialExpiry}
                         onChange={() => setVisibleColumns(prev => ({ ...prev, trialExpiry: !prev.trialExpiry }))}
-                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                        className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                       />
                       <span>Trial Expiry</span>
                     </label>
@@ -628,7 +628,7 @@ export default function Companies() {
                         type="checkbox"
                         checked={visibleColumns.createdDate}
                         onChange={() => setVisibleColumns(prev => ({ ...prev, createdDate: !prev.createdDate }))}
-                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                        className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                       />
                       <span>Created Date</span>
                     </label>
@@ -638,7 +638,7 @@ export default function Companies() {
                         type="checkbox"
                         checked={visibleColumns.accountManager}
                         onChange={() => setVisibleColumns(prev => ({ ...prev, accountManager: !prev.accountManager }))}
-                        className="w-3.5 h-3.5 text-[#FFD400] rounded focus:ring-0 cursor-pointer"
+                        className="w-3.5 h-3.5 text-brand-500 rounded focus:ring-0 cursor-pointer"
                       />
                       <span>Account Manager</span>
                     </label>
@@ -657,7 +657,7 @@ export default function Companies() {
               <select
                 value={selectedPlanFilter}
                 onChange={(e) => setSelectedPlanFilter(e.target.value)}
-                className="w-full px-3 py-2 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
+                className="w-full px-3 py-2 bg-white border border-slate-200 focus:border-brand-500 text-xs font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
               >
                 <option value="All Plans">All Plans</option>
                 <option value="Starter">Starter</option>
@@ -671,7 +671,7 @@ export default function Companies() {
               <select
                 value={selectedStatusFilter}
                 onChange={(e) => setSelectedStatusFilter(e.target.value)}
-                className="w-full px-3 py-2 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
+                className="w-full px-3 py-2 bg-white border border-slate-200 focus:border-brand-500 text-xs font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
               >
                 <option value="All Statuses">All Statuses</option>
                 <option value="ACTIVE">ACTIVE</option>
@@ -686,7 +686,7 @@ export default function Companies() {
                 placeholder="e.g. 10"
                 value={minUsersFilter}
                 onChange={(e) => setMinUsersFilter(e.target.value)}
-                className="w-full px-3 py-2 bg-white border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none"
+                className="w-full px-3 py-2 bg-white border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none"
               />
             </div>
           </div>
@@ -994,7 +994,7 @@ export default function Companies() {
                   value={tenantName}
                   onChange={(e) => setTenantName(e.target.value)}
                   placeholder="e.g. Titan Freightlines LLC"
-                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-xs font-semibold rounded-xl focus:outline-none text-slate-800"
                 />
               </div>
 
@@ -1006,7 +1006,7 @@ export default function Companies() {
                   value={managerEmail}
                   onChange={(e) => setManagerEmail(e.target.value)}
                   placeholder="e.g. admin@titan.com"
-                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-xs font-semibold rounded-xl focus:outline-none text-slate-800"
                 />
               </div>
 
@@ -1018,7 +1018,7 @@ export default function Companies() {
                   value={managerPassword}
                   onChange={(e) => setManagerPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-xs font-semibold rounded-xl focus:outline-none text-slate-800"
                 />
               </div>
 
@@ -1027,7 +1027,7 @@ export default function Companies() {
                 <select
                   value={selectedPlan}
                   onChange={(e) => setSelectedPlan(e.target.value)}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-xs font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
                 >
                   <option value="Professional Tier">Professional Tier</option>
                   <option value="Starter Tier">Starter Tier</option>
@@ -1038,7 +1038,7 @@ export default function Companies() {
               <div className="pt-2">
                 <button
                   type="submit"
-                  className="w-full bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs py-3 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-md transition-colors cursor-pointer"
+                  className="w-full bg-brand-500 hover:bg-brand-600 text-black font-extrabold text-xs py-3 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-md transition-colors cursor-pointer"
                 >
                   <Check className="w-4 h-4 text-black" />
                   <span>Finalize Setup</span>
@@ -1080,15 +1080,15 @@ export default function Companies() {
             }}>
               <div className="space-y-1.5">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">COMPANY NAME</label>
-                <input name="name" type="text" defaultValue={selectedActionCompany.name} className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800" />
+                <input name="name" type="text" defaultValue={selectedActionCompany.name} className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-xs font-semibold rounded-xl focus:outline-none text-slate-800" />
               </div>
               <div className="space-y-1.5">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">ADMINISTRATOR EMAIL</label>
-                <input name="manager" type="text" defaultValue={selectedActionCompany.manager} className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800" />
+                <input name="manager" type="text" defaultValue={selectedActionCompany.manager} className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-xs font-semibold rounded-xl focus:outline-none text-slate-800" />
               </div>
               <div className="space-y-1.5">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SUBSCRIPTION TIER LEVEL</label>
-                <select name="plan" defaultValue={selectedActionCompany.plan + ' Tier'} className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                <select name="plan" defaultValue={selectedActionCompany.plan + ' Tier'} className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-xs font-semibold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
                   <option>Starter Tier</option>
                   <option>Professional Tier</option>
                   <option>Enterprise Tier</option>
@@ -1096,7 +1096,7 @@ export default function Companies() {
               </div>
               <button
                 type="submit"
-                className="w-full mt-2 bg-[#FFB020] hover:bg-[#FFC800] text-black font-extrabold text-[13px] py-4 rounded-xl transition-all cursor-pointer shadow-sm flex flex-col items-center justify-center"
+                className="w-full mt-2 bg-[#FFB020] hover:bg-brand-600 text-black font-extrabold text-[13px] py-4 rounded-xl transition-all cursor-pointer shadow-sm flex flex-col items-center justify-center"
               >
                 <Check className="w-4 h-4 mb-1" />
                 Save Configurations
@@ -1119,7 +1119,7 @@ export default function Companies() {
             <div className="p-6 space-y-5">
               <div className="space-y-1.5">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SELECT COMPANY TO SUSPEND</label>
-                <select defaultValue={selectedActionCompany.name} className="w-full px-4 py-3 bg-white border border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
+                <select defaultValue={selectedActionCompany.name} className="w-full px-4 py-3 bg-white border border-brand-500 text-xs font-semibold rounded-xl focus:outline-none text-slate-800 cursor-pointer">
                   <option>{selectedActionCompany.name}</option>
                   {companies.filter(c => c.name !== selectedActionCompany.name).map(c => <option key={c.id}>{c.name}</option>)}
                 </select>
@@ -1164,7 +1164,7 @@ export default function Companies() {
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SELECT COMPANY WORKSPACE</label>
                 <select
                   defaultValue={selectedActionCompany.name}
-                  className="w-full px-4 py-3 bg-white border border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
+                  className="w-full px-4 py-3 bg-white border border-brand-500 text-xs font-semibold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
                   onChange={(e) => {
                     const comp = companies.find(c => c.name === e.target.value);
                     if (comp) setSelectedActionCompany(comp);
@@ -1203,7 +1203,7 @@ export default function Companies() {
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">SELECT SUBSCRIPTION PLAN TIER</label>
                 <select
                   defaultValue={`${selectedActionCompany.plan} Tier - $${selectedActionCompany.mrr}/mo`}
-                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-semibold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-xs font-semibold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
                 >
                   <option>Starter Tier - $499/mo</option>
                   <option>Professional Tier - $4,910/mo</option>
@@ -1216,7 +1216,7 @@ export default function Companies() {
                   showNotification(`Subscription updated for ${selectedActionCompany.name}`);
                   setShowChangeSubscriptionModal(false);
                 }}
-                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-black font-extrabold text-[13px] py-4 rounded-xl transition-all cursor-pointer shadow-sm mt-2"
+                className="w-full bg-[#FFB020] hover:bg-brand-600 text-black font-extrabold text-[13px] py-4 rounded-xl transition-all cursor-pointer shadow-sm mt-2"
               >
                 Update Subscription
               </button>
@@ -1263,7 +1263,7 @@ export default function Companies() {
                   showNotification(`Features updated for ${selectedActionCompany.name}`);
                   setShowManageFeaturesModal(false);
                 }}
-                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-black font-extrabold text-[13px] py-4 rounded-xl transition-all cursor-pointer shadow-sm mt-4"
+                className="w-full bg-[#FFB020] hover:bg-brand-600 text-black font-extrabold text-[13px] py-4 rounded-xl transition-all cursor-pointer shadow-sm mt-4"
               >
                 Save Granular Features
               </button>
@@ -1287,7 +1287,7 @@ export default function Companies() {
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">NOTIFICATION PAYLOAD MESSAGE</label>
                 <textarea
                   placeholder="Type announcement message..."
-                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-medium rounded-xl focus:outline-none text-slate-800 h-24 resize-none"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-xs font-medium rounded-xl focus:outline-none text-slate-800 h-24 resize-none"
                 ></textarea>
               </div>
               <button
@@ -1295,7 +1295,7 @@ export default function Companies() {
                   showNotification(`Broadcast message sent to ${selectedActionCompany.name}`);
                   setShowSendNotificationModal(false);
                 }}
-                className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-black font-extrabold text-[13px] py-4 rounded-xl transition-all cursor-pointer shadow-sm mt-2"
+                className="w-full bg-[#FFB020] hover:bg-brand-600 text-black font-extrabold text-[13px] py-4 rounded-xl transition-all cursor-pointer shadow-sm mt-2"
               >
                 Broadcast Message
               </button>
@@ -1349,7 +1349,7 @@ export default function Companies() {
                     key={tab}
                     onClick={() => setActiveInspectorTab(tab)}
                     className={`shrink-0 px-4 py-1.5 text-[11px] rounded-xl whitespace-nowrap cursor-pointer transition-colors ${activeInspectorTab === tab
-                        ? 'bg-[#FFD400] text-slate-900 font-black shadow-sm border-2 border-slate-900'
+                        ? 'bg-brand-500 text-slate-900 font-black shadow-sm border-2 border-slate-900'
                         : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100 font-bold border-2 border-transparent'
                       }`}
                   >

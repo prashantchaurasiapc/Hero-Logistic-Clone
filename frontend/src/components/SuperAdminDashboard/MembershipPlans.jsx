@@ -733,7 +733,7 @@ export default function MembershipPlans() {
                 type="button"
                 onClick={() => setBillingCycle('monthly')}
                 className={`px-4 py-2 text-xs font-extrabold rounded-lg transition-all cursor-pointer text-center ${billingCycle === 'monthly'
-                    ? 'bg-[#FFD400] text-black shadow-xs'
+                    ? 'bg-brand-500 text-black shadow-xs'
                     : 'text-slate-655 hover:bg-slate-200'
                   }`}
               >
@@ -743,7 +743,7 @@ export default function MembershipPlans() {
                 type="button"
                 onClick={() => setBillingCycle('annual')}
                 className={`px-4 py-2 text-xs font-extrabold rounded-lg transition-all cursor-pointer text-center ${billingCycle === 'annual'
-                    ? 'bg-[#FFD400] text-black shadow-xs'
+                    ? 'bg-brand-500 text-black shadow-xs'
                     : 'text-slate-655 hover:bg-slate-200'
                   }`}
               >
@@ -754,7 +754,7 @@ export default function MembershipPlans() {
             <button
               type="button"
               onClick={() => handleOpenWizard('create')}
-              className="bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 w-full sm:w-auto"
+              className="bg-brand-500 hover:bg-brand-600 text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 w-full sm:w-auto"
             >
               <Plus className="w-4 h-4" /> Create Plan
             </button>
@@ -889,7 +889,7 @@ export default function MembershipPlans() {
                 key={subTab.id}
                 onClick={() => setActiveSubTab(subTab.id)}
                 className={`flex items-center gap-2 px-4 py-2.5 font-extrabold text-xs rounded-xl transition-all cursor-pointer border inline-flex shrink-0 ${isActive
-                    ? 'bg-[#FFD400] text-black border-black border-2 shadow-xs font-black'
+                    ? 'bg-brand-500 text-black border-black border-2 shadow-xs font-black'
                     : 'bg-slate-600 hover:bg-slate-700 text-slate-100 border-transparent'
                   }`}
               >
@@ -913,7 +913,7 @@ export default function MembershipPlans() {
                     placeholder="Search plans name or ID..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2.5 bg-[#F8FAFC] border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none placeholder:text-slate-400 text-slate-800"
+                    className="w-full pl-9 pr-4 py-2.5 bg-[#F8FAFC] border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none placeholder:text-slate-400 text-slate-800"
                   />
                   <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
                 </div>
@@ -969,7 +969,7 @@ export default function MembershipPlans() {
                 <button
                   type="button"
                   onClick={() => handleOpenWizard('create')}
-                  className="flex-1 sm:flex-none bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                  className="flex-1 sm:flex-none bg-brand-500 hover:bg-brand-600 text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5"
                 >
                   <Plus className="w-4 h-4" /> Create Plan
                 </button>
@@ -984,7 +984,7 @@ export default function MembershipPlans() {
                   <select
                     value={filterState}
                     onChange={(e) => setFilterState(e.target.value)}
-                    className="w-full sm:w-[180px] border border-slate-200 bg-white px-3 py-2 rounded-xl focus:outline-none focus:border-[#FFD400] text-slate-700 font-bold cursor-pointer"
+                    className="w-full sm:w-[180px] border border-slate-200 bg-white px-3 py-2 rounded-xl focus:outline-none focus:border-brand-500 text-slate-700 font-bold cursor-pointer"
                   >
                     <option value="All States">All States</option>
                     <option value="Published">Published</option>
@@ -1000,7 +1000,7 @@ export default function MembershipPlans() {
                     placeholder="e.g. 100"
                     value={filterMinPrice}
                     onChange={(e) => setFilterMinPrice(e.target.value)}
-                    className="w-full sm:w-36 border border-slate-200 px-3 py-2 rounded-xl focus:outline-none focus:border-[#FFD400] text-slate-700 font-bold"
+                    className="w-full sm:w-36 border border-slate-200 px-3 py-2 rounded-xl focus:outline-none focus:border-brand-500 text-slate-700 font-bold"
                   />
                 </div>
 
@@ -1011,7 +1011,7 @@ export default function MembershipPlans() {
                     placeholder="e.g. 2000"
                     value={filterMaxPrice}
                     onChange={(e) => setFilterMaxPrice(e.target.value)}
-                    className="w-full sm:w-36 border border-slate-200 px-3 py-2 rounded-xl focus:outline-none focus:border-[#FFD400] text-slate-700 font-bold"
+                    className="w-full sm:w-36 border border-slate-200 px-3 py-2 rounded-xl focus:outline-none focus:border-brand-500 text-slate-700 font-bold"
                   />
                 </div>
 
@@ -1026,7 +1026,7 @@ export default function MembershipPlans() {
                   <button
                     type="button"
                     onClick={handleApplyFilters}
-                    className="flex-1 sm:flex-none px-6 py-2.5 bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold rounded-xl shadow-xs transition-colors"
+                    className="flex-1 sm:flex-none px-6 py-2.5 bg-brand-500 hover:bg-brand-600 text-black font-extrabold rounded-xl shadow-xs transition-colors"
                   >
                     Apply
                   </button>
@@ -1301,7 +1301,7 @@ export default function MembershipPlans() {
                   placeholder="Search codes or campaign"
                   value={promoSearchQuery}
                   onChange={(e) => setPromoSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 bg-[#F8FAFC] border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none placeholder:text-slate-400 text-slate-800 font-bold"
+                  className="w-full pl-9 pr-4 py-2.5 bg-[#F8FAFC] border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none placeholder:text-slate-400 text-slate-800 font-bold"
                 />
                 <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
               </div>
@@ -1309,7 +1309,7 @@ export default function MembershipPlans() {
               <button
                 type="button"
                 onClick={() => setShowPromoModal(true)}
-                className="bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 w-full sm:w-auto"
+                className="bg-brand-500 hover:bg-brand-600 text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 w-full sm:w-auto"
               >
                 <Plus className="w-4 h-4" /> Add Coupon Code
               </button>
@@ -1364,7 +1364,7 @@ export default function MembershipPlans() {
                               <div className="flex items-center gap-2 w-full lg:w-auto justify-end">
                                 <span className="text-slate-800 font-bold">{p.redemptions}</span>
                                 <div className="w-full lg:w-16 max-w-[100px] bg-slate-100 h-1.5 rounded-full overflow-hidden shrink-0">
-                                  <div className="bg-[#FFD400] h-full" style={{ width: `${percent}%` }} />
+                                  <div className="bg-brand-500 h-full" style={{ width: `${percent}%` }} />
                                 </div>
                               </div>
                             </td>
@@ -1666,11 +1666,11 @@ export default function MembershipPlans() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-bold text-slate-700">
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Stripe Publishable API Key</label>
-                    <input type="text" value={gatewayConfig.stripePublishableKey || ''} onChange={(e) => setGatewayConfig({ ...gatewayConfig, stripePublishableKey: e.target.value })} className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] rounded-xl focus:outline-none font-mono" />
+                    <input type="text" value={gatewayConfig.stripePublishableKey || ''} onChange={(e) => setGatewayConfig({ ...gatewayConfig, stripePublishableKey: e.target.value })} className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 rounded-xl focus:outline-none font-mono" />
                   </div>
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Stripe Secret Signature Key</label>
-                    <input type="password" value={gatewayConfig.stripeSecretKey || ''} onChange={(e) => setGatewayConfig({ ...gatewayConfig, stripeSecretKey: e.target.value })} className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] rounded-xl focus:outline-none font-mono" />
+                    <input type="password" value={gatewayConfig.stripeSecretKey || ''} onChange={(e) => setGatewayConfig({ ...gatewayConfig, stripeSecretKey: e.target.value })} className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 rounded-xl focus:outline-none font-mono" />
                   </div>
                 </div>
               </div>
@@ -1692,11 +1692,11 @@ export default function MembershipPlans() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-bold text-slate-700">
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">ACH Clearing Routing Transit Number</label>
-                    <input type="text" value={gatewayConfig.achRoutingNumber || ''} onChange={(e) => setGatewayConfig({ ...gatewayConfig, achRoutingNumber: e.target.value })} className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] rounded-xl focus:outline-none" />
+                    <input type="text" value={gatewayConfig.achRoutingNumber || ''} onChange={(e) => setGatewayConfig({ ...gatewayConfig, achRoutingNumber: e.target.value })} className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 rounded-xl focus:outline-none" />
                   </div>
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">ACH Corporate Depositors Account Number</label>
-                    <input type="password" value={gatewayConfig.achAccountNumber || ''} onChange={(e) => setGatewayConfig({ ...gatewayConfig, achAccountNumber: e.target.value })} className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] rounded-xl focus:outline-none font-mono" />
+                    <input type="password" value={gatewayConfig.achAccountNumber || ''} onChange={(e) => setGatewayConfig({ ...gatewayConfig, achAccountNumber: e.target.value })} className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 rounded-xl focus:outline-none font-mono" />
                   </div>
                 </div>
               </div>
@@ -1710,15 +1710,15 @@ export default function MembershipPlans() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-bold text-slate-700">
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Wire Bank Name</label>
-                    <input type="text" value={gatewayConfig.wireBankName || ''} onChange={(e) => setGatewayConfig({ ...gatewayConfig, wireBankName: e.target.value })} className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] rounded-xl focus:outline-none" />
+                    <input type="text" value={gatewayConfig.wireBankName || ''} onChange={(e) => setGatewayConfig({ ...gatewayConfig, wireBankName: e.target.value })} className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 rounded-xl focus:outline-none" />
                   </div>
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Swift/BIC Routing Code</label>
-                    <input type="text" value={gatewayConfig.wireSwiftCode || ''} onChange={(e) => setGatewayConfig({ ...gatewayConfig, wireSwiftCode: e.target.value })} className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] rounded-xl focus:outline-none font-mono" />
+                    <input type="text" value={gatewayConfig.wireSwiftCode || ''} onChange={(e) => setGatewayConfig({ ...gatewayConfig, wireSwiftCode: e.target.value })} className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 rounded-xl focus:outline-none font-mono" />
                   </div>
                   <div>
                     <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Wire Account Number</label>
-                    <input type="password" value={gatewayConfig.wireAccountNumber || ''} onChange={(e) => setGatewayConfig({ ...gatewayConfig, wireAccountNumber: e.target.value })} className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] rounded-xl focus:outline-none font-mono" />
+                    <input type="password" value={gatewayConfig.wireAccountNumber || ''} onChange={(e) => setGatewayConfig({ ...gatewayConfig, wireAccountNumber: e.target.value })} className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 rounded-xl focus:outline-none font-mono" />
                   </div>
                 </div>
               </div>
@@ -1731,13 +1731,13 @@ export default function MembershipPlans() {
                 </label>
                 <div className="text-xs font-bold text-slate-700">
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Default Net Payment Terms Instructions</label>
-                  <textarea rows="3" value={gatewayConfig.manualInstructions || ''} onChange={(e) => setGatewayConfig({ ...gatewayConfig, manualInstructions: e.target.value })} className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] rounded-xl focus:outline-none font-semibold text-slate-800" />
+                  <textarea rows="3" value={gatewayConfig.manualInstructions || ''} onChange={(e) => setGatewayConfig({ ...gatewayConfig, manualInstructions: e.target.value })} className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 rounded-xl focus:outline-none font-semibold text-slate-800" />
                 </div>
               </div>
 
               <button
                 type="submit"
-                className="w-full sm:w-[#250px] bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs py-3 rounded-xl shadow-xs transition-colors cursor-pointer text-center"
+                className="w-full sm:w-[#250px] bg-brand-500 hover:bg-brand-600 text-black font-extrabold text-xs py-3 rounded-xl shadow-xs transition-colors cursor-pointer text-center"
               >
                 Save Gateway configurations
               </button>
@@ -1764,7 +1764,7 @@ export default function MembershipPlans() {
                     <select
                       value={migrationSource}
                       onChange={(e) => setMigrationSource(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
                     >
                       <option value="-- Select Plan --">-- Select Plan --</option>
                       <option value="Starter Tier">Starter Tier</option>
@@ -1778,7 +1778,7 @@ export default function MembershipPlans() {
                     <select
                       value={migrationTarget}
                       onChange={(e) => setMigrationTarget(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
                     >
                       <option value="-- Select Plan --">-- Select Plan --</option>
                       <option value="Starter Tier">Starter Tier</option>
@@ -1791,7 +1791,7 @@ export default function MembershipPlans() {
 
               <button
                 type="submit"
-                className="w-full sm:w-[#250px] bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs py-3 rounded-xl shadow-xs transition-colors cursor-pointer text-center"
+                className="w-full sm:w-[#250px] bg-brand-500 hover:bg-brand-600 text-black font-extrabold text-xs py-3 rounded-xl shadow-xs transition-colors cursor-pointer text-center"
               >
                 Execute Bulk Migration
               </button>
@@ -1811,7 +1811,7 @@ export default function MembershipPlans() {
                   placeholder="Search invoices by company..."
                   value={invoiceSearchQuery}
                   onChange={(e) => setInvoiceSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 bg-[#F8FAFC] border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none placeholder:text-slate-400 text-slate-800 font-bold"
+                  className="w-full pl-9 pr-4 py-2.5 bg-[#F8FAFC] border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none placeholder:text-slate-400 text-slate-800 font-bold"
                 />
                 <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
               </div>
@@ -1821,7 +1821,7 @@ export default function MembershipPlans() {
                 <select
                   value={invoiceStatusFilter}
                   onChange={(e) => setInvoiceStatusFilter(e.target.value)}
-                  className="w-full sm:w-auto border border-slate-200 bg-white px-3 py-2 rounded-xl focus:outline-none focus:border-[#FFD400] text-slate-700 font-bold cursor-pointer min-w-[130px]"
+                  className="w-full sm:w-auto border border-slate-200 bg-white px-3 py-2 rounded-xl focus:outline-none focus:border-brand-500 text-slate-700 font-bold cursor-pointer min-w-[130px]"
                 >
                   <option value="All Invoices">All Invoices</option>
                   <option value="Paid">Paid</option>
@@ -1932,7 +1932,7 @@ export default function MembershipPlans() {
                   placeholder="Search audit actions..."
                   value={auditSearchQuery}
                   onChange={(e) => setAuditSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 bg-[#F8FAFC] border border-slate-200 focus:border-[#FFD400] text-xs rounded-xl focus:outline-none placeholder:text-slate-400 text-slate-800 font-bold"
+                  className="w-full pl-9 pr-4 py-2.5 bg-[#F8FAFC] border border-slate-200 focus:border-brand-500 text-xs rounded-xl focus:outline-none placeholder:text-slate-400 text-slate-800 font-bold"
                 />
                 <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
               </div>
@@ -2001,7 +2001,7 @@ export default function MembershipPlans() {
               ].map((s) => (
                 <div key={s.step} className="flex items-center gap-1.5 shrink-0">
                   <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${wizardStep === s.step
-                      ? 'bg-[#FFD400] text-black'
+                      ? 'bg-brand-500 text-black'
                       : 'bg-slate-100 text-slate-400'
                     }`}>
                     {s.step}
@@ -2027,7 +2027,7 @@ export default function MembershipPlans() {
                         value={formName}
                         onChange={(e) => setFormName(e.target.value)}
                         placeholder="e.g. Premium Plus"
-                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] rounded-xl focus:outline-none text-slate-800 text-xs font-bold"
+                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 rounded-xl focus:outline-none text-slate-800 text-xs font-bold"
                       />
                     </div>
                     <div>
@@ -2038,7 +2038,7 @@ export default function MembershipPlans() {
                         value={formVersion}
                         onChange={(e) => setFormVersion(e.target.value)}
                         placeholder="1.0.0"
-                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] rounded-xl focus:outline-none text-slate-800 text-xs font-bold font-mono"
+                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 rounded-xl focus:outline-none text-slate-800 text-xs font-bold font-mono"
                       />
                     </div>
                   </div>
@@ -2048,7 +2048,7 @@ export default function MembershipPlans() {
                     <select
                       value={formStatus}
                       onChange={(e) => setFormStatus(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
                     >
                       <option value="Draft">Draft</option>
                       <option value="Published">Published</option>
@@ -2062,7 +2062,7 @@ export default function MembershipPlans() {
                       value={formDesc}
                       onChange={(e) => setFormDesc(e.target.value)}
                       placeholder="Provide description outline of licensing rules..."
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] rounded-xl focus:outline-none text-slate-800 text-xs font-semibold placeholder:text-slate-400"
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 rounded-xl focus:outline-none text-slate-800 text-xs font-semibold placeholder:text-slate-400"
                     />
                   </div>
 
@@ -2077,7 +2077,7 @@ export default function MembershipPlans() {
                     <button
                       type="button"
                       onClick={() => setWizardStep(2)}
-                      className="bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+                      className="bg-brand-500 hover:bg-brand-600 text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
                     >
                       Next Step <ArrowRight className="w-3.5 h-3.5" />
                     </button>
@@ -2097,7 +2097,7 @@ export default function MembershipPlans() {
                         <input
                           type="text"
                           defaultValue="50"
-                          className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] rounded-xl focus:outline-none text-slate-800 text-xs font-bold"
+                          className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 rounded-xl focus:outline-none text-slate-800 text-xs font-bold"
                         />
                       </div>
                       <div>
@@ -2105,7 +2105,7 @@ export default function MembershipPlans() {
                         <input
                           type="text"
                           defaultValue="100"
-                          className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] rounded-xl focus:outline-none text-slate-800 text-xs font-bold"
+                          className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 rounded-xl focus:outline-none text-slate-800 text-xs font-bold"
                         />
                       </div>
                       <div>
@@ -2113,7 +2113,7 @@ export default function MembershipPlans() {
                         <input
                           type="text"
                           defaultValue="100"
-                          className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] rounded-xl focus:outline-none text-slate-800 text-xs font-bold"
+                          className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 rounded-xl focus:outline-none text-slate-800 text-xs font-bold"
                         />
                       </div>
                       <div>
@@ -2121,7 +2121,7 @@ export default function MembershipPlans() {
                         <input
                           type="text"
                           defaultValue="100"
-                          className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] rounded-xl focus:outline-none text-slate-800 text-xs font-bold"
+                          className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 rounded-xl focus:outline-none text-slate-800 text-xs font-bold"
                         />
                       </div>
                     </div>
@@ -2138,7 +2138,7 @@ export default function MembershipPlans() {
                     <button
                       type="button"
                       onClick={() => setWizardStep(3)}
-                      className="bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+                      className="bg-brand-500 hover:bg-brand-600 text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
                     >
                       Next Step <ArrowRight className="w-3.5 h-3.5" />
                     </button>
@@ -2173,7 +2173,7 @@ export default function MembershipPlans() {
                     <button
                       type="button"
                       onClick={() => setWizardStep(4)}
-                      className="bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+                      className="bg-brand-500 hover:bg-brand-600 text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
                     >
                       Next Step <ArrowRight className="w-3.5 h-3.5" />
                     </button>
@@ -2193,7 +2193,7 @@ export default function MembershipPlans() {
                         <input
                           type="number"
                           defaultValue="499"
-                          className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] rounded-xl focus:outline-none text-slate-800 text-xs font-bold"
+                          className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 rounded-xl focus:outline-none text-slate-800 text-xs font-bold"
                         />
                       </div>
                       <div>
@@ -2201,7 +2201,7 @@ export default function MembershipPlans() {
                         <input
                           type="number"
                           defaultValue="4990"
-                          className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] rounded-xl focus:outline-none text-slate-800 text-xs font-bold"
+                          className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 rounded-xl focus:outline-none text-slate-800 text-xs font-bold"
                         />
                       </div>
                       <div>
@@ -2209,7 +2209,7 @@ export default function MembershipPlans() {
                         <input
                           type="number"
                           defaultValue="14"
-                          className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] rounded-xl focus:outline-none text-slate-800 text-xs font-bold"
+                          className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 rounded-xl focus:outline-none text-slate-800 text-xs font-bold"
                         />
                       </div>
                     </div>
@@ -2226,7 +2226,7 @@ export default function MembershipPlans() {
                     <button
                       type="button"
                       onClick={() => setWizardStep(5)}
-                      className="bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+                      className="bg-brand-500 hover:bg-brand-600 text-black font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
                     >
                       Next Step <ArrowRight className="w-3.5 h-3.5" />
                     </button>
@@ -2352,7 +2352,7 @@ export default function MembershipPlans() {
                   value={promoCode}
                   onChange={(e) => setPromoCode(e.target.value)}
                   placeholder="e.g. OFF50PCT"
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] rounded-xl focus:outline-none text-slate-800 text-xs font-bold font-mono placeholder:text-slate-400"
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 rounded-xl focus:outline-none text-slate-800 text-xs font-bold font-mono placeholder:text-slate-400"
                 />
               </div>
 
@@ -2361,7 +2361,7 @@ export default function MembershipPlans() {
                 <select
                   value={promoType}
                   onChange={(e) => setPromoType(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] text-xs font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 text-xs font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
                 >
                   <option value="Percentage Off (%)">Percentage Off (%)</option>
                   <option value="Fixed Value Off ($)">Fixed Value Off ($)</option>
@@ -2377,7 +2377,7 @@ export default function MembershipPlans() {
                   value={promoValue}
                   onChange={(e) => setPromoValue(e.target.value)}
                   placeholder="e.g. 10 or 30"
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] rounded-xl focus:outline-none text-slate-800 text-xs font-bold placeholder:text-slate-400"
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 rounded-xl focus:outline-none text-slate-800 text-xs font-bold placeholder:text-slate-400"
                 />
               </div>
 
@@ -2389,7 +2389,7 @@ export default function MembershipPlans() {
                   value={promoCampaignName}
                   onChange={(e) => setPromoCampaignName(e.target.value)}
                   placeholder="e.g. Winter Sales Kickoff"
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] rounded-xl focus:outline-none text-slate-800 text-xs font-bold placeholder:text-slate-400"
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 rounded-xl focus:outline-none text-slate-800 text-xs font-bold placeholder:text-slate-400"
                 />
               </div>
 
@@ -2400,7 +2400,7 @@ export default function MembershipPlans() {
                   required
                   value={promoExpiryDate}
                   onChange={(e) => setPromoExpiryDate(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] rounded-xl focus:outline-none text-slate-800 text-xs font-bold cursor-pointer"
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 rounded-xl focus:outline-none text-slate-800 text-xs font-bold cursor-pointer"
                 />
               </div>
 
@@ -2411,13 +2411,13 @@ export default function MembershipPlans() {
                   required
                   value={promoLimit}
                   onChange={(e) => setPromoLimit(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-[#FFD400] rounded-xl focus:outline-none text-slate-800 text-xs font-bold"
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 rounded-xl focus:outline-none text-slate-800 text-xs font-bold"
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full bg-[#FFD400] hover:bg-[#FFC800] text-black font-extrabold text-xs py-3 rounded-xl shadow-xs transition-colors cursor-pointer mt-2 text-center"
+                className="w-full bg-brand-500 hover:bg-brand-600 text-black font-extrabold text-xs py-3 rounded-xl shadow-xs transition-colors cursor-pointer mt-2 text-center"
               >
                 Launch Promotional Code
               </button>
@@ -2498,7 +2498,7 @@ export default function MembershipPlans() {
                       <select
                         value={versionCompareA}
                         onChange={(e) => setVersionCompareA(e.target.value)}
-                        className={`w-full px-3 py-2.5 border rounded-2xl focus:outline-none focus:border-[#FFD400] text-xs font-bold appearance-none cursor-pointer pr-8 ${versionCompareA !== '-- Select A --' ? 'border-[#FFD400] border-2' : 'border-slate-200'
+                        className={`w-full px-3 py-2.5 border rounded-2xl focus:outline-none focus:border-brand-500 text-xs font-bold appearance-none cursor-pointer pr-8 ${versionCompareA !== '-- Select A --' ? 'border-brand-500 border-2' : 'border-slate-200'
                           } text-slate-700 bg-white`}
                       >
                         <option>-- Select A --</option>
@@ -2514,7 +2514,7 @@ export default function MembershipPlans() {
                       <select
                         value={versionCompareB}
                         onChange={(e) => setVersionCompareB(e.target.value)}
-                        className="w-full px-3 py-2.5 border border-slate-200 rounded-2xl focus:outline-none focus:border-[#FFD400] text-xs font-bold appearance-none cursor-pointer pr-8 text-slate-700 bg-white"
+                        className="w-full px-3 py-2.5 border border-slate-200 rounded-2xl focus:outline-none focus:border-brand-500 text-xs font-bold appearance-none cursor-pointer pr-8 text-slate-700 bg-white"
                       >
                         <option>-- Select B --</option>
                         <option>v1.0.0</option>
@@ -2532,7 +2532,7 @@ export default function MembershipPlans() {
                       showNotification(`Comparing ${versioningPlan.name}: ${versionCompareA} vs ${versionCompareB}`);
                     }
                   }}
-                  className="w-full bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-sm py-3 rounded-2xl shadow-sm transition-all cursor-pointer"
+                  className="w-full bg-[#FFB020] hover:bg-brand-600 text-slate-900 font-extrabold text-sm py-3 rounded-2xl shadow-sm transition-all cursor-pointer"
                 >
                   Compare Selected Versions
                 </button>
@@ -2616,7 +2616,7 @@ export default function MembershipPlans() {
                     showNotification(`Invoice ${selectedInvoice.invoiceNo} downloaded as PDF.`);
                     setShowReceiptModal(false);
                   }}
-                  className="flex-1 bg-[#FFB020] hover:bg-[#FFC800] text-slate-900 font-extrabold text-xs py-3 rounded-2xl shadow-sm transition-all cursor-pointer text-center"
+                  className="flex-1 bg-[#FFB020] hover:bg-brand-600 text-slate-900 font-extrabold text-xs py-3 rounded-2xl shadow-sm transition-all cursor-pointer text-center"
                 >
                   Download PDF
                 </button>

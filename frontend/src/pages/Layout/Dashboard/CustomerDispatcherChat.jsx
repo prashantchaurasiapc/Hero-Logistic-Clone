@@ -292,7 +292,7 @@ const CustomerDispatcherChat = () => {
                   <div
                     style={{
                       ...S.messageBubble,
-                      backgroundColor: isCust ? '#FFD400' : '#f8fafc',
+                      backgroundColor: isCust ? 'var(--primary-color)' : '#f8fafc',
                       borderColor: isCust ? '#FFE082' : '#e2e8f0',
                       color: isCust ? '#000000' : '#334155',
                       borderRadius: isCust ? '12px 12px 0 12px' : '12px 12px 12px 0'

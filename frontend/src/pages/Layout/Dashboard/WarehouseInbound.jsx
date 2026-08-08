@@ -355,7 +355,7 @@ export default function WarehouseInbound() {
           padding: 0 18px;
           border-radius: 6px;
           border: none;
-          background: #FFD400;
+          background: var(--primary-color);
           font-size: 11.5px;
           font-weight: 800;
           color: #0F172A;
@@ -524,7 +524,7 @@ export default function WarehouseInbound() {
         }
 
         .item-entry-tabs button.active {
-          background: #FFD400;
+          background: var(--primary-color);
           color: #0F172A;
           font-weight: 800;
         }
@@ -549,7 +549,7 @@ export default function WarehouseInbound() {
           width: 100%;
           border-radius: 6px;
           border: none;
-          background: #FFD400;
+          background: var(--primary-color);
           font-size: 11px;
           font-weight: 800;
           color: #0F172A;
@@ -735,7 +735,7 @@ export default function WarehouseInbound() {
         }
 
         .dropzone-box:hover {
-          border-color: #FFD400;
+          border-color: var(--primary-color);
           background: #FFFFFF;
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
         }

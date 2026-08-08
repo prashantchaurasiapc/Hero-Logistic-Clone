@@ -87,27 +87,27 @@ export default function DispatcherLoads() {
         const formattedLoads = res.data.data.map(dbLoad => {
           // You might have to adjust mapping depending on your exact backend model names
           return {
-            id: dbLoad.id || `LD-${Math.floor(Math.random() * 10000)}`,
+            id: dbLoad.loadRef || dbLoad.id,
             dbId: dbLoad.id, // real db ID
-            status: dbLoad.status || 'In Transit',
-            statusStyle: dbLoad.status === 'In Transit' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-              dbLoad.status === 'En Route' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                dbLoad.status === 'At Pickup' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                  'bg-slate-100 text-slate-700 border-slate-200',
-            accentColor: dbLoad.status === 'In Transit' ? 'border-l-emerald-500' :
-              dbLoad.status === 'En Route' ? 'border-l-blue-500' :
-                dbLoad.status === 'At Pickup' ? 'border-l-amber-500' : 'border-l-slate-400',
-            driver: dbLoad.driverName || 'Unassigned',
+            status: dbLoad.status === 'IN_TRANSIT' ? 'In Transit' : dbLoad.status === 'ASSIGNED' ? 'En Route' : dbLoad.status === 'PLANNED' ? 'Planned' : dbLoad.status || 'In Transit',
+            statusStyle: dbLoad.status === 'IN_TRANSIT' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+              dbLoad.status === 'ASSIGNED' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+              dbLoad.status === 'PLANNED' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+              'bg-slate-100 text-slate-700 border-slate-200',
+            accentColor: dbLoad.status === 'IN_TRANSIT' ? 'border-l-emerald-500' :
+              dbLoad.status === 'ASSIGNED' ? 'border-l-blue-500' :
+              dbLoad.status === 'PLANNED' ? 'border-l-amber-500' : 'border-l-slate-400',
+            driver: dbLoad.driver ? `${dbLoad.driver.firstName} ${dbLoad.driver.lastName}` : 'Unassigned',
             driverRole: 'Car Carrier',
-            driverAvatar: 'https://ui-avatars.com/api/?name=' + (dbLoad.driverName || 'Unassigned'),
-            driverPhone: dbLoad.driverPhone || 'N/A',
+            driverAvatar: 'https://ui-avatars.com/api/?name=' + (dbLoad.driver ? `${dbLoad.driver.firstName}+${dbLoad.driver.lastName}` : 'Unassigned'),
+            driverPhone: dbLoad.driver?.phone || 'N/A',
             driverStatus: 'On Duty',
-            routeFrom: dbLoad.pickupLocation || 'Unknown',
-            routeTo: dbLoad.deliveryLocation || 'Unknown',
-            customer: dbLoad.customerName || 'Unknown Customer',
-            vehicle: dbLoad.vehicleId || 'N/A',
+            routeFrom: dbLoad.notes && dbLoad.notes.includes(' to ') ? dbLoad.notes.split(' to ')[0] : 'Unknown',
+            routeTo: dbLoad.notes && dbLoad.notes.includes(' to ') ? dbLoad.notes.split(' to ')[1] : 'Unknown',
+            customer: dbLoad.customer ? dbLoad.customer.name : 'Unknown Customer',
+            vehicle: dbLoad.truck ? `${dbLoad.truck.make} ${dbLoad.truck.model}` : 'N/A',
             trailer: dbLoad.trailerId || 'N/A',
-            rego: 'NEW-999',
+            rego: dbLoad.truck?.rego || 'NEW-999',
             truckPhoto: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&q=80&w=300',
             reqDate: dbLoad.scheduledDate ? new Date(dbLoad.scheduledDate).toLocaleDateString() : 'N/A',
             reqTime: '05:00 PM',
@@ -138,7 +138,32 @@ export default function DispatcherLoads() {
   // Load list end
 
   // Currently Selected Load details
-  const activeLoadDetails = masterLoads.find(l => l.id === selectedLoadId) || masterLoads[0];
+  const activeLoadDetails = masterLoads.find(l => l.id === selectedLoadId) || masterLoads[0] || {
+    id: 'N/A',
+    status: 'N/A',
+    statusStyle: 'bg-slate-100 text-slate-700 border-slate-200',
+    accentColor: 'border-l-slate-400',
+    driver: 'Unassigned',
+    driverRole: 'N/A',
+    driverAvatar: 'https://ui-avatars.com/api/?name=Unassigned',
+    driverPhone: 'N/A',
+    driverStatus: 'N/A',
+    routeFrom: 'N/A',
+    routeTo: 'N/A',
+    customer: 'N/A',
+    vehicle: 'N/A',
+    trailer: 'N/A',
+    rego: 'N/A',
+    truckPhoto: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&q=80&w=300',
+    reqDate: 'N/A',
+    reqTime: 'N/A',
+    progressStep: 'N/A',
+    activeDotsCount: 0,
+    dotColor: 'bg-slate-500',
+    lineColor: 'bg-slate-500',
+    stopsCount: 0,
+    itemsCount: 0
+  };
 
   // Filter loads
   const filteredLoads = masterLoads.filter(load => {
