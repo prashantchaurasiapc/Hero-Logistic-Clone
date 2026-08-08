@@ -169,7 +169,9 @@ enum LoadStatus {
   PLANNED
   ASSIGNED
   IN_TRANSIT
+  ACTIVE
   DELIVERED
+  COMPLETED
   CANCELLED
 }
 
@@ -263,6 +265,9 @@ enum MovementType {
   STAGE
   DISPATCH
   RETURN
+  INBOUND
+  OUTBOUND
+  ADJUSTMENT
 }
 
 enum LeadStage {
@@ -838,6 +843,9 @@ model Driver {
   // Relations
   companyId String
   company   Company @relation(fields: [companyId], references: [id])
+
+  warehouseId String?
+  warehouse   Warehouse? @relation(fields: [warehouseId], references: [id])
 
   userId String? @unique // Link to User for app login credentials
   user   User?   @relation("DriverUser", fields: [userId], references: [id])
@@ -1442,8 +1450,8 @@ model Report {
   description String?        @db.Text
   metrics     String // JSON array of selected metrics
 
-  createdBy String
-  creator   User   @relation("ReportCreator", fields: [createdBy], references: [id])
+  createdBy String?
+  creator   User?   @relation("ReportCreator", fields: [createdBy], references: [id])
 
   companyId String
   company   Company @relation(fields: [companyId], references: [id])
@@ -1639,18 +1647,29 @@ model RouteStop {
 }
 
 model LoadItem {
-  id     String @id @default(uuid())
-  loadId String
-  load   Load   @relation(fields: [loadId], references: [id])
+  id     String  @id @default(uuid())
+  loadId String?
+  load   Load?   @relation(fields: [loadId], references: [id])
 
   customerId String?
   customer   Customer? @relation(fields: [customerId], references: [id])
 
-  pickupStopId String
-  pickupStop   RouteStop @relation("PickupStop", fields: [pickupStopId], references: [id])
+  pickupStopId String?
+  pickupStop   RouteStop? @relation("PickupStop", fields: [pickupStopId], references: [id])
 
-  dropoffStopId String
-  dropoffStop   RouteStop @relation("DropoffStop", fields: [dropoffStopId], references: [id])
+  dropoffStopId String?
+  dropoffStop   RouteStop? @relation("DropoffStop", fields: [dropoffStopId], references: [id])
+
+  sku         String?
+  description String?
+  quantity    Int?    @default(0)
+  unitPrice   Float?  @default(0)
+  minQuantity Int?    @default(0)
+  reservedQty Int?    @default(0)
+  category    String?
+  location    String?
+  unit        String? @default("EA")
+  status      String?
 
   rego            String?
   vin             String?
@@ -1811,6 +1830,7 @@ model Warehouse {
   assets          Asset[]
   inboundReceipts InboundReceipt[]
   stockItems      LoadItem[]
+  warehouseStaff  Driver[]
 
   loadLanes    LoadLane[]
   stagingAreas StagingArea[]
@@ -1862,6 +1882,7 @@ model ItemMovement {
   type         MovementType
   fromLocation String?
   toLocation   String
+  quantity     Int?     @default(1)
 
   // Enhanced for Warehouse Portal Movement History screen
   movementRef String? // e.g., MT-1045
@@ -1880,8 +1901,9 @@ model ItemMovement {
   performedById String?
   performedBy   User?   @relation(fields: [performedById], references: [id])
 
-  status    String   @default("Completed") // Legacy field kept for compat
-  timestamp DateTime @default(now())
+  status      String    @default("Completed") // Legacy field kept for compat
+  performedAt DateTime? @default(now())
+  timestamp   DateTime  @default(now())
 
   @@map("item_movement")
 }
@@ -1896,6 +1918,7 @@ model Asset {
   model        String?
   year         Int?
   serialNumber String?
+  iotDeviceId  String?
 
   status    AssetStatus    @default(ACTIVE)
   condition AssetCondition @default(GOOD)

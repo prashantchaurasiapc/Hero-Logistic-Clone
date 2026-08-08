@@ -14,6 +14,12 @@ router.get('/dashboard', ctrl.getCommandCentre);
 // 2. Loads
 router.get('/loads', ctrl.getLoads);
 router.post('/loads', ctrl.createLoad);
+router.get('/loads/:id/invoices', ctrl.getLoadInvoices);
+router.post('/loads/:id/invoices', ctrl.createLoadInvoice);
+router.get('/loads/:id/documents', ctrl.getLoadDocuments);
+router.post('/loads/:id/documents', ctrl.createLoadDocument);
+router.put('/loads/:id', ctrl.updateLoad);
+router.delete('/loads/:id', ctrl.deleteLoad);
 
 // 3. Live Tracking
 router.get('/live-tracking', ctrl.getLiveTracking);
@@ -39,6 +45,25 @@ router.post('/assets', ctrl.createAsset);
 // 8. Warehouse
 router.get('/warehouse', ctrl.getWarehouses);
 router.post('/warehouse', ctrl.createWarehouse);
+router.put('/warehouse/:id', ctrl.updateWarehouse);
+router.delete('/warehouse/:id', ctrl.deleteWarehouse);
+router.get('/warehouse/:id/locations', ctrl.getWarehouseLocations);
+router.post('/warehouse/:id/locations', ctrl.createWarehouseLocation);
+router.delete('/warehouse/locations/:locationId', ctrl.deleteWarehouseLocation);
+
+// Warehouse Sub-resources (Stock, Movements, Pick Tasks, Staff, Equipment)
+router.get('/warehouse/:id/stock', ctrl.getWarehouseStock);
+router.post('/warehouse/:id/stock', ctrl.createWarehouseStock);
+router.get('/warehouse/:id/movements', ctrl.getWarehouseMovements);
+router.post('/warehouse/:id/movements', ctrl.createWarehouseMovement);
+router.get('/warehouse/:id/pick-tasks', ctrl.getWarehousePickTasks);
+router.post('/warehouse/:id/pick-tasks', ctrl.createWarehousePickTask);
+router.get('/warehouse/:id/staff', ctrl.getWarehouseStaff);
+router.post('/warehouse/:id/staff', ctrl.createWarehouseStaff);
+router.get('/warehouse/:id/equipment', ctrl.getWarehouseEquipment);
+router.post('/warehouse/:id/equipment', ctrl.createWarehouseEquipment);
+
+router.get('/warehouse/:id/sub/:subType', ctrl.getWarehouseSubData);
 
 // 9. Pricing & Rate Matrix
 router.get('/pricing', ctrl.getPricing);                                              // subscription plans (legacy)
@@ -78,6 +103,10 @@ router.delete('/documents/:id', ctrl.deleteDocument);                           
 
 // 13. Reports & Analytics
 router.get('/reports', ctrl.getReports);
+router.post('/reports/custom', ctrl.createCustomReport);
+router.post('/reports/schedules', ctrl.createReportSchedule);
+router.get('/reports/export', ctrl.exportReports);
+router.post('/reports/favourites/toggle', ctrl.toggleFavouriteReport);
 
 // 14. Messages
 router.get('/messages', ctrl.getMessages);

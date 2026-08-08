@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../services/api';
 
 // === ICONS ===
 const SearchIcon = () => (
@@ -61,9 +62,9 @@ const WifiIcon = ({ color }) => (
     <path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line>
   </svg>
 );
-const CodeIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline>
+const ShieldIcon = ({ color }) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
   </svg>
 );
 const SmallCircleIcon = ({ color }) => (
@@ -71,84 +72,189 @@ const SmallCircleIcon = ({ color }) => (
     <circle cx="12" cy="12" r="10"></circle>
   </svg>
 );
-const ActivityIcon = ({ color }) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-  </svg>
-);
 const UserPlusIcon = ({ color }) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line>
-  </svg>
-);
-const PlusCircleIcon = ({ color }) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line>
-  </svg>
-);
-const Lock2Icon = ({ color }) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-  </svg>
-);
-const ShieldIcon = ({ color }) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color || '#64748B'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+    <circle cx="8.5" cy="7" r="4"></circle>
+    <line x1="20" y1="8" x2="20" y2="14"></line>
+    <line x1="23" y1="11" x2="17" y2="11"></line>
   </svg>
 );
 const PrinterIcon = ({ color }) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect>
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color || '#64748B'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="6 9 6 2 18 2 18 9"></polyline>
+    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+    <rect x="6" y="14" width="12" height="8"></rect>
+  </svg>
+);
+const PlusCircleIcon = ({ color }) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color || '#64748B'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"></circle>
+    <line x1="12" y1="8" x2="12" y2="16"></line>
+    <line x1="8" y1="12" x2="16" y2="12"></line>
   </svg>
 );
 const ClipboardCheckIcon = ({ color }) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><polyline points="9 14 11 16 15 12"></polyline>
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color || '#64748B'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path>
+    <rect x="9" y="3" width="6" height="4" rx="1"></rect>
+    <path d="M9 14l2 2 4-4"></path>
+  </svg>
+);
+const Lock2Icon = ({ color }) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color || '#64748B'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
   </svg>
 );
 const PieChartIcon = ({ color }) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path>
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color || '#64748B'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
+    <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
   </svg>
 );
 
-const mockStaff = [
-  { id: 'S-1001', name: 'James Patel', initials: 'JP', role: 'Warehouse Manager', roleColor: '#3B82F6', roleBg: '#EFF6FF', shift: 'Day (06:00 - 14:00)', loc: 'Main Storage A1', phone: '+61 2 9756 4321', status: 'Active', due: '15 Jun 2025', dueColor: '#EF4444' },
-  { id: 'S-1002', name: 'Sarah Mitchell', initials: 'SM', role: 'Supervisor', roleColor: '#3B82F6', roleBg: '#EFF6FF', shift: 'Day (06:00 - 14:00)', loc: 'Dispatch Area D1', phone: '+61 412 345 678', status: 'Active', due: '20 Jun 2025', dueColor: '#1E293B' },
-  { id: 'S-1003', name: 'Lisa Chen', initials: 'LC', role: 'Storeperson', roleColor: '#22C55E', roleBg: '#F0FDF4', shift: 'Day (06:00 - 14:00)', loc: 'Bulk Storage B1', phone: '+61 400 987 654', status: 'Active', due: '10 Jun 2025', dueColor: '#EF4444' },
-  { id: 'S-1004', name: 'Michael Brown', initials: 'MB', role: 'Picker / Packer', roleColor: '#F59E0B', roleBg: '#FFFBEB', shift: 'Day (06:00 - 14:00)', loc: 'Pick Zone P1', phone: '+61 421 555 321', status: 'Active', due: '25 Jun 2025', dueColor: '#1E293B' },
-  { id: 'S-1005', name: 'Robert Taylor', initials: 'RT', role: 'Forklift Operator', roleColor: '#EF4444', roleBg: '#FEF2F2', shift: 'Day (06:00 - 14:00)', loc: 'Main Storage A2', phone: '+61 422 111 222', status: 'Active', due: '18 Jun 2025', dueColor: '#1E293B' },
-  { id: 'S-1006', name: 'William Carter', initials: 'WC', role: 'Yard Operator', roleColor: '#3B82F6', roleBg: '#EFF6FF', shift: 'Afternoon (14:00 - 22:00)', loc: 'Staging Area S1', phone: '+61 423 333 444', status: 'On Leave', due: '-', dueColor: '#1E293B' },
-  { id: 'S-1007', name: 'Aman Hussain', initials: 'AH', role: 'Picker / Packer', roleColor: '#F59E0B', roleBg: '#FFFBEB', shift: 'Afternoon (14:00 - 22:00)', loc: 'Pick Zone P2', phone: '+61 424 666 555', status: 'Active', due: '02 Jul 2025', dueColor: '#1E293B' },
-  { id: 'S-1008', name: 'Nathan Zubair', initials: 'NZ', role: 'Storeperson', roleColor: '#22C55E', roleBg: '#F0FDF4', shift: 'Night (22:00 - 06:00)', loc: 'Bulk Storage B2', phone: '+61 425 777 888', status: 'Active', due: '22 Jun 2025', dueColor: '#1E293B' },
-];
-
-const mockEquipment = [
-  { id: 'EQ-0001', name: 'Toyota Forklift 2.5T - FL01', type: 'Forklift', typeColor: '#8B5CF6', loc: 'Main Storage A1', status: 'Online', cond: 'Good', condColor: '#22C55E', check: '15 May 2025', service: '10 Jun 2025', serviceColor: '#F59E0B' },
-  { id: 'EQ-0002', name: 'Crown Reach Truck - RT02', type: 'Reach Truck', typeColor: '#3B82F6', loc: 'Bulk Storage B1', status: 'Online', cond: 'Good', condColor: '#22C55E', check: '14 May 2025', service: '18 Jun 2025', serviceColor: '#1E293B' },
-  { id: 'EQ-0003', name: 'Electric Pallet Jack - EPJ03', type: 'Pallet Jack', typeColor: '#22C55E', loc: 'Dispatch Area D1', status: 'Offline', cond: 'Fair', condColor: '#F59E0B', check: '13 May 2025', service: '25 May 2025', serviceColor: '#EF4444' },
-  { id: 'EQ-0004', name: 'Zebra Handheld Scanner - SC04', type: 'Scanner', typeColor: '#F59E0B', loc: 'Pick Zone P1', status: 'Online', cond: 'Good', condColor: '#22C55E', check: '15 May 2025', service: '15 Jul 2025', serviceColor: '#1E293B' },
-  { id: 'EQ-0005', name: 'Stretch Wrapper - SW05', type: 'Packaging', typeColor: '#EF4444', loc: 'Staging Area S1', status: 'Online', cond: 'Good', condColor: '#22C55E', check: '12 May 2025', service: '12 Jun 2025', serviceColor: '#1E293B' },
-  { id: 'EQ-0006', name: 'Battery Charger - CH06', type: 'Charger', typeColor: '#8B5CF6', loc: 'Maintenance Area', status: 'Online', cond: 'Good', condColor: '#22C55E', check: '11 May 2025', service: '11 Jun 2025', serviceColor: '#1E293B' },
-  { id: 'EQ-0007', name: 'Hand Pallet Truck - HPT07', type: 'Pallet Jack', typeColor: '#22C55E', loc: 'Main Storage A2', status: 'Offline', cond: 'Poor', condColor: '#EF4444', check: '10 May 2025', service: 'Overdue', serviceColor: '#EF4444' },
-  { id: 'EQ-0008', name: 'Dock Leveler - DL08', type: 'Dock Equipment', typeColor: '#F59E0B', loc: 'Dispatch Dock D1', status: 'Online', cond: 'Good', condColor: '#22C55E', check: '15 May 2025', service: '15 Aug 2025', serviceColor: '#1E293B' },
-];
-
 export default function WarehouseStaffEquipment({ wh, onBack }) {
-  const [staffList, setStaffList] = React.useState(mockStaff);
-  const [equipmentList, setEquipmentList] = React.useState(mockEquipment);
-  const [showAddStaffModal, setShowAddStaffModal] = React.useState(false);
-  const [modalTab, setModalTab] = React.useState('staff');
-  const [viewStaffModal, setViewStaffModal] = React.useState(null);
-  const [viewEquipmentModal, setViewEquipmentModal] = React.useState(null);
-  const [staffMenuIndex, setStaffMenuIndex] = React.useState(null);
-  const [equipmentMenuIndex, setEquipmentMenuIndex] = React.useState(null);
-  const [toastMessage, setToastMessage] = React.useState('');
+  const [staffList, setStaffList] = useState([]);
+  const [equipmentList, setEquipmentList] = useState([]);
+  const [showAddStaffModal, setShowAddStaffModal] = useState(false);
+  const [modalTab, setModalTab] = useState('staff');
+  const [viewStaffModal, setViewStaffModal] = useState(null);
+  const [viewEquipmentModal, setViewEquipmentModal] = useState(null);
+  const [staffMenuIndex, setStaffMenuIndex] = useState(null);
+  const [equipmentMenuIndex, setEquipmentMenuIndex] = useState(null);
+  const [toastMessage, setToastMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  // Form states for Staff
+  const [staffName, setStaffName] = useState('');
+  const [staffRole, setStaffRole] = useState('Picker / Packer');
+  const [staffShift, setStaffShift] = useState('Day (06:00 - 14:00)');
+  const [submittingStaff, setSubmittingStaff] = useState(false);
+
+  // Form states for Equipment
+  const [equipName, setEquipName] = useState('');
+  const [equipType, setEquipType] = useState('Forklift');
+  const [equipNextService, setEquipNextService] = useState('');
+  const [equipIotId, setEquipIotId] = useState('');
+  const [isPairingIot, setIsPairingIot] = useState(false);
+  const [submittingEquip, setSubmittingEquip] = useState(false);
 
   const showToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(''), 3000);
   };
+
+  const resetForms = () => {
+    setStaffName('');
+    setStaffRole('Picker / Packer');
+    setStaffShift('Day (06:00 - 14:00)');
+    setEquipName('');
+    setEquipType('Forklift');
+    setEquipNextService('');
+    setEquipIotId('');
+    setIsPairingIot(false);
+  };
+
+  const fetchStaffEquipment = async () => {
+    try {
+      setLoading(true);
+      const whId = wh?.id || 'default';
+      const [staffRes, equipRes] = await Promise.all([
+        api.get(`/company-admin/warehouse/${whId}/staff`).catch(() => null),
+        api.get(`/company-admin/warehouse/${whId}/equipment`).catch(() => null)
+      ]);
+
+      if (staffRes?.data?.success) {
+        const items = staffRes.data.data.items || staffRes.data.data || [];
+        setStaffList(Array.isArray(items) ? items : []);
+      }
+      if (equipRes?.data?.success) {
+        const items = equipRes.data.data.items || equipRes.data.data || [];
+        setEquipmentList(Array.isArray(items) ? items : []);
+      }
+    } catch (e) {
+      console.error('Fetch staff/equipment error:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddStaff = async () => {
+    if (!staffName.trim()) { showToast('⚠️ Staff full name is required'); return; }
+    setSubmittingStaff(true);
+    try {
+      const whId = wh?.id || 'default';
+      const payload = {
+        name: staffName.trim(),
+        role: staffRole,
+        shift: staffShift
+      };
+      const res = await api.post(`/company-admin/warehouse/${whId}/staff`, payload);
+      if (res.data && res.data.success) {
+        showToast('✓ Warehouse staff added successfully!');
+        resetForms();
+        setShowAddStaffModal(false);
+        await fetchStaffEquipment();
+      } else {
+        showToast('❌ Failed to add warehouse staff');
+      }
+    } catch (e) {
+      console.error('Create staff error:', e);
+      showToast('❌ Error creating staff member');
+    } finally {
+      setSubmittingStaff(false);
+    }
+  };
+
+  const handleAddEquipment = async () => {
+    if (!equipName.trim()) { showToast('⚠️ Equipment Name / ID is required'); return; }
+    setSubmittingEquip(true);
+    try {
+      const whId = wh?.id || 'default';
+      const payload = {
+        name: equipName.trim(),
+        type: equipType,
+        nextServiceDate: equipNextService || null,
+        iotDeviceId: equipIotId || null
+      };
+      const res = await api.post(`/company-admin/warehouse/${whId}/equipment`, payload);
+      if (res.data && res.data.success) {
+        showToast('✓ Equipment added successfully!');
+        resetForms();
+        setShowAddStaffModal(false);
+        await fetchStaffEquipment();
+      } else {
+        showToast('❌ Failed to add equipment');
+      }
+    } catch (e) {
+      console.error('Create equipment error:', e);
+      showToast('❌ Error creating equipment asset');
+    } finally {
+      setSubmittingEquip(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStaffEquipment();
+  }, [wh?.id]);
+
+  // Dynamic calculations for Staff
+  const totalStaffCount = staffList.length;
+  const mgrCount = staffList.filter(s => s.role?.includes('Manager')).length;
+  const supCount = staffList.filter(s => s.role?.includes('Supervisor')).length;
+  const storeCount = staffList.filter(s => s.role?.includes('Storeperson')).length;
+  const opCount = staffList.filter(s => s.role?.includes('Operator')).length;
+  const pickerCount = staffList.filter(s => s.role?.includes('Picker') || s.role?.includes('Packer')).length;
+  const calcStaffPct = (cnt) => totalStaffCount > 0 ? ((cnt / totalStaffCount) * 100).toFixed(1) + '%' : '0.0%';
+
+  // Dynamic calculations for Equipment
+  const totalEquipCount = equipmentList.length;
+  const onlineCount = equipmentList.filter(e => e.status === 'Online' || e.status === 'ACTIVE' || e.status === 'Active').length;
+  const offlineCount = equipmentList.filter(e => e.status === 'Offline' || e.status === 'INACTIVE' || e.status === 'Inactive').length;
+  const maintCount = equipmentList.filter(e => e.status === 'Maintenance' || e.status === 'MAINTENANCE').length;
+  const calcEquipPct = (cnt) => totalEquipCount > 0 ? ((cnt / totalEquipCount) * 100).toFixed(1) + '%' : '0.0%';
+
   return (
     <div className="wh-staff-container" style={{ background: '#F8FAFC', minHeight: '100vh', padding: '24px 32px', fontFamily: "'Inter','Outfit',sans-serif", overflowX: 'hidden' }}>
       <style>{`
@@ -165,7 +271,7 @@ export default function WarehouseStaffEquipment({ wh, onBack }) {
             <span>Home</span> <span style={{ color: '#CBD5E1' }}>›</span> <span>Warehouse</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ cursor: 'pointer' }} onClick={onBack}>Warehouse Details</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ color: '#0F172A' }}>Warehouse Staff & Equipment</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-            <h1 style={{ fontSize: 22, fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.5px' }}>Warehouse Staff & Equipment – {wh?.name || 'Sydney Head Office Warehouse'}</h1>
+            <h1 style={{ fontSize: 22, fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.5px' }}>Warehouse Staff & Equipment – {wh?.name || 'Depot Warehouse'}</h1>
             <div style={{ width: 18, height: 18, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 4 }}>
               <ShieldIcon color="#8B5CF6" />
             </div>
@@ -186,15 +292,22 @@ export default function WarehouseStaffEquipment({ wh, onBack }) {
         </div>
       </div>
 
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div style={{ position: 'fixed', top: 20, right: 20, zIndex: 99999, background: '#0F172A', color: '#fff', padding: '10px 16px', borderRadius: 8, fontSize: 12, fontWeight: 700, boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
+          {toastMessage}
+        </div>
+      )}
+
       {/* METRIC CARDS */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 16, marginBottom: 24 }}>
         {[
-          { title: 'WAREHOUSE STAFF', value: '24', subtitle: 'Active staff', color: '#8B5CF6', bg: '#F5F3FF', icon: <UsersIcon color="#8B5CF6" />, link: 'all staff' },
-          { title: 'EQUIPMENT', value: '56', subtitle: 'Total equipment', color: '#22C55E', bg: '#F0FDF4', icon: <BoxIcon color="#22C55E" />, link: 'all equipment' },
-          { title: 'EQUIPMENT ONLINE', value: '42 (75%)', subtitle: 'Currently online', color: '#3B82F6', bg: '#EFF6FF', icon: <WifiIcon color="#3B82F6" />, link: 'live status' },
-          { title: 'MAINTENANCE DUE', value: '6', subtitle: 'Due this month', color: '#F59E0B', bg: '#FFFBEB', icon: <SettingsIcon color="#F59E0B" />, link: 'due items' },
-          { title: 'ACCESS ZONES', value: '12', subtitle: 'Configured zones', color: '#8B5CF6', bg: '#F5F3FF', icon: <LockIcon color="#8B5CF6" />, link: 'zones' },
-          { title: 'TRAINING DUE', value: '8', subtitle: 'Staff training due', color: '#EF4444', bg: '#FEF2F2', icon: <BookOpenIcon color="#EF4444" />, link: 'training' }
+          { title: 'WAREHOUSE STAFF', value: totalStaffCount.toString(), subtitle: 'Active staff', color: '#8B5CF6', bg: '#F5F3FF', icon: <UsersIcon color="#8B5CF6" />, link: 'all staff' },
+          { title: 'EQUIPMENT', value: totalEquipCount.toString(), subtitle: 'Total equipment', color: '#22C55E', bg: '#F0FDF4', icon: <BoxIcon color="#22C55E" />, link: 'all equipment' },
+          { title: 'EQUIPMENT ONLINE', value: onlineCount.toString(), subtitle: `${calcEquipPct(onlineCount)} online`, color: '#3B82F6', bg: '#EFF6FF', icon: <WifiIcon color="#3B82F6" />, link: 'live status' },
+          { title: 'MAINTENANCE DUE', value: maintCount.toString(), subtitle: 'Due this month', color: '#F59E0B', bg: '#FFFBEB', icon: <SettingsIcon color="#F59E0B" />, link: 'due items' },
+          { title: 'ACCESS ZONES', value: '0', subtitle: 'Configured zones', color: '#8B5CF6', bg: '#F5F3FF', icon: <LockIcon color="#8B5CF6" />, link: 'zones' },
+          { title: 'TRAINING DUE', value: '0', subtitle: 'Staff training due', color: '#EF4444', bg: '#FEF2F2', icon: <BookOpenIcon color="#EF4444" />, link: 'training' }
         ].map((stat, i) => (
           <div key={i} style={{ background: '#fff', borderRadius: 12, padding: '16px', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', position: 'relative' }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: '#64748B', letterSpacing: '0.5px', marginBottom: 12 }}>{stat.title}</div>
@@ -222,7 +335,7 @@ export default function WarehouseStaffEquipment({ wh, onBack }) {
           {/* STAFF TABLE */}
           <div style={{ marginBottom: 24 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px' }}>WAREHOUSE STAFF (24)</div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px' }}>WAREHOUSE STAFF ({staffList.length})</div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
               <div style={{ display: 'flex', gap: 10, flex: 1 }}>
@@ -243,7 +356,7 @@ export default function WarehouseStaffEquipment({ wh, onBack }) {
                 <button style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #E2E8F0', fontSize: 12, fontWeight: 600, color: '#1E293B', background: '#fff', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
                   <ExportIcon /> Export
                 </button>
-                <button style={{ padding: '6px 8px', borderRadius: 6, border: '1px solid #E2E8F0', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                <button onClick={fetchStaffEquipment} style={{ padding: '6px 8px', borderRadius: 6, border: '1px solid #E2E8F0', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                   <RefreshIcon />
                 </button>
               </div>
@@ -265,118 +378,44 @@ export default function WarehouseStaffEquipment({ wh, onBack }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {staffList.map((row, idx) => (
-                    <tr key={idx} style={{ borderBottom: '1px solid #E2E8F0' }}>
-                      <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 600, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.id}</td>
-                      <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#F1F5F9', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: '#475569' }}>
-                            {row.initials}
+                  {staffList.length > 0 ? (
+                    staffList.map((row, idx) => (
+                      <tr key={row.id || idx} style={{ borderBottom: '1px solid #E2E8F0' }}>
+                        <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 600, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.id}</td>
+                        <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#F1F5F9', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: '#475569' }}>
+                              {row.initials || 'WM'}
+                            </div>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: '#0F172A' }}>{row.name}</div>
                           </div>
-                          <div style={{ fontSize: 12, fontWeight: 600, color: '#0F172A' }}>{row.name}</div>
-                        </div>
-                      </td>
-                      <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
-                        <span style={{ fontSize: 11, fontWeight: 600, color: row.roleColor, background: row.roleBg, padding: '2px 8px', borderRadius: 4, border: `1px solid ${row.roleBg === '#EFF6FF' ? '#BFDBFE' : row.roleBg === '#F0FDF4' ? '#BBF7D0' : row.roleBg === '#FFFBEB' ? '#FDE68A' : '#FECACA'}` }}>{row.role}</span>
-                      </td>
-                      <td style={{ padding: '12px 16px', fontSize: 11, fontWeight: 500, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.shift}</td>
-                      <td style={{ padding: '12px 16px', fontSize: 11, fontWeight: 500, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.loc}</td>
-                      <td style={{ padding: '12px 16px', fontSize: 11, fontWeight: 500, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.phone}</td>
-                      <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
-                        <span style={{ fontSize: 11, fontWeight: 600, color: row.status === 'Active' ? '#22C55E' : '#F59E0B' }}>{row.status}</span>
-                      </td>
-                      <td style={{ padding: '12px 16px', fontSize: 11, fontWeight: 500, color: row.dueColor, whiteSpace: 'nowrap' }}>{row.due}</td>
-                      <td style={{ padding: '12px 16px', textAlign: 'center', position: 'relative' }}>
-                        <div style={{ display: 'flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
-                          <button
-                            title="View Staff Details"
-                            onClick={() => setViewStaffModal(row)}
-                            style={{ background: '#F1F5F9', border: 'none', borderRadius: 6, cursor: 'pointer', padding: '6px 8px', color: '#475569', transition: 'all 0.15s ease', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                            onMouseEnter={(e) => { e.currentTarget.style.background = '#EEF2FF'; e.currentTarget.style.color = '#4F46E5'; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.background = '#F1F5F9'; e.currentTarget.style.color = '#475569'; }}
-                          >
-                            <EyeIcon />
-                          </button>
-
-                          <div style={{ position: 'relative' }}>
-                            <button
-                              title="More Actions"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setStaffMenuIndex(staffMenuIndex === idx ? null : idx);
-                              }}
-                              style={{ background: staffMenuIndex === idx ? '#EEF2FF' : '#F1F5F9', border: 'none', borderRadius: 6, cursor: 'pointer', padding: '6px 8px', color: staffMenuIndex === idx ? '#4F46E5' : '#475569', transition: 'all 0.15s ease', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                              onMouseEnter={(e) => { e.currentTarget.style.background = '#EEF2FF'; e.currentTarget.style.color = '#4F46E5'; }}
-                              onMouseLeave={(e) => { if (staffMenuIndex !== idx) { e.currentTarget.style.background = '#F1F5F9'; e.currentTarget.style.color = '#475569'; } }}
-                            >
-                              <MoreHorizontalIcon />
-                            </button>
-
-                            {/* Staff Action Menu Dropdown */}
-                            {staffMenuIndex === idx && (
-                              <>
-                                <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setStaffMenuIndex(null)} />
-                                <div style={{ position: 'absolute', right: 0, top: '110%', width: 175, background: '#fff', borderRadius: 10, border: '1px solid #E2E8F0', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)', padding: '6px', zIndex: 100, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                  <button
-                                    onClick={() => { setViewStaffModal(row); setStaffMenuIndex(null); }}
-                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-                                  >
-                                    👁️ View Details
-                                  </button>
-                                  <button
-                                    onClick={() => { showToast(`Contacting ${row.name} at ${row.phone}`); setStaffMenuIndex(null); }}
-                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-                                  >
-                                    📞 Contact Member
-                                  </button>
-                                  <button
-                                    onClick={() => { showToast(`Access permissions updated for ${row.name}`); setStaffMenuIndex(null); }}
-                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-                                  >
-                                    🔒 Manage Access
-                                  </button>
-                                  <div style={{ height: 1, background: '#E2E8F0', margin: '4px 0' }} />
-                                  <button
-                                    onClick={() => {
-                                      setStaffList(prev => prev.map((item, i) => i === idx ? { ...item, status: item.status === 'Active' ? 'On Leave' : 'Active' } : item));
-                                      showToast(`Staff member ${row.name} status updated.`);
-                                      setStaffMenuIndex(null);
-                                    }}
-                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#EF4444', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#FEF2F2'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-                                  >
-                                    ⚡ Toggle Status
-                                  </button>
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        </div>
+                        </td>
+                        <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
+                          <span style={{ fontSize: 11, fontWeight: 600, color: row.roleColor || '#3B82F6', background: row.roleBg || '#EFF6FF', padding: '2px 8px', borderRadius: 4 }}>{row.role}</span>
+                        </td>
+                        <td style={{ padding: '12px 16px', fontSize: 11, fontWeight: 500, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.shift}</td>
+                        <td style={{ padding: '12px 16px', fontSize: 11, fontWeight: 500, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.loc}</td>
+                        <td style={{ padding: '12px 16px', fontSize: 11, fontWeight: 500, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.phone}</td>
+                        <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
+                          <span style={{ fontSize: 11, fontWeight: 600, color: row.status === 'Active' ? '#22C55E' : '#F59E0B' }}>{row.status}</span>
+                        </td>
+                        <td style={{ padding: '12px 16px', fontSize: 11, fontWeight: 500, color: row.dueColor || '#1E293B', whiteSpace: 'nowrap' }}>{row.due}</td>
+                        <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                          <button onClick={() => setViewStaffModal(row)} style={{ background: '#F1F5F9', border: 'none', borderRadius: 6, padding: '6px 8px', cursor: 'pointer' }}><EyeIcon /></button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="9" style={{ padding: '32px 16px', textAlign: 'center', color: '#94A3B8', fontSize: 12, fontWeight: 600 }}>
+                        No warehouse staff registered. Click "Add Staff / Equipment" to add team members.
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
               <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #E2E8F0' }}>
-                <div style={{ fontSize: 12, fontWeight: 500, color: '#64748B' }}>Showing 1 to 8 of 24 staff</div>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <button style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, border: '1px solid #E2E8F0', background: '#fff', cursor: 'pointer', color: '#64748B', fontSize: 12 }}>&lt;</button>
-                  <button style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, border: '1px solid #4F46E5', background: '#EEF2FF', cursor: 'pointer', color: '#4F46E5', fontSize: 12, fontWeight: 600 }}>1</button>
-                  <button style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, border: '1px solid #E2E8F0', background: '#fff', cursor: 'pointer', color: '#1E293B', fontSize: 12, fontWeight: 600 }}>2</button>
-                  <button style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, border: '1px solid #E2E8F0', background: '#fff', cursor: 'pointer', color: '#1E293B', fontSize: 12, fontWeight: 600 }}>3</button>
-                  <button style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, border: '1px solid #E2E8F0', background: '#fff', cursor: 'pointer', color: '#1E293B', fontSize: 12, fontWeight: 600 }}>...</button>
-                  <button style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, border: '1px solid #E2E8F0', background: '#fff', cursor: 'pointer', color: '#64748B', fontSize: 12 }}>&gt;</button>
-                </div>
-                <div style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid #E2E8F0', fontSize: 12, fontWeight: 500, color: '#1E293B', display: 'flex', alignItems: 'center', gap: 6, background: '#fff', cursor: 'pointer' }}>
-                  10 / page <span style={{ fontSize: 9, color: '#94A3B8' }}>▼</span>
-                </div>
+                <div style={{ fontSize: 12, fontWeight: 500, color: '#64748B' }}>Showing {staffList.length} staff</div>
               </div>
             </div>
           </div>
@@ -384,7 +423,7 @@ export default function WarehouseStaffEquipment({ wh, onBack }) {
           {/* EQUIPMENT TABLE */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px' }}>EQUIPMENT (56)</div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px' }}>EQUIPMENT ({equipmentList.length})</div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
               <div style={{ display: 'flex', gap: 10, flex: 1 }}>
@@ -405,7 +444,7 @@ export default function WarehouseStaffEquipment({ wh, onBack }) {
                 <button style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #E2E8F0', fontSize: 12, fontWeight: 600, color: '#1E293B', background: '#fff', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
                   <ExportIcon /> Export
                 </button>
-                <button style={{ padding: '6px 8px', borderRadius: 6, border: '1px solid #E2E8F0', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                <button onClick={fetchStaffEquipment} style={{ padding: '6px 8px', borderRadius: 6, border: '1px solid #E2E8F0', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                   <RefreshIcon />
                 </button>
               </div>
@@ -427,109 +466,43 @@ export default function WarehouseStaffEquipment({ wh, onBack }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {equipmentList.map((row, idx) => (
-                    <tr key={idx} style={{ borderBottom: '1px solid #E2E8F0' }}>
-                      <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 600, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.id}</td>
-                      <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 600, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.name}</td>
-                      <td style={{ padding: '12px 16px', fontSize: 11, fontWeight: 600, color: row.typeColor, whiteSpace: 'nowrap' }}>{row.type}</td>
-                      <td style={{ padding: '12px 16px', fontSize: 11, fontWeight: 500, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.loc}</td>
-                      <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
-                        <span style={{ fontSize: 11, fontWeight: 600, color: row.status === 'Online' ? '#22C55E' : '#EF4444' }}>{row.status}</span>
-                      </td>
-                      <td style={{ padding: '12px 16px', fontSize: 11, fontWeight: 500, color: row.condColor, whiteSpace: 'nowrap' }}>{row.cond}</td>
-                      <td style={{ padding: '12px 16px', fontSize: 11, fontWeight: 500, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.check}</td>
-                      <td style={{ padding: '12px 16px', fontSize: 11, fontWeight: 500, color: row.serviceColor, whiteSpace: 'nowrap' }}>{row.service}</td>
-                      <td style={{ padding: '12px 16px', textAlign: 'center', position: 'relative' }}>
-                        <div style={{ display: 'flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
-                          <button
-                            title="View Equipment Details"
-                            onClick={() => setViewEquipmentModal(row)}
-                            style={{ background: '#F1F5F9', border: 'none', borderRadius: 6, cursor: 'pointer', padding: '6px 8px', color: '#475569', transition: 'all 0.15s ease', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                            onMouseEnter={(e) => { e.currentTarget.style.background = '#EEF2FF'; e.currentTarget.style.color = '#4F46E5'; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.background = '#F1F5F9'; e.currentTarget.style.color = '#475569'; }}
-                          >
-                            <EyeIcon />
-                          </button>
-
-                          <div style={{ position: 'relative' }}>
-                            <button
-                              title="More Actions"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEquipmentMenuIndex(equipmentMenuIndex === idx ? null : idx);
-                              }}
-                              style={{ background: equipmentMenuIndex === idx ? '#EEF2FF' : '#F1F5F9', border: 'none', borderRadius: 6, cursor: 'pointer', padding: '6px 8px', color: equipmentMenuIndex === idx ? '#4F46E5' : '#475569', transition: 'all 0.15s ease', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                              onMouseEnter={(e) => { e.currentTarget.style.background = '#EEF2FF'; e.currentTarget.style.color = '#4F46E5'; }}
-                              onMouseLeave={(e) => { if (equipmentMenuIndex !== idx) { e.currentTarget.style.background = '#F1F5F9'; e.currentTarget.style.color = '#475569'; } }}
-                            >
-                              <MoreHorizontalIcon />
-                            </button>
-
-                            {/* Equipment Action Menu Dropdown */}
-                            {equipmentMenuIndex === idx && (
-                              <>
-                                <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setEquipmentMenuIndex(null)} />
-                                <div style={{ position: 'absolute', right: 0, top: '110%', width: 180, background: '#fff', borderRadius: 10, border: '1px solid #E2E8F0', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)', padding: '6px', zIndex: 100, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                  <button
-                                    onClick={() => { setViewEquipmentModal(row); setEquipmentMenuIndex(null); }}
-                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-                                  >
-                                    👁️ View Details
-                                  </button>
-                                  <button
-                                    onClick={() => { showToast(`Maintenance scheduled for ${row.name}`); setEquipmentMenuIndex(null); }}
-                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-                                  >
-                                    🔧 Schedule Service
-                                  </button>
-                                  <button
-                                    onClick={() => { showToast(`Inspection completed for ${row.name}`); setEquipmentMenuIndex(null); }}
-                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-                                  >
-                                    📋 Equipment Check
-                                  </button>
-                                  <div style={{ height: 1, background: '#E2E8F0', margin: '4px 0' }} />
-                                  <button
-                                    onClick={() => {
-                                      setEquipmentList(prev => prev.map((item, i) => i === idx ? { ...item, status: item.status === 'Online' ? 'Offline' : 'Online' } : item));
-                                      showToast(`Equipment ${row.name} status toggled.`);
-                                      setEquipmentMenuIndex(null);
-                                    }}
-                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#EF4444', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#FEF2F2'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-                                  >
-                                    ⚡ Toggle Status
-                                  </button>
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        </div>
+                  {equipmentList.length > 0 ? (
+                    equipmentList.map((row, idx) => (
+                      <tr key={row.id || idx} style={{ borderBottom: '1px solid #E2E8F0' }}>
+                        <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 600, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.id}</td>
+                        <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 600, color: '#0F172A', whiteSpace: 'nowrap' }}>
+                          <div>{row.name}</div>
+                          {row.iotDeviceId && (
+                            <div style={{ fontSize: 10, fontWeight: 700, color: '#166534', background: '#DCFCE7', padding: '1px 6px', borderRadius: 4, display: 'inline-flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22C55E' }}></span>
+                              IoT: {row.iotDeviceId}
+                            </div>
+                          )}
+                        </td>
+                        <td style={{ padding: '12px 16px', fontSize: 11, fontWeight: 600, color: row.typeColor || '#8B5CF6', whiteSpace: 'nowrap' }}>{row.type}</td>
+                        <td style={{ padding: '12px 16px', fontSize: 11, fontWeight: 500, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.loc}</td>
+                        <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
+                          <span style={{ fontSize: 11, fontWeight: 600, color: row.status === 'Online' ? '#22C55E' : '#EF4444' }}>{row.status}</span>
+                        </td>
+                        <td style={{ padding: '12px 16px', fontSize: 11, fontWeight: 500, color: row.condColor || '#22C55E', whiteSpace: 'nowrap' }}>{row.cond}</td>
+                        <td style={{ padding: '12px 16px', fontSize: 11, fontWeight: 500, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.check}</td>
+                        <td style={{ padding: '12px 16px', fontSize: 11, fontWeight: 500, color: row.serviceColor || '#1E293B', whiteSpace: 'nowrap' }}>{row.service}</td>
+                        <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                          <button onClick={() => setViewEquipmentModal(row)} style={{ background: '#F1F5F9', border: 'none', borderRadius: 6, padding: '6px 8px', cursor: 'pointer' }}><EyeIcon /></button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="9" style={{ padding: '32px 16px', textAlign: 'center', color: '#94A3B8', fontSize: 12, fontWeight: 600 }}>
+                        No equipment registered. Click "Add Staff / Equipment" to add machinery & scanners.
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
               <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #E2E8F0' }}>
-                <div style={{ fontSize: 12, fontWeight: 500, color: '#64748B' }}>Showing 1 to 8 of 56 equipment</div>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <button style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, border: '1px solid #E2E8F0', background: '#fff', cursor: 'pointer', color: '#64748B', fontSize: 12 }}>&lt;</button>
-                  <button style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, border: '1px solid #4F46E5', background: '#EEF2FF', cursor: 'pointer', color: '#4F46E5', fontSize: 12, fontWeight: 600 }}>1</button>
-                  <button style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, border: '1px solid #E2E8F0', background: '#fff', cursor: 'pointer', color: '#1E293B', fontSize: 12, fontWeight: 600 }}>2</button>
-                  <button style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, border: '1px solid #E2E8F0', background: '#fff', cursor: 'pointer', color: '#1E293B', fontSize: 12, fontWeight: 600 }}>3</button>
-                  <button style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, border: '1px solid #E2E8F0', background: '#fff', cursor: 'pointer', color: '#1E293B', fontSize: 12, fontWeight: 600 }}>7</button>
-                  <button style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, border: '1px solid #E2E8F0', background: '#fff', cursor: 'pointer', color: '#64748B', fontSize: 12 }}>&gt;</button>
-                </div>
-                <div style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid #E2E8F0', fontSize: 12, fontWeight: 500, color: '#1E293B', display: 'flex', alignItems: 'center', gap: 6, background: '#fff', cursor: 'pointer' }}>
-                  10 / page <span style={{ fontSize: 9, color: '#94A3B8' }}>▼</span>
-                </div>
+                <div style={{ fontSize: 12, fontWeight: 500, color: '#64748B' }}>Showing {equipmentList.length} equipment</div>
               </div>
             </div>
           </div>
@@ -543,19 +516,19 @@ export default function WarehouseStaffEquipment({ wh, onBack }) {
               <div style={{ fontSize: 11, fontWeight: 600, color: '#4F46E5', cursor: 'pointer' }}>View Report →</div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-              <div style={{ position: 'relative', width: 90, height: 90, borderRadius: '50%', background: 'conic-gradient(#3B82F6 0% 4.2%, #3B82F6 4.2% 16.7%, #22C55E 16.7% 41.7%, #8B5CF6 41.7% 79.2%, #F59E0B 79.2% 100%)' }}>
+              <div style={{ position: 'relative', width: 90, height: 90, borderRadius: '50%', background: 'conic-gradient(#3B82F6 0% 20%, #22C55E 20% 50%, #8B5CF6 50% 80%, #F59E0B 80% 100%)' }}>
                 <div style={{ position: 'absolute', top: 14, left: 14, right: 14, bottom: 14, background: '#fff', borderRadius: '50%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: '#0F172A', lineHeight: 1.1 }}>24</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: '#0F172A', lineHeight: 1.1 }}>{totalStaffCount}</div>
                   <div style={{ fontSize: 8, fontWeight: 700, color: '#64748B', marginTop: 2, textAlign: 'center' }}>Total Staff</div>
                 </div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
                 {[
-                  { label: 'Warehouse Manager', val: '1', pct: '4.2%', color: '#3B82F6' },
-                  { label: 'Supervisors', val: '3', pct: '12.5%', color: '#3B82F6' },
-                  { label: 'Storepersons', val: '6', pct: '25.0%', color: '#22C55E' },
-                  { label: 'Operators', val: '9', pct: '37.5%', color: '#8B5CF6' },
-                  { label: 'Pickers / Packers', val: '5', pct: '20.8%', color: '#F59E0B' }
+                  { label: 'Warehouse Manager', val: mgrCount.toString(), pct: calcStaffPct(mgrCount), color: '#3B82F6' },
+                  { label: 'Supervisors', val: supCount.toString(), pct: calcStaffPct(supCount), color: '#3B82F6' },
+                  { label: 'Storepersons', val: storeCount.toString(), pct: calcStaffPct(storeCount), color: '#22C55E' },
+                  { label: 'Operators', val: opCount.toString(), pct: calcStaffPct(opCount), color: '#8B5CF6' },
+                  { label: 'Pickers / Packers', val: pickerCount.toString(), pct: calcStaffPct(pickerCount), color: '#F59E0B' }
                 ].map((l, i) => (
                   <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: '#1E293B' }}><SmallCircleIcon color={l.color} /> {l.label}</div>
@@ -575,17 +548,17 @@ export default function WarehouseStaffEquipment({ wh, onBack }) {
               <div style={{ fontSize: 11, fontWeight: 600, color: '#4F46E5', cursor: 'pointer' }}>View Chart →</div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-              <div style={{ position: 'relative', width: 90, height: 90, borderRadius: '50%', background: 'conic-gradient(#22C55E 0% 75%, #EF4444 75% 89.3%, #F59E0B 89.3% 100%)' }}>
+              <div style={{ position: 'relative', width: 90, height: 90, borderRadius: '50%', background: 'conic-gradient(#22C55E 0% 75%, #EF4444 75% 90%, #F59E0B 90% 100%)' }}>
                 <div style={{ position: 'absolute', top: 14, left: 14, right: 14, bottom: 14, background: '#fff', borderRadius: '50%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: '#0F172A', lineHeight: 1.1 }}>56</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: '#0F172A', lineHeight: 1.1 }}>{totalEquipCount}</div>
                   <div style={{ fontSize: 8, fontWeight: 700, color: '#64748B', marginTop: 2, textAlign: 'center', lineHeight: 1.2 }}>Total<br/>Equipment</div>
                 </div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
                 {[
-                  { label: 'Online', val: '42', pct: '75.0%', color: '#22C55E' },
-                  { label: 'Offline', val: '8', pct: '14.3%', color: '#EF4444' },
-                  { label: 'Maintenance', val: '6', pct: '10.7%', color: '#F59E0B' }
+                  { label: 'Online', val: onlineCount.toString(), pct: calcEquipPct(onlineCount), color: '#22C55E' },
+                  { label: 'Offline', val: offlineCount.toString(), pct: calcEquipPct(offlineCount), color: '#EF4444' },
+                  { label: 'Maintenance', val: maintCount.toString(), pct: calcEquipPct(maintCount), color: '#F59E0B' }
                 ].map((l, i) => (
                   <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: '#1E293B' }}><SmallCircleIcon color={l.color} /> {l.label}</div>
@@ -605,21 +578,21 @@ export default function WarehouseStaffEquipment({ wh, onBack }) {
               <div style={{ fontSize: 11, fontWeight: 600, color: '#4F46E5', cursor: 'pointer' }}>View All →</div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {[
-                { name: 'Toyota Forklift 2.5T - FL01', date: '10 Jun 2025', color: '#8B5CF6', dateCol: '#EF4444' },
-                { name: 'Crown Reach Truck - RT02', date: '18 Jun 2025', color: '#3B82F6', dateCol: '#EF4444' },
-                { name: 'Electric Pallet Jack - EPJ03', date: '25 May 2025', color: '#22C55E', dateCol: '#EF4444' },
-                { name: 'Hand Pallet Truck - HPT07', date: 'Overdue', color: '#22C55E', dateCol: '#EF4444' },
-                { name: 'Stretch Wrapper - SW05', date: '12 Jun 2025', color: '#EF4444', dateCol: '#EF4444' },
-              ].map((m, i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <SettingsIcon color={m.color} />
-                    <div style={{ fontSize: 11, fontWeight: 600, color: '#1E293B' }}>{m.name}</div>
+              {equipmentList.length > 0 ? (
+                equipmentList.map((m, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <SettingsIcon color="#8B5CF6" />
+                      <div style={{ fontSize: 11, fontWeight: 600, color: '#1E293B' }}>{m.name}</div>
+                    </div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: '#EF4444' }}>{m.service || 'Scheduled'}</div>
                   </div>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: m.dateCol }}>{m.date}</div>
+                ))
+              ) : (
+                <div style={{ fontSize: 11, color: '#94A3B8', textAlign: 'center', padding: '8px 0' }}>
+                  No upcoming maintenance scheduled.
                 </div>
-              ))}
+              )}
             </div>
           </div>
 
@@ -651,12 +624,10 @@ export default function WarehouseStaffEquipment({ wh, onBack }) {
         </div>
       </div>
 
-
-
       {/* ADD STAFF / EQUIPMENT MODAL */}
       {showAddStaffModal && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.4)' }} onClick={() => setShowAddStaffModal(false)}></div>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.4)' }} onClick={() => { resetForms(); setShowAddStaffModal(false); }}></div>
           <div style={{ background: '#fff', width: '600px', borderRadius: 16, padding: '32px', position: 'relative', zIndex: 1, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
               <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#0F172A' }}>Add Resource</h2>
@@ -669,25 +640,40 @@ export default function WarehouseStaffEquipment({ wh, onBack }) {
             {modalTab === 'staff' ? (
               <div style={{ display: 'grid', gap: 16 }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Full Name</label>
-                  <input type="text" placeholder="John Doe" style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none' }} />
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Full Name *</label>
+                  <input
+                    type="text"
+                    value={staffName}
+                    onChange={(e) => setStaffName(e.target.value)}
+                    placeholder="e.g. John Doe"
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none' }}
+                  />
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                   <div>
                     <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Role / Position</label>
-                    <select style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none', background: '#fff' }}>
-                      <option>Picker / Packer</option>
-                      <option>Forklift Operator</option>
-                      <option>Storeperson</option>
-                      <option>Supervisor</option>
+                    <select
+                      value={staffRole}
+                      onChange={(e) => setStaffRole(e.target.value)}
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none', background: '#fff' }}
+                    >
+                      <option value="Picker / Packer">Picker / Packer</option>
+                      <option value="Forklift Operator">Forklift Operator</option>
+                      <option value="Storeperson">Storeperson</option>
+                      <option value="Supervisor">Supervisor</option>
+                      <option value="Warehouse Manager">Warehouse Manager</option>
                     </select>
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Assigned Shift</label>
-                    <select style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none', background: '#fff' }}>
-                      <option>Day (06:00 - 14:00)</option>
-                      <option>Afternoon (14:00 - 22:00)</option>
-                      <option>Night (22:00 - 06:00)</option>
+                    <select
+                      value={staffShift}
+                      onChange={(e) => setStaffShift(e.target.value)}
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none', background: '#fff' }}
+                    >
+                      <option value="Day (06:00 - 14:00)">Day (06:00 - 14:00)</option>
+                      <option value="Afternoon (14:00 - 22:00)">Afternoon (14:00 - 22:00)</option>
+                      <option value="Night (22:00 - 06:00)">Night (22:00 - 06:00)</option>
                     </select>
                   </div>
                 </div>
@@ -695,35 +681,103 @@ export default function WarehouseStaffEquipment({ wh, onBack }) {
             ) : (
               <div style={{ display: 'grid', gap: 16 }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Equipment Name / ID</label>
-                  <input type="text" placeholder="e.g. Forklift FL01" style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none' }} />
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Equipment Name / ID *</label>
+                  <input
+                    type="text"
+                    value={equipName}
+                    onChange={(e) => setEquipName(e.target.value)}
+                    placeholder="e.g. Forklift FL01"
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none' }}
+                  />
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                   <div>
                     <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Equipment Type</label>
-                    <select style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none', background: '#fff' }}>
-                      <option>Forklift</option>
-                      <option>Pallet Jack</option>
-                      <option>Scanner</option>
+                    <select
+                      value={equipType}
+                      onChange={(e) => setEquipType(e.target.value)}
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none', background: '#fff' }}
+                    >
+                      <option value="Forklift">Forklift</option>
+                      <option value="Reach Truck">Reach Truck</option>
+                      <option value="Pallet Jack">Pallet Jack</option>
+                      <option value="Scanner">Scanner</option>
                     </select>
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Next Service Date</label>
-                    <input type="date" style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none', color: '#0F172A' }} />
+                    <input
+                      type="date"
+                      value={equipNextService}
+                      onChange={(e) => setEquipNextService(e.target.value)}
+                      style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none', color: '#0F172A' }}
+                    />
                   </div>
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>IoT Tracking Assignment</label>
-                  <div style={{ padding: '12px', background: '#F8FAFC', border: '1px dashed #CBD5E1', borderRadius: 8, fontSize: 12, color: '#64748B', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                    <span>+</span> Pair with new IoT Tracker
-                  </div>
+                  {!equipIotId ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <div
+                        onClick={() => {
+                          const autoId = `IOT-TRK-${Math.floor(1000 + Math.random() * 9000)}`;
+                          setEquipIotId(autoId);
+                          setIsPairingIot(true);
+                          showToast(`⚡ Paired with IoT Tracker: ${autoId}`);
+                        }}
+                        style={{ padding: '14px', background: '#F8FAFC', border: '2px dashed #CBD5E1', borderRadius: 10, fontSize: 13, fontWeight: 700, color: '#4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', transition: 'all 0.2s' }}
+                      >
+                        <span style={{ fontSize: 16 }}>+</span> Pair with new IoT Tracker
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 11, color: '#94A3B8', fontWeight: 600 }}>or enter manual ID:</span>
+                        <input
+                          type="text"
+                          value={equipIotId}
+                          onChange={(e) => setEquipIotId(e.target.value)}
+                          placeholder="e.g. IOT-GPS-9901"
+                          style={{ flex: 1, padding: '6px 12px', borderRadius: 6, border: '1px solid #CBD5E1', fontSize: 12, outline: 'none' }}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ background: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#DCFCE7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#22C55E', boxShadow: '0 0 8px #22C55E' }} />
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 800, color: '#166534', display: 'flex', alignItems: 'center', gap: 8 }}>
+                            IoT Tracker Paired
+                            <span style={{ background: '#DCFCE7', color: '#15803D', fontSize: 10, padding: '2px 6px', borderRadius: 4, fontWeight: 700 }}>ACTIVE</span>
+                          </div>
+                          <div style={{ fontSize: 11, color: '#15803D', marginTop: 2 }}>
+                            Device ID: <strong>{equipIotId}</strong> • Signal Strong (98%)
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => { setEquipIotId(''); setIsPairingIot(false); showToast('Unpaired IoT Tracker'); }}
+                        style={{ background: '#fff', border: '1px solid #CBD5E1', borderRadius: 6, padding: '6px 10px', fontSize: 11, fontWeight: 700, color: '#EF4444', cursor: 'pointer' }}
+                      >
+                        Unpair
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 32 }}>
-              <button onClick={() => setShowAddStaffModal(false)} style={{ padding: '10px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, border: '1px solid #E2E8F0', background: '#fff', color: '#475569', cursor: 'pointer' }}>Cancel</button>
-              <button onClick={() => setShowAddStaffModal(false)} style={{ padding: '10px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, border: 'none', background: '#4F46E5', color: '#fff', cursor: 'pointer' }}>Add {modalTab === 'staff' ? 'Staff' : 'Equipment'}</button>
+              <button onClick={() => { resetForms(); setShowAddStaffModal(false); }} style={{ padding: '10px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, border: '1px solid #E2E8F0', background: '#fff', color: '#475569', cursor: 'pointer' }}>Cancel</button>
+              <button
+                onClick={modalTab === 'staff' ? handleAddStaff : handleAddEquipment}
+                disabled={submittingStaff || submittingEquip}
+                style={{ padding: '10px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, border: 'none', background: (submittingStaff || submittingEquip) ? '#A5B4FC' : '#4F46E5', color: '#fff', cursor: (submittingStaff || submittingEquip) ? 'not-allowed' : 'pointer' }}
+              >
+                {modalTab === 'staff' ? (submittingStaff ? 'Adding Staff...' : 'Add Staff') : (submittingEquip ? 'Adding Equipment...' : 'Add Equipment')}
+              </button>
             </div>
           </div>
         </div>

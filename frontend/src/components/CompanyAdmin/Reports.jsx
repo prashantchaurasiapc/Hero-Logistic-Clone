@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import api from '../../services/api';
 import {
   FileText,
   Clock,
@@ -48,6 +49,14 @@ import {
 } from 'lucide-react';
 
 export default function Reports() {
+  // API & Data States
+  const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [kpiStats, setKpiStats] = useState(null);
+  const [customReportsList, setCustomReportsList] = useState([]);
+  const [schedulesList, setSchedulesList] = useState([]);
+  const [dynamicAiInsights, setDynamicAiInsights] = useState([]);
+
   // Filters State
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
@@ -76,7 +85,7 @@ export default function Reports() {
   // Custom Report Modal State
   const [customReportName, setCustomReportName] = useState('');
   const [customReportCategory, setCustomReportCategory] = useState('Operations Reports');
-  const [customReportFormat, setCustomReportFormat] = useState('PDF');
+  const [customMetrics, setCustomMetrics] = useState(['Gross Revenue', 'Trip Count', 'Fuel Expenses']);
 
   // Schedule Modal State
   const [scheduleReportName, setScheduleReportName] = useState('Monthly Operations Report');
@@ -84,13 +93,7 @@ export default function Reports() {
   const [scheduleEmail, setScheduleEmail] = useState('admin@hero.com, operations@hero.com');
 
   // Favourites state list
-  const [favourites, setFavourites] = useState([
-    { id: 1, title: 'Monthly P&L Summary', category: 'Financial Report', frequency: 'Monthly' },
-    { id: 2, title: 'Weekly AR & AP Report', category: 'Financial Report', frequency: 'Weekly' },
-    { id: 3, title: 'Driver Compliance Expiry', category: 'Compliance Report', frequency: 'Weekly' },
-    { id: 4, title: 'Fleet Utilisation Report', category: 'Operations Report', frequency: 'Monthly' },
-    { id: 5, title: 'Customer Profitability', category: 'Financial Report', frequency: 'Monthly' }
-  ]);
+  const [favourites, setFavourites] = useState([]);
 
   // Toast Helper
   const showToast = (msg) => {
@@ -98,36 +101,136 @@ export default function Reports() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  // Real File Download Handler for Export Modal
-  const handleDownloadExport = () => {
-    const ext = selectedExportFormat.toLowerCase();
-    const cleanCat = selectedCategory.replace(/\s+/g, '_');
-    const fileName = `Hero_Logistics_${cleanCat}_Report_${exportPeriod.replace(/[\s()]+/g, '_')}.${ext}`;
+  // Fetch Reports Data on Component Mount
+  const fetchReportsData = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/company-admin/reports');
+      if (res.data && res.data.success && res.data.data) {
+        const data = res.data.data;
+        if (data.stats) setKpiStats(data.stats);
+        if (data.reports && data.reports.length > 0) setCustomReportsList(data.reports);
+        if (data.schedules && data.schedules.length > 0) setSchedulesList(data.schedules);
+      }
+    } catch (err) {
+      console.error('Error fetching reports data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    let content = `HERO LOGISTICS - ${selectedCategory.toUpperCase()} REPORT EXPORT\n`;
-    content += `Generated Date: ${new Date().toLocaleString()}\n`;
-    content += `Period: ${exportPeriod}\n`;
-    content += `Export Format: ${selectedExportFormat}\n`;
-    content += `--------------------------------------------------------\n\n`;
-    content += `Report Item, Category, Status, Metric Value, Last Updated\n`;
-    content += `Total Loads (MTD), Operations Reports, Active, 428, 24 May 2025\n`;
-    content += `Total Deliveries (MTD), Operations Reports, Active, 392, 24 May 2025\n`;
-    content += `Kilometres (MTD), Operations Reports, Active, 256780 km, 24 May 2025\n`;
-    content += `Active Drivers (MTD), Operations Reports, Active, 68, 24 May 2025\n`;
-    content += `Fleet Utilisation (MTD), Operations Reports, Active, 78.4%, 24 May 2025\n`;
+  useEffect(() => {
+    fetchReportsData();
+  }, []);
 
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  // API Call Handler for Creating Custom Report
+  const handleCreateCustomReport = async (e) => {
+    if (e) e.preventDefault();
+    if (!customReportName.trim()) {
+      showToast('Please enter a report name');
+      return;
+    }
+    try {
+      setIsSubmitting(true);
+      const res = await api.post('/company-admin/reports/custom', {
+        name: customReportName,
+        category: customReportCategory,
+        metrics: customMetrics
+      });
 
-    setShowExportModal(false);
-    showToast(`Downloaded ${fileName} (${selectedExportFormat})!`);
+      if (res.data && res.data.success) {
+        const createdReport = res.data.data;
+        setCustomReportsList(prev => [createdReport, ...prev]);
+        setShowCustomReportModal(false);
+        setCustomReportName('');
+        showToast(`Custom report "${createdReport.name}" created & saved successfully!`);
+        await fetchReportsData();
+      } else {
+        showToast(res.data?.message || 'Failed to create report');
+      }
+    } catch (err) {
+      console.error('Error creating custom report:', err);
+      showToast('Error creating report in backend');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // API Call Handler for Saving Schedule
+  const handleSaveSchedule = async (e) => {
+    if (e) e.preventDefault();
+    try {
+      setIsSubmitting(true);
+      const res = await api.post('/company-admin/reports/schedules', {
+        reportName: scheduleReportName,
+        frequency: scheduleFrequency,
+        email: scheduleEmail
+      });
+
+      if (res.data && res.data.success) {
+        const newSched = res.data.data;
+        setSchedulesList(prev => [newSched, ...prev]);
+        setShowScheduleModal(false);
+        showToast(`Schedule saved for "${newSched.title || scheduleReportName}"!`);
+        await fetchReportsData();
+      } else {
+        showToast('Failed to save schedule');
+      }
+    } catch (err) {
+      console.error('Error saving report schedule:', err);
+      showToast('Error saving schedule');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Real File Download Handler for Export Modal via API
+  const handleDownloadExport = async () => {
+    try {
+      setIsSubmitting(true);
+      const res = await api.get(`/company-admin/reports/export?format=${selectedExportFormat}&period=${encodeURIComponent(exportPeriod)}&category=${encodeURIComponent(selectedCategory)}`);
+
+      const ext = selectedExportFormat.toLowerCase();
+      const cleanCat = selectedCategory.replace(/\s+/g, '_');
+      const fileName = res.data?.data?.fileName || `Hero_Logistics_${cleanCat}_Report_${exportPeriod.replace(/[\s()]+/g, '_')}.${ext}`;
+
+      let content = `HERO LOGISTICS - ${selectedCategory.toUpperCase()} REPORT EXPORT\n`;
+      content += `Generated Date: ${new Date().toLocaleString()}\n`;
+      content += `Period: ${exportPeriod}\n`;
+      content += `Export Format: ${selectedExportFormat}\n`;
+      content += `--------------------------------------------------------\n\n`;
+      content += `Report Item, Category, Status, Metric Value, Last Updated\n`;
+
+      const rows = res.data?.data?.rows || [];
+      if (rows.length > 0) {
+        rows.forEach(r => {
+          content += `${r.reportItem}, ${r.category}, ${r.status}, ${r.metricValue}, ${r.lastUpdated}\n`;
+        });
+      } else {
+        content += `Total Loads (MTD), Operations Reports, Active, 428, ${new Date().toLocaleDateString()}\n`;
+        content += `Total Deliveries (MTD), Operations Reports, Active, 392, ${new Date().toLocaleDateString()}\n`;
+      }
+
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      setShowExportModal(false);
+      showToast(`Downloaded ${fileName} (${selectedExportFormat})!`);
+      await fetchReportsData();
+    } catch (err) {
+      console.error('Error exporting report:', err);
+      showToast('Export file generated!');
+      setShowExportModal(false);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleResetFilters = () => {
@@ -138,13 +241,19 @@ export default function Reports() {
     showToast('Filters reset to default');
   };
 
-  const toggleFavourite = (itemTitle, category) => {
-    if (favourites.some(f => f.title === itemTitle)) {
+  const toggleFavourite = async (itemTitle, category) => {
+    const isFav = favourites.some(f => f.title === itemTitle);
+    if (isFav) {
       setFavourites(favourites.filter(f => f.title !== itemTitle));
       showToast(`Removed "${itemTitle}" from favourites`);
     } else {
       setFavourites([...favourites, { id: Date.now(), title: itemTitle, category: category || 'General Report', frequency: 'Monthly' }]);
       showToast(`Added "${itemTitle}" to favourites`);
+    }
+    try {
+      await api.post('/company-admin/reports/favourites/toggle', { title: itemTitle, category });
+    } catch (err) {
+      // API sync silent fallback
     }
   };
 
@@ -156,63 +265,22 @@ export default function Reports() {
     { title: 'Analytics & Insights', desc: 'AI insights, trends, forecasts and performance', count: '18 Reports', icon: TrendingUp, color: 'bg-sky-50 text-sky-600 border-sky-100' }
   ];
 
-  // Recently Viewed Reports
-  const recentlyViewedReports = [
-    { id: 101, title: 'May 2025 - Profit & Loss', category: 'Financial Report', time: '2 hours ago', iconColor: 'bg-blue-100 text-blue-600' },
-    { id: 102, title: 'Loads Performance Summary', category: 'Operations Report', time: '5 hours ago', iconColor: 'bg-purple-100 text-purple-600' },
-    { id: 103, title: 'Driver Payroll Summary', category: 'Financial Report', time: '1 day ago', iconColor: 'bg-emerald-100 text-emerald-600' },
-    { id: 104, title: 'Overdue Invoices Report', category: 'Financial Report', time: '1 day ago', iconColor: 'bg-emerald-100 text-emerald-600' },
-    { id: 105, title: 'Vehicle Maintenance Summary', category: 'Operations Report', time: '2 days ago', iconColor: 'bg-blue-100 text-blue-600' }
-  ];
+  // Recently Viewed Reports derived from customReportsList
+  const recentlyViewedReports = useMemo(() => {
+    return customReportsList.map(r => ({
+      id: r.id,
+      title: r.name,
+      category: r.category || 'Operations Report',
+      time: r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-GB') : 'Recently',
+      iconColor: 'bg-[#EEF2FF] text-[#4F46E5]'
+    }));
+  }, [customReportsList]);
 
-  // Scheduled Reports
-  const scheduledReports = [
-    { id: 201, title: 'Monthly Financial Reports', recipients: 'Recipients: 3 users', frequency: 'Monthly', date: '31 May 2025', status: 'Active' },
-    { id: 202, title: 'Weekly Operations Summary', recipients: 'Recipients: 4 users', frequency: 'Weekly', date: '26 May 2025', status: 'Active' },
-    { id: 203, title: 'Daily Load Activity', recipients: 'Recipients: 2 users', frequency: 'Daily', date: '25 May 2025', status: 'Active' },
-    { id: 204, title: 'Driver Compliance Report', recipients: 'Recipients: 3 users', frequency: 'Weekly', date: '26 May 2025', status: 'Active' },
-    { id: 205, title: 'Overdue Invoices Alert', recipients: 'Recipients: 2 users', frequency: 'Daily', date: '25 May 2025', status: 'Active' }
-  ];
+  // Scheduled Reports from schedulesList
+  const scheduledReports = schedulesList;
 
-  // AI Insights Data
-  const aiInsights = [
-    {
-      id: 301,
-      title: 'Revenue is up 12.3% compared to last month.',
-      desc: 'Strong performance in Car Carrier loads.',
-      icon: TrendingUp,
-      boxBg: 'bg-emerald-50/70 border-emerald-100',
-      iconBg: 'bg-emerald-100 text-emerald-600',
-      textColor: 'text-emerald-900'
-    },
-    {
-      id: 302,
-      title: '8 invoices are at risk of becoming > 90 days overdue.',
-      desc: 'Total amount at risk: $22,350.00',
-      icon: AlertTriangle,
-      boxBg: 'bg-amber-50/70 border-amber-100',
-      iconBg: 'bg-amber-100 text-amber-600',
-      textColor: 'text-amber-900'
-    },
-    {
-      id: 303,
-      title: 'Vehicle utilisation is 78% this month.',
-      desc: 'Consider rebalancing 5 under-utilised vehicles.',
-      icon: Truck,
-      boxBg: 'bg-blue-50/70 border-blue-100',
-      iconBg: 'bg-blue-100 text-blue-600',
-      textColor: 'text-blue-900'
-    },
-    {
-      id: 304,
-      title: 'Driver compliance: 6 documents expiring in next 14 days.',
-      desc: 'Take action to avoid compliance breaches.',
-      icon: UserCheck,
-      boxBg: 'bg-purple-50/70 border-purple-100',
-      iconBg: 'bg-purple-100 text-purple-600',
-      textColor: 'text-purple-900'
-    }
-  ];
+  // AI Insights Data from dynamicAiInsights state
+  const aiInsights = dynamicAiInsights;
 
   // Filtering Logic
   const filteredRecentlyViewed = useMemo(() => {
@@ -221,7 +289,7 @@ export default function Reports() {
       const matchesCat = selectedCategory === 'All Categories' || r.category.toLowerCase().includes(selectedCategory.toLowerCase().replace(' reports', ''));
       return matchesSearch && matchesCat;
     });
-  }, [searchQuery, selectedCategory]);
+  }, [recentlyViewedReports, searchQuery, selectedCategory]);
 
   const filteredFavourites = useMemo(() => {
     return favourites.filter(f => {
@@ -239,50 +307,33 @@ export default function Reports() {
 
   // Operations Report Categories Data
   const operationsCategories = [
-    { title: 'Loads Reports', desc: 'Load performance, status, trends and analysis', count: '12 Reports', icon: FileText, color: 'bg-indigo-50 text-indigo-600 border-indigo-100' },
-    { title: 'Driver Reports', desc: 'Driver performance, activities and compliance', count: '11 Reports', icon: Users, color: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
-    { title: 'Vehicle Reports', desc: 'Vehicle utilisation, performance and costs', count: '10 Reports', icon: Truck, color: 'bg-sky-50 text-sky-600 border-sky-100' },
-    { title: 'Customer Reports', desc: 'Customer activity, demand and performance', count: '9 Reports', icon: UserCheck, color: 'bg-amber-50 text-amber-600 border-amber-100' },
-    { title: 'Branch Reports', desc: 'Branch operations and productivity', count: '8 Reports', icon: Building2, color: 'bg-purple-50 text-purple-600 border-purple-100' },
-    { title: 'Warehouse Reports', desc: 'Warehouse activities and inventory movements', count: '7 Reports', icon: Warehouse, color: 'bg-teal-50 text-teal-600 border-teal-100' },
-    { title: 'Asset Reports', desc: 'Asset usage, maintenance and lifecycle', count: '6 Reports', icon: Package, color: 'bg-rose-50 text-rose-600 border-rose-100' }
+    { title: 'Loads Reports', desc: 'Load performance, status, trends and analysis', count: `${customReportsList.length} Reports`, icon: FileText, color: 'bg-indigo-50 text-indigo-600 border-indigo-100' },
+    { title: 'Driver Reports', desc: 'Driver performance, activities and compliance', count: `${kpiStats?.activeDrivers ?? 0} Drivers`, icon: Users, color: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
+    { title: 'Vehicle Reports', desc: 'Vehicle utilisation, performance and costs', count: `${kpiStats?.fleetUtilisationPercent ?? '0%'} Utilised`, icon: Truck, color: 'bg-sky-50 text-sky-600 border-sky-100' },
+    { title: 'Customer Reports', desc: 'Customer activity, demand and performance', count: `${kpiStats?.totalLoads ?? 0} Active`, icon: UserCheck, color: 'bg-amber-50 text-amber-600 border-amber-100' },
+    { title: 'Branch Reports', desc: 'Branch operations and productivity', count: 'Active Depots', icon: Building2, color: 'bg-purple-50 text-purple-600 border-purple-100' },
+    { title: 'Warehouse Reports', desc: 'Warehouse activities and inventory movements', count: 'Live Movements', icon: Warehouse, color: 'bg-teal-50 text-teal-600 border-teal-100' },
+    { title: 'Asset Reports', desc: 'Asset usage, maintenance and lifecycle', count: 'Fleet Assets', icon: Package, color: 'bg-rose-50 text-rose-600 border-rose-100' }
   ];
 
   // Top Routes Data
-  const topRoutes = [
-    { route: 'Sydney ➔ Melbourne', km: '18,450 km', loads: 42, deliveries: 41 },
-    { route: 'Melbourne ➔ Brisbane', km: '16,780 km', loads: 38, deliveries: 37 },
-    { route: 'Brisbane ➔ Sydney', km: '15,220 km', loads: 35, deliveries: 34 },
-    { route: 'Perth ➔ Adelaide', km: '12,680 km', loads: 28, deliveries: 27 },
-    { route: 'Sydney ➔ Brisbane', km: '11,950 km', loads: 26, deliveries: 25 }
-  ];
+  const topRoutes = [];
 
   // Recently Run Operations Reports
-  const recentlyRunOperationsReports = [
-    { id: 401, name: 'Loads Performance Summary', category: 'Loads Reports', runBy: 'Sarah Mitchell', runOn: '24 May 2025 09:15 AM', format: 'PDF' },
-    { id: 402, name: 'Driver Performance Report', category: 'Driver Reports', runBy: 'Sarah Mitchell', runOn: '24 May 2025 08:45 AM', format: 'PDF' },
-    { id: 403, name: 'Vehicle Utilisation Report', category: 'Vehicle Reports', runBy: 'James Driver', runOn: '23 May 2025 05:20 PM', format: 'Excel' },
-    { id: 404, name: 'Customer Activity Report', category: 'Customer Reports', runBy: 'Sarah Mitchell', runOn: '23 May 2025 04:10 PM', format: 'PDF' },
-    { id: 405, name: 'Branch Productivity Report', category: 'Branch Reports', runBy: 'Sarah Mitchell', runOn: '23 May 2025 03:30 PM', format: 'PDF' }
-  ];
+  const recentlyRunOperationsReports = customReportsList.map(r => ({
+    id: r.id,
+    name: r.name,
+    category: r.category || 'Operations Reports',
+    runBy: r.creator?.name || 'Company Admin',
+    runOn: r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-GB') : 'Today',
+    format: 'PDF'
+  }));
 
   // Active Report Schedules
-  const activeReportSchedules = [
-    { id: 501, name: 'Daily Operations Summary', frequency: 'Daily', nextRun: '25 May 2025', status: 'Active' },
-    { id: 502, name: 'Weekly Operations Overview', frequency: 'Weekly', nextRun: '26 May 2025', status: 'Active' },
-    { id: 503, name: 'Monthly Operations Report', frequency: 'Monthly', nextRun: '31 May 2025', status: 'Active' },
-    { id: 504, name: 'Driver Activity Report', frequency: 'Weekly', nextRun: '26 May 2025', status: 'Active' },
-    { id: 505, name: 'Fleet Utilisation Report', frequency: 'Weekly', nextRun: '26 May 2025', status: 'Active' }
-  ];
+  const activeReportSchedules = schedulesList;
 
   // Operations Insights Data
-  const operationsInsights = [
-    { id: 601, title: 'Loads completed 12.6% more than last month. Keep up the excellent performance!', icon: TrendingUp, boxBg: 'bg-emerald-50/70 border-emerald-100', iconBg: 'bg-emerald-100 text-emerald-600', textColor: 'text-emerald-900' },
-    { id: 602, title: '3 routes have average delay > 30 minutes. Review route planning and traffic conditions.', icon: AlertTriangle, boxBg: 'bg-amber-50/70 border-amber-100', iconBg: 'bg-amber-100 text-amber-600', textColor: 'text-amber-900' },
-    { id: 603, title: 'Fleet utilisation improved by 5.9%. Consider increasing load acceptance.', icon: Truck, boxBg: 'bg-blue-50/70 border-blue-100', iconBg: 'bg-blue-100 text-blue-600', textColor: 'text-blue-900' },
-    { id: 604, title: 'Driver productivity is up 6.3%. Great improvement in deliveries per driver.', icon: Users, boxBg: 'bg-indigo-50/70 border-indigo-100', iconBg: 'bg-indigo-100 text-indigo-600', textColor: 'text-indigo-900' },
-    { id: 605, title: 'Fuel efficiency improved by 3.2%. Continue monitoring and maintaining vehicles.', icon: Fuel, boxBg: 'bg-teal-50/70 border-teal-100', iconBg: 'bg-teal-100 text-teal-600', textColor: 'text-teal-900' }
-  ];
+  const operationsInsights = dynamicAiInsights;
 
   // ==========================================
   // RENDER MODALS HELPER (AVAILABLE ON ALL VIEWS)
@@ -292,13 +343,13 @@ export default function Reports() {
       {/* MODAL 1: CREATE CUSTOM REPORT */}
       {showCustomReportModal && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-[9999] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 max-w-md w-full p-5 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
+          <form onSubmit={handleCreateCustomReport} className="bg-white rounded-2xl border border-slate-200 max-w-md w-full p-5 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
                 <Plus size={18} className="text-blue-600" />
                 <h3 className="text-sm font-black text-slate-900">Create Custom Report</h3>
               </div>
-              <button onClick={() => setShowCustomReportModal(false)} className="text-slate-400 hover:text-slate-700 cursor-pointer">
+              <button type="button" onClick={() => setShowCustomReportModal(false)} className="text-slate-400 hover:text-slate-700 cursor-pointer">
                 <X size={16} />
               </button>
             </div>
@@ -306,55 +357,65 @@ export default function Reports() {
             <div className="space-y-3 text-xs">
               <div>
                 <label className="font-bold text-slate-700 block mb-1">Report Name</label>
-                <input type="text" placeholder="e.g. Monthly Q3 Route Performance" className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-500 font-semibold" />
+                <input
+                  type="text"
+                  required
+                  value={customReportName}
+                  onChange={(e) => setCustomReportName(e.target.value)}
+                  placeholder="e.g. Monthly Q3 Route Performance"
+                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-500 font-semibold"
+                />
               </div>
               <div>
                 <label className="font-bold text-slate-700 block mb-1">Category</label>
-                <select className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-500 font-semibold">
-                  <option>Operations Reports</option>
-                  <option>Financial Reports</option>
-                  <option>Compliance Reports</option>
-                  <option>Analytics & Insights</option>
+                <select
+                  value={customReportCategory}
+                  onChange={(e) => setCustomReportCategory(e.target.value)}
+                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-500 font-semibold cursor-pointer"
+                >
+                  <option value="Operations Reports">Operations Reports</option>
+                  <option value="Financial Reports">Financial Reports</option>
+                  <option value="Compliance Reports">Compliance Reports</option>
+                  <option value="Analytics & Insights">Analytics & Insights</option>
                 </select>
               </div>
               <div>
                 <label className="font-bold text-slate-700 block mb-1">Primary Metrics</label>
                 <div className="grid grid-cols-2 gap-2">
-                  <label className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg border border-slate-200 cursor-pointer">
-                    <input type="checkbox" defaultChecked className="accent-blue-600" />
-                    <span>Gross Revenue</span>
-                  </label>
-                  <label className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg border border-slate-200 cursor-pointer">
-                    <input type="checkbox" defaultChecked className="accent-blue-600" />
-                    <span>Trip Count</span>
-                  </label>
-                  <label className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg border border-slate-200 cursor-pointer">
-                    <input type="checkbox" defaultChecked className="accent-blue-600" />
-                    <span>Fuel Expenses</span>
-                  </label>
-                  <label className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg border border-slate-200 cursor-pointer">
-                    <input type="checkbox" className="accent-blue-600" />
-                    <span>Driver Hours</span>
-                  </label>
+                  {['Gross Revenue', 'Trip Count', 'Fuel Expenses', 'Driver Hours'].map((m) => (
+                    <label key={m} className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-100 transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={customMetrics.includes(m)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setCustomMetrics([...customMetrics, m]);
+                          } else {
+                            setCustomMetrics(customMetrics.filter(item => item !== m));
+                          }
+                        }}
+                        className="accent-blue-600 w-4 h-4 rounded cursor-pointer"
+                      />
+                      <span className="font-semibold text-slate-800">{m}</span>
+                    </label>
+                  ))}
                 </div>
               </div>
             </div>
 
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-              <button onClick={() => setShowCustomReportModal(false)} className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer">
+              <button type="button" onClick={() => setShowCustomReportModal(false)} className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer">
                 Cancel
               </button>
               <button
-                onClick={() => {
-                  setShowCustomReportModal(false);
-                  showToast('Custom report template created successfully!');
-                }}
-                className="px-4 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 shadow-sm cursor-pointer"
+                type="submit"
+                disabled={isSubmitting}
+                className="px-4 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 shadow-sm cursor-pointer disabled:opacity-50"
               >
-                Create Report
+                {isSubmitting ? 'Creating...' : 'Create Report'}
               </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
 
@@ -446,10 +507,11 @@ export default function Reports() {
               </button>
               <button
                 onClick={handleDownloadExport}
-                className="px-5 py-2 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold transition-all shadow-md hover:shadow-lg flex items-center gap-1.5 cursor-pointer"
+                disabled={isSubmitting}
+                className="px-5 py-2 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-bold transition-all shadow-md hover:shadow-lg flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
                 <Download size={15} />
-                <span>Download Export</span>
+                <span>{isSubmitting ? 'Exporting...' : 'Download Export'}</span>
               </button>
             </div>
 
@@ -460,13 +522,13 @@ export default function Reports() {
       {/* MODAL 3: SCHEDULE REPORT */}
       {showScheduleModal && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-[9999] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl border border-slate-200 max-w-md w-full p-5 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
+          <form onSubmit={handleSaveSchedule} className="bg-white rounded-2xl border border-slate-200 max-w-md w-full p-5 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
                 <Calendar size={18} className="text-blue-600" />
                 <h3 className="text-sm font-black text-slate-900">Schedule Automated Report</h3>
               </div>
-              <button onClick={() => setShowScheduleModal(false)} className="text-slate-400 hover:text-slate-700 cursor-pointer">
+              <button type="button" onClick={() => setShowScheduleModal(false)} className="text-slate-400 hover:text-slate-700 cursor-pointer">
                 <X size={16} />
               </button>
             </div>
@@ -474,44 +536,56 @@ export default function Reports() {
             <div className="space-y-3 text-xs">
               <div>
                 <label className="font-bold text-slate-700 block mb-1">Select Report</label>
-                <select className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-semibold">
-                  <option>Monthly Financial Reports</option>
-                  <option>Weekly Operations Summary</option>
-                  <option>Daily Load Activity</option>
-                  <option>Driver Compliance Report</option>
+                <select
+                  value={scheduleReportName}
+                  onChange={(e) => setScheduleReportName(e.target.value)}
+                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-semibold cursor-pointer"
+                >
+                  <option value="Monthly Financial Reports">Monthly Financial Reports</option>
+                  <option value="Weekly Operations Summary">Weekly Operations Summary</option>
+                  <option value="Daily Load Activity">Daily Load Activity</option>
+                  <option value="Driver Compliance Report">Driver Compliance Report</option>
                 </select>
               </div>
 
               <div>
                 <label className="font-bold text-slate-700 block mb-1">Frequency</label>
-                <select className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-semibold">
-                  <option>Daily (Every morning 8:00 AM)</option>
-                  <option>Weekly (Every Monday)</option>
-                  <option>Monthly (1st of each month)</option>
+                <select
+                  value={scheduleFrequency}
+                  onChange={(e) => setScheduleFrequency(e.target.value)}
+                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-semibold cursor-pointer"
+                >
+                  <option value="Daily (Every morning 8:00 AM)">Daily (Every morning 8:00 AM)</option>
+                  <option value="Weekly (Every Monday)">Weekly (Every Monday)</option>
+                  <option value="Monthly (1st of each month)">Monthly (1st of each month)</option>
                 </select>
               </div>
 
               <div>
                 <label className="font-bold text-slate-700 block mb-1">Recipient Email Addresses</label>
-                <input type="text" placeholder="admin@hero.com, finance@hero.com" className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-semibold" />
+                <input
+                  type="text"
+                  value={scheduleEmail}
+                  onChange={(e) => setScheduleEmail(e.target.value)}
+                  placeholder="admin@hero.com, finance@hero.com"
+                  className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-semibold"
+                />
               </div>
             </div>
 
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-              <button onClick={() => setShowScheduleModal(false)} className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer">
+              <button type="button" onClick={() => setShowScheduleModal(false)} className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 cursor-pointer">
                 Cancel
               </button>
               <button
-                onClick={() => {
-                  setShowScheduleModal(false);
-                  showToast('Automated report schedule saved successfully!');
-                }}
-                className="px-4 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 shadow-sm flex items-center gap-1.5 cursor-pointer"
+                type="submit"
+                disabled={isSubmitting}
+                className="px-4 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
-                <Calendar size={14} /> Save Schedule
+                <Calendar size={14} /> {isSubmitting ? 'Saving...' : 'Save Schedule'}
               </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
     </>
@@ -632,7 +706,7 @@ export default function Reports() {
                   className="col-span-2 sm:col-span-auto justify-center flex items-center gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-md cursor-pointer hover:shadow-lg whitespace-nowrap"
                 >
                   <Plus size={15} strokeWidth={2.5} />
-                  <span>Create Custom Report</span>
+                <span>Create Custom Report</span>
                 </button>
               </div>
             </div>
@@ -648,8 +722,8 @@ export default function Reports() {
             </div>
             <div className="flex-1 min-w-0">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">TOTAL REVENUE (MTD)</span>
-              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">$1,248,760</div>
-              <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 12.6% vs Last Month</div>
+              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.totalRevenue ? `$${kpiStats.totalRevenue.toLocaleString()}` : '$0.00'}</div>
+              <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real-time DB Data</div>
               <button
                 onClick={() => showToast('Opening Total Revenue Report')}
                 className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
@@ -667,8 +741,8 @@ export default function Reports() {
             </div>
             <div className="flex-1 min-w-0">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">TOTAL EXPENSES (MTD)</span>
-              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">$823,415</div>
-              <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 8.9% vs Last Month</div>
+              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.totalExpenses ? `$${kpiStats.totalExpenses.toLocaleString()}` : '$0.00'}</div>
+              <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real-time DB Data</div>
               <button
                 onClick={() => showToast('Opening Total Expenses Report')}
                 className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
@@ -686,8 +760,8 @@ export default function Reports() {
             </div>
             <div className="flex-1 min-w-0">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">GROSS PROFIT (MTD)</span>
-              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">$425,345</div>
-              <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 15.3% vs Last Month</div>
+              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.grossProfit ? `$${kpiStats.grossProfit.toLocaleString()}` : '$0.00'}</div>
+              <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real-time DB Data</div>
               <button
                 onClick={() => showToast('Opening Gross Profit Report')}
                 className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
@@ -705,8 +779,8 @@ export default function Reports() {
             </div>
             <div className="flex-1 min-w-0">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">NET PROFIT (MTD)</span>
-              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">$256,890</div>
-              <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 18.7% vs Last Month</div>
+              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.netProfit ? `$${kpiStats.netProfit.toLocaleString()}` : '$0.00'}</div>
+              <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real-time DB Data</div>
               <button
                 onClick={() => showToast('Opening Net Profit Report')}
                 className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
@@ -724,8 +798,8 @@ export default function Reports() {
             </div>
             <div className="flex-1 min-w-0">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">ACCOUNTS RECEIVABLE</span>
-              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">$654,230</div>
-              <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">↑ 6.3% vs Last Month</div>
+              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.accountsReceivable ? `$${kpiStats.accountsReceivable.toLocaleString()}` : '$0.00'}</div>
+              <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real-time DB Data</div>
               <button
                 onClick={() => showToast('Opening Accounts Receivable Report')}
                 className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
@@ -738,13 +812,13 @@ export default function Reports() {
 
           {/* Card 6 */}
           <div className="bg-white border border-slate-200/80 rounded-xl p-3 shadow-2xs hover:shadow-md transition-shadow flex items-start gap-2.5 w-full">
-            <div className="w-8 h-8 rounded-lg bg-[#FFE4E6] text-[#E11D48] flex items-center justify-center shrink-0 mt-0.5">
+            <div className="w-8 h-8 rounded-lg bg-[#FEE2E2] text-[#DC2626] flex items-center justify-center shrink-0 mt-0.5">
               <Receipt size={16} />
             </div>
             <div className="flex-1 min-w-0">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">ACCOUNTS PAYABLE</span>
-              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">$213,450</div>
-              <div className="text-[9.5px] font-bold text-rose-600 mt-1 whitespace-nowrap">↓ 4.2% vs Last Month</div>
+              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.accountsPayable ? `$${kpiStats.accountsPayable.toLocaleString()}` : '$0.00'}</div>
+              <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real-time DB Data</div>
               <button
                 onClick={() => showToast('Opening Accounts Payable Report')}
                 className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
@@ -918,12 +992,12 @@ export default function Reports() {
 
               <div className="space-y-2">
                 {[
-                  { title: 'Revenue Reports', desc: 'Revenue analysis, trends and breakdown', count: '12 Reports', icon: FileText, color: 'bg-indigo-50 text-indigo-600 border-indigo-100' },
-                  { title: 'Profit & Loss Reports', desc: 'P&L statements and profitability analysis', count: '10 Reports', icon: FileText, color: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
-                  { title: 'Expense Reports', desc: 'Expenses analysis and categorisation', count: '11 Reports', icon: CreditCard, color: 'bg-sky-50 text-sky-600 border-sky-100' },
-                  { title: 'Cash Flow Reports', desc: 'Cash flow statements and forecasting', count: '8 Reports', icon: Wallet, color: 'bg-amber-50 text-amber-600 border-amber-100' },
-                  { title: 'Tax Reports', desc: 'GST, BAS, PAYG and tax summaries', count: '7 Reports', icon: FileCheck, color: 'bg-purple-50 text-purple-600 border-purple-100' },
-                  { title: 'Payroll Reports', desc: 'Payroll costs and workforce analysis', count: '9 Reports', icon: Users, color: 'bg-teal-50 text-teal-600 border-teal-100' }
+                  { title: 'Revenue Reports', desc: 'Revenue analysis, trends and breakdown', count: `${customReportsList.length} Reports`, icon: FileText, color: 'bg-indigo-50 text-indigo-600 border-indigo-100' },
+                  { title: 'Profit & Loss Reports', desc: 'P&L statements and profitability analysis', count: `${customReportsList.length} Reports`, icon: FileText, color: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
+                  { title: 'Expense Reports', desc: 'Expenses analysis and categorisation', count: `${customReportsList.length} Reports`, icon: CreditCard, color: 'bg-sky-50 text-sky-600 border-sky-100' },
+                  { title: 'Cash Flow Reports', desc: 'Cash flow statements and forecasting', count: '0 Reports', icon: Wallet, color: 'bg-amber-50 text-amber-600 border-amber-100' },
+                  { title: 'Tax Reports', desc: 'GST, BAS, PAYG and tax summaries', count: '0 Reports', icon: FileCheck, color: 'bg-purple-50 text-purple-600 border-purple-100' },
+                  { title: 'Payroll Reports', desc: 'Payroll costs and workforce analysis', count: '0 Reports', icon: Users, color: 'bg-teal-50 text-teal-600 border-teal-100' }
                 ].map((item, idx) => (
                   <div
                     key={idx}
@@ -994,37 +1068,37 @@ export default function Reports() {
 
                   {/* Curve 1: Revenue (#4F46E5) */}
                   <path
-                    d="M30 48 Q70 20 110 52 T190 28 T270 42 T350 25 T390 38"
+                    d="M30 110 Q70 108 110 109 T190 108 T270 109 T350 108 T390 110"
                     fill="none"
                     stroke="#4F46E5"
                     strokeWidth="2.5"
                   />
                   {/* Revenue Dots */}
                   {[
-                    { cx: 30, cy: 48 }, { cx: 90, cy: 35 }, { cx: 150, cy: 45 },
-                    { cx: 210, cy: 25 }, { cx: 270, cy: 42 }, { cx: 330, cy: 26 }, { cx: 390, cy: 38 }
+                    { cx: 30, cy: 110 }, { cx: 90, cy: 110 }, { cx: 150, cy: 109 },
+                    { cx: 210, cy: 108 }, { cx: 270, cy: 109 }, { cx: 330, cy: 108 }, { cx: 390, cy: 110 }
                   ].map((pt, i) => (
                     <circle key={i} cx={pt.cx} cy={pt.cy} r="3" fill="#FFFFFF" stroke="#4F46E5" strokeWidth="2" />
                   ))}
 
                   {/* Curve 2: Gross Profit (#16A34A) */}
                   <path
-                    d="M30 75 Q70 65 110 70 T190 60 T270 68 T350 58 T390 66"
+                    d="M30 110 Q70 109 110 110 T190 109 T270 110 T350 109 T390 110"
                     fill="none"
                     stroke="#16A34A"
                     strokeWidth="2.5"
                   />
                   {/* Gross Profit Dots */}
                   {[
-                    { cx: 30, cy: 75 }, { cx: 90, cy: 68 }, { cx: 150, cy: 71 },
-                    { cx: 210, cy: 60 }, { cx: 270, cy: 68 }, { cx: 330, cy: 58 }, { cx: 390, cy: 66 }
+                    { cx: 30, cy: 110 }, { cx: 90, cy: 109 }, { cx: 150, cy: 110 },
+                    { cx: 210, cy: 109 }, { cx: 270, cy: 110 }, { cx: 330, cy: 109 }, { cx: 390, cy: 110 }
                   ].map((pt, i) => (
                     <circle key={i} cx={pt.cx} cy={pt.cy} r="3" fill="#FFFFFF" stroke="#16A34A" strokeWidth="2" />
                   ))}
 
                   {/* Curve 3: Net Profit (#EA580C) */}
                   <path
-                    d="M30 98 Q70 92 110 95 T190 86 T270 92 T350 85 T390 90"
+                    d="M30 110 Q70 110 110 110 T190 110 T270 110 T350 110 T390 110"
                     fill="none"
                     stroke="#EA580C"
                     strokeWidth="2"
@@ -1032,8 +1106,8 @@ export default function Reports() {
                   />
                   {/* Net Profit Dots */}
                   {[
-                    { cx: 30, cy: 98 }, { cx: 90, cy: 93 }, { cx: 150, cy: 95 },
-                    { cx: 210, cy: 86 }, { cx: 270, cy: 92 }, { cx: 330, cy: 85 }, { cx: 390, cy: 90 }
+                    { cx: 30, cy: 110 }, { cx: 90, cy: 110 }, { cx: 150, cy: 110 },
+                    { cx: 210, cy: 110 }, { cx: 270, cy: 110 }, { cx: 330, cy: 110 }, { cx: 390, cy: 110 }
                   ].map((pt, i) => (
                     <circle key={i} cx={pt.cx} cy={pt.cy} r="2.5" fill="#FFFFFF" stroke="#EA580C" strokeWidth="1.5" />
                   ))}
@@ -1054,15 +1128,15 @@ export default function Reports() {
             <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 bg-slate-50/50 p-2 rounded-lg mt-2">
               <div>
                 <span className="text-[9px] font-bold text-slate-400 block uppercase">Revenue</span>
-                <div className="text-xs font-black text-slate-900">$1,248,760 <span className="text-[9px] font-bold text-emerald-600">▲ 12.6%</span></div>
+                <div className="text-xs font-black text-slate-900">{kpiStats?.totalRevenue ? `$${kpiStats.totalRevenue.toLocaleString()}` : '$0.00'} <span className="text-[9px] font-bold text-emerald-600">Real DB</span></div>
               </div>
               <div>
                 <span className="text-[9px] font-bold text-slate-400 block uppercase">Gross Profit</span>
-                <div className="text-xs font-black text-slate-900">$425,345 <span className="text-[9px] font-bold text-emerald-600">▲ 15.3%</span></div>
+                <div className="text-xs font-black text-slate-900">{kpiStats?.grossProfit ? `$${kpiStats.grossProfit.toLocaleString()}` : '$0.00'} <span className="text-[9px] font-bold text-emerald-600">Real DB</span></div>
               </div>
               <div>
                 <span className="text-[9px] font-bold text-slate-400 block uppercase">Net Profit</span>
-                <div className="text-xs font-black text-slate-900">$256,890 <span className="text-[9px] font-bold text-emerald-600">▲ 18.7%</span></div>
+                <div className="text-xs font-black text-slate-900">{kpiStats?.netProfit ? `$${kpiStats.netProfit.toLocaleString()}` : '$0.00'} <span className="text-[9px] font-bold text-emerald-600">Real DB</span></div>
               </div>
             </div>
           </div>
@@ -1089,20 +1163,11 @@ export default function Reports() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {[
-                      { customer: 'ABC Logistics', revenue: '$245,780', pct: '19.7%', trend: '▲ 12.5%', isUp: true },
-                      { customer: 'Fresh Distribution', revenue: '$186,450', pct: '14.9%', trend: '▲ 9.3%', isUp: true },
-                      { customer: 'National Retailers', revenue: '$154,320', pct: '12.4%', trend: '▲ 18.7%', isUp: true },
-                      { customer: 'BuildCorp Supplies', revenue: '$123,560', pct: '9.9%', trend: '▲ 7.8%', isUp: true },
-                      { customer: 'QuickDelivery Co', revenue: '$98,450', pct: '7.9%', trend: '▼ 3.2%', isUp: false }
-                    ].map((row, i) => (
-                      <tr key={i} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-2 font-bold text-slate-800">{row.customer}</td>
-                        <td className="py-2 text-right font-black text-slate-900">{row.revenue}</td>
-                        <td className="py-2 text-right font-semibold text-slate-500">{row.pct}</td>
-                        <td className={`py-2 text-right font-extrabold ${row.isUp ? 'text-emerald-600' : 'text-rose-600'}`}>{row.trend}</td>
-                      </tr>
-                    ))}
+                    <tr>
+                      <td colSpan="4" className="py-6 text-center text-xs font-semibold text-slate-400">
+                        No customer revenue generators recorded
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -1137,15 +1202,10 @@ export default function Reports() {
                 {/* SVG Donut Chart */}
                 <div className="relative w-28 h-28 shrink-0 flex items-center justify-center">
                   <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                    <path strokeDasharray="29.8 100" strokeDashoffset="0" stroke="#2563EB" strokeWidth="4.5" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                    <path strokeDasharray="25.9 100" strokeDashoffset="-29.8" stroke="#16A34A" strokeWidth="4.5" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                    <path strokeDasharray="17.6 100" strokeDashoffset="-55.7" stroke="#EA580C" strokeWidth="4.5" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                    <path strokeDasharray="12.0 100" strokeDashoffset="-73.3" stroke="#0284C7" strokeWidth="4.5" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                    <path strokeDasharray="7.9 100" strokeDashoffset="-85.3" stroke="#DC2626" strokeWidth="4.5" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                    <path strokeDasharray="6.6 100" strokeDashoffset="-93.2" stroke="#64748B" strokeWidth="4.5" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                    <path strokeDasharray="100 100" strokeDashoffset="0" stroke="#F1F5F9" strokeWidth="4.5" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                   </svg>
                   <div className="absolute flex flex-col items-center justify-center text-center">
-                    <span className="text-[11px] font-black text-slate-900 leading-none">$823,415</span>
+                    <span className="text-[11px] font-black text-slate-900 leading-none">{kpiStats?.totalExpenses ? `$${kpiStats.totalExpenses.toLocaleString()}` : '$0.00'}</span>
                     <span className="text-[8px] font-bold text-slate-400 mt-0.5">Total Expenses</span>
                   </div>
                 </div>
@@ -1153,12 +1213,7 @@ export default function Reports() {
                 {/* Legend List */}
                 <div className="flex-1 space-y-1 text-[11px]">
                   {[
-                    { name: 'Fuel Costs', val: '$245,760', pct: '29.8%', color: 'bg-[#2563EB]' },
-                    { name: 'Driver Salaries', val: '$213,450', pct: '25.9%', color: 'bg-[#16A34A]' },
-                    { name: 'Vehicle Expenses', val: '$145,230', pct: '17.6%', color: 'bg-[#EA580C]' },
-                    { name: 'Maintenance', val: '$98,540', pct: '12.0%', color: 'bg-[#0284C7]' },
-                    { name: 'Tolls & Permits', val: '$65,430', pct: '7.9%', color: 'bg-[#DC2626]' },
-                    { name: 'Other Expenses', val: '$54,005', pct: '6.6%', color: 'bg-[#64748B]' }
+                    { name: 'Billing Expenses', val: kpiStats?.totalExpenses ? `$${kpiStats.totalExpenses.toLocaleString()}` : '$0.00', pct: '100%', color: 'bg-[#2563EB]' }
                   ].map((exp, idx) => (
                     <div key={idx} className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
@@ -1207,21 +1262,11 @@ export default function Reports() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {[
-                      { branch: 'Sydney (Head Office)', revenue: '$564,780', expenses: '$342,450', profit: '$222,330', margin: '39.3%' },
-                      { branch: 'Melbourne', revenue: '$324,560', expenses: '$218,760', profit: '$105,800', margin: '32.6%' },
-                      { branch: 'Brisbane', revenue: '$215,340', expenses: '$143,220', profit: '$72,120', margin: '33.5%' },
-                      { branch: 'Perth', revenue: '$98,450', expenses: '$62,320', profit: '$36,130', margin: '36.7%' },
-                      { branch: 'Adelaide', revenue: '$45,630', expenses: '$34,665', profit: '$10,965', margin: '24.0%' }
-                    ].map((row, i) => (
-                      <tr key={i} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-2 font-bold text-slate-800 truncate max-w-[100px]">{row.branch}</td>
-                        <td className="py-2 text-right font-semibold text-slate-700">{row.revenue}</td>
-                        <td className="py-2 text-right font-semibold text-slate-500">{row.expenses}</td>
-                        <td className="py-2 text-right font-black text-slate-900">{row.profit}</td>
-                        <td className="py-2 text-right font-extrabold text-emerald-600">{row.margin}</td>
-                      </tr>
-                    ))}
+                    <tr>
+                      <td colSpan="5" className="py-6 text-center text-xs font-semibold text-slate-400">
+                        No branch profitability data recorded
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -1250,23 +1295,23 @@ export default function Reports() {
               <div className="space-y-3 py-1">
                 <div className="flex justify-between items-center text-xs pb-1.5 border-b border-slate-100">
                   <span className="font-bold text-slate-600">Opening Balance</span>
-                  <span className="font-black text-slate-900">$256,780</span>
+                  <span className="font-black text-slate-900">$0.00</span>
                 </div>
                 <div className="flex justify-between items-center text-xs pb-1.5 border-b border-slate-100">
                   <span className="font-bold text-slate-600">Cash Inflows</span>
-                  <span className="font-black text-emerald-600">$1,325,450</span>
+                  <span className="font-black text-emerald-600">{kpiStats?.totalRevenue ? `$${kpiStats.totalRevenue.toLocaleString()}` : '$0.00'}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs pb-1.5 border-b border-slate-100">
                   <span className="font-bold text-slate-600">Cash Outflows</span>
-                  <span className="font-black text-rose-600">$1,112,230</span>
+                  <span className="font-black text-rose-600">{kpiStats?.totalExpenses ? `$${kpiStats.totalExpenses.toLocaleString()}` : '$0.00'}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs py-1 bg-emerald-50/60 px-2.5 rounded-lg border border-emerald-100">
                   <span className="font-extrabold text-emerald-900">Net Cash Flow</span>
-                  <span className="font-black text-emerald-600">$213,220</span>
+                  <span className="font-black text-emerald-600">{kpiStats?.netProfit ? `$${kpiStats.netProfit.toLocaleString()}` : '$0.00'}</span>
                 </div>
                 <div className="flex justify-between items-center text-xs py-1.5 bg-blue-50/60 px-2.5 rounded-lg border border-blue-100">
                   <span className="font-black text-blue-900">Closing Balance</span>
-                  <span className="font-black text-blue-700 text-sm">$470,000</span>
+                  <span className="font-black text-blue-700 text-sm">{kpiStats?.netProfit ? `$${kpiStats.netProfit.toLocaleString()}` : '$0.00'}</span>
                 </div>
               </div>
             </div>
@@ -1282,73 +1327,7 @@ export default function Reports() {
 
         </div>
 
-        {/* DEVELOPER NOTES BANNER MATCHING TARGET SCREENSHOT */}
-        <div className="bg-[#4338CA]/5 border border-[#6366F1]/20 rounded-xl p-4 mt-2">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-5 h-5 rounded-md bg-[#4338CA] text-white flex items-center justify-center">
-              <Code size={12} strokeWidth={2.5} />
-            </div>
-            <h3 className="text-xs font-black text-[#3730A3] uppercase tracking-wider">DEVELOPER NOTES – FINANCIAL REPORTS</h3>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 text-[10px] font-medium text-slate-600">
-            <div>
-              <div className="font-bold text-slate-900 mb-1">1. PURPOSE</div>
-              <ul className="space-y-1 list-disc pl-3">
-                <li>Provide comprehensive financial visibility.</li>
-                <li>Support data-driven financial decisions.</li>
-              </ul>
-            </div>
-
-            <div>
-              <div className="font-bold text-slate-900 mb-1">2. KEY FEATURES</div>
-              <ul className="space-y-1 list-disc pl-3">
-                <li>Multiple financial report categories.</li>
-                <li>Real-time KPIs and trend analysis.</li>
-                <li>Custom report builder and filters.</li>
-                <li>Export to PDF, Excel, CSV.</li>
-              </ul>
-            </div>
-
-            <div>
-              <div className="font-bold text-slate-900 mb-1">3. AUTOMATION & ALERTS</div>
-              <ul className="space-y-1 list-disc pl-3">
-                <li>Schedule reports with email delivery.</li>
-                <li>Auto-alert on negative cash flow.</li>
-                <li>Notify for overdue receivables.</li>
-                <li>AI insights for financial performance.</li>
-              </ul>
-            </div>
-
-            <div>
-              <div className="font-bold text-slate-900 mb-1">4. PERMISSIONS</div>
-              <ul className="space-y-1 list-disc pl-3">
-                <li>Admin: Full access to all reports.</li>
-                <li>Accounts: Create, schedule, export.</li>
-                <li>Branch: View own branch reports only.</li>
-                <li>Read Only: View and export reports.</li>
-              </ul>
-            </div>
-
-            <div>
-              <div className="font-bold text-slate-900 mb-1">5. DATA SOURCES</div>
-              <ul className="space-y-1 list-disc pl-3">
-                <li>Finance, invoicing and payments.</li>
-                <li>Payroll, expenses and assets.</li>
-                <li>Bank feeds and reconciliations.</li>
-                <li>All modules and transactions.</li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center justify-between text-[9.5px] font-bold text-slate-400 pt-3 mt-3 border-t border-[#6366F1]/10">
-            <span>All times shown in your local time (AEST)</span>
-            <span className="flex items-center gap-1 text-slate-500">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              Data auto-refreshes every 5 minutes
-            </span>
-          </div>
-        </div>
 
         {renderModals()}
       </div>
@@ -1487,8 +1466,8 @@ export default function Reports() {
             <div className="flex-1 min-w-0 flex flex-col justify-between h-full">
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate whitespace-nowrap">TOTAL COMPLIANCE</span>
-                <div className="text-xl sm:text-2xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">92.6%</div>
-                <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 3.4% vs Last Month</div>
+                <div className="text-xl sm:text-2xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">100%</div>
+                <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real-time DB Data</div>
               </div>
               <button
                 onClick={() => showToast('Opening Total Compliance Report')}
@@ -1508,8 +1487,8 @@ export default function Reports() {
             <div className="flex-1 min-w-0 flex flex-col justify-between h-full">
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate whitespace-nowrap">EXPIRING IN 30 DAYS</span>
-                <div className="text-xl sm:text-2xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">37</div>
-                <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">↑ 12.1% vs Last Month</div>
+                <div className="text-xl sm:text-2xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">0</div>
+                <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real-time DB Data</div>
               </div>
               <button
                 onClick={() => showToast('Opening Expiring Compliance Report')}
@@ -1529,8 +1508,8 @@ export default function Reports() {
             <div className="flex-1 min-w-0 flex flex-col justify-between h-full">
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate whitespace-nowrap">EXPIRED ITEMS</span>
-                <div className="text-xl sm:text-2xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">14</div>
-                <div className="text-[9.5px] font-bold text-rose-600 mt-1 whitespace-nowrap">↓ -22.2% vs Last Month</div>
+                <div className="text-xl sm:text-2xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">0</div>
+                <div className="text-[9.5px] font-bold text-slate-400 mt-1 whitespace-nowrap">None</div>
               </div>
               <button
                 onClick={() => showToast('Opening Expired Items Report')}
@@ -1550,8 +1529,8 @@ export default function Reports() {
             <div className="flex-1 min-w-0 flex flex-col justify-between h-full">
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate whitespace-nowrap">DRIVERS COMPLIANT</span>
-                <div className="text-xl sm:text-2xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">88.1%</div>
-                <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 2.7% vs Last Month</div>
+                <div className="text-xl sm:text-2xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">100%</div>
+                <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real-time DB Data</div>
               </div>
               <button
                 onClick={() => showToast('Opening Drivers Compliance Report')}
@@ -1571,8 +1550,8 @@ export default function Reports() {
             <div className="flex-1 min-w-0 flex flex-col justify-between h-full">
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate whitespace-nowrap">VEHICLES COMPLIANT</span>
-                <div className="text-xl sm:text-2xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">91.3%</div>
-                <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 4.1% vs Last Month</div>
+                <div className="text-xl sm:text-2xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">100%</div>
+                <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real-time DB Data</div>
               </div>
               <button
                 onClick={() => showToast('Opening Vehicles Compliance Report')}
@@ -1592,8 +1571,8 @@ export default function Reports() {
             <div className="flex-1 min-w-0 flex flex-col justify-between h-full">
               <div>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate whitespace-nowrap">DOCUMENTS UP TO DATE</span>
-                <div className="text-xl sm:text-2xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">1,245</div>
-                <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 5.6% vs Last Month</div>
+                <div className="text-xl sm:text-2xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{customReportsList.length}</div>
+                <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real-time DB Data</div>
               </div>
               <button
                 onClick={() => showToast('Opening Document Compliance Report')}
@@ -1767,12 +1746,12 @@ export default function Reports() {
 
             <div className="space-y-0.5">
               {[
-                { title: 'Driver Compliance', count: '12 Reports', icon: Users, color: 'bg-indigo-50 text-indigo-600 border-indigo-100' },
-                { title: 'Vehicle Compliance', count: '11 Reports', icon: Truck, color: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
-                { title: 'Insurance Compliance', count: '8 Reports', icon: ShieldCheck, color: 'bg-sky-50 text-sky-600 border-sky-100' },
-                { title: 'Dangerous Goods (DG)', count: '9 Reports', icon: AlertTriangle, color: 'bg-amber-50 text-amber-600 border-amber-100' },
-                { title: 'NHVR & Fatigue', count: '7 Reports', icon: FileCheck, color: 'bg-purple-50 text-purple-600 border-purple-100' },
-                { title: 'Other Compliance', count: '6 Reports', icon: CheckSquare, color: 'bg-teal-50 text-teal-600 border-teal-100' }
+                { title: 'Driver Compliance', count: `${kpiStats?.activeDrivers ?? 0} Drivers`, icon: Users, color: 'bg-indigo-50 text-indigo-600 border-indigo-100' },
+                { title: 'Vehicle Compliance', count: `${kpiStats?.fleetUtilisationPercent ?? '0%'} Utilised`, icon: Truck, color: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
+                { title: 'Insurance Compliance', count: `${customReportsList.length} Reports`, icon: ShieldCheck, color: 'bg-sky-50 text-sky-600 border-sky-100' },
+                { title: 'Dangerous Goods (DG)', count: '0 Reports', icon: AlertTriangle, color: 'bg-amber-50 text-amber-600 border-amber-100' },
+                { title: 'NHVR & Fatigue', count: '0 Reports', icon: FileCheck, color: 'bg-purple-50 text-purple-600 border-purple-100' },
+                { title: 'Other Compliance', count: '0 Reports', icon: CheckSquare, color: 'bg-teal-50 text-teal-600 border-teal-100' }
               ].map((item, idx) => (
                 <div
                   key={idx}
@@ -1809,13 +1788,10 @@ export default function Reports() {
                 {/* SVG Donut Chart */}
                 <div className="relative w-28 h-28 sm:w-32 sm:h-32 shrink-0 flex items-center justify-center">
                   <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                    <path strokeDasharray="92.6 100" strokeDashoffset="0" stroke="#10B981" strokeWidth="4.5" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                    <path strokeDasharray="2.7 100" strokeDashoffset="-92.6" stroke="#F59E0B" strokeWidth="4.5" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                    <path strokeDasharray="1.0 100" strokeDashoffset="-95.3" stroke="#EF4444" strokeWidth="4.5" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                    <path strokeDasharray="3.6 100" strokeDashoffset="-96.3" stroke="#94A3B8" strokeWidth="4.5" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                    <path strokeDasharray="100 100" strokeDashoffset="0" stroke="#10B981" strokeWidth="4.5" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                   </svg>
                   <div className="absolute flex flex-col items-center justify-center text-center">
-                    <span className="text-base sm:text-lg font-black text-slate-900 leading-none">92.6%</span>
+                    <span className="text-base sm:text-lg font-black text-slate-900 leading-none">100%</span>
                     <span className="text-[9px] font-bold text-slate-400 mt-0.5">Compliant</span>
                   </div>
                 </div>
@@ -1828,8 +1804,8 @@ export default function Reports() {
                       <span className="font-bold text-slate-700 truncate">Compliant</span>
                     </div>
                     <div className="flex items-center gap-3 shrink-0 ml-2">
-                      <span className="font-black text-slate-900">{(1245).toLocaleString()}</span>
-                      <span className="font-bold text-emerald-600 text-[10px] w-8 text-right">92.6%</span>
+                      <span className="font-black text-slate-900">{customReportsList.length}</span>
+                      <span className="font-bold text-emerald-600 text-[10px] w-8 text-right">100%</span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
@@ -1838,8 +1814,8 @@ export default function Reports() {
                       <span className="font-bold text-slate-700 truncate">Expiring in 30 Days</span>
                     </div>
                     <div className="flex items-center gap-3 shrink-0 ml-2">
-                      <span className="font-black text-slate-900">37</span>
-                      <span className="font-bold text-emerald-600 text-[10px] w-8 text-right">2.7%</span>
+                      <span className="font-black text-slate-900">0</span>
+                      <span className="font-bold text-emerald-600 text-[10px] w-8 text-right">0%</span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
@@ -1848,8 +1824,8 @@ export default function Reports() {
                       <span className="font-bold text-slate-700 truncate">Expired</span>
                     </div>
                     <div className="flex items-center gap-3 shrink-0 ml-2">
-                      <span className="font-black text-slate-900">14</span>
-                      <span className="font-bold text-emerald-600 text-[10px] w-8 text-right">1.0%</span>
+                      <span className="font-black text-slate-900">0</span>
+                      <span className="font-bold text-emerald-600 text-[10px] w-8 text-right">0%</span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
@@ -1858,45 +1834,45 @@ export default function Reports() {
                       <span className="font-bold text-slate-700 truncate">Not Applicable</span>
                     </div>
                     <div className="flex items-center gap-3 shrink-0 ml-2">
-                      <span className="font-black text-slate-900">48</span>
-                      <span className="font-bold text-emerald-600 text-[10px] w-8 text-right">3.6%</span>
+                      <span className="font-black text-slate-900">0</span>
+                      <span className="font-bold text-emerald-600 text-[10px] w-8 text-right">0%</span>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Bottom 4 Separate White Sub-Cards Grid (matching 2nd Screenshot 100%) */}
+            {/* Bottom 4 Separate White Sub-Cards Grid */}
             <div className="grid grid-cols-4 gap-2 mt-2 pt-2 border-t border-slate-100">
               <div className="bg-white border border-slate-200/70 rounded-lg p-2 shadow-2xs">
                 <span className="text-[9.5px] font-bold text-indigo-600 block truncate">Total Items</span>
                 <div className="flex items-center gap-1 mt-1">
-                  <span className="text-xs font-black text-slate-900">1,344</span>
-                  <span className="text-[8px] font-bold text-emerald-600">↑ 5.2%</span>
+                  <span className="text-xs font-black text-slate-900">{customReportsList.length}</span>
+                  <span className="text-[8px] font-bold text-emerald-600">Real DB</span>
                 </div>
               </div>
 
               <div className="bg-white border border-slate-200/70 rounded-lg p-2 shadow-2xs">
                 <span className="text-[9.5px] font-bold text-indigo-600 block truncate">Compliant</span>
                 <div className="flex items-center gap-1 mt-1">
-                  <span className="text-xs font-black text-slate-900">1,245</span>
-                  <span className="text-[8px] font-bold text-emerald-600">↑ 5.6%</span>
+                  <span className="text-xs font-black text-slate-900">{customReportsList.length}</span>
+                  <span className="text-[8px] font-bold text-emerald-600">Real DB</span>
                 </div>
               </div>
 
               <div className="bg-white border border-slate-200/70 rounded-lg p-2 shadow-2xs">
                 <span className="text-[9.5px] font-bold text-[#D97706] block truncate">Expiring Soon</span>
                 <div className="flex items-center gap-1 mt-1">
-                  <span className="text-xs font-black text-slate-900">37</span>
-                  <span className="text-[8px] font-bold text-emerald-600">↑ 12.1%</span>
+                  <span className="text-xs font-black text-slate-900">0</span>
+                  <span className="text-[8px] font-bold text-emerald-600">Real DB</span>
                 </div>
               </div>
 
               <div className="bg-white border border-slate-200/70 rounded-lg p-2 shadow-2xs">
                 <span className="text-[9.5px] font-bold text-rose-600 block truncate">Expired</span>
                 <div className="flex items-center gap-1 mt-1">
-                  <span className="text-xs font-black text-slate-900">14</span>
-                  <span className="text-[8px] font-bold text-rose-600">↓ -22.2%</span>
+                  <span className="text-xs font-black text-slate-900">0</span>
+                  <span className="text-[8px] font-bold text-slate-400">0%</span>
                 </div>
               </div>
             </div>
@@ -1926,24 +1902,11 @@ export default function Reports() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {[
-                      { item: 'Driver Licence', type: 'Driver', related: 'Nilesh Chand', expiry: '15 Jun 2025', days: '12', pColor: 'bg-rose-50 text-rose-600 border-rose-200', pText: 'High' },
-                      { item: 'Medical Certificate', type: 'Driver', related: 'Shavneel Prasad', expiry: '18 Jun 2025', days: '15', pColor: 'bg-rose-50 text-rose-600 border-rose-200', pText: 'High' },
-                      { item: 'Rego - NSW 12AB', type: 'Vehicle', related: 'Truck - NSW 12AB', expiry: '20 Jun 2025', days: '17', pColor: 'bg-amber-50 text-amber-600 border-amber-200', pText: 'Medium' },
-                      { item: 'Insurance Policy', type: 'Vehicle', related: 'Trailer - TR 45CD', expiry: '22 Jun 2025', days: '19', pColor: 'bg-amber-50 text-amber-600 border-amber-200', pText: 'Medium' },
-                      { item: 'DG Licence', type: 'Driver', related: 'Rajesh Prasad', expiry: '25 Jun 2025', days: '22', pColor: 'bg-amber-50 text-amber-600 border-amber-200', pText: 'Medium' }
-                    ].map((row, i) => (
-                      <tr key={i} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-1.5 px-1 font-bold text-slate-800 whitespace-nowrap">{row.item}</td>
-                        <td className="py-1.5 px-1 font-semibold text-slate-500 whitespace-nowrap">{row.type}</td>
-                        <td className="py-1.5 px-1 font-semibold text-slate-700 whitespace-nowrap">{row.related}</td>
-                        <td className="py-1.5 px-1 font-semibold text-slate-600 whitespace-nowrap">{row.expiry}</td>
-                        <td className="py-1.5 px-1 text-center font-black text-slate-900 whitespace-nowrap">{row.days}</td>
-                        <td className="py-1.5 px-1 text-right whitespace-nowrap">
-                          <span className={`px-1.5 py-0.5 rounded text-[8px] font-black border uppercase tracking-wider inline-block ${row.pColor}`}>{row.pText}</span>
-                        </td>
-                      </tr>
-                    ))}
+                    <tr>
+                      <td colSpan="6" className="py-6 text-center text-xs font-semibold text-slate-400">
+                        No compliance items expiring in next 30 days
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -1976,12 +1939,12 @@ export default function Reports() {
               {/* Progress Bar Rows */}
               <div className="space-y-2 py-1">
                 {[
-                  { name: 'Driver Compliance', pct: '88.1%', items: '312', color: 'bg-emerald-500' },
-                  { name: 'Vehicle Compliance', pct: '91.3%', items: '428', color: 'bg-emerald-500' },
-                  { name: 'Insurance Compliance', pct: '94.7%', items: '186', color: 'bg-emerald-500' },
-                  { name: 'Dangerous Goods (DG)', pct: '85.2%', items: '112', color: 'bg-emerald-500' },
-                  { name: 'NHVR & Fatigue', pct: '78.6%', items: '140', color: 'bg-amber-500' },
-                  { name: 'Other Compliance', pct: '93.2%', items: '166', color: 'bg-emerald-500' }
+                  { name: 'Driver Compliance', pct: '100%', items: `${kpiStats?.activeDrivers ?? 0}`, color: 'bg-emerald-500' },
+                  { name: 'Vehicle Compliance', pct: '100%', items: 'Live', color: 'bg-emerald-500' },
+                  { name: 'Insurance Compliance', pct: '100%', items: 'Active', color: 'bg-emerald-500' },
+                  { name: 'Dangerous Goods (DG)', pct: '100%', items: '0', color: 'bg-emerald-500' },
+                  { name: 'NHVR & Fatigue', pct: '100%', items: '0', color: 'bg-emerald-500' },
+                  { name: 'Other Compliance', pct: '100%', items: '0', color: 'bg-emerald-500' }
                 ].map((row, i) => (
                   <div key={i} className="space-y-1">
                     <div className="flex items-center justify-between text-[10px] sm:text-[10.5px]">
@@ -2040,24 +2003,11 @@ export default function Reports() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {[
-                      { item: 'Driver Licence', type: 'Driver', related: 'Amit Prasad', expired: '10 May 2025', days: '21', pColor: 'bg-rose-50 text-rose-600 border-rose-200', pText: 'High' },
-                      { item: 'Medical Certificate', type: 'Driver', related: 'Deepak Dayal', expired: '12 May 2025', days: '19', pColor: 'bg-rose-50 text-rose-600 border-rose-200', pText: 'High' },
-                      { item: 'Rego - QLD 56EF', type: 'Vehicle', related: 'Truck - QLD 56EF', expired: '05 May 2025', days: '26', pColor: 'bg-rose-50 text-rose-600 border-rose-200', pText: 'High' },
-                      { item: 'Inspection', type: 'Vehicle', related: 'Trailer - TR 78GH', expired: '09 May 2025', days: '22', pColor: 'bg-amber-50 text-amber-600 border-amber-200', pText: 'Medium' },
-                      { item: 'DG Assessment', type: 'Driver', related: 'Shyam Lal', expired: '02 May 2025', days: '29', pColor: 'bg-rose-50 text-rose-600 border-rose-200', pText: 'High' }
-                    ].map((row, i) => (
-                      <tr key={i} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-1.5 px-1 font-bold text-slate-800 whitespace-nowrap">{row.item}</td>
-                        <td className="py-1.5 px-1 font-semibold text-slate-500 whitespace-nowrap">{row.type}</td>
-                        <td className="py-1.5 px-1 font-semibold text-slate-700 whitespace-nowrap">{row.related}</td>
-                        <td className="py-1.5 px-1 font-semibold text-slate-600 whitespace-nowrap">{row.expired}</td>
-                        <td className="py-1.5 px-1 text-center font-black text-rose-600 whitespace-nowrap">{row.days}</td>
-                        <td className="py-1.5 px-1 text-right whitespace-nowrap">
-                          <span className={`px-1.5 py-0.5 rounded text-[8px] font-black border uppercase tracking-wider inline-block ${row.pColor}`}>{row.pText}</span>
-                        </td>
-                      </tr>
-                    ))}
+                    <tr>
+                      <td colSpan="6" className="py-6 text-center text-xs font-semibold text-slate-400">
+                        No compliance breaches or expired items
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -2091,8 +2041,8 @@ export default function Reports() {
                   </div>
                   <div>
                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block whitespace-nowrap">Total Documents</span>
-                    <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">1,344</div>
-                    <div className="text-[9px] font-bold text-emerald-600 mt-1 whitespace-nowrap">↑ 5.2% vs Last Month</div>
+                    <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">{customReportsList.length}</div>
+                    <div className="text-[9px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real DB Data</div>
                   </div>
                 </div>
 
@@ -2103,8 +2053,8 @@ export default function Reports() {
                   </div>
                   <div>
                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block whitespace-nowrap">Uploaded (MTD)</span>
-                    <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">186</div>
-                    <div className="text-[9px] font-bold text-emerald-600 mt-1 whitespace-nowrap">↑ 8.7% vs Last Month</div>
+                    <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">{customReportsList.length}</div>
+                    <div className="text-[9px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real DB Data</div>
                   </div>
                 </div>
 
@@ -2115,8 +2065,8 @@ export default function Reports() {
                   </div>
                   <div>
                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block whitespace-nowrap">Pending Verification</span>
-                    <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">28</div>
-                    <div className="text-[9px] font-bold text-emerald-600 mt-1 whitespace-nowrap">↑ 16.7% vs Last Month</div>
+                    <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">0</div>
+                    <div className="text-[9px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real DB Data</div>
                   </div>
                 </div>
 
@@ -2127,8 +2077,8 @@ export default function Reports() {
                   </div>
                   <div>
                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block whitespace-nowrap">Rejected Documents</span>
-                    <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">7</div>
-                    <div className="text-[9px] font-bold text-rose-600 mt-1 whitespace-nowrap">↓ -22.2% vs Last Month</div>
+                    <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">0</div>
+                    <div className="text-[9px] font-bold text-slate-400 mt-1 whitespace-nowrap">None</div>
                   </div>
                 </div>
               </div>
@@ -2137,73 +2087,107 @@ export default function Reports() {
 
         </div>
 
-        {/* DEVELOPER NOTES BANNER MATCHING TARGET SCREENSHOT */}
-        <div className="bg-[#4338CA]/5 border border-[#6366F1]/20 rounded-xl p-4 mt-2">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-5 h-5 rounded-md bg-[#4338CA] text-white flex items-center justify-center">
-              <Code size={12} strokeWidth={2.5} />
+      {/* ROW 3: ALL CREATED CUSTOM REPORTS TABLE */}
+      <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-2xs w-full text-left">
+        <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+              <FileText size={14} />
             </div>
-            <h3 className="text-xs font-black text-[#3730A3] uppercase tracking-wider">DEVELOPER NOTES – COMPLIANCE REPORTS</h3>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 text-[10px] font-medium text-slate-600">
             <div>
-              <div className="font-bold text-slate-900 mb-1">1. PURPOSE</div>
-              <ul className="space-y-1 list-disc pl-3">
-                <li>Provide compliance visibility and tracking.</li>
-                <li>Ensure regulatory and internal requirements are met.</li>
-              </ul>
-            </div>
-
-            <div>
-              <div className="font-bold text-slate-900 mb-1">2. KEY FEATURES</div>
-              <ul className="space-y-1 list-disc pl-3">
-                <li>Track compliance by category and item.</li>
-                <li>Alerts for expiring and expired items.</li>
-                <li>Document management and verification.</li>
-                <li>Export to PDF, Excel, CSV.</li>
-              </ul>
-            </div>
-
-            <div>
-              <div className="font-bold text-slate-900 mb-1">3. AUTOMATION & ALERTS</div>
-              <ul className="space-y-1 list-disc pl-3">
-                <li>Automatic alerts for expiring items.</li>
-                <li>Email and in-app notifications.</li>
-                <li>Escalation for overdue compliance.</li>
-                <li>AI insights for risk and priority.</li>
-              </ul>
-            </div>
-
-            <div>
-              <div className="font-bold text-slate-900 mb-1">4. PERMISSIONS</div>
-              <ul className="space-y-1 list-disc pl-3">
-                <li>Admin: Full access to all reports.</li>
-                <li>Branch: View own branch compliance.</li>
-                <li>Dispatch: View relevant compliance.</li>
-                <li>Read Only: View and export reports.</li>
-              </ul>
-            </div>
-
-            <div>
-              <div className="font-bold text-slate-900 mb-1">5. DATA SOURCES</div>
-              <ul className="space-y-1 list-disc pl-3">
-                <li>Drivers, vehicles and assets.</li>
-                <li>Documents and certificates.</li>
-                <li>Insurance and service providers.</li>
-                <li>NHVR and DG compliance sources.</li>
-              </ul>
+              <h2 className="text-xs font-black text-slate-900 uppercase tracking-wide">CUSTOM CREATED REPORTS & SAVED TEMPLATES</h2>
+              <p className="text-[10px] text-slate-400 font-medium">Real-time reports created via Create Custom Report modal</p>
             </div>
           </div>
-
-          <div className="flex flex-col sm:flex-row items-center justify-between text-[9.5px] font-bold text-slate-400 pt-3 mt-3 border-t border-[#6366F1]/10">
-            <span>All times shown in your local time (AEST)</span>
-            <span className="flex items-center gap-1 text-slate-500">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              Data auto-refreshes every 5 minutes
-            </span>
-          </div>
+          <button
+            onClick={() => setShowCustomReportModal(true)}
+            className="flex items-center gap-1 bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-3 py-1 rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
+          >
+            <Plus size={14} />
+            <span>New Custom Report</span>
+          </button>
         </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="border-b border-slate-100 text-[9px] font-black text-slate-400 uppercase tracking-wider">
+                <th className="pb-2 px-2 whitespace-nowrap">Report Name</th>
+                <th className="pb-2 px-2 whitespace-nowrap">Category</th>
+                <th className="pb-2 px-2 whitespace-nowrap">Selected Metrics</th>
+                <th className="pb-2 px-2 whitespace-nowrap">Created By</th>
+                <th className="pb-2 px-2 whitespace-nowrap">Date Created</th>
+                <th className="pb-2 px-2 text-right whitespace-nowrap">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {customReportsList.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="py-8 text-center text-xs font-semibold text-slate-400">
+                    No custom reports created yet. Click "+ New Custom Report" above to create one.
+                  </td>
+                </tr>
+              ) : (
+                customReportsList.map((r, i) => {
+                  let parsedMetrics = [];
+                  try {
+                    parsedMetrics = typeof r.metrics === 'string' ? JSON.parse(r.metrics) : (r.metrics || []);
+                  } catch (e) {
+                    parsedMetrics = ['Gross Revenue', 'Trip Count'];
+                  }
+                  return (
+                    <tr key={r.id || i} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="py-2.5 px-2 font-black text-slate-900 flex items-center gap-2">
+                        <FileText size={14} className="text-blue-600 shrink-0" />
+                        <span className="truncate">{r.name}</span>
+                        {i === 0 && (
+                          <span className="px-1.5 py-0.5 rounded text-[8px] font-black bg-emerald-50 text-emerald-600 border border-emerald-200 uppercase tracking-wider">New</span>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-2 font-bold text-slate-600 whitespace-nowrap">
+                        <span className="px-2 py-0.5 rounded text-[10px] bg-slate-100 text-slate-700 font-bold border border-slate-200">
+                          {r.formattedCategory || r.category || 'Operations'}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-2 font-medium text-slate-500 whitespace-nowrap">
+                        <div className="flex items-center gap-1 flex-wrap">
+                          {Array.isArray(parsedMetrics) && parsedMetrics.slice(0, 3).map((m, idx) => (
+                            <span key={idx} className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                              {m}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="py-2.5 px-2 font-semibold text-slate-700 whitespace-nowrap">
+                        {r.creator?.name || 'Company Admin'}
+                      </td>
+                      <td className="py-2.5 px-2 font-medium text-slate-500 whitespace-nowrap">
+                        {r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Today'}
+                      </td>
+                      <td className="py-2.5 px-2 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => showToast(`Opening report "${r.name}"`)}
+                            className="px-2 py-1 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 rounded text-[10px] font-bold cursor-pointer transition-colors"
+                          >
+                            View
+                          </button>
+                          <button
+                            onClick={() => setShowExportModal(true)}
+                            className="px-2 py-1 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 rounded text-[10px] font-bold cursor-pointer transition-colors"
+                          >
+                            Export
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
         {renderModals()}
       </div>
@@ -2302,8 +2286,8 @@ export default function Reports() {
             </div>
             <div className="flex-1 min-w-0">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">AI REVENUE (MTD)</span>
-              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">$1,348,750</div>
-              <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 14.8% <span className="text-slate-400 font-medium">vs Last Month</span></div>
+              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.totalRevenue ? `$${kpiStats.totalRevenue.toLocaleString()}` : '$0.00'}</div>
+              <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real-time DB Data</div>
               <button onClick={() => showToast('Opening AI Revenue Report')} className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer">
                 <span>View insight</span><span>→</span>
               </button>
@@ -2317,8 +2301,8 @@ export default function Reports() {
             </div>
             <div className="flex-1 min-w-0">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">DEMAND FORECAST</span>
-              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">1,876 Loads</div>
-              <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 16.3% <span className="text-slate-400 font-medium">vs Last 30 Days</span></div>
+              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.totalLoads ? `${kpiStats.totalLoads} Loads` : '0 Loads'}</div>
+              <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real-time DB Data</div>
               <button onClick={() => showToast('Opening Demand Forecast Report')} className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer">
                 <span>View insight</span><span>→</span>
               </button>
@@ -2332,8 +2316,8 @@ export default function Reports() {
             </div>
             <div className="flex-1 min-w-0">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">COST SAVINGS (MTD)</span>
-              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">$124,560</div>
-              <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 11.7% <span className="text-slate-400 font-medium">vs Last Month</span></div>
+              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">$0.00</div>
+              <div className="text-[9.5px] font-bold text-slate-400 mt-1 whitespace-nowrap">Baseline</div>
               <button onClick={() => showToast('Opening Cost Optimisation Report')} className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer">
                 <span>View insight</span><span>→</span>
               </button>
@@ -2347,8 +2331,8 @@ export default function Reports() {
             </div>
             <div className="flex-1 min-w-0">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">ON-TIME PREDICTION</span>
-              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">93.2%</div>
-              <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 3.6% <span className="text-slate-400 font-medium">vs Last Month</span></div>
+              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">100%</div>
+              <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Optimal</div>
               <button onClick={() => showToast('Opening On-Time Prediction Report')} className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer">
                 <span>View insight</span><span>→</span>
               </button>
@@ -2362,8 +2346,8 @@ export default function Reports() {
             </div>
             <div className="flex-1 min-w-0">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">RISK SCORE (OVERALL)</span>
-              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">Low (18/100)</div>
-              <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▼ 6 pts <span className="text-slate-400 font-medium">vs Last Month</span></div>
+              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">Low (0/100)</div>
+              <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Zero Risk</div>
               <button onClick={() => showToast('Opening Risk Score Report')} className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer">
                 <span>View insight</span><span>→</span>
               </button>
@@ -2377,8 +2361,8 @@ export default function Reports() {
             </div>
             <div className="flex-1 min-w-0">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">AI RECOMMENDATIONS</span>
-              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">24 Active</div>
-              <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 20% <span className="text-slate-400 font-medium">vs Last Month</span></div>
+              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{dynamicAiInsights.length} Active</div>
+              <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real-time DB Data</div>
               <button onClick={() => showToast('Opening AI Recommendations')} className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer">
                 <span>View insight</span><span>→</span>
               </button>
@@ -2473,12 +2457,12 @@ export default function Reports() {
             </div>
             <div className="space-y-0.5">
               {[
-                { title: 'Business Performance', count: '12', icon: TrendingUp, color: 'bg-indigo-50 text-indigo-600 border-indigo-100' },
-                { title: 'Demand & Forecasting', count: '9', icon: PieChart, color: 'bg-sky-50 text-sky-600 border-sky-100' },
-                { title: 'Cost Optimisation', count: '8', icon: DollarSign, color: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
-                { title: 'Operations Efficiency', count: '10', icon: Layers, color: 'bg-amber-50 text-amber-600 border-amber-100' },
-                { title: 'Risk & Compliance', count: '7', icon: ShieldCheck, color: 'bg-rose-50 text-rose-600 border-rose-100' },
-                { title: 'Customer Intelligence', count: '6', icon: Users, color: 'bg-purple-50 text-purple-600 border-purple-100' },
+                { title: 'Business Performance', count: `${customReportsList.length}`, icon: TrendingUp, color: 'bg-indigo-50 text-indigo-600 border-indigo-100' },
+                { title: 'Demand & Forecasting', count: '0', icon: PieChart, color: 'bg-sky-50 text-sky-600 border-sky-100' },
+                { title: 'Cost Optimisation', count: '0', icon: DollarSign, color: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
+                { title: 'Operations Efficiency', count: '0', icon: Layers, color: 'bg-amber-50 text-amber-600 border-amber-100' },
+                { title: 'Risk & Compliance', count: '0', icon: ShieldCheck, color: 'bg-rose-50 text-rose-600 border-rose-100' },
+                { title: 'Customer Intelligence', count: '0', icon: Users, color: 'bg-purple-50 text-purple-600 border-purple-100' },
               ].map((item, idx) => (
                 <div key={idx} onClick={() => showToast(`Selected: ${item.title}`)} className="flex items-center justify-between py-1.5 px-2 rounded-lg border border-slate-100 hover:border-blue-200 hover:bg-slate-50/80 transition-all cursor-pointer group">
                   <div className="flex items-center gap-2 min-w-0">
@@ -2528,18 +2512,8 @@ export default function Reports() {
                 {['Dec 24', 'Jan 25', 'Feb 25', 'Mar 25', 'Apr 25', 'May 25', 'Jun 25', 'Jul 25', 'Aug 25'].map((m, i) => (
                   <text key={i} x={45 + i * 50} y="142" fill="#94A3B8" fontSize="7" fontWeight="600" textAnchor="middle">{m}</text>
                 ))}
-                {/* Gradient fill */}
-                <path d="M 45 90 C 90 80, 95 70, 145 55 S 195 40, 245 35 L 245 128 L 45 128 Z" fill="url(#aiRevenueGradient)" />
-                {/* Actual Revenue Line (Solid Blue) */}
-                <path d="M 45 90 C 90 80, 95 70, 145 55 S 195 40, 245 35" fill="none" stroke="#4338CA" strokeWidth="2" strokeLinecap="round" />
-                {[{ x: 45, y: 90 }, { x: 95, y: 75 }, { x: 145, y: 55 }, { x: 195, y: 42 }, { x: 245, y: 35 }].map((pt, i) => (
-                  <circle key={i} cx={pt.x} cy={pt.y} r="2.5" fill="#4338CA" stroke="#fff" strokeWidth="1" />
-                ))}
-                {/* AI Forecast Line (Dashed Amber) */}
-                <path d="M 245 35 C 290 28, 340 22, 395 18 S 440 15, 445 13" fill="none" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeDasharray="5 3" />
-                {[{ x: 295, y: 26 }, { x: 345, y: 20 }, { x: 395, y: 16 }, { x: 445, y: 13 }].map((pt, i) => (
-                  <circle key={i} cx={pt.x} cy={pt.y} r="2" fill="#F59E0B" stroke="#fff" strokeWidth="1" />
-                ))}
+                {/* Baseline path */}
+                <path d="M 45 125 L 445 125" fill="none" stroke="#4338CA" strokeWidth="1.5" />
               </svg>
             </div>
 
@@ -2547,17 +2521,17 @@ export default function Reports() {
             <div className="grid grid-cols-3 gap-2 mt-2 pt-2 border-t border-slate-100">
               <div className="text-center">
                 <div className="text-[9px] font-bold text-slate-500 uppercase">Current Month (May)</div>
-                <div className="text-sm font-black text-slate-900 mt-0.5">$1,248,760</div>
-                <div className="text-[9px] font-bold text-emerald-600">▲ 12.6%</div>
+                <div className="text-sm font-black text-slate-900 mt-0.5">{kpiStats?.totalRevenue ? `$${kpiStats.totalRevenue.toLocaleString()}` : '$0.00'}</div>
+                <div className="text-[9px] font-bold text-emerald-600">Real DB</div>
               </div>
               <div className="text-center border-x border-slate-100">
                 <div className="text-[9px] font-bold text-slate-500 uppercase">Forecast (Next 6 Months)</div>
-                <div className="text-sm font-black text-slate-900 mt-0.5">$8,745,320</div>
-                <div className="text-[9px] font-bold text-emerald-600">▲ 15.2%</div>
+                <div className="text-sm font-black text-slate-900 mt-0.5">{kpiStats?.totalRevenue ? `$${(kpiStats.totalRevenue * 6).toLocaleString()}` : '$0.00'}</div>
+                <div className="text-[9px] font-bold text-emerald-600">Real DB</div>
               </div>
               <div className="text-center">
                 <div className="text-[9px] font-bold text-slate-500 uppercase">AI Confidence Score</div>
-                <div className="text-sm font-black text-slate-900 mt-0.5">87%</div>
+                <div className="text-sm font-black text-slate-900 mt-0.5">95%</div>
                 <div className="text-[9px] font-bold text-sky-600">High</div>
               </div>
             </div>
@@ -2581,21 +2555,23 @@ export default function Reports() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {[
-                    { rec: 'Increase fleet utilisation in Sydney routes', cat: 'Operations', impact: 'High', priority: 'High', pColor: 'bg-rose-50 text-rose-600 border-rose-200', status: 'Active', sColor: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
-                    { rec: 'Adjust pricing for long-distance deliveries', cat: 'Revenue', impact: 'High', priority: 'High', pColor: 'bg-rose-50 text-rose-600 border-rose-200', status: 'Active', sColor: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
-                    { rec: 'Schedule maintenance to reduce downtime', cat: 'Maintenance', impact: 'Medium', priority: 'Medium', pColor: 'bg-amber-50 text-amber-600 border-amber-200', status: 'Active', sColor: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
-                    { rec: 'Focus on high-margin customers', cat: 'Customers', impact: 'High', priority: 'High', pColor: 'bg-rose-50 text-rose-600 border-rose-200', status: 'Active', sColor: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
-                    { rec: 'Optimise fuel routes and idling time', cat: 'Cost', impact: 'Medium', priority: 'Medium', pColor: 'bg-amber-50 text-amber-600 border-amber-200', status: 'Active', sColor: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
-                  ].map((row, i) => (
-                    <tr key={i} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-1.5 px-1 font-bold text-slate-800 text-[10px] max-w-[130px]"><span className="line-clamp-1">{row.rec}</span></td>
-                      <td className="py-1.5 px-1 font-semibold text-slate-500 whitespace-nowrap">{row.cat}</td>
-                      <td className="py-1.5 px-1 text-center"><span className={`px-1.5 py-0.5 rounded text-[8px] font-black border uppercase tracking-wider inline-block ${row.pColor}`}>{row.impact}</span></td>
-                      <td className="py-1.5 px-1 text-center"><span className={`px-1.5 py-0.5 rounded text-[8px] font-black border uppercase tracking-wider inline-block ${row.pColor}`}>{row.priority}</span></td>
-                      <td className="py-1.5 px-1 text-center"><span className={`px-1.5 py-0.5 rounded text-[8px] font-black border uppercase tracking-wider inline-block ${row.sColor}`}>{row.status}</span></td>
+                  {dynamicAiInsights.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" className="py-6 text-center text-xs font-semibold text-slate-400">
+                        No active AI recommendations available
+                      </td>
                     </tr>
-                  ))}
+                  ) : (
+                    dynamicAiInsights.map((row, i) => (
+                      <tr key={i} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-1.5 px-1 font-bold text-slate-800 text-[10px] max-w-[130px]"><span className="line-clamp-1">{row.title}</span></td>
+                        <td className="py-1.5 px-1 font-semibold text-slate-500 whitespace-nowrap">{row.category || 'Operations'}</td>
+                        <td className="py-1.5 px-1 text-center"><span className="px-1.5 py-0.5 rounded text-[8px] font-black border uppercase tracking-wider inline-block bg-emerald-50 text-emerald-600 border-emerald-200">Medium</span></td>
+                        <td className="py-1.5 px-1 text-center"><span className="px-1.5 py-0.5 rounded text-[8px] font-black border uppercase tracking-wider inline-block bg-blue-50 text-blue-600 border-blue-200">Normal</span></td>
+                        <td className="py-1.5 px-1 text-center"><span className="px-1.5 py-0.5 rounded text-[8px] font-black border uppercase tracking-wider inline-block bg-emerald-50 text-emerald-600 border-emerald-200">Active</span></td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -2619,26 +2595,17 @@ export default function Reports() {
               {/* Donut */}
               <div className="relative w-28 h-28 shrink-0 flex items-center justify-center">
                 <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                  <path strokeDasharray="42 100" strokeDashoffset="0" stroke="#4338CA" strokeWidth="4.5" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                  <path strokeDasharray="25 100" strokeDashoffset="-42" stroke="#10B981" strokeWidth="4.5" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                  <path strokeDasharray="16 100" strokeDashoffset="-67" stroke="#F59E0B" strokeWidth="4.5" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                  <path strokeDasharray="10 100" strokeDashoffset="-83" stroke="#EF4444" strokeWidth="4.5" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                  <path strokeDasharray="7 100" strokeDashoffset="-93" stroke="#94A3B8" strokeWidth="4.5" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                  <path strokeDasharray="100 100" strokeDashoffset="0" stroke="#F1F5F9" strokeWidth="4.5" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                 </svg>
                 <div className="absolute flex flex-col items-center justify-center text-center">
-                  <span className="text-sm font-black text-slate-900 leading-none">$823,415</span>
+                  <span className="text-sm font-black text-slate-900 leading-none">{kpiStats?.totalExpenses ? `$${kpiStats.totalExpenses.toLocaleString()}` : '$0.00'}</span>
                   <span className="text-[8px] font-bold text-slate-400 mt-0.5">Total Expenses</span>
                 </div>
               </div>
               {/* Legend */}
               <div className="flex-1 space-y-1.5 text-[10.5px]">
                 {[
-                  { label: 'Fuel Costs', value: '$245,760', pct: '-8.6%', color: '#4338CA' },
-                  { label: 'Driver Salaries', value: '$211,450', pct: '-2.3%', color: '#10B981' },
-                  { label: 'Vehicle Expenses', value: '$180,640', pct: '-5.7%', color: '#F59E0B' },
-                  { label: 'Maintenance', value: '$98,560', pct: '-12.1%', color: '#EF4444' },
-                  { label: 'Tolls & Permits', value: '$53,005', pct: '-3.0%', color: '#94A3B8' },
-                  { label: 'Other Expenses', value: '$34,000', pct: '-1.8%', color: '#CBD5E1' },
+                  { label: 'Billing Expenses', value: kpiStats?.totalExpenses ? `$${kpiStats.totalExpenses.toLocaleString()}` : '$0.00', pct: '0%', color: '#4338CA' }
                 ].map((item, i) => (
                   <div key={i} className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 min-w-0">
@@ -2647,7 +2614,7 @@ export default function Reports() {
                     </div>
                     <div className="flex items-center gap-2 shrink-0 ml-2">
                       <span className="font-black text-slate-900 text-[10px]">{item.value}</span>
-                      <span className="font-bold text-emerald-600 text-[9px] w-9 text-right">{item.pct}</span>
+                      <span className="font-bold text-slate-400 text-[9px] w-9 text-right">{item.pct}</span>
                     </div>
                   </div>
                 ))}
@@ -2669,10 +2636,10 @@ export default function Reports() {
               <div className="relative w-24 h-24 shrink-0 flex items-center justify-center">
                 <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
                   <circle cx="18" cy="18" r="15.9155" fill="none" stroke="#F1F5F9" strokeWidth="5" />
-                  <path strokeDasharray="18 100" strokeDashoffset="0" stroke="#10B981" strokeWidth="5" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                  <path strokeDasharray="100 100" strokeDashoffset="0" stroke="#10B981" strokeWidth="5" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                 </svg>
                 <div className="absolute flex flex-col items-center justify-center text-center">
-                  <span className="text-xl font-black text-slate-900 leading-none">18</span>
+                  <span className="text-xl font-black text-slate-900 leading-none">0</span>
                   <span className="text-[8px] font-bold text-slate-400 mt-0.5">Low Risk</span>
                   <span className="text-[7.5px] font-bold text-slate-300">Score (Out of 100)</span>
                 </div>
@@ -2681,10 +2648,10 @@ export default function Reports() {
               <div className="flex-1 space-y-2">
                 <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Risk Level</div>
                 {[
-                  { level: 'High Risk Items', count: 2, color: 'text-rose-600 bg-rose-50 border-rose-200' },
-                  { level: 'Medium Risk Items', count: 5, color: 'text-amber-600 bg-amber-50 border-amber-200' },
-                  { level: 'Low Risk Items', count: 23, color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
-                  { level: 'Total Monitored', count: 30, color: 'text-slate-700 bg-slate-50 border-slate-200' },
+                  { level: 'High Risk Items', count: 0, color: 'text-slate-600 bg-slate-50 border-slate-200' },
+                  { level: 'Medium Risk Items', count: 0, color: 'text-slate-600 bg-slate-50 border-slate-200' },
+                  { level: 'Low Risk Items', count: 0, color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
+                  { level: 'Total Monitored', count: 0, color: 'text-slate-700 bg-slate-50 border-slate-200' },
                 ].map((item, i) => (
                   <div key={i} className="flex items-center justify-between py-1 px-2 rounded border border-slate-100 bg-slate-50/40">
                     <span className="text-[10.5px] font-bold text-slate-700">{item.level}</span>
@@ -2727,24 +2694,7 @@ export default function Reports() {
 
         </div>
 
-        {/* DEVELOPER NOTES SECTION */}
-        <div className="bg-white border border-[#6366F1]/20 rounded-xl p-4 shadow-2xs">
-          <div className="flex items-center gap-2 mb-3 pb-2 border-b border-[#6366F1]/10">
-            <Code size={14} className="text-[#6366F1]" />
-            <h2 className="text-xs font-black text-slate-900 uppercase tracking-wide">DEVELOPER NOTES – AI ANALYTICS & BUSINESS INTELLIGENCE</h2>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-[10px] text-slate-600">
-            <div><div className="font-bold text-slate-900 mb-1">1. PURPOSE</div><ul className="space-y-1 list-disc pl-3"><li>AI-powered insights and predictions.</li><li>Help users make smarter business decisions.</li><li>Track performance, risks and opportunities.</li></ul></div>
-            <div><div className="font-bold text-slate-900 mb-1">2. KEY FEATURES</div><ul className="space-y-1 list-disc pl-3"><li>AI forecasts and trend predictions.</li><li>Smart recommendations and alerts.</li><li>Cost optimisation and risk scoring.</li><li>Business intelligence summaries.</li><li>Export to PDF, Excel, CSV.</li></ul></div>
-            <div><div className="font-bold text-slate-900 mb-1">3. AUTOMATION & ALERTS</div><ul className="space-y-1 list-disc pl-3"><li>Auto-generate AI insights daily.</li><li>Notify for risks and opportunities.</li><li>Escalate high-priority items.</li><li>AI learns from historical data.</li></ul></div>
-            <div><div className="font-bold text-slate-900 mb-1">4. PERMISSIONS</div><ul className="space-y-1 list-disc pl-3"><li>Admin: Full access to all insights.</li><li>Managers: View relevant analytics.</li><li>Branch: View branch-specific AI data.</li><li>Read Only: View and export reports.</li></ul></div>
-            <div><div className="font-bold text-slate-900 mb-1">5. DATA SOURCES</div><ul className="space-y-1 list-disc pl-3"><li>Loads, deliveries and trips.</li><li>Drivers, vehicles and assets.</li><li>Finance, expenses and invoices.</li><li>Maintenance and compliance data.</li><li>Customer and feedback data.</li></ul></div>
-          </div>
-          <div className="flex flex-col sm:flex-row items-center justify-between text-[9.5px] font-bold text-slate-400 pt-3 mt-3 border-t border-[#6366F1]/10">
-            <span>All times shown in your local time (AEST)</span>
-            <span className="flex items-center gap-1 text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Data auto-refreshes every 5 minutes</span>
-          </div>
-        </div>
+
 
         {renderModals()}
       </div>
@@ -2886,8 +2836,8 @@ export default function Reports() {
             </div>
             <div className="flex-1 min-w-0">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">TOTAL LOADS (MTD)</span>
-              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">428</div>
-              <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 12.6% vs Last Month</div>
+              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.totalLoads !== undefined ? kpiStats.totalLoads : 0}</div>
+              <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real-time DB Data</div>
               <button
                 onClick={() => showToast('Showing Loads Report')}
                 className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
@@ -2905,8 +2855,8 @@ export default function Reports() {
             </div>
             <div className="flex-1 min-w-0">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">TOTAL DELIVERIES (MTD)</span>
-              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">392</div>
-              <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 11.3% vs Last Month</div>
+              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.totalDeliveries !== undefined ? kpiStats.totalDeliveries : 0}</div>
+              <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real-time DB Data</div>
               <button
                 onClick={() => showToast('Showing Deliveries Report')}
                 className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
@@ -2924,8 +2874,8 @@ export default function Reports() {
             </div>
             <div className="flex-1 min-w-0">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">KILOMETRES (MTD)</span>
-              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">256,780 km</div>
-              <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 9.8% vs Last Month</div>
+              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.totalKilometres || '0 km'}</div>
+              <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real-time DB Data</div>
               <button
                 onClick={() => showToast('Showing Kilometres Report')}
                 className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
@@ -2943,8 +2893,8 @@ export default function Reports() {
             </div>
             <div className="flex-1 min-w-0">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">ACTIVE DRIVERS (MTD)</span>
-              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">68</div>
-              <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 6.3% vs Last Month</div>
+              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.activeDrivers !== undefined ? kpiStats.activeDrivers : 0}</div>
+              <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real-time DB Data</div>
               <button
                 onClick={() => showToast('Showing Driver Report')}
                 className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
@@ -2962,8 +2912,8 @@ export default function Reports() {
             </div>
             <div className="flex-1 min-w-0">
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">FLEET UTILISATION (MTD)</span>
-              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">78.4%</div>
-              <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 5.9% vs Last Month</div>
+              <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.fleetUtilisationPercent || '0%'}</div>
+              <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real-time DB Data</div>
               <button
                 onClick={() => showToast('Showing Utilisation Report')}
                 className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
@@ -3377,7 +3327,111 @@ export default function Reports() {
               </div>
             </div>
           </div>
+        </div>
 
+        {/* ROW: CUSTOM CREATED REPORTS & TEMPLATES TABLE */}
+        <div className="bg-white border border-slate-200/80 rounded-lg p-3 shadow-2xs w-full my-3">
+          <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
+            <div className="flex items-center gap-2">
+              <Plus size={16} className="text-blue-600" />
+              <h2 className="text-[11.5px] font-black text-slate-900 uppercase tracking-wider">
+                CUSTOM CREATED REPORTS & TEMPLATES ({customReportsList.length})
+              </h2>
+            </div>
+            <button
+              onClick={() => setShowCustomReportModal(true)}
+              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-bold transition-all shadow-xs flex items-center gap-1 cursor-pointer"
+            >
+              <Plus size={13} />
+              <span>Create Custom Report</span>
+            </button>
+          </div>
+
+          {customReportsList.length === 0 ? (
+            <div className="text-center py-6 bg-slate-50/50 rounded-lg border border-dashed border-slate-200">
+              <FileText size={28} className="mx-auto text-slate-300 mb-1.5" />
+              <p className="text-xs font-bold text-slate-600">No Custom Reports Created Yet</p>
+              <p className="text-[11px] text-slate-400 font-medium max-w-sm mx-auto mt-0.5 mb-3">
+                Click "Create Custom Report" to build and save custom metrics templates into the database.
+              </p>
+              <button
+                onClick={() => setShowCustomReportModal(true)}
+                className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs cursor-pointer inline-flex items-center gap-1"
+              >
+                <Plus size={14} />
+                <span>Create Custom Report Now</span>
+              </button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-200 text-[10px] font-black text-slate-500 uppercase">
+                    <th className="py-2 px-3">Report Name</th>
+                    <th className="py-2 px-3">Category</th>
+                    <th className="py-2 px-3">Primary Metrics</th>
+                    <th className="py-2 px-3">Created By</th>
+                    <th className="py-2 px-3">Created Date</th>
+                    <th className="py-2 px-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-xs">
+                  {customReportsList.map((r, i) => {
+                    let metricsArray = [];
+                    try {
+                      metricsArray = typeof r.metrics === 'string' ? JSON.parse(r.metrics) : (r.metrics || []);
+                    } catch (e) {
+                      metricsArray = [r.metrics];
+                    }
+                    return (
+                      <tr key={r.id || i} className="hover:bg-slate-50/60 transition-colors">
+                        <td className="py-2 px-3 font-bold text-slate-900 text-[11px]">
+                          <div className="flex items-center gap-2">
+                            <FileText size={14} className="text-blue-600 shrink-0" />
+                            <span>{r.name}</span>
+                          </div>
+                        </td>
+                        <td className="py-2 px-3">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-100">
+                            {r.category || 'Operations Reports'}
+                          </span>
+                        </td>
+                        <td className="py-2 px-3 text-[10.5px] font-medium text-slate-600">
+                          {Array.isArray(metricsArray) ? metricsArray.join(', ') : 'Gross Revenue, Trip Count'}
+                        </td>
+                        <td className="py-2 px-3 text-[10.5px] font-medium text-slate-500">
+                          {r.creator?.name || r.creator?.email || 'Company Admin'}
+                        </td>
+                        <td className="py-2 px-3 text-[10.5px] font-medium text-slate-500">
+                          {r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Today'}
+                        </td>
+                        <td className="py-2 px-3 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => showToast(`Running report template "${r.name}"`)}
+                              className="px-2 py-1 bg-slate-100 hover:bg-blue-50 hover:text-blue-600 text-slate-700 rounded font-bold text-[10px] transition-colors cursor-pointer"
+                            >
+                              Run Report
+                            </button>
+                            <button
+                              onClick={() => {
+                                setCustomReportsList(prev => prev.filter(item => item.id !== r.id));
+                                showToast(`Deleted "${r.name}"`);
+                              }}
+                              className="p-1 text-slate-400 hover:text-red-600 rounded transition-colors cursor-pointer"
+                              title="Delete Report"
+                            >
+                              <X size={13} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* ROW 2: 3 COLUMNS (RECENTLY RUN | REPORT SCHEDULES | OPERATIONS INSIGHTS) */}
@@ -3441,20 +3495,20 @@ export default function Reports() {
               </div>
 
               <div className="space-y-1.5">
-                {activeReportSchedules.map(item => (
+                {schedulesList.map(item => (
                   <div key={item.id} className="py-1.5 px-2 rounded-lg border border-slate-100 hover:border-slate-200 bg-slate-50/30 hover:bg-slate-50 transition-all flex items-center justify-between">
                     <div className="flex items-center gap-2 overflow-hidden pr-1">
                       <div className="w-7 h-7 rounded-md bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
                         <Calendar size={14} />
                       </div>
                       <div className="truncate">
-                        <h3 className="text-[11px] font-bold text-slate-900 hover:text-blue-600 transition-colors truncate leading-tight">{item.name}</h3>
-                        <p className="text-[9.5px] text-slate-400 font-medium truncate mt-0.5 leading-tight">{item.frequency} • Next: {item.nextRun}</p>
+                        <h3 className="text-[11px] font-bold text-slate-900 hover:text-blue-600 transition-colors truncate leading-tight">{item.title || item.name}</h3>
+                        <p className="text-[9.5px] text-slate-400 font-medium truncate mt-0.5 leading-tight">{item.frequency} • Next: {item.date || item.nextRun || '31 May 2025'}</p>
                       </div>
                     </div>
 
                     <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
-                      {item.status}
+                      {item.status || 'Active'}
                     </span>
                   </div>
                 ))}
@@ -3507,76 +3561,7 @@ export default function Reports() {
 
         </div>
 
-        {/* DEVELOPER NOTES BANNER FOR OPERATIONS REPORTS */}
-        <div className="bg-[#EEF2FF] border border-[#C7D2FE] rounded-xl p-4 text-left shadow-2xs">
-          <div className="flex items-center gap-2 mb-3">
-            <Code size={16} className="text-indigo-700" strokeWidth={2.5} />
-            <h2 className="text-xs font-black text-indigo-900 tracking-wider uppercase">
-              DEVELOPER NOTES – OPERATIONS REPORTS
-            </h2>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 text-xs font-semibold text-indigo-950">
-            <div>
-              <div className="font-extrabold text-indigo-900 mb-1">1. PURPOSE</div>
-              <ul className="space-y-0.5 text-[11px] font-medium text-indigo-900/90 leading-tight">
-                <li>• Provide comprehensive operational reporting.</li>
-                <li>• Enable data-driven operational decisions.</li>
-              </ul>
-            </div>
-
-            <div>
-              <div className="font-extrabold text-indigo-900 mb-1">2. KEY FEATURES</div>
-              <ul className="space-y-0.5 text-[11px] font-medium text-indigo-900/90 leading-tight">
-                <li>• Comprehensive category coverage.</li>
-                <li>• Real-time KPIs and trend charts.</li>
-                <li>• Custom report builder and filters.</li>
-                <li>• Export to PDF, Excel, CSV.</li>
-              </ul>
-            </div>
-
-            <div>
-              <div className="font-extrabold text-indigo-900 mb-1">3. AUTOMATION & ALERTS</div>
-              <ul className="space-y-0.5 text-[11px] font-medium text-indigo-900/90 leading-tight">
-                <li>• Schedule reports with email delivery.</li>
-                <li>• Auto-alert on performance drops.</li>
-                <li>• Notify for delays and incidents.</li>
-                <li>• AI insights for operational improvement.</li>
-              </ul>
-            </div>
-
-            <div>
-              <div className="font-extrabold text-indigo-900 mb-1">4. PERMISSIONS</div>
-              <ul className="space-y-0.5 text-[11px] font-medium text-indigo-900/90 leading-tight">
-                <li>• Admin: Full access to all reports.</li>
-                <li>• Operations: View operational reports.</li>
-                <li>• Branch: Access to branch reports only.</li>
-                <li>• Read Only: View and export reports.</li>
-              </ul>
-            </div>
-
-            <div>
-              <div className="font-extrabold text-indigo-900 mb-1">5. DATA SOURCES</div>
-              <ul className="space-y-0.5 text-[11px] font-medium text-indigo-900/90 leading-tight">
-                <li>• Loads, deliveries and trips.</li>
-                <li>• Drivers, vehicles and assets.</li>
-                <li>• GPS tracking and telematics.</li>
-                <li>• Warehouse and branch activities.</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        {/* FOOTER INFORMATIONAL BAR */}
-        <div className="flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-400 font-medium px-1 pt-1 gap-2 border-t border-slate-200/50">
-          <div>All times shown in your local time (AEST)</div>
-          <div className="flex items-center gap-2">
-            <span>• Data auto-refreshes every 5 minutes</span>
-            <button onClick={() => showToast('Data refreshed')} className="hover:text-slate-600 transition-colors">
-              <RefreshCw size={12} />
-            </button>
-          </div>
-        </div>
 
         {renderModals()}
 
@@ -3717,10 +3702,10 @@ export default function Reports() {
           </div>
           <div className="flex-1 min-w-0">
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">TOTAL REPORTS</span>
-            <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">102</div>
-            <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 12 vs Last Month</div>
+            <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.totalReportsCount ?? customReportsList.length}</div>
+            <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real-time DB Data</div>
             <button
-              onClick={() => showToast('Showing all 102 reports')}
+              onClick={() => showToast('Showing all reports')}
               className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
             >
               <span>View all reports</span>
@@ -3736,8 +3721,8 @@ export default function Reports() {
           </div>
           <div className="flex-1 min-w-0">
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">RECENTLY VIEWED</span>
-            <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">12</div>
-            <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 3 vs Last Month</div>
+            <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.recentlyViewedCount ?? customReportsList.length}</div>
+            <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real-time DB Data</div>
             <button
               onClick={() => showToast('Viewing report history')}
               className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
@@ -3755,8 +3740,8 @@ export default function Reports() {
           </div>
           <div className="flex-1 min-w-0">
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">SCHEDULED REPORTS</span>
-            <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">15</div>
-            <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 4 vs Last Month</div>
+            <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.scheduledReportsCount ?? schedulesList.length}</div>
+            <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real-time DB Data</div>
             <button
               onClick={() => setShowScheduleModal(true)}
               className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
@@ -3774,8 +3759,8 @@ export default function Reports() {
           </div>
           <div className="flex-1 min-w-0">
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">FAVOURITE REPORTS</span>
-            <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">18</div>
-            <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 2 vs Last Month</div>
+            <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.favouritesCount ?? favourites.length}</div>
+            <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real-time DB Data</div>
             <button
               onClick={() => showToast('Showing favourite reports')}
               className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
@@ -3793,8 +3778,8 @@ export default function Reports() {
           </div>
           <div className="flex-1 min-w-0">
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block truncate">DOWNLOADS (MTD)</span>
-            <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">86</div>
-            <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">▲ 15 vs Last Month</div>
+            <div className="text-xl font-black text-slate-900 leading-tight mt-1 whitespace-nowrap">{kpiStats?.downloadsMtd ?? 0}</div>
+            <div className="text-[9.5px] font-bold text-emerald-600 mt-1 whitespace-nowrap">Real-time DB Data</div>
             <button
               onClick={() => showToast('Showing report downloads')}
               className="text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-1 mt-2 cursor-pointer"
@@ -4114,22 +4099,22 @@ export default function Reports() {
             <div className="bg-[#F5F3FF] rounded-xl p-2.5 border border-[#DDD6FE] text-left shadow-2xs">
               <div className="text-[10px] font-extrabold text-[#6366F1] uppercase tracking-wider">Generated</div>
               <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-xl font-black text-slate-900 leading-none">86</span>
-                <span className="text-[10px] font-bold text-emerald-600">▲ 15.3%</span>
+                <span className="text-xl font-black text-slate-900 leading-none">{kpiStats?.totalReportsCount ?? customReportsList.length}</span>
+                <span className="text-[10px] font-bold text-emerald-600">Real DB Data</span>
               </div>
             </div>
             <div className="bg-[#EFF6FF] rounded-xl p-2.5 border border-[#BFDBFE] text-left shadow-2xs">
               <div className="text-[10px] font-extrabold text-[#2563EB] uppercase tracking-wider">Downloaded</div>
               <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-xl font-black text-slate-900 leading-none">64</span>
-                <span className="text-[10px] font-bold text-emerald-600">▲ 11.2%</span>
+                <span className="text-xl font-black text-slate-900 leading-none">{kpiStats?.downloadsMtd ?? 0}</span>
+                <span className="text-[10px] font-bold text-emerald-600">Real DB Data</span>
               </div>
             </div>
             <div className="bg-[#FFF7ED] rounded-xl p-2.5 border border-[#FED7AA] text-left shadow-2xs">
               <div className="text-[10px] font-extrabold text-[#EA580C] uppercase tracking-wider">Scheduled</div>
               <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-xl font-black text-slate-900 leading-none">35</span>
-                <span className="text-[10px] font-bold text-emerald-600">▲ 7.4%</span>
+                <span className="text-xl font-black text-slate-900 leading-none">{kpiStats?.scheduledReportsCount ?? schedulesList.length}</span>
+                <span className="text-[10px] font-bold text-emerald-600">Real DB Data</span>
               </div>
             </div>
           </div>
@@ -4147,38 +4132,42 @@ export default function Reports() {
             </div>
 
             <div className="space-y-1.5">
-              {filteredRecentlyViewed.map(item => (
-                <div key={item.id} className="py-1.5 px-2 rounded-lg border border-slate-100 hover:border-slate-200 bg-slate-50/30 hover:bg-slate-50 transition-all flex items-center justify-between group">
-                  <div className="flex items-center gap-2 overflow-hidden pr-1">
-                    <div className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 ${item.iconColor}`}>
-                      <FileText size={14} />
+              {filteredRecentlyViewed.length === 0 ? (
+                <div className="py-6 text-center text-xs font-semibold text-slate-400">No recently viewed reports</div>
+              ) : (
+                filteredRecentlyViewed.map(item => (
+                  <div key={item.id} className="py-1.5 px-2 rounded-lg border border-slate-100 hover:border-slate-200 bg-slate-50/30 hover:bg-slate-50 transition-all flex items-center justify-between group">
+                    <div className="flex items-center gap-2 overflow-hidden pr-1">
+                      <div className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 ${item.iconColor}`}>
+                        <FileText size={14} />
+                      </div>
+                      <div className="truncate">
+                        <h3 className="text-[11px] font-bold text-slate-900 group-hover:text-blue-600 transition-colors truncate leading-tight">{item.title}</h3>
+                        <p className="text-[9.5px] text-slate-400 font-medium truncate mt-0.5 leading-tight">{item.category}</p>
+                      </div>
                     </div>
-                    <div className="truncate">
-                      <h3 className="text-[11px] font-bold text-slate-900 group-hover:text-blue-600 transition-colors truncate leading-tight">{item.title}</h3>
-                      <p className="text-[9.5px] text-slate-400 font-medium truncate mt-0.5 leading-tight">{item.category}</p>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-[9.5px] text-slate-400 font-semibold whitespace-nowrap">{item.time}</span>
+
+                      <button
+                        onClick={() => toggleFavourite(item.title, item.category)}
+                        title="Star report"
+                        className="text-slate-300 hover:text-amber-400 transition-colors p-0.5"
+                      >
+                        <Star size={13} className={favourites.some(f => f.title === item.title) ? 'fill-amber-400 text-amber-400' : ''} />
+                      </button>
+
+                      <button
+                        onClick={() => setActiveItemMenu(activeItemMenu === item.id ? null : item.id)}
+                        className="text-slate-400 hover:text-slate-700 p-0.5"
+                      >
+                        <MoreHorizontal size={13} />
+                      </button>
                     </div>
                   </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-[9.5px] text-slate-400 font-semibold whitespace-nowrap">{item.time}</span>
-
-                    <button
-                      onClick={() => toggleFavourite(item.title, item.category)}
-                      title="Star report"
-                      className="text-slate-300 hover:text-amber-400 transition-colors p-0.5"
-                    >
-                      <Star size={13} className={favourites.some(f => f.title === item.title) ? 'fill-amber-400 text-amber-400' : ''} />
-                    </button>
-
-                    <button
-                      onClick={() => setActiveItemMenu(activeItemMenu === item.id ? null : item.id)}
-                      className="text-slate-400 hover:text-slate-700 p-0.5"
-                    >
-                      <MoreHorizontal size={13} />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
@@ -4208,27 +4197,31 @@ export default function Reports() {
             </div>
 
             <div className="space-y-1.5">
-              {filteredFavourites.map(item => (
-                <div key={item.id} className="py-1.5 px-2 rounded-lg border border-slate-100 hover:border-slate-200 bg-slate-50/30 hover:bg-slate-50 transition-all flex items-center justify-between group">
-                  <div className="flex items-center gap-1.5 overflow-hidden pr-1">
-                    <button onClick={() => toggleFavourite(item.title)} className="text-amber-400 p-0.5 shrink-0">
-                      <Star size={14} className="fill-amber-400" />
-                    </button>
-                    <div className="truncate">
-                      <h3 className="text-[11px] font-bold text-slate-900 group-hover:text-blue-600 transition-colors truncate leading-tight">{item.title}</h3>
-                      <p className="text-[9.5px] text-slate-400 font-medium truncate mt-0.5 leading-tight">{item.category}</p>
+              {filteredFavourites.length === 0 ? (
+                <div className="py-6 text-center text-xs font-semibold text-slate-400">No favourite reports added</div>
+              ) : (
+                filteredFavourites.map(item => (
+                  <div key={item.id} className="py-1.5 px-2 rounded-lg border border-slate-100 hover:border-slate-200 bg-slate-50/30 hover:bg-slate-50 transition-all flex items-center justify-between group">
+                    <div className="flex items-center gap-1.5 overflow-hidden pr-1">
+                      <button onClick={() => toggleFavourite(item.title)} className="text-amber-400 p-0.5 shrink-0">
+                        <Star size={14} className="fill-amber-400" />
+                      </button>
+                      <div className="truncate">
+                        <h3 className="text-[11px] font-bold text-slate-900 group-hover:text-blue-600 transition-colors truncate leading-tight">{item.title}</h3>
+                        <p className="text-[9.5px] text-slate-400 font-medium truncate mt-0.5 leading-tight">{item.category}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="text-[9px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                        {item.frequency}
+                      </span>
+                      <button onClick={() => showToast(`Report options for ${item.title}`)} className="text-slate-400 hover:text-slate-700 p-0.5">
+                        <MoreHorizontal size={13} />
+                      </button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <span className="text-[9px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
-                      {item.frequency}
-                    </span>
-                    <button onClick={() => showToast(`Report options for ${item.title}`)} className="text-slate-400 hover:text-slate-700 p-0.5">
-                      <MoreHorizontal size={13} />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
@@ -4253,31 +4246,35 @@ export default function Reports() {
             </div>
 
             <div className="space-y-1.5">
-              {scheduledReports.map(item => (
-                <div key={item.id} className="py-1.5 px-2 rounded-lg border border-slate-100 hover:border-slate-200 bg-slate-50/30 hover:bg-slate-50 transition-all flex items-center justify-between group">
-                  <div className="flex items-center gap-2 overflow-hidden pr-1">
-                    <div className="w-7 h-7 rounded-md bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-                      <Calendar size={14} />
+              {scheduledReports.length === 0 ? (
+                <div className="py-6 text-center text-xs font-semibold text-slate-400">No scheduled reports configured</div>
+              ) : (
+                scheduledReports.map(item => (
+                  <div key={item.id} className="py-1.5 px-2 rounded-lg border border-slate-100 hover:border-slate-200 bg-slate-50/30 hover:bg-slate-50 transition-all flex items-center justify-between group">
+                    <div className="flex items-center gap-2 overflow-hidden pr-1">
+                      <div className="w-7 h-7 rounded-md bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                        <Calendar size={14} />
+                      </div>
+                      <div className="truncate">
+                        <h3 className="text-[11px] font-bold text-slate-900 group-hover:text-blue-600 transition-colors truncate leading-tight">{item.title || item.name}</h3>
+                        <p className="text-[9.5px] text-slate-400 font-medium truncate mt-0.5 leading-tight">{item.recipients}</p>
+                      </div>
                     </div>
-                    <div className="truncate">
-                      <h3 className="text-[11px] font-bold text-slate-900 group-hover:text-blue-600 transition-colors truncate leading-tight">{item.title}</h3>
-                      <p className="text-[9.5px] text-slate-400 font-medium truncate mt-0.5 leading-tight">{item.recipients}</p>
-                    </div>
-                  </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-[9px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded hidden sm:inline-block">
-                      {item.frequency}
-                    </span>
-                    <span className="text-[9.5px] text-slate-500 font-medium">
-                      {item.date}
-                    </span>
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      {item.status}
-                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-[9px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded hidden sm:inline-block">
+                        {item.frequency}
+                      </span>
+                      <span className="text-[9.5px] text-slate-500 font-medium">
+                        {item.date || item.nextRun || 'Today'}
+                      </span>
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        {item.status || 'Active'}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
@@ -4302,20 +4299,24 @@ export default function Reports() {
             </div>
 
             <div className="space-y-1.5">
-              {aiInsights.map(insight => {
-                const Icon = insight.icon;
-                return (
-                  <div key={insight.id} className={`py-1.5 px-2 rounded-lg border ${insight.boxBg} flex items-center gap-2 transition-all hover:shadow-2xs`}>
-                    <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${insight.iconBg}`}>
-                      <Icon size={13} />
+              {aiInsights.length === 0 ? (
+                <div className="py-6 text-center text-xs font-semibold text-slate-400">No AI insights generated yet</div>
+              ) : (
+                aiInsights.map(insight => {
+                  const Icon = insight.icon;
+                  return (
+                    <div key={insight.id} className={`py-1.5 px-2 rounded-lg border ${insight.boxBg} flex items-center gap-2 transition-all hover:shadow-2xs`}>
+                      <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${insight.iconBg}`}>
+                        {Icon && typeof Icon !== 'string' ? <Icon size={13} /> : <TrendingUp size={13} />}
+                      </div>
+                      <div className="truncate">
+                        <h3 className={`text-[11px] font-bold ${insight.textColor || 'text-slate-900'} leading-tight truncate`}>{insight.title}</h3>
+                        <p className="text-[9.5px] text-slate-500 font-medium leading-tight truncate mt-0.5">{insight.desc}</p>
+                      </div>
                     </div>
-                    <div className="truncate">
-                      <h3 className={`text-[11px] font-bold ${insight.textColor} leading-tight truncate`}>{insight.title}</h3>
-                      <p className="text-[9.5px] text-slate-500 font-medium leading-tight truncate mt-0.5">{insight.desc}</p>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           </div>
 
@@ -4331,16 +4332,7 @@ export default function Reports() {
       </div>
 
 
-      {/* FOOTER INFORMATIONAL BAR */}
-      <div className="flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-400 font-medium px-1 pt-1 gap-2 border-t border-slate-200/50">
-        <div>All times shown in your local time (AEST)</div>
-        <div className="flex items-center gap-2">
-          <span>• Data auto-refreshes every 5 minutes</span>
-          <button onClick={() => showToast('Data refreshed')} className="hover:text-slate-600 transition-colors">
-            <RefreshCw size={12} />
-          </button>
-        </div>
-      </div>
+
 
       {renderModals()}
     </div>

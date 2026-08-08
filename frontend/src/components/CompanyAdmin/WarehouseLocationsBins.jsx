@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../services/api';
 
 // === ICONS ===
 const SearchIcon = () => (
@@ -76,29 +77,101 @@ const SmallCircleIconBordered = ({ color, border }) => (
   </svg>
 );
 
-const mockLocations = [
-  { code: 'A1', name: 'Main Storage A1', area: 'Main Storage', type: 'Floor', bins: '24', cap: '1,200', used: '780', util: '65%' },
-  { code: 'A2', name: 'Main Storage A2', area: 'Main Storage', type: 'Floor', bins: '20', cap: '1,000', used: '520', util: '52%' },
-  { code: 'B1', name: 'Bulk Storage B1', area: 'Bulk Storage', type: 'Floor', bins: '30', cap: '1,500', used: '1,050', util: '70%' },
-  { code: 'B2', name: 'Bulk Storage B2', area: 'Bulk Storage', type: 'Floor', bins: '24', cap: '1,200', used: '890', util: '74%' },
-  { code: 'R1', name: 'Rack Storage R1', area: 'Racking', type: 'Racking', bins: '60', cap: '1,800', used: '1,020', util: '57%' },
-  { code: 'R2', name: 'Rack Storage R2', area: 'Racking', type: 'Racking', bins: '60', cap: '1,800', used: '1,420', util: '79%' },
-  { code: 'D1', name: 'Dispatch Area D1', area: 'Dispatch', type: 'Floor', bins: '12', cap: '600', used: '210', util: '35%' },
-  { code: 'D2', name: 'Dispatch Area D2', area: 'Dispatch', type: 'Floor', bins: '12', cap: '600', used: '180', util: '30%' },
-  { code: 'Q1', name: 'Quarantine Area Q1', area: 'Quarantine', type: 'Floor', bins: '10', cap: '350', used: '120', util: '34%' },
-  { code: 'R3', name: 'Returns Area R3', area: 'Returns', type: 'Floor', bins: '8', cap: '300', used: '75', util: '25%' },
-];
-
 export default function WarehouseLocationsBins({ wh, onBack }) {
-  const [showAddLocationModal, setShowAddLocationModal] = React.useState(false);
-  const [viewLocationModal, setViewLocationModal] = React.useState(null);
-  const [actionMenuIndex, setActionMenuIndex] = React.useState(null);
-  const [editLocationModal, setEditLocationModal] = React.useState(null);
-  const [toastMessage, setToastMessage] = React.useState('');
+  const [showAddLocationModal, setShowAddLocationModal] = useState(false);
+  const [viewLocationModal, setViewLocationModal] = useState(null);
+  const [actionMenuIndex, setActionMenuIndex] = useState(null);
+  const [editLocationModal, setEditLocationModal] = useState(null);
+  const [toastMessage, setToastMessage] = useState('');
+  const [locationsList, setLocationsList] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [kpiStats, setKpiStats] = useState({
+    totalLocations: 0,
+    totalBins: 0,
+    binCapacity: '0 m³',
+    usedCapacity: '0 m³',
+    availableCapacity: '0 m³',
+    utilPercent: '0.0',
+    overfullBins: 0
+  });
+
+  const [addForm, setAddForm] = useState({
+    code: '',
+    name: '',
+    area: 'Standard Storage',
+    type: 'Floor',
+    bins: '1',
+    capacity: '100'
+  });
 
   const showToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(''), 3000);
+  };
+
+  const fetchLocations = async () => {
+    try {
+      setLoading(true);
+      const whId = wh?.id || 'default';
+      const res = await api.get(`/company-admin/warehouse/${whId}/locations`);
+      if (res.data && res.data.success && res.data.data) {
+        setLocationsList(res.data.data.locations || []);
+        if (res.data.data.stats) setKpiStats(res.data.data.stats);
+      }
+    } catch (e) {
+      console.error('Fetch locations error:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLocations();
+  }, [wh?.id]);
+
+  const handleSaveLocation = async (e) => {
+    if (e) e.preventDefault();
+    if (!addForm.name.trim() && !addForm.code.trim()) {
+      showToast('Please enter a location name or code');
+      return;
+    }
+    try {
+      setIsSubmitting(true);
+      const whId = wh?.id || 'default';
+      const res = await api.post(`/company-admin/warehouse/${whId}/locations`, addForm);
+      if (res.data && res.data.success) {
+        showToast('New location created & saved to MySQL DB!');
+        setShowAddLocationModal(false);
+        setAddForm({ code: '', name: '', area: 'Standard Storage', type: 'Floor', bins: '1', capacity: '100' });
+        await fetchLocations();
+      } else {
+        showToast('Failed to create location');
+      }
+    } catch (e) {
+      console.error('Error saving location:', e);
+      showToast('Error saving location to MySQL DB');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteLocation = async (locId, locName) => {
+    if (window.confirm(`Are you sure you want to delete location "${locName}"?`)) {
+      try {
+        const res = await api.delete(`/company-admin/warehouse/locations/${locId}`);
+        if (res.data && res.data.success) {
+          showToast(`Location "${locName}" deleted from MySQL DB!`);
+          await fetchLocations();
+        } else {
+          showToast('Failed to delete location');
+        }
+      } catch (e) {
+        console.error('Error deleting location:', e);
+        showToast('Error deleting location');
+      }
+    }
   };
   return (
     <div className="wh-bins-container" style={{ background: '#F8FAFC', minHeight: '100vh', padding: '24px 32px', fontFamily: "'Inter','Outfit',sans-serif", overflowX: 'hidden' }}>
@@ -136,15 +209,22 @@ export default function WarehouseLocationsBins({ wh, onBack }) {
         </div>
       </div>
 
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div style={{ position: 'fixed', top: 20, right: 20, zIndex: 99999, background: '#0F172A', color: '#fff', padding: '10px 16px', borderRadius: 8, fontSize: 12, fontWeight: 700, boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
+          {toastMessage}
+        </div>
+      )}
+
       {/* METRIC CARDS */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 24 }}>
         {[
-          { title: 'TOTAL LOCATIONS', value: '28', subtitle: 'Active locations', color: '#8B5CF6', bg: '#F5F3FF', icon: <CalendarIcon2 color="#8B5CF6" />, link: 'locations' },
-          { title: 'TOTAL BINS', value: '356', subtitle: 'All bins', color: '#22C55E', bg: '#F0FDF4', icon: <BoxCheckIcon2 color="#22C55E" />, link: 'bins' },
-          { title: 'BIN CAPACITY', value: '8,750 m³', subtitle: 'Total capacity', color: '#3B82F6', bg: '#EFF6FF', icon: <LayersIcon color="#3B82F6" />, link: 'capacity' },
-          { title: 'USED CAPACITY', value: '5,245 m³', subtitle: '59.9% utilised', color: '#F59E0B', bg: '#FFFBEB', icon: <LockIcon color="#F59E0B" />, link: 'utilisation' },
-          { title: 'AVAILABLE CAPACITY', value: '3,505 m³', subtitle: '40.1% available', color: '#22C55E', bg: '#F0FDF4', icon: <CheckCircleIcon color="#22C55E" />, link: 'details' },
-          { title: 'OVERFULL BINS', value: '8', subtitle: 'Exceeds capacity', color: '#EF4444', bg: '#FEF2F2', icon: <AlertTriangleIcon color="#EF4444" />, link: 'alerts' }
+          { title: 'TOTAL LOCATIONS', value: kpiStats.totalLocations.toString(), subtitle: 'Active locations', color: '#8B5CF6', bg: '#F5F3FF', icon: <CalendarIcon2 color="#8B5CF6" />, link: 'locations' },
+          { title: 'TOTAL BINS', value: kpiStats.totalBins.toString(), subtitle: 'All bins', color: '#22C55E', bg: '#F0FDF4', icon: <BoxCheckIcon2 color="#22C55E" />, link: 'bins' },
+          { title: 'BIN CAPACITY', value: kpiStats.binCapacity, subtitle: 'Total capacity', color: '#3B82F6', bg: '#EFF6FF', icon: <LayersIcon color="#3B82F6" />, link: 'capacity' },
+          { title: 'USED CAPACITY', value: kpiStats.usedCapacity, subtitle: `${kpiStats.utilPercent}% utilised`, color: '#F59E0B', bg: '#FFFBEB', icon: <LockIcon color="#F59E0B" />, link: 'utilisation' },
+          { title: 'AVAILABLE CAPACITY', value: kpiStats.availableCapacity, subtitle: 'Available', color: '#22C55E', bg: '#F0FDF4', icon: <CheckCircleIcon color="#22C55E" />, link: 'details' },
+          { title: 'OVERFULL BINS', value: kpiStats.overfullBins.toString(), subtitle: 'Exceeds capacity', color: '#EF4444', bg: '#FEF2F2', icon: <AlertTriangleIcon color="#EF4444" />, link: 'alerts' }
         ].map((stat, i) => (
           <div key={i} style={{ background: '#fff', borderRadius: 12, padding: '16px', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', position: 'relative' }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: '#64748B', letterSpacing: '0.5px', marginBottom: 12 }}>{stat.title}</div>
@@ -185,7 +265,7 @@ export default function WarehouseLocationsBins({ wh, onBack }) {
               <button style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #E2E8F0', fontSize: 12, fontWeight: 600, color: '#1E293B', background: '#fff', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
                 <ExportIcon /> Export
               </button>
-              <button style={{ padding: '6px 8px', borderRadius: 6, border: '1px solid #E2E8F0', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+              <button onClick={fetchLocations} style={{ padding: '6px 8px', borderRadius: 6, border: '1px solid #E2E8F0', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                 <RefreshIcon />
               </button>
             </div>
@@ -194,7 +274,7 @@ export default function WarehouseLocationsBins({ wh, onBack }) {
           {/* LOCATIONS TABLE */}
           <div style={{ background: '#fff', borderRadius: 8, border: '1px solid #E2E8F0', overflow: 'hidden' }}>
             <div style={{ padding: '16px', borderBottom: '1px solid #E2E8F0' }}>
-              <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px' }}>WAREHOUSE LOCATIONS (28)</div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px' }}>WAREHOUSE LOCATIONS ({locationsList.length})</div>
             </div>
             
             <div style={{ overflowX: 'auto' }}>
@@ -214,123 +294,87 @@ export default function WarehouseLocationsBins({ wh, onBack }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {mockLocations.map((row, idx) => (
-                    <tr key={idx} style={{ borderBottom: '1px solid #E2E8F0' }}>
-                      <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 600, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.code}</td>
-                      <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 500, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.name}</td>
-                      <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 500, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.area}</td>
-                      <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 500, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.type}</td>
-                      <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 600, color: '#0F172A' }}>{row.bins}</td>
-                      <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 600, color: '#0F172A' }}>{row.cap}</td>
-                      <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 600, color: '#0F172A' }}>{row.used}</td>
-                      <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{ fontSize: 11, fontWeight: 600, color: '#0F172A', width: 28 }}>{row.util}</span>
-                          <div style={{ flex: 1, height: 6, background: '#E2E8F0', borderRadius: 3, overflow: 'hidden' }}>
-                            <div style={{ width: row.util, height: '100%', background: '#4F46E5', borderRadius: 3 }}></div>
+                  {locationsList.length > 0 ? (
+                    locationsList.map((row, idx) => (
+                      <tr key={row.id || idx} style={{ borderBottom: '1px solid #E2E8F0' }}>
+                        <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 600, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.code}</td>
+                        <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 500, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.name}</td>
+                        <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 500, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.area}</td>
+                        <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 500, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.type}</td>
+                        <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 600, color: '#0F172A' }}>{row.bins}</td>
+                        <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 600, color: '#0F172A' }}>{row.cap}</td>
+                        <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 600, color: '#0F172A' }}>{row.used}</td>
+                        <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontSize: 11, fontWeight: 600, color: '#0F172A', width: 28 }}>{row.util}</span>
+                            <div style={{ flex: 1, height: 6, background: '#E2E8F0', borderRadius: 3, overflow: 'hidden' }}>
+                              <div style={{ width: row.util, height: '100%', background: '#4F46E5', borderRadius: 3 }}></div>
+                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td style={{ padding: '12px 16px' }}>
-                        <span style={{ display: 'inline-flex', padding: '4px 8px', borderRadius: 12, background: '#F0FDF4', color: '#22C55E', fontSize: 11, fontWeight: 600 }}>Active</span>
-                      </td>
-                      <td style={{ padding: '12px 16px', textAlign: 'center', position: 'relative' }}>
-                        <div style={{ display: 'flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
-                          <button
-                            title="View Location Details"
-                            onClick={() => setViewLocationModal(row)}
-                            style={{ background: '#F1F5F9', border: 'none', borderRadius: 6, cursor: 'pointer', padding: '6px 8px', color: '#475569', transition: 'all 0.15s ease', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                            onMouseEnter={(e) => { e.currentTarget.style.background = '#EEF2FF'; e.currentTarget.style.color = '#4F46E5'; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.background = '#F1F5F9'; e.currentTarget.style.color = '#475569'; }}
-                          >
-                            <EyeIcon />
-                          </button>
-                          
-                          <div style={{ position: 'relative' }}>
+                        </td>
+                        <td style={{ padding: '12px 16px' }}>
+                          <span style={{ display: 'inline-flex', padding: '4px 8px', borderRadius: 12, background: '#F0FDF4', color: '#22C55E', fontSize: 11, fontWeight: 600 }}>{row.status}</span>
+                        </td>
+                        <td style={{ padding: '12px 16px', textAlign: 'center', position: 'relative' }}>
+                          <div style={{ display: 'flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
                             <button
-                              title="More Actions"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setActionMenuIndex(actionMenuIndex === idx ? null : idx);
-                              }}
-                              style={{ background: actionMenuIndex === idx ? '#EEF2FF' : '#F1F5F9', border: 'none', borderRadius: 6, cursor: 'pointer', padding: '6px 8px', color: actionMenuIndex === idx ? '#4F46E5' : '#475569', transition: 'all 0.15s ease', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                              onMouseEnter={(e) => { e.currentTarget.style.background = '#EEF2FF'; e.currentTarget.style.color = '#4F46E5'; }}
-                              onMouseLeave={(e) => { if (actionMenuIndex !== idx) { e.currentTarget.style.background = '#F1F5F9'; e.currentTarget.style.color = '#475569'; } }}
+                              title="View Location Details"
+                              onClick={() => setViewLocationModal(row)}
+                              style={{ background: '#F1F5F9', border: 'none', borderRadius: 6, cursor: 'pointer', padding: '6px 8px', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                             >
-                              <MoreHorizontalIcon />
+                              <EyeIcon />
                             </button>
+                            
+                            <div style={{ position: 'relative' }}>
+                              <button
+                                title="More Actions"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActionMenuIndex(actionMenuIndex === idx ? null : idx);
+                                }}
+                                style={{ background: actionMenuIndex === idx ? '#EEF2FF' : '#F1F5F9', border: 'none', borderRadius: 6, cursor: 'pointer', padding: '6px 8px', color: actionMenuIndex === idx ? '#4F46E5' : '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                              >
+                                <MoreHorizontalIcon />
+                              </button>
 
-                            {/* Action Menu Dropdown */}
-                            {actionMenuIndex === idx && (
-                              <>
-                                <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setActionMenuIndex(null)} />
-                                <div style={{ position: 'absolute', right: 0, top: '110%', width: 170, background: '#fff', borderRadius: 10, border: '1px solid #E2E8F0', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)', padding: '6px', zIndex: 100, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                  <button
-                                    onClick={() => { setViewLocationModal(row); setActionMenuIndex(null); }}
-                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-                                  >
-                                    👁️ View Details
-                                  </button>
-                                  <button
-                                    onClick={() => { setEditLocationModal(row); setActionMenuIndex(null); }}
-                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-                                  >
-                                    ✏️ Edit Location
-                                  </button>
-                                  <button
-                                    onClick={() => { showToast(`Barcode & QR printed for ${row.code}`); setActionMenuIndex(null); }}
-                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-                                  >
-                                    🏷️ Print Barcode
-                                  </button>
-                                  <button
-                                    onClick={() => { showToast(`Status toggled for ${row.name}`); setActionMenuIndex(null); }}
-                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-                                  >
-                                    🔄 Toggle Status
-                                  </button>
-                                  <div style={{ height: 1, background: '#E2E8F0', margin: '4px 0' }} />
-                                  <button
-                                    onClick={() => { showToast(`Location ${row.code} deleted`); setActionMenuIndex(null); }}
-                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#EF4444', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#FEF2F2'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-                                  >
-                                    🗑️ Delete Location
-                                  </button>
-                                </div>
-                              </>
-                            )}
+                              {/* Action Menu Dropdown */}
+                              {actionMenuIndex === idx && (
+                                <>
+                                  <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setActionMenuIndex(null)} />
+                                  <div style={{ position: 'absolute', right: 0, top: '110%', width: 170, background: '#fff', borderRadius: 10, border: '1px solid #E2E8F0', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)', padding: '6px', zIndex: 100, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                    <button
+                                      onClick={() => { setViewLocationModal(row); setActionMenuIndex(null); }}
+                                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                                    >
+                                      👁️ View Details
+                                    </button>
+                                    <button
+                                      onClick={() => { handleDeleteLocation(row.id, row.name); setActionMenuIndex(null); }}
+                                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#EF4444', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                                    >
+                                      🗑️ Delete Location
+                                    </button>
+                                  </div>
+                                </>
+                              )}
+                            </div>
                           </div>
-                        </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="10" style={{ padding: '32px 16px', textAlign: 'center', color: '#94A3B8', fontSize: 12, fontWeight: 600 }}>
+                        No warehouse locations found matching your search. Click "+ Add Location / Bin" to create one.
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
             
             <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ fontSize: 12, fontWeight: 500, color: '#64748B' }}>Showing 1 to 10 of 28 locations</div>
-              <div style={{ display: 'flex', gap: 6 }}>
-                <button style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, border: '1px solid #E2E8F0', background: '#fff', cursor: 'pointer', color: '#64748B', fontSize: 12 }}>&lt;</button>
-                <button style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, border: '1px solid #4F46E5', background: '#EEF2FF', cursor: 'pointer', color: '#4F46E5', fontSize: 12, fontWeight: 600 }}>1</button>
-                <button style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, border: '1px solid #E2E8F0', background: '#fff', cursor: 'pointer', color: '#1E293B', fontSize: 12, fontWeight: 600 }}>2</button>
-                <button style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, border: '1px solid #E2E8F0', background: '#fff', cursor: 'pointer', color: '#1E293B', fontSize: 12, fontWeight: 600 }}>3</button>
-                <button style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, border: '1px solid #E2E8F0', background: '#fff', cursor: 'pointer', color: '#1E293B', fontSize: 12, fontWeight: 600 }}>...</button>
-                <button style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, border: '1px solid #E2E8F0', background: '#fff', cursor: 'pointer', color: '#64748B', fontSize: 12 }}>&gt;</button>
-              </div>
-              <div style={{ padding: '4px 8px', borderRadius: 6, border: '1px solid #E2E8F0', fontSize: 12, fontWeight: 500, color: '#1E293B', display: 'flex', alignItems: 'center', gap: 6, background: '#fff', cursor: 'pointer' }}>
-                10 / page <span style={{ fontSize: 9, color: '#94A3B8' }}>▼</span>
-              </div>
+              <div style={{ fontSize: 12, fontWeight: 500, color: '#64748B' }}>Showing {locationsList.length} of {locationsList.length} locations</div>
             </div>
           </div>
         </div>
@@ -342,57 +386,21 @@ export default function WarehouseLocationsBins({ wh, onBack }) {
           <div style={{ background: '#fff', borderRadius: 8, border: '1px solid #E2E8F0', padding: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px' }}>WAREHOUSE LAYOUT</div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: '#4F46E5', cursor: 'pointer' }}>View Full Layout →</div>
             </div>
             
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 90px', gap: 8 }}>
-              {/* Row 1 */}
-              <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 6, height: 48, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: '#0F172A' }}>A1</div>
-                <div style={{ fontSize: 8, color: '#15803D', fontWeight: 600 }}>Main Storage A1</div>
-              </div>
-              <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 6, height: 48, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: '#0F172A' }}>A2</div>
-                <div style={{ fontSize: 8, color: '#15803D', fontWeight: 600 }}>Main Storage A2</div>
-              </div>
-              <div style={{ gridRow: '1 / span 2', background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: 6, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: '#0F172A' }}>R1</div>
-                <div style={{ fontSize: 8, color: '#6D28D9', fontWeight: 600 }}>Rack Storage R1</div>
-              </div>
-
-              {/* Row 2 */}
-              <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 6, height: 48, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: '#0F172A' }}>B1</div>
-                <div style={{ fontSize: 8, color: '#1D4ED8', fontWeight: 600 }}>Bulk Storage B1</div>
-              </div>
-              <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 6, height: 48, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: '#0F172A' }}>B2</div>
-                <div style={{ fontSize: 8, color: '#1D4ED8', fontWeight: 600 }}>Bulk Storage B2</div>
-              </div>
-
-              {/* Row 3 */}
-              <div style={{ background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: 6, height: 48, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: '#0F172A' }}>R2</div>
-                <div style={{ fontSize: 8, color: '#6D28D9', fontWeight: 600 }}>Rack Storage R2</div>
-              </div>
-              <div style={{ background: '#FFF7ED', border: '1px solid #FFEDD5', borderRadius: 6, height: 48, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: '#0F172A' }}>D1</div>
-                <div style={{ fontSize: 8, color: '#C2410C', fontWeight: 600 }}>Dispatch Area D1</div>
-              </div>
-              <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 6, height: 48, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: '#0F172A' }}>Q1</div>
-                <div style={{ fontSize: 8, color: '#B91C1C', fontWeight: 600, textAlign: 'center', lineHeight: 1.1 }}>Quarantine<br/>Area Q1</div>
-              </div>
-
-              {/* Row 4 */}
-              <div style={{ gridColumn: '1 / span 2', background: '#FFF7ED', border: '1px solid #FFEDD5', borderRadius: 6, height: 48, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: '#0F172A' }}>D2</div>
-                <div style={{ fontSize: 8, color: '#C2410C', fontWeight: 600 }}>Dispatch Area D2</div>
-              </div>
-              <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 6, height: 48, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: '#0F172A' }}>R3</div>
-                <div style={{ fontSize: 8, color: '#B91C1C', fontWeight: 600 }}>Returns Area R3</div>
-              </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(70px, 1fr))', gap: 8 }}>
+              {locationsList.length > 0 ? (
+                locationsList.slice(0, 6).map((loc, i) => (
+                  <div key={i} style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 6, height: 48, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 4 }}>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: '#0F172A' }}>{loc.code}</div>
+                    <div style={{ fontSize: 8, color: '#15803D', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>{loc.name}</div>
+                  </div>
+                ))
+              ) : (
+                <div style={{ gridColumn: '1 / -1', padding: '16px 0', textAlign: 'center', color: '#94A3B8', fontSize: 11, fontWeight: 600 }}>
+                  No layout locations registered
+                </div>
+              )}
             </div>
           </div>
 
@@ -400,33 +408,26 @@ export default function WarehouseLocationsBins({ wh, onBack }) {
           <div style={{ background: '#fff', borderRadius: 8, border: '1px solid #E2E8F0', padding: '16px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px' }}>STORAGE UTILISATION</div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: '#4F46E5', cursor: 'pointer' }}>View Report →</div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-              {/* Donut Chart Mockup */}
-              <div style={{ position: 'relative', width: 90, height: 90, borderRadius: '50%', background: 'conic-gradient(#22C55E 0% 59.9%, #E2E8F0 59.9% 100%)' }}>
+              <div style={{ position: 'relative', width: 90, height: 90, borderRadius: '50%', background: '#E2E8F0' }}>
                 <div style={{ position: 'absolute', top: 14, left: 14, right: 14, bottom: 14, background: '#fff', borderRadius: '50%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A', lineHeight: 1.1 }}>5,245<br/>m³</div>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A', lineHeight: 1.1 }}>{kpiStats.usedCapacity}</div>
                   <div style={{ fontSize: 8, fontWeight: 700, color: '#64748B', marginTop: 2 }}>Used</div>
                 </div>
               </div>
-              {/* Legend */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: '#1E293B' }}><SmallCircleIcon color="#4F46E5" /> Used</div>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: '#0F172A', display: 'flex', gap: 8 }}>
-                    <span>5,245 m³</span> <span style={{ color: '#64748B' }}>(59.9%)</span>
-                  </div>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: '#0F172A' }}>{kpiStats.usedCapacity}</div>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: '#1E293B' }}><SmallCircleIcon color="#22C55E" /> Available</div>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: '#0F172A', display: 'flex', gap: 8 }}>
-                    <span>3,505 m³</span> <span style={{ color: '#64748B' }}>(40.1%)</span>
-                  </div>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: '#0F172A' }}>{kpiStats.availableCapacity}</div>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4, paddingTop: 10, borderTop: '1px solid #E2E8F0' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, color: '#1E293B' }}><SmallCircleIconBordered color="#fff" border="#CBD5E1" /> Total Capacity</div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#0F172A' }}>8,750 m³</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#0F172A' }}>{kpiStats.binCapacity}</div>
                 </div>
               </div>
             </div>
@@ -473,26 +474,46 @@ export default function WarehouseLocationsBins({ wh, onBack }) {
       {showAddLocationModal && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.4)' }} onClick={() => setShowAddLocationModal(false)}></div>
-          <div style={{ background: '#fff', width: '500px', borderRadius: 16, padding: '32px', position: 'relative', zIndex: 1, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
+          <form onSubmit={handleSaveLocation} style={{ background: '#fff', width: '500px', borderRadius: 16, padding: '32px', position: 'relative', zIndex: 1, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
             <h2 style={{ margin: '0 0 24px 0', fontSize: 20, fontWeight: 800, color: '#0F172A' }}>Add New Location / Bin</h2>
             
             <div style={{ display: 'grid', gap: 16 }}>
               <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Bin Name / Identifier</label>
-                <input type="text" placeholder="e.g. A-12-04" style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none' }} />
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Bin Name / Identifier *</label>
+                <input
+                  type="text"
+                  required
+                  value={addForm.name}
+                  onChange={e => setAddForm({ ...addForm, name: e.target.value, code: e.target.value })}
+                  placeholder="e.g. A-12-04"
+                  style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none' }}
+                />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Zone</label>
-                  <select style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none', background: '#fff' }}>
-                    <option>Standard Storage</option>
-                    <option>Cold Storage</option>
-                    <option>Hazardous</option>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Zone / Area</label>
+                  <select
+                    value={addForm.area}
+                    onChange={e => setAddForm({ ...addForm, area: e.target.value })}
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none', background: '#fff' }}
+                  >
+                    <option value="Standard Storage">Standard Storage</option>
+                    <option value="Main Storage">Main Storage</option>
+                    <option value="Bulk Storage">Bulk Storage</option>
+                    <option value="Cold Storage">Cold Storage</option>
+                    <option value="Dispatch Area">Dispatch Area</option>
+                    <option value="Quarantine">Quarantine</option>
                   </select>
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Max Capacity (m³)</label>
-                  <input type="number" placeholder="0.0" style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none' }} />
+                  <input
+                    type="number"
+                    value={addForm.capacity}
+                    onChange={e => setAddForm({ ...addForm, capacity: e.target.value })}
+                    placeholder="100"
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none' }}
+                  />
                 </div>
               </div>
               <div>
@@ -504,10 +525,12 @@ export default function WarehouseLocationsBins({ wh, onBack }) {
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 32 }}>
-              <button onClick={() => setShowAddLocationModal(false)} style={{ padding: '10px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, border: '1px solid #E2E8F0', background: '#fff', color: '#475569', cursor: 'pointer' }}>Cancel</button>
-              <button onClick={() => setShowAddLocationModal(false)} style={{ padding: '10px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, border: 'none', background: '#4F46E5', color: '#fff', cursor: 'pointer' }}>Save Location</button>
+              <button type="button" onClick={() => setShowAddLocationModal(false)} style={{ padding: '10px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, border: '1px solid #E2E8F0', background: '#fff', color: '#475569', cursor: 'pointer' }}>Cancel</button>
+              <button type="submit" disabled={isSubmitting} style={{ padding: '10px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, border: 'none', background: '#4F46E5', color: '#fff', cursor: 'pointer' }}>
+                {isSubmitting ? 'Saving...' : 'Save Location'}
+              </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
 

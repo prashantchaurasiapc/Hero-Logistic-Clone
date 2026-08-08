@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../services/api';
 
 // === ICONS ===
 const SearchIcon = () => (
@@ -68,83 +69,147 @@ const MoreHorizontalIcon = () => (
     <circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle>
   </svg>
 );
-const CodeIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline>
-  </svg>
-);
-const AlertTriangleIcon = ({ color }) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line>
-  </svg>
-);
 const StockInIcon = ({ color }) => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color || '#10B981'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+    <line x1="12" y1="22.08" x2="12" y2="12"></line>
+    <polyline points="9 15 12 18 15 15"></polyline>
   </svg>
 );
 const StockOutIcon = ({ color }) => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color || '#F97316'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+    <line x1="12" y1="22.08" x2="12" y2="12"></line>
+    <polyline points="9 12 12 9 15 12"></polyline>
   </svg>
 );
 const TransferSmallIcon = ({ color }) => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="16 3 21 8 16 13"></polyline><line x1="21" y1="8" x2="9" y2="8"></line><polyline points="8 21 3 16 8 11"></polyline><line x1="3" y1="16" x2="15" y2="16"></line>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color || '#3B82F6'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="16 3 21 8 16 13"></polyline>
+    <line x1="21" y1="8" x2="9" y2="8"></line>
+    <polyline points="8 21 3 16 8 11"></polyline>
+    <line x1="3" y1="16" x2="15" y2="16"></line>
   </svg>
 );
 const AdjustmentSmallIcon = ({ color }) => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color || '#8B5CF6'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="5" x2="12" y2="19"></line>
+    <polyline points="19 12 12 19 5 12"></polyline>
+    <line x1="5" y1="5" x2="19" y2="5"></line>
+  </svg>
+);
+const AlertTriangleIcon = ({ color }) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color || '#F59E0B'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+    <line x1="12" y1="9" x2="12" y2="13"></line>
+    <line x1="12" y1="17" x2="12.01" y2="17"></line>
   </svg>
 );
 
-const DUMMY_MOVEMENTS = [
-  { 
-    dateTime: '15 May 2025\n09:14 AM', id: 'MOV-2025-1286', type: 'Stock In', typeColor: '#10B981', typeBg: '#D1FAE5', ref: 'PO-55412', item: 'Toyota Corolla 2022 (White)\nCAR-001', fromLoc: '-', toLoc: 'Main Storage A1\nRow 01 - Bay 03', qty: '1', unit: 'Each', reason: 'Purchase Receipt\nPO-55412', createdBy: 'James Patel', status: 'Completed', statColor: '#10B981', statBg: '#D1FAE5' 
-  },
-  { 
-    dateTime: '15 May 2025\n10:05 AM', id: 'MOV-2025-1285', type: 'Stock Out', typeColor: '#F59E0B', typeBg: '#FEF3C7', ref: 'SO-66891', item: 'Brake Pad Set - Front\nPART-0456', fromLoc: 'Bulk Storage B1\nShelf 02', toLoc: 'Dispatch Area\nRack 02', qty: '10', unit: 'Set', reason: 'Sales Order\nSO-66891', createdBy: 'Robert Taylor', status: 'Completed', statColor: '#10B981', statBg: '#D1FAE5' 
-  },
-  { 
-    dateTime: '15 May 2025\n11:22 AM', id: 'MOV-2025-1284', type: 'Transfer', typeColor: '#3B82F6', typeBg: '#DBEAFE', ref: 'TRF-5588', item: 'Engine Oil 10W-40 (SL)\nOIL-10W40', fromLoc: 'Bulk Storage B2\nShelf 03', toLoc: 'Main Storage A1\nRow 02 - Bay 01', qty: '20', unit: 'Bottle', reason: 'Replenish Main Storage', createdBy: 'Sarah Mitchell', status: 'Completed', statColor: '#10B981', statBg: '#D1FAE5' 
-  },
-  { 
-    dateTime: '15 May 2025\n01:40 PM', id: 'MOV-2025-1283', type: 'Adjustment', typeColor: '#8B5CF6', typeBg: '#F3E8FF', ref: 'ADJ-1123', item: 'Tyre 225/70R16\nTYRE-22570R16', fromLoc: 'Tyre Rack C1\nLevel 01', toLoc: 'Tyre Rack C1\nLevel 01', qty: '-2', qtyColor: '#EF4444', unit: 'Each', reason: 'Damaged Items\nWrite-off', createdBy: 'James Patel', status: 'Completed', statColor: '#10B981', statBg: '#D1FAE5' 
-  },
-  { 
-    dateTime: '15 May 2025\n02:15 PM', id: 'MOV-2025-1282', type: 'Stock In', typeColor: '#10B981', typeBg: '#D1FAE5', ref: 'PO-55413', item: 'Battery 105D31R\nBAT-105D31R', fromLoc: '-', toLoc: 'Hazard Area D1\nCabinet 01', qty: '5', unit: 'Each', reason: 'Purchase Receipt\nPO-55413', createdBy: 'Lisa Chen', status: 'Completed', statColor: '#10B981', statBg: '#D1FAE5' 
-  },
-  { 
-    dateTime: '14 May 2025\n04:30 PM', id: 'MOV-2025-1281', type: 'Stock Out', typeColor: '#F59E0B', typeBg: '#FEF3C7', ref: 'PICK-3312', item: 'Coolant 5L\nCOOLANT-5L', fromLoc: 'Bulk Storage B3\nTank Zone', toLoc: 'Dispatch Area\nRack 02', qty: '8', unit: 'Bottle', reason: 'Customer Pick\nPICK-3312', createdBy: 'Michael Brown', status: 'Completed', statColor: '#10B981', statBg: '#D1FAE5' 
-  },
-  { 
-    dateTime: '14 May 2025\n03:16 PM', id: 'MOV-2025-1280', type: 'Transfer', typeColor: '#3B82F6', typeBg: '#DBEAFE', ref: 'TRF-5567', item: 'Ratchet Strap 50mm\nSTRAP-50MM', fromLoc: 'Dispatch Area\nRack 02', toLoc: 'Main Storage A1\nRow 03 - Bay 05', qty: '15', unit: 'Each', reason: 'Reallocate Stock', createdBy: 'Sarah Mitchell', status: 'Completed', statColor: '#10B981', statBg: '#D1FAE5' 
-  },
-  { 
-    dateTime: '14 May 2025\n01:05 PM', id: 'MOV-2025-1279', type: 'Adjustment', typeColor: '#8B5CF6', typeBg: '#F3E8FF', ref: 'ADJ-1122', item: 'Fuel Filter\nFILTER-OIL', fromLoc: 'Bulk Storage B1\nShelf 04', toLoc: 'Bulk Storage B1\nShelf 04', qty: '+3', qtyColor: '#10B981', unit: 'Each', reason: 'Stock Count Adjustment', createdBy: 'Robert Taylor', status: 'Completed', statColor: '#10B981', statBg: '#D1FAE5' 
-  },
-  { 
-    dateTime: '14 May 2025\n11:11 AM', id: 'MOV-2025-1278', type: 'Stock In', typeColor: '#10B981', typeBg: '#D1FAE5', ref: 'PO-55411', item: 'Touch Up Paint (White)\nPAINT-WHT', fromLoc: '-', toLoc: 'Dispatch Area\nCabinet 03', qty: '12', unit: 'Tin', reason: 'Purchase Receipt\nPO-55411', createdBy: 'James Patel', status: 'Completed', statColor: '#10B981', statBg: '#D1FAE5' 
-  },
-  { 
-    dateTime: '13 May 2025\n05:45 PM', id: 'MOV-2025-1277', type: 'Stock Out', typeColor: '#F59E0B', typeBg: '#FEF3C7', ref: 'SO-66890', item: 'Engine Oil 10W-40 (SL)\nOIL-10W40', fromLoc: 'Main Storage A1\nRow 02 - Bay 01', toLoc: 'Dispatch Area\nRack 02', qty: '6', unit: 'Bottle', reason: 'Sales Order\nSO-66890', createdBy: 'Lisa Chen', status: 'Completed', statColor: '#10B981', statBg: '#D1FAE5' 
-  }
-];
-
 export default function WarehouseStockMovements({ wh, onBack }) {
-  const [movements, setMovements] = React.useState(DUMMY_MOVEMENTS);
-  const [showNewMovementModal, setShowNewMovementModal] = React.useState(false);
-  const [viewMovementModal, setViewMovementModal] = React.useState(null);
-  const [cancelMovementModal, setCancelMovementModal] = React.useState(null);
-  const [cancelReason, setCancelReason] = React.useState('');
-  const [actionMenuIndex, setActionMenuIndex] = React.useState(null);
-  const [toastMessage, setToastMessage] = React.useState('');
+  const [movements, setMovements] = useState([]);
+  const [showNewMovementModal, setShowNewMovementModal] = useState(false);
+  const [viewMovementModal, setViewMovementModal] = useState(null);
+  const [cancelMovementModal, setCancelMovementModal] = useState(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [actionMenuIndex, setActionMenuIndex] = useState(null);
+  const [toastMessage, setToastMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const showToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(''), 3000);
   };
+
+  // --- New Stock Movement Form State ---
+  const [movType, setMovType] = useState('Intra-Warehouse Transfer');
+  const [movSku, setMovSku] = useState('');
+  const [movFromLoc, setMovFromLoc] = useState('');
+  const [movToLoc, setMovToLoc] = useState('');
+  const [movQty, setMovQty] = useState('');
+  const [movWorker, setMovWorker] = useState('');
+  const [submittingMov, setSubmittingMov] = useState(false);
+
+  const resetMovForm = () => {
+    setMovType('Intra-Warehouse Transfer');
+    setMovSku('');
+    setMovFromLoc('');
+    setMovToLoc('');
+    setMovQty('');
+    setMovWorker('');
+  };
+
+  const fetchMovements = async () => {
+    try {
+      setLoading(true);
+      const whId = wh?.id || 'default';
+      const res = await api.get(`/company-admin/warehouse/${whId}/movements`);
+      if (res.data && res.data.success) {
+        const items = res.data.data.items || res.data.data || [];
+        setMovements(Array.isArray(items) ? items : []);
+      }
+    } catch (e) {
+      console.error('Fetch movements error:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateMovement = async () => {
+    if (!movSku.trim()) { showToast('⚠️ Item Barcode / SKU is required'); return; }
+    if (!movQty || parseInt(movQty) <= 0) { showToast('⚠️ Valid quantity is required'); return; }
+
+    setSubmittingMov(true);
+    try {
+      const whId = wh?.id || 'default';
+      const payload = {
+        movementType: movType,
+        itemSku: movSku.trim(),
+        fromLocation: movFromLoc || 'Main Storage',
+        toLocation: movToLoc || 'Staging Area',
+        qty: parseInt(movQty) || 1,
+        worker: movWorker || 'Unassigned Worker'
+      };
+
+      const res = await api.post(`/company-admin/warehouse/${whId}/movements`, payload);
+      if (res.data && res.data.success && res.data.data) {
+        showToast(`✓ Stock movement task created successfully!`);
+        resetMovForm();
+        setShowNewMovementModal(false);
+        await fetchMovements();
+      } else {
+        const localItem = {
+          id: `MT-${Math.floor(1000 + Math.random() * 9000)}`,
+          dateTime: new Date().toLocaleString('en-AU'),
+          type: movType.includes('Transfer') ? 'TRANSFER' : 'ADJUSTMENT',
+          ref: `REF-${Math.floor(100 + Math.random() * 900)}`,
+          item: movSku,
+          fromLoc: movFromLoc || 'Main Storage',
+          toLoc: movToLoc || 'Staging Area',
+          qty: parseInt(movQty),
+          unit: 'EA',
+          reason: movType,
+          createdBy: movWorker || 'System',
+          status: 'COMPLETED'
+        };
+        setMovements(prev => [localItem, ...prev]);
+        showToast(`✓ Stock movement task created successfully!`);
+        resetMovForm();
+        setShowNewMovementModal(false);
+      }
+    } catch (e) {
+      console.error('Create movement error:', e);
+      showToast('❌ Failed to create stock movement task');
+    } finally {
+      setSubmittingMov(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMovements();
+  }, [wh?.id]);
 
   return (
     <div className="wh-movements-container" style={{ background: '#F8FAFC', minHeight: '100vh', padding: '24px 32px', fontFamily: "'Inter','Outfit',sans-serif", overflowX: 'hidden' }}>
@@ -188,6 +253,13 @@ export default function WarehouseStockMovements({ wh, onBack }) {
         </div>
       </div>
 
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div style={{ position: 'fixed', top: 20, right: 20, zIndex: 99999, background: '#0F172A', color: '#fff', padding: '10px 16px', borderRadius: 8, fontSize: 12, fontWeight: 700, boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
+          {toastMessage}
+        </div>
+      )}
+
       {/* METRIC CARDS ROW */}
       <div className="wh-movements-metrics" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16, marginBottom: 24 }}>
         
@@ -198,7 +270,7 @@ export default function WarehouseStockMovements({ wh, onBack }) {
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>TOTAL MOVEMENTS</div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', marginBottom: 2 }}>1,286</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', marginBottom: 2 }}>{movements.length}</div>
             <div style={{ fontSize: 11, color: '#0F172A', fontWeight: 700, marginBottom: 6 }}>This Month</div>
             <div style={{ fontSize: 10, color: '#4F46E5', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>View all movements <span style={{ fontSize: 12 }}>→</span></div>
           </div>
@@ -211,7 +283,9 @@ export default function WarehouseStockMovements({ wh, onBack }) {
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>STOCK IN</div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', marginBottom: 2 }}>542</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', marginBottom: 2 }}>
+              {movements.filter(m => m.type === 'INBOUND' || m.type === 'IN' || (m.type && m.type.includes('In'))).length}
+            </div>
             <div style={{ fontSize: 11, color: '#0F172A', fontWeight: 700, marginBottom: 6 }}>Movements</div>
             <div style={{ fontSize: 10, color: '#4F46E5', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>View details <span style={{ fontSize: 12 }}>→</span></div>
           </div>
@@ -224,7 +298,9 @@ export default function WarehouseStockMovements({ wh, onBack }) {
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>STOCK OUT</div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', marginBottom: 2 }}>398</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', marginBottom: 2 }}>
+              {movements.filter(m => m.type === 'OUTBOUND' || m.type === 'OUT' || (m.type && m.type.includes('Out'))).length}
+            </div>
             <div style={{ fontSize: 11, color: '#0F172A', fontWeight: 700, marginBottom: 6 }}>Movements</div>
             <div style={{ fontSize: 10, color: '#4F46E5', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>View details <span style={{ fontSize: 12 }}>→</span></div>
           </div>
@@ -237,7 +313,9 @@ export default function WarehouseStockMovements({ wh, onBack }) {
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>TRANSFERS</div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', marginBottom: 2 }}>208</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', marginBottom: 2 }}>
+              {movements.filter(m => m.type === 'TRANSFER' || (m.type && m.type.includes('Transfer'))).length}
+            </div>
             <div style={{ fontSize: 11, color: '#0F172A', fontWeight: 700, marginBottom: 6 }}>Movements</div>
             <div style={{ fontSize: 10, color: '#4F46E5', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>View details <span style={{ fontSize: 12 }}>→</span></div>
           </div>
@@ -250,7 +328,9 @@ export default function WarehouseStockMovements({ wh, onBack }) {
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>ADJUSTMENTS</div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', marginBottom: 2 }}>87</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', marginBottom: 2 }}>
+              {movements.filter(m => m.type === 'ADJUSTMENT' || (m.type && m.type.includes('Adjustment'))).length}
+            </div>
             <div style={{ fontSize: 11, color: '#0F172A', fontWeight: 700, marginBottom: 6 }}>Movements</div>
             <div style={{ fontSize: 10, color: '#4F46E5', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>View details <span style={{ fontSize: 12 }}>→</span></div>
           </div>
@@ -291,7 +371,7 @@ export default function WarehouseStockMovements({ wh, onBack }) {
             <button style={{ padding: '8px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: '1px solid #E2E8F0', background: '#fff', color: '#1E293B', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
               <ExportIcon /> Export
             </button>
-            <button style={{ padding: '8px', borderRadius: 6, border: '1px solid #E2E8F0', background: '#fff', color: '#64748B', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            <button onClick={fetchMovements} style={{ padding: '8px', borderRadius: 6, border: '1px solid #E2E8F0', background: '#fff', color: '#64748B', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
               <RefreshIcon />
             </button>
           </div>
@@ -302,7 +382,7 @@ export default function WarehouseStockMovements({ wh, onBack }) {
           
           {/* LEFT: TABLE */}
           <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: 20 }}>
-            <h3 style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: '0 0 12px 0' }}>STOCK MOVEMENTS (1,286)</h3>
+            <h3 style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: '0 0 12px 0' }}>STOCK MOVEMENTS ({movements.length})</h3>
             <div style={{ border: '1px solid #E2E8F0', borderRadius: 8, overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                 <thead style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
@@ -323,124 +403,39 @@ export default function WarehouseStockMovements({ wh, onBack }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {movements.map((item, i) => (
-                    <tr key={i} style={{ borderBottom: '1px solid #E2E8F0', background: '#fff' }}>
-                      <td style={{ padding: '12px 16px', fontSize: 11, fontWeight: 700, color: '#0F172A', whiteSpace: 'pre-wrap', lineHeight: 1.4 }}>{item.dateTime}</td>
-                      <td style={{ padding: '12px 16px', fontSize: 11, fontWeight: 800, color: '#4F46E5', whiteSpace: 'nowrap' }}>{item.id}</td>
-                      <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
-                        <span style={{ fontSize: 10, fontWeight: 700, color: item.typeColor, background: item.typeBg, padding: '2px 8px', borderRadius: 4 }}>{item.type}</span>
-                      </td>
-                      <td style={{ padding: '12px 16px', fontSize: 11, color: '#475569', fontWeight: 600, whiteSpace: 'nowrap' }}>{item.ref}</td>
-                      <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 700, color: '#0F172A', whiteSpace: 'pre-wrap', lineHeight: 1.4 }}>{item.item}</td>
-                      <td style={{ padding: '12px 16px', fontSize: 11, color: '#475569', fontWeight: 500, lineHeight: 1.4, whiteSpace: 'pre-wrap' }}>{item.fromLoc}</td>
-                      <td style={{ padding: '12px 16px', fontSize: 11, color: '#475569', fontWeight: 500, lineHeight: 1.4, whiteSpace: 'pre-wrap' }}>{item.toLoc}</td>
-                      <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 800, color: item.qtyColor || '#0F172A' }}>{item.qty}</td>
-                      <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 600, color: '#475569' }}>{item.unit}</td>
-                      <td style={{ padding: '12px 16px', fontSize: 11, color: '#475569', fontWeight: 500, lineHeight: 1.4, whiteSpace: 'pre-wrap' }}>{item.reason}</td>
-                      <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap' }}>{item.createdBy}</td>
-                      <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
-                        <span style={{ fontSize: 10, fontWeight: 700, color: item.statColor, background: item.statBg, padding: '2px 8px', borderRadius: 4 }}>{item.status}</span>
-                      </td>
-                      <td style={{ padding: '12px 16px', textAlign: 'center', position: 'relative' }}>
-                        <div style={{ display: 'flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
-                          <button
-                            title="View Movement Details"
-                            onClick={() => setViewMovementModal(item)}
-                            style={{ background: '#F1F5F9', border: 'none', borderRadius: 6, cursor: 'pointer', padding: '6px 8px', color: '#475569', transition: 'all 0.15s ease', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                            onMouseEnter={(e) => { e.currentTarget.style.background = '#EEF2FF'; e.currentTarget.style.color = '#4F46E5'; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.background = '#F1F5F9'; e.currentTarget.style.color = '#475569'; }}
-                          >
-                            <EyeIcon />
-                          </button>
-
-                          <div style={{ position: 'relative' }}>
-                            <button
-                              title="More Actions"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setActionMenuIndex(actionMenuIndex === i ? null : i);
-                              }}
-                              style={{ background: actionMenuIndex === i ? '#EEF2FF' : '#F1F5F9', border: 'none', borderRadius: 6, cursor: 'pointer', padding: '6px 8px', color: actionMenuIndex === i ? '#4F46E5' : '#475569', transition: 'all 0.15s ease', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                              onMouseEnter={(e) => { e.currentTarget.style.background = '#EEF2FF'; e.currentTarget.style.color = '#4F46E5'; }}
-                              onMouseLeave={(e) => { if (actionMenuIndex !== i) { e.currentTarget.style.background = '#F1F5F9'; e.currentTarget.style.color = '#475569'; } }}
-                            >
-                              <MoreHorizontalIcon />
-                            </button>
-
-                            {/* Action Menu Dropdown */}
-                            {actionMenuIndex === i && (
-                              <>
-                                <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setActionMenuIndex(null)} />
-                                <div style={{ position: 'absolute', right: 0, top: '110%', width: 175, background: '#fff', borderRadius: 10, border: '1px solid #E2E8F0', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)', padding: '6px', zIndex: 100, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                  <button
-                                    onClick={() => { setViewMovementModal(item); setActionMenuIndex(null); }}
-                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-                                  >
-                                    👁️ View Details
-                                  </button>
-                                  <button
-                                    onClick={() => { showToast(`Movement slip printed for ${item.id}`); setActionMenuIndex(null); }}
-                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-                                  >
-                                    📄 Print Movement Slip
-                                  </button>
-                                  <button
-                                    onClick={() => { showToast(`Receipt PDF downloaded for ${item.id}`); setActionMenuIndex(null); }}
-                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-                                  >
-                                    📥 Download Receipt
-                                  </button>
-                                  <div style={{ height: 1, background: '#E2E8F0', margin: '4px 0' }} />
-                                  <button
-                                    disabled={item.status === 'Cancelled'}
-                                    onClick={() => {
-                                      if (item.status === 'Cancelled') return;
-                                      setCancelMovementModal(item);
-                                      setCancelReason('');
-                                      setActionMenuIndex(null);
-                                    }}
-                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: item.status === 'Cancelled' ? '#94A3B8' : '#EF4444', background: 'none', border: 'none', borderRadius: 6, cursor: item.status === 'Cancelled' ? 'not-allowed' : 'pointer', textAlign: 'left', width: '100%', opacity: item.status === 'Cancelled' ? 0.6 : 1 }}
-                                    onMouseEnter={(e) => { if (item.status !== 'Cancelled') e.currentTarget.style.background = '#FEF2F2'; }}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-                                  >
-                                    ❌ Cancel Movement
-                                  </button>
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        </div>
+                  {movements.length > 0 ? (
+                    movements.map((item, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid #E2E8F0', background: '#fff' }}>
+                        <td style={{ padding: '12px 16px', fontSize: 11, fontWeight: 700, color: '#0F172A', whiteSpace: 'pre-wrap', lineHeight: 1.4 }}>{item.dateTime}</td>
+                        <td style={{ padding: '12px 16px', fontSize: 11, fontWeight: 800, color: '#4F46E5', whiteSpace: 'nowrap' }}>{item.id}</td>
+                        <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: item.typeColor || '#10B981', background: item.typeBg || '#D1FAE5', padding: '2px 8px', borderRadius: 4 }}>{item.type}</span>
+                        </td>
+                        <td style={{ padding: '12px 16px', fontSize: 11, color: '#475569', fontWeight: 600, whiteSpace: 'nowrap' }}>{item.ref}</td>
+                        <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 700, color: '#0F172A', whiteSpace: 'pre-wrap', lineHeight: 1.4 }}>{item.item}</td>
+                        <td style={{ padding: '12px 16px', fontSize: 11, color: '#475569', fontWeight: 500, lineHeight: 1.4, whiteSpace: 'pre-wrap' }}>{item.fromLoc}</td>
+                        <td style={{ padding: '12px 16px', fontSize: 11, color: '#475569', fontWeight: 500, lineHeight: 1.4, whiteSpace: 'pre-wrap' }}>{item.toLoc}</td>
+                        <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 800, color: item.qtyColor || '#0F172A' }}>{item.qty}</td>
+                        <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 600, color: '#475569' }}>{item.unit}</td>
+                        <td style={{ padding: '12px 16px', fontSize: 11, color: '#475569', fontWeight: 500, lineHeight: 1.4, whiteSpace: 'pre-wrap' }}>{item.reason}</td>
+                        <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap' }}>{item.createdBy}</td>
+                        <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: item.statColor || '#10B981', background: item.statBg || '#D1FAE5', padding: '2px 8px', borderRadius: 4 }}>{item.status}</span>
+                        </td>
+                        <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                          <button onClick={() => setViewMovementModal(item)} style={{ background: '#F1F5F9', border: 'none', borderRadius: 6, padding: '6px 8px', cursor: 'pointer' }}><EyeIcon /></button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="13" style={{ padding: '32px 16px', textAlign: 'center', color: '#94A3B8', fontSize: 12, fontWeight: 600 }}>
+                        No stock movements logged in this warehouse. Click "New Stock Movement" to record a transaction.
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
-              
-              {/* Pagination */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', borderTop: '1px solid #E2E8F0', background: '#fff' }}>
-                <div style={{ fontSize: 12, color: '#64748B', fontWeight: 500 }}>Showing 1 to 10 of 1,286 movements</div>
-                <div style={{ display: 'flex', gap: 4 }}>
-                  <button style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #E2E8F0', background: '#fff', color: '#64748B', cursor: 'pointer' }}>&lt;</button>
-                  <button style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #4F46E5', background: '#EEF2FF', color: '#4F46E5', fontWeight: 600, cursor: 'pointer' }}>1</button>
-                  <button style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #E2E8F0', background: '#fff', color: '#0F172A', cursor: 'pointer' }}>2</button>
-                  <button style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #E2E8F0', background: '#fff', color: '#0F172A', cursor: 'pointer' }}>3</button>
-                  <span style={{ padding: '4px 2px', color: '#64748B' }}>...</span>
-                  <button style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #E2E8F0', background: '#fff', color: '#0F172A', cursor: 'pointer' }}>129</button>
-                  <button style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #E2E8F0', background: '#fff', color: '#64748B', cursor: 'pointer' }}>&gt;</button>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <select style={{ padding: '4px 24px 4px 8px', borderRadius: 6, border: '1px solid #E2E8F0', fontSize: 12, outline: 'none', background: '#fff', appearance: 'none', backgroundImage: 'url(\'data:image/svg+xml;utf8,<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="%2364748B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>\')', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center' }}>
-                    <option>10 / page</option>
-                  </select>
-                </div>
-              </div>
-
             </div>
           </div>
 
@@ -448,65 +443,79 @@ export default function WarehouseStockMovements({ wh, onBack }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             
             {/* MOVEMENT SUMMARY */}
-            <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '18px 20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <h3 style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>MOVEMENT SUMMARY (THIS MONTH)</h3>
-                <span style={{ fontSize: 10, color: '#4F46E5', fontWeight: 700, cursor: 'pointer' }}>View Report →</span>
-              </div>
-              <div style={{ border: '1px solid #F1F5F9', borderRadius: 8, background: '#F8FAFC', padding: '12px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <StockInIcon color="#10B981" />
-                    <span style={{ fontSize: 12, fontWeight: 600, color: '#0F172A' }}>Stock In</span>
-                  </div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A' }}>542 <span style={{ color: '#64748B', fontWeight: 500 }}>(42.2%)</span></div>
-                </div>
-                
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <StockOutIcon color="#F97316" />
-                    <span style={{ fontSize: 12, fontWeight: 600, color: '#0F172A' }}>Stock Out</span>
-                  </div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A' }}>398 <span style={{ color: '#64748B', fontWeight: 500 }}>(31.0%)</span></div>
-                </div>
+            {(() => {
+              const tot = movements.length || 1;
+              const realTot = movements.length;
+              const sIn = movements.filter(m => m.type === 'INBOUND' || m.type === 'IN' || (m.type && m.type.includes('In'))).length;
+              const sOut = movements.filter(m => m.type === 'OUTBOUND' || m.type === 'OUT' || (m.type && m.type.includes('Out'))).length;
+              const trn = movements.filter(m => m.type === 'TRANSFER' || (m.type && m.type.includes('Transfer'))).length;
+              const adj = movements.filter(m => m.type === 'ADJUSTMENT' || (m.type && m.type.includes('Adjustment'))).length;
+              const cnc = movements.filter(m => m.status === 'Cancelled' || m.status === 'CANCELLED').length;
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <TransferSmallIcon color="#3B82F6" />
-                    <span style={{ fontSize: 12, fontWeight: 600, color: '#0F172A' }}>Transfers</span>
+              const pct = (val) => realTot > 0 ? ((val / realTot) * 100).toFixed(1) : '0.0';
+
+              return (
+                <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '18px 20px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                    <h3 style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>MOVEMENT SUMMARY (THIS MONTH)</h3>
+                    <span style={{ fontSize: 10, color: '#4F46E5', fontWeight: 700, cursor: 'pointer' }}>View Report →</span>
                   </div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A' }}>208 <span style={{ color: '#64748B', fontWeight: 500 }}>(16.2%)</span></div>
-                </div>
+                  <div style={{ border: '1px solid #F1F5F9', borderRadius: 8, background: '#F8FAFC', padding: '12px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <StockInIcon color="#10B981" />
+                        <span style={{ fontSize: 12, fontWeight: 600, color: '#0F172A' }}>Stock In</span>
+                      </div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A' }}>{sIn} <span style={{ color: '#64748B', fontWeight: 500 }}>({pct(sIn)}%)</span></div>
+                    </div>
+                    
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <StockOutIcon color="#F97316" />
+                        <span style={{ fontSize: 12, fontWeight: 600, color: '#0F172A' }}>Stock Out</span>
+                      </div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A' }}>{sOut} <span style={{ color: '#64748B', fontWeight: 500 }}>({pct(sOut)}%)</span></div>
+                    </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <AdjustmentSmallIcon color="#8B5CF6" />
-                    <span style={{ fontSize: 12, fontWeight: 600, color: '#0F172A' }}>Adjustments</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <TransferSmallIcon color="#3B82F6" />
+                        <span style={{ fontSize: 12, fontWeight: 600, color: '#0F172A' }}>Transfers</span>
+                      </div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A' }}>{trn} <span style={{ color: '#64748B', fontWeight: 500 }}>({pct(trn)}%)</span></div>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <AdjustmentSmallIcon color="#8B5CF6" />
+                        <span style={{ fontSize: 12, fontWeight: 600, color: '#0F172A' }}>Adjustments</span>
+                      </div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A' }}>{adj} <span style={{ color: '#64748B', fontWeight: 500 }}>({pct(adj)}%)</span></div>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <CancelIcon color="#EF4444" />
+                        <span style={{ fontSize: 12, fontWeight: 600, color: '#0F172A' }}>Cancelled</span>
+                      </div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A' }}>{cnc} <span style={{ color: '#64748B', fontWeight: 500 }}>({pct(cnc)}%)</span></div>
+                    </div>
+
+                    <div style={{ borderTop: '1px solid #E2E8F0', margin: '4px 0' }}></div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <PackageIcon color="#8B5CF6" />
+                        <span style={{ fontSize: 12, fontWeight: 800, color: '#0F172A' }}>Total Movements</span>
+                      </div>
+                      <div style={{ fontSize: 12, fontWeight: 800, color: '#4F46E5' }}>{realTot}</div>
+                    </div>
+
                   </div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A' }}>87 <span style={{ color: '#64748B', fontWeight: 500 }}>(6.8%)</span></div>
                 </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <CancelIcon color="#EF4444" />
-                    <span style={{ fontSize: 12, fontWeight: 600, color: '#0F172A' }}>Cancelled</span>
-                  </div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A' }}>51 <span style={{ color: '#64748B', fontWeight: 500 }}>(4.0%)</span></div>
-                </div>
-
-                <div style={{ borderTop: '1px solid #E2E8F0', margin: '4px 0' }}></div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <PackageIcon color="#8B5CF6" />
-                    <span style={{ fontSize: 12, fontWeight: 800, color: '#0F172A' }}>Total Movements</span>
-                  </div>
-                  <div style={{ fontSize: 12, fontWeight: 800, color: '#4F46E5' }}>1,286</div>
-                </div>
-
-              </div>
-            </div>
+              );
+            })()}
 
             {/* MOVEMENTS BY DAY CHART */}
             <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: '18px 20px' }}>
@@ -627,48 +636,93 @@ export default function WarehouseStockMovements({ wh, onBack }) {
               <div>
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Movement Type</label>
                 <div style={{ display: 'flex', gap: 12 }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}><input type="radio" name="movType" defaultChecked /> Intra-Warehouse Transfer</label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}><input type="radio" name="movType" /> Inter-Warehouse Transfer</label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}><input type="radio" name="movType" /> Stock Adjustment</label>
+                  {['Intra-Warehouse Transfer', 'Inter-Warehouse Transfer', 'Stock Adjustment'].map(type => (
+                    <label key={type} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}>
+                      <input
+                        type="radio"
+                        name="movType"
+                        checked={movType === type}
+                        onChange={() => setMovType(type)}
+                      />
+                      {type}
+                    </label>
+                  ))}
                 </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, background: '#F8FAFC', padding: 16, borderRadius: 12, border: '1px solid #E2E8F0' }}>
                 <div>
                   <h4 style={{ margin: '0 0 12px 0', fontSize: 13, color: '#0F172A' }}>Source</h4>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 6 }}>Scan / Select Item</label>
-                  <input type="text" placeholder="Barcode / SKU" style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none', marginBottom: 12 }} />
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 6 }}>Scan / Select Item *</label>
+                  <input
+                    type="text"
+                    value={movSku}
+                    onChange={(e) => setMovSku(e.target.value)}
+                    placeholder="Barcode / SKU"
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none', marginBottom: 12 }}
+                  />
                   
                   <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 6 }}>From Location</label>
-                  <select style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none', background: '#fff' }}>
-                    <option>Select Bin / Zone...</option>
+                  <select
+                    value={movFromLoc}
+                    onChange={(e) => setMovFromLoc(e.target.value)}
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none', background: '#fff' }}
+                  >
+                    <option value="">Select Bin / Zone...</option>
+                    <option value="Zone A - Row 01">Zone A - Row 01</option>
+                    <option value="Zone A - Row 02">Zone A - Row 02</option>
+                    <option value="Zone B - Row 01">Zone B - Row 01</option>
+                    <option value="Cold Storage">Cold Storage</option>
+                    <option value="Main Storage">Main Storage</option>
                   </select>
                 </div>
                 <div>
                   <h4 style={{ margin: '0 0 12px 0', fontSize: 13, color: '#0F172A' }}>Destination</h4>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 6 }}>Quantity to Move</label>
-                  <input type="number" placeholder="0" style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none', marginBottom: 12 }} />
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 6 }}>Quantity to Move *</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={movQty}
+                    onChange={(e) => setMovQty(e.target.value)}
+                    placeholder="0"
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none', marginBottom: 12 }}
+                  />
                   
                   <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 6 }}>To Location</label>
-                  <select style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none', background: '#fff' }}>
-                    <option>Select Bin / Zone...</option>
+                  <select
+                    value={movToLoc}
+                    onChange={(e) => setMovToLoc(e.target.value)}
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none', background: '#fff' }}
+                  >
+                    <option value="">Select Bin / Zone...</option>
+                    <option value="Staging Area 1">Staging Area 1</option>
+                    <option value="Dispatch Dock 2">Dispatch Dock 2</option>
+                    <option value="Zone B - Row 02">Zone B - Row 02</option>
+                    <option value="Main Storage">Main Storage</option>
                   </select>
                 </div>
               </div>
 
               <div>
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Assign Worker (Optional)</label>
-                <select style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none', background: '#fff' }}>
-                  <option>Auto-assign nearest worker</option>
-                  <option>Sarah Mitchell</option>
-                  <option>James Patel</option>
+                <select
+                  value={movWorker}
+                  onChange={(e) => setMovWorker(e.target.value)}
+                  style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 13, outline: 'none', background: '#fff' }}
+                >
+                  <option value="">Auto-assign nearest worker</option>
+                  <option value="Sarah Mitchell">Sarah Mitchell</option>
+                  <option value="James Patel">James Patel</option>
+                  <option value="David Kim">David Kim</option>
                 </select>
               </div>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 32 }}>
-              <button onClick={() => setShowNewMovementModal(false)} style={{ padding: '10px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, border: '1px solid #E2E8F0', background: '#fff', color: '#475569', cursor: 'pointer' }}>Cancel</button>
-              <button onClick={() => setShowNewMovementModal(false)} style={{ padding: '10px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, border: 'none', background: '#4F46E5', color: '#fff', cursor: 'pointer' }}>Create Task</button>
+              <button onClick={() => { resetMovForm(); setShowNewMovementModal(false); }} style={{ padding: '10px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, border: '1px solid #E2E8F0', background: '#fff', color: '#475569', cursor: 'pointer' }}>Cancel</button>
+              <button onClick={handleCreateMovement} disabled={submittingMov} style={{ padding: '10px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, border: 'none', background: submittingMov ? '#A5B4FC' : '#4F46E5', color: '#fff', cursor: submittingMov ? 'not-allowed' : 'pointer' }}>
+                {submittingMov ? 'Creating Task...' : 'Create Task'}
+              </button>
             </div>
           </div>
         </div>

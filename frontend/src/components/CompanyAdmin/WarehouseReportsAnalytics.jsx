@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../services/api';
 
 // === ICONS ===
 const SearchIcon = () => (
@@ -77,19 +78,119 @@ const SmallCircleIcon = ({ color }) => (
   </svg>
 );
 
-const mockPerformance = [
-  { loc: 'Main Storage A1', util: 65.3, val: '$512,650.00', acc: '99.3%', ful: '385', time: '00:05:12' },
-  { loc: 'Main Storage A2', util: 52.1, val: '$389,200.00', acc: '98.7%', ful: '298', time: '00:05:48' },
-  { loc: 'Bulk Storage B1', util: 70.4, val: '$168,350.00', acc: '99.1%', ful: '215', time: '00:05:02' },
-  { loc: 'Bulk Storage B2', util: 61.6, val: '$112,400.00', acc: '98.9%', ful: '162', time: '00:05:21' },
-  { loc: 'Dispatch Area D1', util: 85.2, val: '$48,600.00', acc: '99.6%', ful: '134', time: '00:04:31' },
-  { loc: 'Staging Area S1', util: 48.7, val: '$25,650.00', acc: '98.8%', ful: '92', time: '00:05:02' },
-];
-
 export default function WarehouseReportsAnalytics({ wh, onBack }) {
-  const [showCustomReportModal, setShowCustomReportModal] = React.useState(false);
+  const [performance, setPerformance] = useState([]);
+  const [analyticsData, setAnalyticsData] = useState({
+    totalValue: '$0.00',
+    totalMovements: '0',
+    fulfilmentRate: '0.0%',
+    turnover: '0.00',
+    utilisation: '0.0%',
+    pickingAccuracy: '0.0%'
+  });
+  const [showCustomReportModal, setShowCustomReportModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // Custom Report Form States
+  const [reportTitle, setReportTitle] = useState('');
+  const [dataSourceModule, setDataSourceModule] = useState('Inventory & Stock');
+  const [dateRange, setDateRange] = useState('Last 7 Days');
+  const [exportFormat, setExportFormat] = useState('PDF Report');
+  const [generatingReport, setGeneratingReport] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(''), 3500);
+  };
+
+  const resetReportForm = () => {
+    setReportTitle('');
+    setDataSourceModule('Inventory & Stock');
+    setDateRange('Last 7 Days');
+    setExportFormat('PDF Report');
+  };
+
+  const fetchAnalytics = async () => {
+    try {
+      setLoading(true);
+      const whId = wh?.id || 'default';
+      const res = await api.get(`/company-admin/warehouse/${whId}/sub/analytics`);
+      if (res.data && res.data.success) {
+        setAnalyticsData(res.data.data.metrics || analyticsData);
+        setPerformance(res.data.data.performance || []);
+      }
+    } catch (e) {
+      console.error('Fetch analytics error:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGenerateReport = async () => {
+    if (!reportTitle.trim()) {
+      showToast('⚠️ Report Title is required');
+      return;
+    }
+    setGeneratingReport(true);
+    try {
+      // 1. Save Report in Backend DB
+      const payload = {
+        name: reportTitle.trim(),
+        category: dataSourceModule,
+        metrics: [dataSourceModule, dateRange, exportFormat]
+      };
+      await api.post('/company-admin/reports/custom', payload).catch(() => null);
+
+      // 2. Download File if CSV / PDF format requested
+      const fileExt = exportFormat === 'Excel (CSV)' ? 'csv' : 'txt';
+      let fileData = `HERO LOGISTICS - WAREHOUSE CUSTOM REPORT\n`;
+      fileData += `Report Title: ${reportTitle.trim()}\n`;
+      fileData += `Warehouse: ${wh?.name || 'Sydney Head Office Warehouse'}\n`;
+      fileData += `Data Source: ${dataSourceModule}\n`;
+      fileData += `Date Range: ${dateRange}\n`;
+      fileData += `Export Format: ${exportFormat}\n`;
+      fileData += `Generated Date: ${new Date().toLocaleString()}\n`;
+      fileData += `--------------------------------------------------------\n\n`;
+      fileData += `Metric,Value\n`;
+      fileData += `Total Inventory Value,${analyticsData.totalValue}\n`;
+      fileData += `Total Stock Movements,${analyticsData.totalMovements}\n`;
+      fileData += `Order Fulfilment Rate,${analyticsData.fulfilmentRate}\n`;
+      fileData += `Inventory Turnover,${analyticsData.turnover}\n`;
+      fileData += `Storage Utilisation,${analyticsData.utilisation}\n`;
+      fileData += `Picking Accuracy,${analyticsData.pickingAccuracy}\n`;
+
+      const blob = new Blob([fileData], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `${reportTitle.trim().replace(/\s+/g, '_')}_${Date.now()}.${fileExt}`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      showToast(`✓ Custom Report "${reportTitle.trim()}" generated successfully!`);
+      resetReportForm();
+      setShowCustomReportModal(false);
+    } catch (e) {
+      console.error('Generate custom report error:', e);
+      showToast('❌ Error generating report');
+    } finally {
+      setGeneratingReport(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, [wh?.id]);
   return (
     <div className="wh-reports-container" style={{ background: '#F8FAFC', minHeight: '100vh', padding: '24px 32px', fontFamily: "'Inter','Outfit',sans-serif", overflowX: 'hidden' }}>
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div style={{ position: 'fixed', top: 20, right: 20, zIndex: 99999, background: '#0F172A', color: '#fff', padding: '10px 16px', borderRadius: 8, fontSize: 12, fontWeight: 700, boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
+          {toastMessage}
+        </div>
+      )}
       <style>{`
         @media (max-width: 900px) {
           .wh-reports-container { padding: 16px !important; }
@@ -127,12 +228,12 @@ export default function WarehouseReportsAnalytics({ wh, onBack }) {
       {/* METRIC CARDS */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 24 }}>
         {[
-          { title: 'TOTAL INVENTORY VALUE', value: '$1,256,850.00', subtitle: 'Across all locations', color: '#8B5CF6', bg: '#F5F3FF', icon: <CalendarIcon color="#8B5CF6" />, link: 'inventory value' },
-          { title: 'TOTAL MOVEMENTS', value: '1,286', subtitle: 'This Month', color: '#22C55E', bg: '#F0FDF4', icon: <RefreshCwIcon color="#22C55E" />, link: 'movements' },
-          { title: 'ORDER FULFILMENT RATE', value: '96.8%', subtitle: 'This Month', color: '#3B82F6', bg: '#EFF6FF', icon: <FileTextIcon color="#3B82F6" />, link: 'performance' },
-          { title: 'INVENTORY TURNOVER', value: '8.42', subtitle: 'This Month', color: '#F59E0B', bg: '#FFFBEB', icon: <UsersIcon color="#F59E0B" />, link: 'analysis' },
-          { title: 'STORAGE UTILISATION', value: '59.9%', subtitle: 'Overall utilisation', color: '#22C55E', bg: '#F0FDF4', icon: <BoxIcon color="#22C55E" />, link: 'utilisation' },
-          { title: 'PICKING ACCURACY', value: '99.2%', subtitle: 'This Month', color: '#8B5CF6', bg: '#F5F3FF', icon: <TargetIcon color="#8B5CF6" />, link: 'accuracy' }
+          { title: 'TOTAL INVENTORY VALUE', value: analyticsData.totalValue, subtitle: 'Across all locations', color: '#8B5CF6', bg: '#F5F3FF', icon: <CalendarIcon color="#8B5CF6" />, link: 'inventory value' },
+          { title: 'TOTAL MOVEMENTS', value: analyticsData.totalMovements, subtitle: 'This Month', color: '#22C55E', bg: '#F0FDF4', icon: <RefreshCwIcon color="#22C55E" />, link: 'movements' },
+          { title: 'ORDER FULFILMENT RATE', value: analyticsData.fulfilmentRate, subtitle: 'This Month', color: '#3B82F6', bg: '#EFF6FF', icon: <FileTextIcon color="#3B82F6" />, link: 'performance' },
+          { title: 'INVENTORY TURNOVER', value: analyticsData.turnover, subtitle: 'This Month', color: '#F59E0B', bg: '#FFFBEB', icon: <UsersIcon color="#F59E0B" />, link: 'analysis' },
+          { title: 'STORAGE UTILISATION', value: analyticsData.utilisation, subtitle: 'Overall utilisation', color: '#22C55E', bg: '#F0FDF4', icon: <BoxIcon color="#22C55E" />, link: 'utilisation' },
+          { title: 'PICKING ACCURACY', value: analyticsData.pickingAccuracy, subtitle: 'This Month', color: '#8B5CF6', bg: '#F5F3FF', icon: <TargetIcon color="#8B5CF6" />, link: 'accuracy' }
         ].map((stat, i) => (
           <div key={i} style={{ background: '#fff', borderRadius: 12, padding: '16px', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', position: 'relative' }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: '#64748B', letterSpacing: '0.5px', marginBottom: 12 }}>{stat.title}</div>
@@ -177,7 +278,7 @@ export default function WarehouseReportsAnalytics({ wh, onBack }) {
               <button style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #E2E8F0', fontSize: 12, fontWeight: 600, color: '#1E293B', background: '#fff', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
                 <ExportIcon /> Export
               </button>
-              <button style={{ padding: '6px 8px', borderRadius: 6, border: '1px solid #E2E8F0', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+              <button onClick={fetchAnalytics} style={{ padding: '6px 8px', borderRadius: 6, border: '1px solid #E2E8F0', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                 <RefreshIcon />
               </button>
             </div>
@@ -304,23 +405,31 @@ export default function WarehouseReportsAnalytics({ wh, onBack }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {mockPerformance.map((row, idx) => (
-                    <tr key={idx} style={{ borderBottom: idx === 5 ? 'none' : '1px solid #E2E8F0' }}>
-                      <td style={{ padding: '10px 4px', fontSize: 10, fontWeight: 600, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.loc}</td>
-                      <td style={{ padding: '10px 4px', whiteSpace: 'nowrap' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <span style={{ fontSize: 10, fontWeight: 500, color: '#1E293B' }}>{row.util}%</span>
-                          <div style={{ width: 40, height: 4, background: '#E2E8F0', borderRadius: 2 }}>
-                            <div style={{ width: `${row.util}%`, height: '100%', background: '#4F46E5', borderRadius: 2 }}></div>
+                  {performance.length > 0 ? (
+                    performance.map((row, idx) => (
+                      <tr key={idx} style={{ borderBottom: idx === performance.length - 1 ? 'none' : '1px solid #E2E8F0' }}>
+                        <td style={{ padding: '10px 4px', fontSize: 10, fontWeight: 600, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.loc}</td>
+                        <td style={{ padding: '10px 4px', whiteSpace: 'nowrap' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ fontSize: 10, fontWeight: 500, color: '#1E293B' }}>{row.util}%</span>
+                            <div style={{ width: 40, height: 4, background: '#E2E8F0', borderRadius: 2 }}>
+                              <div style={{ width: `${row.util}%`, height: '100%', background: '#4F46E5', borderRadius: 2 }}></div>
+                            </div>
                           </div>
-                        </div>
+                        </td>
+                        <td style={{ padding: '10px 4px', fontSize: 10, fontWeight: 500, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.val}</td>
+                        <td style={{ padding: '10px 4px', fontSize: 10, fontWeight: 500, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.acc}</td>
+                        <td style={{ padding: '10px 4px', fontSize: 10, fontWeight: 500, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.ful}</td>
+                        <td style={{ padding: '10px 4px', fontSize: 10, fontWeight: 500, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.time}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="6" style={{ padding: '24px 8px', textAlign: 'center', color: '#94A3B8', fontSize: 11, fontWeight: 600 }}>
+                        No warehouse location performance data recorded. Add warehouse locations and inventory to begin tracking performance.
                       </td>
-                      <td style={{ padding: '10px 4px', fontSize: 10, fontWeight: 500, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.val}</td>
-                      <td style={{ padding: '10px 4px', fontSize: 10, fontWeight: 500, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.acc}</td>
-                      <td style={{ padding: '10px 4px', fontSize: 10, fontWeight: 500, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.ful}</td>
-                      <td style={{ padding: '10px 4px', fontSize: 10, fontWeight: 500, color: '#0F172A', whiteSpace: 'nowrap' }}>{row.time}</td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
@@ -485,51 +594,79 @@ export default function WarehouseReportsAnalytics({ wh, onBack }) {
       {/* CREATE CUSTOM REPORT MODAL */}
       {showCustomReportModal && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.4)' }} onClick={() => setShowCustomReportModal(false)}></div>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.4)' }} onClick={() => { resetReportForm(); setShowCustomReportModal(false); }}></div>
           <div style={{ background: '#fff', width: '550px', borderRadius: 16, padding: '32px', position: 'relative', zIndex: 1, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
             <h2 style={{ margin: '0 0 24px 0', fontSize: 20, fontWeight: 800, color: '#0F172A' }}>Create Custom Report</h2>
             
             <div style={{ display: 'grid', gap: 16 }}>
               <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Report Title</label>
-                <input type="text" placeholder="e.g. Monthly KPI Summary" style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none' }} />
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Report Title *</label>
+                <input
+                  type="text"
+                  value={reportTitle}
+                  onChange={(e) => setReportTitle(e.target.value)}
+                  placeholder="e.g. Monthly KPI Summary"
+                  style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none' }}
+                />
               </div>
               
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Data Source module</label>
-                  <select style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none', background: '#fff' }}>
-                    <option>Inventory & Stock</option>
-                    <option>Stock Movements</option>
-                    <option>Pick, Pack & Dispatch</option>
-                    <option>Warehouse Locations</option>
+                  <select
+                    value={dataSourceModule}
+                    onChange={(e) => setDataSourceModule(e.target.value)}
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none', background: '#fff' }}
+                  >
+                    <option value="Inventory & Stock">Inventory & Stock</option>
+                    <option value="Stock Movements">Stock Movements</option>
+                    <option value="Pick, Pack & Dispatch">Pick, Pack & Dispatch</option>
+                    <option value="Warehouse Locations">Warehouse Locations</option>
                   </select>
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Date Range</label>
-                  <select style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none', background: '#fff' }}>
-                    <option>Last 7 Days</option>
-                    <option>This Month</option>
-                    <option>Last Month</option>
-                    <option>Year to Date</option>
-                    <option>Custom Range...</option>
+                  <select
+                    value={dateRange}
+                    onChange={(e) => setDateRange(e.target.value)}
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none', background: '#fff' }}
+                  >
+                    <option value="Last 7 Days">Last 7 Days</option>
+                    <option value="This Month">This Month</option>
+                    <option value="Last Month">Last Month</option>
+                    <option value="Year to Date">Year to Date</option>
+                    <option value="Custom Range...">Custom Range...</option>
                   </select>
                 </div>
               </div>
 
               <div>
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Export Format</label>
-                <div style={{ display: 'flex', gap: 12 }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}><input type="radio" name="exportFmt" defaultChecked /> PDF Report</label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}><input type="radio" name="exportFmt" /> Excel (CSV)</label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}><input type="radio" name="exportFmt" /> Dashboard View</label>
+                <div style={{ display: 'flex', gap: 16 }}>
+                  {['PDF Report', 'Excel (CSV)', 'Dashboard View'].map((fmt) => (
+                    <label key={fmt} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#0F172A', fontWeight: 500, cursor: 'pointer' }}>
+                      <input
+                        type="radio"
+                        name="exportFmt"
+                        checked={exportFormat === fmt}
+                        onChange={() => setExportFormat(fmt)}
+                      />
+                      {fmt}
+                    </label>
+                  ))}
                 </div>
               </div>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 32 }}>
-              <button onClick={() => setShowCustomReportModal(false)} style={{ padding: '10px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, border: '1px solid #E2E8F0', background: '#fff', color: '#475569', cursor: 'pointer' }}>Cancel</button>
-              <button onClick={() => setShowCustomReportModal(false)} style={{ padding: '10px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, border: 'none', background: '#4F46E5', color: '#fff', cursor: 'pointer' }}>Generate Report</button>
+              <button onClick={() => { resetReportForm(); setShowCustomReportModal(false); }} style={{ padding: '10px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, border: '1px solid #E2E8F0', background: '#fff', color: '#475569', cursor: 'pointer' }}>Cancel</button>
+              <button
+                onClick={handleGenerateReport}
+                disabled={generatingReport}
+                style={{ padding: '10px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, border: 'none', background: generatingReport ? '#A5B4FC' : '#4F46E5', color: '#fff', cursor: generatingReport ? 'not-allowed' : 'pointer' }}
+              >
+                {generatingReport ? 'Generating...' : 'Generate Report'}
+              </button>
             </div>
           </div>
         </div>

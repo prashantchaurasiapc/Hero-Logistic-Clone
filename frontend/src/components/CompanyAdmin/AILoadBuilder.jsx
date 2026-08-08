@@ -6,6 +6,7 @@ import {
   Sparkles, Check, Zap, Shield, Clock, Star, Edit3,
   MapPin, User, Truck, Calendar, X, Plus, ArrowRight
 } from 'lucide-react';
+import api from '../../services/api';
 
 /* ─── Shared helpers ──────────────────────────────────────────── */
 const CONF_COLORS = {
@@ -23,12 +24,56 @@ const SOURCES = [
   { id: 'api',     Icon: Link2,    color: '#10b981', bg: '#ecfdf5', label: 'API Integration',    desc: 'Connect external TMS / ERP' },
 ];
 
-const EMAILS = [
-  { id: 1, title: 'Car Transport Booking – Sydney to Melbourne', sender: 'bookings@abcmotors.com.au',   conf: 'High',   isNew: true,  time: 'Today, 9:15 AM'     },
-  { id: 2, title: 'Vehicle Transport Request – 3 Cars',          sender: 'transport@fastcars.com.au',   conf: 'Medium', isNew: false, time: 'Yesterday, 4:32 PM'  },
-  { id: 3, title: 'Urgent Pickup – Toyota RAV4',                 sender: 'sales@toyota.com.au',         conf: 'High',   isNew: false, time: 'Yesterday, 11:08 AM' },
-  { id: 4, title: 'Freight Request – Machinery',                 sender: 'logistics@industrial.com.au', conf: 'Medium', isNew: false, time: '2 days ago'          },
-  { id: 5, title: 'Enquiry – Car Transport Quote',               sender: 'info@customer.com.au',        conf: 'Low',    isNew: false, time: '3 days ago'          },
+const INITIAL_EMAILS = [
+  { 
+    id: 1, 
+    title: 'Vehicle Booking – Sydney to Melbourne', 
+    sender: 'dispatch@autotransport.com',   
+    conf: 'High',   
+    isNew: true,  
+    time: 'Today, 9:15 AM',
+    customer: 'Auto Transport Logistics',
+    loadType: 'Car Carrying',
+    pickupAddr: '123 Smith St, Melbourne VIC 3000',
+    dropAddr: '456 Jones Rd, Sydney NSW 2000',
+    items: [
+      { rego: 'ABC234', vin: 'JMM2EJH77A5B00125', make: 'Toyota', model: 'HiLux', year: '2024', colour: 'White', conf: 'High' },
+      { rego: 'XYZ789', vin: '1HGBH41JXMN109186', make: 'Ford', model: 'Ranger', year: '2023', colour: 'Black', conf: 'High' },
+    ],
+    pricing: '$2,200.00'
+  },
+  { 
+    id: 2, 
+    title: 'Freight Booking – Commercial Fleet',          
+    sender: 'booking@fleetlogistics.com.au',   
+    conf: 'Medium', 
+    isNew: false, 
+    time: 'Yesterday, 4:32 PM',
+    customer: 'Fleet Logistics Australia',
+    loadType: 'General Freight',
+    pickupAddr: '88 Industrial Blvd, Geelong VIC 3220',
+    dropAddr: '12 Depot Rd, Sydney NSW 2000',
+    items: [
+      { rego: 'LMN456', vin: 'WAUZZZ4V2KN012345', make: 'Toyota', model: 'Landcruiser', year: '2024', colour: 'Silver', conf: 'Medium' }
+    ],
+    pricing: '$1,850.00'
+  },
+  { 
+    id: 3, 
+    title: 'Urgent Vehicle Transport Request',                 
+    sender: 'operations@primefreight.com',         
+    conf: 'High',   
+    isNew: false, 
+    time: 'Yesterday, 11:08 AM',
+    customer: 'Prime Freight Express',
+    loadType: 'Dangerous Goods',
+    pickupAddr: '45 Port Rd, Brisbane QLD 4000',
+    dropAddr: '99 Logistics Way, Sydney NSW 2000',
+    items: [
+      { rego: 'PRM101', vin: 'PRM998811223344', make: 'Volvo', model: 'FH540', year: '2024', colour: 'Blue', conf: 'High' }
+    ],
+    pricing: '$3,100.00'
+  }
 ];
 
 const HOW_IT_WORKS = [
@@ -50,52 +95,67 @@ const TIPS = [
   'You can edit everything before creating the load.',
 ];
 
-/* ─── Extracted draft data (editable in Step 3) ──────────────── */
-const INITIAL_DRAFT = {
-  customer: 'ABC Motors Pty Ltd',
-  loadType: 'Car Carrying',
-  loadRef: 'PO-12548',
-  priority: 'High',
-  pickupAddr: '123 Smith St, Melbourne VIC 3000',
-  pickupContact: 'John Smith',
-  pickupDate: '2025-07-15',
-  pickupTime: '08:00',
-  dropAddr: '456 Jones Rd, Sydney NSW 2000',
-  dropContact: 'Jane Doe',
-  dropDate: '2025-07-17',
-  dropTime: '16:00',
-  items: [
-    { rego: 'ABC234', vin: 'JMM2EJH77A5B00125', make: 'Toyota', model: 'HiLux',    year: '2024', colour: 'White', conf: 'High'   },
-    { rego: 'XYZ789', vin: '1HGBH41JXMN109186', make: 'Ford',   model: 'Ranger',   year: '2023', colour: 'Black', conf: 'High'   },
-    { rego: 'LMN456', vin: 'WAUZZZ4V2KN012345', make: 'Toyota', model: 'Landcruiser',year:'2024', colour: 'Silver',conf: 'Medium' },
-  ],
-  specialInstructions: 'Call 30 mins before arrival. Gate code: 1234.',
-  pricing: '$2,200.00',
-};
-
-const EXTRACTION_FIELDS = [
-  { label: 'Customer Details',        value: 'ABC Motors\nPty Ltd' },
-  { label: 'Pickup & Drop-off Stops', value: '2 Stops'             },
-  { label: 'Cars / Items',            value: '3 Cars'              },
-  { label: 'Rego, VIN, Make, Model',  value: 'Yes'                 },
-  { label: 'Dates & Times',           value: 'Yes'                 },
-  { label: 'Special Instructions',    value: 'Yes'                 },
-  { label: 'Pricing & Billing Info',  value: 'Yes'                 },
-  { label: 'Documents & Photos',      value: 'Yes'                 },
-];
-
-/* ─── Input style ─────────────────────────────────────────────── */
 const inpCls = 'w-full px-3 py-2 bg-white border border-slate-200 focus:border-indigo-400 rounded-lg focus:outline-none text-xs font-bold text-slate-800 placeholder-slate-400 transition-colors';
 
 export default function AILoadBuilder({ onBack }) {
   const [step,           setStep]           = useState(1);   // 1 | 2 | 3 | 4
   const [selectedSource, setSelectedSource] = useState('email');
+  const [emails,         setEmails]         = useState(INITIAL_EMAILS);
   const [selectedEmail,  setSelectedEmail]  = useState(1);
   const [searchQuery,    setSearchQuery]    = useState('');
   const [extractPct,     setExtractPct]     = useState(0);
-  const [draft,          setDraft]          = useState(INITIAL_DRAFT);
+  const [createdLoadId,  setCreatedLoadId]  = useState(null);
+  
+  const selectedEmailData = emails.find(e => e.id === selectedEmail) || emails[0];
+
+  const [draft, setDraft] = useState({
+    customer: selectedEmailData?.customer || 'General Customer',
+    loadType: selectedEmailData?.loadType || 'Car Carrying',
+    loadRef: `PO-${Date.now().toString().slice(-6)}`,
+    priority: 'High',
+    pickupAddr: selectedEmailData?.pickupAddr || '123 Smith St, Melbourne VIC 3000',
+    pickupContact: 'Dispatch Officer',
+    pickupDate: new Date().toISOString().split('T')[0],
+    pickupTime: '08:00',
+    dropAddr: selectedEmailData?.dropAddr || '456 Jones Rd, Sydney NSW 2000',
+    dropContact: 'Receiving Manager',
+    dropDate: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0],
+    dropTime: '16:00',
+    items: selectedEmailData?.items || [],
+    specialInstructions: 'Call 30 mins prior to arrival. Verify VIN number on offloading.',
+    pricing: selectedEmailData?.pricing || '$2,200.00'
+  });
+
   const [draftCreated,   setDraftCreated]   = useState(false);
   const [draftSaving,    setDraftSaving]    = useState(false);
+
+  // Synchronize draft when selected email changes
+  useEffect(() => {
+    if (selectedEmailData) {
+      setDraft(prev => ({
+        ...prev,
+        customer: selectedEmailData.customer,
+        loadType: selectedEmailData.loadType,
+        pickupAddr: selectedEmailData.pickupAddr,
+        dropAddr: selectedEmailData.dropAddr,
+        items: selectedEmailData.items,
+        pricing: selectedEmailData.pricing
+      }));
+    }
+  }, [selectedEmail]);
+
+  // Fetch real customers from API if available to populate dropdowns
+  useEffect(() => {
+    api.get('/company-admin/customers')
+      .then(res => {
+        const custs = res.data?.data || res.data;
+        if (Array.isArray(custs) && custs.length > 0) {
+          const firstCust = custs[0].name || custs[0].companyName;
+          if (firstCust) setDraft(prev => ({ ...prev, customer: firstCust }));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   /* ── Step 2: simulate extraction progress ─────────────────── */
   useEffect(() => {
@@ -110,10 +170,9 @@ export default function AILoadBuilder({ onBack }) {
     return () => clearInterval(interval);
   }, [step]);
 
-  const selectedEmailData = EMAILS.find(e => e.id === selectedEmail);
   const emailConf = selectedEmailData ? CONF_COLORS[selectedEmailData.conf] : CONF_COLORS.High;
 
-  const filteredEmails = EMAILS.filter(e =>
+  const filteredEmails = emails.filter(e =>
     !searchQuery ||
     e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     e.sender.toLowerCase().includes(searchQuery.toLowerCase())
@@ -123,10 +182,67 @@ export default function AILoadBuilder({ onBack }) {
   const updateItem  = (idx, field, value) =>
     setDraft(d => ({ ...d, items: d.items.map((it, i) => i === idx ? { ...it, [field]: value } : it) }));
 
-  const handleCreateDraft = () => {
+  const handleCreateDraft = async () => {
     setDraftSaving(true);
-    setTimeout(() => { setDraftSaving(false); setDraftCreated(true); setStep(4); }, 1800);
+    try {
+      const payload = {
+        loadRef: draft.loadRef || `PO-${Date.now().toString().slice(-6)}`,
+        type: draft.loadType || 'Car Carrying',
+        status: 'DRAFT',
+        priority: (draft.priority || 'HIGH').toUpperCase(),
+        notes: draft.specialInstructions || 'AI Extracted Draft Load',
+        sourceType: 'EMAIL',
+        aiExtracted: true,
+        aiConfidence: parseFloat(emailConf.pct) || 94.0,
+        stops: [
+          { type: 'PICKUP', sequenceIndex: 0, address: draft.pickupAddr, contactName: draft.pickupContact },
+          { type: 'DROPOFF', sequenceIndex: 1, address: draft.dropAddr, contactName: draft.dropContact }
+        ],
+        items: draft.items.map(item => ({
+          stockRef: item.rego || item.vin || 'AI-ITEM',
+          make: item.make,
+          model: item.model,
+          rego: item.rego,
+          vin: item.vin,
+          quantity: 1
+        }))
+      };
+
+      const res = await api.post('/company-admin/loads', payload);
+      const created = res.data?.data || res.data;
+      if (created?.id) {
+        setCreatedLoadId(created.id);
+      }
+    } catch (err) {
+      console.error('Error saving AI draft load:', err);
+    } finally {
+      setDraftSaving(false);
+      setDraftCreated(true);
+      setStep(4);
+    }
   };
+
+  const handleActivateLoad = async () => {
+    if (createdLoadId) {
+      try {
+        await api.put(`/company-admin/loads/${createdLoadId}`, { status: 'PLANNED' });
+      } catch (err) {
+        console.error('Error activating load:', err);
+      }
+    }
+    onBack();
+  };
+
+  const dynamicExtractionFields = [
+    { label: 'Customer Details',        value: draft.customer || 'General Customer' },
+    { label: 'Pickup & Drop-off Stops', value: '2 Stops' },
+    { label: 'Cars / Items',            value: `${draft.items.length} ${draft.loadType === 'General Freight' ? 'Items' : 'Cars'}` },
+    { label: 'Rego, VIN, Make, Model',  value: draft.items.length > 0 ? 'Yes' : 'None' },
+    { label: 'Dates & Times',           value: 'Yes' },
+    { label: 'Special Instructions',    value: draft.specialInstructions ? 'Yes' : 'No' },
+    { label: 'Pricing & Billing Info',  value: draft.pricing || 'Yes' },
+    { label: 'Documents & Photos',      value: 'Yes' },
+  ];
 
   /* ── Step indicator ───────────────────────────────────────── */
   const STEPS = [
@@ -617,7 +733,7 @@ export default function AILoadBuilder({ onBack }) {
             <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider mb-1">Extraction Preview</h3>
             <p className="text-[11px] font-medium text-slate-400 mb-4">AI will extract the following information:</p>
             <div className="space-y-2.5">
-              {EXTRACTION_FIELDS.map((field, i) => (
+              {dynamicExtractionFields.map((field, i) => (
                 <div key={i} className="flex items-start justify-between gap-2 text-xs">
                   <div className="flex items-center gap-2 min-w-0">
                     <CheckCircle2 size={13} className={step >= 3 ? 'text-emerald-500 shrink-0' : 'text-slate-300 shrink-0'} />
@@ -679,8 +795,8 @@ export default function AILoadBuilder({ onBack }) {
             </button>
           )}
           {step === 4 && (
-            <button onClick={onBack}
-              className="w-full flex items-center justify-center gap-2 px-5 py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-md shadow-indigo-200">
+            <button onClick={handleActivateLoad}
+              className="w-full flex items-center justify-center gap-2 px-5 py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-md shadow-indigo-200 cursor-pointer">
               <Zap size={14} className="fill-amber-400 text-amber-400" /> Activate Load
             </button>
           )}

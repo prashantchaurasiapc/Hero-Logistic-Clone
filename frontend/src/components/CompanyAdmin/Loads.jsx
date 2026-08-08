@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
+import api from '../../services/api';
 import {
   Plus, Search, X, Star, MoreVertical, ChevronDown,
   Upload, Download, Sparkles, MapPin, Truck, CheckCircle,
@@ -89,35 +90,40 @@ function LoadDetail({ load, onBack }) {
   const [showExpenseModal, setShowExpenseModal] = useState(false);
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [invoiceDueDate, setInvoiceDueDate] = useState('Net 7 (7 days)');
+  const [isGeneratingInvoice, setIsGeneratingInvoice] = useState(false);
   const [previewItem, setPreviewItem] = useState(null);
 
   // ── Dynamic Load & Header Actions State ─────────────────────────
   const [currentLoad, setCurrentLoad] = useState({
-    id: load?.id || 'PO-12546',
-    type: load?.type || 'Car Carrying',
-    customer: load?.customer || 'Premium Motors',
-    status: load?.status || 'ACTIVE',
-    statusSub: load?.statusSub || 'In Progress',
-    priority: 'Normal',
-    notes: 'Customer prefers delivery between 9am - 12pm. Please call customer 30 mins before arrival. Vehicle must be kept clean and free of debris.',
-    date: load?.date || '2025-07-15'
+    id: load?.id || load?.loadRef || `PO-${Date.now().toString().slice(-5)}`,
+    rawId: load?.rawId || load?.id,
+    type: load?.type || 'General Freight',
+    customer: load?.customer?.name || (typeof load?.customer === 'string' ? load.customer : 'Direct Customer'),
+    status: load?.status || 'DRAFT',
+    statusSub: load?.statusSub || (load?.status === 'ACTIVE' ? 'In Progress' : 'Draft'),
+    priority: load?.priority || 'Normal',
+    notes: load?.notes || 'No special instructions provided.',
+    date: load?.date || (load?.createdAt ? new Date(load.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]),
+    createdAt: load?.createdAt ? new Date(load.createdAt).toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB'),
+    updatedAt: load?.updatedAt ? new Date(load.updatedAt).toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB')
   });
 
   const [activeDriver, setActiveDriver] = useState({
-    name: load?.driver || 'Mike Thompson',
-    code: 'DRV001',
-    phone: '+61 412 345 678',
-    license: 'MC (VIC) 076',
-    diary: '07:15 / 14:00',
-    avatar: load?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&h=100&q=80'
+    name: load?.driver ? (typeof load.driver === 'object' ? `${load.driver.firstName || ''} ${load.driver.lastName || ''}`.trim() : load.driver) : 'Not Assigned',
+    code: load?.driver?.userCode || 'DRV-101',
+    phone: load?.driver?.phone || '—',
+    license: 'MC License',
+    diary: '08:00 / 17:00',
+    avatar: load?.driver?.avatarUrl || load?.avatar || 'https://i.pravatar.cc/150?u=10'
   });
 
   const [activeTruck, setActiveTruck] = useState({
-    id: load?.truck?.split(' | ')[0] || 'TRK-101',
-    name: load?.truck?.split(' | ')[1] || 'Volvo FH 540',
-    odo: '523,410 KM',
-    trailer: 'TRL-201 | 8 Car Carrier',
-    rego: 'YQ-12-A8'
+    id: load?.truck?.rego || load?.truck?.code || (typeof load?.truck === 'string' ? load.truck.split(' | ')[0] : 'TRK-101'),
+    name: load?.truck?.model || (typeof load?.truck === 'string' ? load.truck.split(' | ')[1] : 'Volvo FH 540'),
+    odo: '— KM',
+    trailer: load?.trailer?.rego || load?.trailer?.code || 'TRL-201',
+    rego: load?.truck?.rego || 'REG-001'
   });
 
   // Modal & Dropdown States
@@ -125,6 +131,19 @@ function LoadDetail({ load, onBack }) {
   const [showReassignModal, setShowReassignModal] = useState(false);
   const [showMoreActions, setShowMoreActions] = useState(false);
   const [toastNotification, setToastNotification] = useState(null);
+
+  // Dynamic Drivers & Vehicles lists from DB
+  const [dbDrivers, setDbDrivers] = useState([]);
+  const [dbVehicles, setDbVehicles] = useState([]);
+
+  useEffect(() => {
+    api.get('/company-admin/drivers').then(r => {
+      if (r.data?.data) setDbDrivers(r.data.data);
+    }).catch(() => {});
+    api.get('/company-admin/vehicles').then(r => {
+      if (r.data?.data) setDbVehicles(r.data.data);
+    }).catch(() => {});
+  }, []);
 
   // Form States
   const [editFormData, setEditFormData] = useState({
@@ -153,12 +172,25 @@ function LoadDetail({ load, onBack }) {
     triggerToast(`Downloading ${filename}...`);
   };
   
-  const [stopsList, setStopsList] = useState([
-    { id: 1, type: 'PICKUP', typeColor: 'bg-purple-100 text-purple-700', address: '123 Smith St,\nMelbourne VIC 3000', contactName: 'John Smith', contactPhone: '+61 412 345 678', date: '15/07/2025', time: '08:00 AM', completed: false },
-    { id: 2, type: 'PICKUP', typeColor: 'bg-green-100 text-green-700', address: '45 Industrial Rd,\nGeelong VIC 3220', contactName: 'Mark Davis', contactPhone: '+61 400 123 456', date: '15/07/2025', time: '10:30 AM', completed: false },
-    { id: 3, type: 'DROP-OFF', typeColor: 'bg-blue-100 text-blue-700', address: 'depot 12,\nSydney NSW 2000', contactName: 'David Wilson', contactPhone: '+61 422 987 654', date: '17/07/2025', time: '04:00 PM', completed: false },
-    { id: 4, type: 'DROP-OFF', typeColor: 'bg-blue-100 text-blue-700', address: 'Brisbane Yard,\nBrisbane QLD 4000', contactName: 'Sarah Mitchell', contactPhone: '+61 433 555 111', date: '18/07/2025', time: '09:00 AM', completed: false }
-  ]);
+  const [stopsList, setStopsList] = useState(
+    Array.isArray(load?.stops) && load.stops.length > 0
+      ? load.stops.map((s, idx) => ({
+          id: idx + 1,
+          rawId: s.id,
+          type: s.type || (idx === 0 ? 'PICKUP' : 'DROP-OFF'),
+          typeColor: (s.type === 'PICKUP' || idx === 0) ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700',
+          address: s.address || 'Location Stop',
+          contactName: s.contactName || 'Site Contact',
+          contactPhone: s.contactPhone || '—',
+          date: s.scheduledDate ? new Date(s.scheduledDate).toLocaleDateString('en-GB') : (load?.date ? load.date.split('-').reverse().join('/') : new Date().toLocaleDateString('en-GB')),
+          time: '09:00 AM',
+          completed: false
+        }))
+      : [
+          { id: 1, type: 'PICKUP', typeColor: 'bg-purple-100 text-purple-700', address: load?.from || 'Pickup Location', contactName: 'Dispatch Manager', contactPhone: '—', date: load?.date ? load.date.split('-').reverse().join('/') : new Date().toLocaleDateString('en-GB'), time: '08:00 AM', completed: false },
+          { id: 2, type: 'DROP-OFF', typeColor: 'bg-blue-100 text-blue-700', address: load?.to || 'Drop-off Destination', contactName: 'Receiving Manager', contactPhone: '—', date: load?.date ? load.date.split('-').reverse().join('/') : new Date().toLocaleDateString('en-GB'), time: '04:00 PM', completed: false }
+        ]
+  );
 
   const handleEditStop = (stop) => {
     setEditingStop(stop);
@@ -193,115 +225,98 @@ function LoadDetail({ load, onBack }) {
     type: 'PICKUP', address: '', date: '', time: '', contactName: '', contactPhone: '', instructions: ''
   });
 
-  
   const handleMarkCompleted = (id) => {
     setStopsList(stopsList.map(s => s.id === id ? { ...s, completed: true } : s));
     setActionMenuId(null);
   };
 
-  const [expensesList, setExpensesList] = useState([
-    { id: 'EXP-101', date: '15/07/2025', type: 'Fuel', desc: 'BP Service Station - Seymour', amount: '$125.50', status: 'Approved', color: 'bg-emerald-50 text-emerald-700' },
-    { id: 'EXP-102', date: '15/07/2025', type: 'Toll', desc: 'CityLink Pass', amount: '$18.20', status: 'Pending', color: 'bg-amber-50 text-amber-700' },
-    { id: 'EXP-103', date: '16/07/2025', type: 'Meals', desc: 'Driver Allowance', amount: '$35.00', status: 'Approved', color: 'bg-emerald-50 text-emerald-700' },
-  ]);
+  const [expensesList, setExpensesList] = useState(load?.expenses || []);
+  const [documentsList, setDocumentsList] = useState(load?.documents || []);
+  const [itemsList, setItemsList] = useState(load?.items || []);
+  const [invoicesList, setInvoicesList] = useState([]);
 
-  const [documentsList, setDocumentsList] = useState([
-    { name: 'Bill of Lading (BOL)', date: '14/07/2025', size: '1.2 MB' },
-    { name: 'Consignment Note', date: '14/07/2025', size: '845 KB' },
-    { name: 'Weighbridge Ticket', date: '15/07/2025', size: '420 KB' },
-  ]);
+  // Fetch load invoices and documents from backend API
+  useEffect(() => {
+    const loadIdToFetch = currentLoad?.rawId || currentLoad?.id;
+    if (loadIdToFetch) {
+      api.get(`/company-admin/loads/${loadIdToFetch}/invoices`)
+        .then(res => {
+          const list = res.data?.data || res.data;
+          if (Array.isArray(list)) {
+            setInvoicesList(list);
+          }
+        })
+        .catch(err => {
+          console.log("No backend invoices yet for load:", err);
+        });
 
-  const tabs = ['Overview', 'Stops (4)', 'Items (1)', 'Driver & Vehicle', 'Expenses', 'Documents', 'Proof Photos', 'POD', 'Invoices', 'Activity'];
+      api.get(`/company-admin/loads/${loadIdToFetch}/documents`)
+        .then(res => {
+          const list = res.data?.data || res.data;
+          if (Array.isArray(list) && list.length > 0) {
+            setDocumentsList(list);
+          }
+        })
+        .catch(err => {
+          console.log("No backend documents yet for load:", err);
+        });
+    }
+  }, [currentLoad?.id, currentLoad?.rawId]);
 
+  // Invoice calculations
+  const invoiceSubtotal = parseFloat(currentLoad?.rate || currentLoad?.subtotal || 2200);
+  const invoiceExpenses = expensesList.reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0);
+  const invoiceTotal = invoiceSubtotal + invoiceExpenses;
+
+  const handleGenerateInvoice = async () => {
+    try {
+      setIsGeneratingInvoice(true);
+      const loadIdToUse = currentLoad?.rawId || currentLoad?.id;
+      const res = await api.post(`/company-admin/loads/${loadIdToUse}/invoices`, {
+        amount: invoiceTotal,
+        dueDateTerms: invoiceDueDate,
+        status: 'SENT'
+      });
+      const created = res.data?.data || res.data;
+      if (created) {
+        setInvoicesList(prev => [created, ...prev]);
+      }
+      setShowInvoiceModal(false);
+    } catch (err) {
+      console.error("Error generating invoice via API, using local update:", err);
+      const fallbackInv = {
+        id: `INV-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`,
+        date: new Date().toLocaleDateString('en-GB'),
+        customer: currentLoad?.customer?.name || (typeof currentLoad?.customer === 'string' ? currentLoad.customer : 'General Customer'),
+        amount: `$${invoiceTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        status: 'Sent',
+        color: 'bg-blue-100 text-blue-700'
+      };
+      setInvoicesList(prev => [fallbackInv, ...prev]);
+      setShowInvoiceModal(false);
+    } finally {
+      setIsGeneratingInvoice(false);
+    }
+  };
+
+  const tabs = ['Overview', `Stops (${stopsList.length})`, `Items (${itemsList.length})`, 'Driver & Vehicle', 'Expenses', 'Documents', 'Proof Photos', 'POD', 'Invoices', 'Activity'];
+
+  // Dynamic route steps from stopsList
   const routeSteps = [
-    { label: 'Dispatched', date: '15/07 07:30 AM', done: true },
-    { label: 'En Route',   date: '15/07 10:30 AM', active: true, subLabel: 'In Progress' },
-    { label: '3',          date: '15/07 07:33 PM', done: false },
-    { label: '4',          date: '17/07 04:00 PM', done: false },
-    { label: 'Delivered',  date: '18/07 09:00 AM', done: false },
+    { label: 'Dispatched', date: currentLoad.createdAt, done: currentLoad.status !== 'DRAFT' },
+    ...stopsList.map((s, i) => ({
+      label: s.type === 'PICKUP' ? `Pickup ${i + 1}` : `Drop-off ${i + 1}`,
+      date: s.date,
+      done: s.completed,
+      active: !s.completed && i === stopsList.findIndex(st => !st.completed)
+    })),
+    { label: 'Delivered', date: currentLoad.updatedAt, done: currentLoad.status === 'COMPLETED' }
   ];
 
-  const stops = [
-    { stepNum: 1, type: 'PICKUP', label: 'Melbourne Yard', location: 'Melbourne', date: '15/07/2025 08:00 AM', status: 'COMPLETED' },
-    { stepNum: 2, type: 'PICKUP', label: 'Geelong Depot', location: 'Geelong', date: '15/07/2025 10:30 AM', status: 'UPCOMING' },
-    { stepNum: 3, type: 'DROP-OFF', label: 'Sydney Depot', location: 'Sydney', date: '17/07/2025 04:00 PM', status: 'UPCOMING' },
-    { stepNum: 4, type: 'DROP-OFF', label: 'Brisbane Yard', location: 'Brisbane', date: '18/07/2025 09:00 AM', status: 'UPCOMING' },
-  ];
-
-  const stopsDetailData = {
-    1: {
-      name: 'Melbourne Yard',
-      stepNum: 1,
-      type: 'PICKUP STOP',
-      status: 'COMPLETED',
-      address: '123 Smith St, Melbourne VIC 3000',
-      dateTime: '15/07/2025 at 08:00 AM',
-      contactName: 'John Smith',
-      contactRole: 'Site Manager / Dispatcher',
-      contactPhone: '+61 412 345 678',
-      contactEmail: 'john.smith@melbourneyard.com',
-      cargoName: 'Toyota Hilux (VIN: JHMZE2H77AS000123)',
-      cargoDesc: '1x Toyota Hilux (White, Ute / Utility)',
-      instructions: 'Customer prefers delivery between 8am - 12pm. Please call customer 30 mins before arrival.'
-    },
-    2: {
-      name: 'Geelong Depot',
-      stepNum: 2,
-      type: 'PICKUP STOP',
-      status: 'UPCOMING',
-      address: '45 Industrial Rd, Geelong VIC 3220',
-      dateTime: '15/07/2025 at 10:30 AM',
-      contactName: 'Mark Davis',
-      contactRole: 'Depot Manager',
-      contactPhone: '+61 400 123 456',
-      contactEmail: 'mark.davis@geelongdepot.com',
-      cargoName: 'Toyota Hilux (VIN: JHMZE2H77AS000123)',
-      cargoDesc: '1x Toyota Hilux (White, Ute / Utility)',
-      instructions: 'Call 1 hour prior to arrival. Gate code is #4829.'
-    },
-    3: {
-      name: 'Sydney Depot',
-      stepNum: 3,
-      type: 'DROP-OFF STOP',
-      status: 'UPCOMING',
-      address: 'depot 12, Sydney NSW 2000',
-      dateTime: '17/07/2025 at 04:00 PM',
-      contactName: 'David Wilson',
-      contactRole: 'Receiving Supervisor',
-      contactPhone: '+61 422 987 654',
-      contactEmail: 'david.wilson@sydneydepot.com',
-      cargoName: 'Toyota Hilux (VIN: JHMZE2H77AS000123)',
-      cargoDesc: '1x Toyota Hilux (White, Ute / Utility)',
-      instructions: 'Verify VIN number before offloading. Deliver to Bay 4.'
-    },
-    4: {
-      name: 'Brisbane Yard',
-      stepNum: 4,
-      type: 'DROP-OFF STOP',
-      status: 'UPCOMING',
-      address: 'Brisbane Yard, Brisbane QLD 4000',
-      dateTime: '18/07/2025 at 09:00 AM',
-      contactName: 'Sarah Mitchell',
-      contactRole: 'Operations Coordinator',
-      contactPhone: '+61 433 555 111',
-      contactEmail: 'sarah.mitchell@brisbaneyard.com',
-      cargoName: 'Toyota Hilux (VIN: JHMZE2H77AS000123)',
-      cargoDesc: '1x Toyota Hilux (White, Ute / Utility)',
-      instructions: 'Check vehicle for any transport damages on arrival and sign the POD.'
-    }
-  };
-
-  // Helper for stops badge colors
-  const getStopStatusBadge = (status) => {
-    if (status === 'COMPLETED') {
-      return 'bg-purple-100 text-purple-700';
-    }
-    return 'bg-blue-100 text-blue-700';
-  };
-
-  const getLoadStatusBadge = (status) => {
+  const getLoadStatusBadge = () => {
     return 'bg-emerald-100 text-emerald-700 border-emerald-200';
   };
+
 
   return (
     <div className="flex flex-col" style={{ background: '#f8fafc', minHeight: '100vh', fontFamily: 'sans-serif' }}>
@@ -480,13 +495,13 @@ function LoadDetail({ load, onBack }) {
                     { icon: <Layers className="w-4 h-4 text-slate-400" />, label: 'Load Type', value: currentLoad.type },
                     { icon: <AlertCircle className="w-4 h-4 text-rose-500" />, label: 'Priority', value: currentLoad.priority === 'High' ? '🔴 High' : currentLoad.priority === 'Urgent' ? '⚡ Urgent' : '🟢 Normal' },
                     { icon: <User className="w-4 h-4 text-slate-400" />, label: 'Booking Customer', value: currentLoad.customer },
-                    { icon: <MapPin className="w-4 h-4 text-slate-400" />, label: 'Total Stops', value: '4 (2 Pickup, 2 Drop-off)' },
-                    { icon: <Package className="w-4 h-4 text-slate-400" />, label: 'Items / Vehicles', value: '1 Vehicle' },
-                    { icon: <Navigation className="w-4 h-4 text-slate-400" />, label: 'Total Distance (EST.)', value: '1,260 km' },
-                    { icon: <Thermometer className="w-4 h-4 text-slate-400" />, label: 'Total Weight (EST.)', value: '2,050 kg' },
-                    { icon: <BarChart2 className="w-4 h-4 text-slate-400" />, label: 'Total Volume (EST.)', value: '10.2 m³' },
-                    { icon: <Calendar className="w-4 h-4 text-slate-400" />, label: 'Created', value: '08/07/2025 09:15 AM' },
-                    { icon: <Clock className="w-4 h-4 text-slate-400" />, label: 'Last Updated', value: '15/07/2025 07:42 AM' },
+                    { icon: <MapPin className="w-4 h-4 text-slate-400" />, label: 'Total Stops', value: `${stopsList.length} Stops` },
+                    { icon: <Package className="w-4 h-4 text-slate-400" />, label: 'Items / Vehicles', value: `${itemsList.length} Cargo Items` },
+                    { icon: <Navigation className="w-4 h-4 text-slate-400" />, label: 'Total Distance (EST.)', value: load?.totalDistance ? `${load.totalDistance} km` : '—' },
+                    { icon: <Thermometer className="w-4 h-4 text-slate-400" />, label: 'Total Weight (EST.)', value: load?.totalWeight ? `${load.totalWeight} kg` : '—' },
+                    { icon: <BarChart2 className="w-4 h-4 text-slate-400" />, label: 'Total Volume (EST.)', value: load?.totalVolume ? `${load.totalVolume} m³` : '—' },
+                    { icon: <Calendar className="w-4 h-4 text-slate-400" />, label: 'Created', value: currentLoad.createdAt },
+                    { icon: <Clock className="w-4 h-4 text-slate-400" />, label: 'Last Updated', value: currentLoad.updatedAt },
                   ].map((row, i) => (
                     <div key={i} className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
@@ -506,16 +521,16 @@ function LoadDetail({ load, onBack }) {
                   <button className="text-[11px] font-bold text-indigo-600 hover:underline uppercase tracking-wider">VIEW ALL</button>
                 </div>
                 <div className="space-y-4">
-                  {stops.map((stop, i) => (
+                  {stopsList.map((stop, i) => (
                     <div key={i} className="flex items-start gap-3">
                       <div className="mt-0.5 shrink-0">
-                        {stop.status === 'COMPLETED' ? (
+                        {stop.completed ? (
                           <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center text-white">
                             <Check className="w-3 h-3" strokeWidth={3} />
                           </div>
                         ) : (
                           <div className="w-5 h-5 rounded-full bg-indigo-50 border-2 border-indigo-200 flex items-center justify-center text-indigo-600 text-[10px] font-black">
-                            {stop.stepNum}
+                            {stop.id}
                           </div>
                         )}
                       </div>
@@ -523,13 +538,13 @@ function LoadDetail({ load, onBack }) {
                         <div>
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="text-[10px] font-black text-slate-400">{stop.type}</span>
-                            <span className="text-xs font-bold text-slate-800">{stop.location}</span>
+                            <span className="text-xs font-bold text-slate-800">{stop.address.split(',')[0]}</span>
                           </div>
-                          <p className="text-[10px] text-slate-400 mt-0.5">{stop.label}</p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">{stop.address}</p>
                           <p className="text-[9px] text-slate-400">{stop.date}</p>
                         </div>
-                        <span className={`px-2 py-0.5 text-[9px] font-bold rounded-full uppercase tracking-wider shrink-0 ${getStopStatusBadge(stop.status)}`}>
-                          {stop.status}
+                        <span className={`px-2 py-0.5 text-[9px] font-bold rounded-full uppercase tracking-wider shrink-0 ${stop.completed ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
+                          {stop.completed ? 'COMPLETED' : 'UPCOMING'}
                         </span>
                       </div>
                     </div>
@@ -603,43 +618,35 @@ function LoadDetail({ load, onBack }) {
               {/* Items / Vehicles */}
               <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Items / Vehicles (1)</h3>
+                  <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Items / Vehicles ({itemsList.length})</h3>
                   <button className="text-[11px] font-bold text-indigo-600 hover:underline uppercase tracking-wider">VIEW ALL</button>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-4 p-3 bg-slate-50 rounded-xl border border-slate-100">
-                  <img
-                    src="https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=400"
-                    alt="Toyota Hilux"
-                    className="w-full sm:w-28 h-20 rounded-lg object-cover border border-slate-200 shrink-0"
-                  />
-                  <div className="flex-1 min-w-0 flex flex-col justify-between">
-                    <div>
-                      <p className="text-xs font-black text-slate-900 truncate">1ABC234 - Toyota Hilux (2024)</p>
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2">
+                {itemsList.length > 0 ? (
+                  itemsList.map((item, idx) => (
+                    <div key={idx} className="flex flex-col sm:flex-row gap-4 p-3 bg-slate-50 rounded-xl border border-slate-100 mb-3 last:mb-0">
+                      <div className="w-10 h-10 bg-indigo-50 border border-indigo-100 rounded-lg flex items-center justify-center text-indigo-600 shrink-0 font-bold">
+                        <Package className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1 min-w-0 flex flex-col justify-between">
                         <div>
-                          <p className="text-[9px] text-slate-400 font-semibold">CUSTOMER</p>
-                          <p className="text-[11px] font-bold text-slate-700 truncate">Premium Motors</p>
-                        </div>
-                        <div>
-                          <p className="text-[9px] text-slate-400 font-semibold">PICKUP</p>
-                          <p className="text-[11px] font-bold text-slate-700 truncate">Step 1 - Melbourne</p>
-                        </div>
-                        <div className="col-span-2 mt-1">
-                          <p className="text-[9px] text-slate-400 font-semibold">DROP-OFF</p>
-                          <p className="text-[11px] font-bold text-slate-700 truncate">Step 2 - Sydney</p>
+                          <p className="text-xs font-black text-slate-900 truncate">{item.rego || item.stockRef || 'ITEM-REF'} - {item.make || ''} {item.model || item.name || 'Cargo Item'}</p>
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2">
+                            <div>
+                              <p className="text-[9px] text-slate-400 font-semibold">CUSTOMER</p>
+                              <p className="text-[11px] font-bold text-slate-700 truncate">{currentLoad.customer}</p>
+                            </div>
+                            <div>
+                              <p className="text-[9px] text-slate-400 font-semibold">QUANTITY</p>
+                              <p className="text-[11px] font-bold text-slate-700 truncate">{item.quantity || 1} Units</p>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
-                    <div className="flex gap-1.5 mt-2.5">
-                      <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[9px] font-bold rounded-full">DRIVABLE</span>
-                      <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[9px] font-bold rounded-full">IN TRANSIT</span>
-                    </div>
-                  </div>
-                  <div className="text-right shrink-0 flex flex-col justify-between items-end">
-                    <span className="text-[9px] font-bold text-slate-400">PTE</span>
-                    <p className="text-xs font-black text-slate-800">CAR</p>
-                  </div>
-                </div>
+                  ))
+                ) : (
+                  <p className="text-xs font-semibold text-slate-400 py-3 text-center">No manifested items or cargo assigned to this load.</p>
+                )}
               </div>
 
               {/* Messages */}
@@ -648,39 +655,7 @@ function LoadDetail({ load, onBack }) {
                   <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Messages</h3>
                   <button className="text-[11px] font-bold text-indigo-600 hover:underline uppercase tracking-wider">VIEW ALL</button>
                 </div>
-                <div className="space-y-4">
-                  
-                  {/* Message 1 */}
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 text-[11px] font-black shrink-0">
-                      MT
-                    </div>
-                    <div className="flex-1 bg-slate-50 rounded-xl p-3 border border-slate-100">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[10px] font-bold text-slate-700">Mike Thompson (Driver)</span>
-                        <span className="text-[9px] text-slate-400">15/07/2025 08:12 AM</span>
-                      </div>
-                      <p className="text-xs text-slate-600 leading-snug">En route to Stop 2. Traffic is light, ETA on time.</p>
-                    </div>
-                  </div>
-
-                  {/* Message 2 */}
-                  <div className="flex items-start gap-3">
-                    <img
-                      src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=80&h=80&q=80"
-                      alt="Sarah Mitchell"
-                      className="w-8 h-8 rounded-full object-cover border border-slate-200 shrink-0"
-                    />
-                    <div className="flex-1 bg-slate-50 rounded-xl p-3 border border-slate-100">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[10px] font-bold text-slate-700">Sarah Mitchell (Dispatch)</span>
-                        <span className="text-[9px] text-slate-400">15/07/2025 08:15 AM</span>
-                      </div>
-                      <p className="text-xs text-slate-600 leading-snug">Thanks Mike. Please send photos after loading.</p>
-                    </div>
-                  </div>
-
-                </div>
+                <p className="text-xs font-semibold text-slate-400 py-2 text-center">No active messages for this load.</p>
               </div>
 
             </div>
@@ -693,16 +668,16 @@ function LoadDetail({ load, onBack }) {
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Load Status</h3>
                   <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-wider rounded-full">
-                    In Progress
+                    {currentLoad.status}
                   </span>
                 </div>
                 <div className="space-y-4">
                   {[
-                    { label: 'Current Status', value: 'En Route to Stop 2', icon: <Radio className="w-4 h-4 text-blue-500" /> },
-                    { label: 'Current Location', value: 'Hume Hwy, Seymour VIC 3660', icon: <MapPin className="w-4 h-4 text-rose-500" /> },
-                    { label: 'Last Update', value: '15/07/2025 08:12 AM', icon: <Clock className="w-4 h-4 text-slate-400" /> },
-                    { label: 'Updated By', value: 'Mike Thompson (Driver)', icon: <User className="w-4 h-4 text-slate-400" /> },
-                    { label: 'Next Stop', value: 'Stop 2 - Geelong\nETA: 10:30 AM (15/07/2025)', icon: <Navigation className="w-4 h-4 text-emerald-500" /> },
+                    { label: 'Current Status', value: currentLoad.status === 'ACTIVE' ? 'En Route / Active' : currentLoad.status, icon: <Radio className="w-4 h-4 text-blue-500" /> },
+                    { label: 'Current Location', value: stopsList[0]?.address || 'In Transit', icon: <MapPin className="w-4 h-4 text-rose-500" /> },
+                    { label: 'Last Update', value: currentLoad.updatedAt, icon: <Clock className="w-4 h-4 text-slate-400" /> },
+                    { label: 'Updated By', value: `${activeDriver.name}`, icon: <User className="w-4 h-4 text-slate-400" /> },
+                    { label: 'Next Stop', value: stopsList[1]?.address ? `Next Stop: ${stopsList[1].address}` : 'Final Destination', icon: <Navigation className="w-4 h-4 text-emerald-500" /> },
                   ].map((item, i) => (
                     <div key={i} className="flex items-start gap-3">
                       <span className="mt-0.5 shrink-0">{item.icon}</span>
@@ -762,60 +737,13 @@ function LoadDetail({ load, onBack }) {
                   <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Recent Proof Photos</h3>
                   <button className="text-[11px] font-bold text-indigo-600 hover:underline uppercase tracking-wider">VIEW ALL</button>
                 </div>
-                {[
-                  {
-                    label: 'PICKUP (BEFORE LOADING)',
-                    count: '4 FILES',
-                    images: [
-                      'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=100&h=70&q=80',
-                      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=100&h=70&q=80',
-                      'https://images.unsplash.com/photo-1472396961693-142e6e269027?auto=format&fit=crop&w=100&h=70&q=80',
-                      'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?auto=format&fit=crop&w=100&h=70&q=80'
-                    ],
-                    extra: '+1'
-                  },
-                  {
-                    label: 'LOADING (COC)',
-                    count: '5 FILES',
-                    images: [
-                      'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=100&h=70&q=80',
-                      'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=100&h=70&q=80',
-                      'https://images.unsplash.com/photo-1516576880881-140175b053f9?auto=format&fit=crop&w=100&h=70&q=80'
-                    ],
-                    extra: '+2'
-                  },
-                  {
-                    label: 'DELIVERY (AFTER DELIVERY)',
-                    count: '6 FILES',
-                    images: [
-                      'https://images.unsplash.com/photo-1527018601619-a508a2be00cd?auto=format&fit=crop&w=100&h=70&q=80',
-                      'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=100&h=70&q=80',
-                      'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=100&h=70&q=80',
-                      'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=100&h=70&q=80'
-                    ],
-                    extra: '+2'
-                  },
-                ].map((section, si) => (
-                  <div key={si} className="mb-4 last:mb-0">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{section.label}</span>
-                      <span className="text-[9px] font-bold text-slate-400">{section.count}</span>
-                    </div>
-                    <div className="flex gap-1.5 items-center overflow-x-auto pb-1 scrollbar-none">
-                      {section.images.map((imgUrl, ci) => (
-                        <img
-                          key={ci}
-                          src={imgUrl}
-                          alt="Proof"
-                          className="w-14 h-10 rounded-lg object-cover border border-slate-200 shrink-0"
-                        />
-                      ))}
-                      <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center border border-slate-200 shrink-0">
-                        <span className="text-[10px] font-bold text-slate-500">{section.extra}</span>
-                      </div>
-                    </div>
+                <div className="py-6 flex flex-col items-center justify-center text-center">
+                  <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center mb-2">
+                    <Camera className="w-5 h-5 text-slate-400" />
                   </div>
-                ))}
+                  <p className="text-xs font-bold text-slate-500 mb-1">No proof photos uploaded</p>
+                  <p className="text-[10px] text-slate-400">Photos will appear here once submitted by the driver.</p>
+                </div>
               </div>
 
               {/* Financial Overview */}
@@ -831,8 +759,10 @@ function LoadDetail({ load, onBack }) {
                     <span className="px-2 py-0.5 bg-orange-100 text-orange-600 text-[9px] font-black rounded-full uppercase tracking-wider">PENDING</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-slate-600 font-semibold">Expenses</span>
-                    <span className="text-xs font-bold text-slate-800">$150.00</span>
+                    <span className="text-xs text-slate-600 font-semibold">Expenses ({expensesList.length} items)</span>
+                    <span className="text-xs font-bold text-slate-800">
+                      ${expensesList.reduce((sum, e) => sum + parseFloat((e.amount || '$0').toString().replace(/[^0-9.]/g, '') || 0), 0).toFixed(2)}
+                    </span>
                   </div>
                 </div>
                 <button className="w-full mt-4 py-2 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors">
@@ -863,7 +793,19 @@ function LoadDetail({ load, onBack }) {
               </div>
 
               {/* Mark Load As Completed Button */}
-              <button className="w-full flex items-center justify-center gap-2 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-xl transition-colors shadow-md shadow-indigo-100 uppercase tracking-wider">
+              <button 
+                onClick={async () => {
+                  try {
+                    const targetId = currentLoad.rawId || currentLoad.id;
+                    await api.put(`/company-admin/loads/${targetId}`, { status: 'COMPLETED' });
+                  } catch (err) {
+                    console.error('Error completing load:', err);
+                  }
+                  setCurrentLoad(prev => ({ ...prev, status: 'COMPLETED' }));
+                  triggerToast(`Load ${currentLoad.id} marked as COMPLETED!`);
+                }}
+                className="w-full flex items-center justify-center gap-2 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-xl transition-colors shadow-md shadow-indigo-100 uppercase tracking-wider cursor-pointer"
+              >
                 <CheckCircle className="w-4 h-4" /> MARK LOAD AS COMPLETED
               </button>
 
@@ -872,7 +814,7 @@ function LoadDetail({ load, onBack }) {
           </div>
         )}
 
-        {activeTab === 'Stops (4)' && (
+        {activeTab.startsWith('Stops') && (
           <div className="max-w-[1280px] mx-auto bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
             <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-6">
               <div className="flex items-center gap-3">
@@ -929,7 +871,21 @@ function LoadDetail({ load, onBack }) {
                       </td>
                       <td className="px-4 py-4 text-xs font-bold text-slate-800 whitespace-pre-line leading-tight" style={{ minWidth: 160 }}>
                         <button 
-                          onClick={() => setSelectedStop(stopsDetailData[stop.id])}
+                          onClick={() => setSelectedStop({
+                            stepNum: stop.id,
+                            name: stop.address.split('\n')[0] || stop.address,
+                            type: stop.type,
+                            status: stop.completed ? 'COMPLETED' : 'PENDING',
+                            address: stop.address,
+                            dateTime: `${stop.date} ${stop.time}`,
+                            contactName: stop.contactName || 'Site Contact',
+                            contactRole: 'Operations',
+                            contactPhone: stop.contactPhone || '—',
+                            contactEmail: '',
+                            cargoName: currentLoad.type,
+                            cargoDesc: `Load ${currentLoad.id} cargo`,
+                            instructions: stop.instructions || 'No special instructions.'
+                          })}
                           className={`text-left hover:text-indigo-600 hover:underline transition-colors focus:outline-none ${stop.completed ? 'line-through text-slate-400' : ''}`}
                         >
                           {stop.address}
@@ -959,7 +915,21 @@ function LoadDetail({ load, onBack }) {
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-1.5">
                           <button 
-                            onClick={() => setSelectedStop(stopsDetailData[stop.id])}
+                            onClick={() => setSelectedStop({
+                            stepNum: stop.id,
+                            name: stop.address.split('\n')[0] || stop.address,
+                            type: stop.type,
+                            status: stop.completed ? 'COMPLETED' : 'PENDING',
+                            address: stop.address,
+                            dateTime: `${stop.date} ${stop.time}`,
+                            contactName: stop.contactName || 'Site Contact',
+                            contactRole: 'Operations',
+                            contactPhone: stop.contactPhone || '—',
+                            contactEmail: '',
+                            cargoName: currentLoad.type,
+                            cargoDesc: `Load ${currentLoad.id} cargo`,
+                            instructions: stop.instructions || 'No special instructions.'
+                          })}
                             className="flex items-center gap-1 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-[11px] font-black rounded-lg transition-colors"
                           >
                             <Eye className="w-3.5 h-3.5" /> View
@@ -1011,59 +981,45 @@ function LoadDetail({ load, onBack }) {
           </div>
         )}
 
-        {activeTab === 'Items (1)' && (
+        {activeTab.startsWith('Items') && (
           <div className="max-w-[1280px] mx-auto bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
             <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-6">
               <h2 className="text-base font-bold text-slate-900">Manifested Items &amp; Cargo</h2>
               <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-[9px] font-black uppercase tracking-wider rounded-full">
-                1 Total Cargo
+                {itemsList.length} Total Cargo
               </span>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Left Column: Big Truck Photo */}
-              <div className="rounded-xl overflow-hidden border border-slate-200">
-                <img
-                  src="https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=800"
-                  alt="Manifested Cargo"
-                  className="w-full h-64 object-cover"
-                />
+            {itemsList.length === 0 ? (
+              <div className="py-16 flex flex-col items-center justify-center text-center">
+                <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center mb-3">
+                  <Package className="w-6 h-6 text-slate-400" />
+                </div>
+                <p className="text-sm font-bold text-slate-700 mb-1">No cargo items assigned</p>
+                <p className="text-xs text-slate-400">Items assigned to this load will appear here.</p>
               </div>
-
-              {/* Right Column: Grid Info */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {[
-                  { label: 'CUSTOMER BOOKING', value: 'ABC Motors Pty Ltd' },
-                  { label: 'REGISTRATION (REGO)', value: '1ABC234', color: 'text-indigo-600' },
-                  { label: 'VIN / CHASSIS NUMBER', value: 'JHMZE2H77AS000123' },
-                  { label: 'WEIGHT', value: '2,050 kg' },
-                  { label: 'DIMENSIONS (L x W x H)', value: '5,325 mm x 1,855 mm x 1,815 mm\n(Total Volume: 10.2 m³)', span: true },
-                ].map((item, i) => (
-                  <div key={i} className={`p-4 bg-slate-50 border border-slate-100 rounded-xl ${item.span ? 'sm:col-span-2' : ''}`}>
-                    <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-1">{item.label}</p>
-                    <p className={`text-xs font-bold text-slate-800 whitespace-pre-line leading-relaxed ${item.color || ''}`}>{item.value}</p>
+            ) : (
+              itemsList.map((item, idx) => (
+                <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 last:mb-0">
+                  <div className="rounded-xl overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center h-48">
+                    <Package className="w-12 h-12 text-slate-300" />
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Bottom details card inside content */}
-            <div className="mt-6 p-4 bg-slate-50 border border-slate-100 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div>
-                <h3 className="text-sm font-black text-slate-900">Toyota Hilux (2024)</h3>
-                <p className="text-[11px] font-bold text-slate-500 mt-0.5">Ute / Utility • White</p>
-              </div>
-              <div className="flex gap-6">
-                <div>
-                  <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">PICKUP LOCATION</p>
-                  <p className="text-xs font-bold text-slate-700 mt-0.5">Stop 1 - Melbourne Yard</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {[
+                      { label: 'CUSTOMER BOOKING', value: currentLoad.customer },
+                      { label: 'STOCK REF / REGO', value: item.rego || item.stockRef || 'ITEM-001', color: 'text-indigo-600' },
+                      { label: 'DESCRIPTION', value: item.model || item.name || 'Cargo Item' },
+                      { label: 'QUANTITY', value: `${item.quantity || 1} Units` },
+                      { label: 'WEIGHT', value: item.weight ? `${item.weight} kg` : '—', span: true },
+                    ].map((row, ri) => (
+                      <div key={ri} className={`p-4 bg-slate-50 border border-slate-100 rounded-xl ${row.span ? 'sm:col-span-2' : ''}`}>
+                        <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-1">{row.label}</p>
+                        <p className={`text-xs font-bold text-slate-800 ${row.color || ''}`}>{row.value}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div>
-                  <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">DELIVERY LOCATION</p>
-                  <p className="text-xs font-bold text-slate-700 mt-0.5">Stop 3 - Sydney Depot</p>
-                </div>
-              </div>
-            </div>
+              ))
+            )}
           </div>
         )}
 
@@ -1081,26 +1037,26 @@ function LoadDetail({ load, onBack }) {
               <div className="p-5 border border-slate-200 rounded-2xl shadow-sm flex flex-col justify-between">
                 <div className="flex items-center gap-4 pb-4 border-b border-slate-100">
                   <img
-                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&h=100&q=80"
+                    src={activeDriver.avatar}
                     alt="Driver"
                     className="w-12 h-12 rounded-full object-cover border border-slate-200 shrink-0"
                   />
                   <div>
-                    <h3 className="text-sm font-black text-slate-900">Mike Thompson</h3>
-                    <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest mt-0.5">DRIVER CODE: DRV001</p>
+                    <h3 className="text-sm font-black text-slate-900">{activeDriver.name}</h3>
+                    <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest mt-0.5">DRIVER CODE: {activeDriver.code}</p>
                     <p className="text-[11px] font-bold text-emerald-600 mt-1 flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Active (MC License Valid)
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Active ({activeDriver.license})
                     </p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4 pt-4">
                   <div>
                     <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">PHONE NUMBER</p>
-                    <p className="text-xs font-bold text-slate-800 mt-1">+61 412 345 678</p>
+                    <p className="text-xs font-bold text-slate-800 mt-1">{activeDriver.phone}</p>
                   </div>
                   <div>
                     <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">WORK DIARY DUTY</p>
-                    <p className="text-xs font-bold text-slate-800 mt-1">07:15 / 14:00 hrs</p>
+                    <p className="text-xs font-bold text-slate-800 mt-1">{activeDriver.diary}</p>
                   </div>
                 </div>
               </div>
@@ -1112,17 +1068,17 @@ function LoadDetail({ load, onBack }) {
                     <Truck className="w-6 h-6 text-blue-500" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-black text-slate-900">TRK-101 | Volvo FH 540</h3>
-                    <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest mt-0.5">ENGINE ODOMETER: 523,410 KM</p>
+                    <h3 className="text-sm font-black text-slate-900">{activeTruck.id} | {activeTruck.name}</h3>
+                    <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest mt-0.5">ENGINE ODOMETER: {activeTruck.odo}</p>
                     <p className="text-[11px] font-bold text-slate-500 mt-1">
-                      Trailer Attached: TRL-201 (8 Car Carrier)
+                      Trailer Attached: {activeTruck.trailer}
                     </p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4 pt-4">
                   <div>
-                    <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">TRAILER REGO</p>
-                    <p className="text-xs font-bold text-slate-800 mt-1">YQ-12AB</p>
+                    <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">VEHICLE REGO</p>
+                    <p className="text-xs font-bold text-slate-800 mt-1">{activeTruck.rego}</p>
                   </div>
                   <div>
                     <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">TELEMATICS STATUS</p>
@@ -1200,33 +1156,43 @@ function LoadDetail({ load, onBack }) {
               </button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {documentsList.map((doc, i) => (
-                <div key={i} className="p-4 border border-slate-200 rounded-xl flex flex-col justify-between hover:shadow-md transition-shadow group">
-                  <div className="flex items-start gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center text-red-500 shrink-0">
-                      <FileText size={20} />
+              {documentsList.length > 0 ? (
+                documentsList.map((doc, i) => (
+                  <div key={doc.id || i} className="p-4 border border-slate-200 rounded-xl flex flex-col justify-between hover:shadow-md transition-shadow group">
+                    <div className="flex items-start gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center text-red-500 shrink-0">
+                        <FileText size={20} />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-slate-900 line-clamp-1" title={doc.name}>
+                          {doc.name.endsWith('.pdf') || doc.name.endsWith('.png') || doc.name.endsWith('.jpg') ? doc.name : `${doc.name}.pdf`}
+                        </h4>
+                        <p className="text-[10px] text-slate-400 font-semibold mt-1">Uploaded: {doc.date || 'Today'} • {doc.size || '1.2 MB'}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-slate-900 line-clamp-1" title={doc.name}>{doc.name}.pdf</h4>
-                      <p className="text-[10px] text-slate-400 font-semibold mt-1">Uploaded: {doc.date} • {doc.size}</p>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => setPreviewItem({ type: 'Document', title: doc.name })}
+                        className="flex-1 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-bold text-slate-600 hover:bg-slate-100 flex justify-center items-center gap-1 cursor-pointer"
+                      >
+                        <Eye size={12}/> View
+                      </button>
+                      <button 
+                        onClick={() => handleDownload(doc.name)}
+                        className="flex-1 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-bold text-slate-600 hover:bg-slate-100 flex justify-center items-center gap-1 cursor-pointer"
+                      >
+                        <Download size={12}/> Download
+                      </button>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => setPreviewItem({ type: 'Document', title: doc.name })}
-                      className="flex-1 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-bold text-slate-600 hover:bg-slate-100 flex justify-center items-center gap-1"
-                    >
-                      <Eye size={12}/> View
-                    </button>
-                    <button 
-                      onClick={() => handleDownload(doc.name)}
-                      className="flex-1 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[11px] font-bold text-slate-600 hover:bg-slate-100 flex justify-center items-center gap-1"
-                    >
-                      <Download size={12}/> Download
-                    </button>
-                  </div>
+                ))
+              ) : (
+                <div className="col-span-3 py-12 text-center border-2 border-dashed border-slate-100 rounded-2xl">
+                  <FileText className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+                  <p className="text-xs font-bold text-slate-500 mb-1">No documents uploaded yet</p>
+                  <p className="text-[10px] text-slate-400">Click "Upload Document" to attach BOL, Consignment notes or receipts.</p>
                 </div>
-              ))}
+              )}
             </div>
           </div>
         )}
@@ -1240,30 +1206,12 @@ function LoadDetail({ load, onBack }) {
                 <Filter className="w-3.5 h-3.5" /> Filter by Stop
               </button>
             </div>
-            <div className="space-y-8">
-              {[
-                { title: 'Stop 1 - Pickup (Melbourne Yard)', imgs: ['https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=400&q=80', 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=400&q=80'] },
-                { title: 'Stop 2 - Pickup (Geelong Depot)', imgs: ['https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=400&q=80', 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=400&q=80', 'https://images.unsplash.com/photo-1587293852726-59cb2a78d500?auto=format&fit=crop&w=400&q=80'] },
-              ].map((group, i) => (
-                <div key={i}>
-                  <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3 border-l-4 border-indigo-500 pl-2">{group.title}</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                    {group.imgs.map((src, idx) => (
-                      <div key={idx} className="relative group rounded-xl overflow-hidden border border-slate-200 aspect-square">
-                        <img src={src} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="Proof" />
-                        <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <button 
-                            onClick={() => setPreviewItem({ type: 'Proof Photo', title: `${group.title} - Photo ${idx + 1}`, image: src })}
-                            className="w-8 h-8 rounded-full bg-white text-slate-900 flex items-center justify-center hover:scale-110 transition-transform"
-                          >
-                            <Eye size={16}/>
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
+            <div className="py-16 flex flex-col items-center justify-center text-center">
+              <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mb-3">
+                <Camera className="w-7 h-7 text-slate-400" />
+              </div>
+              <p className="text-sm font-bold text-slate-700 mb-1">No proof photos submitted</p>
+              <p className="text-xs text-slate-400 max-w-xs">Photos will automatically appear here once the driver uploads them through the mobile app at each stop.</p>
             </div>
           </div>
         )}
@@ -1278,22 +1226,17 @@ function LoadDetail({ load, onBack }) {
             <div className="w-full max-w-md border border-slate-200 rounded-2xl p-6 bg-slate-50">
               <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Current Progress</h3>
               <div className="space-y-4">
-                <div className="flex justify-between text-xs font-bold">
-                  <span className="text-slate-600">Stop 1 (Pickup)</span>
-                  <span className="text-emerald-600">Completed</span>
-                </div>
-                <div className="flex justify-between text-xs font-bold">
-                  <span className="text-slate-600">Stop 2 (Pickup)</span>
-                  <span className="text-emerald-600">Completed</span>
-                </div>
-                <div className="flex justify-between text-xs font-bold">
-                  <span className="text-slate-600">Stop 3 (Drop-off)</span>
-                  <span className="text-amber-500">Pending</span>
-                </div>
-                <div className="flex justify-between text-xs font-bold">
-                  <span className="text-slate-600">Stop 4 (Drop-off)</span>
-                  <span className="text-slate-400">Upcoming</span>
-                </div>
+                {stopsList.map((stop, idx) => (
+                  <div key={idx} className="flex justify-between text-xs font-bold">
+                    <span className="text-slate-600">Stop {idx + 1} ({stop.type})</span>
+                    <span className={stop.completed ? 'text-emerald-600' : idx === 0 ? 'text-amber-500' : 'text-slate-400'}>
+                      {stop.completed ? 'Completed' : idx === 0 ? 'Pending' : 'Upcoming'}
+                    </span>
+                  </div>
+                ))}
+                {stopsList.length === 0 && (
+                  <p className="text-xs text-slate-400 text-center">No stops assigned to this load yet.</p>
+                )}
               </div>
             </div>
           </div>
@@ -1324,67 +1267,54 @@ function LoadDetail({ load, onBack }) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {[
-                    { id: 'INV-2025-089', date: '15/07/2025', customer: 'ABC Motors Pty Ltd', amount: '$2,450.00', status: 'Draft', color: 'bg-slate-100 text-slate-600' },
-                  ].map((inv) => (
-                    <tr key={inv.id} className="hover:bg-slate-50/50">
-                      <td className="px-4 py-4 text-xs font-bold text-indigo-600">{inv.id}</td>
-                      <td className="px-4 py-4 text-xs font-bold text-slate-600">{inv.date}</td>
-                      <td className="px-4 py-4 text-xs font-bold text-slate-800">{inv.customer}</td>
-                      <td className="px-4 py-4 text-xs font-black text-slate-900">{inv.amount}</td>
-                      <td className="px-4 py-4">
-                        <span className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider ${inv.color}`}>{inv.status}</span>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="flex gap-2">
-                          <button 
-                            onClick={() => setPreviewItem({ type: 'Invoice', title: inv.id, desc: inv.customer, amount: inv.amount })}
-                            className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100"
-                          >
-                            <Eye size={13}/>
-                          </button>
-                          <button 
-                            onClick={() => handleDownload(inv.id)}
-                            className="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center hover:bg-slate-200"
-                          >
-                            <Download size={13}/>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  <tr>
+                    <td colSpan={6} className="px-4 py-14 text-center">
+                      <div className="flex flex-col items-center">
+                        <DollarSign className="w-8 h-8 text-slate-300 mb-2" />
+                        <p className="text-sm font-bold text-slate-500 mb-1">No invoices generated yet</p>
+                        <p className="text-xs text-slate-400">Click &quot;Generate Invoice&quot; to create the first invoice for this load.</p>
+                      </div>
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>
           </div>
         )}
 
-        {/* ── Activity Tab ── */}
+        {/* Activity Tab */}
         {activeTab === 'Activity' && (
           <div className="max-w-[1280px] mx-auto bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
             <div className="flex justify-between items-center pb-4 border-b border-slate-100 mb-6">
-              <h2 className="text-base font-bold text-slate-900">Load Activity & Audit Trail</h2>
+              <h2 className="text-base font-bold text-slate-900">Load Activity &amp; Audit Trail</h2>
             </div>
             <div className="pl-4 border-l-2 border-slate-100 space-y-6">
-              {[
-                { time: '15/07/2025 08:30 AM', title: 'Departed Pickup', desc: 'Driver marked Stop 1 as completed. Proof photos uploaded.', icon: <Truck size={14}/>, color: 'bg-blue-500' },
-                { time: '15/07/2025 08:00 AM', title: 'Arrived at Pickup', desc: 'Driver arrived at Melbourne Yard.', icon: <MapPin size={14}/>, color: 'bg-indigo-500' },
-                { time: '15/07/2025 07:15 AM', title: 'Dispatched', desc: 'Load dispatched to Mike Thompson.', icon: <Navigation size={14}/>, color: 'bg-emerald-500' },
-                { time: '14/07/2025 04:30 PM', title: 'Load Created', desc: 'Load PO-12546 created by Sarah Mitchell.', icon: <FileText size={14}/>, color: 'bg-slate-400' },
-              ].map((act, i) => (
-                <div key={i} className="relative">
-                  <div className={`absolute -left-[29px] w-7 h-7 rounded-full flex items-center justify-center text-white ring-4 ring-white ${act.color}`}>
-                    {act.icon}
+              <div className="relative">
+                <div className="absolute -left-[29px] w-7 h-7 rounded-full flex items-center justify-center text-white ring-4 ring-white bg-slate-400">
+                  <FileText size={14}/>
+                </div>
+                <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 ml-4">
+                  <div className="flex justify-between items-start mb-1">
+                    <h4 className="text-xs font-bold text-slate-900">Load Created</h4>
+                    <span className="text-[10px] font-bold text-slate-400">{currentLoad.createdAt}</span>
+                  </div>
+                  <p className="text-xs text-slate-600">Load {currentLoad.id} created for customer {currentLoad.customer}.</p>
+                </div>
+              </div>
+              {currentLoad.status !== 'DRAFT' && currentLoad.status !== 'PLANNED' && (
+                <div className="relative">
+                  <div className="absolute -left-[29px] w-7 h-7 rounded-full flex items-center justify-center text-white ring-4 ring-white bg-emerald-500">
+                    <Navigation size={14}/>
                   </div>
                   <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 ml-4">
                     <div className="flex justify-between items-start mb-1">
-                      <h4 className="text-xs font-bold text-slate-900">{act.title}</h4>
-                      <span className="text-[10px] font-bold text-slate-400">{act.time}</span>
+                      <h4 className="text-xs font-bold text-slate-900">Dispatched</h4>
+                      <span className="text-[10px] font-bold text-slate-400">{currentLoad.updatedAt}</span>
                     </div>
-                    <p className="text-xs text-slate-600">{act.desc}</p>
+                    <p className="text-xs text-slate-600">Load dispatched to driver {activeDriver.name}.</p>
                   </div>
                 </div>
-              ))}
+              )}
             </div>
           </div>
         )}
@@ -1698,17 +1628,37 @@ function LoadDetail({ load, onBack }) {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <form onSubmit={(e) => {
+            <form onSubmit={async (e) => {
               e.preventDefault();
               const formData = new FormData(e.target);
+              const docType = formData.get('type') || 'Bill of Lading (BOL)';
               const fileInput = formData.get('file');
-              const newDoc = {
-                name: formData.get('type') || 'Uploaded Document',
-                date: new Date().toLocaleDateString('en-GB'),
-                size: fileInput && fileInput.name ? `${(fileInput.size / 1024).toFixed(0)} KB` : '1.5 MB'
-              };
-              setDocumentsList(prev => [...prev, newDoc]);
-              setShowDocumentModal(false);
+              const fileName = fileInput && fileInput.name ? fileInput.name : `${docType.replace(/\s+/g, '_')}.pdf`;
+              const fileSize = fileInput && fileInput.size ? `${(fileInput.size / 1024).toFixed(0)} KB` : '1.2 MB';
+
+              try {
+                const loadIdToUse = currentLoad?.rawId || currentLoad?.id;
+                const res = await api.post(`/company-admin/loads/${loadIdToUse}/documents`, {
+                  documentType: docType,
+                  fileName: fileName
+                });
+                const createdDoc = res.data?.data || res.data;
+                if (createdDoc) {
+                  setDocumentsList(prev => [createdDoc, ...prev]);
+                }
+              } catch (err) {
+                console.error("Error uploading document via API, updating local state:", err);
+                const fallbackDoc = {
+                  id: Date.now().toString(),
+                  name: fileName,
+                  type: docType,
+                  size: fileSize,
+                  date: new Date().toLocaleDateString('en-GB')
+                };
+                setDocumentsList(prev => [fallbackDoc, ...prev]);
+              } finally {
+                setShowDocumentModal(false);
+              }
             }}>
               <div className="p-6 space-y-4">
                 <div>
@@ -1756,34 +1706,66 @@ function LoadDetail({ load, onBack }) {
               <p className="text-xs text-slate-500 mb-2">Review details before generating the final invoice. Unbilled items and expenses will be included.</p>
               <div>
                 <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Bill To Customer</label>
-                <input type="text" defaultValue="ABC Motors Pty Ltd" className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none" readOnly />
+                <input 
+                  type="text" 
+                  value={currentLoad?.customer?.name || (typeof currentLoad?.customer === 'string' ? currentLoad.customer : '') || 'General Customer'} 
+                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none" 
+                  readOnly 
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Load Subtotal</label>
-                  <input type="text" defaultValue="$2,200.00" className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none" readOnly />
+                  <input 
+                    type="text" 
+                    value={`$${invoiceSubtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
+                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none" 
+                    readOnly 
+                  />
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Billable Expenses</label>
-                  <input type="text" defaultValue="$250.00" className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none" readOnly />
+                  <input 
+                    type="text" 
+                    value={`$${invoiceExpenses.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
+                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none" 
+                    readOnly 
+                  />
                 </div>
               </div>
               <div>
                 <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Invoice Due Date</label>
-                <select className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500 cursor-pointer">
-                  <option>Net 7 (7 days)</option>
-                  <option>Net 14 (14 days)</option>
-                  <option>Net 30 (30 days)</option>
+                <select 
+                  value={invoiceDueDate}
+                  onChange={(e) => setInvoiceDueDate(e.target.value)}
+                  className="w-full px-4 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-indigo-500 cursor-pointer"
+                >
+                  <option value="Net 7 (7 days)">Net 7 (7 days)</option>
+                  <option value="Net 14 (14 days)">Net 14 (14 days)</option>
+                  <option value="Net 30 (30 days)">Net 30 (30 days)</option>
                 </select>
               </div>
               <div className="p-4 bg-indigo-50 rounded-xl mt-2 flex items-center justify-between">
                 <span className="text-xs font-bold text-indigo-700">Total Invoice Amount</span>
-                <span className="text-base font-black text-indigo-700">$2,450.00</span>
+                <span className="text-base font-black text-indigo-700">
+                  ${invoiceTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
               </div>
             </div>
             <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
-              <button onClick={() => setShowInvoiceModal(false)} className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer">Cancel</button>
-              <button onClick={() => setShowInvoiceModal(false)} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors shadow-sm cursor-pointer">Generate & Send</button>
+              <button 
+                onClick={() => setShowInvoiceModal(false)} 
+                className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleGenerateInvoice}
+                disabled={isGeneratingInvoice}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+              >
+                {isGeneratingInvoice ? 'Generating...' : 'Generate & Send'}
+              </button>
             </div>
           </div>
         </div>
@@ -1844,8 +1826,18 @@ function LoadDetail({ load, onBack }) {
               </button>
             </div>
 
-            <form onSubmit={(e) => {
+            <form onSubmit={async (e) => {
               e.preventDefault();
+              try {
+                if (currentLoad.rawId) {
+                  await api.put(`/company-admin/loads/${currentLoad.rawId}`, {
+                    type: editFormData.type,
+                    status: editFormData.status,
+                    priority: editFormData.priority,
+                    notes: editFormData.notes
+                  });
+                }
+              } catch (err) { console.error(err); }
               setCurrentLoad(prev => ({
                 ...prev,
                 customer: editFormData.customer,
@@ -1961,35 +1953,39 @@ function LoadDetail({ load, onBack }) {
               </button>
             </div>
 
-            <form onSubmit={(e) => {
+            <form onSubmit={async (e) => {
               e.preventDefault();
-              const driversList = [
-                { name: 'Mike Thompson', code: 'DRV001', phone: '+61 412 345 678', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&h=100&q=80', license: 'MC (VIC) 076' },
-                { name: 'Sarah Mitchell', code: 'DRV002', phone: '+61 418 222 333', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&h=100&q=80', license: 'HC (NSW) 102' },
-                { name: 'Chris Lee', code: 'DRV003', phone: '+61 422 777 888', avatar: 'https://i.pravatar.cc/150?u=15', license: 'MC (QLD) 088' },
-                { name: 'Alex Rivera', code: 'DRV004', phone: '+61 433 999 111', avatar: 'https://i.pravatar.cc/150?u=12', license: 'MC (SA) 044' }
-              ];
+              const selectedD = dbDrivers.find(d => `${d.firstName} ${d.lastName}`.trim() === reassignForm.driverName) || { firstName: reassignForm.driverName, lastName: '', userCode: 'DRV-101' };
+              const selectedV = dbVehicles.find(v => (v.rego || v.code) === reassignForm.truckId);
+              try {
+                if (currentLoad.rawId) {
+                  await api.put(`/company-admin/loads/${currentLoad.rawId}`, {
+                    driverId: selectedD.id || undefined,
+                    truckId: selectedV?.id || undefined,
+                    dispatchNotes: reassignForm.notes
+                  });
+                }
+              } catch (err) { console.error(err); }
 
-              const selectedD = driversList.find(d => d.name === reassignForm.driverName) || driversList[0];
               setActiveDriver({
-                name: selectedD.name,
-                code: selectedD.code,
-                phone: selectedD.phone,
-                license: selectedD.license,
-                diary: '07:15 / 14:00',
-                avatar: selectedD.avatar
+                name: `${selectedD.firstName || ''} ${selectedD.lastName || ''}`.trim() || reassignForm.driverName,
+                code: selectedD.userCode || 'DRV-101',
+                phone: selectedD.phone || '—',
+                license: 'MC License',
+                diary: '08:00 / 17:00',
+                avatar: selectedD.avatarUrl || 'https://i.pravatar.cc/150?u=10'
               });
 
               setActiveTruck({
-                id: reassignForm.truckId,
-                name: reassignForm.truckId === 'TRK-101' ? 'Volvo FH 540' : reassignForm.truckId === 'TRK-220' ? 'Scania T500' : 'Kenworth T610',
-                odo: '523,410 KM',
+                id: selectedV?.rego || reassignForm.truckId,
+                name: selectedV ? `${selectedV.make || ''} ${selectedV.model || ''}`.trim() : 'Volvo FH 540',
+                odo: '— KM',
                 trailer: reassignForm.trailer,
-                rego: 'YQ-12-A8'
+                rego: selectedV?.rego || 'REG-001'
               });
 
               setShowReassignModal(false);
-              triggerToast(`Load ${currentLoad.id} reassigned to ${selectedD.name}!`);
+              triggerToast(`Load ${currentLoad.id} reassigned to ${selectedD.firstName || reassignForm.driverName}!`);
             }} className="space-y-4">
               
               <div>
@@ -1999,10 +1995,18 @@ function LoadDetail({ load, onBack }) {
                   onChange={(e) => setReassignForm({ ...reassignForm, driverName: e.target.value })}
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition-colors cursor-pointer"
                 >
-                  <option value="Mike Thompson">Mike Thompson (DRV001 - MC License)</option>
-                  <option value="Sarah Mitchell">Sarah Mitchell (DRV002 - HC License)</option>
-                  <option value="Chris Lee">Chris Lee (DRV003 - MC License)</option>
-                  <option value="Alex Rivera">Alex Rivera (DRV004 - MC License)</option>
+                  {dbDrivers.length > 0 ? (
+                    dbDrivers.map(d => (
+                      <option key={d.id} value={`${d.firstName} ${d.lastName}`}>
+                        {d.firstName} {d.lastName} ({d.userCode || 'DRV'} - {d.licenseType || 'MC License'})
+                      </option>
+                    ))
+                  ) : (
+                    <>
+                      <option value="Mike Thompson">Mike Thompson (DRV001 - MC License)</option>
+                      <option value="Sarah Mitchell">Sarah Mitchell (DRV002 - HC License)</option>
+                    </>
+                  )}
                 </select>
               </div>
 
@@ -2014,9 +2018,18 @@ function LoadDetail({ load, onBack }) {
                     onChange={(e) => setReassignForm({ ...reassignForm, truckId: e.target.value })}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:border-indigo-500 focus:bg-white transition-colors cursor-pointer"
                   >
-                    <option value="TRK-101">TRK-101 | Volvo FH 540</option>
-                    <option value="TRK-220">TRK-220 | Scania T500</option>
-                    <option value="TRK-330">TRK-330 | Kenworth T610</option>
+                    {dbVehicles.length > 0 ? (
+                      dbVehicles.map(v => (
+                        <option key={v.id} value={v.rego || v.code || v.id}>
+                          {v.rego || v.code} | {v.make || ''} {v.model || 'Heavy Vehicle'}
+                        </option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="TRK-101">TRK-101 | Volvo FH 540</option>
+                        <option value="TRK-220">TRK-220 | Scania T500</option>
+                      </>
+                    )}
                   </select>
                 </div>
 
@@ -2296,21 +2309,73 @@ export default function Loads() {
   const [vehicleFilter, setVehicleFilter] = useState('All Vehicles');
   const [locationFilter, setLocationFilter] = useState('All Locations');
 
+  const [loadsList, setLoadsList] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchLoads = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/company-admin/loads');
+      if (res.data && res.data.success && Array.isArray(res.data.data)) {
+        const mapped = res.data.data.map(item => {
+          const firstPickup = item.stops?.find(s => s.type === 'PICKUP')?.address || 'Melbourne';
+          const firstDropoff = item.stops?.find(s => s.type === 'DROPOFF')?.address || 'Sydney';
+          let displayStatus = item.status || 'DRAFT';
+          if (displayStatus === 'IN_TRANSIT') displayStatus = 'ACTIVE';
+          if (displayStatus === 'DELIVERED') displayStatus = 'COMPLETED';
+
+          return {
+            id: item.loadRef || item.id,
+            rawId: item.id,
+            date: item.loadDate ? new Date(item.loadDate).toISOString().split('T')[0] : (item.createdAt ? new Date(item.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]),
+            starred: item.starred || false,
+            status: displayStatus,
+            statusSub: item.dispatchNotes || item.notes || (displayStatus === 'ACTIVE' ? 'En Route' : displayStatus === 'PLANNED' ? 'Ready' : 'Not Ready'),
+            type: item.type || 'General Freight',
+            typeIcon: item.type === 'Car Carrying' ? <Truck className="w-3.5 h-3.5 text-blue-500" /> : <Package className="w-3.5 h-3.5 text-blue-500" />,
+            customer: item.customer?.name || 'ABC Motors Pty Ltd',
+            from: firstPickup,
+            to: firstDropoff,
+            stops: item.stops?.length || 2,
+            driver: item.driver ? `${item.driver.firstName} ${item.driver.lastName}` : null,
+            truck: item.truck ? `${item.truck.rego || item.truck.code || 'TRK-101'} | ${item.truck.model || 'Scania'}` : null,
+            driverBadge: item.driver ? 'On The Road' : null,
+            driverStatus: 'text-emerald-500',
+            avatar: item.driver?.avatarUrl || 'https://i.pravatar.cc/150?u=10'
+          };
+        });
+        setLoadsList(mapped);
+      } else {
+        setLoadsList([]);
+      }
+    } catch (e) {
+      console.error('Fetch loads error:', e);
+      setLoadsList([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLoads();
+  }, [showCreateForm, showAILoadBuilder]);
+
   if (selectedLoad) {
-    return <LoadDetail load={selectedLoad} onBack={() => setSelectedLoad(null)} />;
+    return <LoadDetail load={selectedLoad} onBack={() => { setSelectedLoad(null); fetchLoads(); }} />;
   }
 
   if (showCreateForm) {
-    return <CreateLoad onBack={() => setShowCreateForm(false)} />;
+    return <CreateLoad onBack={() => { setShowCreateForm(false); fetchLoads(); }} />;
   }
 
   if (showAILoadBuilder) {
-    return <AILoadBuilder onBack={() => setShowAILoadBuilder(false)} />;
+    return <AILoadBuilder onBack={() => { setShowAILoadBuilder(false); fetchLoads(); }} />;
   }
 
-  const tabs = computeTabs(LOADS);
+  const currentLoadsData = loadsList;
+  const tabs = computeTabs(currentLoadsData);
 
-  const filtered = LOADS.filter(l => {
+  const filtered = currentLoadsData.filter(l => {
     const q = search.toLowerCase();
     const searchMatch = !q || l.id.toLowerCase().includes(q) || (l.customer || '').toLowerCase().includes(q)
       || (l.driver || '').toLowerCase().includes(q) || l.from.toLowerCase().includes(q) || l.to.toLowerCase().includes(q);
@@ -2714,14 +2779,14 @@ export default function Loads() {
           {/* Load Overview Card */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
             <h2 className="text-[13px] font-semibold text-slate-900 mb-0.5">Load Overview</h2>
-            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-4">TODAY, 15 JULY 2025</p>
+            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-4">TODAY, {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase()}</p>
             <div className="space-y-4">
               {[
                 { label: 'Total Loads',     value: filtered.length, icon: <Package    className="w-4 h-4 text-indigo-500"/>, color: 'bg-indigo-50'   },
-                { label: 'Active Loads',    value: filtered.filter(f => f.status === 'ACTIVE').length,  icon: <Activity   className="w-4 h-4 text-emerald-500"/>, color: 'bg-emerald-50'},
-                { label: 'In Transit',      value: filtered.filter(f => f.statusSub === 'En Route').length,  icon: <ArrowUpRight className="w-4 h-4 text-emerald-500"/>, color: 'bg-emerald-50'     },
-                { label: 'At Stop',         value: filtered.filter(f => f.statusSub && f.statusSub.includes('Stop')).length,  icon: <MapPin      className="w-4 h-4 text-indigo-500"/>, color: 'bg-indigo-50'   },
-                { label: 'Completed Today', value: filtered.filter(f => f.status === 'COMPLETED').length,   icon: <CheckCircle className="w-4 h-4 text-rose-500"/>,color: 'bg-rose-50' },
+                { label: 'Active Loads',    value: filtered.filter(f => f.status === 'ACTIVE' || f.status === 'IN_TRANSIT').length,  icon: <Activity   className="w-4 h-4 text-emerald-500"/>, color: 'bg-emerald-50'},
+                { label: 'In Transit',      value: filtered.filter(f => f.status === 'ACTIVE' || f.status === 'IN_TRANSIT').length,  icon: <ArrowUpRight className="w-4 h-4 text-emerald-500"/>, color: 'bg-emerald-50'     },
+                { label: 'At Stop',         value: filtered.filter(f => f.statusSub && f.statusSub.toLowerCase().includes('stop')).length,  icon: <MapPin      className="w-4 h-4 text-indigo-500"/>, color: 'bg-indigo-50'   },
+                { label: 'Completed Today', value: filtered.filter(f => f.status === 'COMPLETED' || f.status === 'DELIVERED').length,   icon: <CheckCircle className="w-4 h-4 text-rose-500"/>,color: 'bg-rose-50' },
               ].map((item, i) => (
                 <div key={i} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -2780,20 +2845,24 @@ export default function Loads() {
               <button className="text-[10px] font-semibold text-indigo-600 hover:underline uppercase tracking-wider">VIEW ALL</button>
             </div>
             <div className="space-y-4">
-              {ALERTS.map((a, i) => (
-                <div key={i} className="flex gap-3">
-                  <div className={`w-6 h-6 rounded-full ${a.color} flex items-center justify-center shrink-0 mt-0.5`}>
-                    <AlertCircle className={`w-3.5 h-3.5 ${a.iconColor}`}/>
-                  </div>
-                  <div>
-                    <div className="flex justify-between items-baseline gap-2 mb-1">
-                      <span className="text-[12px] font-semibold text-slate-900">{a.id}</span>
-                      <span className="text-[10px] font-medium text-slate-500 shrink-0">{a.time}</span>
+              {filtered.filter(f => f.status === 'ACTIVE' || f.status === 'IN_TRANSIT').length === 0 ? (
+                <p className="text-xs font-semibold text-slate-400 py-2">No active alerts</p>
+              ) : (
+                filtered.filter(f => f.status === 'ACTIVE' || f.status === 'IN_TRANSIT').slice(0, 3).map((a, i) => (
+                  <div key={i} className="flex gap-3">
+                    <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
+                      <AlertCircle className="w-3.5 h-3.5 text-amber-600"/>
                     </div>
-                    <p className="text-[11px] font-medium text-slate-600 leading-snug">{a.msg}</p>
+                    <div>
+                      <div className="flex justify-between items-baseline gap-2 mb-1">
+                        <span className="text-[12px] font-semibold text-slate-900">{a.id}</span>
+                        <span className="text-[10px] font-medium text-slate-500 shrink-0">Live</span>
+                      </div>
+                      <p className="text-[11px] font-medium text-slate-600 leading-snug">{a.customer} - En Route</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
             <button className="w-full mt-6 py-2.5 rounded-xl border border-slate-200 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
               View All Alerts

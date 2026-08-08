@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../services/api';
 import { 
   ArrowLeft, Edit, Trash2, ChevronDown, Plus, Download, Upload, Search, Filter, RotateCcw, 
   CheckCircle, Clock, Truck, Box, AlertTriangle, Info, Star, Building, MapPin, 
@@ -207,14 +208,7 @@ const CircleInfoIcon = () => (
 );
 
 // ─── DATA ──────────────────────────────────────────────────────────────────
-const initialWarehouses = [
-  { name: 'Sydney Head Office Warehouse', addr: '12 Logistics Ave, Wetherill Park NSW 2164', code: 'WH-001', branch: 'Sydney Head Office', type: 'General', status: 'Active', stock: '1,250', value: '$485,250.00', util: 78, isStar: true },
-  { name: 'Melbourne Distribution Centre', addr: '45 Freight Rd, Truganina VIC 3029', code: 'WH-002', branch: 'Melbourne Branch', type: 'General', status: 'Active', stock: '980', value: '$326,750.00', util: 65, isStar: false },
-  { name: 'Brisbane Warehouse', addr: '78 Export St, Lytton QLD 4178', code: 'WH-003', branch: 'Brisbane Branch', type: 'General', status: 'Active', stock: '650', value: '$218,300.00', util: 62, isStar: false },
-  { name: 'Perth Logistics Hub', addr: '3 Freight Loop, Welshpool WA 6106', code: 'WH-004', branch: 'Perth Branch', type: 'General', status: 'Active', stock: '420', value: '$142,600.00', util: 58, isStar: false },
-  { name: 'Adelaide Storage Facility', addr: '21 Transport Rd, Wingfield SA 5013', code: 'WH-005', branch: 'Adelaide Branch', type: 'General', status: 'Inactive', stock: '210', value: '$63,250.00', util: 25, isStar: false },
-  { name: 'Auckland Warehouse', addr: '33 Logistics Dr, East Tamaki, Auckland', code: 'WH-006', branch: 'Auckland Branch', type: 'General', status: 'Active', stock: '615', value: '$20,700.00', util: 45, isStar: false },
-];
+const initialWarehouses = [];
 
 // ─── SMALL REUSABLE COMPONENTS ────────────────────────────────────────────
 function DevNotes({ title, cols }) {
@@ -279,9 +273,67 @@ export default function Warehouse() {
   const [selectedWh, setSelectedWh] = useState(null);
   const [showMoreActions, setShowMoreActions] = useState(false);
   const [showDetailMoreActions, setShowDetailMoreActions] = useState(false);
-  const [openRowAction, setOpenRowAction] = useState(null);
   const [whList, setWhList] = useState(initialWarehouses);
+  const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
   const [editModal, setEditModal] = useState(null);
+
+  const [kpiStats, setKpiStats] = useState({
+    totalWarehouses: 0,
+    activeWarehouses: 0,
+    totalInventoryValue: '$0.00',
+    totalStockItems: 0,
+    pendingTasks: 0,
+    incomingShipments: 0,
+    outgoingShipments: 0
+  });
+
+  const [addForm, setAddForm] = useState({
+    name: '',
+    code: '',
+    branch: 'Sydney Main',
+    status: 'Active',
+    type: 'General',
+    totalAreaSqm: '',
+    palletCapacity: '',
+    loadingDocks: '',
+    street: '',
+    suburb: '',
+    state: '',
+    postalCode: '',
+    managerName: '',
+    managerPhone: '',
+    managerEmail: '',
+    emergencyContact: '',
+    capabilities: [],
+    notes: ''
+  });
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(''), 4000);
+  };
+
+  const fetchWarehousesData = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/company-admin/warehouse');
+      if (res.data && res.data.success && res.data.data) {
+        const { warehouses, stats } = res.data.data;
+        if (warehouses) setWhList(warehouses);
+        if (stats) setKpiStats(stats);
+      }
+    } catch (err) {
+      console.error('Error fetching warehouses data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchWarehousesData();
+  }, []);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All Status');
@@ -317,6 +369,10 @@ export default function Warehouse() {
 
   const handleExport = (targetWh) => {
     const w = targetWh || selectedWh || whList[0];
+    if (!w) {
+      showToast('No warehouse available for export');
+      return;
+    }
     const csvContent = `data:text/csv;charset=utf-8,Warehouse Name,Code,Branch,Type,Status,Stock Items,Value,Utilisation\n"${w.name}","${w.code}","${w.branch}","${w.type}","${w.status}","${w.stock}","${w.value}","${w.util}%"`;
     const link = document.createElement("a");
     link.setAttribute("href", encodeURI(csvContent));
@@ -326,6 +382,7 @@ export default function Warehouse() {
     document.body.removeChild(link);
     setShowMoreActions(false);
     setShowDetailMoreActions(false);
+    showToast('Export downloaded successfully!');
   };
 
   const handleImport = () => {
@@ -333,7 +390,7 @@ export default function Warehouse() {
     input.type = 'file';
     input.accept = '.csv, .xlsx';
     input.onchange = (e) => {
-      if (e.target.files?.length > 0) alert("File '" + e.target.files[0].name + "' imported successfully!");
+      if (e.target.files?.length > 0) showToast("File '" + e.target.files[0].name + "' imported successfully!");
     };
     input.click();
     setShowMoreActions(false);
@@ -341,15 +398,86 @@ export default function Warehouse() {
 
   const handleWhClick = (w) => { setSelectedWh(w); setView('details'); };
 
+  const handleSaveNewWarehouse = async (e) => {
+    if (e) e.preventDefault();
+    if (!addForm.name.trim()) {
+      showToast('Please enter a Warehouse Name');
+      return;
+    }
+    try {
+      setIsSubmitting(true);
+      const res = await api.post('/company-admin/warehouse', addForm);
+      if (res.data && res.data.success) {
+        const createdWh = res.data.data;
+        if (createdWh) {
+          setWhList(prev => [createdWh, ...prev.filter(w => w.id !== createdWh.id)]);
+        }
+        showToast(`Warehouse "${addForm.name}" created & saved to database!`);
+        setAddForm({
+          name: '', code: '', branch: 'Sydney Main', status: 'Active', type: 'General',
+          totalAreaSqm: '', palletCapacity: '', loadingDocks: '',
+          street: '', suburb: '', state: '', postalCode: '',
+          managerName: '', managerPhone: '', managerEmail: '', emergencyContact: '',
+          capabilities: [], notes: ''
+        });
+        setView('list');
+        await fetchWarehousesData();
+      } else {
+        showToast(res.data?.message || 'Failed to create warehouse');
+      }
+    } catch (err) {
+      console.error('Error saving warehouse:', err);
+      showToast('Error saving warehouse to database');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSaveEditWarehouse = async () => {
+    if (!editModal || !editModal.id) return;
+    try {
+      setIsSubmitting(true);
+      const res = await api.put(`/company-admin/warehouse/${editModal.id}`, editModal);
+      if (res.data && res.data.success) {
+        showToast(`Warehouse "${editModal.name}" updated!`);
+        setEditModal(null);
+        await fetchWarehousesData();
+      } else {
+        showToast(res.data?.message || 'Failed to update warehouse');
+      }
+    } catch (err) {
+      console.error('Error updating warehouse:', err);
+      showToast('Error updating warehouse');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteWarehouse = async (w) => {
+    if (!w || !w.id) return;
+    if (window.confirm(`Are you sure you want to delete warehouse "${w.name}"?`)) {
+      try {
+        const res = await api.delete(`/company-admin/warehouse/${w.id}`);
+        if (res.data && res.data.success) {
+          showToast(`Warehouse "${w.name}" deleted!`);
+          await fetchWarehousesData();
+        } else {
+          showToast('Failed to delete warehouse');
+        }
+      } catch (err) {
+        console.error('Error deleting warehouse:', err);
+        showToast('Error deleting warehouse');
+      }
+    }
+  };
+
   const renderEditModal = () => {
     if (!editModal) return null;
     return (
       <div className="wh-modal-backdrop" onClick={() => setEditModal(null)}>
         <div className="wh-modal" onClick={e => e.stopPropagation()}>
           <div className="wh-modal-head">
-            <h2 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Edit size={16} className="text-purple-600" /> Edit Warehouse
-            </h2>
+            <h2 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 8 }}>Edit Warehouse</h2>
             <button onClick={() => setEditModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B', fontSize: 20 }}>&times;</button>
           </div>
           <div className="wh-modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
@@ -393,18 +521,9 @@ export default function Warehouse() {
           </div>
           <div className="wh-modal-foot">
             <button onClick={() => setEditModal(null)} className="wh-btn">Cancel</button>
-            <button onClick={() => { 
-              const idx = editModal.index >= 0 ? editModal.index : whList.findIndex(w => w.code === editModal.code); 
-              if (idx >= 0) {
-                const nl = [...whList]; 
-                nl[idx] = { ...nl[idx], ...editModal }; 
-                setWhList(nl); 
-                if (selectedWh && (selectedWh.code === editModal.code || idx === whList.findIndex(w => w.code === selectedWh.code))) {
-                  setSelectedWh({ ...selectedWh, ...editModal });
-                }
-              }
-              setEditModal(null); 
-            }} className="wh-btn wh-btn-primary">Save Changes</button>
+            <button onClick={handleSaveEditWarehouse} disabled={isSubmitting} className="wh-btn wh-btn-primary">
+              {isSubmitting ? 'Saving...' : 'Save Changes'}
+            </button>
           </div>
         </div>
       </div>
@@ -422,10 +541,25 @@ export default function Warehouse() {
   // ── DETAIL VIEW ────────────────────────────────────────────────────────
   if (view === 'details') {
     const wh = selectedWh || whList[0];
+    if (!wh) {
+      return (
+        <div className="wh-detail-page" style={{ padding: 40, textAlign: 'center' }}>
+          <p style={{ fontSize: 14, color: '#64748B' }}>No warehouse selected.</p>
+          <button onClick={() => setView('list')} className="wh-btn wh-btn-primary" style={{ margin: '16px auto 0 auto' }}>Back to List</button>
+        </div>
+      );
+    }
     return (
       <>
         <style>{styles}</style>
         <div className="wh-detail-page">
+
+          {/* Toast Notification */}
+          {toastMessage && (
+            <div style={{ position: 'fixed', top: 20, right: 20, zIndex: 99999, background: '#0F172A', color: '#fff', padding: '10px 16px', borderRadius: 8, fontSize: 12, fontWeight: 700, boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
+              {toastMessage}
+            </div>
+          )}
 
           {/* Header */}
           <div className="wh-detail-header">
@@ -439,9 +573,7 @@ export default function Warehouse() {
               </div>
               <h1 style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', margin: '0 0 4px 0', letterSpacing: '-0.5px', display: 'flex', alignItems: 'center', gap: 8 }}>
                 Warehouse Details
-                <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 20, height: 20, borderRadius: '50%', background: '#EEF2FF', color: '#4F46E5' }}>
-                  <CheckCircle2 size={14} />
-                </span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 20, height: 20, borderRadius: '50%', background: '#EEF2FF', color: '#4F46E5' }}><CheckCircle2 size={14} /></span>
               </h1>
               <p style={{ fontSize: 12, color: '#64748B', margin: 0, fontWeight: 500 }}>{wh.name}</p>
             </div>
@@ -450,7 +582,7 @@ export default function Warehouse() {
                 <ArrowLeft size={14} /> Back
               </button>
               <button 
-                onClick={() => setEditModal({ ...wh, index: whList.findIndex(w => w.code === wh.code) })} 
+                onClick={() => setEditModal({ ...wh })} 
                 className="wh-btn" 
                 style={{ borderColor: '#C7D2FE', background: '#EEF2FF', color: '#4F46E5' }}
               >
@@ -462,7 +594,7 @@ export default function Warehouse() {
                 </button>
                 {showDetailMoreActions && (
                   <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: 8, width: 210, background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', zIndex: 99, padding: 6 }}>
-                    <div onClick={() => { setEditModal({ ...wh, index: whList.findIndex(w => w.code === wh.code) }); setShowDetailMoreActions(false); }}
+                    <div onClick={() => { setEditModal({ ...wh }); setShowDetailMoreActions(false); }}
                       style={{ padding: '8px 12px', fontSize: 12, fontWeight: 700, color: '#334155', cursor: 'pointer', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 8 }}
                       onMouseOver={e => e.currentTarget.style.background = '#F8FAFC'}
                       onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
@@ -473,24 +605,6 @@ export default function Warehouse() {
                       onMouseOver={e => e.currentTarget.style.background = '#F8FAFC'}
                       onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
                       <Download size={14} className="text-emerald-600" /> Export Details (CSV)
-                    </div>
-                    <div onClick={() => { setView('inventory'); setShowDetailMoreActions(false); }}
-                      style={{ padding: '8px 12px', fontSize: 12, fontWeight: 700, color: '#334155', cursor: 'pointer', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 8 }}
-                      onMouseOver={e => e.currentTarget.style.background = '#F8FAFC'}
-                      onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
-                      <Package size={14} className="text-blue-600" /> Inventory & Stock
-                    </div>
-                    <div onClick={() => { setView('locations'); setShowDetailMoreActions(false); }}
-                      style={{ padding: '8px 12px', fontSize: 12, fontWeight: 700, color: '#334155', cursor: 'pointer', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 8 }}
-                      onMouseOver={e => e.currentTarget.style.background = '#F8FAFC'}
-                      onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
-                      <MapPin size={14} className="text-amber-600" /> Locations & Bins
-                    </div>
-                    <div onClick={() => { window.print(); setShowDetailMoreActions(false); }}
-                      style={{ padding: '8px 12px', fontSize: 12, fontWeight: 700, color: '#334155', cursor: 'pointer', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 8 }}
-                      onMouseOver={e => e.currentTarget.style.background = '#F8FAFC'}
-                      onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
-                      <Printer size={14} className="text-slate-600" /> Print Summary
                     </div>
                   </div>
                 )}
@@ -514,8 +628,8 @@ export default function Warehouse() {
                     { label: 'Warehouse Code', val: wh.code },
                     { label: 'Type', val: wh.type },
                     { label: 'Branch', val: wh.branch },
-                    { label: 'Phone', val: '+61 2 9756 4321' },
-                    { label: 'Email', val: 'warehouse.sydney@hero.com.au' },
+                    { label: 'Phone', val: wh.phone || '+61 2 9756 4321' },
+                    { label: 'Email', val: wh.email || 'warehouse@hero.com.au' },
                     { label: 'Address', val: wh.addr },
                   ].map((f, i) => (
                     <div key={i}>
@@ -523,13 +637,6 @@ export default function Warehouse() {
                       <div style={{ fontSize: 12, fontWeight: 700, color: '#0F172A', wordBreak: 'break-word' }}>{f.val}</div>
                     </div>
                   ))}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#F1F5F9', color: '#475569', fontSize: 10, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>JP</div>
-                  <div>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A' }}>James Patel — Warehouse Manager</div>
-                    <div style={{ fontSize: 11, color: '#4F46E5' }}>james.patel@hero.com.au</div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -553,16 +660,14 @@ export default function Warehouse() {
           <div className="wh-detail-bottom">
             {/* Left */}
             <div className="wh-detail-left">
-              {/* Warehouse Info & Contact */}
               <div className="wh-2col">
                 <div>
                   <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: '0 0 14px 0' }}>WAREHOUSE INFORMATION</h3>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 10px' }}>
                     {[
-                      { l: 'Warehouse Code', v: wh.code }, { l: 'Total Area', v: '4,500 m²' },
-                      { l: 'Type', v: wh.type }, { l: 'Usable Area', v: '3,520 m²' },
-                      { l: 'Branch', v: wh.branch }, { l: 'Pallet Capacity', v: '2,000' },
-                      { l: 'Utilisation', v: `${wh.util}%` }, { l: 'Status', v: wh.status },
+                      { l: 'Warehouse Code', v: wh.code }, { l: 'Total Area', v: `${wh.totalAreaSqm || 5000} m²` },
+                      { l: 'Type', v: wh.type }, { l: 'Pallet Capacity', v: (wh.palletCapacity || 15000).toLocaleString() },
+                      { l: 'Branch', v: wh.branch }, { l: 'Status', v: wh.status },
                     ].map((f, i) => (
                       <div key={i}>
                         <div style={{ fontSize: 9, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>{f.l}</div>
@@ -575,9 +680,8 @@ export default function Warehouse() {
                   <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: '0 0 14px 0' }}>CONTACT & SETTINGS</h3>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 10px' }}>
                     {[
-                      { l: 'Manager', v: 'James Patel' }, { l: 'Notif. Email', v: 'warehouse.sydney@hero.com.au' },
-                      { l: 'Phone', v: '+61 2 9756 4321' }, { l: 'Timezone', v: 'AEST' },
-                      { l: 'Mobile', v: '+61 412 345 678' }, { l: 'Auto Tasks', v: 'Enabled' },
+                      { l: 'Phone', v: wh.phone || '+61 2 9756 4321' }, { l: 'Email', v: wh.email || 'warehouse@hero.com' },
+                      { l: 'Timezone', v: 'AEST' }, { l: 'Auto Tasks', v: 'Enabled' },
                     ].map((f, i) => (
                       <div key={i}>
                         <div style={{ fontSize: 9, color: '#64748B', fontWeight: 600, marginBottom: 2 }}>{f.l}</div>
@@ -588,14 +692,13 @@ export default function Warehouse() {
                 </div>
               </div>
 
-              {/* Services */}
               <div>
                 <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: '0 0 14px 0' }}>SERVICES & CAPABILITIES</h3>
                 <div className="wh-services">
                   {[
                     { name: 'Receiving', on: true }, { name: 'Storage', on: true }, { name: 'Picking', on: true },
                     { name: 'Packing', on: true }, { name: 'Dispatch', on: true }, { name: 'Returns', on: true },
-                    { name: 'Cross Docking', on: true }, { name: 'Value Added', on: false }, { name: 'Dangerous Goods', on: false },
+                    { name: 'Cross Docking', on: true }
                   ].map((item, idx) => (
                     <div key={idx} className="wh-service-item">
                       <div style={{ width: 32, height: 32, borderRadius: 8, background: item.on ? '#EEF2FF' : '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>
@@ -611,101 +714,23 @@ export default function Warehouse() {
 
             {/* Right */}
             <div className="wh-detail-right">
-              {/* Overview */}
               <div className="wh-panel">
                 <div className="wh-panel-header">
                   <span className="wh-panel-title">WAREHOUSE OVERVIEW</span>
-                  <span className="wh-panel-link">View Report →</span>
+                  <span className="wh-panel-link" onClick={() => setView('reports')}>View Report →</span>
                 </div>
                 <div className="wh-overview-grid">
                   {[
-                    { label: 'Stock Items', value: wh.stock, color: '#4F46E5', bg: '#EEF2FF' },
-                    { label: 'Inventory Value', value: wh.value, color: '#10B981', bg: '#ECFDF5' },
-                    { label: 'Utilisation', value: `${wh.util}%`, color: '#3B82F6', bg: '#EFF6FF' },
-                    { label: 'Pending Tasks', value: '28', color: '#4F46E5', bg: '#EEF2FF' },
-                    { label: 'Inc. Shipments', value: '14', color: '#EF4444', bg: '#FEF2F2' },
-                    { label: 'Out. Shipments', value: '19', color: '#F97316', bg: '#FFF7ED' },
+                    { label: 'Stock Items', value: wh.stock || '0', color: '#4F46E5', bg: '#EEF2FF' },
+                    { label: 'Inventory Value', value: wh.value || '$0.00', color: '#10B981', bg: '#ECFDF5' },
+                    { label: 'Utilisation', value: `${wh.util || 0}%`, color: '#3B82F6', bg: '#EFF6FF' }
                   ].map((c, i) => (
                     <div key={i} className="wh-overview-card">
                       <div style={{ width: 22, height: 22, borderRadius: 6, background: c.bg, flexShrink: 0 }} />
                       <div>
                         <div style={{ fontSize: 11, fontWeight: 900, color: '#0F172A' }}>{c.value}</div>
-                        <div style={{ fontSize: 9, color: '#64748B', fontWeight: 600 }}>{c.label}</div>
+                        <div style={{ fontSize: 9, fontWeight: 600, color: '#64748B' }}>{c.label}</div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Quick Actions */}
-              <div className="wh-panel">
-                <span className="wh-panel-title">QUICK ACTIONS</span>
-                <div className="wh-qa-grid" style={{ marginTop: 14 }}>
-                  {[
-                    { label: '📦 Manage Stock', fn: () => setView('inventory') },
-                    { label: '+ Add Stock', fn: () => setView('inventory') },
-                    { label: '✓ Create Pick Task', fn: () => setView('pickpack') },
-                    { label: '↓ Receive Shipment', fn: () => setView('inventory') },
-                    { label: '⇄ Stock Transfer', fn: () => setView('movements') },
-                    { label: '📍 View Locations', fn: () => setView('locations') },
-                    { label: '☰ View All Tasks', fn: () => setView('pickpack') },
-                    { label: '🖨️ Print Label', fn: () => window.print() }
-                  ].map((a, i) => (
-                    <div key={i} onClick={a.fn} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: '#0F172A', cursor: 'pointer' }} className="hover:text-purple-600 transition-colors">
-                      {a.label}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Locations */}
-              <div className="wh-panel">
-                <div className="wh-panel-header">
-                  <span className="wh-panel-title">WAREHOUSE LOCATIONS (5)</span>
-                  <span className="wh-panel-link">View All →</span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {[
-                    { name: 'Main Storage Area', code: 'A1-A20', pct: 78 },
-                    { name: 'Bulk Storage', code: 'B1-B15', pct: 66 },
-                    { name: 'Dispatch Area', code: 'D1-D10', pct: 85 },
-                    { name: 'Returns Area', code: 'R1-R5', pct: 42 },
-                    { name: 'Quarantine Area', code: 'Q1-Q5', pct: 25 },
-                  ].map((loc, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: '#0F172A', flex: 1 }}>{loc.name}</div>
-                      <div style={{ fontSize: 10, color: '#64748B', width: 48 }}>{loc.code}</div>
-                      <div style={{ width: 50, height: 5, background: '#EEF2FF', borderRadius: 4, overflow: 'hidden' }}>
-                        <div style={{ width: `${loc.pct}%`, height: '100%', background: '#4F46E5', borderRadius: 4 }} />
-                      </div>
-                      <div style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', width: 28, textAlign: 'right' }}>{loc.pct}%</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Documents */}
-              <div className="wh-panel">
-                <div className="wh-panel-header">
-                  <span className="wh-panel-title">DOCUMENTS</span>
-                  <span className="wh-panel-link">View All →</span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {[
-                    { name: 'Warehouse Licence', full: 'LIC-WH-001.pdf', date: '15 Mar 2024' },
-                    { name: 'Insurance Cert', full: 'INS-WH-001.pdf', date: '01 Jan 2025' },
-                    { name: 'Fire Safety Cert', full: 'FSC-WH-001.pdf', date: '20 Feb 2025' },
-                    { name: 'OH&S Compliance', full: 'OHS-WH-001.pdf', date: '10 Apr 2025' },
-                    { name: 'Site Plan', full: 'SITE-WH-001.pdf', date: '15 Mar 2024' },
-                  ].map((doc, idx) => (
-                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 12, color: '#64748B' }}>📄</span>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: '#0F172A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.name}</div>
-                        <div style={{ fontSize: 10, color: '#94A3B8' }}>{doc.full}</div>
-                      </div>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap' }}>{doc.date}</div>
-                      <span style={{ fontSize: 12, color: '#64748B', cursor: 'pointer' }}>↓</span>
                     </div>
                   ))}
                 </div>
@@ -713,42 +738,28 @@ export default function Warehouse() {
             </div>
           </div>
 
-
-
-          {renderEditModal()}
         </div>
       </>
     );
   }
 
-  // ── ADD WAREHOUSE VIEW ────────────────────────────────────────────────
-  const handleAddWarehouse = (e) => {
-    e.preventDefault();
-    const fd = new FormData(e.target);
-    const newWh = {
-      name: fd.get('name') || 'New Warehouse',
-      code: fd.get('code') || 'WH-NEW',
-      branch: fd.get('branch') || 'Main Branch',
-      addr: fd.get('addr') || '123 Logistics Way',
-      type: 'General',
-      status: 'Active',
-      stock: '0',
-      value: '$0.00',
-      util: 0,
-      isStar: false
-    };
-    setWhList(prev => [newWh, ...prev]);
-    setView('list');
-  };
-
+  // ── ADD WAREHOUSE VIEW ───────────────────────────────────────────────────
   if (view === 'add') {
     return (
       <>
         <style>{styles}</style>
-        <form onSubmit={handleAddWarehouse} className="wh-add-page">
+        <form onSubmit={handleSaveNewWarehouse} className="wh-add-page">
+
+          {/* Toast Notification */}
+          {toastMessage && (
+            <div style={{ position: 'fixed', top: 20, right: 20, zIndex: 99999, background: '#0F172A', color: '#fff', padding: '10px 16px', borderRadius: 8, fontSize: 12, fontWeight: 700, boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
+              {toastMessage}
+            </div>
+          )}
+
           <div className="wh-add-header">
             <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-              <button onClick={() => setView('list')} className="wh-btn" style={{ width: 38, height: 38, borderRadius: '50%', padding: 0, justifyContent: 'center' }}>←</button>
+              <button type="button" onClick={() => setView('list')} className="wh-btn" style={{ width: 38, height: 38, borderRadius: '50%', padding: 0, justifyContent: 'center' }}>←</button>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <h1 style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', margin: 0 }}>Add New Warehouse</h1>
@@ -759,7 +770,9 @@ export default function Warehouse() {
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
               <button type="button" onClick={() => setView('list')} className="wh-btn">Cancel</button>
-              <button type="submit" className="wh-btn wh-btn-accent">Save Warehouse →</button>
+              <button type="submit" disabled={isSubmitting} className="wh-btn wh-btn-accent">
+                {isSubmitting ? 'Saving...' : 'Save Warehouse →'}
+              </button>
             </div>
           </div>
 
@@ -773,21 +786,58 @@ export default function Warehouse() {
               <div className="wh-form-grid-2">
                 <div>
                   <label className="wh-label">Warehouse Name *</label>
-                  <div className="wh-input-icon"><span className="icon">🏢</span><input name="name" className="wh-input" placeholder="e.g. Sydney Main Depot" /></div>
+                  <div className="wh-input-icon">
+                    <span className="icon">🏢</span>
+                    <input
+                      name="name"
+                      required
+                      value={addForm.name}
+                      onChange={e => setAddForm({ ...addForm, name: e.target.value })}
+                      className="wh-input"
+                      placeholder="e.g. Sydney Main Depot"
+                    />
+                  </div>
                 </div>
                 <div>
                   <label className="wh-label">Warehouse Code *</label>
-                  <div className="wh-input-icon"><span className="icon">📦</span><input name="code" className="wh-input" placeholder="e.g. SYD-01" /></div>
+                  <div className="wh-input-icon">
+                    <span className="icon">📦</span>
+                    <input
+                      name="code"
+                      value={addForm.code}
+                      onChange={e => setAddForm({ ...addForm, code: e.target.value })}
+                      className="wh-input"
+                      placeholder="e.g. SYD-01"
+                    />
+                  </div>
                 </div>
                 <div>
                   <label className="wh-label">Branch / Region</label>
-                  <input name="branch" className="wh-input" placeholder="Sydney Main" />
+                  <input
+                    name="branch"
+                    value={addForm.branch}
+                    onChange={e => setAddForm({ ...addForm, branch: e.target.value })}
+                    className="wh-input"
+                    placeholder="Sydney Main"
+                  />
                 </div>
                 <div>
                   <label className="wh-label">Status</label>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <button style={{ flex: 1, padding: '10px', borderRadius: 8, border: 'none', background: '#F97316', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Active</button>
-                    <button style={{ flex: 1, padding: '10px', borderRadius: 8, border: '1px solid #E2E8F0', background: '#fff', color: '#475569', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Maintenance</button>
+                    <button
+                      type="button"
+                      onClick={() => setAddForm({ ...addForm, status: 'Active' })}
+                      style={{ flex: 1, padding: '10px', borderRadius: 8, border: addForm.status === 'Active' ? 'none' : '1px solid #E2E8F0', background: addForm.status === 'Active' ? '#F97316' : '#fff', color: addForm.status === 'Active' ? '#fff' : '#475569', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      Active
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAddForm({ ...addForm, status: 'Maintenance' })}
+                      style={{ flex: 1, padding: '10px', borderRadius: 8, border: addForm.status === 'Maintenance' ? 'none' : '1px solid #E2E8F0', background: addForm.status === 'Maintenance' ? '#F97316' : '#fff', color: addForm.status === 'Maintenance' ? '#fff' : '#475569', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      Maintenance
+                    </button>
                   </div>
                 </div>
               </div>
@@ -800,9 +850,36 @@ export default function Warehouse() {
                 <div><h2 style={{ fontSize: 13, fontWeight: 800, color: '#1E293B', margin: '0 0 2px 0' }}>2. CAPACITY & SIZING</h2><div style={{ fontSize: 10, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Physical Dimensions and Limits</div></div>
               </div>
               <div className="wh-form-grid-3">
-                <div><label className="wh-label">Total Area (SQM)</label><input className="wh-input" placeholder="e.g. 5000" /></div>
-                <div><label className="wh-label">Pallet Capacity</label><input className="wh-input" placeholder="e.g. 15000" /></div>
-                <div><label className="wh-label">Loading Docks</label><input className="wh-input" placeholder="e.g. 12" /></div>
+                <div>
+                  <label className="wh-label">Total Area (SQM)</label>
+                  <input
+                    type="number"
+                    value={addForm.totalAreaSqm}
+                    onChange={e => setAddForm({ ...addForm, totalAreaSqm: e.target.value })}
+                    className="wh-input"
+                    placeholder="e.g. 5000"
+                  />
+                </div>
+                <div>
+                  <label className="wh-label">Pallet Capacity</label>
+                  <input
+                    type="number"
+                    value={addForm.palletCapacity}
+                    onChange={e => setAddForm({ ...addForm, palletCapacity: e.target.value })}
+                    className="wh-input"
+                    placeholder="e.g. 15000"
+                  />
+                </div>
+                <div>
+                  <label className="wh-label">Loading Docks</label>
+                  <input
+                    type="number"
+                    value={addForm.loadingDocks}
+                    onChange={e => setAddForm({ ...addForm, loadingDocks: e.target.value })}
+                    className="wh-input"
+                    placeholder="e.g. 12"
+                  />
+                </div>
               </div>
             </div>
 
@@ -813,11 +890,44 @@ export default function Warehouse() {
                 <div><h2 style={{ fontSize: 13, fontWeight: 800, color: '#1E293B', margin: '0 0 2px 0' }}>3. LOCATION DETAILS</h2><div style={{ fontSize: 10, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Geographic Address</div></div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <div><label className="wh-label">Street Address</label><input name="addr" className="wh-input" placeholder="e.g. 123 Logistics Way" /></div>
+                <div>
+                  <label className="wh-label">Street Address</label>
+                  <input
+                    name="addr"
+                    value={addForm.street}
+                    onChange={e => setAddForm({ ...addForm, street: e.target.value })}
+                    className="wh-input"
+                    placeholder="e.g. 123 Logistics Way"
+                  />
+                </div>
                 <div className="wh-form-grid-3">
-                  <div><label className="wh-label">Suburb / City</label><input className="wh-input" placeholder="e.g. Wetherill Park" /></div>
-                  <div><label className="wh-label">State</label><input className="wh-input" placeholder="e.g. NSW" /></div>
-                  <div><label className="wh-label">Postal Code</label><input className="wh-input" placeholder="e.g. 2164" /></div>
+                  <div>
+                    <label className="wh-label">Suburb / City</label>
+                    <input
+                      value={addForm.suburb}
+                      onChange={e => setAddForm({ ...addForm, suburb: e.target.value })}
+                      className="wh-input"
+                      placeholder="e.g. Wetherill Park"
+                    />
+                  </div>
+                  <div>
+                    <label className="wh-label">State</label>
+                    <input
+                      value={addForm.state}
+                      onChange={e => setAddForm({ ...addForm, state: e.target.value })}
+                      className="wh-input"
+                      placeholder="e.g. NSW"
+                    />
+                  </div>
+                  <div>
+                    <label className="wh-label">Postal Code</label>
+                    <input
+                      value={addForm.postalCode}
+                      onChange={e => setAddForm({ ...addForm, postalCode: e.target.value })}
+                      className="wh-input"
+                      placeholder="e.g. 2164"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -829,10 +939,43 @@ export default function Warehouse() {
                 <div><h2 style={{ fontSize: 13, fontWeight: 800, color: '#1E293B', margin: '0 0 2px 0' }}>4. KEY CONTACTS</h2><div style={{ fontSize: 10, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Warehouse Management</div></div>
               </div>
               <div className="wh-form-grid-2">
-                <div><label className="wh-label">Manager Name</label><input className="wh-input" placeholder="e.g. Sarah Mitchell" /></div>
-                <div><label className="wh-label">Manager Phone</label><input className="wh-input" placeholder="0400 000 000" /></div>
-                <div><label className="wh-label">Manager Email</label><input className="wh-input" placeholder="manager@company.com" /></div>
-                <div><label className="wh-label">Emergency After-hours</label><input className="wh-input" placeholder="Security/Fire contact" /></div>
+                <div>
+                  <label className="wh-label">Manager Name</label>
+                  <input
+                    value={addForm.managerName}
+                    onChange={e => setAddForm({ ...addForm, managerName: e.target.value })}
+                    className="wh-input"
+                    placeholder="e.g. Sarah Mitchell"
+                  />
+                </div>
+                <div>
+                  <label className="wh-label">Manager Phone</label>
+                  <input
+                    value={addForm.managerPhone}
+                    onChange={e => setAddForm({ ...addForm, managerPhone: e.target.value })}
+                    className="wh-input"
+                    placeholder="0400 000 000"
+                  />
+                </div>
+                <div>
+                  <label className="wh-label">Manager Email</label>
+                  <input
+                    type="email"
+                    value={addForm.managerEmail}
+                    onChange={e => setAddForm({ ...addForm, managerEmail: e.target.value })}
+                    className="wh-input"
+                    placeholder="manager@company.com"
+                  />
+                </div>
+                <div>
+                  <label className="wh-label">Emergency After-hours</label>
+                  <input
+                    value={addForm.emergencyContact}
+                    onChange={e => setAddForm({ ...addForm, emergencyContact: e.target.value })}
+                    className="wh-input"
+                    placeholder="Security/Fire contact"
+                  />
+                </div>
               </div>
             </div>
 
@@ -845,7 +988,18 @@ export default function Warehouse() {
               <div className="wh-form-grid-4">
                 {['Cold Storage', 'Dangerous Goods', 'Cross-Docking', '24/7 Operations'].map((lbl, idx) => (
                   <label key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, border: '1px solid #E2E8F0', borderRadius: 8, padding: '12px 14px', cursor: 'pointer' }}>
-                    <input type="checkbox" style={{ width: 15, height: 15, cursor: 'pointer', accentColor: '#4F46E5' }} />
+                    <input
+                      type="checkbox"
+                      checked={addForm.capabilities.includes(lbl)}
+                      onChange={e => {
+                        if (e.target.checked) {
+                          setAddForm({ ...addForm, capabilities: [...addForm.capabilities, lbl] });
+                        } else {
+                          setAddForm({ ...addForm, capabilities: addForm.capabilities.filter(c => c !== lbl) });
+                        }
+                      }}
+                      style={{ width: 15, height: 15, cursor: 'pointer', accentColor: '#4F46E5' }}
+                    />
                     <span style={{ fontSize: 12, fontWeight: 700, color: '#334155' }}>{lbl}</span>
                   </label>
                 ))}
@@ -858,13 +1012,21 @@ export default function Warehouse() {
                 <div style={{ width: 40, height: 40, borderRadius: 10, background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><CircleInfoIcon /></div>
                 <div><h2 style={{ fontSize: 13, fontWeight: 800, color: '#1E293B', margin: '0 0 2px 0' }}>6. NOTES & COMMENTS</h2><div style={{ fontSize: 10, fontWeight: 600, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Additional Information</div></div>
               </div>
-              <textarea className="wh-input" placeholder="Any specific instructions, hours, or operational notes..." style={{ height: 100, resize: 'vertical' }} />
+              <textarea
+                value={addForm.notes}
+                onChange={e => setAddForm({ ...addForm, notes: e.target.value })}
+                className="wh-input"
+                placeholder="Any specific instructions, hours, or operational notes..."
+                style={{ height: 100, resize: 'vertical' }}
+              />
             </div>
           </div>
 
           <div className="wh-sticky-bar">
-            <button onClick={() => setView('list')} className="wh-btn">Cancel</button>
-            <button onClick={() => setView('list')} className="wh-btn wh-btn-accent">Save Warehouse →</button>
+            <button type="button" onClick={() => setView('list')} className="wh-btn">Cancel</button>
+            <button type="submit" disabled={isSubmitting} className="wh-btn wh-btn-accent">
+              {isSubmitting ? 'Saving...' : 'Save Warehouse →'}
+            </button>
           </div>
         </form>
       </>
@@ -876,6 +1038,13 @@ export default function Warehouse() {
     <>
       <style>{styles}</style>
       <div className="wh-page">
+
+        {/* Toast Notification */}
+        {toastMessage && (
+          <div style={{ position: 'fixed', top: 20, right: 20, zIndex: 99999, background: '#0F172A', color: '#fff', padding: '10px 16px', borderRadius: 8, fontSize: 12, fontWeight: 700, boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
+            {toastMessage}
+          </div>
+        )}
 
         {/* Header */}
         <div className="wh-header">
@@ -904,11 +1073,6 @@ export default function Warehouse() {
                       onMouseOver={e => e.currentTarget.style.background = '#F1F5F9'}
                       onMouseOut={e => e.currentTarget.style.background = 'transparent'}>{item.label}</div>
                   ))}
-                  <div style={{ height: 1, background: '#E2E8F0', margin: '4px 0' }} />
-                  <div onClick={() => { navigate('/company-admin/company-settings'); setShowMoreActions(false); }}
-                    style={{ padding: '8px 12px', fontSize: 12, fontWeight: 600, color: '#4F46E5', cursor: 'pointer', borderRadius: 6 }}
-                    onMouseOver={e => e.currentTarget.style.background = '#EEF2FF'}
-                    onMouseOut={e => e.currentTarget.style.background = 'transparent'}>Warehouse Settings</div>
                 </div>
               )}
             </div>
@@ -916,13 +1080,13 @@ export default function Warehouse() {
         </div>
 
         {/* Metric Cards */}
-        <div className="wh-metrics">
-          <MetricCard icon={<BoxIcon color="#8B5CF6" />} bg="#F5F3FF" label="TOTAL WAREHOUSES" value="6" sub="Active Warehouses" linkText="View all warehouses" onClick={() => {}} />
-          <MetricCard icon={<CheckCircleIcon color="#10B981" />} bg="#F0FDF4" label="TOTAL INVENTORY VALUE" value="$1.26M" sub="Across all warehouses" linkText="View inventory" onClick={() => navigate('/warehouse/current-stock')} />
-          <MetricCard icon={<BoxIcon color="#F59E0B" />} bg="#FFFBEB" label="TOTAL STOCK ITEMS" value="4,125" sub="All warehouses" linkText="View stock" onClick={() => navigate('/warehouse/current-stock')} />
-          <MetricCard icon={<ClockIcon color="#3B82F6" />} bg="#EFF6FF" label="PENDING PICK TASKS" value="28" sub="Requires attention" linkText="View tasks" onClick={() => navigate('/warehouse/movements')} />
-          <MetricCard icon={<TruckIcon color="#8B5CF6" />} bg="#F5F3FF" label="INCOMING SHIPMENTS" value="14" sub="In transit / Expected" linkText="View shipments" onClick={() => navigate('/warehouse/inbound')} />
-          <MetricCard icon={<TruckIcon color="#EF4444" />} bg="#FEF2F2" label="OUTGOING SHIPMENTS" value="19" sub="Scheduled / In progress" linkText="View shipments" onClick={() => navigate('/warehouse/outbound')} />
+        <div className="wh-metrics" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
+          <MetricCard icon={<BoxIcon color="#8B5CF6" />} bg="#F5F3FF" label="TOTAL WAREHOUSES" value={kpiStats.totalWarehouses.toString()} sub="Active Warehouses" linkText="View all warehouses" onClick={() => {}} />
+          <MetricCard icon={<CheckCircleIcon color="#10B981" />} bg="#F0FDF4" label="TOTAL INVENTORY VALUE" value={kpiStats.totalInventoryValue} sub="Across all warehouses" linkText="View inventory" onClick={() => navigate('/warehouse/current-stock')} />
+          <MetricCard icon={<BoxIcon color="#F59E0B" />} bg="#FFFBEB" label="TOTAL STOCK ITEMS" value={kpiStats.totalStockItems.toLocaleString()} sub="All warehouses" linkText="View stock" onClick={() => navigate('/warehouse/current-stock')} />
+          <MetricCard icon={<ClockIcon color="#3B82F6" />} bg="#EFF6FF" label="PENDING PICK TASKS" value={kpiStats.pendingTasks.toString()} sub="Requires attention" linkText="View tasks" onClick={() => navigate('/warehouse/movements')} />
+          <MetricCard icon={<TruckIcon color="#8B5CF6" />} bg="#F5F3FF" label="INCOMING SHIPMENTS" value={kpiStats.incomingShipments.toString()} sub="In transit / Expected" linkText="View shipments" onClick={() => navigate('/warehouse/inbound')} />
+          <MetricCard icon={<TruckIcon color="#EF4444" />} bg="#FEF2F2" label="OUTGOING SHIPMENTS" value={kpiStats.outgoingShipments.toString()} sub="Scheduled / In progress" linkText="View shipments" onClick={() => navigate('/warehouse/outbound')} />
         </div>
 
         {/* Middle Section */}
@@ -1036,14 +1200,7 @@ export default function Warehouse() {
                               <Edit size={13} />
                             </button>
                             <button 
-                              onClick={() => { 
-                                if (window.confirm(`Are you sure you want to delete warehouse ${w.name}?`)) { 
-                                  const nl = [...whList]; 
-                                  const origIdx = whList.findIndex(item => item.code === w.code);
-                                  if (origIdx !== -1) nl.splice(origIdx, 1); 
-                                  setWhList(nl); 
-                                } 
-                              }} 
+                              onClick={() => handleDeleteWarehouse(w)} 
                               title="Delete Warehouse" 
                               style={{ width: 26, height: 26, borderRadius: 6, background: '#FEE2E2', color: '#DC2626', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                             >
@@ -1136,38 +1293,48 @@ export default function Warehouse() {
             <div className="wh-panel">
               <div className="wh-panel-header">
                 <span className="wh-panel-title">WAREHOUSE ALERTS</span>
-                <span className="wh-panel-link">View All →</span>
+                <span className="wh-panel-link" onClick={() => navigate('/warehouse/reports')}>View All →</span>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <AlertItem icon={<AlertTriangleIcon color="#F97316" />} color="#EA580C" title="Low Stock Alert" time="12 min ago" desc="15 items below minimum stock level" />
-                <AlertItem icon={<AlertTriangleIcon color="#F97316" />} color="#EA580C" title="Stock Expiry Alert" time="1 hr ago" desc="8 items expiring within 30 days" />
-                <AlertItem icon={<InfoIcon color="#4F46E5" />} color="#4F46E5" title="Pick Tasks Overdue" time="2 hrs ago" desc="5 pick tasks are overdue" />
-                <AlertItem icon={<TruckIcon color="#4F46E5" />} color="#4F46E5" title="Incoming Shipment" time="3 hrs ago" desc="PO-55412 arriving today at WH-001" />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {whList.length > 0 ? (
+                  <>
+                    <AlertItem icon={<AlertTriangleIcon color="#EF4444" />} color="#DC2626" title="Capacity Warning" time="Real-time" desc="Monitor warehouse storage capacity limits" />
+                    <AlertItem icon={<InfoIcon color="#4F46E5" />} color="#4F46E5" title="System Status" time="Active" desc="All warehouse integrations operating smoothly" />
+                  </>
+                ) : (
+                  <div style={{ padding: '16px 0', textAlign: 'center', color: '#94A3B8', fontSize: 11, fontWeight: 600 }}>
+                    No active warehouse alerts
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Warehouse Locations Map */}
             <div className="wh-panel">
               <div className="wh-panel-header">
-                <span className="wh-panel-title">WAREHOUSE LOCATIONS</span>
-                <span className="wh-panel-link">View All →</span>
+                <span className="wh-panel-title">WAREHOUSE LOCATIONS ({whList.length})</span>
+                <span className="wh-panel-link" onClick={() => setView('locations')}>View All →</span>
               </div>
               <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
                 <div style={{ width: 130, height: 100, background: '#BFDBFE', borderRadius: 8, position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
                   <div style={{ position: 'absolute', bottom: 4, left: 6, fontSize: 8, fontWeight: 800, color: '#1E3A8A' }}>Google</div>
-                  {[[40, 20], [60, 50], [25, 70]].map(([l, t], idx) => (
-                    <div key={idx} style={{ position: 'absolute', top: `${t}%`, left: `${l}%`, width: 14, height: 14, background: '#4F46E5', borderRadius: '50% 50% 50% 0', transform: 'rotate(-45deg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {whList.slice(0, 3).map((w, idx) => (
+                    <div key={idx} style={{ position: 'absolute', top: `${30 + idx * 25}%`, left: `${25 + idx * 30}%`, width: 14, height: 14, background: '#4F46E5', borderRadius: '50% 50% 50% 0', transform: 'rotate(-45deg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <span style={{ fontSize: 7, color: '#fff', transform: 'rotate(45deg)', fontWeight: 800 }}>{idx + 1}</span>
                     </div>
                   ))}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, justifyContent: 'center', flex: 1 }}>
-                  {['Sydney Head Office', 'Melbourne DC', 'Brisbane Warehouse', 'Perth Hub', 'Adelaide Facility', 'Auckland Warehouse'].map((name, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <div style={{ width: 13, height: 13, borderRadius: '50%', background: '#4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 800, color: '#fff', flexShrink: 0 }}>{i + 1}</div>
-                      <div style={{ fontSize: 10, fontWeight: 600, color: '#0F172A' }}>{name}</div>
-                    </div>
-                  ))}
+                  {whList.length > 0 ? (
+                    whList.slice(0, 6).map((w, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <div style={{ width: 13, height: 13, borderRadius: '50%', background: '#4F46E5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 800, color: '#fff', flexShrink: 0 }}>{i + 1}</div>
+                        <div style={{ fontSize: 10, fontWeight: 600, color: '#0F172A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{w.name}</div>
+                      </div>
+                    ))
+                  ) : (
+                    <div style={{ fontSize: 11, color: '#94A3B8', fontWeight: 600 }}>No warehouses registered</div>
+                  )}
                 </div>
               </div>
             </div>
@@ -1180,17 +1347,17 @@ export default function Warehouse() {
           <div className="wh-bottom-card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
               <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.2px', textTransform: 'uppercase', margin: 0 }}>INVENTORY SUMMARY</h3>
-              <span style={{ fontSize: 9, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }}>View →</span>
+              <span style={{ fontSize: 9, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }} onClick={() => navigate('/warehouse/current-stock')}>View →</span>
             </div>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-              <div style={{ width: 60, height: 60, borderRadius: '50%', background: 'conic-gradient(#10B981 0% 59.4%, #F59E0B 59.4% 74.4%, #8B5CF6 74.4% 84.8%, #3B82F6 84.8% 95.1%, #94A3B8 95.1% 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <div style={{ width: 60, height: 60, borderRadius: '50%', background: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontSize: 10, fontWeight: 900, color: '#0F172A' }}>4,125</span>
+                  <span style={{ fontSize: 10, fontWeight: 900, color: '#0F172A' }}>{kpiStats.totalStockItems.toLocaleString()}</span>
                   <span style={{ fontSize: 7, color: '#64748B', textAlign: 'center' }}>Total Items</span>
                 </div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5, flex: 1 }}>
-                {[{ c: '#10B981', t: 'Available', v: '2,450', p: '59.4%' }, { c: '#F59E0B', t: 'Reserved', v: '620', p: '15%' }, { c: '#8B5CF6', t: 'In Transit', v: '430', p: '10.4%' }, { c: '#3B82F6', t: 'On Order', v: '425', p: '10.3%' }].map(x => (
+                {[{ c: '#10B981', t: 'Available', v: kpiStats.totalStockItems.toLocaleString(), p: '100%' }, { c: '#F59E0B', t: 'Reserved', v: '0', p: '0%' }, { c: '#8B5CF6', t: 'In Transit', v: '0', p: '0%' }, { c: '#3B82F6', t: 'On Order', v: '0', p: '0%' }].map(x => (
                   <div key={x.t} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                     <div style={{ width: 5, height: 5, borderRadius: '50%', background: x.c, flexShrink: 0 }} />
                     <div style={{ fontSize: 10, fontWeight: 700, color: '#0F172A', flex: 1 }}>{x.t}</div>
@@ -1205,10 +1372,10 @@ export default function Warehouse() {
           <div className="wh-bottom-card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
               <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0, lineHeight: 1.4 }}>STOCK MOVEMENTS<br />(THIS WEEK)</h3>
-              <span style={{ fontSize: 9, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }}>View →</span>
+              <span style={{ fontSize: 9, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }} onClick={() => setView('movements')}>View →</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {[['↓', '#F0FDF4', '#16A34A', 'Stock In', '1,250 Items'], ['↑', '#FEF2F2', '#DC2626', 'Stock Out', '980 Items'], ['⇄', '#EFF6FF', '#3B82F6', 'Transfers', '320 Items'], ['⚙', '#F5F3FF', '#8B5CF6', 'Adjustments', '45 Items']].map(([icon, bg, color, label, val], i) => (
+              {[['↓', '#F0FDF4', '#16A34A', 'Stock In', '0 Items'], ['↑', '#FEF2F2', '#DC2626', 'Stock Out', '0 Items'], ['⇄', '#EFF6FF', '#3B82F6', 'Transfers', '0 Items'], ['⚙', '#F5F3FF', '#8B5CF6', 'Adjustments', '0 Items']].map(([icon, bg, color, label, val], i) => (
                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600, color: '#334155' }}>
                     <span style={{ width: 18, height: 18, borderRadius: 5, background: bg, color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10 }}>{icon}</span>{label}
@@ -1223,10 +1390,10 @@ export default function Warehouse() {
           <div className="wh-bottom-card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
               <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>PENDING TASKS</h3>
-              <span style={{ fontSize: 9, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }}>View All →</span>
+              <span style={{ fontSize: 9, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }} onClick={() => setView('pickpack')}>View All →</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {[['📋', 'Pick Tasks', '28'], ['⬇', 'Put Away Tasks', '16'], ['⇄', 'Stock Transfers', '8'], ['↻', 'Cycle Counts', '5']].map(([icon, label, val], i) => (
+              {[['📋', 'Pick Tasks', kpiStats.pendingTasks.toString()], ['⬇', 'Put Away Tasks', '0'], ['⇄', 'Stock Transfers', '0'], ['↻', 'Cycle Counts', '0']].map(([icon, label, val], i) => (
                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, fontWeight: 600, color: '#0F172A' }}>
                     <span style={{ color: '#8B5CF6' }}>{icon}</span>{label}
@@ -1241,7 +1408,7 @@ export default function Warehouse() {
           <div className="wh-bottom-card">
             <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: '0 0 14px 0' }}>QUICK ACTIONS</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {[['+', 'Add Warehouse', () => setView('add')], ['📦', 'Manage Stock', null], ['✓', 'Create Pick Task', null], ['⇄', 'Stock Transfer', null]].map(([icon, label, fn], i) => (
+              {[['+', 'Add Warehouse', () => setView('add')], ['📦', 'Manage Stock', () => setView('inventory')], ['✓', 'Create Pick Task', () => setView('pickpack')], ['⇄', 'Stock Transfer', () => setView('movements')]].map(([icon, label, fn], i) => (
                 <div key={i} onClick={fn} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, fontWeight: 600, color: '#0F172A', cursor: 'pointer' }}>
                   <span style={{ color: '#4F46E5', fontSize: 13 }}>{icon}</span>{label}
                 </div>
@@ -1256,21 +1423,21 @@ export default function Warehouse() {
               <span style={{ fontSize: 9, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }}>View All →</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {[
-                { dot: '#10B981', title: 'Stock received at WH-001', by: 'By James Patel', date: '10 May 2025' },
-                { dot: '#10B981', title: 'Pick task completed at WH-002', by: 'By Robert Taylor', date: '10 May 2025' },
-                { dot: '#F59E0B', title: 'Stock transfer WH-003 → WH-001', by: 'By Sarah Mitchell', date: '09 May 2025' },
-                { dot: '#F97316', title: 'Inventory adjusted at WH-004', by: 'By James Patel', date: '09 May 2025' },
-              ].map((a, i) => (
-                <div key={i} style={{ display: 'flex', gap: 8 }}>
-                  <div style={{ width: 7, height: 7, borderRadius: '50%', background: a.dot, marginTop: 4, flexShrink: 0 }} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: '#0F172A', lineHeight: 1.3, marginBottom: 1 }}>{a.title}</div>
-                    <div style={{ fontSize: 9, color: '#64748B' }}>{a.by}</div>
+              {whList.length > 0 ? (
+                whList.slice(0, 4).map((w, idx) => (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981', flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#0F172A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Warehouse registered: {w.name} ({w.code})</div>
+                      <div style={{ fontSize: 10, color: '#94A3B8' }}>Status: {w.status}</div>
+                    </div>
                   </div>
-                  <div style={{ fontSize: 9, color: '#94A3B8', whiteSpace: 'nowrap' }}>{a.date}</div>
+                ))
+              ) : (
+                <div style={{ padding: '12px 0', textAlign: 'center', color: '#94A3B8', fontSize: 11, fontWeight: 600 }}>
+                  No recent activity recorded
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>

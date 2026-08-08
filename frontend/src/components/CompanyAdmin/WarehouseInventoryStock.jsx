@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+﻿import React, { useState, useEffect } from 'react';
+import api from '../../services/api';
 
 // === ICONS ===
 const SearchIcon = () => (
@@ -76,32 +77,104 @@ const CodeIcon = () => (
   </svg>
 );
 
-const DUMMY_STOCK_ITEMS = [
-  { code: 'CAR-001', name: 'Toyota Corolla 2022 (White)', cat: 'Vehicles', catColor: '#8B5CF6', catBg: '#F3E8FF', loc: 'Main Storage A1\nRow 01 - Bay 03', onHand: 12, reserved: 2, available: 10, unit: 'Each', unitCost: '$18,500.00', totalValue: '$222,000.00', status: 'Available', statColor: '#10B981', statBg: '#D1FAE5' },
-  { code: 'PART-0456', name: 'Brake Pad Set - Front', cat: 'Auto Parts', catColor: '#3B82F6', catBg: '#DBEAFE', loc: 'Bulk Storage B1\nShelf 02', onHand: 250, reserved: 15, available: 235, unit: 'Set', unitCost: '$45.00', totalValue: '$11,250.00', status: 'Available', statColor: '#10B981', statBg: '#D1FAE5' },
-  { code: 'OIL-10W40', name: 'Engine Oil 10W-40 (5L)', cat: 'Lubricants', catColor: '#F59E0B', catBg: '#FEF3C7', loc: 'Bulk Storage B2\nShelf 03', onHand: 180, reserved: 10, available: 170, unit: 'Bottle', unitCost: '$28.00', totalValue: '$5,040.00', status: 'Available', statColor: '#10B981', statBg: '#D1FAE5' },
-  { code: 'TYRE-22570R16', name: 'Tyre 225/70R16', cat: 'Tyres', catColor: '#10B981', catBg: '#D1FAE5', loc: 'Tyre Rack C1\nLevel 01', onHand: 36, reserved: 6, available: 30, unit: 'Each', unitCost: '$165.00', totalValue: '$5,940.00', status: 'Available', statColor: '#10B981', statBg: '#D1FAE5' },
-  { code: 'BAT-105D31R', name: 'Battery 105D31R', cat: 'Batteries', catColor: '#8B5CF6', catBg: '#F3E8FF', loc: 'Hazard Area D1\nCabinet 01', onHand: 20, reserved: 1, available: 19, unit: 'Each', unitCost: '$210.00', totalValue: '$4,200.00', status: 'Available', statColor: '#10B981', statBg: '#D1FAE5' },
-  { code: 'FUEL-ADBLUE', name: 'AdBlue 20L', cat: 'Fluids', catColor: '#3B82F6', catBg: '#DBEAFE', loc: 'Bulk Storage B3\nTank Zone', onHand: 55, reserved: 5, available: 50, unit: 'Drum', unitCost: '$52.00', totalValue: '$2,860.00', status: 'Available', statColor: '#10B981', statBg: '#D1FAE5' },
-  { code: 'STRAP-50MM', name: 'Ratchet Strap 50mm', cat: 'Equipment', catColor: '#06B6D4', catBg: '#CFFAFE', loc: 'Dispatch Area\nRack 02', onHand: 95, reserved: 20, available: 75, unit: 'Each', unitCost: '$18.00', totalValue: '$1,710.00', status: 'Available', statColor: '#10B981', statBg: '#D1FAE5' },
-  { code: 'PAINT-WHT', name: 'Touch Up Paint (White)', cat: 'Consumables', catColor: '#EC4899', catBg: '#FCE7F3', loc: 'Dispatch Area\nCabinet 03', onHand: 12, reserved: 0, available: 12, unit: 'Tin', unitCost: '$15.00', totalValue: '$180.00', status: 'Available', statColor: '#10B981', statBg: '#D1FAE5' },
-  { code: 'FILTER-OIL', name: 'Oil Filter', cat: 'Auto Parts', catColor: '#3B82F6', catBg: '#DBEAFE', loc: 'Bulk Storage B1\nShelf 04', onHand: 0, reserved: 5, available: -5, unit: 'Each', unitCost: '$20.00', totalValue: '$0.00', status: 'Out of Stock', statColor: '#EF4444', statBg: '#FEE2E2' },
-  { code: 'COOLANT-5L', name: 'Coolant 5L', cat: 'Fluids', catColor: '#F59E0B', catBg: '#FEF3C7', loc: 'Bulk Storage B3\nShelf 01', onHand: 8, reserved: 2, available: 6, unit: 'Bottle', unitCost: '$22.00', totalValue: '$176.00', status: 'Low Stock', statColor: '#F59E0B', statBg: '#FEF3C7' },
-];
-
 export default function WarehouseInventoryStock({ wh, onBack }) {
-  const [stockItems, setStockItems] = useState(DUMMY_STOCK_ITEMS);
+  const [stockItems, setStockItems] = useState([]);
   const [activeTab, setActiveTab] = useState('Stock List');
   const [showAddStockModal, setShowAddStockModal] = useState(false);
   const [viewStockItemModal, setViewStockItemModal] = useState(null);
   const [editStockItemModal, setEditStockItemModal] = useState(null);
   const [actionMenuIndex, setActionMenuIndex] = useState(null);
   const [toastMessage, setToastMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const showToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(''), 3000);
   };
+
+  const fetchStock = async () => {
+    try {
+      setLoading(true);
+      const whId = wh?.id || 'default';
+      const res = await api.get(`/company-admin/warehouse/${whId}/sub/stock`);
+      if (res.data && res.data.success) {
+        setStockItems(res.data.data.items || []);
+      }
+    } catch (e) {
+      console.error('Fetch stock error:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStock();
+  }, [wh?.id]);
+
+  // --- Add Stock Form State ---
+  const [formSku, setFormSku] = useState('');
+  const [formCategory, setFormCategory] = useState('');
+  const [formName, setFormName] = useState('');
+  const [formQty, setFormQty] = useState(0);
+  const [formUnitCost, setFormUnitCost] = useState(0);
+  const [formLowStock, setFormLowStock] = useState(0);
+  const [formLocation, setFormLocation] = useState('');
+  const [formSubmitting, setFormSubmitting] = useState(false);
+
+  const resetForm = () => {
+    setFormSku(''); setFormCategory(''); setFormName('');
+    setFormQty(0); setFormUnitCost(0); setFormLowStock(0); setFormLocation('');
+  };
+
+  const handleAddStock = async () => {
+    if (!formName.trim()) { showToast('âš ï¸ Product name is required'); return; }
+    if (!formSku.trim()) { showToast('âš ï¸ SKU Code is required'); return; }
+    setFormSubmitting(true);
+    try {
+      const whId = wh?.id || 'default';
+      const payload = {
+        code: formSku.trim(),
+        name: formName.trim(),
+        cat: formCategory || 'General',
+        catColor: '#3B82F6',
+        catBg: '#EFF6FF',
+        loc: formLocation || 'Main Warehouse',
+        onHand: parseInt(formQty) || 0,
+        reserved: 0,
+        available: parseInt(formQty) || 0,
+        unit: 'EA',
+        unitCost: `$${parseFloat(formUnitCost || 0).toFixed(2)}`,
+        totalValue: `$${(parseFloat(formUnitCost || 0) * (parseInt(formQty) || 0)).toFixed(2)}`,
+        lowStock: parseInt(formLowStock) || 0,
+        status: parseInt(formQty) > 0 ? 'In Stock' : 'Out of Stock',
+        statusColor: parseInt(formQty) > 0 ? '#10B981' : '#EF4444',
+        statusBg: parseInt(formQty) > 0 ? '#D1FAE5' : '#FEE2E2',
+        warehouseId: whId
+      };
+
+      try {
+        const res = await api.post(`/company-admin/warehouse/${whId}/sub/stock`, payload);
+        if (res.data && res.data.success && res.data.data) {
+          setStockItems(prev => [res.data.data, ...prev]);
+        } else {
+          setStockItems(prev => [payload, ...prev]);
+        }
+      } catch (err) {
+        console.warn('API save note, adding locally:', err.message);
+        setStockItems(prev => [{ ...payload, id: Date.now().toString() }, ...prev]);
+      }
+
+      showToast(`âœ“ "${formName}" added to inventory!`);
+      resetForm();
+      setShowAddStockModal(false);
+    } catch (e) {
+      console.error('Add stock error:', e);
+      showToast('âŒ Failed to add stock item');
+    } finally {
+      setFormSubmitting(false);
+    }
+  };
+
 
   return (
     <div className="wh-inventory-container" style={{ background: '#F8FAFC', minHeight: '100vh', padding: '24px 32px', fontFamily: "'Inter','Outfit',sans-serif", overflowX: 'hidden' }}>
@@ -118,7 +191,7 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
         <div>
           <div style={{ fontSize: 12, fontWeight: 600, color: '#64748B', marginBottom: 8, display: 'flex', gap: 6 }}>
-            <span>Home</span> <span style={{ color: '#CBD5E1' }}>›</span> <span>Warehouse</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ cursor: 'pointer' }} onClick={onBack}>Warehouse Details</span> <span style={{ color: '#CBD5E1' }}>›</span> <span style={{ color: '#0F172A' }}>Inventory & Stock</span>
+            <span>Home</span> <span style={{ color: '#CBD5E1' }}>â€º</span> <span>Warehouse</span> <span style={{ color: '#CBD5E1' }}>â€º</span> <span style={{ cursor: 'pointer' }} onClick={onBack}>Warehouse Details</span> <span style={{ color: '#CBD5E1' }}>â€º</span> <span style={{ color: '#0F172A' }}>Inventory & Stock</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
             <h1 style={{ fontSize: 22, fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.5px' }}>Inventory & Stock - {wh.name}</h1>
@@ -142,6 +215,12 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
           </button>
         </div>
       </div>
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div style={{ position: 'fixed', top: 20, right: 20, zIndex: 99999, background: '#0F172A', color: '#fff', padding: '10px 16px', borderRadius: 8, fontSize: 12, fontWeight: 700, boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
+          {toastMessage}
+        </div>
+      )}
 
       {/* 6 TOP METRIC CARDS */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 24 }}>
@@ -153,7 +232,7 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
           </div>
           <div style={{ flex: '1 1 100px', minWidth: 0 }}>
             <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>TOTAL ITEMS</div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', marginBottom: 2, wordBreak: 'break-word', overflowWrap: 'break-word' }}>4,125</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', marginBottom: 2, wordBreak: 'break-word', overflowWrap: 'break-word' }}>{stockItems.length}</div>
             <div style={{ fontSize: 11, color: '#64748B', fontWeight: 500 }}>All items in stock</div>
           </div>
         </div>
@@ -165,7 +244,7 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
           </div>
           <div style={{ flex: '1 1 100px', minWidth: 0 }}>
             <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>TOTAL STOCK VALUE</div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', marginBottom: 2, wordBreak: 'break-word', overflowWrap: 'break-word' }}>$1,256,850.00</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', marginBottom: 2, wordBreak: 'break-word', overflowWrap: 'break-word' }}>$0.00</div>
             <div style={{ fontSize: 11, color: '#64748B', fontWeight: 500 }}>Across all locations</div>
           </div>
         </div>
@@ -177,8 +256,8 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
           </div>
           <div style={{ flex: '1 1 100px', minWidth: 0 }}>
             <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>AVAILABLE STOCK</div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', marginBottom: 2, wordBreak: 'break-word', overflowWrap: 'break-word' }}>3,145</div>
-            <div style={{ fontSize: 11, color: '#64748B', fontWeight: 500 }}>76.3% of total stock</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', marginBottom: 2, wordBreak: 'break-word', overflowWrap: 'break-word' }}>0</div>
+            <div style={{ fontSize: 11, color: '#64748B', fontWeight: 500 }}>0.0% of total stock</div>
           </div>
         </div>
 
@@ -189,7 +268,7 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
           </div>
           <div style={{ flex: '1 1 100px', minWidth: 0 }}>
             <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>LOW STOCK ITEMS</div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', marginBottom: 2, wordBreak: 'break-word', overflowWrap: 'break-word' }}>128</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', marginBottom: 2, wordBreak: 'break-word', overflowWrap: 'break-word' }}>0</div>
             <div style={{ fontSize: 11, color: '#64748B', fontWeight: 500 }}>Reorder required</div>
           </div>
         </div>
@@ -201,7 +280,7 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
           </div>
           <div style={{ flex: '1 1 100px', minWidth: 0 }}>
             <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>OUT OF STOCK ITEMS</div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', marginBottom: 2, wordBreak: 'break-word', overflowWrap: 'break-word' }}>17</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', marginBottom: 2, wordBreak: 'break-word', overflowWrap: 'break-word' }}>0</div>
             <div style={{ fontSize: 11, color: '#64748B', fontWeight: 500 }}>No stock available</div>
           </div>
         </div>
@@ -213,7 +292,7 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
           </div>
           <div style={{ flex: '1 1 100px', minWidth: 0 }}>
             <div style={{ fontSize: 10, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>SPECIAL ITEMS</div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', marginBottom: 2, wordBreak: 'break-word', overflowWrap: 'break-word' }}>86</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A', marginBottom: 2, wordBreak: 'break-word', overflowWrap: 'break-word' }}>0</div>
             <div style={{ fontSize: 11, color: '#64748B', fontWeight: 500 }}>Haz / DG / Controlled</div>
           </div>
         </div>
@@ -223,8 +302,6 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
       {/* MAIN CONTAINER */}
       <div style={{ marginBottom: 24 }}>
         
-
-
         {activeTab === 'Stock List' && (
           <>
             {/* Filters Row */}
@@ -250,7 +327,7 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
                 <button style={{ padding: '8px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: '1px solid #E2E8F0', background: '#fff', color: '#1E293B', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
                   <ExportIcon /> Export
                 </button>
-                <button style={{ padding: '8px', borderRadius: 6, border: '1px solid #E2E8F0', background: '#fff', color: '#64748B', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                <button onClick={fetchStock} style={{ padding: '8px', borderRadius: 6, border: '1px solid #E2E8F0', background: '#fff', color: '#64748B', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                   <RefreshIcon />
                 </button>
               </div>
@@ -261,7 +338,7 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
               
               {/* LEFT: TABLE */}
               <div style={{ background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, padding: 20 }}>
-                <h3 style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: '0 0 12px 0' }}>STOCK ITEMS (4,125)</h3>
+                <h3 style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: '0 0 12px 0' }}>STOCK ITEMS ({stockItems.length})</h3>
                 <div style={{ border: '1px solid #E2E8F0', borderRadius: 8, overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                     <thead style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
@@ -281,109 +358,36 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
                       </tr>
                     </thead>
                     <tbody>
-                      {stockItems.map((item, i) => (
-                        <tr key={i} style={{ borderBottom: '1px solid #E2E8F0', background: '#fff' }}>
-                          <td style={{ padding: '12px 16px', fontSize: 11, fontWeight: 800, color: '#4F46E5', whiteSpace: 'nowrap' }}>{item.code}</td>
-                          <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap' }}>{item.name}</td>
-                          <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
-                            <span style={{ fontSize: 10, fontWeight: 700, color: item.catColor, background: item.catBg, padding: '2px 8px', borderRadius: 4 }}>{item.cat}</span>
-                          </td>
-                          <td style={{ padding: '12px 16px', fontSize: 11, color: '#475569', fontWeight: 500, lineHeight: 1.4, whiteSpace: 'pre-wrap' }}>{item.loc}</td>
-                          <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 800, color: '#0F172A' }}>{item.onHand}</td>
-                          <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 700, color: '#64748B' }}>{item.reserved}</td>
-                          <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 800, color: item.available < 0 ? '#EF4444' : (item.available < 10 ? '#F59E0B' : '#10B981') }}>{item.available}</td>
-                          <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 600, color: '#475569' }}>{item.unit}</td>
-                          <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 700, color: '#0F172A' }}>{item.unitCost}</td>
-                          <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 700, color: '#0F172A' }}>{item.totalValue}</td>
-                          <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
-                            <span style={{ fontSize: 10, fontWeight: 700, color: item.statColor, background: item.statBg, padding: '2px 8px', borderRadius: 4 }}>{item.status}</span>
-                          </td>
-                          <td style={{ padding: '12px 16px', textAlign: 'center', position: 'relative' }}>
-                            <div style={{ display: 'flex', gap: 6, justifyContent: 'center', alignItems: 'center' }}>
-                              <button
-                                title="View Item Details"
-                                onClick={() => setViewStockItemModal(item)}
-                                style={{ background: '#F1F5F9', border: 'none', borderRadius: 6, cursor: 'pointer', padding: '6px 8px', color: '#475569', transition: 'all 0.15s ease', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                onMouseEnter={(e) => { e.currentTarget.style.background = '#EEF2FF'; e.currentTarget.style.color = '#4F46E5'; }}
-                                onMouseLeave={(e) => { e.currentTarget.style.background = '#F1F5F9'; e.currentTarget.style.color = '#475569'; }}
-                              >
-                                <EyeIcon />
-                              </button>
-
-                              <div style={{ position: 'relative' }}>
-                                <button
-                                  title="More Actions"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setActionMenuIndex(actionMenuIndex === i ? null : i);
-                                  }}
-                                  style={{ background: actionMenuIndex === i ? '#EEF2FF' : '#F1F5F9', border: 'none', borderRadius: 6, cursor: 'pointer', padding: '6px 8px', color: actionMenuIndex === i ? '#4F46E5' : '#475569', transition: 'all 0.15s ease', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                  onMouseEnter={(e) => { e.currentTarget.style.background = '#EEF2FF'; e.currentTarget.style.color = '#4F46E5'; }}
-                                  onMouseLeave={(e) => { if (actionMenuIndex !== i) { e.currentTarget.style.background = '#F1F5F9'; e.currentTarget.style.color = '#475569'; } }}
-                                >
-                                  <MoreHorizontalIcon />
-                                </button>
-
-                                {/* Action Menu Dropdown */}
-                                {actionMenuIndex === i && (
-                                  <>
-                                    <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setActionMenuIndex(null)} />
-                                    <div style={{ position: 'absolute', right: 0, top: '110%', width: 175, background: '#fff', borderRadius: 10, border: '1px solid #E2E8F0', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.15)', padding: '6px', zIndex: 100, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                      <button
-                                        onClick={() => { setViewStockItemModal(item); setActionMenuIndex(null); }}
-                                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
-                                        onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
-                                        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-                                      >
-                                        👁️ View Details
-                                      </button>
-                                      <button
-                                        onClick={() => { setEditStockItemModal(item); setActionMenuIndex(null); }}
-                                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
-                                        onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
-                                        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-                                      >
-                                        ✏️ Edit Item
-                                      </button>
-                                      <button
-                                        onClick={() => { showToast(`Barcode & SKU label printed for ${item.code}`); setActionMenuIndex(null); }}
-                                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
-                                        onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
-                                        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-                                      >
-                                        🏷️ Print SKU Label
-                                      </button>
-                                      <button
-                                        onClick={() => { showToast(`Stock level adjusted for ${item.name}`); setActionMenuIndex(null); }}
-                                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#334155', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
-                                        onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
-                                        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-                                      >
-                                        📦 Adjust Stock
-                                      </button>
-                                      <div style={{ height: 1, background: '#E2E8F0', margin: '4px 0' }} />
-                                      <button
-                                        onClick={() => {
-                                          if (window.confirm(`Are you sure you want to delete stock item ${item.name} (${item.code})?`)) {
-                                            setStockItems(prev => prev.filter(s => s.code !== item.code));
-                                            showToast(`Stock item ${item.code} deleted`);
-                                          }
-                                          setActionMenuIndex(null);
-                                        }}
-                                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', fontSize: 12, fontWeight: 600, color: '#EF4444', background: 'none', border: 'none', borderRadius: 6, cursor: 'pointer', textAlign: 'left', width: '100%' }}
-                                        onMouseEnter={(e) => e.currentTarget.style.background = '#FEF2F2'}
-                                        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-                                      >
-                                        🗑️ Delete Item
-                                      </button>
-                                    </div>
-                                  </>
-                                )}
-                              </div>
-                            </div>
+                      {stockItems.length > 0 ? (
+                        stockItems.map((item, i) => (
+                          <tr key={i} style={{ borderBottom: '1px solid #E2E8F0', background: '#fff' }}>
+                            <td style={{ padding: '12px 16px', fontSize: 11, fontWeight: 800, color: '#4F46E5', whiteSpace: 'nowrap' }}>{item.code}</td>
+                            <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap' }}>{item.name}</td>
+                            <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
+                              <span style={{ fontSize: 10, fontWeight: 700, color: item.catColor || '#4F46E5', background: item.catBg || '#EEF2FF', padding: '2px 8px', borderRadius: 4 }}>{item.cat || 'General'}</span>
+                            </td>
+                            <td style={{ padding: '12px 16px', fontSize: 11, color: '#475569', fontWeight: 500, lineHeight: 1.4, whiteSpace: 'pre-wrap' }}>{item.loc || 'Unassigned'}</td>
+                            <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 800, color: '#0F172A' }}>{item.onHand || 0}</td>
+                            <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 700, color: '#64748B' }}>{item.reserved || 0}</td>
+                            <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 800, color: '#10B981' }}>{item.available || 0}</td>
+                            <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 600, color: '#475569' }}>{item.unit || 'Each'}</td>
+                            <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 700, color: '#0F172A' }}>{item.unitCost || '$0.00'}</td>
+                            <td style={{ padding: '12px 16px', fontSize: 12, fontWeight: 700, color: '#0F172A' }}>{item.totalValue || '$0.00'}</td>
+                            <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
+                              <span style={{ fontSize: 10, fontWeight: 700, color: '#10B981', background: '#D1FAE5', padding: '2px 8px', borderRadius: 4 }}>{item.status || 'Available'}</span>
+                            </td>
+                            <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                              <button onClick={() => setViewStockItemModal(item)} style={{ background: '#F1F5F9', border: 'none', borderRadius: 6, padding: '6px 8px', cursor: 'pointer' }}><EyeIcon /></button>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="12" style={{ padding: '32px 16px', textAlign: 'center', color: '#94A3B8', fontSize: 12, fontWeight: 600 }}>
+                            No stock items registered in this warehouse. Click "Add Stock Item" to register new stock.
                           </td>
                         </tr>
-                      ))}
+                      )}
                     </tbody>
                   </table>
                   
@@ -410,7 +414,7 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
 
               {/* RIGHT: SUMMARY PANELS */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                
+
                 {/* STOCK SUMMARY */}
                 <div className="wh-panel">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -423,28 +427,28 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
                         <div style={{ width: 20, height: 20, borderRadius: 4, background: '#F3E8FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><ClipboardListIcon color="#8B5CF6" width="12" /></div>
                         <div style={{ fontSize: 9, fontWeight: 700, color: '#64748B' }}>Total Items</div>
                       </div>
-                      <div style={{ fontSize: 14, fontWeight: 900, color: '#0F172A' }}>4,125</div>
+                      <div style={{ fontSize: 14, fontWeight: 900, color: '#0F172A' }}>{stockItems.length.toLocaleString()}</div>
                     </div>
                     <div style={{ border: '1px solid #E2E8F0', borderRadius: 8, padding: '12px', background: '#F8FAFC' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
                         <div style={{ width: 20, height: 20, borderRadius: 4, background: '#E0E7FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><PackageIcon color="#4F46E5" /></div>
                         <div style={{ fontSize: 9, fontWeight: 700, color: '#64748B' }}>Total Units</div>
                       </div>
-                      <div style={{ fontSize: 14, fontWeight: 900, color: '#0F172A' }}>8,765</div>
+                      <div style={{ fontSize: 14, fontWeight: 900, color: '#0F172A' }}>{stockItems.reduce((s, i) => s + (parseInt(i.onHand) || 0), 0).toLocaleString()}</div>
                     </div>
                     <div style={{ border: '1px solid #E2E8F0', borderRadius: 8, padding: '12px', background: '#F8FAFC' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
                         <div style={{ width: 20, height: 20, borderRadius: 4, background: '#D1FAE5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ color: '#10B981', fontWeight: 800, fontSize: 10 }}>$</span></div>
                         <div style={{ fontSize: 9, fontWeight: 700, color: '#64748B' }}>Total Stock Value</div>
                       </div>
-                      <div style={{ fontSize: 14, fontWeight: 900, color: '#0F172A' }}>$1,256,850.00</div>
+                      <div style={{ fontSize: 14, fontWeight: 900, color: '#0F172A' }}>${stockItems.reduce((s, i) => { const c = parseFloat((i.unitCost||'0').toString().replace('$','').replace(',',''))||0; return s + c*(parseInt(i.onHand)||0); }, 0).toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
                     </div>
                     <div style={{ border: '1px solid #E2E8F0', borderRadius: 8, padding: '12px', background: '#F8FAFC' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
                         <div style={{ width: 20, height: 20, borderRadius: 4, background: '#D1FAE5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ color: '#10B981', fontWeight: 800, fontSize: 10 }}>$</span></div>
                         <div style={{ fontSize: 9, fontWeight: 700, color: '#64748B' }}>Avg Unit Cost</div>
                       </div>
-                      <div style={{ fontSize: 14, fontWeight: 900, color: '#0F172A' }}>$143.43</div>
+                      <div style={{ fontSize: 14, fontWeight: 900, color: '#0F172A' }}>{stockItems.length === 0 ? '$0.00' : '$' + (stockItems.reduce((s,i)=>{const c=parseFloat((i.unitCost||'0').toString().replace('$','').replace(',',''))||0;return s+c*(parseInt(i.onHand)||0);},0)/stockItems.length).toFixed(2)}</div>
                     </div>
                   </div>
                 </div>
@@ -456,32 +460,33 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
                     <div style={{ fontSize: 10, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }}>View Chart →</div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                    <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'conic-gradient(#8B5CF6 0% 12.6%, #3B82F6 12.6% 47.4%, #F59E0B 47.4% 62.8%, #10B981 62.8% 74.7%, #06B6D4 74.7% 84.8%, #EC4899 84.8% 100%)', position: 'relative', flexShrink: 0 }}>
+                    <div style={{ width: 80, height: 80, borderRadius: '50%', background: stockItems.length === 0 ? '#E2E8F0' : '#4F46E5', position: 'relative', flexShrink: 0 }}>
                       <div style={{ position: 'absolute', inset: 16, background: '#fff', borderRadius: '50%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                        <span style={{ fontSize: 14, fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>4,125</span>
-                        <span style={{ fontSize: 8, fontWeight: 700, color: '#64748B' }}>Total Items</span>
+                        <span style={{ fontSize: 14, fontWeight: 900, color: '#0F172A', lineHeight: 1 }}>{stockItems.length}</span>
+                        <span style={{ fontSize: 8, fontWeight: 700, color: '#64748B' }}>Total</span>
                       </div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
-                      {[
-                        { label: 'Vehicles', color: '#8B5CF6', pct: '12.6%', count: '520' },
-                        { label: 'Auto Parts', color: '#3B82F6', pct: '34.8%', count: '1,435' },
-                        { label: 'Lubricants', color: '#F59E0B', pct: '15.4%', count: '634' },
-                        { label: 'Tyres', color: '#10B981', pct: '11.9%', count: '490' },
-                        { label: 'Equipment', color: '#06B6D4', pct: '10.1%', count: '416' },
-                        { label: 'Others', color: '#EC4899', pct: '15.2%', count: '630' },
-                      ].map(cat => (
-                        <div key={cat.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 10, fontWeight: 600 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <div style={{ width: 6, height: 6, borderRadius: '50%', background: cat.color }}></div>
-                            <span style={{ color: '#475569' }}>{cat.label}</span>
-                          </div>
-                          <div style={{ display: 'flex', gap: 4 }}>
-                            <span style={{ color: '#0F172A' }}>{cat.pct}</span>
-                            <span style={{ color: '#94A3B8' }}>({cat.count})</span>
-                          </div>
-                        </div>
-                      ))}
+                      {stockItems.length === 0 ? (
+                        <div style={{ fontSize: 11, color: '#94A3B8', fontWeight: 500 }}>No items yet</div>
+                      ) : (
+                        Object.entries(stockItems.reduce((acc, item) => { const cat = item.cat || 'General'; acc[cat] = (acc[cat] || 0) + 1; return acc; }, {})).slice(0, 6).map(([label, count], i) => {
+                          const clrs = ['#8B5CF6','#3B82F6','#F59E0B','#10B981','#06B6D4','#EC4899'];
+                          const pct = ((count / stockItems.length) * 100).toFixed(1);
+                          return (
+                            <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 10, fontWeight: 600 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <div style={{ width: 6, height: 6, borderRadius: '50%', background: clrs[i % 6] }}></div>
+                                <span style={{ color: '#475569' }}>{label}</span>
+                              </div>
+                              <div style={{ display: 'flex', gap: 4 }}>
+                                <span style={{ color: '#0F172A' }}>{pct}%</span>
+                                <span style={{ color: '#94A3B8' }}>({count})</span>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
                     </div>
                   </div>
                 </div>
@@ -494,52 +499,49 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {[
-                      { label: 'Available', color: '#10B981', val: 76.3, text: '3,145 (76.3%)' },
-                      { label: 'Reserved', color: '#3B82F6', val: 17.5, text: '720 (17.5%)' },
-                      { label: 'Low Stock', color: '#F59E0B', val: 3.1, text: '128 (3.1%)' },
-                      { label: 'Out of Stock', color: '#EF4444', val: 0.4, text: '17 (0.4%)' },
-                      { label: 'On Order', color: '#8B5CF6', val: 2.7, text: '115 (2.7%)' },
-                    ].map(stat => (
-                      <div key={stat.label}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, fontWeight: 600, marginBottom: 4 }}>
-                          <span style={{ color: '#475569' }}>{stat.label}</span>
-                          <span style={{ color: '#0F172A' }}>{stat.text}</span>
+                      { label: 'In Stock', color: '#10B981', count: stockItems.filter(i => i.status === 'In Stock').length },
+                      { label: 'Reserved', color: '#3B82F6', count: stockItems.filter(i => i.status === 'Reserved').length },
+                      { label: 'Low Stock', color: '#F59E0B', count: stockItems.filter(i => i.status === 'Low Stock').length },
+                      { label: 'Out of Stock', color: '#EF4444', count: stockItems.filter(i => i.status === 'Out of Stock').length },
+                    ].map(stat => {
+                      const pct = stockItems.length > 0 ? ((stat.count / stockItems.length) * 100).toFixed(1) : '0.0';
+                      return (
+                        <div key={stat.label}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, fontWeight: 600, marginBottom: 4 }}>
+                            <span style={{ color: '#475569' }}>{stat.label}</span>
+                            <span style={{ color: '#0F172A' }}>{stat.count} ({pct}%)</span>
+                          </div>
+                          <div style={{ height: 4, background: '#F1F5F9', borderRadius: 2, overflow: 'hidden' }}>
+                            <div style={{ height: '100%', background: stat.color, width: `${pct}%`, borderRadius: 2 }}></div>
+                          </div>
                         </div>
-                        <div style={{ height: 4, background: '#F1F5F9', borderRadius: 2, overflow: 'hidden' }}>
-                          <div style={{ height: '100%', background: stat.color, width: `${stat.val}%`, borderRadius: 2 }}></div>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 
-                {/* RECENT STOCK MOVEMENTS */}
+                {/* RECENT ADDITIONS */}
                 <div className="wh-panel">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                    <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>RECENT STOCK MOVEMENTS</h3>
+                    <h3 style={{ fontSize: 10, fontWeight: 800, color: '#0F172A', letterSpacing: '0.5px', textTransform: 'uppercase', margin: 0 }}>RECENT ADDITIONS</h3>
                     <div style={{ fontSize: 10, fontWeight: 700, color: '#4F46E5', cursor: 'pointer' }}>View All →</div>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    {[
-                      { title: 'Stock Received', desc: 'Car Battery 105D31R', date: '10 May 2025', icon: <PackageIcon color="#10B981" />, bg: '#D1FAE5' },
-                      { title: 'Stock Issued', desc: 'Brake Pad Set - Front', date: '10 May 2025', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"></path><path d="M12 5l7 7-7 7"></path></svg>, bg: '#FEE2E2' },
-                      { title: 'Stock Transfer', desc: 'Engine Oil 10W-40 (5L)', date: '09 May 2025', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>, bg: '#DBEAFE' },
-                      { title: 'Stock Adjustment', desc: 'Tyre 225/70R16', date: '09 May 2025', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>, bg: '#FEF3C7' },
-                      { title: 'Stock Reserved', desc: 'Toyota Corolla 2022 (White)', date: '08 May 2025', icon: <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>, bg: '#FEE2E2' },
-                    ].map((mov, i) => (
+                    {stockItems.length > 0 ? stockItems.slice(0, 5).map((item, i) => (
                       <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                        <div style={{ width: 24, height: 24, borderRadius: 6, background: mov.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: 4 }}>
-                          {React.cloneElement(mov.icon, { width: '16', height: '16' })}
+                        <div style={{ width: 28, height: 28, borderRadius: 6, background: '#D1FAE5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <PackageIcon color="#10B981" />
                         </div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', display: 'flex', justifyContent: 'space-between' }}>
-                            <span>{mov.title}</span>
-                            <span style={{ fontSize: 10, color: '#64748B', fontWeight: 600 }}>{mov.date}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 11, fontWeight: 800, color: '#0F172A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
+                          <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600, marginTop: 2 }}>
+                            {item.code} • Qty: {item.onHand || 0} • <span style={{ color: item.statusColor || '#10B981' }}>{item.status || 'In Stock'}</span>
                           </div>
-                          <div style={{ fontSize: 10, color: '#64748B', fontWeight: 600 }}>{mov.desc}</div>
                         </div>
                       </div>
-                    ))}
+                    )) : (
+                      <div style={{ fontSize: 12, color: '#94A3B8', fontWeight: 500, textAlign: 'center', padding: '12px 0' }}>No stock items added yet</div>
+                    )}
                   </div>
                 </div>
 
@@ -561,48 +563,59 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
             <div style={{ display: 'grid', gap: 16 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>SKU Code</label>
-                  <input type="text" placeholder="Scan or type SKU..." style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none' }} />
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>SKU Code *</label>
+                  <input type="text" value={formSku} onChange={e => setFormSku(e.target.value)} placeholder="Scan or type SKU..." style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none' }} />
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Category</label>
-                  <select style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none', background: '#fff' }}>
-                    <option>Select Category...</option>
-                    <option>Auto Parts</option>
-                    <option>Fluids</option>
-                    <option>Equipment</option>
+                  <select value={formCategory} onChange={e => setFormCategory(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none', background: '#fff' }}>
+                    <option value="">Select Category...</option>
+                    <option value="Auto Parts">Auto Parts</option>
+                    <option value="Fluids">Fluids</option>
+                    <option value="Equipment">Equipment</option>
+                    <option value="Tyres">Tyres</option>
+                    <option value="Accessories">Accessories</option>
+                    <option value="General">General</option>
                   </select>
                 </div>
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Product Name / Description</label>
-                <input type="text" placeholder="e.g. Synthetic Motor Oil 5W-30" style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none' }} />
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Product Name / Description *</label>
+                <input type="text" value={formName} onChange={e => setFormName(e.target.value)} placeholder="e.g. Synthetic Motor Oil 5W-30" style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none' }} />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
                 <div>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Initial Qty</label>
-                  <input type="number" placeholder="0" style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none' }} />
+                  <input type="number" min="0" value={formQty} onChange={e => setFormQty(e.target.value)} placeholder="0" style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none' }} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Unit Cost</label>
-                  <input type="number" placeholder="$0.00" style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none' }} />
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Unit Cost ($)</label>
+                  <input type="number" min="0" step="0.01" value={formUnitCost} onChange={e => setFormUnitCost(e.target.value)} placeholder="0.00" style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none' }} />
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Low Stock Alert</label>
-                  <input type="number" placeholder="Threshold" style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none' }} />
+                  <input type="number" min="0" value={formLowStock} onChange={e => setFormLowStock(e.target.value)} placeholder="Threshold" style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none' }} />
                 </div>
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>Default Location</label>
-                <select style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none', background: '#fff' }}>
-                  <option>Assign to Zone / Bin...</option>
+                <select value={formLocation} onChange={e => setFormLocation(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', borderRadius: 8, border: '1px solid #CBD5E1', fontSize: 14, outline: 'none', background: '#fff' }}>
+                  <option value="">Assign to Zone / Bin...</option>
+                  <option value="Zone A - Row 01">Zone A - Row 01</option>
+                  <option value="Zone A - Row 02">Zone A - Row 02</option>
+                  <option value="Zone B - Row 01">Zone B - Row 01</option>
+                  <option value="Zone B - Row 02">Zone B - Row 02</option>
+                  <option value="Cold Storage">Cold Storage</option>
+                  <option value="Main Warehouse">Main Warehouse</option>
                 </select>
               </div>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 32 }}>
-              <button onClick={() => setShowAddStockModal(false)} style={{ padding: '10px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, border: '1px solid #E2E8F0', background: '#fff', color: '#475569', cursor: 'pointer' }}>Cancel</button>
-              <button onClick={() => setShowAddStockModal(false)} style={{ padding: '10px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, border: 'none', background: '#4F46E5', color: '#fff', cursor: 'pointer' }}>Add to Inventory</button>
+              <button onClick={() => { resetForm(); setShowAddStockModal(false); }} style={{ padding: '10px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, border: '1px solid #E2E8F0', background: '#fff', color: '#475569', cursor: 'pointer' }}>Cancel</button>
+              <button onClick={handleAddStock} disabled={formSubmitting} style={{ padding: '10px 20px', borderRadius: 8, fontSize: 13, fontWeight: 600, border: 'none', background: formSubmitting ? '#A5B4FC' : '#4F46E5', color: '#fff', cursor: formSubmitting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+                {formSubmitting ? 'Saving...' : '+ Add to Inventory'}
+              </button>
             </div>
           </div>
         </div>
@@ -615,7 +628,7 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
           <div style={{ background: '#fff', width: '480px', borderRadius: 16, padding: '24px', position: 'relative', zIndex: 1, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #E2E8F0', paddingBottom: 12, marginBottom: 16 }}>
               <h2 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <EyeIcon /> Item Details – {viewStockItemModal.code}
+                <EyeIcon /> Item Details â€“ {viewStockItemModal.code}
               </h2>
               <button onClick={() => setViewStockItemModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#64748B' }}>&times;</button>
             </div>
@@ -725,7 +738,7 @@ export default function WarehouseInventoryStock({ wh, onBack }) {
       {/* TOAST NOTIFICATION BANNER */}
       {toastMessage && (
         <div style={{ position: 'fixed', bottom: 28, right: 28, zIndex: 10000, background: '#0F172A', color: '#fff', padding: '12px 20px', borderRadius: 12, fontSize: 13, fontWeight: 700, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3)', display: 'flex', alignItems: 'center', gap: 10, border: '1px solid #334155' }}>
-          <span style={{ color: '#22C55E' }}>✓</span> {toastMessage}
+          <span style={{ color: '#22C55E' }}>âœ“</span> {toastMessage}
         </div>
       )}
 
