@@ -55,8 +55,13 @@ exports.logout = async (req, res, next) => {
 exports.me = async (req, res, next) => {
   try {
     const prisma = require('../utils/prismaClient');
+    const targetId = req.user?.id || req.user?.userId;
+    if (!targetId) {
+      return sendError(res, { code: ERROR_CODES.UNAUTHORIZED_ACCESS, message: 'Invalid session context' }, HTTP_STATUS.UNAUTHORIZED);
+    }
     const freshUser = await prisma.user.findUnique({
-      where: { id: req.user.id }
+      where: { id: targetId },
+      include: { customRole: true, company: true }
     });
     if (freshUser) {
       delete freshUser.password;

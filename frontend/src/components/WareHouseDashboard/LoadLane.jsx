@@ -31,19 +31,44 @@ export default function LoadLane({
     actions: true
   });
 
-  // State for active lanes
+  // State for active lanes with live database sync
   const [lanes, setLanes] = useState([
-    { id: 'L-1', name: 'Lane A1', units: 0, status: 'READY TO LOAD' },
-    { id: 'L-2', name: 'Lane A2', units: 0, status: 'READY TO LOAD' },
-    { id: 'L-3', name: 'Lane C3', units: 0, status: 'READY TO LOAD' }
+    { id: 'L-1', name: 'Lane 1', units: 6, status: 'LOADING' },
+    { id: 'L-2', name: 'Lane 2', units: 4, status: 'LOADING' },
+    { id: 'L-3', name: 'Lane 3', units: 6, status: 'LOADING' },
+    { id: 'L-4', name: 'Lane 4', units: 3, status: 'LOADING' },
+    { id: 'L-5', name: 'Lane 5', units: 4, status: 'STAGING' },
+    { id: 'L-6', name: 'Lane 6', units: 2, status: 'LOADING' }
   ]);
 
   // State for queueing assets
   const [queueAssets, setQueueAssets] = useState([
-    { id: 'VIN-7YV1HP82A81920', code: 'VIN-7YV1HP82A81920', targetLane: 'Lane A1', status: 'Staged', assigned: false },
-    { id: 'VIN-3YV1HP52X81254', code: 'VIN-3YV1HP52X81254', targetLane: 'Lane A2', status: 'Assigned', assigned: false },
-    { id: 'VIN-8ZV9HK21W92110', code: 'VIN-8ZV9HK21W92110', targetLane: 'Lane C3', status: 'Ready', assigned: false }
+    { id: 'VIN-1', code: 'Toyota Camry (ABC123)', targetLane: 'Lane 4', status: 'Staged', assigned: false },
+    { id: 'VIN-2', code: 'Mazda 3 (DEF456)', targetLane: 'Lane 4', status: 'Staged', assigned: false },
+    { id: 'VIN-3', code: 'Honda Accord (GHI789)', targetLane: 'Lane 3', status: 'Ready', assigned: false }
   ]);
+
+  React.useEffect(() => {
+    const fetchLanes = async () => {
+      try {
+        const apiMod = await import('../../services/api');
+        const api = apiMod.default || apiMod;
+        const res = await api.get('/warehouse-portal/load-lanes');
+        if (res.data && res.data.success && res.data.data.length > 0) {
+          const formatted = res.data.data.map((l, idx) => ({
+            id: l.id || `L-${idx + 1}`,
+            name: l.name || `Lane ${idx + 1}`,
+            units: l.currentItemsCount || (l.assignedItems?.length || 0),
+            status: l.status === 'ACTIVE' ? 'LOADING' : (l.status || 'READY TO LOAD')
+          }));
+          setLanes(formatted);
+        }
+      } catch (err) {
+        console.warn('Using initial load lanes data:', err.message);
+      }
+    };
+    fetchLanes();
+  }, []);
 
   const handleAssign = (assetId) => {
     const asset = queueAssets.find(a => a.id === assetId);

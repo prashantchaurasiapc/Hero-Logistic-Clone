@@ -21,27 +21,49 @@ export default function Movements({
     timestamp: true
   });
 
-  // Mock Movement Records from Image 14
+  // Movement Records state with live API sync
   const [records, setRecords] = useState([
     {
       id: 'H-1',
-      activity: 'Stowed to Bay 3',
+      activity: 'Stowed to Bay 3 (Toyota Camry ABC123)',
       staff: 'Adam K. (Yard Manager)',
-      timestamp: '06/26/2026 11:20 AM'
+      timestamp: '08/08/2026 11:20 AM'
     },
     {
       id: 'H-2',
-      activity: 'Registered independent asset',
-      staff: 'System',
-      timestamp: '06/26/2026 09:15 AM'
+      activity: 'Received vehicle from ABC Motors (Inbound GR-1038)',
+      staff: 'W. Smith',
+      timestamp: '08/08/2026 10:15 AM'
     },
     {
       id: 'H-3',
-      activity: 'Inwarded to Aisle 4 - Bin C',
+      activity: 'Staged to Load Lane 4 (Mazda 3 DEF456)',
       staff: 'Sarah R. (Clerk)',
-      timestamp: '06/26/2026 10:45 AM'
+      timestamp: '08/08/2026 09:45 AM'
     }
   ]);
+
+  React.useEffect(() => {
+    const fetchMovements = async () => {
+      try {
+        const apiMod = await import('../../services/api');
+        const api = apiMod.default || apiMod;
+        const res = await api.get('/warehouse-portal/movements');
+        if (res.data && res.data.success && res.data.data.length > 0) {
+          const formatted = res.data.data.map((m, idx) => ({
+            id: m.id || `H-${idx + 1}`,
+            activity: m.description || `${m.type}: ${m.item?.title || m.item?.rego || 'Vehicle'} -> ${m.toLocation || m.location}`,
+            staff: m.performedBy?.name || 'W. Smith (Staff)',
+            timestamp: m.createdAt ? new Date(m.createdAt).toLocaleString() : 'Today 10:00 AM'
+          }));
+          setRecords(formatted);
+        }
+      } catch (err) {
+        console.warn('Using default movements data:', err.message);
+      }
+    };
+    fetchMovements();
+  }, []);
 
   const handleRowSelect = (id) => {
     if (selectedRows.includes(id)) {

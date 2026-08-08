@@ -22,7 +22,7 @@ exports.verifyToken = (req, res, next) => {
   try {
     const secret = process.env.JWT_SECRET || 'fallback-secret-for-dev-only';
     const decoded = jwt.verify(token, secret);
-    req.user = decoded;
+    req.user = { ...decoded, id: decoded.userId || decoded.id, userId: decoded.userId || decoded.id };
     next();
   } catch (error) {
     return sendError(res, {
