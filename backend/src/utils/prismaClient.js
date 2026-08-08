@@ -1,14 +1,12 @@
 const { PrismaClient } = require('@prisma/client');
+const { PrismaMariaDb } = require('@prisma/adapter-mariadb');
+require('dotenv').config();
 
-let prisma;
+const dbUrl = process.env.DATABASE_URL || 'mysql://root:@localhost:3306/hero-logistic';
 
-if (process.env.NODE_ENV === 'production') {
-  prisma = new PrismaClient();
-} else {
-  if (!global.prisma) {
-    global.prisma = new PrismaClient();
-  }
-  prisma = global.prisma;
-}
+const adapter = new PrismaMariaDb(dbUrl);
+
+const prisma = new PrismaClient({ adapter });
 
 module.exports = prisma;
+

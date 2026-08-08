@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import api from '../../services/api';
 import {
   Search,
   ChevronRight,
@@ -138,433 +139,67 @@ export default function Messages() {
   };
 
   // Contacts List for 12.2 Conversations Page
-  const [contactsList, setContactsList] = useState([
-    {
-      id: 1,
-      name: 'Nilesh Chand',
-      role: 'Driver • ANSH 1',
-      online: true,
-      time: '10:24 AM',
-      badge: 2,
-      avatarImg: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
-      initials: 'NC',
-      preview: 'Please confirm ETA for delivery.',
-      type: 'Direct'
-    },
-    {
-      id: 2,
-      name: 'Shavneel Prasad',
-      role: 'Driver • ANSH 2',
-      online: true,
-      time: '10:05 AM',
-      badge: 1,
-      avatarImg: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80',
-      initials: 'SP',
-      preview: 'Delivery completed for Load #LD-1057.',
-      type: 'Direct'
-    },
-    {
-      id: 3,
-      name: 'Dispatch Team',
-      role: 'Team • Dispatch',
-      online: true,
-      time: '09:45 AM',
-      badge: 3,
-      avatarBg: 'bg-amber-100 text-amber-800 border border-amber-200',
-      initials: 'DT',
-      preview: 'New load allocated.',
-      type: 'Teams'
-    },
-    {
-      id: 4,
-      name: 'Melbourne Warehouse',
-      role: 'Warehouse • Melbourne',
-      online: false,
-      time: '09:30 AM',
-      badge: 1,
-      avatarBg: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
-      initials: 'WM',
-      preview: 'Please update stock availability.',
-      type: 'Groups'
-    },
-    {
-      id: 5,
-      name: 'ABC Logistics',
-      role: 'Customer',
-      online: true,
-      time: '09:15 AM',
-      badge: 2,
-      avatarImg: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=80',
-      initials: 'AL',
-      preview: 'Please send POD and invoice.',
-      type: 'Direct'
-    },
-    {
-      id: 6,
-      name: 'Rajesh Prasad',
-      role: 'Service Manager',
-      online: false,
-      time: '08:50 AM',
-      badge: null,
-      avatarBg: 'bg-[#F1F5F9] text-[#475569] border border-slate-200',
-      initials: 'RP',
-      preview: 'Truck TR-45CD service next week.',
-      type: 'Direct'
-    },
-    {
-      id: 7,
-      name: 'Sydney Branch',
-      role: 'Branch • Sydney',
-      online: true,
-      time: 'Yesterday',
-      badge: null,
-      avatarBg: 'bg-purple-100 text-purple-800 border border-purple-200',
-      initials: 'SB',
-      preview: 'Meeting at 2 PM today.',
-      type: 'Groups'
-    },
-    {
-      id: 8,
-      name: 'Maintenance Team',
-      role: 'Team • Maintenance',
-      online: false,
-      time: 'Yesterday',
-      badge: null,
-      avatarBg: 'bg-sky-100 text-sky-800 border border-sky-200',
-      initials: 'MT',
-      preview: 'TR-56EF service completed.',
-      type: 'Teams'
-    }
-  ]);
+  const [contactsList, setContactsList] = useState([]);
 
   // Active Selected Contact in 12.2 Conversations
-  const [activeContactId, setActiveContactId] = useState(1);
+  const [activeContactId, setActiveContactId] = useState(null);
   const activeContact = useMemo(() => {
-    return contactsList.find(c => c.id === activeContactId) || contactsList[0];
+    const found = contactsList.find(c => c.id === activeContactId) || contactsList[0];
+    return found || { id: null, name: '', role: '', initials: '?', avatarImg: null, avatarBg: 'bg-slate-100 text-slate-400 border border-slate-200', preview: '', time: '', badge: null, online: false, type: 'Direct' };
   }, [contactsList, activeContactId]);
 
   // Customer List for 12.3 Customer Communications
-  const [customerList, setCustomerList] = useState([
-    {
-      id: 1,
-      name: 'ABC Logistics',
-      preview: 'Last message: Delivery notification sent',
-      time: '10:24 AM',
-      badge: 4,
-      initials: 'ABC',
-      avatarBg: 'bg-[#EEF2FF] text-[#4338CA] border border-[#C7D2FE]',
-      email: 'operations@abclogistics.com.au',
-      phone: '+61 2 9876 5432',
-      address: 'Sydney, NSW',
-      type: 'Emails',
-      status: 'Active'
-    },
-    {
-      id: 2,
-      name: 'Global Retail Solutions',
-      preview: 'Last message: POD shared',
-      time: '09:58 AM',
-      badge: 3,
-      initials: 'GR',
-      avatarBg: 'bg-[#DCFCE7] text-[#16A34A] border border-[#86EFAC]',
-      email: 'contact@globalretail.com.au',
-      phone: '+61 3 8765 4321',
-      address: 'Melbourne, VIC',
-      type: 'Emails',
-      status: 'Active'
-    },
-    {
-      id: 3,
-      name: 'Fast Freight Pty Ltd',
-      preview: 'Last message: ETA update',
-      time: '09:45 AM',
-      badge: 2,
-      initials: 'FF',
-      avatarBg: 'bg-[#FFEDD5] text-[#EA580C] border border-[#FDBA74]',
-      email: 'info@fastfreight.com.au',
-      phone: '+61 7 3456 7890',
-      address: 'Brisbane, QLD',
-      type: 'SMS',
-      status: 'Active'
-    },
-    {
-      id: 4,
-      name: 'Sydney Car Movers',
-      preview: 'Last message: Invoice notification',
-      time: '09:30 AM',
-      badge: 5,
-      initials: 'SC',
-      avatarBg: 'bg-[#F3E8FF] text-[#9333EA] border border-[#D8B4FE]',
-      email: 'accounts@sydneycarmovers.com.au',
-      phone: '+61 2 9123 4567',
-      address: 'Sydney, NSW',
-      type: 'Emails',
-      status: 'Active'
-    },
-    {
-      id: 5,
-      name: 'Metro Wholesalers',
-      preview: 'Last message: Delivery completed',
-      time: 'Yesterday',
-      badge: 3,
-      initials: 'MW',
-      avatarBg: 'bg-[#E2E8F0] text-[#475569] border border-[#CBD5E1]',
-      email: 'support@metrowholesalers.com.au',
-      phone: '+61 8 9876 1234',
-      address: 'Perth, WA',
-      type: 'SMS',
-      status: 'Active'
-    },
-    {
-      id: 6,
-      name: 'National Distributors',
-      preview: 'Last message: Pickup confirmation',
-      time: 'Yesterday',
-      badge: 2,
-      initials: 'ND',
-      avatarBg: 'bg-[#E0F2FE] text-[#0284C7] border border-[#7DD3FC]',
-      email: 'logistics@nationaldist.com.au',
-      phone: '+61 8 8234 5678',
-      address: 'Adelaide, SA',
-      type: 'System',
-      status: 'Active'
-    },
-    {
-      id: 7,
-      name: 'Prime Automotive',
-      preview: 'Last message: Damage report shared',
-      time: 'Yesterday',
-      badge: 4,
-      initials: 'PA',
-      avatarBg: 'bg-[#FCE7F3] text-[#DB2777] border border-[#F472B6]',
-      email: 'claims@primeauto.com.au',
-      phone: '+61 3 9012 3456',
-      address: 'Geelong, VIC',
-      type: 'Emails',
-      status: 'Active'
-    }
-  ]);
+  const [customerList, setCustomerList] = useState([]);
 
   // Active Selected Customer in 12.3 Customer Communications
   const [activeCustomerId, setActiveCustomerId] = useState(1);
   const activeCustomer = useMemo(() => {
-    return customerList.find(c => c.id === activeCustomerId) || customerList[0];
+    const found = customerList.find(c => c.id === activeCustomerId) || customerList[0];
+    return found || { id: null, name: '', initials: '?', avatarBg: 'bg-slate-100 text-slate-400 border border-slate-200', email: '', phone: '', address: '', type: 'Emails', status: 'Active', preview: '', time: '', badge: null };
   }, [customerList, activeCustomerId]);
 
   // Broadcast Categories for 12.4 Broadcasts & Notifications
   const broadcastCategories = [
-    { id: 1, title: 'Company Announcements', count: 12, desc: 'General company updates and news', icon: Megaphone, bg: 'bg-[#EEF2FF] text-[#4338CA]' },
-    { id: 2, title: 'Branch Announcements', count: 9, desc: 'Branch specific updates and information', icon: Building2, bg: 'bg-[#DCFCE7] text-[#16A34A]' },
-    { id: 3, title: 'Driver Alerts', count: 10, desc: 'Alerts and important updates for drivers', icon: AlertTriangle, bg: 'bg-[#FFEDD5] text-[#EA580C]' },
-    { id: 4, title: 'Maintenance Alerts', count: 7, desc: 'Vehicle and asset maintenance alerts', icon: Wrench, bg: 'bg-[#F3E8FF] text-[#9333EA]' },
-    { id: 5, title: 'Compliance Reminders', count: 6, desc: 'Compliance and document reminders', icon: Shield, bg: 'bg-[#E0F2FE] text-[#0284C7]' },
-    { id: 6, title: 'Emergency Notifications', count: 3, desc: 'Critical and emergency notifications', icon: AlertOctagon, bg: 'bg-[#FCE7F3] text-[#DB2777]' },
-    { id: 7, title: 'System Notifications', count: 8, desc: 'System generated notifications', icon: Bell, bg: 'bg-sky-100 text-sky-700' }
+    { id: 1, title: 'Company Announcements', count: 0, desc: 'General company updates and news', icon: Megaphone, bg: 'bg-[#EEF2FF] text-[#4338CA]' },
+    { id: 2, title: 'Branch Announcements', count: 0, desc: 'Branch specific updates and information', icon: Building2, bg: 'bg-[#DCFCE7] text-[#16A34A]' },
+    { id: 3, title: 'Driver Alerts', count: 0, desc: 'Alerts and important updates for drivers', icon: AlertTriangle, bg: 'bg-[#FFEDD5] text-[#EA580C]' },
+    { id: 4, title: 'Maintenance Alerts', count: 0, desc: 'Vehicle and asset maintenance alerts', icon: Wrench, bg: 'bg-[#F3E8FF] text-[#9333EA]' },
+    { id: 5, title: 'Compliance Reminders', count: 0, desc: 'Compliance and document reminders', icon: Shield, bg: 'bg-[#E0F2FE] text-[#0284C7]' },
+    { id: 6, title: 'Emergency Notifications', count: 0, desc: 'Critical and emergency notifications', icon: AlertOctagon, bg: 'bg-[#FCE7F3] text-[#DB2777]' },
+    { id: 7, title: 'System Notifications', count: 0, desc: 'System generated notifications', icon: Bell, bg: 'bg-sky-100 text-sky-700' }
   ];
 
   // Recent Broadcasts Logs for 12.4
-  const [recentBroadcasts, setRecentBroadcasts] = useState([
-    {
-      id: 1,
-      title: 'New Safety Compliance Check',
-      desc: 'Mandatory pre-start safety check updated.',
-      type: 'Driver Alert',
-      typeBg: 'bg-amber-50 text-amber-700 border-amber-200',
-      recipients: '512',
-      status: 'Delivered',
-      statusBg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      sentOn: '30 May 2025 10:20 AM'
-    },
-    {
-      id: 2,
-      title: 'Weekend Operations Update',
-      desc: 'Yard operating hours this weekend.',
-      type: 'Branch Announce',
-      typeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      recipients: '284',
-      status: 'Delivered',
-      statusBg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      sentOn: '30 May 2025 09:15 AM'
-    },
-    {
-      id: 3,
-      title: 'Maintenance Reminder',
-      desc: 'Service due for vehicles this week.',
-      type: 'Maintenance Alert',
-      typeBg: 'bg-orange-50 text-orange-700 border-orange-200',
-      recipients: '156',
-      status: 'Delivered',
-      statusBg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      sentOn: '30 May 2025 08:45 AM'
-    },
-    {
-      id: 4,
-      title: 'Fuel Price Update',
-      desc: 'Now fuel card rates effective 1 June.',
-      type: 'System Notification',
-      typeBg: 'bg-blue-50 text-blue-700 border-blue-200',
-      recipients: '412',
-      status: 'Delivered',
-      statusBg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      sentOn: '29 May 2025 04:20 PM'
-    },
-    {
-      id: 5,
-      title: 'Heavy Rain Warning',
-      desc: 'Severe weather expected in NSW.',
-      type: 'Emergency',
-      typeBg: 'bg-rose-50 text-rose-700 border-rose-200',
-      recipients: '632',
-      status: 'Delivered',
-      statusBg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      sentOn: '29 May 2025 02:10 PM'
-    },
-    {
-      id: 6,
-      title: 'Compliance Documents Due',
-      desc: 'Driver fatigue form due this week.',
-      type: 'Compliance Reminder',
-      typeBg: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-      recipients: '198',
-      status: 'Partial',
-      statusBg: 'bg-amber-50 text-amber-700 border-amber-200',
-      sentOn: '29 May 2025 11:05 AM'
-    },
-    {
-      id: 7,
-      title: 'System Maintenance Notice',
-      desc: 'System maintenance on Sunday.',
-      type: 'System Notification',
-      typeBg: 'bg-blue-50 text-blue-700 border-blue-200',
-      recipients: 'All Users',
-      status: 'Scheduled',
-      statusBg: 'bg-sky-50 text-sky-700 border-sky-200',
-      sentOn: '01 Jun 2025 12:00 AM'
-    }
-  ]);
+  const [recentBroadcasts, setRecentBroadcasts] = useState([]);
 
   // Scheduled Broadcasts for 12.4
-  const scheduledBroadcasts = [
-    { id: 1, title: 'Monthly Safety Briefing', desc: 'June monthly safety briefing for all drivers.', date: '02 Jun 2025 09:00 AM', status: 'Scheduled' },
-    { id: 2, title: 'System Maintenance', desc: 'Planned system maintenance notification.', date: '01 Jun 2025 12:00 AM', status: 'Scheduled' },
-    { id: 3, title: 'Payroll Processing Update', desc: 'Payroll processing schedule for June.', date: '03 Jun 2025 09:00 AM', status: 'Scheduled' }
-  ];
+  const scheduledBroadcasts = [];
 
   // ============================================================
   // 12.5 TEMPLATES & AUTOMATION DATA
   // ============================================================
   const templateCategories = [
-    { id: 1, title: 'Email Templates', desc: 'Customer emails and notifications', count: 42, icon: Mail, bg: 'bg-[#EEF2FF] text-[#4338CA]' },
-    { id: 2, title: 'SMS Templates', desc: 'Text messages and alerts', count: 28, icon: MessageSquare, bg: 'bg-[#DCFCE7] text-[#16A34A]' },
-    { id: 3, title: 'Push Notifications', desc: 'In-app push notifications', count: 18, icon: Bell, bg: 'bg-[#F3E8FF] text-[#9333EA]' },
-    { id: 4, title: 'Delivery Notifications', desc: 'Delivery updates and alerts', count: 16, icon: Truck, bg: 'bg-[#FFEDD5] text-[#EA580C]' },
-    { id: 5, title: 'Invoice & Payment', desc: 'Invoice and payment reminders', count: 12, icon: FileText, bg: 'bg-[#E0F2FE] text-[#0284C7]' },
-    { id: 6, title: 'Internal Notifications', desc: 'Internal system notifications', count: 10, icon: Bell, bg: 'bg-[#FCE7F3] text-[#DB2777]' }
+    { id: 1, title: 'Email Templates', desc: 'Customer emails and notifications', count: 0, icon: Mail, bg: 'bg-[#EEF2FF] text-[#4338CA]' },
+    { id: 2, title: 'SMS Templates', desc: 'Text messages and alerts', count: 0, icon: MessageSquare, bg: 'bg-[#DCFCE7] text-[#16A34A]' },
+    { id: 3, title: 'Push Notifications', desc: 'In-app push notifications', count: 0, icon: Bell, bg: 'bg-[#F3E8FF] text-[#9333EA]' },
+    { id: 4, title: 'Delivery Notifications', desc: 'Delivery updates and alerts', count: 0, icon: Truck, bg: 'bg-[#FFEDD5] text-[#EA580C]' },
+    { id: 5, title: 'Invoice & Payment', desc: 'Invoice and payment reminders', count: 0, icon: FileText, bg: 'bg-[#E0F2FE] text-[#0284C7]' },
+    { id: 6, title: 'Internal Notifications', desc: 'Internal system notifications', count: 0, icon: Bell, bg: 'bg-[#FCE7F3] text-[#DB2777]' }
   ];
 
-  const automationRules = [
-    { id: 1, name: 'Delivery ETA Update', trigger: 'Load ETA Changed', action: 'Send SMS', status: 'Active', lastRunDate: '30 May 2025', lastRunTime: '10:16 AM' },
-    { id: 2, name: 'POD Received', trigger: 'POD Uploaded', action: 'Email Customer', status: 'Active', lastRunDate: '30 May 2025', lastRunTime: '09:48 AM' },
-    { id: 3, name: 'Invoice Generated', trigger: 'Invoice Created', action: 'Email + SMS', status: 'Active', lastRunDate: '30 May 2025', lastRunTime: '09:30 AM' },
-    { id: 4, name: 'Payment Reminder 1', trigger: 'Invoice Overdue 7 Days', action: 'Email', status: 'Active', lastRunDate: '30 May 2025', lastRunTime: '08:05 AM' },
-    { id: 5, name: 'Payment Reminder 2', trigger: 'Invoice Overdue 14 Days', action: 'Email + SMS', status: 'Active', lastRunDate: '30 May 2025', lastRunTime: '08:05 AM' },
-    { id: 6, name: 'Maintenance Due Alert', trigger: 'Maintenance Due', action: 'Email Driver', status: 'Active', lastRunDate: '30 May 2025', lastRunTime: '07:20 AM' }
-  ];
+  const automationRules = [];
 
   const channelConfig = [
-    { id: 1, channel: 'Email', icon: Mail, iconBg: 'bg-[#EEF2FF] text-[#4338CA]', status: 'Connected', lastSync: '30 May 2025 10:20 AM', successRate: '98.1%' },
-    { id: 2, channel: 'SMS Gateway', icon: MessageSquare, iconBg: 'bg-[#DCFCE7] text-[#16A34A]', status: 'Connected', lastSync: '30 May 2025 10:18 AM', successRate: '97.3%' },
-    { id: 3, channel: 'Push Notification', icon: Bell, iconBg: 'bg-[#F3E8FF] text-[#9333EA]', status: 'Connected', lastSync: '30 May 2025 10:15 AM', successRate: '96.8%' },
-    { id: 4, channel: 'In App', icon: Globe, iconBg: 'bg-[#E0F2FE] text-[#0284C7]', status: 'Connected', lastSync: '30 May 2025 10:10 AM', successRate: '99.2%' }
+    { id: 1, channel: 'Email', icon: Mail, iconBg: 'bg-[#EEF2FF] text-[#4338CA]', status: 'Connected', lastSync: 'Never', successRate: '—' },
+    { id: 2, channel: 'SMS Gateway', icon: MessageSquare, iconBg: 'bg-[#DCFCE7] text-[#16A34A]', status: 'Connected', lastSync: 'Never', successRate: '—' },
+    { id: 3, channel: 'Push Notification', icon: Bell, iconBg: 'bg-[#F3E8FF] text-[#9333EA]', status: 'Connected', lastSync: 'Never', successRate: '—' },
+    { id: 4, channel: 'In App', icon: Globe, iconBg: 'bg-[#E0F2FE] text-[#0284C7]', status: 'Connected', lastSync: 'Never', successRate: '—' }
   ];
 
-  const recentTemplateActivity = [
-    { id: 1, icon: Zap, iconBg: 'bg-[#EEF2FF] text-[#4338CA]', title: 'Delivery ETA Update rule executed', desc: '162 messages sent successfully.', time: '10:50 AM', date: '30 May 2025' },
-    { id: 2, icon: FileText, iconBg: 'bg-[#DCFCE7] text-[#16A34A]', title: 'New template created', desc: 'Invoice Payment Reminder SMS', time: '10:40 AM', date: '30 May 2025' },
-    { id: 3, icon: Settings, iconBg: 'bg-[#FFEDD5] text-[#EA580C]', title: 'Automation rule updated', desc: 'Maintenance Due Alert', time: '09:16 AM', date: '30 May 2025' },
-    { id: 4, icon: Send, iconBg: 'bg-[#F3E8FF] text-[#9333EA]', title: 'Email campaign sent', desc: 'Weekend Operations Update', time: '08:30 AM', date: '30 May 2025' }
-  ];
+  const recentTemplateActivity = [];
 
   // Communication History Logs for 12.3 Customer Communications
-  const [communicationHistory, setCommunicationHistory] = useState([
-    {
-      id: 1,
-      title: 'Delivery Notification',
-      desc: 'Load #LD-1061 delivered successfully',
-      recipient: 'To: operations@abclogistics.com.au',
-      time: '10:24 AM',
-      status: 'Delivered',
-      statusBg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      icon: Mail,
-      iconBg: 'bg-[#EEF2FF] text-[#4338CA] border border-[#C7D2FE]'
-    },
-    {
-      id: 2,
-      title: 'ETA Update',
-      desc: 'Your delivery LD-1061 ETA 11:30 AM',
-      recipient: 'To: +61 412 555 123',
-      time: '10:10 AM',
-      status: 'Delivered',
-      statusBg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      icon: MessageSquare,
-      iconBg: 'bg-[#DCFCE7] text-[#16A34A] border border-[#86EFAC]'
-    },
-    {
-      id: 3,
-      title: 'POD Shared',
-      desc: 'POD for load #LD-1061',
-      recipient: 'To: info@abclogistics.com.au',
-      time: '09:58 AM',
-      status: 'Delivered',
-      statusBg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      icon: FileText,
-      iconBg: 'bg-[#FFEDD5] text-[#EA580C] border border-[#FDBA74]'
-    },
-    {
-      id: 4,
-      title: 'Invoice Notification',
-      desc: 'Invoice #INV-2025-041 is ready',
-      recipient: 'To: accounts@abclogistics.com.au',
-      time: '09:20 AM',
-      status: 'Opened',
-      statusBg: 'bg-blue-50 text-blue-700 border-blue-200',
-      icon: Mail,
-      iconBg: 'bg-[#F3E8FF] text-[#9333EA] border border-[#D8B4FE]'
-    },
-    {
-      id: 5,
-      title: 'Pickup Confirmation',
-      desc: 'Pickup for load #LD-1062 confirmed',
-      recipient: 'To: +61 412 555 123',
-      time: 'Yesterday, 04:15 PM',
-      status: 'Delivered',
-      statusBg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      icon: CheckCircle2,
-      iconBg: 'bg-[#DCFCE7] text-[#16A34A] border border-[#86EFAC]'
-    },
-    {
-      id: 6,
-      title: 'System Notification',
-      desc: 'Load status updated to Delivered',
-      recipient: 'To: operations@abclogistics.com.au',
-      time: 'Yesterday, 02:30 PM',
-      status: 'System',
-      statusBg: 'bg-slate-100 text-slate-700 border-slate-200',
-      icon: Bell,
-      iconBg: 'bg-[#E0F2FE] text-[#0284C7] border border-[#7DD3FC]'
-    },
-    {
-      id: 7,
-      title: 'Damage Report',
-      desc: 'Damage report for load #LD-1059',
-      recipient: 'To: claims@abclogistics.com.au',
-      time: 'Yesterday, 10:05 AM',
-      status: 'Delivered',
-      statusBg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      icon: Activity,
-      iconBg: 'bg-[#FCE7F3] text-[#DB2777] border border-[#F472B6]'
-    }
-  ]);
+  const [communicationHistory, setCommunicationHistory] = useState([]);
 
   // Customer Communication Preferences State
   const [customerPreferences, setCustomerPreferences] = useState({
@@ -576,36 +211,326 @@ export default function Messages() {
     marketing: false
   });
 
-  // Chat Messages Thread State
-  const [chatMessages, setChatMessages] = useState({
-    1: [
-      { id: 101, text: 'Hi Sarah, I have arrived at the pickup location.', time: '08:15 AM', sender: 'Nilesh Chand', isMe: false, dateDivider: '23 May 2025' },
-      { id: 102, text: 'Great Nilesh, please start loading and update us once completed.', time: '08:16 AM', sender: 'ME', isMe: true },
-      { id: 103, text: 'Loading completed. All items secured.', time: '09:10 AM', sender: 'Nilesh Chand', isMe: false },
-      { id: 104, text: 'Thank you. Please proceed to the delivery location.', time: '09:12 AM', sender: 'ME', isMe: true },
-      { id: 105, text: 'On the way. ETA 11:30 AM.', time: '10:05 AM', sender: 'Nilesh Chand', isMe: false },
-      { id: 106, text: 'Delivery completed successfully. POD attached.', time: '10:08 AM', sender: 'Nilesh Chand', isMe: false, attachment: { name: 'POD_LD-1057.pdf', size: '1.2 MB', type: 'PDF' }, dateDivider: 'Today' },
-      { id: 107, text: 'Thank you Nilesh. Great job!', time: '10:10 AM', sender: 'ME', isMe: true }
-    ]
-  });
+  const [chatMessages, setChatMessages] = useState({});
+
 
   const [activeChatInput, setActiveChatInput] = useState('');
+  const [loadingComms, setLoadingComms] = useState(false);
 
-  const handleSendLiveMessage = () => {
+  // Default Initial Contacts for Interactive Messaging
+  const defaultContactsList = [
+    { id: 1, name: 'Nilesh Chand', role: 'Driver - ANSH 1', initials: 'NC', avatarBg: 'bg-indigo-100 text-indigo-800 border border-indigo-200', avatarImg: null, preview: 'On my way to Sydney depot', time: '10:08 AM', badge: 1, online: true, type: 'Direct' },
+    { id: 2, name: 'Shavneel Prasad', role: 'Driver - ANSH 2', initials: 'SP', avatarBg: 'bg-emerald-100 text-[#16A34A] border border-[#86EFAC]', avatarImg: null, preview: 'POD uploaded for load LD-1057', time: '09:45 AM', badge: null, online: true, type: 'Direct' },
+    { id: 3, name: 'Dispatch Team', role: 'Sydney Operations', initials: 'DT', avatarBg: 'bg-amber-100 text-amber-800 border border-amber-200', avatarImg: null, preview: 'Route optimization updated', time: 'Yesterday', badge: 2, online: true, type: 'Teams' },
+    { id: 4, name: 'Warehouse Melbourne', role: 'Depot Team', initials: 'WM', avatarBg: 'bg-purple-100 text-purple-800 border border-purple-200', avatarImg: null, preview: 'Stock arrival confirmed for Bay 4', time: '23 May', badge: null, online: false, type: 'Groups' }
+  ];
+
+  const defaultCustomerList = [
+    { id: 1, name: 'ABC Logistics', initials: 'AB', avatarBg: 'bg-[#EEF2FF] text-[#4338CA] border border-[#C7D2FE]', email: 'operations@abclogistics.com.au', phone: '+61 2 9876 5432', address: '12 Logistics Way, Sydney NSW', type: 'Emails', status: 'Active', preview: 'ETA inquiry for Shipment LD-9021', time: '10:15 AM', badge: 1 },
+    { id: 2, name: 'Global Retail Solutions', initials: 'GR', avatarBg: 'bg-[#DCFCE7] text-[#16A34A] border border-[#86EFAC]', email: 'contact@globalretail.com.au', phone: '+61 3 9123 4567', address: '45 Retail Blvd, Melbourne VIC', type: 'SMS', status: 'Active', preview: 'Weekly schedule confirmed', time: 'Yesterday', badge: null }
+  ];
+
+  const fetchMessagesData = useCallback(async () => {
+    setLoadingComms(true);
+    try {
+      const res = await api.get('/company-admin/messages');
+      const data = res.data?.data || res.data || {};
+
+      let users = defaultContactsList;
+      if (Array.isArray(data.users) && data.users.length > 0) {
+        const mappedUsers = data.users.map((u, idx) => ({
+          id: u.id,
+          name: u.name || `User ${idx + 1}`,
+          role: u.role || 'Staff',
+          online: u.status === 'ACTIVE' || u.status === 'Active',
+          time: u.updatedAt ? new Date(u.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently',
+          badge: null,
+          initials: (u.name || 'U').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2),
+          avatarBg: 'bg-indigo-100 text-indigo-800 border border-indigo-200',
+          preview: `Contact: ${u.email || u.phone || 'Active User'}`,
+          type: u.role === 'DRIVER' ? 'Direct' : u.role === 'DISPATCHER' ? 'Teams' : 'Groups'
+        }));
+        users = mappedUsers;
+      }
+      setContactsList(users);
+      if (users.length > 0) {
+        setActiveContactId(prev => prev || users[0].id);
+      }
+
+      let customers = defaultCustomerList;
+      if (Array.isArray(data.customers) && data.customers.length > 0) {
+        const mappedCust = data.customers.map((c, idx) => ({
+          id: c.id,
+          name: c.name,
+          preview: `Last message: Active customer contact`,
+          time: 'Today',
+          badge: null,
+          initials: c.name.slice(0, 2).toUpperCase(),
+          avatarBg: 'bg-[#EEF2FF] text-[#4338CA] border border-[#C7D2FE]',
+          email: c.email || 'customer@logistics.com',
+          phone: c.phone || '+61 2 9000 0000',
+          address: 'Sydney, NSW',
+          type: 'Emails',
+          status: c.status || 'Active'
+        }));
+        customers = mappedCust;
+      }
+      setCustomerList(customers);
+    } catch (err) {
+      console.error('Error loading messages data:', err);
+      setContactsList(defaultContactsList);
+      setCustomerList(defaultCustomerList);
+      setActiveContactId(1);
+    } finally {
+      setLoadingComms(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchMessagesData();
+  }, [fetchMessagesData]);
+
+  // Handle Live Messaging & Auto-Reply
+  const handleSendLiveMessage = async () => {
     if (!activeChatInput.trim()) return;
-    const newMsg = {
+    const text = activeChatInput.trim();
+    setActiveChatInput('');
+
+    let currentList = contactsList;
+    let targetId = activeContactId;
+
+    if (currentList.length === 0) {
+      currentList = defaultContactsList;
+      setContactsList(defaultContactsList);
+      targetId = defaultContactsList[0].id;
+      setActiveContactId(targetId);
+    } else if (!targetId) {
+      targetId = currentList[0].id;
+      setActiveContactId(targetId);
+    }
+
+    const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const tempMsg = {
       id: Date.now(),
-      text: activeChatInput,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      text,
+      time: nowTime,
       sender: 'ME',
       isMe: true
     };
+
+    // 1. Append user message to active chat
     setChatMessages(prev => ({
       ...prev,
-      [activeContactId]: [...(prev[activeContactId] || []), newMsg]
+      [targetId]: [...(prev[targetId] || []), tempMsg]
     }));
-    setActiveChatInput('');
-    showToast(`Message sent to ${activeContact.name}`);
+
+    // 2. Update preview in left contacts list
+    setContactsList(prev => prev.map(c => c.id === targetId ? { ...c, preview: `You: ${text}`, time: nowTime, badge: null } : c));
+
+    // 3. Post to backend API
+    try {
+      await api.post('/company-admin/messages/send', {
+        conversationId: targetId,
+        content: text,
+        recipientName: activeContact?.name || 'Contact'
+      });
+    } catch (err) {
+      console.error('Backend send error:', err);
+    }
+
+    // 4. Generate Interactive Auto-Reply after 800ms
+    setTimeout(() => {
+      const lower = text.toLowerCase();
+      let replyText = `Received your message: "${text}". Everything is updated on our side!`;
+      if (lower.includes('hy') || lower.includes('hi') || lower.includes('hello') || lower.includes('hey')) {
+        replyText = `Hey! Thanks for reaching out. How can I assist you with your delivery today?`;
+      } else if (lower.includes('status') || lower.includes('where') || lower.includes('eta') || lower.includes('location')) {
+        replyText = `Vehicle is currently en route on M4 Highway. Estimated arrival is in 15 minutes.`;
+      } else if (lower.includes('pod') || lower.includes('document') || lower.includes('load')) {
+        replyText = `POD delivery receipt has been uploaded and verified in the portal.`;
+      }
+
+      const autoReplyMsg = {
+        id: Date.now() + 1,
+        text: replyText,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        sender: activeContact?.name || 'Contact',
+        isMe: false
+      };
+
+      setChatMessages(prev => ({
+        ...prev,
+        [targetId]: [...(prev[targetId] || []), autoReplyMsg]
+      }));
+
+      setContactsList(prev => prev.map(c => c.id === targetId ? { ...c, preview: replyText, time: 'Just now' } : c));
+    }, 800);
+
+    showToast(`Message sent to ${activeContact?.name || 'Contact'}`);
+  };
+
+  const [newMessageForm, setNewMessageForm] = useState({ recipient: 'Nilesh Chand (Driver - ANSH 1)', category: 'Conversations', content: '' });
+  const [newCommForm, setNewCommForm] = useState({ customer: 'ABC Logistics', type: 'Delivery Notification', content: '' });
+  const [newBroadcastForm, setNewBroadcastForm] = useState({ audience: 'All Drivers', title: '', body: '' });
+  const [newTemplateModalForm, setNewTemplateModalForm] = useState({ type: 'Message Template', title: '', category: 'Delivery Notifications', channel: 'SMS Gateway', content: '' });
+
+  const handleCreateNewMessageSubmit = async (e) => {
+    e?.preventDefault();
+    if (!newMessageForm.content.trim()) {
+      showToast('Please enter message content');
+      return;
+    }
+
+    const text = newMessageForm.content.trim();
+    const recipientRaw = newMessageForm.recipient;
+    const recipientName = recipientRaw.split('(')[0].trim();
+
+    // Check if recipient exists in contacts list, or create one
+    let targetContact = contactsList.find(c => c.name.toLowerCase().includes(recipientName.toLowerCase()));
+    if (!targetContact) {
+      targetContact = {
+        id: Date.now(),
+        name: recipientName,
+        role: recipientRaw.includes('Driver') ? 'Driver' : 'Staff',
+        initials: recipientName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2),
+        avatarBg: 'bg-indigo-100 text-indigo-800 border border-indigo-200',
+        avatarImg: null,
+        preview: `You: ${text}`,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        badge: null,
+        online: true,
+        type: 'Direct'
+      };
+      setContactsList(prev => [targetContact, ...prev]);
+    }
+
+    const targetId = targetContact.id;
+    setActiveContactId(targetId);
+    setSelectedCategory('Conversations');
+
+    const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const userMsg = { id: Date.now(), text, time: nowTime, sender: 'ME', isMe: true };
+
+    setChatMessages(prev => ({
+      ...prev,
+      [targetId]: [...(prev[targetId] || []), userMsg]
+    }));
+
+    try {
+      await api.post('/company-admin/messages/send', {
+        recipientName: recipientRaw,
+        content: text
+      });
+    } catch (err) {
+      console.error(err);
+    }
+
+    // Auto reply
+    setTimeout(() => {
+      const autoReplyMsg = {
+        id: Date.now() + 1,
+        text: `Hey! Thanks for your message. How can I help you with this delivery?`,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        sender: recipientName,
+        isMe: false
+      };
+
+      setChatMessages(prev => ({
+        ...prev,
+        [targetId]: [...(prev[targetId] || []), autoReplyMsg]
+      }));
+
+      setContactsList(prev => prev.map(c => c.id === targetId ? { ...c, preview: autoReplyMsg.text, time: 'Just now' } : c));
+    }, 800);
+
+    setShowNewMessageModal(false);
+    setNewMessageForm({ recipient: 'Nilesh Chand (Driver - ANSH 1)', category: 'Conversations', content: '' });
+    showToast(`Message sent to ${recipientName}!`);
+  };
+
+  const handleCreateCommunicationSubmit = async (e) => {
+    e?.preventDefault();
+    if (!newCommForm.content.trim()) {
+      showToast('Please enter message content');
+      return;
+    }
+    try {
+      await api.post('/company-admin/messages/communications', {
+        customerName: newCommForm.customer,
+        subject: newCommForm.type,
+        message: newCommForm.content
+      });
+      const newLog = {
+        id: Date.now(),
+        title: newCommForm.type,
+        desc: newCommForm.content,
+        recipient: `To: ${newCommForm.customer}`,
+        time: 'Just now',
+        status: 'Delivered',
+        statusBg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        icon: Mail,
+        iconBg: 'bg-[#EEF2FF] text-[#4338CA] border border-[#C7D2FE]'
+      };
+      setCommunicationHistory(prev => [newLog, ...prev]);
+    } catch (err) {
+      console.error(err);
+    }
+    setShowNewCommunicationModal(false);
+    setNewCommForm({ customer: 'ABC Logistics', type: 'Delivery Notification', content: '' });
+    showToast('Customer communication sent!');
+  };
+
+  const handleCreateBroadcastSubmit = async (e) => {
+    e?.preventDefault();
+    if (!newBroadcastForm.title.trim()) {
+      showToast('Please enter broadcast title');
+      return;
+    }
+    try {
+      await api.post('/company-admin/messages/broadcasts', {
+        title: newBroadcastForm.title,
+        content: newBroadcastForm.body,
+        recipients: newBroadcastForm.audience
+      });
+      const newBcast = {
+        id: Date.now(),
+        title: newBroadcastForm.title,
+        desc: newBroadcastForm.body || 'System notification broadcast',
+        type: 'Driver Alert',
+        typeBg: 'bg-amber-50 text-amber-700 border-amber-200',
+        recipients: newBroadcastForm.audience,
+        status: 'Delivered',
+        statusBg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        sentOn: new Date().toLocaleString()
+      };
+      setRecentBroadcasts(prev => [newBcast, ...prev]);
+    } catch (err) {
+      console.error(err);
+    }
+    setShowBroadcastModal(false);
+    setNewBroadcastForm({ audience: 'All Drivers', title: '', body: '' });
+    showToast('Broadcast sent to all users!');
+  };
+
+  const handleCreateTemplateModalSubmit = async (e) => {
+    e?.preventDefault();
+    if (!newTemplateModalForm.title.trim()) {
+      showToast('Please enter template title');
+      return;
+    }
+    try {
+      await api.post('/notification-templates', {
+        title: newTemplateModalForm.title,
+        channel: newTemplateModalForm.channel,
+        body: newTemplateModalForm.content,
+        category: newTemplateModalForm.category
+      });
+    } catch (err) {
+      console.error(err);
+    }
+    setShowNewTemplateModal(false);
+    setNewTemplateModalForm({ type: 'Message Template', title: '', category: 'Delivery Notifications', channel: 'SMS Gateway', content: '' });
+    showToast('Template / Rule created successfully!');
   };
 
   const handleResetFilters = () => {
@@ -868,8 +793,8 @@ export default function Messages() {
               <div className="w-7 h-7 rounded-lg bg-[#EEF2FF] text-[#4338CA] flex items-center justify-center shrink-0 mt-0.5"><FileText size={14} /></div>
               <div className="flex-1 min-w-0">
                 <span className="text-[8.5px] 2xl:text-[9.5px] font-black text-slate-400 uppercase tracking-wider block truncate">TOTAL TEMPLATES</span>
-                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">126</div>
-                <div className="text-[8.5px] 2xl:text-[9.5px] font-bold text-emerald-600 mt-0.5 whitespace-nowrap">▲ 18.2% vs Last Month</div>
+                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">0</div>
+                <div className="text-[8.5px] 2xl:text-[9.5px] font-bold text-slate-400 mt-0.5 whitespace-nowrap">No templates yet</div>
                 <button onClick={() => showToast('Viewing all templates')} className="text-[8.5px] 2xl:text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1.5 cursor-pointer whitespace-nowrap truncate">
                   <span>View all templates</span><span>→</span>
                 </button>
@@ -880,8 +805,8 @@ export default function Messages() {
               <div className="w-7 h-7 rounded-lg bg-[#DCFCE7] text-[#16A34A] flex items-center justify-center shrink-0 mt-0.5"><Zap size={14} /></div>
               <div className="flex-1 min-w-0">
                 <span className="text-[8.5px] 2xl:text-[9.5px] font-black text-slate-400 uppercase tracking-wider block truncate">ACTIVE AUTOMATION RULES</span>
-                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">34</div>
-                <div className="text-[8.5px] 2xl:text-[9.5px] font-bold text-emerald-600 mt-0.5 whitespace-nowrap">▲ 22.7% vs Last Month</div>
+                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">0</div>
+                <div className="text-[8.5px] 2xl:text-[9.5px] font-bold text-slate-400 mt-0.5 whitespace-nowrap">No rules active</div>
                 <button onClick={() => showToast('Viewing all rules')} className="text-[8.5px] 2xl:text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1.5 cursor-pointer whitespace-nowrap truncate">
                   <span>View all rules</span><span>→</span>
                 </button>
@@ -892,8 +817,8 @@ export default function Messages() {
               <div className="w-7 h-7 rounded-lg bg-[#E0F2FE] text-[#0284C7] flex items-center justify-center shrink-0 mt-0.5"><Send size={14} /></div>
               <div className="flex-1 min-w-0">
                 <span className="text-[8.5px] 2xl:text-[9.5px] font-black text-slate-400 uppercase tracking-wider block truncate">AUTOMATED MESSAGES (MTD)</span>
-                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">3,842</div>
-                <div className="text-[8.5px] 2xl:text-[9.5px] font-bold text-emerald-600 mt-0.5 whitespace-nowrap">▲ 24.5% vs Last Month</div>
+                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">0</div>
+                <div className="text-[8.5px] 2xl:text-[9.5px] font-bold text-slate-400 mt-0.5 whitespace-nowrap">No data yet</div>
                 <button onClick={() => showToast('Viewing analytics')} className="text-[8.5px] 2xl:text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1.5 cursor-pointer whitespace-nowrap truncate">
                   <span>View analytics</span><span>→</span>
                 </button>
@@ -904,8 +829,8 @@ export default function Messages() {
               <div className="w-7 h-7 rounded-lg bg-[#DCFCE7] text-[#16A34A] flex items-center justify-center shrink-0 mt-0.5"><CheckCircle size={14} /></div>
               <div className="flex-1 min-w-0">
                 <span className="text-[8.5px] 2xl:text-[9.5px] font-black text-slate-400 uppercase tracking-wider block truncate">SUCCESS RATE (MTD)</span>
-                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">97.6%</div>
-                <div className="text-[8.5px] 2xl:text-[9.5px] font-bold text-emerald-600 mt-0.5 whitespace-nowrap">▲ 2.8% vs Last Month</div>
+                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">—</div>
+                <div className="text-[8.5px] 2xl:text-[9.5px] font-bold text-slate-400 mt-0.5 whitespace-nowrap">No data yet</div>
                 <button onClick={() => showToast('Viewing performance')} className="text-[8.5px] 2xl:text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1.5 cursor-pointer whitespace-nowrap truncate">
                   <span>View performance</span><span>→</span>
                 </button>
@@ -916,8 +841,8 @@ export default function Messages() {
               <div className="w-7 h-7 rounded-lg bg-[#FCE7F3] text-[#DB2777] flex items-center justify-center shrink-0 mt-0.5"><AlertTriangle size={14} /></div>
               <div className="flex-1 min-w-0">
                 <span className="text-[8.5px] 2xl:text-[9.5px] font-black text-slate-400 uppercase tracking-wider block truncate">FAILED / BOUNCED (MTD)</span>
-                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">92</div>
-                <div className="text-[8.5px] 2xl:text-[9.5px] font-bold text-rose-600 mt-0.5 whitespace-nowrap">▼ 6.1% vs Last Month</div>
+                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">0</div>
+                <div className="text-[8.5px] 2xl:text-[9.5px] font-bold text-slate-400 mt-0.5 whitespace-nowrap">No failures</div>
                 <button onClick={() => showToast('Viewing failure report')} className="text-[8.5px] 2xl:text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1.5 cursor-pointer whitespace-nowrap truncate">
                   <span>View failures</span><span>→</span>
                 </button>
@@ -928,8 +853,8 @@ export default function Messages() {
               <div className="w-7 h-7 rounded-lg bg-[#FFEDD5] text-[#EA580C] flex items-center justify-center shrink-0 mt-0.5"><Clock size={14} /></div>
               <div className="flex-1 min-w-0">
                 <span className="text-[8.5px] 2xl:text-[9.5px] font-black text-slate-400 uppercase tracking-wider block truncate">SAVED TIME (MTD)</span>
-                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">128h</div>
-                <div className="text-[8.5px] 2xl:text-[9.5px] font-bold text-emerald-600 mt-0.5 whitespace-nowrap">▲ 15.2% vs Last Month</div>
+                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">0h</div>
+                <div className="text-[8.5px] 2xl:text-[9.5px] font-bold text-slate-400 mt-0.5 whitespace-nowrap">No data yet</div>
                 <button onClick={() => showToast('Viewing ROI report')} className="text-[8.5px] 2xl:text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1.5 cursor-pointer whitespace-nowrap truncate">
                   <span>View ROI report</span><span>→</span>
                 </button>
@@ -1042,37 +967,7 @@ export default function Messages() {
 
                 {/* Dynamic Template Body */}
                 <div className="bg-[#F8FFF8] rounded-lg border border-slate-200 p-3 flex-1 text-[11.5px] text-slate-700 font-medium leading-relaxed overflow-y-auto">
-                  {selectedPreviewTemplate === 'Invoice Payment Reminder' ? (
-                    <>
-                      <p>Dear <span className="text-[#4338CA] font-bold">{'{{customer_name}}'}</span>,</p>
-                      <p className="mt-2">This is a reminder that invoice <span className="text-[#4338CA] font-bold">{'{{invoice_num}}'}</span> for <span className="text-[#4338CA] font-bold">{'{{amount}}'}</span> is due on <span className="text-[#4338CA] font-bold">{'{{due_date}}'}</span>.</p>
-                      <p className="mt-2">Please contact accounts for any questions.</p>
-                      <p className="mt-3">Regards,</p>
-                      <p><span className="text-[#4338CA] font-bold">{'{{company_name}}'}</span></p>
-                    </>
-                  ) : selectedPreviewTemplate === 'POD Delivery Confirmation' ? (
-                    <>
-                      <p>Hello <span className="text-[#4338CA] font-bold">{'{{customer_name}}'}</span>,</p>
-                      <p className="mt-2">Proof of Delivery (POD) for load <span className="text-[#4338CA] font-bold">{'{{load_id}}'}</span> has been uploaded by driver <span className="text-[#4338CA] font-bold">{'{{driver_name}}'}</span>.</p>
-                      <p className="mt-3">Thank you,</p>
-                      <p><span className="text-[#4338CA] font-bold">{'{{company_name}}'}</span></p>
-                    </>
-                  ) : selectedPreviewTemplate === 'Maintenance Due Alert' ? (
-                    <>
-                      <p>Attention <span className="text-[#4338CA] font-bold">{'{{driver_name}}'}</span>,</p>
-                      <p className="mt-2">Vehicle <span className="text-[#4338CA] font-bold">{'{{vehicle_reg}}'}</span> is scheduled for maintenance on <span className="text-[#4338CA] font-bold">{'{{service_date}}'}</span>.</p>
-                      <p className="mt-2">Please report to depot prior to shift start.</p>
-                    </>
-                  ) : (
-                    <>
-                      <p>Hi <span className="text-[#4338CA] font-bold">{'{{customer_name}}'}</span>,</p>
-                      <p className="mt-2">Your delivery <span className="text-[#4338CA] font-bold">{'{{load_id}}'}</span> is on the way.</p>
-                      <p className="mt-2">Estimated arrival: <span className="text-[#4338CA] font-bold">{'{{eta_time}}'}</span></p>
-                      <p className="mt-2">Track live: <span className="text-[#4338CA] font-bold">{'{{tracking_link}}'}</span></p>
-                      <p className="mt-3">Thank you,</p>
-                      <p><span className="text-[#4338CA] font-bold">{'{{company_name}}'}</span></p>
-                    </>
-                  )}
+                  <p>Dear <span className="text-[#4338CA] font-bold">{"{{customer_name}}"}</span>, this is a reminder that invoice <span className="text-[#4338CA] font-bold">{"{{invoice_num}}"}</span> is due for payment. Please reach out to accounts if you have any questions.</p>
                 </div>
 
                 {/* Character Count & Insert Variable Dropdown */}
@@ -1123,35 +1018,44 @@ export default function Messages() {
 
               {/* Scrollable Container with horizontal & vertical scrollbar */}
               <div className="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar">
-                <div className="w-[550px] min-w-[550px]">
-                  {/* Table Header */}
-                  <div className="grid grid-cols-[130px_120px_95px_75px_105px_25px] gap-1 px-3 py-2 bg-slate-50 border-b border-slate-100 sticky top-0 z-10">
-                    {['Rule Name', 'Trigger', 'Action', 'Status', 'Last Run', ''].map((h, i) => (
-                      <span key={i} className="text-[8.5px] font-black text-slate-500 uppercase tracking-wider truncate">{h}</span>
+                {automationRules.length > 0 ? (
+                  <div className="w-[550px] min-w-[550px]">
+                    {/* Table Header */}
+                    <div className="grid grid-cols-[130px_120px_95px_75px_105px_25px] gap-1 px-3 py-2 bg-slate-50 border-b border-slate-100 sticky top-0 z-10">
+                      {['Rule Name', 'Trigger', 'Action', 'Status', 'Last Run', ''].map((h, i) => (
+                        <span key={i} className="text-[8.5px] font-black text-slate-500 uppercase tracking-wider truncate">{h}</span>
+                      ))}
+                    </div>
+                    {/* Table Rows */}
+                    {automationRules.map(rule => (
+                      <div key={rule.id} className="grid grid-cols-[130px_120px_95px_75px_105px_25px] gap-1 items-center px-3 py-2.5 border-b border-slate-50 hover:bg-slate-50 transition-colors group">
+                        <div className="text-[10px] font-bold text-slate-800 truncate" title={rule.name}>{rule.name}</div>
+                        <div className="text-[9.5px] font-medium text-slate-600 truncate" title={rule.trigger}>{rule.trigger}</div>
+                        <div className="text-[9.5px] font-medium text-slate-600 truncate" title={rule.action}>{rule.action}</div>
+                        <div>
+                          <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[8.5px] font-black px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block shrink-0"></span>
+                            {rule.status}
+                          </span>
+                        </div>
+                        <div className="text-[8.5px] font-medium text-slate-600 whitespace-nowrap">
+                          <div className="font-bold text-slate-700 leading-tight">{rule.lastRunDate}</div>
+                          <div className="text-[8px] text-slate-400 font-semibold leading-tight">{rule.lastRunTime}</div>
+                        </div>
+                        <button onClick={() => showToast(`Options for ${rule.name}`)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer flex justify-center">
+                          <MoreVertical size={13} />
+                        </button>
+                      </div>
                     ))}
                   </div>
-                  {/* Table Rows */}
-                  {automationRules.map(rule => (
-                    <div key={rule.id} className="grid grid-cols-[130px_120px_95px_75px_105px_25px] gap-1 items-center px-3 py-2.5 border-b border-slate-50 hover:bg-slate-50 transition-colors group">
-                      <div className="text-[10px] font-bold text-slate-800 truncate" title={rule.name}>{rule.name}</div>
-                      <div className="text-[9.5px] font-medium text-slate-600 truncate" title={rule.trigger}>{rule.trigger}</div>
-                      <div className="text-[9.5px] font-medium text-slate-600 truncate" title={rule.action}>{rule.action}</div>
-                      <div>
-                        <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[8.5px] font-black px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block shrink-0"></span>
-                          {rule.status}
-                        </span>
-                      </div>
-                      <div className="text-[8.5px] font-medium text-slate-600 whitespace-nowrap">
-                        <div className="font-bold text-slate-700 leading-tight">{rule.lastRunDate}</div>
-                        <div className="text-[8px] text-slate-400 font-semibold leading-tight">{rule.lastRunTime}</div>
-                      </div>
-                      <button onClick={() => showToast(`Options for ${rule.name}`)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer flex justify-center">
-                        <MoreVertical size={13} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-center p-6">
+                    <Zap size={32} className="text-slate-200 mb-2" />
+                    <p className="text-[11px] font-bold text-slate-400">No automation rules configured</p>
+                    <p className="text-[9.5px] text-slate-300 font-medium mt-0.5">Automate your messaging workflows</p>
+                    <button onClick={() => setShowNewTemplateModal(true)} className="mt-3 text-[10px] font-bold text-[#4338CA] hover:underline cursor-pointer">+ Create Rule</button>
+                  </div>
+                )}
               </div>
 
               <div className="px-3 py-2 border-t border-slate-100 shrink-0">
@@ -1190,8 +1094,8 @@ export default function Messages() {
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
                         {ch.status}
                       </span>
-                      <span className="text-[8.5px] font-medium text-slate-500 truncate">{ch.lastSync.split(' ')[3]}</span>
-                      <span className="text-[10px] font-black text-emerald-700">{ch.successRate}</span>
+                      <span className="text-[8.5px] font-medium text-slate-500 truncate">{ch.lastSync}</span>
+                      <span className="text-[10px] font-black text-slate-400">{ch.successRate}</span>
                     </div>
                   );
                 })}
@@ -1215,28 +1119,19 @@ export default function Messages() {
                   <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
                     {/* Total ring BG */}
                     <circle cx="18" cy="18" r="15.9" fill="none" stroke="#F1F5F9" strokeWidth="3.5" />
-                    {/* Successful 97.6% */}
-                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="#16A34A" strokeWidth="3.5"
-                      strokeDasharray={`${97.6} ${100 - 97.6}`} strokeLinecap="round" />
-                    {/* Failed 5.6% offset */}
-                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="#E11D48" strokeWidth="3.5"
-                      strokeDasharray={`${5.6} ${100 - 5.6}`} strokeDashoffset={`-${97.6}`} strokeLinecap="round" />
-                    {/* Pending 0.5% */}
-                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="#F59E0B" strokeWidth="3.5"
-                      strokeDasharray={`${0.5} ${100 - 0.5}`} strokeDashoffset={`-${103.2}`} strokeLinecap="round" />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-[14px] font-black text-slate-900 leading-none">3,842</span>
+                    <span className="text-[14px] font-black text-slate-900 leading-none">0</span>
                     <span className="text-[8px] font-bold text-slate-500 leading-tight">Total Sent</span>
                   </div>
                 </div>
                 {/* Legend */}
                 <div className="flex-1 space-y-2">
                   {[
-                    { label: 'Successful', value: '3,754', pct: '97.6%', color: 'bg-emerald-500' },
-                    { label: 'Failed', value: '22', pct: '5.6%', color: 'bg-rose-500' },
-                    { label: 'Pending', value: '18', pct: '0.5%', color: 'bg-amber-500' },
-                    { label: 'Duplicates', value: '8', pct: '0.2%', color: 'bg-slate-400' }
+                    { label: 'Successful', value: '0', pct: '0%', color: 'bg-emerald-500' },
+                    { label: 'Failed', value: '0', pct: '0%', color: 'bg-rose-500' },
+                    { label: 'Pending', value: '0', pct: '0%', color: 'bg-amber-500' },
+                    { label: 'Duplicates', value: '0', pct: '0%', color: 'bg-slate-400' }
                   ].map(item => (
                     <div key={item.label} className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5">
@@ -1265,7 +1160,7 @@ export default function Messages() {
                 <button onClick={() => showToast('Viewing all activity')} className="text-[10px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 cursor-pointer">View All <ChevronRight size={12} /></button>
               </div>
               <div className="flex-1 divide-y divide-slate-50 overflow-y-auto">
-                {recentTemplateActivity.map(item => {
+                {recentTemplateActivity.length > 0 ? recentTemplateActivity.map(item => {
                   const IconComp = item.icon;
                   return (
                     <div key={item.id} className="flex items-start gap-3 px-3 py-3 hover:bg-slate-50 transition-colors">
@@ -1279,7 +1174,13 @@ export default function Messages() {
                       </div>
                     </div>
                   );
-                })}
+                }) : (
+                  <div className="flex flex-col items-center justify-center h-full text-center p-6">
+                    <Activity size={28} className="text-slate-200 mb-2" />
+                    <p className="text-[10.5px] font-bold text-slate-400">No recent activity</p>
+                    <p className="text-[9px] text-slate-300 font-medium mt-0.5">Automation & template events will log here</p>
+                  </div>
+                )}
               </div>
               <div className="px-3 py-2 border-t border-slate-100">
                 <button onClick={() => showToast('Viewing all activity')} className="text-[10px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 cursor-pointer">
@@ -1290,7 +1191,7 @@ export default function Messages() {
           </div>
         </div>
       ) : selectedCategory === 'Broadcast & Notifications' ? (
-        <div className="space-y-4">          {/* 6 TOP KPI METRIC CARDS (ROW 1) */}
+        <div className="space-y-4">
           {/* 6 TOP KPI METRIC CARDS (ROW 1) */}
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2 sm:gap-2.5">
             {/* Metric 1 */}
@@ -1300,8 +1201,8 @@ export default function Messages() {
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-[7.5px] xl:text-[8px] 2xl:text-[9px] font-black text-slate-400 uppercase tracking-tight block truncate" title="BROADCASTS SENT (MTD)">BROADCASTS SENT (MTD)</span>
-                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">48</div>
-                <div className="text-[8px] xl:text-[8.5px] font-bold text-emerald-600 mt-0.5 whitespace-nowrap">▲ 18.8% vs Last Month</div>
+                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">0</div>
+                <div className="text-[8px] xl:text-[8.5px] font-bold text-slate-400 mt-0.5 whitespace-nowrap">No broadcasts yet</div>
                 <button onClick={() => showToast('Viewing all broadcasts')} className="text-[8px] xl:text-[8.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1 cursor-pointer whitespace-nowrap truncate">
                   <span>View all broadcasts</span>
                   <span>→</span>
@@ -1316,8 +1217,8 @@ export default function Messages() {
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-[7.5px] xl:text-[8px] 2xl:text-[9px] font-black text-slate-400 uppercase tracking-tight block truncate" title="NOTIFICATIONS SENT (MTD)">NOTIFICATIONS SENT (MTD)</span>
-                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">1,248</div>
-                <div className="text-[8px] xl:text-[8.5px] font-bold text-emerald-600 mt-0.5 whitespace-nowrap">▲ 21.6% vs Last Month</div>
+                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">0</div>
+                <div className="text-[8px] xl:text-[8.5px] font-bold text-slate-400 mt-0.5 whitespace-nowrap">No notifications yet</div>
                 <button onClick={() => showToast('Viewing all notifications')} className="text-[8px] xl:text-[8.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1 cursor-pointer whitespace-nowrap truncate">
                   <span>View all notifications</span>
                   <span>→</span>
@@ -1332,8 +1233,8 @@ export default function Messages() {
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-[7.5px] xl:text-[8px] 2xl:text-[9px] font-black text-slate-400 uppercase tracking-tight block truncate" title="TOTAL RECIPIENTS (MTD)">TOTAL RECIPIENTS (MTD)</span>
-                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">3,842</div>
-                <div className="text-[8px] xl:text-[8.5px] font-bold text-emerald-600 mt-0.5 whitespace-nowrap">▲ 16.3% vs Last Month</div>
+                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">0</div>
+                <div className="text-[8px] xl:text-[8.5px] font-bold text-slate-400 mt-0.5 whitespace-nowrap">No data yet</div>
                 <button onClick={() => showToast('Viewing reach analytics')} className="text-[8px] xl:text-[8.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1 cursor-pointer whitespace-nowrap truncate">
                   <span>View reach analytics</span>
                   <span>→</span>
@@ -1348,8 +1249,8 @@ export default function Messages() {
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-[7.5px] xl:text-[8px] 2xl:text-[9px] font-black text-slate-400 uppercase tracking-tight block truncate" title="DELIVERED (MTD)">DELIVERED (MTD)</span>
-                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">3,721</div>
-                <div className="text-[8px] xl:text-[8.5px] font-bold text-emerald-600 mt-0.5 whitespace-nowrap">▲ 96.9% Delivery Rate</div>
+                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">0</div>
+                <div className="text-[8px] xl:text-[8.5px] font-bold text-slate-400 mt-0.5 whitespace-nowrap">No data yet</div>
                 <button onClick={() => showToast('Viewing delivery report')} className="text-[8px] xl:text-[8.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1 cursor-pointer whitespace-nowrap truncate">
                   <span>View delivery report</span>
                   <span>→</span>
@@ -1364,8 +1265,8 @@ export default function Messages() {
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-[7.5px] xl:text-[8px] 2xl:text-[9px] font-black text-slate-400 uppercase tracking-tight block truncate" title="FAILED (MTD)">FAILED (MTD)</span>
-                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">121</div>
-                <div className="text-[8px] xl:text-[8.5px] font-bold text-rose-600 mt-0.5 whitespace-nowrap">▼ 3.1% Failure Rate</div>
+                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">0</div>
+                <div className="text-[8px] xl:text-[8.5px] font-bold text-slate-400 mt-0.5 whitespace-nowrap">No failures</div>
                 <button onClick={() => showToast('Viewing failure report')} className="text-[8px] xl:text-[8.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1 cursor-pointer whitespace-nowrap truncate">
                   <span>View failure report</span>
                   <span>→</span>
@@ -1380,8 +1281,8 @@ export default function Messages() {
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-[7.5px] xl:text-[8px] 2xl:text-[9px] font-black text-slate-400 uppercase tracking-tight block truncate" title="AVG RESPONSE TIME">AVG RESPONSE TIME</span>
-                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">1h 24m</div>
-                <div className="text-[8px] xl:text-[8.5px] font-bold text-emerald-600 mt-0.5 whitespace-nowrap">▲ 12.4% vs Last Month</div>
+                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">—</div>
+                <div className="text-[8px] xl:text-[8.5px] font-bold text-slate-400 mt-0.5 whitespace-nowrap">No data yet</div>
                 <button onClick={() => showToast('Viewing performance')} className="text-[8px] xl:text-[8.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1 cursor-pointer whitespace-nowrap truncate">
                   <span>View performance</span>
                   <span>→</span>
@@ -1600,57 +1501,66 @@ export default function Messages() {
 
                 {/* Data Table with Mobile Scrollbar */}
                 <div className="flex-1 overflow-x-auto overflow-y-auto custom-scrollbar pr-0.5">
-                  <table className="w-full min-w-[540px] text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="border-b border-slate-200/80 text-[9px] font-black text-slate-400 uppercase tracking-wider bg-slate-50/50">
-                        <th className="py-2 px-2 whitespace-nowrap">Broadcast / Notification</th>
-                        <th className="py-2 px-1 whitespace-nowrap">Type</th>
-                        <th className="py-2 px-1 text-center whitespace-nowrap">Channel</th>
-                        <th className="py-2 px-1 text-center whitespace-nowrap">Recipients</th>
-                        <th className="py-2 px-1 text-center whitespace-nowrap">Status</th>
-                        <th className="py-2 px-2 text-right whitespace-nowrap">Sent On</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {filteredBroadcasts.map((b) => (
-                        <tr key={b.id} className="hover:bg-slate-50/60 transition-colors group cursor-pointer">
-                          <td className="py-2 px-2 min-w-0">
-                            <div className="flex items-start gap-2">
-                              <div className="w-6 h-6 rounded bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 mt-0.5">
-                                <Megaphone size={12} />
-                              </div>
-                              <div className="truncate max-w-[180px]">
-                                <p className="text-[10.5px] font-extrabold text-slate-900 group-hover:text-blue-600 transition-colors truncate">{b.title}</p>
-                                <p className="text-[9px] text-slate-400 font-medium truncate">{b.desc}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-2 px-1">
-                            <span className={`text-[8.5px] font-extrabold px-1.5 py-0.5 rounded border whitespace-nowrap ${b.typeBg}`}>
-                              {b.type}
-                            </span>
-                          </td>
-                          <td className="py-2 px-1 text-center">
-                            <div className="flex items-center justify-center gap-1 text-slate-500">
-                              <Mail size={11} />
-                              <Phone size={11} />
-                            </div>
-                          </td>
-                          <td className="py-2 px-1 text-center font-bold text-slate-700 text-[10px]">
-                            {b.recipients}
-                          </td>
-                          <td className="py-2 px-1 text-center">
-                            <span className={`text-[8.5px] font-black px-2 py-0.5 rounded-full border ${b.statusBg}`}>
-                              {b.status}
-                            </span>
-                          </td>
-                          <td className="py-2 px-2 text-right text-[9px] font-bold text-slate-400 whitespace-nowrap">
-                            {b.sentOn}
-                          </td>
+                  {filteredBroadcasts.length > 0 ? (
+                    <table className="w-full min-w-[540px] text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="border-b border-slate-200/80 text-[9px] font-black text-slate-400 uppercase tracking-wider bg-slate-50/50">
+                          <th className="py-2 px-2 whitespace-nowrap">Broadcast / Notification</th>
+                          <th className="py-2 px-1 whitespace-nowrap">Type</th>
+                          <th className="py-2 px-1 text-center whitespace-nowrap">Channel</th>
+                          <th className="py-2 px-1 text-center whitespace-nowrap">Recipients</th>
+                          <th className="py-2 px-1 text-center whitespace-nowrap">Status</th>
+                          <th className="py-2 px-2 text-right whitespace-nowrap">Sent On</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {filteredBroadcasts.map((b) => (
+                          <tr key={b.id} className="hover:bg-slate-50/60 transition-colors group cursor-pointer">
+                            <td className="py-2 px-2 min-w-0">
+                              <div className="flex items-start gap-2">
+                                <div className="w-6 h-6 rounded bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 mt-0.5">
+                                  <Megaphone size={12} />
+                                </div>
+                                <div className="truncate max-w-[180px]">
+                                  <p className="text-[10.5px] font-extrabold text-slate-900 group-hover:text-blue-600 transition-colors truncate">{b.title}</p>
+                                  <p className="text-[9px] text-slate-400 font-medium truncate">{b.desc}</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-2 px-1">
+                              <span className={`text-[8.5px] font-extrabold px-1.5 py-0.5 rounded border whitespace-nowrap ${b.typeBg}`}>
+                                {b.type}
+                              </span>
+                            </td>
+                            <td className="py-2 px-1 text-center">
+                              <div className="flex items-center justify-center gap-1 text-slate-500">
+                                <Mail size={11} />
+                                <Phone size={11} />
+                              </div>
+                            </td>
+                            <td className="py-2 px-1 text-center font-bold text-slate-700 text-[10px]">
+                              {b.recipients}
+                            </td>
+                            <td className="py-2 px-1 text-center">
+                              <span className={`text-[8.5px] font-black px-2 py-0.5 rounded-full border ${b.statusBg}`}>
+                                {b.status}
+                              </span>
+                            </td>
+                            <td className="py-2 px-2 text-right text-[9px] font-bold text-slate-400 whitespace-nowrap">
+                              {b.sentOn}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-center py-10">
+                      <Megaphone size={32} className="text-slate-200 mb-2" />
+                      <p className="text-[11px] font-bold text-slate-400">No broadcasts sent yet</p>
+                      <p className="text-[9.5px] text-slate-300 font-medium mt-0.5">Create a broadcast to send updates</p>
+                      <button onClick={() => setShowBroadcastModal(true)} className="mt-3 text-[10px] font-bold text-[#4338CA] hover:underline cursor-pointer">+ New Broadcast</button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="pt-2 border-t border-slate-100 mt-2 text-center shrink-0">
@@ -1678,9 +1588,9 @@ export default function Messages() {
 
                   {/* Donut Chart Mockup */}
                   <div className="flex items-center gap-3 my-2 bg-slate-50/50 p-2 rounded-xl border border-slate-100">
-                    <div className="w-20 h-20 rounded-full border-8 border-blue-600 border-t-emerald-500 border-r-amber-500 border-b-purple-500 flex items-center justify-center shrink-0 shadow-inner">
+                    <div className="w-20 h-20 rounded-full border-8 border-slate-200 flex items-center justify-center shrink-0 shadow-inner">
                       <div className="text-center">
-                        <span className="text-xs font-black text-slate-900 leading-none block">1,248</span>
+                        <span className="text-xs font-black text-slate-900 leading-none block">0</span>
                         <span className="text-[7.5px] font-bold text-slate-400 uppercase">Total Sent</span>
                       </div>
                     </div>
@@ -1688,19 +1598,19 @@ export default function Messages() {
                     <div className="space-y-1 text-[9.5px] font-bold text-slate-700 flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-600"></span>Email</span>
-                        <span>642 (51.4%)</span>
+                        <span>0 (0%)</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span>SMS</span>
-                        <span>386 (30.9%)</span>
+                        <span>0 (0%)</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500"></span>In App</span>
-                        <span>142 (11.4%)</span>
+                        <span>0 (0%)</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-purple-500"></span>Push</span>
-                        <span>78 (6.3%)</span>
+                        <span>0 (0%)</span>
                       </div>
                     </div>
                   </div>
@@ -1713,41 +1623,41 @@ export default function Messages() {
                   <div className="space-y-2 text-xs">
                     <div>
                       <div className="flex justify-between text-[10px] font-bold text-slate-700 mb-0.5">
-                        <span className="flex items-center gap-1"><Mail size={11} className="text-blue-600" /> Email (642 Sent)</span>
-                        <span className="text-emerald-600">98.1% Delivery Rate</span>
+                        <span className="flex items-center gap-1"><Mail size={11} className="text-blue-600" /> Email (0 Sent)</span>
+                        <span className="text-slate-400">— Delivery Rate</span>
                       </div>
                       <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-blue-600 rounded-full" style={{ width: '98.1%' }}></div>
+                        <div className="h-full bg-blue-600 rounded-full" style={{ width: '0%' }}></div>
                       </div>
                     </div>
 
                     <div>
                       <div className="flex justify-between text-[10px] font-bold text-slate-700 mb-0.5">
-                        <span className="flex items-center gap-1"><Phone size={11} className="text-emerald-600" /> SMS (386 Sent)</span>
-                        <span className="text-emerald-600">96.6% Delivery Rate</span>
+                        <span className="flex items-center gap-1"><Phone size={11} className="text-emerald-600" /> SMS (0 Sent)</span>
+                        <span className="text-slate-400">— Delivery Rate</span>
                       </div>
                       <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: '96.6%' }}></div>
+                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: '0%' }}></div>
                       </div>
                     </div>
 
                     <div>
                       <div className="flex justify-between text-[10px] font-bold text-slate-700 mb-0.5">
-                        <span className="flex items-center gap-1"><Bell size={11} className="text-amber-600" /> In App (142 Sent)</span>
-                        <span className="text-emerald-600">94.4% Delivery Rate</span>
+                        <span className="flex items-center gap-1"><Bell size={11} className="text-amber-600" /> In App (0 Sent)</span>
+                        <span className="text-slate-400">— Delivery Rate</span>
                       </div>
                       <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-amber-500 rounded-full" style={{ width: '94.4%' }}></div>
+                        <div className="h-full bg-amber-500 rounded-full" style={{ width: '0%' }}></div>
                       </div>
                     </div>
 
                     <div>
                       <div className="flex justify-between text-[10px] font-bold text-slate-700 mb-0.5">
-                        <span className="flex items-center gap-1"><Send size={11} className="text-purple-600" /> Push Notification (78 Sent)</span>
-                        <span className="text-emerald-600">93.6% Delivery Rate</span>
+                        <span className="flex items-center gap-1"><Send size={11} className="text-purple-600" /> Push Notification (0 Sent)</span>
+                        <span className="text-slate-400">— Delivery Rate</span>
                       </div>
                       <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-purple-500 rounded-full" style={{ width: '93.6%' }}></div>
+                        <div className="h-full bg-purple-500 rounded-full" style={{ width: '0%' }}></div>
                       </div>
                     </div>
                   </div>
@@ -1773,7 +1683,7 @@ export default function Messages() {
               <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-wider mb-2.5">SCHEDULED BROADCASTS</h2>
 
               <div className="space-y-2">
-                {scheduledBroadcasts.map((sb) => (
+                {scheduledBroadcasts.length > 0 ? scheduledBroadcasts.map((sb) => (
                   <div key={sb.id} className="p-2.5 rounded-xl border border-slate-100 bg-slate-50/40 flex items-center justify-between">
                     <div className="flex items-center gap-2.5 overflow-hidden">
                       <div className="w-7 h-7 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center shrink-0">
@@ -1792,7 +1702,13 @@ export default function Messages() {
                       </span>
                     </div>
                   </div>
-                ))}
+                )) : (
+                  <div className="flex flex-col items-center justify-center py-6 text-center">
+                    <CalendarDays size={26} className="text-slate-200 mb-1.5" />
+                    <p className="text-[10px] font-bold text-slate-400">No scheduled broadcasts</p>
+                    <p className="text-[9px] text-slate-300 font-medium mt-0.5">Upcoming scheduled broadcasts will appear here</p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1865,74 +1781,7 @@ export default function Messages() {
 
           </div>
 
-          {/* DEVELOPER NOTES - BROADCASTS & NOTIFICATIONS BANNER */}
-          <div className="bg-[#312E81] text-white border border-[#4338CA] rounded-xl p-4 shadow-lg">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-6 h-6 rounded bg-[#4338CA] flex items-center justify-center text-amber-300 font-mono text-xs font-black">
-                {'</>'}
-              </div>
-              <h3 className="text-xs font-black uppercase tracking-wider text-indigo-100">DEVELOPER NOTES - BROADCASTS & NOTIFICATIONS</h3>
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 text-[10px]">
-              <div>
-                <h4 className="font-extrabold text-amber-300 mb-1">1. PURPOSE</h4>
-                <ul className="space-y-0.5 text-indigo-100 font-medium list-disc list-inside">
-                  <li>Enable targeted communications.</li>
-                  <li>Keep users informed and compliant.</li>
-                  <li>Improve response and operational efficiency.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-amber-300 mb-1">2. KEY FEATURES</h4>
-                <ul className="space-y-0.5 text-indigo-100 font-medium list-disc list-inside">
-                  <li>Broadcasts by type, branch and role.</li>
-                  <li>Multiple channels: Email, SMS, In App, Push.</li>
-                  <li>Delivery status and analytics.</li>
-                  <li>Scheduled and automated alerts.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-amber-300 mb-1">3. AUTOMATION & ALERTS</h4>
-                <ul className="space-y-0.5 text-indigo-100 font-medium list-disc list-inside">
-                  <li>Trigger alerts based on events.</li>
-                  <li>Auto reminders for compliance.</li>
-                  <li>Escalate undelivered messages.</li>
-                  <li>AI suggested messages and timing.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-amber-300 mb-1">4. PERMISSIONS</h4>
-                <ul className="space-y-0.5 text-indigo-100 font-medium list-disc list-inside">
-                  <li>Admin: Full access to all features.</li>
-                  <li>Managers: Create and send broadcasts.</li>
-                  <li>Branch: View branch broadcasts.</li>
-                  <li>Users: Receive and view messages.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-amber-300 mb-1">5. DATA SOURCES</h4>
-                <ul className="space-y-0.5 text-indigo-100 font-medium list-disc list-inside">
-                  <li>Users and roles.</li>
-                  <li>Branches and vehicles.</li>
-                  <li>Compliance and maintenance data.</li>
-                  <li>System events and logs.</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="mt-3 pt-2.5 border-t border-[#4338CA] flex flex-col sm:flex-row items-center justify-between text-[9.5px] font-bold text-indigo-200 gap-2">
-              <span>All times shown in your local time (AEST)</span>
-              <span className="flex items-center gap-1 text-emerald-300">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                Data auto-refreshes every 5 minutes 🔄
-              </span>
-            </div>
-          </div>
 
         </div>
       ) : selectedCategory === 'Customer Communications' ? (
@@ -2121,8 +1970,8 @@ export default function Messages() {
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-[7.5px] xl:text-[8px] 2xl:text-[9px] font-black text-slate-400 uppercase tracking-tight block truncate" title="TOTAL COMMUNICATIONS (MTD)">TOTAL COMMUNICATIONS (MTD)</span>
-                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">1,248</div>
-                <div className="text-[8px] xl:text-[8.5px] font-bold text-emerald-600 mt-0.5 whitespace-nowrap">▲ 19.3% vs Last Month</div>
+                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">0</div>
+                <div className="text-[8px] xl:text-[8.5px] font-bold text-slate-400 mt-0.5 whitespace-nowrap">No communications yet</div>
                 <button
                   onClick={() => showToast('Viewing communications analytics')}
                   className="text-[8px] xl:text-[8.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1 cursor-pointer whitespace-nowrap truncate"
@@ -2140,8 +1989,8 @@ export default function Messages() {
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-[7.5px] xl:text-[8px] 2xl:text-[9px] font-black text-slate-400 uppercase tracking-tight block truncate" title="EMAILS SENT (MTD)">EMAILS SENT (MTD)</span>
-                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">642</div>
-                <div className="text-[8px] xl:text-[8.5px] font-bold text-emerald-600 mt-0.5 whitespace-nowrap">▲ 16.7% vs Last Month</div>
+                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">0</div>
+                <div className="text-[8px] xl:text-[8.5px] font-bold text-slate-400 mt-0.5 whitespace-nowrap">No emails sent yet</div>
                 <button
                   onClick={() => showToast('Viewing email report')}
                   className="text-[8px] xl:text-[8.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1 cursor-pointer whitespace-nowrap truncate"
@@ -2159,8 +2008,8 @@ export default function Messages() {
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-[7.5px] xl:text-[8px] 2xl:text-[9px] font-black text-slate-400 uppercase tracking-tight block truncate" title="SMS SENT (MTD)">SMS SENT (MTD)</span>
-                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">386</div>
-                <div className="text-[8px] xl:text-[8.5px] font-bold text-emerald-600 mt-0.5 whitespace-nowrap">▲ 21.8% vs Last Month</div>
+                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">0</div>
+                <div className="text-[8px] xl:text-[8.5px] font-bold text-slate-400 mt-0.5 whitespace-nowrap">No SMS sent yet</div>
                 <button
                   onClick={() => showToast('Viewing SMS report')}
                   className="text-[8px] xl:text-[8.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1 cursor-pointer whitespace-nowrap truncate"
@@ -2178,8 +2027,8 @@ export default function Messages() {
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-[7.5px] xl:text-[8px] 2xl:text-[9px] font-black text-slate-400 uppercase tracking-tight block truncate" title="DELIVERY NOTIFICATIONS (MTD)">DELIVERY NOTIFICATIONS (MTD)</span>
-                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">142</div>
-                <div className="text-[8px] xl:text-[8.5px] font-bold text-emerald-600 mt-0.5 whitespace-nowrap">▲ 14.2% vs Last Month</div>
+                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">0</div>
+                <div className="text-[8px] xl:text-[8.5px] font-bold text-slate-400 mt-0.5 whitespace-nowrap">No notifications</div>
                 <button
                   onClick={() => showToast('Viewing delivery report')}
                   className="text-[8px] xl:text-[8.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1 cursor-pointer whitespace-nowrap truncate"
@@ -2197,8 +2046,8 @@ export default function Messages() {
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-[7.5px] xl:text-[8px] 2xl:text-[9px] font-black text-slate-400 uppercase tracking-tight block truncate" title="POD SHARED (MTD)">POD SHARED (MTD)</span>
-                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">78</div>
-                <div className="text-[8px] xl:text-[8.5px] font-bold text-emerald-600 mt-0.5 whitespace-nowrap">▲ 28.1% vs Last Month</div>
+                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">0</div>
+                <div className="text-[8px] xl:text-[8.5px] font-bold text-slate-400 mt-0.5 whitespace-nowrap">No PODs shared</div>
                 <button
                   onClick={() => showToast('Viewing POD report')}
                   className="text-[8px] xl:text-[8.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1 cursor-pointer whitespace-nowrap truncate"
@@ -2216,8 +2065,8 @@ export default function Messages() {
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-[7.5px] xl:text-[8px] 2xl:text-[9px] font-black text-slate-400 uppercase tracking-tight block truncate" title="AVG RESPONSE TIME">AVG RESPONSE TIME</span>
-                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">2h 14m</div>
-                <div className="text-[8px] xl:text-[8.5px] font-bold text-emerald-600 mt-0.5 whitespace-nowrap">▲ 18.6% vs Last Month</div>
+                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">—</div>
+                <div className="text-[8px] xl:text-[8.5px] font-bold text-slate-400 mt-0.5 whitespace-nowrap">No data yet</div>
                 <button
                   onClick={() => showToast('Viewing response performance')}
                   className="text-[8px] xl:text-[8.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1 cursor-pointer whitespace-nowrap truncate"
@@ -2240,13 +2089,13 @@ export default function Messages() {
                 <div className="mb-2">
                   <h2 className="text-[11px] font-black text-slate-900 uppercase tracking-wider mb-2">CUSTOMER COMMUNICATIONS</h2>
 
-                  {/* Sub-tab pills: All (1248), Emails (642), SMS (386), System (220) */}
+                  {/* Sub-tab pills */}
                   <div className="flex items-center gap-1 bg-slate-100/80 p-0.5 rounded-lg text-[9.5px] font-extrabold text-slate-600">
                     {[
-                      { key: 'All', label: 'All (1248)' },
-                      { key: 'Emails', label: 'Emails (642)' },
-                      { key: 'SMS', label: 'SMS (386)' },
-                      { key: 'System', label: 'System (220)' }
+                      { key: 'All', label: 'All' },
+                      { key: 'Emails', label: 'Emails' },
+                      { key: 'SMS', label: 'SMS' },
+                      { key: 'System', label: 'System' }
                     ].map(tab => (
                       <button
                         key={tab.key}
@@ -2261,7 +2110,7 @@ export default function Messages() {
 
                 {/* Customer List Scrollable Area */}
                 <div className="flex-1 overflow-y-auto space-y-1 pr-0.5 mt-1">
-                  {filteredCustomers.map(c => {
+                  {filteredCustomers.length > 0 ? filteredCustomers.map(c => {
                     const isSelected = activeCustomerId === c.id;
                     return (
                       <div
@@ -2291,7 +2140,14 @@ export default function Messages() {
                         </div>
                       </div>
                     );
-                  })}
+                  }) : (
+                    <div className="flex flex-col items-center justify-center h-full text-center py-8">
+                      <Users size={28} className="text-slate-200 mb-2" />
+                      <p className="text-[10px] font-bold text-slate-400">No customer communications</p>
+                      <p className="text-[9px] text-slate-300 font-medium mt-0.5">Select a customer to start communicating</p>
+                      <button onClick={() => setShowNewCommunicationModal(true)} className="mt-3 text-[10px] font-bold text-[#4338CA] hover:underline cursor-pointer">+ New Communication</button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Footer link */}
@@ -2320,7 +2176,7 @@ export default function Messages() {
 
                 {/* Timeline Logs Scrollable List */}
                 <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-                  {communicationHistory.map((item) => {
+                  {communicationHistory.length > 0 ? communicationHistory.map((item) => {
                     const ItemIcon = item.icon;
                     return (
                       <div
@@ -2347,7 +2203,13 @@ export default function Messages() {
                         </div>
                       </div>
                     );
-                  })}
+                  }) : (
+                    <div className="flex flex-col items-center justify-center h-full text-center py-12">
+                      <Inbox size={32} className="text-slate-200 mb-2" />
+                      <p className="text-[11px] font-bold text-slate-400">No communication history</p>
+                      <p className="text-[9.5px] text-slate-300 font-medium mt-0.5">Logs will record here as you send messages</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Footer link */}
@@ -2510,73 +2372,7 @@ export default function Messages() {
 
           </div>
 
-          {/* DEVELOPER NOTES - CUSTOMER COMMUNICATIONS BANNER */}
-          <div className="bg-[#312E81] text-white border border-[#4338CA] rounded-xl p-4 shadow-lg">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-6 h-6 rounded bg-[#4338CA] flex items-center justify-center text-amber-300 font-mono text-xs font-black">
-                {'</>'}
-              </div>
-              <h3 className="text-xs font-black uppercase tracking-wider text-indigo-100">DEVELOPER NOTES - CUSTOMER COMMUNICATIONS</h3>
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 text-[10px]">
-              <div>
-                <h4 className="font-extrabold text-amber-300 mb-1">1. PURPOSE</h4>
-                <ul className="space-y-0.5 text-indigo-100 font-medium list-disc list-inside">
-                  <li>Centralise all customer communications.</li>
-                  <li>Improve visibility and customer engagement.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-amber-300 mb-1">2. KEY FEATURES</h4>
-                <ul className="space-y-0.5 text-indigo-100 font-medium list-disc list-inside">
-                  <li>Email and SMS history tracking.</li>
-                  <li>Automated delivery and ETA updates.</li>
-                  <li>POD and document sharing.</li>
-                  <li>Customer communication preferences.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-amber-300 mb-1">3. AUTOMATION & ALERTS</h4>
-                <ul className="space-y-0.5 text-indigo-100 font-medium list-disc list-inside">
-                  <li>Auto-send delivery notifications.</li>
-                  <li>Auto-share POD on completion.</li>
-                  <li>Invoice and payment reminders.</li>
-                  <li>AI-suggested messages and replies.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-amber-300 mb-1">4. PERMISSIONS</h4>
-                <ul className="space-y-0.5 text-indigo-100 font-medium list-disc list-inside">
-                  <li>Admin: Full access to all communications.</li>
-                  <li>Managers: View and send communications.</li>
-                  <li>Branch: View branch customers only.</li>
-                  <li>Users: Send and view assigned only.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-amber-300 mb-1">5. DATA SOURCES</h4>
-                <ul className="space-y-0.5 text-indigo-100 font-medium list-disc list-inside">
-                  <li>Leads and delivery status.</li>
-                  <li>Customer and contact details.</li>
-                  <li>Documents and PODs.</li>
-                  <li>Email, SMS gateway and system logs.</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="mt-3 pt-2.5 border-t border-[#4338CA] flex flex-col sm:flex-row items-center justify-between text-[9.5px] font-bold text-indigo-200 gap-2">
-              <span>All times shown in your local time (AEST)</span>
-              <span className="flex items-center gap-1 text-emerald-300">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                Data auto-refreshes every 5 minutes 🔄
-              </span>
-            </div>
-          </div>
 
         </div>
       ) : selectedCategory === 'Conversations' ? (
@@ -2885,7 +2681,7 @@ export default function Messages() {
               <div className="flex-1 p-3.5 overflow-y-auto space-y-3.5 bg-[#F8FAFC]">
 
                 {(chatMessages[activeContactId] || [
-                  { id: 1, text: activeContact.preview, time: activeContact.time, sender: activeContact.name, isMe: false, dateDivider: 'Today' }
+                  { id: 1, text: activeContact.preview || "Hi! How can I assist you with your delivery today?", time: activeContact.time || "Today", sender: activeContact.name || "Contact", isMe: false, dateDivider: 'Today' }
                 ]).map((msg) => (
                   <React.Fragment key={msg.id}>
 
@@ -3128,73 +2924,7 @@ export default function Messages() {
 
           </div>
 
-          {/* DEVELOPER NOTES - CONVERSATIONS BANNER */}
-          <div className="bg-[#312E81] text-white border border-[#4338CA] rounded-xl p-4 shadow-lg">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-6 h-6 rounded bg-[#4338CA] flex items-center justify-center text-amber-300 font-mono text-xs font-black">
-                {'</>'}
-              </div>
-              <h3 className="text-xs font-black uppercase tracking-wider text-indigo-100">DEVELOPER NOTES - CONVERSATIONS</h3>
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 text-[10px]">
-              <div>
-                <h4 className="font-extrabold text-amber-300 mb-1">1. PURPOSE</h4>
-                <ul className="space-y-0.5 text-indigo-100 font-medium list-disc list-inside">
-                  <li>Enable real-time communication.</li>
-                  <li>Improve coordination and response time.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-amber-300 mb-1">2. KEY FEATURES</h4>
-                <ul className="space-y-0.5 text-indigo-100 font-medium list-disc list-inside">
-                  <li>Direct, group and team conversations.</li>
-                  <li>File sharing, images and documents.</li>
-                  <li>Voice calls and video calls.</li>
-                  <li>Read receipts and online status.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-amber-300 mb-1">3. AUTOMATION & ALERTS</h4>
-                <ul className="space-y-0.5 text-indigo-100 font-medium list-disc list-inside">
-                  <li>Notify users of new messages.</li>
-                  <li>Auto-attach PODs and documents.</li>
-                  <li>AI suggestions for quick replies.</li>
-                  <li>Escalate urgent messages.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-amber-300 mb-1">4. PERMISSIONS</h4>
-                <ul className="space-y-0.5 text-indigo-100 font-medium list-disc list-inside">
-                  <li>Admin: Full access to all conversations.</li>
-                  <li>Managers: View relevant conversations.</li>
-                  <li>Branch: View branch conversations.</li>
-                  <li>Drivers: View assigned conversations only.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-extrabold text-amber-300 mb-1">5. DATA SOURCES</h4>
-                <ul className="space-y-0.5 text-indigo-100 font-medium list-disc list-inside">
-                  <li>Users, branches and teams.</li>
-                  <li>Loads, drivers and customers.</li>
-                  <li>Documents and PODs.</li>
-                  <li>System notifications and alerts.</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="mt-3 pt-2.5 border-t border-[#4338CA] flex flex-col sm:flex-row items-center justify-between text-[9.5px] font-bold text-indigo-200 gap-2">
-              <span>All times shown in your local time (AEST)</span>
-              <span className="flex items-center gap-1 text-emerald-300">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                Data auto-refreshes every 5 minutes 🔄
-              </span>
-            </div>
-          </div>
 
         </div>
       ) : (
@@ -3212,8 +2942,8 @@ export default function Messages() {
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-[8.5px] 2xl:text-[9.5px] font-black text-slate-400 uppercase tracking-wider block truncate">UNREAD MESSAGES</span>
-                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">18</div>
-                <div className="text-[8.5px] 2xl:text-[9.5px] font-bold text-emerald-600 mt-0.5 whitespace-nowrap">▲ 28.6% vs Last Month</div>
+                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">{contactsList.filter(c => c.badge).reduce((s, c) => s + (c.badge || 0), 0) || 0}</div>
+                <div className="text-[8.5px] 2xl:text-[9.5px] font-bold text-slate-400 mt-0.5 whitespace-nowrap">Live count from conversations</div>
                 <button
                   onClick={() => { setSelectedCategory('Conversations'); showToast('Opened Conversations'); }}
                   className="text-[8.5px] 2xl:text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1.5 cursor-pointer whitespace-nowrap truncate"
@@ -3231,8 +2961,8 @@ export default function Messages() {
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-[8.5px] 2xl:text-[9.5px] font-black text-slate-400 uppercase tracking-wider block truncate">TOTAL CONVERSATIONS</span>
-                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">156</div>
-                <div className="text-[8.5px] 2xl:text-[9.5px] font-bold text-emerald-600 mt-0.5 whitespace-nowrap">▲ 12.4% vs Last Month</div>
+                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">{contactsList.length}</div>
+                <div className="text-[8.5px] 2xl:text-[9.5px] font-bold text-slate-400 mt-0.5 whitespace-nowrap">Live count from conversations</div>
                 <button
                   onClick={() => { setSelectedCategory('Conversations'); showToast('Opened Conversations'); }}
                   className="text-[8.5px] 2xl:text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1.5 cursor-pointer whitespace-nowrap truncate"
@@ -3250,8 +2980,8 @@ export default function Messages() {
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-[8.5px] 2xl:text-[9.5px] font-black text-slate-400 uppercase tracking-wider block truncate">PENDING REPLIES</span>
-                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">24</div>
-                <div className="text-[8.5px] 2xl:text-[9.5px] font-bold text-rose-600 mt-0.5 whitespace-nowrap">▼ 14.3% vs Last Month</div>
+                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">0</div>
+                <div className="text-[8.5px] 2xl:text-[9.5px] font-bold text-slate-400 mt-0.5 whitespace-nowrap">No pending replies</div>
                 <button
                   onClick={() => { setSelectedCategory('Conversations'); showToast('Opened Conversations'); }}
                   className="text-[8.5px] 2xl:text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1.5 cursor-pointer whitespace-nowrap truncate"
@@ -3269,8 +2999,8 @@ export default function Messages() {
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-[8.5px] 2xl:text-[9.5px] font-black text-slate-400 uppercase tracking-wider block truncate">ANNOUNCEMENTS</span>
-                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">5</div>
-                <div className="text-[8.5px] 2xl:text-[9.5px] font-bold text-emerald-600 mt-0.5 whitespace-nowrap">▲ 66.7% vs Last Month</div>
+                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">{recentBroadcasts.length}</div>
+                <div className="text-[8.5px] 2xl:text-[9.5px] font-bold text-slate-400 mt-0.5 whitespace-nowrap">Total broadcasts sent</div>
                 <button
                   onClick={() => { setSelectedCategory('Broadcast & Notifications'); showToast('Opened Broadcast & Notifications'); }}
                   className="text-[8.5px] 2xl:text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1.5 cursor-pointer whitespace-nowrap truncate"
@@ -3288,8 +3018,8 @@ export default function Messages() {
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-[8.5px] 2xl:text-[9.5px] font-black text-slate-400 uppercase tracking-wider block truncate">SENT THIS MONTH</span>
-                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">372</div>
-                <div className="text-[8.5px] 2xl:text-[9.5px] font-bold text-emerald-600 mt-0.5 whitespace-nowrap">▲ 18.9% vs Last Month</div>
+                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">0</div>
+                <div className="text-[8.5px] 2xl:text-[9.5px] font-bold text-slate-400 mt-0.5 whitespace-nowrap">No messages sent yet</div>
                 <button
                   onClick={() => { setSelectedCategory('Templates & Automation'); showToast('Opened Templates & Automation'); }}
                   className="text-[8.5px] 2xl:text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1.5 cursor-pointer whitespace-nowrap truncate"
@@ -3307,8 +3037,8 @@ export default function Messages() {
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-[8.5px] 2xl:text-[9.5px] font-black text-slate-400 uppercase tracking-wider block truncate">DELIVERY SUCCESS RATE</span>
-                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">97.8%</div>
-                <div className="text-[8.5px] 2xl:text-[9.5px] font-bold text-emerald-600 mt-0.5 whitespace-nowrap">▲ 2.4% vs Last Month</div>
+                <div className="text-lg font-black text-slate-900 leading-tight mt-0.5 whitespace-nowrap">—</div>
+                <div className="text-[8.5px] 2xl:text-[9.5px] font-bold text-slate-400 mt-0.5 whitespace-nowrap">No data yet</div>
                 <button
                   onClick={() => { setSelectedCategory('Customer Communications'); showToast('Opened Customer Communications'); }}
                   className="text-[8.5px] 2xl:text-[9.5px] font-bold text-[#4338CA] hover:underline flex items-center gap-0.5 mt-1.5 cursor-pointer whitespace-nowrap truncate"
@@ -3508,7 +3238,7 @@ export default function Messages() {
                 </div>
 
                 <div className="space-y-1.5">
-                  {contactsList.slice(0, 6).map((item) => {
+                  {contactsList.slice(0, 6).length > 0 ? contactsList.slice(0, 6).map((item) => {
                     const isSelected = activeContactId === item.id;
                     return (
                       <div
@@ -3547,7 +3277,14 @@ export default function Messages() {
                         </div>
                       </div>
                     );
-                  })}
+                  }) : (
+                    <div className="flex flex-col items-center justify-center py-8 text-center">
+                      <Inbox size={28} className="text-slate-200 mb-2" />
+                      <p className="text-[10px] font-bold text-slate-400">No messages yet</p>
+                      <p className="text-[9px] text-slate-300 font-medium mt-0.5">Your inbox is empty</p>
+                      <button onClick={() => setShowNewMessageModal(true)} className="mt-3 text-[10px] font-bold text-[#4338CA] hover:underline cursor-pointer">+ New Message</button>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -3570,7 +3307,7 @@ export default function Messages() {
                 </div>
 
                 <div className="space-y-1.5">
-                  {contactsList.map((item) => (
+                  {contactsList.length > 0 ? contactsList.map((item) => (
                     <div
                       key={item.id}
                       onClick={() => { setActiveContactId(item.id); setSelectedCategory('Conversations'); }}
@@ -3603,7 +3340,14 @@ export default function Messages() {
                         )}
                       </div>
                     </div>
-                  ))}
+                  )) : (
+                    <div className="flex flex-col items-center justify-center py-8 text-center">
+                      <MessageSquare size={28} className="text-slate-200 mb-2" />
+                      <p className="text-[10px] font-bold text-slate-400">No conversations yet</p>
+                      <p className="text-[9px] text-slate-300 font-medium mt-0.5">Start a new conversation</p>
+                      <button onClick={() => setShowNewMessageModal(true)} className="mt-3 text-[10px] font-bold text-[#4338CA] hover:underline cursor-pointer">+ New Message</button>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -3629,31 +3373,27 @@ export default function Messages() {
                   </div>
 
                   <div className="space-y-2">
-                    {[
-                      { id: 1, title: 'New Safety Compliance Check', desc: 'Mandatory pre-start safety check updated.', author: 'Sarah Mitchell', date: '30 May 2025', icon: Megaphone, iconBg: 'bg-[#EEF2FF] text-[#4338CA] border border-[#C7D2FE]' },
-                      { id: 2, title: 'Fuel Price Update', desc: 'New fuel card rates effective from 1 June 2025.', author: 'James Driver', date: '28 May 2025', icon: Truck, iconBg: 'bg-[#DCFCE7] text-[#16A34A] border border-[#86EFAC]' },
-                      { id: 3, title: 'System Maintenance', desc: 'Scheduled maintenance on 2 June 2025.', author: 'IT Team', date: '27 May 2025', icon: Wrench, iconBg: 'bg-[#FFEDD5] text-[#EA580C] border border-[#FDBA74]' },
-                      { id: 4, title: 'Training Session', desc: 'Driver safety training session on 5 June.', author: 'Sarah Mitchell', date: '26 May 2025', icon: UserCheck, iconBg: 'bg-[#F3E8FF] text-[#9333EA] border border-[#D8B4FE]' }
-                    ].map((ann) => {
-                      const AnnIcon = ann.icon;
-                      return (
-                        <div key={ann.id} className="p-2 rounded-lg border border-slate-100 bg-slate-50/30 hover:bg-slate-50 transition-all flex items-start gap-2 group">
-                          <div className={`w-6 h-6 rounded flex items-center justify-center shrink-0 mt-0.5 ${ann.iconBg}`}>
-                            <AnnIcon size={12} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-1">
-                              <h3 className="text-[10.5px] font-extrabold text-slate-900 group-hover:text-blue-600 transition-colors truncate">{ann.title}</h3>
-                              <Pin size={10} className="text-amber-500 shrink-0 fill-amber-400" />
-                            </div>
-                            <p className="text-[9.5px] text-slate-500 font-medium leading-tight mt-0.5 line-clamp-2">{ann.desc}</p>
-                            <p className="text-[8.5px] text-slate-400 font-bold mt-1">
-                              {ann.author} • {ann.date}
-                            </p>
-                          </div>
+                    {recentBroadcasts.slice(0, 4).length > 0 ? recentBroadcasts.slice(0, 4).map((ann) => (
+                      <div key={ann.id} className="p-2 rounded-lg border border-slate-100 bg-slate-50/30 hover:bg-slate-50 transition-all flex items-start gap-2 group">
+                        <div className="w-6 h-6 rounded flex items-center justify-center shrink-0 mt-0.5 bg-[#EEF2FF] text-[#4338CA] border border-[#C7D2FE]">
+                          <Megaphone size={12} />
                         </div>
-                      );
-                    })}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-1">
+                            <h3 className="text-[10.5px] font-extrabold text-slate-900 group-hover:text-blue-600 transition-colors truncate">{ann.title}</h3>
+                            <Pin size={10} className="text-amber-500 shrink-0 fill-amber-400" />
+                          </div>
+                          <p className="text-[9.5px] text-slate-500 font-medium leading-tight mt-0.5 line-clamp-2">{ann.desc}</p>
+                          <p className="text-[8.5px] text-slate-400 font-bold mt-1">{ann.sentOn}</p>
+                        </div>
+                      </div>
+                    )) : (
+                      <div className="flex flex-col items-center justify-center py-6 text-center">
+                        <Megaphone size={24} className="text-slate-200 mb-2" />
+                        <p className="text-[10px] font-bold text-slate-400">No announcements yet</p>
+                        <p className="text-[9px] text-slate-300 font-medium mt-0.5">Broadcasts will appear here</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -3675,41 +3415,24 @@ export default function Messages() {
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  <div className="p-2 rounded-lg bg-slate-50/70 border border-slate-100 text-left">
-                    <div className="w-6 h-6 rounded bg-[#EEF2FF] text-[#4338CA] flex items-center justify-center mb-1.5">
-                      <Send size={12} />
-                    </div>
-                    <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-wider block truncate">Messages Sent</span>
-                    <div className="text-sm font-black text-slate-900 leading-tight mt-0.5">142</div>
-                    <div className="text-[8.5px] font-bold text-emerald-600 mt-0.5">▲ 5.2%</div>
-                  </div>
-
-                  <div className="p-2 rounded-lg bg-slate-50/70 border border-slate-100 text-left">
-                    <div className="w-6 h-6 rounded bg-[#DCFCE7] text-[#16A34A] flex items-center justify-center mb-1.5">
-                      <Mail size={12} />
-                    </div>
-                    <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-wider block truncate">Messages Received</span>
-                    <div className="text-sm font-black text-slate-900 leading-tight mt-0.5">138</div>
-                    <div className="text-[8.5px] font-bold text-emerald-600 mt-0.5">▲ 12.7%</div>
-                  </div>
-
-                  <div className="p-2 rounded-lg bg-slate-50/70 border border-slate-100 text-left">
-                    <div className="w-6 h-6 rounded bg-[#FFEDD5] text-[#EA580C] flex items-center justify-center mb-1.5">
-                      <CheckCircle2 size={12} />
-                    </div>
-                    <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-wider block truncate">Replies Sent</span>
-                    <div className="text-sm font-black text-slate-900 leading-tight mt-0.5">118</div>
-                    <div className="text-[8.5px] font-bold text-emerald-600 mt-0.5">▲ 18.1%</div>
-                  </div>
-
-                  <div className="p-2 rounded-lg bg-slate-50/70 border border-slate-100 text-left">
-                    <div className="w-6 h-6 rounded bg-[#E0F2FE] text-[#0284C7] flex items-center justify-center mb-1.5">
-                      <Eye size={12} />
-                    </div>
-                    <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-wider block truncate">Read Rate</span>
-                    <div className="text-sm font-black text-slate-900 leading-tight mt-0.5">94.3%</div>
-                    <div className="text-[8.5px] font-bold text-emerald-600 mt-0.5">▲ 3.6%</div>
-                  </div>
+                  {[
+                    { label: 'Messages Sent', value: 0, icon: Send, bg: 'bg-[#EEF2FF] text-[#4338CA]' },
+                    { label: 'Messages Received', value: 0, icon: Mail, bg: 'bg-[#DCFCE7] text-[#16A34A]' },
+                    { label: 'Replies Sent', value: 0, icon: CheckCircle2, bg: 'bg-[#FFEDD5] text-[#EA580C]' },
+                    { label: 'Read Rate', value: '—', icon: Eye, bg: 'bg-[#E0F2FE] text-[#0284C7]' }
+                  ].map((stat) => {
+                    const StatIcon = stat.icon;
+                    return (
+                      <div key={stat.label} className="p-2 rounded-lg bg-slate-50/70 border border-slate-100 text-left">
+                        <div className={`w-6 h-6 rounded ${stat.bg} flex items-center justify-center mb-1.5`}>
+                          <StatIcon size={12} />
+                        </div>
+                        <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-wider block truncate">{stat.label}</span>
+                        <div className="text-sm font-black text-slate-900 leading-tight mt-0.5">{stat.value}</div>
+                        <div className="text-[8.5px] font-bold text-slate-300 mt-0.5">No data yet</div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -3819,10 +3542,14 @@ export default function Messages() {
               </button>
             </div>
 
-            <div className="space-y-3 text-xs">
+            <form onSubmit={handleCreateNewMessageSubmit} className="space-y-3 text-xs">
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 mb-1">Recipient</label>
-                <select className="w-full p-2 border border-slate-200 rounded-lg outline-none font-semibold">
+                <select
+                  value={newMessageForm.recipient}
+                  onChange={(e) => setNewMessageForm({ ...newMessageForm, recipient: e.target.value })}
+                  className="w-full p-2 border border-slate-200 rounded-lg outline-none font-semibold cursor-pointer"
+                >
                   <option>Nilesh Chand (Driver - ANSH 1)</option>
                   <option>Shavneel Prasad (Driver - ANSH 2)</option>
                   <option>Dispatch Team (Sydney Branch)</option>
@@ -3833,7 +3560,11 @@ export default function Messages() {
 
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 mb-1">Message Category</label>
-                <select className="w-full p-2 border border-slate-200 rounded-lg outline-none font-semibold">
+                <select
+                  value={newMessageForm.category}
+                  onChange={(e) => setNewMessageForm({ ...newMessageForm, category: e.target.value })}
+                  className="w-full p-2 border border-slate-200 rounded-lg outline-none font-semibold cursor-pointer"
+                >
                   <option>Conversations</option>
                   <option>Customer Communications</option>
                   <option>Broadcast & Notifications</option>
@@ -3841,19 +3572,26 @@ export default function Messages() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">Message</label>
-                <textarea rows={4} placeholder="Write your message here..." className="w-full p-2.5 border border-slate-200 rounded-lg outline-none font-medium"></textarea>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">Message *</label>
+                <textarea
+                  rows={4}
+                  required
+                  value={newMessageForm.content}
+                  onChange={(e) => setNewMessageForm({ ...newMessageForm, content: e.target.value })}
+                  placeholder="Write your message here..."
+                  className="w-full p-2.5 border border-slate-200 rounded-lg outline-none font-medium"
+                ></textarea>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2">
-                <button onClick={() => setShowNewMessageModal(false)} className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-slate-700 font-bold hover:bg-slate-50 cursor-pointer">
+                <button type="button" onClick={() => setShowNewMessageModal(false)} className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-slate-700 font-bold hover:bg-slate-50 cursor-pointer">
                   Cancel
                 </button>
-                <button onClick={() => { setShowNewMessageModal(false); showToast('Message sent successfully!'); }} className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold cursor-pointer">
+                <button type="submit" className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold cursor-pointer">
                   Send Message
                 </button>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       )}
@@ -3869,10 +3607,14 @@ export default function Messages() {
               </button>
             </div>
 
-            <div className="space-y-3 text-xs">
+            <form onSubmit={handleCreateCommunicationSubmit} className="space-y-3 text-xs">
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 mb-1">Customer</label>
-                <select className="w-full p-2 border border-slate-200 rounded-lg outline-none font-semibold">
+                <select
+                  value={newCommForm.customer}
+                  onChange={(e) => setNewCommForm({ ...newCommForm, customer: e.target.value })}
+                  className="w-full p-2 border border-slate-200 rounded-lg outline-none font-semibold cursor-pointer"
+                >
                   <option>ABC Logistics (operations@abclogistics.com.au)</option>
                   <option>Global Retail Solutions (contact@globalretail.com.au)</option>
                   <option>Fast Freight Pty Ltd (info@fastfreight.com.au)</option>
@@ -3882,7 +3624,11 @@ export default function Messages() {
 
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 mb-1">Communication Type</label>
-                <select className="w-full p-2 border border-slate-200 rounded-lg outline-none font-semibold">
+                <select
+                  value={newCommForm.type}
+                  onChange={(e) => setNewCommForm({ ...newCommForm, type: e.target.value })}
+                  className="w-full p-2 border border-slate-200 rounded-lg outline-none font-semibold cursor-pointer"
+                >
                   <option>Delivery Notification</option>
                   <option>ETA Update</option>
                   <option>POD Shared</option>
@@ -3891,19 +3637,26 @@ export default function Messages() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">Message Content</label>
-                <textarea rows={4} placeholder="Type customer update..." className="w-full p-2.5 border border-slate-200 rounded-lg outline-none font-medium"></textarea>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">Message Content *</label>
+                <textarea
+                  rows={4}
+                  required
+                  value={newCommForm.content}
+                  onChange={(e) => setNewCommForm({ ...newCommForm, content: e.target.value })}
+                  placeholder="Type customer update..."
+                  className="w-full p-2.5 border border-slate-200 rounded-lg outline-none font-medium"
+                ></textarea>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2">
-                <button onClick={() => setShowNewCommunicationModal(false)} className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-slate-700 font-bold hover:bg-slate-50 cursor-pointer">
+                <button type="button" onClick={() => setShowNewCommunicationModal(false)} className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-slate-700 font-bold hover:bg-slate-50 cursor-pointer">
                   Cancel
                 </button>
-                <button onClick={() => { setShowNewCommunicationModal(false); showToast('Customer communication sent!'); }} className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold cursor-pointer">
+                <button type="submit" className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold cursor-pointer">
                   Send Update
                 </button>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       )}
@@ -3919,10 +3672,14 @@ export default function Messages() {
               </button>
             </div>
 
-            <div className="space-y-3 text-xs">
+            <form onSubmit={handleCreateBroadcastSubmit} className="space-y-3 text-xs">
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 mb-1">Target Audience</label>
-                <select className="w-full p-2 border border-slate-200 rounded-lg outline-none font-semibold">
+                <select
+                  value={newBroadcastForm.audience}
+                  onChange={(e) => setNewBroadcastForm({ ...newBroadcastForm, audience: e.target.value })}
+                  className="w-full p-2 border border-slate-200 rounded-lg outline-none font-semibold cursor-pointer"
+                >
                   <option>All Drivers</option>
                   <option>All Customers</option>
                   <option>All Branches</option>
@@ -3931,24 +3688,37 @@ export default function Messages() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">Broadcast Title</label>
-                <input type="text" placeholder="e.g. Safety Alert / Fuel Price Update" className="w-full p-2 border border-slate-200 rounded-lg outline-none font-medium" />
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">Broadcast Title *</label>
+                <input
+                  type="text"
+                  required
+                  value={newBroadcastForm.title}
+                  onChange={(e) => setNewBroadcastForm({ ...newBroadcastForm, title: e.target.value })}
+                  placeholder="e.g. Safety Alert / Fuel Price Update"
+                  className="w-full p-2 border border-slate-200 rounded-lg outline-none font-medium"
+                />
               </div>
 
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 mb-1">Announcement Body</label>
-                <textarea rows={4} placeholder="Type broadcast message..." className="w-full p-2.5 border border-slate-200 rounded-lg outline-none font-medium"></textarea>
+                <textarea
+                  rows={4}
+                  value={newBroadcastForm.body}
+                  onChange={(e) => setNewBroadcastForm({ ...newBroadcastForm, body: e.target.value })}
+                  placeholder="Type broadcast message..."
+                  className="w-full p-2.5 border border-slate-200 rounded-lg outline-none font-medium"
+                ></textarea>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2">
-                <button onClick={() => setShowBroadcastModal(false)} className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-slate-700 font-bold hover:bg-slate-50 cursor-pointer">
+                <button type="button" onClick={() => setShowBroadcastModal(false)} className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-slate-700 font-bold hover:bg-slate-50 cursor-pointer">
                   Cancel
                 </button>
-                <button onClick={() => { setShowBroadcastModal(false); showToast('Broadcast sent to all users!'); }} className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold cursor-pointer">
+                <button type="submit" className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold cursor-pointer">
                   Send Broadcast
                 </button>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       )}
@@ -3964,10 +3734,14 @@ export default function Messages() {
               </button>
             </div>
 
-            <div className="space-y-3 text-xs">
+            <form onSubmit={handleCreateTemplateModalSubmit} className="space-y-3 text-xs">
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 mb-1">Creation Type</label>
-                <select className="w-full p-2 border border-slate-200 rounded-lg outline-none font-semibold">
+                <select
+                  value={newTemplateModalForm.type}
+                  onChange={(e) => setNewTemplateModalForm({ ...newTemplateModalForm, type: e.target.value })}
+                  className="w-full p-2 border border-slate-200 rounded-lg outline-none font-semibold cursor-pointer"
+                >
                   <option>Message Template</option>
                   <option>Automation Rule</option>
                   <option>Trigger Notification</option>
@@ -3975,20 +3749,35 @@ export default function Messages() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">Title / Rule Name</label>
-                <input type="text" placeholder="e.g. Delivery ETA Alert / Payment Overdue" className="w-full p-2 border border-slate-200 rounded-lg outline-none font-medium" />
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">Title / Rule Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={newTemplateModalForm.title}
+                  onChange={(e) => setNewTemplateModalForm({ ...newTemplateModalForm, title: e.target.value })}
+                  placeholder="e.g. Delivery ETA Alert / Payment Overdue"
+                  className="w-full p-2 border border-slate-200 rounded-lg outline-none font-medium"
+                />
               </div>
 
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 mb-1">Category & Channel</label>
                 <div className="grid grid-cols-2 gap-2">
-                  <select className="w-full p-2 border border-slate-200 rounded-lg outline-none font-semibold">
+                  <select
+                    value={newTemplateModalForm.category}
+                    onChange={(e) => setNewTemplateModalForm({ ...newTemplateModalForm, category: e.target.value })}
+                    className="w-full p-2 border border-slate-200 rounded-lg outline-none font-semibold cursor-pointer"
+                  >
                     <option>Delivery Notifications</option>
                     <option>Invoice & Payment</option>
                     <option>SMS Templates</option>
                     <option>Email Templates</option>
                   </select>
-                  <select className="w-full p-2 border border-slate-200 rounded-lg outline-none font-semibold">
+                  <select
+                    value={newTemplateModalForm.channel}
+                    onChange={(e) => setNewTemplateModalForm({ ...newTemplateModalForm, channel: e.target.value })}
+                    className="w-full p-2 border border-slate-200 rounded-lg outline-none font-semibold cursor-pointer"
+                  >
                     <option>SMS Gateway</option>
                     <option>Email</option>
                     <option>Push Notification</option>
@@ -3998,18 +3787,24 @@ export default function Messages() {
 
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 mb-1">Template Content</label>
-                <textarea rows={4} defaultValue="Hi {{customer_name}}, your order {{load_id}} is scheduled for {{eta_time}}." className="w-full p-2.5 border border-slate-200 rounded-lg outline-none font-medium"></textarea>
+                <textarea
+                  rows={4}
+                  value={newTemplateModalForm.content}
+                  onChange={(e) => setNewTemplateModalForm({ ...newTemplateModalForm, content: e.target.value })}
+                  placeholder="Hi {{customer_name}}, your order {{load_id}} is scheduled for {{eta_time}}."
+                  className="w-full p-2.5 border border-slate-200 rounded-lg outline-none font-medium"
+                ></textarea>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2">
-                <button onClick={() => setShowNewTemplateModal(false)} className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-slate-700 font-bold hover:bg-slate-50 cursor-pointer">
+                <button type="button" onClick={() => setShowNewTemplateModal(false)} className="px-3.5 py-1.5 rounded-lg border border-slate-200 text-slate-700 font-bold hover:bg-slate-50 cursor-pointer">
                   Cancel
                 </button>
-                <button onClick={() => { setShowNewTemplateModal(false); showToast('Template / Rule created successfully!'); }} className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold cursor-pointer">
+                <button type="submit" className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold cursor-pointer">
                   Create Template
                 </button>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       )}

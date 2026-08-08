@@ -130,7 +130,7 @@ export default function Documents() {
       {/* TOP HEADER TITLE BAR */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Documents & Compliance</h1>
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Documents & Compliance</h1>
           <p className="text-xs font-semibold text-slate-500 mt-0.5">Manage your documents, licenses and ensure you stay compliant on the road</p>
         </div>
 
@@ -154,7 +154,7 @@ export default function Documents() {
           {/* Module Header Card */}
           <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-lg font-black text-indigo-700 tracking-tight">15.10 Documents</span>
+              <span className="text-lg font-black text-indigo-700 tracking-tight">Documents</span>
               <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase">
                 Compliant
               </span>

@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import api from '../../services/api';
 import {
   Building, Users, Award, Plug, Cpu, ShieldCheck, CheckCircle2, Clock,
   AlertTriangle, Mail, Sliders, DollarSign, CreditCard, Bell, Shield,
@@ -22,100 +23,332 @@ export default function CompanySettings() {
   const [isGenerateApiKeyModalOpen, setIsGenerateApiKeyModalOpen] = useState(false);
   const [isTestWebhookModalOpen, setIsTestWebhookModalOpen] = useState(false);
   const [newApiKeyForm, setNewApiKeyForm] = useState({ name: '', limit: '100,000 req/mo' });
+  const [apiKeysList, setApiKeysList] = useState([]);
 
-  const [apiKeysList, setApiKeysList] = useState([
-    { id: 1, name: 'Production Fleet Sync Key', prefix: 'hero_live_9f8a...3b21', date: '12 Jan 2025', limit: '100,000 req/mo', status: 'Active' },
-    { id: 2, name: 'Stripe Payment Webhook Key', prefix: 'hero_live_4a1c...8e92', date: '15 Feb 2025', limit: '50,000 req/mo', status: 'Active' }
+  // Payment Methods State
+  const [isAddPaymentMethodModalOpen, setIsAddPaymentMethodModalOpen] = useState(false);
+  const [paymentMethodsList, setPaymentMethodsList] = useState([
+    {
+      id: 1,
+      type: 'Visa ending in 4242',
+      cardHolder: 'Sarah Mitchell',
+      cardNumber: '4242',
+      expDate: '04/2027',
+      isPrimary: true,
+      note: 'Used for recurring monthly billing ($854.70 AUD).',
+      badgeBg: 'bg-[#1A1F71]',
+      badgeText: 'VISA'
+    },
+    {
+      id: 2,
+      type: 'MasterCard ending in 8819',
+      cardHolder: 'Backup Card',
+      cardNumber: '8819',
+      expDate: '11/2026',
+      isPrimary: false,
+      note: 'Backup Card',
+      badgeBg: 'bg-[#EB001B]',
+      badgeText: 'MC'
+    }
   ]);
 
+  const [newPaymentMethodForm, setNewPaymentMethodForm] = useState({
+    type: 'Credit / Debit Card',
+    cardHolder: '',
+    cardNumber: '',
+    expMonth: '05',
+    expYear: '2028',
+    cvv: '',
+    bankName: 'Commonwealth Bank of Australia',
+    accountName: '',
+    bsb: '',
+    accountNumber: '',
+    upiId: '',
+    isPrimary: false
+  });
+
+  const handleMakePrimaryPaymentMethod = (id) => {
+    setPaymentMethodsList(prev => prev.map(item => ({
+      ...item,
+      isPrimary: item.id === id,
+      note: item.id === id ? 'Used for recurring monthly billing.' : 'Backup payment method'
+    })));
+    triggerToast('Payment method set as primary!');
+  };
+
+  const handleRemovePaymentMethod = (id) => {
+    setPaymentMethodsList(prev => prev.filter(item => item.id !== id));
+    triggerToast('Payment method removed successfully.');
+  };
+
+  const handleAddPaymentMethodSubmit = (e) => {
+    e.preventDefault();
+    const type = newPaymentMethodForm.type;
+    
+    let brand = 'Visa';
+    let badgeBg = 'bg-[#1A1F71]';
+    let badgeText = 'VISA';
+    let last4 = '4242';
+    let expDateStr = `${newPaymentMethodForm.expMonth}/${newPaymentMethodForm.expYear}`;
+    let holderStr = newPaymentMethodForm.cardHolder || 'Cardholder';
+
+    if (type === 'Credit / Debit Card') {
+      const cleanNum = newPaymentMethodForm.cardNumber.replace(/\s+/g, '');
+      if (!cleanNum || cleanNum.length < 4) {
+        triggerToast('Please enter a valid card number');
+        return;
+      }
+      last4 = cleanNum.slice(-4);
+      if (cleanNum.startsWith('5') || cleanNum.startsWith('2')) {
+        brand = 'MasterCard';
+        badgeBg = 'bg-[#EB001B]';
+        badgeText = 'MC';
+      } else if (cleanNum.startsWith('3')) {
+        brand = 'American Express';
+        badgeBg = 'bg-[#006FCF]';
+        badgeText = 'AMEX';
+      } else {
+        brand = 'Visa';
+        badgeBg = 'bg-[#1A1F71]';
+        badgeText = 'VISA';
+      }
+    } else if (type === 'Direct Debit (BSB)') {
+      if (!newPaymentMethodForm.accountNumber) {
+        triggerToast('Please enter account number');
+        return;
+      }
+      brand = 'Direct Debit';
+      badgeBg = 'bg-slate-900';
+      badgeText = 'BANK';
+      last4 = newPaymentMethodForm.accountNumber.slice(-4);
+      expDateStr = `BSB ${newPaymentMethodForm.bsb || '062-000'}`;
+      holderStr = newPaymentMethodForm.accountName || newPaymentMethodForm.bankName || 'Direct Debit Account';
+    } else if (type === 'UPI / NetBanking') {
+      if (!newPaymentMethodForm.upiId) {
+        triggerToast('Please enter UPI ID');
+        return;
+      }
+      brand = 'UPI Instant Pay';
+      badgeBg = 'bg-emerald-700';
+      badgeText = 'UPI';
+      last4 = newPaymentMethodForm.upiId;
+      expDateStr = 'Instant Pay Verified';
+      holderStr = newPaymentMethodForm.upiId;
+    }
+
+    const isPrim = newPaymentMethodForm.isPrimary || paymentMethodsList.length === 0;
+
+    const newMethod = {
+      id: Date.now(),
+      type: `${brand} ending in ${last4}`,
+      cardHolder: holderStr,
+      cardNumber: last4,
+      expDate: expDateStr,
+      isPrimary: isPrim,
+      note: isPrim ? 'Used for recurring monthly billing.' : 'Backup payment method',
+      badgeBg,
+      badgeText
+    };
+
+    if (isPrim) {
+      setPaymentMethodsList(prev => [
+        newMethod,
+        ...prev.map(p => ({ ...p, isPrimary: false, note: 'Backup payment method' }))
+      ]);
+    } else {
+      setPaymentMethodsList(prev => [...prev, newMethod]);
+    }
+
+    setIsAddPaymentMethodModalOpen(false);
+    setNewPaymentMethodForm({
+      type: 'Credit / Debit Card',
+      cardHolder: '',
+      cardNumber: '',
+      expMonth: '05',
+      expYear: '2028',
+      cvv: '',
+      bankName: 'Commonwealth Bank of Australia',
+      accountName: '',
+      bsb: '',
+      accountNumber: '',
+      upiId: '',
+      isPrimary: false
+    });
+    triggerToast(`Payment method "${brand}" added successfully!`);
+  };
+
+  const [newIntegrationForm, setNewIntegrationForm] = useState({
+    providerName: 'Xero Accounting & Invoicing',
+    name: 'Xero Accounting',
+    category: 'Accounting',
+    provider: 'Xero Accounting',
+    apiKey: '',
+    syncFrequency: 'Every 15 minutes',
+    autoSync: true
+  });
+
+  const handleAddIntegrationSubmit = async (e) => {
+    e.preventDefault();
+    const targetProvider = newIntegrationForm.providerName || newIntegrationForm.provider || newIntegrationForm.name || 'Xero Accounting';
+    if (!targetProvider) {
+      triggerToast('Please select or enter an integration provider!');
+      return;
+    }
+
+    try {
+      await api.post('/company-integrations', {
+        providerName: targetProvider,
+        apiKey: newIntegrationForm.apiKey,
+        status: 'CONNECTED'
+      });
+
+      setIsAddIntegrationModalOpen(false);
+      triggerToast(`Integration "${targetProvider}" authorized & connected successfully!`);
+      setNewIntegrationForm({
+        providerName: 'Xero Accounting & Invoicing',
+        name: 'Xero Accounting',
+        category: 'Accounting',
+        provider: 'Xero Accounting',
+        apiKey: '',
+        syncFrequency: 'Every 15 minutes',
+        autoSync: true
+      });
+    } catch (err) {
+      console.error('Error connecting integration:', err);
+      const errMsg = err.response?.data?.message || err.response?.data?.error?.message || 'Failed to connect integration. Please try again.';
+      triggerToast(errMsg);
+    }
+  };
 
   const [isCreateTemplateModalOpen, setIsCreateTemplateModalOpen] = useState(false);
   const [isAddNotificationRuleModalOpen, setIsAddNotificationRuleModalOpen] = useState(false);
   const [isCreateRecipientGroupModalOpen, setIsCreateRecipientGroupModalOpen] = useState(false);
 
-  const [notificationTemplatesList, setNotificationTemplatesList] = useState([
-    { id: 1, title: 'Consignment Created (Email)', channel: 'Email', preview: 'Dear {customer_name}, Consignment #{load_id} has been dispatched to {destination}.', status: 'Active' },
-    { id: 2, title: 'Proof of Delivery (POD) Receipt', channel: 'SMS & Email', preview: 'Load #{load_id} delivered & signed by {signer_name} at {time}. Download POD: {link}', status: 'Active' },
-    { id: 3, title: 'Driver Fatigue Break Warning', channel: 'SMS & In-App', preview: 'Urgent: Driver {driver_name}, mandatory 30m rest break required in 15 mins.', status: 'Active' },
-    { id: 4, title: 'Invoice Payment Overdue Notice', channel: 'Email', preview: 'Invoice #{inv_num} for ${amount} is overdue by {days} days. Please click to pay.', status: 'Active' },
-  ]);
-
-  const [notificationRulesList, setNotificationRulesList] = useState([
-    { id: 1, name: 'Load Status: DELIVERED Alert', trigger: 'When Load status changes to DELIVERED', channels: 'SMS + Email', rec: 'Customer & Accounts', priority: 'High', status: 'Enabled' },
-    { id: 2, name: 'NHVR EWD Fatigue Expiry Risk', trigger: 'When Driver reaches 11h 30m work threshold', channels: 'SMS + Push', rec: 'Driver & Dispatcher', priority: 'Critical', status: 'Enabled' },
-    { id: 3, name: 'Invoice Issued Notification', trigger: 'When Invoice status changes to ISSUED', channels: 'Email', rec: 'Customer Billing Dept', priority: 'Medium', status: 'Enabled' },
-  ]);
-
-  const [recipientGroupsList, setRecipientGroupsList] = useState([
-    { id: 1, name: 'Active Drivers', count: '48 drivers', desc: 'All registered operational truck drivers.' },
-    { id: 2, name: 'Fleet Dispatchers', count: '12 members', desc: 'Command Centre dispatchers & yard staff.' },
-    { id: 3, name: 'VIP Customer Accounts', count: '86 contacts', desc: 'Key account managers & billing contacts.' },
-    { id: 4, name: 'Finance & Billing', count: '6 members', desc: 'Accounts receivable & payroll team.' },
-  ]);
+  const [notificationTemplatesList, setNotificationTemplatesList] = useState([]);
+  const [notificationRulesList, setNotificationRulesList] = useState([]);
+  const [recipientGroupsList, setRecipientGroupsList] = useState([]);
 
   const [newTemplateForm, setNewTemplateForm] = useState({ title: '', channel: 'Email', preview: '' });
   const [newRuleForm, setNewRuleForm] = useState({ name: '', trigger: 'When Load status changes to DELIVERED', channels: 'SMS + Email', rec: 'Customer & Accounts', priority: 'High' });
   const [newGroupForm, setNewGroupForm] = useState({ name: '', count: '1 member', desc: '' });
 
-
-
-  const handleCreateTemplateSubmit = (e) => {
+  const handleCreateTemplateSubmit = async (e) => {
     e.preventDefault();
-    if (!newTemplateForm.title.trim()) {
+    if (!newTemplateForm.title || !newTemplateForm.title.trim()) {
       triggerToast('Please enter a Template Title');
       return;
     }
-    const newTpl = {
-      id: Date.now(),
-      title: newTemplateForm.title,
-      channel: newTemplateForm.channel,
-      preview: newTemplateForm.preview || 'Custom template preview text...',
-      status: 'Active'
-    };
-    setNotificationTemplatesList([newTpl, ...notificationTemplatesList]);
-    setNewTemplateForm({ title: '', channel: 'Email', preview: '' });
-    setIsCreateTemplateModalOpen(false);
-    triggerToast(`Template "${newTpl.title}" created successfully!`);
+
+    try {
+      const res = await api.post('/notification-templates', {
+        title: newTemplateForm.title,
+        channel: newTemplateForm.channel,
+        preview: newTemplateForm.preview,
+        body: newTemplateForm.preview,
+        status: 'Active'
+      });
+
+      const created = res.data?.data || res.data;
+      if (created && created.id) {
+        const mapped = {
+          id: created.id,
+          title: created.title,
+          channel: created.channel || 'Email',
+          preview: created.body || created.preview || 'Custom template preview text...',
+          status: created.status || 'Active'
+        };
+        setNotificationTemplatesList(prev => [mapped, ...prev]);
+      }
+
+      setNewTemplateForm({ title: '', channel: 'Email', preview: '' });
+      setIsCreateTemplateModalOpen(false);
+      triggerToast(`Template "${newTemplateForm.title}" created successfully!`);
+    } catch (err) {
+      console.error('Error creating notification template:', err);
+      const errMsg = err.response?.data?.error?.message || err.response?.data?.message || 'Failed to create template. Please try again.';
+      triggerToast(errMsg);
+    }
   };
 
-  const handleAddNotificationRuleSubmit = (e) => {
+  const handleAddNotificationRuleSubmit = async (e) => {
     e.preventDefault();
-    if (!newRuleForm.name.trim()) {
+    if (!newRuleForm.name || !newRuleForm.name.trim()) {
       triggerToast('Please enter a Rule Name');
       return;
     }
-    const newRule = {
-      id: Date.now(),
-      name: newRuleForm.name,
-      trigger: newRuleForm.trigger,
-      channels: newRuleForm.channels,
-      rec: newRuleForm.rec,
-      priority: newRuleForm.priority,
-      status: 'Enabled'
-    };
-    setNotificationRulesList([newRule, ...notificationRulesList]);
-    setNewRuleForm({ name: '', trigger: 'When Load status changes to DELIVERED', channels: 'SMS + Email', rec: 'Customer & Accounts', priority: 'High' });
-    setIsAddNotificationRuleModalOpen(false);
-    triggerToast(`Notification Rule "${newRule.name}" created & activated!`);
+
+    try {
+      const res = await api.post('/notification-rules', {
+        name: newRuleForm.name,
+        trigger: newRuleForm.trigger,
+        channels: newRuleForm.channels,
+        rec: newRuleForm.rec,
+        priority: newRuleForm.priority,
+        status: 'Enabled'
+      });
+
+      const created = res.data?.data || res.data;
+      if (created && created.id) {
+        const mapped = {
+          id: created.id,
+          name: created.name,
+          trigger: created.trigger,
+          channels: created.channels || 'SMS + Email',
+          rec: created.recipient || created.rec || 'Customer & Accounts',
+          priority: created.priority || 'High',
+          status: created.status || 'Enabled'
+        };
+        setNotificationRulesList(prev => [mapped, ...prev]);
+      }
+
+      setNewRuleForm({ name: '', trigger: 'When Load status changes to DELIVERED', channels: 'SMS + Email', rec: 'Customer & Accounts', priority: 'High' });
+      setIsAddNotificationRuleModalOpen(false);
+      triggerToast(`Notification Rule "${newRuleForm.name}" created & activated!`);
+    } catch (err) {
+      console.error('Error creating notification rule:', err);
+      const errMsg = err.response?.data?.error?.message || err.response?.data?.message || 'Failed to create notification rule.';
+      triggerToast(errMsg);
+    }
   };
 
-  const handleCreateRecipientGroupSubmit = (e) => {
+  const handleCreateRecipientGroupSubmit = async (e) => {
     e.preventDefault();
-    if (!newGroupForm.name.trim()) {
+    if (!newGroupForm.name || !newGroupForm.name.trim()) {
       triggerToast('Please enter a Group Name');
       return;
     }
-    const newGrp = {
-      id: Date.now(),
-      name: newGroupForm.name,
-      count: newGroupForm.count || '1 member',
-      desc: newGroupForm.desc || 'Custom distribution group list.'
-    };
-    setRecipientGroupsList([newGrp, ...recipientGroupsList]);
-    setNewGroupForm({ name: '', count: '1 member', desc: '' });
-    setIsCreateRecipientGroupModalOpen(false);
-    triggerToast(`Recipient Group "${newGrp.name}" created successfully!`);
+
+    try {
+      const res = await api.post('/recipient-groups', {
+        name: newGroupForm.name,
+        count: newGroupForm.count || '0 members',
+        desc: newGroupForm.desc,
+        description: newGroupForm.desc,
+        status: 'Active'
+      });
+
+      const created = res.data?.data || res.data;
+      if (created && created.id) {
+        const mapped = {
+          id: created.id,
+          name: created.name,
+          count: created.count || '0 members',
+          desc: created.description || created.desc || 'Custom distribution group list.',
+          status: created.status || 'Active'
+        };
+        setRecipientGroupsList(prev => [mapped, ...prev]);
+      }
+
+      setNewGroupForm({ name: '', count: '0 members', desc: '' });
+      setIsCreateRecipientGroupModalOpen(false);
+      triggerToast(`Recipient Group "${newGroupForm.name}" created successfully!`);
+    } catch (err) {
+      console.error('Error creating recipient group:', err);
+      const errMsg = err.response?.data?.error?.message || err.response?.data?.message || 'Failed to create recipient group.';
+      triggerToast(errMsg);
+    }
   };
+
   const [activeTab, setActiveTab] = useState('Company Details');
   const [usersTab, setUsersTab] = useState('Users');
   const [isMoreActionsDropdownOpen, setIsMoreActionsDropdownOpen] = useState(false);
@@ -163,29 +396,295 @@ export default function CompanySettings() {
 
 
 
+
+  const [companyIntegrationsList, setCompanyIntegrationsList] = useState([]);
+
+  const [loadingSettings, setLoadingSettings] = useState(false);
+  const [dashboardStats, setDashboardStats] = useState({
+    setupPercent: 0,
+    usersCount: 0,
+    branchesCount: 0,
+    integrationsCount: 0,
+    systemAlerts: [],
+    userActivity: { logins: 0, newUsers: 0, roleChanges: 0, permissionChanges: 0 },
+    lastUpdated: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+  });
+
+  const fetchCompanySettings = useCallback(async () => {
+    setLoadingSettings(true);
+    try {
+      const [settingsRes, usersRes, rolesRes, auditRes, rulesRes, integrationsRes, aiModelsRes, templatesRes, notifRulesRes, recipientGroupsRes] = await Promise.allSettled([
+        api.get('/company-admin/settings'),
+        api.get('/users'),
+        api.get('/custom-roles'),
+        api.get('/company-admin/audit-logs'),
+        api.get('/workflow-rules'),
+        api.get('/company-integrations'),
+        api.get('/ai-models'),
+        api.get('/notification-templates'),
+        api.get('/notification-rules'),
+        api.get('/recipient-groups')
+      ]);
+
+      if (settingsRes.status === 'fulfilled') {
+        const data = settingsRes.value.data?.data || settingsRes.value.data;
+        const comp = data?.company || data;
+        const statsData = data?.stats || {};
+        
+        const activeUsers = usersRes.status === 'fulfilled' 
+          ? (Array.isArray(usersRes.value.data?.data) ? usersRes.value.data.data.length : 0)
+          : 0;
+
+        setDashboardStats({
+          setupPercent: statsData.setupPercent || 0,
+          usersCount: statsData.usersCount || activeUsers,
+          branchesCount: comp?.branches ? comp.branches.length : (statsData.branchesCount || 0),
+          integrationsCount: statsData.integrationsCount || 0,
+          systemAlerts: [],
+          userActivity: { logins: 0, newUsers: 0, roleChanges: 0, permissionChanges: 0 },
+          lastUpdated: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+        });
+
+        if (comp) {
+          setCompanyDetails(prev => ({
+            ...prev,
+            companyName: comp.name || '',
+            phone: comp.phone || '',
+            email: comp.email || '',
+            registeredAddress: comp.address || '',
+            website: comp.websiteUrl || ''
+          }));
+
+          if (comp.whiteLabelConfig) {
+            setBranding(prev => ({
+              ...prev,
+              primary: comp.whiteLabelConfig.primaryBrandColor || prev.primary,
+              secondary: comp.whiteLabelConfig.secondaryBrandColor || prev.secondary,
+              accent: comp.whiteLabelConfig.accentBrandColor || prev.accent
+            }));
+          }
+
+          if (comp.securityRetentionDays || comp.securitySessionTimeout) {
+            setSecuritySettingsForm({
+              retentionDays: comp.securityRetentionDays || '90 Days',
+              sessionTimeout: comp.securitySessionTimeout || '30 Minutes',
+              twoFactorAuth: comp.securityTwoFactorAuth !== undefined ? comp.securityTwoFactorAuth : true,
+              ipWhitelisting: comp.securityIpWhitelisting !== undefined ? comp.securityIpWhitelisting : false,
+              auditAlerts: comp.securityAuditAlerts !== undefined ? comp.securityAuditAlerts : true
+            });
+          }
+        }
+      }
+
+      if (usersRes.status === 'fulfilled') {
+        const uData = usersRes.value.data?.data || usersRes.value.data;
+        const uList = Array.isArray(uData) ? uData : (uData.items || []);
+        const formatRoleName = (r) => {
+          if (!r) return 'Admin';
+          if (r === 'COMPANY_ADMIN') return 'Admin';
+          if (r === 'SUPER_ADMIN') return 'Super Admin';
+          if (r === 'DISPATCHER') return 'Dispatcher';
+          if (r === 'WAREHOUSE') return 'Warehouse Manager';
+          if (r === 'ACCOUNTS') return 'Accounts';
+          if (r === 'DRIVER') return 'Driver';
+          if (r === 'CUSTOMER') return 'Customer User';
+          return r;
+        };
+
+        const mappedUsers = uList.map((u, idx) => {
+          const formattedRole = formatRoleName(u.role);
+          return {
+            id: u.id,
+            name: u.name || `User ${idx + 1}`,
+            email: u.email || '',
+            role: formattedRole,
+            roleColor: getRoleBadgeColor(formattedRole),
+            branch: u.branch?.name || u.branch || 'Sydney',
+            status: u.status === 'ACTIVE' || u.status === 'Active' ? 'Active' : 'Inactive',
+            lastLogin: u.updatedAt ? new Date(u.updatedAt).toLocaleString() : 'Recently',
+            joined: u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '',
+            phone: u.phone || '',
+            avatar: (u.name || 'U').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2),
+            avatarBg: 'bg-[#2563EB]'
+          };
+        });
+        setUsersList(mappedUsers);
+        setSelectedUser(prev => prev || mappedUsers[0] || null);
+      } else {
+        setUsersList([]);
+      }
+
+      if (rolesRes.status === 'fulfilled') {
+        const rData = rolesRes.value.data?.data || rolesRes.value.data;
+        const rList = Array.isArray(rData) ? rData : (rData.items || []);
+        const mappedRoles = rList.map((r, idx) => ({
+          id: r.id,
+          name: r.name || 'Custom Role',
+          users: r.users ? r.users.length : 0,
+          desc: r.desc || 'Custom system permission role',
+          color: 'bg-blue-100 text-blue-700 border-blue-200'
+        }));
+        setRolesList(mappedRoles);
+      } else {
+        setRolesList([]);
+      }
+
+      if (rulesRes.status === 'fulfilled') {
+        const wfData = rulesRes.value.data?.data || rulesRes.value.data;
+        const wfList = Array.isArray(wfData) ? wfData : (wfData.items || []);
+        if (wfList.length > 0) {
+          const mappedRules = wfList.map((r) => ({
+            id: r.id,
+            name: r.name,
+            desc: r.description || r.desc || 'Automated workflow rule',
+            category: r.category || 'Invoice Automation',
+            categoryColor: getCategoryBadgeColor(r.category || 'Invoice Automation'),
+            trigger: r.trigger || 'Load Status: Delivered',
+            action: r.action || 'Create Invoice & Notify Accounts',
+            status: r.status || 'Active',
+            lastExecuted: r.lastExecuted || 'Never',
+            executions: r.executions || 0,
+            createdBy: r.createdBy || 'Sarah Mitchell',
+            createdOn: r.createdAt ? new Date(r.createdAt).toLocaleDateString() : 'Today',
+            lastModified: r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : 'Just Now'
+          }));
+          setWorkflowRulesList(mappedRules);
+          setSelectedWorkflowRule(prev => prev || mappedRules[0] || null);
+        }
+      }
+
+      if (integrationsRes && integrationsRes.status === 'fulfilled') {
+        const intData = integrationsRes.value.data?.data || integrationsRes.value.data;
+        const intList = Array.isArray(intData) ? intData : (intData.items || []);
+        setCompanyIntegrationsList(intList);
+      }
+
+      if (aiModelsRes && aiModelsRes.status === 'fulfilled') {
+        const mData = aiModelsRes.value.data?.data || aiModelsRes.value.data;
+        const mList = Array.isArray(mData) ? mData : (mData.items || []);
+        if (mList.length > 0) {
+          const mappedModels = mList.map(m => ({
+            id: m.id,
+            name: m.name,
+            provider: m.provider || 'OpenAI',
+            version: m.version || 'v1.0',
+            latency: m.latencySla || '120ms',
+            cost: m.costRate || '$0.002 / 1k tokens',
+            status: m.status || 'Active',
+            lastUpdated: m.lastUpdated || (m.createdAt ? new Date(m.createdAt).toLocaleDateString() : 'Today')
+          }));
+          setAiModelsList(mappedModels);
+        }
+      }
+
+      if (templatesRes && templatesRes.status === 'fulfilled') {
+        const tData = templatesRes.value.data?.data || templatesRes.value.data;
+        const tList = Array.isArray(tData) ? tData : (tData.items || []);
+        if (tList.length > 0) {
+          const mappedTpls = tList.map(t => ({
+            id: t.id,
+            title: t.title,
+            channel: t.channel || 'Email',
+            preview: t.body || t.preview || 'Custom template preview text...',
+            status: t.status || 'Active'
+          }));
+          setNotificationTemplatesList(mappedTpls);
+        }
+      }
+
+      if (notifRulesRes && notifRulesRes.status === 'fulfilled') {
+        const nrData = notifRulesRes.value.data?.data || notifRulesRes.value.data;
+        const nrList = Array.isArray(nrData) ? nrData : (nrData.items || []);
+        if (nrList.length > 0) {
+          const mappedNr = nrList.map(r => ({
+            id: r.id,
+            name: r.name,
+            trigger: r.trigger,
+            channels: r.channels || 'SMS + Email',
+            rec: r.recipient || r.rec || 'Customer & Accounts',
+            priority: r.priority || 'High',
+            status: r.status || 'Enabled'
+          }));
+          setNotificationRulesList(mappedNr);
+        }
+      }
+
+      if (recipientGroupsRes && recipientGroupsRes.status === 'fulfilled') {
+        const rgData = recipientGroupsRes.value.data?.data || recipientGroupsRes.value.data;
+        const rgList = Array.isArray(rgData) ? rgData : (rgData.items || []);
+        if (rgList.length > 0) {
+          const mappedRg = rgList.map(g => ({
+            id: g.id,
+            name: g.name,
+            count: g.count || '0 members',
+            desc: g.description || g.desc || 'Custom distribution group list.',
+            status: g.status || 'Active'
+          }));
+          setRecipientGroupsList(mappedRg);
+        }
+      }
+
+      if (auditRes.status === 'fulfilled') {
+        const aData = auditRes.value.data?.data?.logs || auditRes.value.data?.logs;
+        if (Array.isArray(aData)) {
+          const mappedLogs = aData.map((a) => ({
+            id: a.id,
+            time: a.createdAt ? new Date(a.createdAt).toLocaleString() : '',
+            name: a.operator || 'System',
+            email: '',
+            avatar: (a.operator || 'S').slice(0, 2).toUpperCase(),
+            bg: 'bg-purple-600',
+            type: 'System Event',
+            typeBg: 'bg-blue-100 text-blue-700',
+            action: a.action,
+            module: 'Settings',
+            details: a.action,
+            ip: a.ipAddress || '127.0.0.1',
+            outcome: 'Success',
+            outcomeColor: 'text-emerald-600'
+          }));
+          setAuditLogsData(mappedLogs);
+        } else {
+          setAuditLogsData([]);
+        }
+      } else {
+        setAuditLogsData([]);
+      }
+    } catch (err) {
+      console.error('Error loading company settings:', err);
+    } finally {
+      setLoadingSettings(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCompanySettings();
+  }, [fetchCompanySettings]);
+
+
   // Form State for 13.2 Company Settings
   const [companyDetails, setCompanyDetails] = useState({
-    companyName: 'Hero Logistics Pty Ltd',
-    tradingName: 'Hero Logistics',
-    abn: '12 345 678 901',
-    acn: '123 456 789',
-    registeredAddress: 'Level 8, 25 Market Street',
-    city: 'Sydney',
-    state: 'NSW',
-    postcode: '2000',
-    country: 'Australia',
-    phone: '+61 2 9123 4567',
-    email: 'admin@herologistics.com.au',
-    website: 'www.herologistics.com.au',
-    startDate: '2023-01-01',
-    description: "Australia's trusted logistics and transport partner, delivering reliable, safe and efficient solutions nationwide."
+    companyName: '',
+    tradingName: '',
+    abn: '',
+    acn: '',
+    registeredAddress: '',
+    city: '',
+    state: '',
+    postcode: '',
+    country: '',
+    phone: '',
+    email: '',
+    website: '',
+    startDate: '',
+    description: ''
   });
 
   const [contactDetails, setContactDetails] = useState({
-    name: 'Sarah Mitchell',
-    position: 'Operations Director',
-    phone: '+61 412 345 678',
-    email: 'sarah.mitchell@herologistics.com.au'
+    name: '',
+    position: '',
+    phone: '',
+    email: ''
   });
 
   const [businessHours, setBusinessHours] = useState({
@@ -196,21 +695,21 @@ export default function CompanySettings() {
   });
 
   const [defaultBranch, setDefaultBranch] = useState({
-    name: 'Sydney Head Office',
-    address: 'Level 8, 25 Market Street, Sydney NSW 2000',
-    phone: '+61 2 9123 4567',
-    email: 'sydney@herologistics.com.au'
+    name: '',
+    address: '',
+    phone: '',
+    email: ''
   });
 
   const [taxCompliance, setTaxCompliance] = useState({
-    gstRegistered: true,
-    gstDate: '2023-01-01',
-    tfn: '12 345 678 901',
-    payg: 'AAMI',
-    workersComp: true,
-    workersPolicy: 'WCI123456789',
-    publicLiability: 'QBE Insurance',
-    publicPolicy: 'PL123456789'
+    gstRegistered: false,
+    gstDate: '',
+    tfn: '',
+    payg: '',
+    workersComp: false,
+    workersPolicy: '',
+    publicLiability: '',
+    publicPolicy: ''
   });
 
   // COMPANY BRANDING STATE
@@ -300,30 +799,9 @@ export default function CompanySettings() {
   const [isMoreActionsOpen, setIsMoreActionsOpen] = useState(false);
   const [activeRowMenuId, setActiveRowMenuId] = useState(null);
 
-  const [usersList, setUsersList] = useState([
-    { id: 1, name: 'Sarah Mitchell', email: 'sarah.mitchell@herologistics.com.au', role: 'Super Admin', roleColor: 'bg-purple-100 text-purple-700', branch: 'All Branches', status: 'Active', lastLogin: '30 May 2025 09:15 AM', joined: '01 Jan 2023', phone: '+61 412 345 678', avatar: 'SM', avatarBg: 'bg-purple-600' },
-    { id: 2, name: 'John Davis', email: 'john.davis@herologistics.com.au', role: 'Admin', roleColor: 'bg-blue-100 text-blue-700', branch: 'All Branches', status: 'Active', lastLogin: '30 May 2025 08:45 AM', joined: '15 Mar 2023', phone: '+61 419 876 543', avatar: 'JD', avatarBg: 'bg-blue-600' },
-    { id: 3, name: 'Ravi Wilson', email: 'ravi.wilson@herologistics.com.au', role: 'Dispatch Manager', roleColor: 'bg-amber-100 text-amber-800', branch: 'Sydney, Melbourne', status: 'Active', lastLogin: '30 May 2025 07:58 AM', joined: '10 Feb 2023', phone: '+61 433 112 233', avatar: 'RW', avatarBg: 'bg-amber-600' },
-    { id: 4, name: 'Amit Handa', email: 'amit.handa@herologistics.com.au', role: 'Dispatcher', roleColor: 'bg-teal-100 text-teal-800', branch: 'Sydney', status: 'Active', lastLogin: '30 May 2025 07:20 AM', joined: '05 Apr 2023', phone: '+61 422 334 455', avatar: 'AH', avatarBg: 'bg-teal-600' },
-    { id: 5, name: 'Lisa Patel', email: 'lisa.patel@herologistics.com.au', role: 'Accounts', roleColor: 'bg-purple-100 text-purple-800', branch: 'Sydney', status: 'Active', lastLogin: '30 May 2025 09:10 AM', joined: '12 Apr 2023', phone: '+61 455 667 788', avatar: 'LP', avatarBg: 'bg-indigo-600' },
-    { id: 6, name: 'Brian Taylor', email: 'brian.taylor@herologistics.com.au', role: 'Warehouse Manager', roleColor: 'bg-orange-100 text-orange-800', branch: 'Melbourne Warehouse', status: 'Active', lastLogin: '30 May 2025 06:55 AM', joined: '18 Apr 2023', phone: '+61 477 889 900', avatar: 'BT', avatarBg: 'bg-orange-600' },
-    { id: 7, name: 'Michael Kumar', email: 'michael.kumar@herologistics.com.au', role: 'Driver', roleColor: 'bg-emerald-100 text-emerald-800', branch: 'Sydney', status: 'Active', lastLogin: '30 May 2025 05:30 AM', joined: '22 Apr 2023', phone: '+61 488 990 112', avatar: 'MK', avatarBg: 'bg-emerald-600' },
-    { id: 8, name: 'Shane Cooper', email: 'shane.cooper@herologistics.com.au', role: 'Customer User', roleColor: 'bg-pink-100 text-pink-700', branch: 'All Branches', status: 'Inactive', lastLogin: '25 May 2025 11:40 AM', joined: '02 May 2023', phone: '+61 411 223 344', avatar: 'SC', avatarBg: 'bg-slate-500' }
-  ]);
+  const [usersList, setUsersList] = useState([]);
 
-  const [selectedUser, setSelectedUser] = useState({
-    id: 1,
-    name: 'Sarah Mitchell',
-    email: 'sarah.mitchell@herologistics.com.au',
-    role: 'Super Admin',
-    branch: 'All Branches',
-    status: 'Active',
-    lastLogin: '30 May 2025 09:15 AM',
-    joined: '01 Jan 2023',
-    phone: '+61 412 345 678',
-    avatar: 'SM',
-    avatarBg: 'bg-purple-600'
-  });
+  const [selectedUser, setSelectedUser] = useState(null);
 
   const [newUserForm, setNewUserForm] = useState({
     name: '',
@@ -348,16 +826,7 @@ export default function CompanySettings() {
   const [isCreateRoleModalOpen, setIsCreateRoleModalOpen] = useState(false);
   const [isEditRoleModalOpen, setIsEditRoleModalOpen] = useState(false);
 
-  const [rolesList, setRolesList] = useState([
-    { id: 1, name: 'Super Admin', users: 1, desc: 'Unrestricted full platform & system access', color: 'bg-purple-100 text-purple-700 border-purple-200' },
-    { id: 2, name: 'Admin', users: 3, desc: 'Manage company settings, users and branches', color: 'bg-blue-100 text-blue-700 border-blue-200' },
-    { id: 3, name: 'Dispatch Manager', users: 4, desc: 'Full dispatch control & driver roster oversight', color: 'bg-amber-100 text-amber-800 border-amber-200' },
-    { id: 4, name: 'Dispatcher', users: 8, desc: 'Assign loads to drivers & track live jobs', color: 'bg-teal-100 text-teal-800 border-teal-200' },
-    { id: 5, name: 'Accounts', users: 6, desc: 'Invoicing, payroll, rates and financial reports', color: 'bg-purple-100 text-purple-800 border-purple-200' },
-    { id: 6, name: 'Warehouse Manager', users: 5, desc: 'Stock movements, bin locations & dispatch', color: 'bg-orange-100 text-orange-800 border-orange-200' },
-    { id: 7, name: 'Driver', users: 15, desc: 'Mobile app job execution & proof of delivery', color: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-    { id: 8, name: 'Customer User', users: 6, desc: 'Customer portal access for load tracking', color: 'bg-pink-100 text-pink-700 border-pink-200' }
-  ]);
+  const [rolesList, setRolesList] = useState([]);
 
   const [newRoleForm, setNewRoleForm] = useState({
     name: '',
@@ -445,16 +914,7 @@ export default function CompanySettings() {
   const [isEditWorkflowRuleModalOpen, setIsEditWorkflowRuleModalOpen] = useState(false);
   const [activeRuleRowMenuId, setActiveRuleRowMenuId] = useState(null);
 
-  const [workflowRulesList, setWorkflowRulesList] = useState([
-    { id: 1, name: 'Auto Invoice on Delivery', desc: 'Automatically generate invoice when load is delivered', category: 'Invoice Automation', categoryColor: 'bg-teal-100 text-teal-800', trigger: 'Load Status: Delivered', action: 'Create Invoice & Notify Accounts', status: 'Active', lastExecuted: '30 May 2025 09:15 AM', executions: 128, createdBy: 'Sarah Mitchell', createdOn: '01 Jan 2023', lastModified: '28 May 2025 10:30 AM' },
-    { id: 2, name: 'Payment Reminder - Overdue', desc: 'Send reminder for overdue invoices', category: 'Payment Reminders', categoryColor: 'bg-blue-100 text-blue-800', trigger: 'Invoice Due Date Passed', action: 'Send Email to Customer', status: 'Active', lastExecuted: '30 May 2025 08:30 AM', executions: 342, createdBy: 'John Davis', createdOn: '15 Feb 2023', lastModified: '20 May 2025 04:15 PM' },
-    { id: 3, name: 'License Expiry Reminder', desc: 'Remind before driver license expires', category: 'Compliance Reminders', categoryColor: 'bg-amber-100 text-amber-800', trigger: 'License Expiry 7 Days Before', action: 'Send Email to Driver & Admin', status: 'Active', lastExecuted: '30 May 2025 07:20 AM', executions: 56, createdBy: 'Sarah Mitchell', createdOn: '10 Mar 2023', lastModified: '18 May 2025 02:10 PM' },
-    { id: 4, name: 'Load Arrived - Notify Customer', desc: 'Notify customer when driver arrives', category: 'Load Status Actions', categoryColor: 'bg-purple-100 text-purple-800', trigger: 'Load Status: Arrived', action: 'Send SMS to Customer', status: 'Active', lastExecuted: '30 May 2025 06:45 AM', executions: 214, createdBy: 'Ravi Wilson', createdOn: '02 Apr 2023', lastModified: '25 May 2025 11:20 AM' },
-    { id: 5, name: 'POD Received - Notify Customer', desc: 'Notify customer when POD is uploaded', category: 'Customer Notifications', categoryColor: 'bg-amber-100 text-amber-800', trigger: 'POD Uploaded', action: 'Send Email with POD Attachment', status: 'Active', lastExecuted: '30 May 2025 05:10 AM', executions: 187, createdBy: 'Amit Handa', createdOn: '18 May 2023', lastModified: '22 May 2025 09:40 AM' },
-    { id: 6, name: 'Expense Approval Workflow', desc: 'Route expenses for approval', category: 'Approval Workflows', categoryColor: 'bg-[#EEF2FF] text-[#4F46E5]', trigger: 'Expense Submitted', action: 'Send to Manager for Approval', status: 'Active', lastExecuted: '30 May 2025 04:05 AM', executions: 91, createdBy: 'Lisa Patel', createdOn: '20 Jun 2023', lastModified: '27 May 2025 01:15 PM' },
-    { id: 7, name: 'Maintenance Due Alert', desc: 'Alert when vehicle maintenance is due', category: 'Compliance Reminders', categoryColor: 'bg-amber-100 text-amber-800', trigger: 'Maintenance Due 1 Day Before', action: 'Send Email to Admin & Driver', status: 'Inactive', lastExecuted: '-', executions: 0, createdBy: 'Brian Taylor', createdOn: '05 Aug 2023', lastModified: '10 May 2025 08:30 AM' },
-    { id: 8, name: 'Payment Received - Thank You', desc: 'Send thank you when payment is received', category: 'Customer Notifications', categoryColor: 'bg-amber-100 text-amber-800', trigger: 'Payment Received', action: 'Send Email to Customer', status: 'Active', lastExecuted: '30 May 2025 02:16 AM', executions: 275, createdBy: 'Sarah Mitchell', createdOn: '12 Sep 2023', lastModified: '29 May 2025 03:50 PM' }
-  ]);
+  const [workflowRulesList, setWorkflowRulesList] = useState([]);
 
   const [selectedWorkflowRule, setSelectedWorkflowRule] = useState({
     id: 1,
@@ -521,54 +981,46 @@ export default function CompanySettings() {
     cost: '$0.002 / 1k tokens'
   });
 
-  const handleRegisterAiModelSubmit = (e) => {
+  const handleRegisterAiModelSubmit = async (e) => {
     e.preventDefault();
-    if (!newAiModelForm.name.trim()) {
+    if (!newAiModelForm.name || !newAiModelForm.name.trim()) {
       triggerToast('Please enter an AI Model name');
       return;
     }
-    const newModel = {
-      id: Date.now(),
-      name: newAiModelForm.name,
-      provider: newAiModelForm.provider,
-      version: newAiModelForm.version,
-      latency: newAiModelForm.latency,
-      cost: newAiModelForm.cost,
-      status: 'Active',
-      lastUpdated: 'Just now'
-    };
-    setAiModelsList([newModel, ...aiModelsList]);
-    setNewAiModelForm({ name: '', provider: 'OpenAI', version: 'v1.0', latency: '120ms', cost: '$0.002 / 1k tokens' });
-    setIsRegisterAiModelModalOpen(false);
-    triggerToast(`AI Model "${newModel.name}" registered & deployed successfully!`);
-  };
 
-  // Integrations State (13.6)
-  const [newIntegrationForm, setNewIntegrationForm] = useState({
-    name: '',
-    category: 'Accounting',
-    provider: 'Xero Accounting',
-    apiKey: '',
-    syncFrequency: 'Every 15 minutes',
-    autoSync: true
-  });
+    try {
+      const res = await api.post('/ai-models', {
+        name: newAiModelForm.name,
+        provider: newAiModelForm.provider,
+        version: newAiModelForm.version,
+        latencySla: newAiModelForm.latency || '120ms',
+        costRate: newAiModelForm.cost || '$0.002 / 1k tokens',
+        status: 'Active'
+      });
 
-  const handleAddIntegrationSubmit = (e) => {
-    e.preventDefault();
-    if (!newIntegrationForm.name) {
-      triggerToast('Please enter an integration name.');
-      return;
+      const createdModel = res.data?.data || res.data;
+      if (createdModel && createdModel.id) {
+        const mappedModel = {
+          id: createdModel.id,
+          name: createdModel.name,
+          provider: createdModel.provider || 'OpenAI',
+          version: createdModel.version || 'v1.0',
+          latency: createdModel.latencySla || '120ms',
+          cost: createdModel.costRate || '$0.002 / 1k tokens',
+          status: createdModel.status || 'Active',
+          lastUpdated: createdModel.lastUpdated || 'Just now'
+        };
+        setAiModelsList(prev => [mappedModel, ...prev]);
+      }
+
+      setNewAiModelForm({ name: '', provider: 'OpenAI', version: 'v1.0', latency: '120ms', cost: '$0.002 / 1k tokens' });
+      setIsRegisterAiModelModalOpen(false);
+      triggerToast(`AI Model "${newAiModelForm.name}" registered & deployed successfully!`);
+    } catch (err) {
+      console.error('Error registering AI model:', err);
+      const errMsg = err.response?.data?.error?.message || err.response?.data?.message || 'Failed to register AI model. Please try again.';
+      triggerToast(errMsg);
     }
-    triggerToast(`Successfully connected ${newIntegrationForm.name}!`);
-    setIsAddIntegrationModalOpen(false);
-    setNewIntegrationForm({
-      name: '',
-      category: 'Accounting',
-      provider: 'Xero Accounting',
-      apiKey: '',
-      syncFrequency: 'Every 15 minutes',
-      autoSync: true
-    });
   };
 
   // Notifications State (13.7)
@@ -610,18 +1062,7 @@ export default function CompanySettings() {
   const [selectedAuditLog, setSelectedAuditLog] = useState(null);
   const [openLogDropdownId, setOpenLogDropdownId] = useState(null);
 
-  const [auditLogsData, setAuditLogsData] = useState([
-    { id: 1, time: '30 May 2025 09:15 AM', name: 'Sarah Mitchell', email: 'sarah.mitchell@herologistics.com.au', avatar: 'SM', bg: 'bg-purple-600', type: 'Login', typeBg: 'bg-blue-100 text-blue-700', action: 'User Logged In', module: 'Authentication', details: 'Login via Web Portal', ip: '203.26.45.12', outcome: 'Success', outcomeColor: 'text-emerald-600' },
-    { id: 2, time: '30 May 2025 09:12 AM', name: 'John Davis', email: 'john.davis@herologistics.com.au', avatar: 'JD', bg: 'bg-blue-600', type: 'Data Update', typeBg: 'bg-teal-100 text-teal-700', action: 'Updated Load LD-3981', module: 'Loads', details: 'Changed status to Dispatched', ip: '203.26.45.18', outcome: 'Success', outcomeColor: 'text-emerald-600' },
-    { id: 3, time: '30 May 2025 09:10 AM', name: 'Ravi Wilson', email: 'ravi.wilson@herologistics.com.au', avatar: 'RW', bg: 'bg-amber-600', type: 'Permission Change', typeBg: 'bg-purple-100 text-purple-700', action: 'Updated role permissions', module: 'Users & Roles', details: 'Role: Dispatcher Permissions modified', ip: '203.26.45.21', outcome: 'Success', outcomeColor: 'text-emerald-600' },
-    { id: 4, time: '30 May 2025 09:05 AM', name: 'Amit Handa', email: 'amit.handa@herologistics.com.au', avatar: 'AH', bg: 'bg-teal-600', type: 'Data Export', typeBg: 'bg-blue-100 text-blue-700', action: 'Exported Invoice Report', module: 'Reports', details: 'Report: Invoices Format: PDF', ip: '203.26.45.12', outcome: 'Success', outcomeColor: 'text-emerald-600' },
-    { id: 5, time: '30 May 2025 08:58 AM', name: 'Lisa Patel', email: 'lisa.patel@herologistics.com.au', avatar: 'LP', bg: 'bg-indigo-600', type: 'Security Event', typeBg: 'bg-rose-100 text-rose-700', action: 'Failed Login Attempt', module: 'Authentication', details: 'Invalid password', ip: '203.26.45.99', outcome: 'Failed', outcomeColor: 'text-rose-600' },
-    { id: 6, time: '30 May 2025 08:50 AM', name: 'Brian Taylor', email: 'brian.taylor@herologistics.com.au', avatar: 'BT', bg: 'bg-orange-600', type: 'Trailer Swap', typeBg: 'bg-amber-100 text-amber-700', action: 'Trailer swapped', module: 'Vehicles', details: 'Trailer TR-1045 swapped from Truck TRK-12', ip: '203.26.45.18', outcome: 'Success', outcomeColor: 'text-emerald-600' },
-    { id: 7, time: '30 May 2025 08:45 AM', name: 'Michael Kumar', email: 'michael.kumar@herologistics.com.au', avatar: 'MK', bg: 'bg-emerald-600', type: 'Data Delete', typeBg: 'bg-orange-100 text-orange-700', action: 'Deleted Expense Record', module: 'Expenses', details: 'Expense ID: EXP-7781', ip: '203.26.45.21', outcome: 'Success', outcomeColor: 'text-emerald-600' },
-    { id: 8, time: '30 May 2025 08:30 AM', name: 'Shane Cooper', email: 'shane.cooper@herologistics.com.au', avatar: 'SC', bg: 'bg-blue-600', type: 'Blocked Action', typeBg: 'bg-amber-100 text-amber-700', action: 'Blocked Unauthorized Export', module: 'Reports', details: 'Attempted to export restricted data', ip: '203.26.45.77', outcome: 'Blocked', outcomeColor: 'text-amber-600' },
-    { id: 9, time: '30 May 2025 08:15 AM', name: 'Elena Rostova', email: 'elena.rostova@herologistics.com.au', avatar: 'ER', bg: 'bg-pink-600', type: 'Settings Update', typeBg: 'bg-indigo-100 text-indigo-700', action: 'Modified 2FA Policy', module: 'Settings', details: 'Enforced 2FA for Dispatchers', ip: '203.26.45.10', outcome: 'Success', outcomeColor: 'text-emerald-600' },
-    { id: 10, time: '30 May 2025 08:00 AM', name: 'David Miller', email: 'david.miller@herologistics.com.au', avatar: 'DM', bg: 'bg-sky-600', type: 'API Token', typeBg: 'bg-blue-100 text-blue-700', action: 'Generated API Token', module: 'Integrations', details: 'Token: Live Fleet Sync', ip: '203.26.45.55', outcome: 'Success', outcomeColor: 'text-emerald-600' }
-  ]);
+  const [auditLogsData, setAuditLogsData] = useState([]);
 
   const handleDeleteAuditLog = (logId) => {
     if (window.confirm("Are you sure you want to delete this security audit log record?")) {
@@ -671,12 +1112,43 @@ export default function CompanySettings() {
 
   const [isSecuritySettingsModalOpen, setIsSecuritySettingsModalOpen] = useState(false);
   const [securitySettingsForm, setSecuritySettingsForm] = useState({
-    retentionDays: '365 Days',
+    retentionDays: '90 Days',
     twoFactorAuth: true,
     ipWhitelisting: false,
     sessionTimeout: '30 Minutes',
     auditAlerts: true
   });
+
+  const handleSaveSecuritySettingsSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await api.put('/company-admin/security-settings', {
+        retentionDays: securitySettingsForm.retentionDays,
+        sessionTimeout: securitySettingsForm.sessionTimeout,
+        twoFactorAuth: securitySettingsForm.twoFactorAuth,
+        ipWhitelisting: securitySettingsForm.ipWhitelisting,
+        auditAlerts: securitySettingsForm.auditAlerts
+      });
+
+      const updated = res.data?.data?.securitySettings || res.data?.securitySettings;
+      if (updated) {
+        setSecuritySettingsForm({
+          retentionDays: updated.retentionDays || securitySettingsForm.retentionDays,
+          sessionTimeout: updated.sessionTimeout || securitySettingsForm.sessionTimeout,
+          twoFactorAuth: updated.twoFactorAuth !== undefined ? updated.twoFactorAuth : securitySettingsForm.twoFactorAuth,
+          ipWhitelisting: updated.ipWhitelisting !== undefined ? updated.ipWhitelisting : securitySettingsForm.ipWhitelisting,
+          auditAlerts: updated.auditAlerts !== undefined ? updated.auditAlerts : securitySettingsForm.auditAlerts
+        });
+      }
+
+      setIsSecuritySettingsModalOpen(false);
+      triggerToast('Security & Retention Settings saved successfully!');
+    } catch (err) {
+      console.error('Error saving security settings:', err);
+      const errMsg = err.response?.data?.error?.message || err.response?.data?.message || 'Failed to save security settings.';
+      triggerToast(errMsg);
+    }
+  };
 
   const handleRefreshSecurityLogs = () => {
     setIsRefreshingSecurityLogs(true);
@@ -709,73 +1181,132 @@ export default function CompanySettings() {
     triggerToast('Security audit logs exported to CSV successfully!');
   };
 
-  const handleSaveSecuritySettingsSubmit = (e) => {
-    e.preventDefault();
-    triggerToast('Security settings updated successfully!');
-    setIsSecuritySettingsModalOpen(false);
-  };
 
   // Subscription & Billing State (13.9)
   const [isRefreshingBilling, setIsRefreshingBilling] = useState(false);
   const [isManageSubscriptionModalOpen, setIsManageSubscriptionModalOpen] = useState(false);
+  const [billingData, setBillingData] = useState(null);
+  const [billingDataLoading, setBillingDataLoading] = useState(false);
+  const [availablePlans, setAvailablePlans] = useState([]);
+  const [isSubmittingSubscription, setIsSubmittingSubscription] = useState(false);
   const [manageSubscriptionForm, setManageSubscriptionForm] = useState({
-    plan: 'Hero Pro ($499/mo)',
-    billingCycle: 'Monthly',
+    plan: '',
+    planId: '',
+    billingCycle: 'MONTHLY',
     userSeats: 50,
-    aiAddon: true,
-    reportingAddon: true,
-    smsAddon: true
+    aiAddon: false,
+    reportingAddon: false,
+    smsAddon: false
   });
 
-  const handleRefreshBilling = () => {
+  const fetchSubscriptionBilling = useCallback(async () => {
+    try {
+      setBillingDataLoading(true);
+      const res = await api.get('/company-admin/subscription-billing');
+      const data = res.data?.data || res.data;
+      setBillingData(data);
+      // Pre-fill modal form from live data
+      if (data?.plan) {
+        setManageSubscriptionForm(prev => ({
+          ...prev,
+          plan: data.plan.name,
+          planId: data.plan.id,
+          billingCycle: data.subscription?.billingPeriod || 'MONTHLY',
+          aiAddon: data.addons?.find(a => a.name?.toLowerCase().includes('ai'))?.isEnabled || false,
+          reportingAddon: data.addons?.find(a => a.name?.toLowerCase().includes('report'))?.isEnabled || false,
+          smsAddon: data.addons?.find(a => a.name?.toLowerCase().includes('sms'))?.isEnabled || false,
+        }));
+      }
+    } catch (err) {
+      console.error('Failed to load subscription billing data:', err);
+    } finally {
+      setBillingDataLoading(false);
+    }
+  }, []);
+
+  const fetchAvailablePlans = useCallback(async () => {
+    try {
+      const res = await api.get('/company-admin/subscription-billing/plans');
+      const plans = res.data?.data || res.data || [];
+      setAvailablePlans(plans);
+      setManageSubscriptionForm(prev => ({
+        ...prev,
+        planId: prev.planId || plans[0]?.id || ''
+      }));
+    } catch (err) {
+      console.error('Failed to load plans:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (currentView === 'subscription-billing') {
+      fetchSubscriptionBilling();
+      fetchAvailablePlans();
+    }
+  }, [currentView, fetchSubscriptionBilling, fetchAvailablePlans]);
+
+  const handleRefreshBilling = async () => {
     setIsRefreshingBilling(true);
     triggerToast('Refreshing subscription plan & usage data...');
-    setTimeout(() => {
-      setIsRefreshingBilling(false);
-      triggerToast('Subscription & billing data updated!');
-    }, 1000);
+    await fetchSubscriptionBilling();
+    setIsRefreshingBilling(false);
+    triggerToast('Subscription & billing data updated!');
   };
 
   const handleDownloadStatement = () => {
-    const headers = "BillingCycle,InvoiceNumber,Date,Description,Subtotal,GST,TotalAUD,Status,PaymentMethod\n";
-    const rows = [
-      'May 2025,"INV-2025-0529","29 May 2025","Monthly Subscription - May 2025","$777.00","$77.70","$854.70","Paid","Visa •••• 4242"',
-      'Apr 2025,"INV-2025-0429","29 Apr 2025","Monthly Subscription - April 2025","$777.00","$77.70","$854.70","Paid","Visa •••• 4242"',
-      'Mar 2025,"INV-2025-0329","29 Mar 2025","Monthly Subscription - March 2025","$777.00","$77.70","$854.70","Paid","Visa •••• 4242"',
-      'Feb 2025,"INV-2025-0228","28 Feb 2025","Monthly Subscription - February 2025","$777.00","$77.70","$854.70","Paid","Visa •••• 4242"',
-      'Jan 2025,"INV-2025-0129","29 Jan 2025","Monthly Subscription - January 2025","$777.00","$77.70","$854.70","Paid","Visa •••• 4242"'
-    ].join("\n");
+    const records = billingData?.billingRecords || [];
+    const headers = "InvoiceNumber,Date,Description,Amount,Tax,Status,PaymentMethod\n";
+    const rows = records.map(r =>
+      `"${r.invoiceNumber}","${r.date ? new Date(r.date).toLocaleDateString() : ''}","${r.planTierSnapshot || 'Subscription'}","$${r.amount?.toFixed(2)}","$${(r.taxAmount || 0).toFixed(2)}","${r.status}","${r.paymentMethod || ''}"` 
+    ).join('\n');
     const blob = new Blob([headers + rows], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `billing_statement_may_2025_${Date.now()}.csv`;
+    a.download = `billing_statement_${Date.now()}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
     triggerToast('Billing statement downloaded successfully!');
   };
 
-  const handleDownloadSingleInvoice = (invNumber) => {
-    const content = `Invoice Number: ${invNumber}\nCompany: Hero Logistics Pty Ltd\nPlan: Hero Pro ($499.00)\nAI Add-on: $199.00\nReporting Add-on: $99.00\nSMS Credits: $29.00\nDiscount: -$49.00\nSubtotal: $777.00\nGST (10%): $77.70\nTotal Amount Paid: $854.70 AUD\nPayment Method: Visa ending in 4242\nStatus: PAID`;
+  const handleDownloadSingleInvoice = (inv) => {
+    const invNum = typeof inv === 'string' ? inv : (inv.invoiceNumber || inv);
+    const amt = inv.amount ? `$${Number(inv.amount).toFixed(2)}` : '';
+    const tax = inv.taxAmount ? `$${Number(inv.taxAmount).toFixed(2)}` : '';
+    const content = `Invoice Number: ${invNum}\nDate: ${inv.date ? new Date(inv.date).toLocaleDateString() : ''}\nPlan: ${inv.planTierSnapshot || 'Subscription'}\nAmount: ${amt}\nTax (10%): ${tax}\nStatus: ${inv.status || 'PAID'}\nPayment Method: ${inv.paymentMethod || ''}`;
     const blob = new Blob([content], { type: 'text/plain' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${invNumber}.txt`;
+    a.download = `${invNum}.txt`;
     a.click();
     window.URL.revokeObjectURL(url);
-    triggerToast(`Invoice ${invNumber} downloaded successfully!`);
+    triggerToast(`Invoice ${invNum} downloaded successfully!`);
   };
 
-  const handleSaveManageSubscriptionSubmit = (e) => {
+  const handleSaveManageSubscriptionSubmit = async (e) => {
     e.preventDefault();
-    triggerToast('Subscription plan updated successfully!');
-    setIsManageSubscriptionModalOpen(false);
+    setIsSubmittingSubscription(true);
+    const targetPlanId = manageSubscriptionForm.planId || billingData?.plan?.id || availablePlans[0]?.id;
+    try {
+      await api.put('/company-admin/subscription-billing/plan', {
+        planId: targetPlanId || undefined,
+        billingPeriod: manageSubscriptionForm.billingCycle,
+        addonIds: [],
+      });
+      triggerToast('Subscription plan updated successfully!');
+      setIsManageSubscriptionModalOpen(false);
+      await fetchSubscriptionBilling();
+    } catch (err) {
+      triggerToast('Failed to update subscription. Please try again.');
+      console.error('Subscription update error:', err);
+    } finally {
+      setIsSubmittingSubscription(false);
+    }
   };
 
   // Company Settings 13.2 Handlers
   const [isRefreshingCompanySettings, setIsRefreshingCompanySettings] = useState(false);
-  const [isSavingCompanySettings, setIsSavingCompanySettings] = useState(false);
 
   const handleRefreshCompanySettings = () => {
     setIsRefreshingCompanySettings(true);
@@ -886,34 +1417,50 @@ export default function CompanySettings() {
     }
   };
 
-  const handleCreateWorkflowRuleSubmit = (e) => {
+  const handleCreateWorkflowRuleSubmit = async (e) => {
     e.preventDefault();
     if (!newWorkflowRuleForm.name) {
       triggerToast('Please enter a rule name!');
       return;
     }
 
-    const newRule = {
-      id: Date.now(),
-      name: newWorkflowRuleForm.name,
-      desc: newWorkflowRuleForm.desc || 'Automated workflow rule',
-      category: newWorkflowRuleForm.category,
-      categoryColor: getCategoryBadgeColor(newWorkflowRuleForm.category),
-      trigger: newWorkflowRuleForm.trigger,
-      action: newWorkflowRuleForm.action,
-      status: newWorkflowRuleForm.status,
-      lastExecuted: 'Just Now',
-      executions: 0,
-      createdBy: 'Sarah Mitchell',
-      createdOn: 'Today',
-      lastModified: 'Just Now'
-    };
+    try {
+      const res = await api.post('/workflow-rules', {
+        name: newWorkflowRuleForm.name,
+        desc: newWorkflowRuleForm.desc || 'Automated workflow rule',
+        category: newWorkflowRuleForm.category,
+        trigger: newWorkflowRuleForm.trigger,
+        action: newWorkflowRuleForm.action,
+        status: newWorkflowRuleForm.status
+      });
 
-    setWorkflowRulesList([newRule, ...workflowRulesList]);
-    setSelectedWorkflowRule(newRule);
-    setIsCreateWorkflowRuleModalOpen(false);
-    setNewWorkflowRuleForm({ name: '', desc: '', category: 'Invoice Automation', trigger: 'Load Status: Delivered', action: 'Create Invoice & Notify Accounts', status: 'Active' });
-    triggerToast(`Workflow Rule "${newRule.name}" created successfully!`);
+      const createdData = res.data?.data || res.data;
+      const newRule = {
+        id: createdData.id || Date.now(),
+        name: createdData.name || newWorkflowRuleForm.name,
+        desc: createdData.description || newWorkflowRuleForm.desc || 'Automated workflow rule',
+        category: createdData.category || newWorkflowRuleForm.category,
+        categoryColor: getCategoryBadgeColor(createdData.category || newWorkflowRuleForm.category),
+        trigger: createdData.trigger || newWorkflowRuleForm.trigger,
+        action: createdData.action || newWorkflowRuleForm.action,
+        status: createdData.status || newWorkflowRuleForm.status,
+        lastExecuted: createdData.lastExecuted || 'Never',
+        executions: createdData.executions || 0,
+        createdBy: createdData.createdBy || 'Sarah Mitchell',
+        createdOn: createdData.createdAt ? new Date(createdData.createdAt).toLocaleDateString() : 'Today',
+        lastModified: 'Just Now'
+      };
+
+      setWorkflowRulesList(prev => [newRule, ...prev]);
+      setSelectedWorkflowRule(newRule);
+      setIsCreateWorkflowRuleModalOpen(false);
+      setNewWorkflowRuleForm({ name: '', desc: '', category: 'Invoice Automation', trigger: 'Load Status: Delivered', action: 'Create Invoice & Notify Accounts', status: 'Active' });
+      triggerToast(`Workflow Rule "${newRule.name}" created successfully!`);
+    } catch (err) {
+      console.error('Error creating workflow rule:', err);
+      const errMsg = err.response?.data?.message || err.response?.data?.error?.message || 'Failed to create workflow rule. Please try again.';
+      triggerToast(errMsg);
+    }
   };
 
   const handleOpenEditWorkflowRuleModal = (ruleObj) => {
@@ -930,57 +1477,86 @@ export default function CompanySettings() {
     setActiveRuleRowMenuId(null);
   };
 
-  const handleEditWorkflowRuleSubmit = (e) => {
+  const handleEditWorkflowRuleSubmit = async (e) => {
     e.preventDefault();
-    const updated = workflowRulesList.map(r => {
-      if (r.id === editWorkflowRuleForm.id) {
-        const item = {
-          ...r,
-          name: editWorkflowRuleForm.name,
-          desc: editWorkflowRuleForm.desc,
-          category: editWorkflowRuleForm.category,
-          categoryColor: getCategoryBadgeColor(editWorkflowRuleForm.category),
-          trigger: editWorkflowRuleForm.trigger,
-          action: editWorkflowRuleForm.action,
-          status: editWorkflowRuleForm.status,
-          lastModified: 'Just Now'
-        };
-        if (selectedWorkflowRule.id === r.id) setSelectedWorkflowRule(item);
-        return item;
-      }
-      return r;
-    });
+    try {
+      await api.put(`/workflow-rules/${editWorkflowRuleForm.id}`, {
+        name: editWorkflowRuleForm.name,
+        desc: editWorkflowRuleForm.desc,
+        category: editWorkflowRuleForm.category,
+        trigger: editWorkflowRuleForm.trigger,
+        action: editWorkflowRuleForm.action,
+        status: editWorkflowRuleForm.status
+      });
 
-    setWorkflowRulesList(updated);
-    setIsEditWorkflowRuleModalOpen(false);
-    triggerToast('Workflow rule updated successfully!');
+      const updated = workflowRulesList.map(r => {
+        if (r.id === editWorkflowRuleForm.id) {
+          const item = {
+            ...r,
+            name: editWorkflowRuleForm.name,
+            desc: editWorkflowRuleForm.desc,
+            category: editWorkflowRuleForm.category,
+            categoryColor: getCategoryBadgeColor(editWorkflowRuleForm.category),
+            trigger: editWorkflowRuleForm.trigger,
+            action: editWorkflowRuleForm.action,
+            status: editWorkflowRuleForm.status,
+            lastModified: 'Just Now'
+          };
+          if (selectedWorkflowRule?.id === r.id) setSelectedWorkflowRule(item);
+          return item;
+        }
+        return r;
+      });
+
+      setWorkflowRulesList(updated);
+      setIsEditWorkflowRuleModalOpen(false);
+      triggerToast('Workflow rule updated successfully!');
+    } catch (err) {
+      console.error('Error updating workflow rule:', err);
+      const errMsg = err.response?.data?.message || err.response?.data?.error?.message || 'Failed to update workflow rule.';
+      triggerToast(errMsg);
+    }
   };
 
-  const handleDeleteWorkflowRule = (ruleObj) => {
+  const handleDeleteWorkflowRule = async (ruleObj) => {
     if (workflowRulesList.length <= 1) {
       triggerToast('Cannot delete the only remaining workflow rule!');
       return;
     }
-    const updated = workflowRulesList.filter(r => r.id !== ruleObj.id);
-    setWorkflowRulesList(updated);
-    if (selectedWorkflowRule.id === ruleObj.id) setSelectedWorkflowRule(updated[0]);
-    setActiveRuleRowMenuId(null);
-    triggerToast(`Rule "${ruleObj.name}" deleted.`);
+    try {
+      await api.delete(`/workflow-rules/${ruleObj.id}`);
+      const updated = workflowRulesList.filter(r => r.id !== ruleObj.id);
+      setWorkflowRulesList(updated);
+      if (selectedWorkflowRule?.id === ruleObj.id) setSelectedWorkflowRule(updated[0]);
+      setActiveRuleRowMenuId(null);
+      triggerToast(`Rule "${ruleObj.name}" deleted.`);
+    } catch (err) {
+      console.error('Error deleting workflow rule:', err);
+      const errMsg = err.response?.data?.message || err.response?.data?.error?.message || 'Failed to delete workflow rule.';
+      triggerToast(errMsg);
+    }
   };
 
-  const handleToggleWorkflowRuleStatus = (ruleObj) => {
+  const handleToggleWorkflowRuleStatus = async (ruleObj) => {
     const newStatus = ruleObj.status === 'Active' ? 'Inactive' : 'Active';
-    const updated = workflowRulesList.map(r => {
-      if (r.id === ruleObj.id) {
-        const item = { ...r, status: newStatus };
-        if (selectedWorkflowRule.id === r.id) setSelectedWorkflowRule(item);
-        return item;
-      }
-      return r;
-    });
-    setWorkflowRulesList(updated);
-    setActiveRuleRowMenuId(null);
-    triggerToast(`Rule "${ruleObj.name}" status set to ${newStatus}.`);
+    try {
+      await api.put(`/workflow-rules/${ruleObj.id}`, { status: newStatus });
+      const updated = workflowRulesList.map(r => {
+        if (r.id === ruleObj.id) {
+          const item = { ...r, status: newStatus };
+          if (selectedWorkflowRule?.id === r.id) setSelectedWorkflowRule(item);
+          return item;
+        }
+        return r;
+      });
+      setWorkflowRulesList(updated);
+      setActiveRuleRowMenuId(null);
+      triggerToast(`Rule "${ruleObj.name}" status set to ${newStatus}.`);
+    } catch (err) {
+      console.error('Error toggling rule status:', err);
+      const errMsg = err.response?.data?.message || err.response?.data?.error?.message || 'Failed to update status.';
+      triggerToast(errMsg);
+    }
   };
 
   const handleExportWorkflowRulesCSV = () => {
@@ -1012,8 +1588,6 @@ export default function CompanySettings() {
       case 'Super Admin': return 'bg-purple-100 text-purple-700';
       case 'Admin': return 'bg-blue-100 text-blue-700';
       case 'Dispatch Manager': return 'bg-amber-100 text-amber-800';
-      case 'Dispatcher': return 'bg-teal-100 text-teal-800';
-      case 'Accounts': return 'bg-purple-100 text-purple-800';
       case 'Warehouse Manager': return 'bg-orange-100 text-orange-800';
       case 'Driver': return 'bg-emerald-100 text-emerald-800';
       case 'Customer User': return 'bg-pink-100 text-pink-700';
@@ -1021,34 +1595,50 @@ export default function CompanySettings() {
     }
   };
 
-  const handleAddUserSubmit = (e) => {
+  const handleAddUserSubmit = async (e) => {
     e.preventDefault();
     if (!newUserForm.name || !newUserForm.email) {
       triggerToast('Please fill in required fields (Name & Email)');
       return;
     }
 
-    const initials = newUserForm.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'US';
-    const newEntry = {
-      id: Date.now(),
-      name: newUserForm.name,
-      email: newUserForm.email,
-      role: newUserForm.role,
-      roleColor: getRoleBadgeColor(newUserForm.role),
-      branch: newUserForm.branch,
-      status: newUserForm.status,
-      lastLogin: 'Never',
-      joined: 'Just Now',
-      phone: newUserForm.phone || '+61 400 000 000',
-      avatar: initials,
-      avatarBg: 'bg-[#2563EB]'
-    };
+    try {
+      const res = await api.post('/users', {
+        name: newUserForm.name,
+        email: newUserForm.email,
+        role: newUserForm.role,
+        branch: newUserForm.branch,
+        phone: newUserForm.phone,
+        status: newUserForm.status
+      });
 
-    setUsersList([newEntry, ...usersList]);
-    setSelectedUser(newEntry);
-    setIsAddModalOpen(false);
-    setNewUserForm({ name: '', email: '', role: 'Admin', branch: 'Sydney', status: 'Active', phone: '' });
-    triggerToast(`User "${newEntry.name}" created successfully!`);
+      const createdData = res.data?.data || res.data;
+      const initials = (createdData.name || newUserForm.name).split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'US';
+      const newEntry = {
+        id: createdData.id || Date.now(),
+        name: createdData.name || newUserForm.name,
+        email: createdData.email || newUserForm.email,
+        role: newUserForm.role,
+        roleColor: getRoleBadgeColor(newUserForm.role),
+        branch: newUserForm.branch || 'Sydney',
+        status: newUserForm.status || 'Active',
+        lastLogin: 'Never',
+        joined: 'Just Now',
+        phone: createdData.phone || newUserForm.phone || '+61 400 000 000',
+        avatar: initials,
+        avatarBg: 'bg-[#2563EB]'
+      };
+
+      setUsersList(prev => [newEntry, ...prev]);
+      setSelectedUser(newEntry);
+      setIsAddModalOpen(false);
+      setNewUserForm({ name: '', email: '', role: 'Admin', branch: 'Sydney', status: 'Active', phone: '' });
+      triggerToast(`User "${newEntry.name}" created successfully!`);
+    } catch (err) {
+      console.error('Error creating user:', err);
+      const errMsg = err.response?.data?.message || err.response?.data?.error?.message || 'Failed to create user. Please try again.';
+      triggerToast(errMsg);
+    }
   };
 
   const handleOpenEditModal = (userObj) => {
@@ -1065,62 +1655,92 @@ export default function CompanySettings() {
     setActiveRowMenuId(null);
   };
 
-  const handleEditUserSubmit = (e) => {
+  const handleEditUserSubmit = async (e) => {
     e.preventDefault();
-    const updatedList = usersList.map(u => {
-      if (u.id === editUserForm.id) {
-        const initials = editUserForm.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || u.avatar;
-        const updated = {
-          ...u,
-          name: editUserForm.name,
-          email: editUserForm.email,
-          role: editUserForm.role,
-          roleColor: getRoleBadgeColor(editUserForm.role),
-          branch: editUserForm.branch,
-          status: editUserForm.status,
-          phone: editUserForm.phone,
-          avatar: initials
-        };
-        if (selectedUser.id === u.id) {
-          setSelectedUser(updated);
-        }
-        return updated;
-      }
-      return u;
-    });
+    try {
+      const res = await api.put(`/users/${editUserForm.id}`, {
+        name: editUserForm.name,
+        email: editUserForm.email,
+        role: editUserForm.role,
+        branch: editUserForm.branch,
+        phone: editUserForm.phone,
+        status: editUserForm.status
+      });
 
-    setUsersList(updatedList);
-    setIsEditModalOpen(false);
-    triggerToast('User details updated successfully!');
+      const initials = editUserForm.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'US';
+
+      const updatedList = usersList.map(u => {
+        if (u.id === editUserForm.id) {
+          const updated = {
+            ...u,
+            name: editUserForm.name,
+            email: editUserForm.email,
+            role: editUserForm.role,
+            roleColor: getRoleBadgeColor(editUserForm.role),
+            branch: editUserForm.branch,
+            status: editUserForm.status,
+            phone: editUserForm.phone,
+            avatar: initials
+          };
+          if (selectedUser?.id === u.id) {
+            setSelectedUser(updated);
+          }
+          return updated;
+        }
+        return u;
+      });
+
+      setUsersList(updatedList);
+      setIsEditModalOpen(false);
+      triggerToast('User details updated successfully!');
+    } catch (err) {
+      console.error('Error updating user:', err);
+      const errMsg = err.response?.data?.message || err.response?.data?.error?.message || 'Failed to update user.';
+      triggerToast(errMsg);
+    }
   };
 
-  const handleDeleteUser = (userObj) => {
+  const handleDeleteUser = async (userObj) => {
     if (usersList.length <= 1) {
       triggerToast('Cannot delete the only remaining user!');
       return;
     }
-    const updated = usersList.filter(u => u.id !== userObj.id);
-    setUsersList(updated);
-    if (selectedUser.id === userObj.id) {
-      setSelectedUser(updated[0]);
+    try {
+      await api.delete(`/users/${userObj.id}`);
+      const updated = usersList.filter(u => u.id !== userObj.id);
+      setUsersList(updated);
+      if (selectedUser?.id === userObj.id) {
+        setSelectedUser(updated[0]);
+      }
+      setActiveRowMenuId(null);
+      triggerToast(`User "${userObj.name}" deleted.`);
+    } catch (err) {
+      console.error('Error deleting user:', err);
+      const errMsg = err.response?.data?.message || err.response?.data?.error?.message || 'Failed to delete user.';
+      triggerToast(errMsg);
     }
-    setActiveRowMenuId(null);
-    triggerToast(`User "${userObj.name}" deleted.`);
   };
 
-  const handleToggleUserStatus = (userObj) => {
+  const handleToggleUserStatus = async (userObj) => {
     const newStatus = userObj.status === 'Active' ? 'Inactive' : 'Active';
-    const updated = usersList.map(u => {
-      if (u.id === userObj.id) {
-        const item = { ...u, status: newStatus };
-        if (selectedUser.id === u.id) setSelectedUser(item);
-        return item;
-      }
-      return u;
-    });
-    setUsersList(updated);
-    setActiveRowMenuId(null);
-    triggerToast(`User "${userObj.name}" status updated to ${newStatus}.`);
+    try {
+      await api.put(`/users/${userObj.id}`, { status: newStatus });
+      const updated = usersList.map(u => {
+        if (u.id === userObj.id) {
+          const item = { ...u, status: newStatus };
+          if (selectedUser?.id === u.id) setSelectedUser(item);
+          return item;
+        }
+        return u;
+      });
+      setUsersList(updated);
+      setActiveRowMenuId(null);
+      triggerToast(`User "${userObj.name}" status updated to ${newStatus}.`);
+    } catch (err) {
+      console.error('Error updating status:', err);
+      const errMsg = err.response?.data?.message || err.response?.data?.error?.message || 'Failed to update status.';
+      triggerToast(errMsg);
+    }
   };
 
   const handleExportCSV = () => {
@@ -1317,16 +1937,16 @@ export default function CompanySettings() {
                 <div className="flex-1 min-w-0">
                   <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-tight block leading-none">COMPANY SETUP</span>
                   <div className="flex items-baseline gap-1.5 mt-0.5">
-                    <span className="text-base font-black text-slate-900">92%</span>
+                    <span className="text-base font-black text-slate-900">{dashboardStats.setupPercent}%</span>
                     <span className="text-[9.5px] font-bold text-emerald-600">Complete</span>
                   </div>
                 </div>
               </div>
               <div className="mt-1">
                 <div className="w-full bg-slate-100 rounded-full h-1 overflow-hidden">
-                  <div className="bg-[#2563EB] h-1 rounded-full w-[92%] transition-all"></div>
+                  <div className="bg-[#2563EB] h-1 rounded-full transition-all" style={{ width: `${dashboardStats.setupPercent}%` }}></div>
                 </div>
-                <p className="text-[8px] font-semibold text-slate-400 mt-1 leading-none">Last updated: 30 May 2025</p>
+                <p className="text-[8px] font-semibold text-slate-400 mt-1 leading-none">Last updated: {dashboardStats.lastUpdated}</p>
               </div>
             </div>
 
@@ -1339,10 +1959,10 @@ export default function CompanySettings() {
                 <div className="flex-1 min-w-0">
                   <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-tight block leading-none">ACTIVE USERS</span>
                   <div className="flex items-baseline gap-1 mt-0.5">
-                    <span className="text-base font-black text-slate-900">48</span>
+                    <span className="text-base font-black text-slate-900">{usersList.length}</span>
                     <span className="text-[9.5px] font-bold text-slate-600">Users</span>
                   </div>
-                  <p className="text-[8.5px] font-extrabold text-emerald-600 leading-none mt-0.5">↑ 12.5% <span className="font-semibold text-slate-400">vs Last Month</span></p>
+                  <p className="text-[8.5px] font-extrabold text-emerald-600 leading-none mt-0.5">0.0% <span className="font-semibold text-slate-400">vs Last Month</span></p>
                 </div>
               </div>
               <div className="pt-1 border-t border-slate-50 flex justify-end">
@@ -1361,7 +1981,7 @@ export default function CompanySettings() {
                 <div className="flex-1 min-w-0">
                   <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-tight block leading-none">BRANCHES CONFIGURED</span>
                   <div className="flex items-baseline gap-1 mt-0.5">
-                    <span className="text-base font-black text-slate-900">6</span>
+                    <span className="text-base font-black text-slate-900">{dashboardStats.branchesCount}</span>
                     <span className="text-[9.5px] font-bold text-slate-600">Branches</span>
                   </div>
                 </div>
@@ -1382,7 +2002,7 @@ export default function CompanySettings() {
                 <div className="flex-1 min-w-0">
                   <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-tight block leading-none">ACTIVE INTEGRATIONS</span>
                   <div className="flex items-baseline gap-1 mt-0.5">
-                    <span className="text-base font-black text-slate-900">7</span>
+                    <span className="text-base font-black text-slate-900">{dashboardStats.integrationsCount}</span>
                     <span className="text-[9.5px] font-bold text-slate-600">Integrations</span>
                   </div>
                 </div>
@@ -1648,23 +2268,23 @@ export default function CompanySettings() {
                 <div className="grid grid-cols-2 gap-2">
                   <div className="bg-slate-50/70 p-1.5 rounded-lg border border-slate-100">
                     <p className="text-[8px] font-bold text-slate-400 uppercase">Logins</p>
-                    <p className="text-sm font-black text-slate-900 mt-0.5">256</p>
-                    <p className="text-[8px] font-bold text-emerald-600">↑ 18.2%</p>
+                    <p className="text-sm font-black text-slate-900 mt-0.5">{dashboardStats.userActivity.logins}</p>
+                    <p className="text-[8px] font-bold text-emerald-600">0.0%</p>
                   </div>
                   <div className="bg-slate-50/70 p-1.5 rounded-lg border border-slate-100">
                     <p className="text-[8px] font-bold text-slate-400 uppercase">New Users</p>
-                    <p className="text-sm font-black text-slate-900 mt-0.5">4</p>
-                    <p className="text-[8px] font-bold text-emerald-600">↑ 100%</p>
+                    <p className="text-sm font-black text-slate-900 mt-0.5">{dashboardStats.userActivity.newUsers}</p>
+                    <p className="text-[8px] font-bold text-emerald-600">0.0%</p>
                   </div>
                   <div className="bg-slate-50/70 p-1.5 rounded-lg border border-slate-100">
                     <p className="text-[8px] font-bold text-slate-400 uppercase">Role Changes</p>
-                    <p className="text-sm font-black text-slate-900 mt-0.5">6</p>
-                    <p className="text-[8px] font-bold text-emerald-600">↑ 20%</p>
+                    <p className="text-sm font-black text-slate-900 mt-0.5">{dashboardStats.userActivity.roleChanges}</p>
+                    <p className="text-[8px] font-bold text-emerald-600">0.0%</p>
                   </div>
                   <div className="bg-slate-50/70 p-1.5 rounded-lg border border-slate-100">
                     <p className="text-[8px] font-bold text-slate-400 uppercase">Permission Changes</p>
-                    <p className="text-sm font-black text-slate-900 mt-0.5">12</p>
-                    <p className="text-[8px] font-bold text-emerald-600">↑ 33.3%</p>
+                    <p className="text-sm font-black text-slate-900 mt-0.5">{dashboardStats.userActivity.permissionChanges}</p>
+                    <p className="text-[8px] font-bold text-emerald-600">0.0%</p>
                   </div>
                 </div>
 
@@ -1734,7 +2354,7 @@ export default function CompanySettings() {
                       <Clock size={13} className="text-slate-400" />
                       <span>Last Updated</span>
                     </div>
-                    <span className="text-slate-500 font-bold text-[9px]">30 May 2025 09:30 AM</span>
+                    <span className="text-slate-500 font-bold text-[9px]">{dashboardStats.lastUpdated}</span>
                   </div>
                 </div>
               </div>
@@ -2826,7 +3446,7 @@ export default function CompanySettings() {
                     <div className="flex-1 min-w-0">
                       <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-tight block leading-none">TOTAL USERS</span>
                       <div className="flex items-baseline gap-1 mt-0.5">
-                        <span className="text-base font-black text-slate-900">48</span>
+                        <span className="text-base font-black text-slate-900">{usersList.length}</span>
                       </div>
                       <p className="text-[8.5px] font-extrabold text-emerald-600 leading-none mt-0.5">↑ 12.5% <span className="font-semibold text-slate-400">vs Last Month</span></p>
                     </div>
@@ -2847,7 +3467,7 @@ export default function CompanySettings() {
                     <div className="flex-1 min-w-0">
                       <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-tight block leading-none">ACTIVE USERS</span>
                       <div className="flex items-baseline gap-1 mt-0.5">
-                        <span className="text-base font-black text-slate-900">44</span>
+                        <span className="text-base font-black text-slate-900">{usersList.filter(u => u.status === "Active" || u.status === "ACTIVE").length}</span>
                       </div>
                       <p className="text-[8.5px] font-extrabold text-emerald-600 leading-none mt-0.5">↑ 10.0% <span className="font-semibold text-slate-400">vs Last Month</span></p>
                     </div>
@@ -2868,7 +3488,7 @@ export default function CompanySettings() {
                     <div className="flex-1 min-w-0">
                       <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-tight block leading-none">INACTIVE USERS</span>
                       <div className="flex items-baseline gap-1 mt-0.5">
-                        <span className="text-base font-black text-slate-900">4</span>
+                        <span className="text-base font-black text-slate-900">{usersList.filter(u => u.status === "Inactive" || u.status === "INACTIVE").length}</span>
                       </div>
                       <p className="text-[8.5px] font-extrabold text-rose-600 leading-none mt-0.5">↓ 20.0% <span className="font-semibold text-slate-400">vs Last Month</span></p>
                     </div>
@@ -2889,7 +3509,7 @@ export default function CompanySettings() {
                     <div className="flex-1 min-w-0">
                       <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-tight block leading-none">PENDING INVITES</span>
                       <div className="flex items-baseline gap-1 mt-0.5">
-                        <span className="text-base font-black text-slate-900">6</span>
+                        <span className="text-base font-black text-slate-900">{usersList.filter(u => u.status === "Pending" || u.status === "PENDING").length}</span>
                       </div>
                     </div>
                   </div>
@@ -2909,7 +3529,7 @@ export default function CompanySettings() {
                     <div className="flex-1 min-w-0">
                       <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-tight block leading-none">ROLES</span>
                       <div className="flex items-baseline gap-1 mt-0.5">
-                        <span className="text-base font-black text-slate-900">9</span>
+                        <span className="text-base font-black text-slate-900">{rolesList.length}</span>
                       </div>
                     </div>
                   </div>
@@ -2929,7 +3549,7 @@ export default function CompanySettings() {
                     <div className="flex-1 min-w-0">
                       <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-tight block leading-none">PERMISSION SETS</span>
                       <div className="flex items-baseline gap-1 mt-0.5">
-                        <span className="text-base font-black text-slate-900">27</span>
+                        <span className="text-base font-black text-slate-900">{rolesList.length * 3}</span>
                       </div>
                     </div>
                   </div>
@@ -4021,7 +4641,7 @@ export default function CompanySettings() {
                     <div className="flex-1 min-w-0">
                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-tight block leading-none">AI FEATURES ENABLED</span>
                       <div className="flex items-baseline gap-1 mt-1">
-                        <span className="text-xl font-black text-slate-900 leading-none">12</span>
+                        <span className="text-xl font-black text-slate-900 leading-none">0</span>
                         <span className="text-[10px] font-bold text-slate-500">of 18</span>
                       </div>
                     </div>
@@ -4041,8 +4661,8 @@ export default function CompanySettings() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-tight block leading-none">AI REQUESTS (THIS MONTH)</span>
-                      <span className="text-xl font-black text-slate-900 block mt-1 leading-none">24,680</span>
-                      <p className="text-[9px] font-extrabold text-emerald-600 leading-none mt-1">↑ 18.6% <span className="font-semibold text-slate-400">vs Last Month</span></p>
+                      <span className="text-xl font-black text-slate-900 block mt-1 leading-none">0</span>
+                      <p className="text-[9px] font-extrabold text-slate-400 leading-none mt-1">0.0% <span className="font-semibold text-slate-400">vs Last Month</span></p>
                     </div>
                   </div>
                   <div className="pt-2 border-t border-slate-50 flex justify-end mt-2">
@@ -4060,8 +4680,8 @@ export default function CompanySettings() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-tight block leading-none">AUTOMATIONS RUN (THIS MONTH)</span>
-                      <span className="text-xl font-black text-slate-900 block mt-1 leading-none">3,842</span>
-                      <p className="text-[9px] font-extrabold text-emerald-600 leading-none mt-1">↑ 21.4% <span className="font-semibold text-slate-400">vs Last Month</span></p>
+                      <span className="text-xl font-black text-slate-900 block mt-1 leading-none">0</span>
+                      <p className="text-[9px] font-extrabold text-slate-400 leading-none mt-1">0.0% <span className="font-semibold text-slate-400">vs Last Month</span></p>
                     </div>
                   </div>
                   <div className="pt-2 border-t border-slate-50 flex justify-end mt-2">
@@ -4079,7 +4699,7 @@ export default function CompanySettings() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-tight block leading-none">DATA SOURCES CONNECTED</span>
-                      <span className="text-xl font-black text-slate-900 block mt-1 leading-none">8</span>
+                      <span className="text-xl font-black text-slate-900 block mt-1 leading-none">0</span>
                     </div>
                   </div>
                   <div className="pt-2 border-t border-slate-50 flex justify-end mt-2">
@@ -4097,8 +4717,8 @@ export default function CompanySettings() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <span className="text-[8.5px] font-black text-slate-400 uppercase tracking-tight block leading-none">AI ACCURACY (AVG THIS MONTH)</span>
-                      <span className="text-xl font-black text-slate-900 block mt-1 leading-none">92.4%</span>
-                      <p className="text-[9px] font-extrabold text-emerald-600 leading-none mt-1">↑ 4.2% <span className="font-semibold text-slate-400">vs Last Month</span></p>
+                      <span className="text-xl font-black text-slate-900 block mt-1 leading-none">0.0%</span>
+                      <p className="text-[9px] font-extrabold text-slate-400 leading-none mt-1">0.0% <span className="font-semibold text-slate-400">vs Last Month</span></p>
                     </div>
                   </div>
                   <div className="pt-2 border-t border-slate-50 flex justify-end mt-2">
@@ -4326,7 +4946,7 @@ export default function CompanySettings() {
 
                   {/* Pagination Footer */}
                   <div className="flex flex-col sm:flex-row justify-between items-center gap-2 pt-2.5 border-t border-slate-100 text-[11px] font-semibold text-slate-500">
-                    <span>Showing 1 to 8 of 12 features</span>
+                    <span>Showing 1 to {aiFeaturesList.length} of {aiFeaturesList.length} features</span>
 
                     <div className="flex items-center gap-1">
                       <button className="px-2 py-0.5 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-400 text-xs">|‹</button>
@@ -4363,17 +4983,25 @@ export default function CompanySettings() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 text-xs font-medium">
-                          {aiModelsList.map((m) => (
-                            <tr key={m.id} className="hover:bg-slate-50/80 transition-colors">
-                              <td className="py-2.5 px-2 font-extrabold text-slate-900 text-[11px] whitespace-nowrap">{m.name}</td>
-                              <td className="py-2.5 px-2 text-slate-600 text-[10px] whitespace-nowrap">{m.provider}</td>
-                              <td className="py-2.5 px-2 text-slate-500 font-mono text-[10px] whitespace-nowrap">{m.version}</td>
-                              <td className="py-2.5 px-2 whitespace-nowrap">
-                                <span className="text-emerald-600 font-black text-[10px]">Active</span>
+                          {aiModelsList.length === 0 ? (
+                            <tr>
+                              <td colSpan={5} className="py-4 text-center text-xs font-semibold text-slate-400">
+                                No custom AI models registered yet. Click "+ Register AI Model" to add.
                               </td>
-                              <td className="py-2.5 px-2 text-right text-slate-500 text-[10px] whitespace-nowrap">{m.lastUpdated}</td>
                             </tr>
-                          ))}
+                          ) : (
+                            aiModelsList.map((m) => (
+                              <tr key={m.id} className="hover:bg-slate-50/80 transition-colors">
+                                <td className="py-2.5 px-2 font-extrabold text-slate-900 text-[11px] whitespace-nowrap">{m.name}</td>
+                                <td className="py-2.5 px-2 text-slate-600 text-[10px] whitespace-nowrap">{m.provider}</td>
+                                <td className="py-2.5 px-2 text-slate-500 font-mono text-[10px] whitespace-nowrap">{m.version}</td>
+                                <td className="py-2.5 px-2 whitespace-nowrap">
+                                  <span className="text-emerald-600 font-black text-[10px]">{m.status || 'Active'}</span>
+                                </td>
+                                <td className="py-2.5 px-2 text-right text-slate-500 text-[10px] whitespace-nowrap">{m.lastUpdated}</td>
+                              </tr>
+                            ))
+                          )}
                         </tbody>
                       </table>
                     </div>
@@ -4400,14 +5028,9 @@ export default function CompanySettings() {
                       <div className="relative w-[85px] h-[85px] flex-shrink-0 flex items-center justify-center">
                         <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
                           <circle cx="60" cy="60" r="45" fill="none" stroke="#E2E8F0" strokeWidth="18" />
-                          <circle cx="60" cy="60" r="45" fill="none" stroke="#2563EB" strokeWidth="18" strokeDasharray="282.7" strokeDashoffset="96" />
-                          <circle cx="60" cy="60" r="45" fill="none" stroke="#06B6D4" strokeWidth="18" strokeDasharray="282.7" strokeDashoffset="166" />
-                          <circle cx="60" cy="60" r="45" fill="none" stroke="#F59E0B" strokeWidth="18" strokeDasharray="282.7" strokeDashoffset="215" />
-                          <circle cx="60" cy="60" r="45" fill="none" stroke="#10B981" strokeWidth="18" strokeDasharray="282.7" strokeDashoffset="256" />
-                          <circle cx="60" cy="60" r="45" fill="none" stroke="#A855F7" strokeWidth="18" strokeDasharray="282.7" strokeDashoffset="278" />
                         </svg>
                         <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                          <span className="text-[10px] font-black text-slate-900 leading-none">24,680</span>
+                          <span className="text-[10px] font-black text-slate-900 leading-none">0</span>
                           <span className="text-[7px] font-bold text-slate-400 leading-tight mt-0.5">Total Requests</span>
                         </div>
                       </div>
@@ -4415,11 +5038,11 @@ export default function CompanySettings() {
                       {/* Legend List beside chart */}
                       <div className="flex-1 min-w-0 space-y-[4px]">
                         {[
-                          { color: '#2563EB', label: 'Load Creation', val: '8,450 (34.2%)' },
-                          { color: '#06B6D4', label: 'Document OCR', val: '6,120 (24.8%)' },
-                          { color: '#F59E0B', label: 'Trailer Recommendation', val: '4,320 (17.5%)' },
-                          { color: '#10B981', label: 'Payment Reminders', val: '3,650 (14.8%)' },
-                          { color: '#A855F7', label: 'Other Features', val: '2,140 (8.7%)' },
+                          { color: '#2563EB', label: 'Load Creation', val: '0 (0.0%)' },
+                          { color: '#06B6D4', label: 'Document OCR', val: '0 (0.0%)' },
+                          { color: '#F59E0B', label: 'Trailer Recommendation', val: '0 (0.0%)' },
+                          { color: '#10B981', label: 'Payment Reminders', val: '0 (0.0%)' },
+                          { color: '#A855F7', label: 'Other Features', val: '0 (0.0%)' },
                         ].map((item, i) => (
                           <div key={i} className="flex items-center justify-between gap-1">
                             <div className="flex items-center gap-1 min-w-0">
@@ -4441,8 +5064,8 @@ export default function CompanySettings() {
                             <span className="text-[8.5px] font-bold text-slate-500">Successful</span>
                           </div>
                           <div className="flex items-baseline gap-0.5">
-                            <span className="text-[12px] font-black text-slate-900 leading-none">22,846</span>
-                            <span className="text-[8px] font-extrabold text-emerald-600">(92.6%)</span>
+                            <span className="text-[12px] font-black text-slate-900 leading-none">0</span>
+                            <span className="text-[8px] font-extrabold text-emerald-600">(0.0%)</span>
                           </div>
                         </div>
 
@@ -4454,8 +5077,8 @@ export default function CompanySettings() {
                             <span className="text-[8.5px] font-bold text-slate-500">Failed</span>
                           </div>
                           <div className="flex items-baseline gap-0.5">
-                            <span className="text-[12px] font-black text-slate-900 leading-none">1,834</span>
-                            <span className="text-[8px] font-extrabold text-amber-600">(7.4%)</span>
+                            <span className="text-[12px] font-black text-slate-900 leading-none">0</span>
+                            <span className="text-[8px] font-extrabold text-amber-600">(0.0%)</span>
                           </div>
                         </div>
 
@@ -4466,7 +5089,7 @@ export default function CompanySettings() {
                             </div>
                             <span className="text-[8.5px] font-bold text-slate-500">Avg Response Time</span>
                           </div>
-                          <span className="text-[12px] font-black text-slate-900 leading-none">2.4 sec</span>
+                          <span className="text-[12px] font-black text-slate-900 leading-none">0 ms</span>
                         </div>
                       </div>
 
@@ -4598,7 +5221,6 @@ export default function CompanySettings() {
                   <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">AI AUTOMATION TRIGGERS & WORKFLOW RULES</h3>
                   <p className="text-xs text-slate-500 font-medium">Rules automatically executed when AI confidence scores exceed safety limits.</p>
                 </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                   {[
                     { name: 'Auto-Dispatch High Confidence Loads', trigger: 'When Load created & AI match confidence > 90%', action: 'Assign truck & notify driver automatically', runs: '1,420 runs' },
@@ -4800,11 +5422,11 @@ export default function CompanySettings() {
               {/* 6 METRIC CARDS */}
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                 {[
-                  { icon: <Link2 size={16} />, bg: 'bg-[#DBEAFE] text-[#2563EB]', border: 'hover:border-blue-200', label: 'CONNECTED INTEGRATIONS', value: '12', sub: '↑ 20.0%', subColor: 'text-emerald-600', subText: 'vs Last Month', link: 'View all integrations →', onClick: () => setIntegrationsTab('Connected Integrations') },
-                  { icon: <Database size={16} />, bg: 'bg-[#DCFCE7] text-[#16A34A]', border: 'hover:border-emerald-200', label: 'DATA SYNCED TODAY', value: '1,248', sub: '↑ 15.3%', subColor: 'text-emerald-600', subText: 'vs Yesterday', link: 'View sync activity →', onClick: () => setIntegrationsTab('Data Sync') },
-                  { icon: <AlertCircle size={16} />, bg: 'bg-rose-100 text-rose-600', border: 'hover:border-rose-200', label: 'FAILED SYNC (TODAY)', value: '6', valueColor: 'text-rose-600', sub: '↓ 25.0%', subColor: 'text-rose-600', subText: 'vs Yesterday', link: 'View error log →', onClick: () => triggerToast('Opening error log...') },
-                  { icon: <Clock size={16} />, bg: 'bg-[#DBEAFE] text-[#2563EB]', border: 'hover:border-blue-200', label: 'LAST SYNC', value: '10:15 AM', sub: '30 May 2026', subColor: 'text-slate-400', link: 'View sync schedule →', onClick: () => triggerToast('Viewing sync schedule...') },
-                  { icon: <Zap size={16} />, bg: 'bg-[#DCFCE7] text-[#16A34A]', border: 'hover:border-emerald-200', label: 'AUTO SYNC STATUS', value: 'Active', valueColor: 'text-emerald-600', sub: 'All automations running', subColor: 'text-slate-400', link: 'Manage schedules →', onClick: () => triggerToast('Managing schedules...') },
+                  { icon: <Link2 size={16} />, bg: 'bg-[#DBEAFE] text-[#2563EB]', border: 'hover:border-blue-200', label: 'CONNECTED INTEGRATIONS', value: companyIntegrationsList.length.toString(), sub: '0.0%', subColor: 'text-slate-400', subText: 'vs Last Month', link: 'View all integrations →', onClick: () => setIntegrationsTab('Connected Integrations') },
+                  { icon: <Database size={16} />, bg: 'bg-[#DCFCE7] text-[#16A34A]', border: 'hover:border-emerald-200', label: 'DATA SYNCED TODAY', value: '0', sub: '0.0%', subColor: 'text-slate-400', subText: 'vs Yesterday', link: 'View sync activity →', onClick: () => setIntegrationsTab('Data Sync') },
+                  { icon: <AlertCircle size={16} />, bg: 'bg-rose-100 text-rose-600', border: 'hover:border-rose-200', label: 'FAILED SYNC (TODAY)', value: '0', valueColor: 'text-slate-900', sub: '0.0%', subColor: 'text-slate-400', subText: 'vs Yesterday', link: 'View error log →', onClick: () => triggerToast('Opening error log...') },
+                  { icon: <Clock size={16} />, bg: 'bg-[#DBEAFE] text-[#2563EB]', border: 'hover:border-blue-200', label: 'LAST SYNC', value: companyIntegrationsList.length > 0 ? 'Just Now' : '-', sub: companyIntegrationsList.length > 0 ? 'Today' : '-', subColor: 'text-slate-400', link: 'View sync schedule →', onClick: () => triggerToast('Viewing sync schedule...') },
+                  { icon: <Zap size={16} />, bg: 'bg-[#DCFCE7] text-[#16A34A]', border: 'hover:border-emerald-200', label: 'AUTO SYNC STATUS', value: companyIntegrationsList.length > 0 ? 'Active' : 'Inactive', valueColor: companyIntegrationsList.length > 0 ? 'text-emerald-600' : 'text-slate-500', sub: companyIntegrationsList.length > 0 ? 'Automations active' : 'No active sync', subColor: 'text-slate-400', link: 'Manage schedules →', onClick: () => triggerToast('Managing schedules...') },
                   { icon: <ShieldCheck size={16} />, bg: 'bg-[#DCFCE7] text-[#16A34A]', border: 'hover:border-emerald-200', label: 'INTEGRATION HEALTH', value: 'Healthy', valueColor: 'text-emerald-600', sub: 'All systems operational', subColor: 'text-slate-400', link: 'View health report →', onClick: () => triggerToast('Viewing health report...') },
                 ].map((card, i) => (
                   <div key={i} className={`bg-white rounded-xl border border-slate-200/80 p-3 shadow-2xs flex flex-col justify-between ${card.border} transition-all text-left`}>
@@ -4864,47 +5486,42 @@ export default function CompanySettings() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {[
-                          { id: 1, name: 'Xero Accounting', desc: 'Sync invoices, bills, payments & contacts', cat: 'Accounting', sync: 'Synced', last: '30 May 2025 10:16 AM', next: '30 May 2025 11:15 AM', color: '#1A73E8', letter: 'X' },
-                          { id: 2, name: 'MYOB Accounting', desc: 'Sync financial data and contacts', cat: 'Accounting', sync: 'Synced', last: '30 May 2025 10:10 AM', next: '30 May 2025 10:45 AM', color: '#6B21A8', letter: 'M' },
-                          { id: 3, name: 'QuickBooks Online', desc: 'Sync customers, invoices & payments', cat: 'Accounting', sync: 'Synced', last: '30 May 2025 10:10 AM', next: '30 May 2025 11:10 AM', color: '#16A34A', letter: 'Q' },
-                          { id: 4, name: 'Google Maps Platform', desc: 'Maps, geocoding and route optimisation', cat: 'Maps & Routing', sync: 'Synced', last: '30 May 2025 10:10 AM', next: '30 May 2025 11:10 AM', color: '#EA4335', letter: 'G' },
-                          { id: 5, name: 'Samsara Telematics', desc: 'GPS tracking and vehicle data', cat: 'GPS / Telematics', sync: 'Synced', last: '30 May 2025 10:12 AM', next: '30 May 2025 11:12 AM', color: '#0EA5E9', letter: 'S' },
-                          { id: 6, name: 'Geotab', desc: 'Vehicle tracking and diagnostics', cat: 'GPS / Telematics', sync: 'Synced', last: '30 May 2025 10:10 AM', next: '30 May 2025 11:10 AM', color: '#6B7280', letter: 'G' },
-                          { id: 7, name: 'NHVR EWD', desc: 'Driver work diary & fatigue data', cat: 'Compliance', sync: 'Synced', last: '30 May 2025 10:12 AM', next: '30 May 2025 11:12 AM', color: '#DC2626', letter: 'N' },
-                          { id: 8, name: 'Stripe Payments', desc: 'Online payments and subscriptions', cat: 'Payments', sync: 'Synced', last: '30 May 2025 10:12 AM', next: '30 May 2025 11:10 AM', color: '#6366F1', letter: 'S' },
-                          { id: 9, name: 'Email Service (SendGrid)', desc: 'Transactional emails and alerts', cat: 'Communication', sync: 'Syncing', last: '30 May 2025 10:15 AM', next: '30 May 2025 11:30 AM', color: '#0891B2', letter: 'E' },
-                          { id: 10, name: 'SMS Service (Twilio)', desc: 'SMS notifications and alerts', cat: 'Communication', sync: 'Synced', last: '30 May 2025 10:11 AM', next: '30 May 2025 11:11 AM', color: '#DC2626', letter: 'T' },
-                        ].map((item) => (
-                          <tr key={item.id} className="hover:bg-blue-50/30 transition-colors">
-                            <td className="py-2 px-2">
-                              <div className="flex items-center gap-2">
-                                <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0 text-white text-[9px] font-black" style={{ backgroundColor: item.color }}>{item.letter}</div>
-                                <div>
-                                  <div className="text-[10.5px] font-extrabold text-slate-900 leading-tight whitespace-nowrap">{item.name}</div>
-                                  <div className="text-[8.5px] font-medium text-slate-400 leading-tight">{item.desc}</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="py-2 px-2 whitespace-nowrap"><span className="text-[9.5px] font-semibold text-slate-600">{item.cat}</span></td>
-                            <td className="py-2 px-2 whitespace-nowrap"><span className="px-1.5 py-0.5 rounded-md text-[8.5px] font-extrabold bg-[#DCFCE7] text-[#166534]">Connected</span></td>
-                            <td className="py-2 px-2 whitespace-nowrap">
-                              {item.sync === 'Syncing' ? (
-                                <div className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span><span className="text-[9.5px] font-bold text-amber-600">Syncing</span></div>
-                              ) : <span className="text-[9.5px] font-semibold text-slate-600">{item.sync}</span>}
-                            </td>
-                            <td className="py-2 px-2 whitespace-nowrap"><span className="text-[9px] font-semibold text-slate-500">{item.last}</span></td>
-                            <td className="py-2 px-2 whitespace-nowrap"><span className="text-[9px] font-semibold text-slate-500">{item.next}</span></td>
-                            <td className="py-2 px-1.5 text-right whitespace-nowrap">
-                              <button onClick={() => triggerToast(`Managing ${item.name}...`)} className="w-7 h-7 inline-flex items-center justify-center rounded-lg border border-slate-200/80 bg-white hover:bg-slate-100 hover:border-slate-300 text-slate-500 hover:text-slate-900 transition-all cursor-pointer outline-none focus:outline-none focus:ring-0 select-none shadow-2xs"><MoreHorizontal size={13} /></button>
+                        {companyIntegrationsList.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="py-8 text-center text-xs font-semibold text-slate-400">
+                              No connected integrations found (0). Click <button onClick={() => setIsAddIntegrationModalOpen(true)} className="font-bold text-[#2563EB] hover:underline cursor-pointer">+ Add Integration</button> to connect software.
                             </td>
                           </tr>
-                        ))}
+                        ) : (
+                          companyIntegrationsList.map((item, idx) => (
+                            <tr key={item.id || idx} className="hover:bg-blue-50/30 transition-colors">
+                              <td className="py-2 px-2">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0 text-white text-[9px] font-black bg-[#2563EB]">
+                                    {(item.providerName || 'I').slice(0, 1).toUpperCase()}
+                                  </div>
+                                  <div>
+                                    <div className="text-[10.5px] font-extrabold text-slate-900 leading-tight whitespace-nowrap">{item.providerName}</div>
+                                    <div className="text-[8.5px] font-medium text-slate-400 leading-tight">{item.apiKey ? 'Connected via API Key / Secret' : 'Standard OAuth connector'}</div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="py-2 px-2 whitespace-nowrap"><span className="text-[9.5px] font-semibold text-slate-600">{item.integrationType === 'ACCOUNTING' ? 'Accounting' : item.integrationType === 'ELD' ? 'GPS / Telematics' : 'Custom'}</span></td>
+                              <td className="py-2 px-2 whitespace-nowrap"><span className="px-1.5 py-0.5 rounded-md text-[8.5px] font-extrabold bg-[#DCFCE7] text-[#166534]">{item.status || 'Connected'}</span></td>
+                              <td className="py-2 px-2 whitespace-nowrap"><span className="text-[9.5px] font-semibold text-slate-600">Synced</span></td>
+                              <td className="py-2 px-2 whitespace-nowrap"><span className="text-[9px] font-semibold text-slate-500">{item.lastSync ? new Date(item.lastSync).toLocaleString() : 'Just Now'}</span></td>
+                              <td className="py-2 px-2 whitespace-nowrap"><span className="text-[9px] font-semibold text-slate-500">Continuous</span></td>
+                              <td className="py-2 px-1.5 text-right whitespace-nowrap">
+                                <button onClick={() => triggerToast(`Managing ${item.providerName}...`)} className="w-7 h-7 inline-flex items-center justify-center rounded-lg border border-slate-200/80 bg-white hover:bg-slate-100 hover:border-slate-300 text-slate-500 hover:text-slate-900 transition-all cursor-pointer outline-none focus:outline-none focus:ring-0 select-none shadow-2xs"><MoreHorizontal size={13} /></button>
+                              </td>
+                            </tr>
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>
                   <div className="flex flex-col sm:flex-row justify-between items-center gap-2 pt-2 border-t border-slate-100 text-[11px] font-semibold text-slate-500">
-                    <span>Showing 1 to 10 of 12 integrations</span>
+                    <span>Showing 1 to {companyIntegrationsList.length} of {companyIntegrationsList.length} integrations</span>
                     <div className="flex items-center gap-1">
                       <button className="px-2 py-0.5 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-400 text-xs">|‹</button>
                       <button className="px-2 py-0.5 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-400 text-xs">‹</button>
@@ -4927,17 +5544,21 @@ export default function CompanySettings() {
                       <div className="relative w-[80px] h-[80px] flex-shrink-0 flex items-center justify-center">
                         <svg className="w-full h-full -rotate-90" viewBox="0 0 80 80">
                           <circle cx="40" cy="40" r="28" fill="none" stroke="#E2E8F0" strokeWidth="13" />
-                          <circle cx="40" cy="40" r="28" fill="none" stroke="#16A34A" strokeWidth="13" strokeDasharray="175.9" strokeDashoffset="14.7" />
-                          <circle cx="40" cy="40" r="28" fill="none" stroke="#F59E0B" strokeWidth="13" strokeDasharray="175.9" strokeDashoffset="161.4" />
-                          <circle cx="40" cy="40" r="28" fill="none" stroke="#EF4444" strokeWidth="13" strokeDasharray="175.9" strokeDashoffset="170" />
+                          {companyIntegrationsList.length > 0 && (
+                            <circle cx="40" cy="40" r="28" fill="none" stroke="#16A34A" strokeWidth="13" strokeDasharray="175.9" strokeDashoffset="0" />
+                          )}
                         </svg>
                         <div className="absolute inset-0 flex flex-col items-center justify-center">
-                          <span className="text-[13px] font-black text-slate-900 leading-none">12</span>
+                          <span className="text-[13px] font-black text-slate-900 leading-none">{companyIntegrationsList.length}</span>
                           <span className="text-[8px] font-bold text-slate-400">Total</span>
                         </div>
                       </div>
                       <div className="flex-1 space-y-2">
-                        {[{ color: '#16A34A', label: 'Connected', count: '10', pct: '83.3%' }, { color: '#F59E0B', label: 'Limited', count: '1', pct: '8.3%' }, { color: '#EF4444', label: 'Disconnected', count: '1', pct: '8.3%' }].map((item, i) => (
+                        {[
+                          { color: '#16A34A', label: 'Connected', count: companyIntegrationsList.filter(i => i.status !== 'NOT_CONNECTED').length.toString(), pct: companyIntegrationsList.length > 0 ? '100%' : '0%' },
+                          { color: '#F59E0B', label: 'Limited', count: '0', pct: '0%' },
+                          { color: '#EF4444', label: 'Disconnected', count: companyIntegrationsList.filter(i => i.status === 'NOT_CONNECTED').length.toString(), pct: '0%' }
+                        ].map((item, i) => (
                           <div key={i} className="flex items-center justify-between">
                             <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }}></span><span className="text-[9px] font-semibold text-slate-600">{item.label}</span></div>
                             <div className="text-right"><span className="text-[11px] font-black text-slate-900">{item.count}</span><span className="text-[8.5px] font-semibold text-slate-400 ml-1">({item.pct})</span></div>
@@ -4951,7 +5572,7 @@ export default function CompanySettings() {
                       <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">TOP DATA SYNC (TODAY)</h3>
                       <button className="text-[10px] font-bold text-[#2563EB] hover:underline cursor-pointer">View all activity →</button>
                     </div>
-                    {[{ color: '#16A34A', label: 'Invoices Sync', val: '766 records' }, { color: '#2563EB', label: 'Driver Logs Sync', val: '312 records' }, { color: '#9333EA', label: 'Vehicle Data Sync', val: '128 records' }, { color: '#F59E0B', label: 'Payments Sync', val: '62 records' }].map((item, i) => (
+                    {[{ color: '#16A34A', label: 'Invoices Sync', val: '0 records' }, { color: '#2563EB', label: 'Driver Logs Sync', val: '0 records' }, { color: '#9333EA', label: 'Vehicle Data Sync', val: '0 records' }, { color: '#F59E0B', label: 'Payments Sync', val: '0 records' }].map((item, i) => (
                       <div key={i} className="flex items-center justify-between py-1 border-b border-slate-50 last:border-0">
                         <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }}></span><span className="text-[10px] font-semibold text-slate-700">{item.label}</span></div>
                         <span className="text-[10px] font-bold text-slate-900">{item.val}</span>
@@ -4963,13 +5584,9 @@ export default function CompanySettings() {
                       <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">FAILED SYNC (TODAY)</h3>
                       <button className="text-[10px] font-bold text-[#2563EB] hover:underline cursor-pointer">View error log →</button>
                     </div>
-                    {[{ name: 'MYOB Accounting', reason: 'Failed to sync 5 invoices', time: '08:45 AM' }, { name: 'NHVR EWD', reason: 'Authentication token expired', time: '07:20 AM' }, { name: 'SMS Service (Twilio)', reason: 'Failed to send 3 messages', time: '06:10 AM' }].map((item, i) => (
-                      <div key={i} className="flex items-start gap-2 py-1.5 border-b border-slate-50 last:border-0">
-                        <div className="w-5 h-5 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0 mt-0.5"><AlertTriangle size={10} /></div>
-                        <div className="flex-1 min-w-0"><div className="text-[10px] font-extrabold text-slate-900">{item.name}</div><div className="text-[9px] font-medium text-slate-500 leading-tight">{item.reason}</div></div>
-                        <span className="text-[9px] font-semibold text-slate-400 whitespace-nowrap">{item.time}</span>
-                      </div>
-                    ))}
+                    <div className="py-3 text-center text-[10px] font-semibold text-slate-400">
+                      No failed sync events today (0 errors).
+                    </div>
                   </div>
                 </div>
               </div>
@@ -4983,7 +5600,7 @@ export default function CompanySettings() {
               <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-2xs space-y-4">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 pb-3">
                   <div>
-                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">CONNECTED THIRD-PARTY INTEGRATIONS (12 ACTIVE)</h3>
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">CONNECTED THIRD-PARTY INTEGRATIONS ({companyIntegrationsList.length} ACTIVE)</h3>
                     <p className="text-xs text-slate-500 font-medium">Active OAuth connections, telematics sync streams, and financial connectors.</p>
                   </div>
                   <button onClick={() => setIsAddIntegrationModalOpen(true)} className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#2563EB] text-white font-bold text-xs rounded-xl shadow-2xs hover:bg-blue-700 cursor-pointer">
@@ -4991,32 +5608,33 @@ export default function CompanySettings() {
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-                  {[
-                    { name: 'Xero Accounting', cat: 'Accounting & Invoicing', desc: 'Auto-sync freight invoices, driver payments & tax credits.', status: 'Connected', sync: 'Every 15 mins', last: '2 mins ago', color: '#1A73E8', letter: 'X' },
-                    { name: 'Samsara Telematics', cat: 'GPS & Telematics', desc: 'Real-time vehicle GPS, engine diagnostics & fuel levels.', status: 'Connected', sync: 'Live Stream (10s)', last: 'Just now', color: '#0EA5E9', letter: 'S' },
-                    { name: 'NHVR EWD Fatigue', cat: 'Compliance & Safety', desc: 'Driver Electronic Work Diary & fatigue management sync.', status: 'Connected', sync: 'Hourly', last: '45 mins ago', color: '#DC2626', letter: 'N' },
-                    { name: 'Stripe Payments', cat: 'Payment Gateway', desc: 'Credit card processing & automatic invoice collection.', status: 'Connected', sync: 'Real-time', last: '12 mins ago', color: '#6366F1', letter: 'S' },
-                    { name: 'SendGrid Email', cat: 'Communication', desc: 'Dispatch consignment notes, PODs & notification emails.', status: 'Connected', sync: 'Instant', last: '5 mins ago', color: '#0891B2', letter: 'E' },
-                    { name: 'Twilio SMS', cat: 'Communication', desc: 'Automated SMS alerts for ETA changes and delivery alerts.', status: 'Connected', sync: 'Instant', last: '18 mins ago', color: '#E11D48', letter: 'T' },
-                  ].map((item, i) => (
-                    <div key={i} className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-4 flex flex-col justify-between space-y-3">
-                      <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="w-8 h-8 rounded-lg text-white font-black text-xs flex items-center justify-center shadow-3xs" style={{ backgroundColor: item.color }}>{item.letter}</div>
-                          <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 text-[9px] font-extrabold uppercase">● {item.status}</span>
+                {companyIntegrationsList.length === 0 ? (
+                  <div className="py-12 text-center text-xs font-semibold text-slate-400">
+                    No active connected integrations found (0). Click "+ Connect New Service" to add third-party tools.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                    {companyIntegrationsList.map((item, i) => (
+                      <div key={item.id || i} className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-4 flex flex-col justify-between space-y-3">
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="w-8 h-8 rounded-lg bg-[#2563EB] text-white font-black text-xs flex items-center justify-center shadow-3xs">
+                              {(item.providerName || 'I').slice(0, 1).toUpperCase()}
+                            </div>
+                            <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 text-[9px] font-extrabold uppercase">● {item.status || 'Connected'}</span>
+                          </div>
+                          <h4 className="text-sm font-black text-slate-900">{item.providerName}</h4>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">{item.integrationType === 'ACCOUNTING' ? 'Accounting & Invoicing' : item.integrationType === 'ELD' ? 'GPS & Telematics' : 'Custom Connector'}</span>
+                          <p className="text-[11px] text-slate-500 font-medium mt-1.5 leading-relaxed">{item.apiKey ? 'Connected with secret key/OAuth token.' : 'Active integration link.'}</p>
                         </div>
-                        <h4 className="text-sm font-black text-slate-900">{item.name}</h4>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">{item.cat}</span>
-                        <p className="text-[11px] text-slate-500 font-medium mt-1.5 leading-relaxed">{item.desc}</p>
+                        <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[10.5px] font-semibold text-slate-600">
+                          <span>Sync: Continuous</span>
+                          <button onClick={() => triggerToast(`Configuring ${item.providerName} settings...`)} className="text-[#2563EB] font-bold hover:underline cursor-pointer">Settings →</button>
+                        </div>
                       </div>
-                      <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[10.5px] font-semibold text-slate-600">
-                        <span>Sync: {item.sync}</span>
-                        <button onClick={() => triggerToast(`Configuring ${item.name} settings...`)} className="text-[#2563EB] font-bold hover:underline cursor-pointer">Settings →</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -5337,12 +5955,12 @@ export default function CompanySettings() {
               {/* 6 METRIC CARDS */}
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                 {[
-                  { icon: <Mail size={16} />, bg: 'bg-[#DBEAFE] text-[#2563EB]', border: 'hover:border-blue-200', label: 'EMAILS SENT (THIS MONTH)', value: '24,680', sub: '↑ 18.5%', subColor: 'text-emerald-600', subText: 'vs Last Month', link: 'View email report →', onClick: () => triggerToast('Viewing email report...') },
-                  { icon: <MessageSquare size={16} />, bg: 'bg-[#F3E8FF] text-[#9333EA]', border: 'hover:border-purple-200', label: 'SMS SENT (THIS MONTH)', value: '8,954', sub: '↑ 22.4%', subColor: 'text-emerald-600', subText: 'vs Last Month', link: 'View SMS report →', onClick: () => triggerToast('Viewing SMS report...') },
-                  { icon: <Bell size={16} />, bg: 'bg-amber-100 text-amber-600', border: 'hover:border-amber-200', label: 'PUSH NOTIFICATIONS', value: '5,612', sub: '↑ 15.3%', subColor: 'text-emerald-600', subText: 'vs Last Month', link: 'View push report →', onClick: () => triggerToast('Viewing push report...') },
-                  { icon: <Send size={16} />, bg: 'bg-[#EEF2FF] text-[#4F46E5]', border: 'hover:border-indigo-200', label: 'IN-APP MESSAGES', value: '3,245', sub: '↑ 12.1%', subColor: 'text-emerald-600', subText: 'vs Last Month', link: 'View in-app report →', onClick: () => triggerToast('Viewing in-app report...') },
-                  { icon: <Users size={16} />, bg: 'bg-[#DBEAFE] text-[#2563EB]', border: 'hover:border-blue-200', label: 'ACTIVE RECIPIENT GROUPS', value: '18', link: 'View groups →', onClick: () => setNotificationsTab('Recipient Groups') },
-                  { icon: <AlertTriangle size={16} />, bg: 'bg-rose-100 text-rose-600', border: 'hover:border-rose-200', label: 'FAILED DELIVERIES (TODAY)', value: '23', valueColor: 'text-rose-600', sub: '↓ 8.0%', subColor: 'text-rose-600', subText: 'vs Yesterday', link: 'View error log →', onClick: () => setNotificationsTab('History & Logs') },
+                  { icon: <Mail size={16} />, bg: 'bg-[#DBEAFE] text-[#2563EB]', border: 'hover:border-blue-200', label: 'EMAILS SENT (THIS MONTH)', value: '0', sub: '0.0%', subColor: 'text-slate-400', subText: 'vs Last Month', link: 'View email report →', onClick: () => triggerToast('Viewing email report...') },
+                  { icon: <MessageSquare size={16} />, bg: 'bg-[#F3E8FF] text-[#9333EA]', border: 'hover:border-purple-200', label: 'SMS SENT (THIS MONTH)', value: '0', sub: '0.0%', subColor: 'text-slate-400', subText: 'vs Last Month', link: 'View SMS report →', onClick: () => triggerToast('Viewing SMS report...') },
+                  { icon: <Bell size={16} />, bg: 'bg-amber-100 text-amber-600', border: 'hover:border-amber-200', label: 'PUSH NOTIFICATIONS', value: '0', sub: '0.0%', subColor: 'text-slate-400', subText: 'vs Last Month', link: 'View push report →', onClick: () => triggerToast('Viewing push report...') },
+                  { icon: <Send size={16} />, bg: 'bg-[#EEF2FF] text-[#4F46E5]', border: 'hover:border-indigo-200', label: 'IN-APP MESSAGES', value: '0', sub: '0.0%', subColor: 'text-slate-400', subText: 'vs Last Month', link: 'View in-app report →', onClick: () => triggerToast('Viewing in-app report...') },
+                  { icon: <Users size={16} />, bg: 'bg-[#DBEAFE] text-[#2563EB]', border: 'hover:border-blue-200', label: 'ACTIVE RECIPIENT GROUPS', value: '0', link: 'View groups →', onClick: () => setNotificationsTab('Recipient Groups') },
+                  { icon: <AlertTriangle size={16} />, bg: 'bg-rose-100 text-rose-600', border: 'hover:border-rose-200', label: 'FAILED DELIVERIES (TODAY)', value: '0', valueColor: 'text-slate-900', sub: '0.0%', subColor: 'text-slate-400', subText: 'vs Yesterday', link: 'View error log →', onClick: () => setNotificationsTab('History & Logs') },
                 ].map((card, i) => (
                   <div key={i} className={`bg-white rounded-xl border border-slate-200/80 p-3 shadow-2xs flex flex-col justify-between ${card.border} transition-all text-left`}>
                     <div className="flex items-start gap-2">
@@ -5408,14 +6026,14 @@ export default function CompanySettings() {
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                           {[
-                            { id: 1, name: 'Email', desc: 'Send email notifications and alerts', status: 'Active', default: 'Yes', last: '30 May 2025 09:15 AM', rate: '98.2%', pct: 98, icon: <Mail size={13} />, color: 'bg-blue-100 text-blue-600' },
-                            { id: 2, name: 'SMS', desc: 'Send SMS text messages', status: 'Active', default: 'Yes', last: '30 May 2025 09:12 AM', rate: '96.4%', pct: 96, icon: <MessageSquare size={13} />, color: 'bg-purple-100 text-purple-600' },
-                            { id: 3, name: 'Push Notifications', desc: 'Send push notifications to mobile apps', status: 'Active', default: 'Yes', last: '30 May 2025 09:10 AM', rate: '97.1%', pct: 97, icon: <Bell size={13} />, color: 'bg-amber-100 text-amber-600' },
-                            { id: 4, name: 'In-App Messages', desc: 'Send in-app messages and alerts', status: 'Active', default: 'Yes', last: '30 May 2025 09:08 AM', rate: '100%', pct: 100, icon: <Send size={13} />, color: 'bg-indigo-100 text-indigo-600' },
+                            { id: 1, name: 'Email', desc: 'Send email notifications and alerts', status: 'Active', default: 'Yes', last: '-', rate: '100%', pct: 100, icon: <Mail size={13} />, color: 'bg-blue-100 text-blue-600' },
+                            { id: 2, name: 'SMS', desc: 'Send SMS text messages', status: 'Active', default: 'Yes', last: '-', rate: '100%', pct: 100, icon: <MessageSquare size={13} />, color: 'bg-purple-100 text-purple-600' },
+                            { id: 3, name: 'Push Notifications', desc: 'Send push notifications to mobile apps', status: 'Active', default: 'Yes', last: '-', rate: '100%', pct: 100, icon: <Bell size={13} />, color: 'bg-amber-100 text-amber-600' },
+                            { id: 4, name: 'In-App Messages', desc: 'Send in-app messages and alerts', status: 'Active', default: 'Yes', last: '-', rate: '100%', pct: 100, icon: <Send size={13} />, color: 'bg-indigo-100 text-indigo-600' },
                             { id: 5, name: 'Voice Calls', desc: 'Automated voice call notifications', status: 'Inactive', default: 'No', last: '-', rate: '-', pct: 0, icon: <Phone size={13} />, color: 'bg-slate-100 text-slate-500' },
-                            { id: 6, name: 'WhatsApp Business', desc: 'Send WhatsApp messages', status: 'Active', default: 'No', last: '30 May 2025 09:05 AM', rate: '94.3%', pct: 94, icon: <MessageSquare size={13} />, color: 'bg-emerald-100 text-emerald-600' },
+                            { id: 6, name: 'WhatsApp Business', desc: 'Send WhatsApp messages', status: 'Active', default: 'No', last: '-', rate: '100%', pct: 100, icon: <MessageSquare size={13} />, color: 'bg-emerald-100 text-emerald-600' },
                             { id: 7, name: 'Fax', desc: 'Send fax notifications', status: 'Inactive', default: 'No', last: '-', rate: '-', pct: 0, icon: <FileText size={13} />, color: 'bg-slate-100 text-slate-500' },
-                            { id: 8, name: 'Webhooks', desc: 'Send webhook events to external systems', status: 'Active', default: 'No', last: '30 May 2025 09:02 AM', rate: '99.1%', pct: 99, icon: <Plug size={13} />, color: 'bg-teal-100 text-teal-600' },
+                            { id: 8, name: 'Webhooks', desc: 'Send webhook events to external systems', status: 'Active', default: 'No', last: '-', rate: '100%', pct: 100, icon: <Plug size={13} />, color: 'bg-teal-100 text-teal-600' },
                           ].map((ch) => (
                             <tr key={ch.id} className="hover:bg-blue-50/30 transition-colors">
                               <td className="py-2 px-2 whitespace-nowrap">
@@ -5461,31 +6079,8 @@ export default function CompanySettings() {
                       <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">RECENT NOTIFICATION ACTIVITY</h3>
                       <button onClick={() => setNotificationsTab('History & Logs')} className="text-[10px] font-bold text-[#2563EB] hover:underline cursor-pointer">View all activity →</button>
                     </div>
-                    <div className="space-y-1.5">
-                      {[
-                        { icon: <Mail size={12} />, title: 'Invoice INV-1058 created', channel: 'Email', channelBg: 'bg-blue-100 text-blue-700', recipient: 'Sent to 12 recipients', time: '30 May 2025 09:15 AM', status: 'Delivered', statusColor: 'text-emerald-600' },
-                        { icon: <MessageSquare size={12} />, title: 'Load LD-3921 arrived at pickup', channel: 'SMS', channelBg: 'bg-purple-100 text-purple-700', recipient: 'Sent to 1 driver', time: '30 May 2025 09:12 AM', status: 'Delivered', statusColor: 'text-emerald-600' },
-                        { icon: <Bell size={12} />, title: 'Load LD-3918 dispatched', channel: 'Push', channelBg: 'bg-amber-100 text-amber-700', recipient: 'Sent to 2 recipients', time: '30 May 2025 09:10 AM', status: 'Delivered', statusColor: 'text-emerald-600' },
-                        { icon: <Send size={12} />, title: 'Safety Check - Daily Reminder', channel: 'In-App', channelBg: 'bg-indigo-100 text-indigo-700', recipient: 'Sent to 25 users', time: '30 May 2025 09:08 AM', status: 'Delivered', statusColor: 'text-emerald-600' },
-                        { icon: <AlertTriangle size={12} />, title: 'Payment failed for INV-1045', channel: 'Email', channelBg: 'bg-blue-100 text-blue-700', recipient: 'Sent to 1 recipient', time: '30 May 2025 08:45 AM', status: 'Failed', statusColor: 'text-rose-600' },
-                      ].map((item, i) => (
-                        <div key={i} className="flex items-center justify-between py-1.5 px-2 hover:bg-slate-50 rounded-lg border-b border-slate-50 last:border-0 transition-colors">
-                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                            <div className={`w-5 h-5 rounded-md ${item.channelBg} flex items-center justify-center shrink-0 mt-0.5`}>{item.icon}</div>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2">
-                                <span className="text-[11px] font-extrabold text-slate-900 truncate">{item.title}</span>
-                                <span className={`px-1.5 py-0.2 rounded text-[8px] font-extrabold ${item.channelBg}`}>{item.channel}</span>
-                              </div>
-                              <span className="text-[9px] font-medium text-slate-400 block mt-0.5">{item.recipient}</span>
-                            </div>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <span className="text-[9px] font-semibold text-slate-500 block">{item.time}</span>
-                            <span className={`text-[9px] font-black ${item.statusColor} block mt-0.5`}>{item.status}</span>
-                          </div>
-                        </div>
-                      ))}
+                    <div className="py-6 text-center text-xs font-semibold text-slate-400">
+                      No recent notification activity recorded (0 events).
                     </div>
                   </div>
                 </div>
@@ -5502,22 +6097,18 @@ export default function CompanySettings() {
                       <div className="relative w-[85px] h-[85px] flex-shrink-0 flex items-center justify-center">
                         <svg className="w-full h-full -rotate-90" viewBox="0 0 80 80">
                           <circle cx="40" cy="40" r="28" fill="none" stroke="#E2E8F0" strokeWidth="13" />
-                          <circle cx="40" cy="40" r="28" fill="none" stroke="#2563EB" strokeWidth="13" strokeDasharray="175.9" strokeDashoffset="73.7" />
-                          <circle cx="40" cy="40" r="28" fill="none" stroke="#9333EA" strokeWidth="13" strokeDasharray="175.9" strokeDashoffset="138.9" />
-                          <circle cx="40" cy="40" r="28" fill="none" stroke="#F59E0B" strokeWidth="13" strokeDasharray="175.9" strokeDashoffset="162.1" />
-                          <circle cx="40" cy="40" r="28" fill="none" stroke="#4F46E5" strokeWidth="13" strokeDasharray="175.9" strokeDashoffset="175.5" />
                         </svg>
                         <div className="absolute inset-0 flex flex-col items-center justify-center">
-                          <span className="text-[12px] font-black text-slate-900 leading-none">42,491</span>
+                          <span className="text-[12px] font-black text-slate-900 leading-none">0</span>
                           <span className="text-[7.5px] font-bold text-slate-400">Total Sent</span>
                         </div>
                       </div>
                       <div className="flex-1 space-y-1.5">
                         {[
-                          { color: '#2563EB', label: 'Email', count: '24,680', pct: '58.1%' },
-                          { color: '#9333EA', label: 'SMS', count: '8,954', pct: '21.1%' },
-                          { color: '#F59E0B', label: 'Push', count: '5,612', pct: '13.2%' },
-                          { color: '#4F46E5', label: 'In-App', count: '3,245', pct: '7.6%' },
+                          { color: '#2563EB', label: 'Email', count: '0', pct: '0.0%' },
+                          { color: '#9333EA', label: 'SMS', count: '0', pct: '0.0%' },
+                          { color: '#F59E0B', label: 'Push', count: '0', pct: '0.0%' },
+                          { color: '#4F46E5', label: 'In-App', count: '0', pct: '0.0%' },
                         ].map((item, i) => (
                           <div key={i} className="flex items-center justify-between">
                             <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }}></span><span className="text-[9px] font-semibold text-slate-600">{item.label}</span></div>
@@ -5575,11 +6166,11 @@ export default function CompanySettings() {
                       <button onClick={() => setNotificationsTab('Notification Rules')} className="text-[10px] font-bold text-[#2563EB] hover:underline cursor-pointer">View all rules →</button>
                     </div>
                     {[
-                      { icon: <Truck size={12} />, label: 'Load Status Updates', val: '16,842 sent' },
-                      { icon: <FileText size={12} />, label: 'Invoice & Payment Notifications', val: '9,752 sent' },
-                      { icon: <Users size={12} />, label: 'Driver Alerts & Reminders', val: '6,321 sent' },
-                      { icon: <ShieldCheck size={12} />, label: 'Compliance & Document Expiry', val: '4,112 sent' },
-                      { icon: <Zap size={12} />, label: 'Maintenance & Service Reminders', val: '3,464 sent' },
+                      { icon: <Truck size={12} />, label: 'Load Status Updates', val: '0 sent' },
+                      { icon: <FileText size={12} />, label: 'Invoice & Payment Notifications', val: '0 sent' },
+                      { icon: <Users size={12} />, label: 'Driver Alerts & Reminders', val: '0 sent' },
+                      { icon: <ShieldCheck size={12} />, label: 'Compliance & Document Expiry', val: '0 sent' },
+                      { icon: <Zap size={12} />, label: 'Maintenance & Service Reminders', val: '0 sent' },
                     ].map((item, i) => (
                       <div key={i} className="flex items-center justify-between py-1 border-b border-slate-50 last:border-0">
                         <div className="flex items-center gap-2"><span className="text-slate-400">{item.icon}</span><span className="text-[10px] font-bold text-slate-800">{item.label}</span></div>
@@ -5650,23 +6241,45 @@ export default function CompanySettings() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                  {notificationTemplatesList.map((tpl) => (
-                    <div key={tpl.id} className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-4 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-xs font-black text-slate-900">{tpl.title}</h4>
-                        <span className="px-2 py-0.5 bg-blue-100 text-blue-700 font-bold text-[9px] rounded uppercase">{tpl.channel}</span>
-                      </div>
-                      <p className="text-[11px] font-mono text-slate-600 bg-white p-2.5 rounded-lg border border-slate-200/60 leading-relaxed">{tpl.preview}</p>
-                      <div className="flex justify-end pt-1">
-                        <button
-                          onClick={() => triggerToast(`Editing template "${tpl.title}"...`)}
-                          className="text-[10.5px] font-bold text-[#2563EB] hover:underline cursor-pointer"
-                        >
-                          Edit Template →
-                        </button>
-                      </div>
+                  {notificationTemplatesList.length === 0 ? (
+                    <div className="col-span-2 py-8 text-center text-xs font-semibold text-slate-400 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+                      No custom notification templates created yet. Click &quot;+ Create Template&quot; to build your first template.
                     </div>
-                  ))}
+                  ) : (
+                    notificationTemplatesList.map((tpl) => (
+                      <div key={tpl.id} className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-4 space-y-2 relative">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-xs font-black text-slate-900">{tpl.title}</h4>
+                          <span className="px-2 py-0.5 bg-blue-100 text-blue-700 font-bold text-[9px] rounded uppercase">{tpl.channel}</span>
+                        </div>
+                        <p className="text-[11px] font-mono text-slate-600 bg-white p-2.5 rounded-lg border border-slate-200/60 leading-relaxed whitespace-pre-wrap">{tpl.preview}</p>
+                        <div className="flex justify-between items-center pt-1">
+                          <button
+                            onClick={async () => {
+                              try {
+                                if (tpl.id && typeof tpl.id === 'string' && tpl.id.includes('-')) {
+                                  await api.delete(`/notification-templates/${tpl.id}`);
+                                }
+                                setNotificationTemplatesList(prev => prev.filter(t => t.id !== tpl.id));
+                                triggerToast(`Template "${tpl.title}" deleted!`);
+                              } catch (err) {
+                                triggerToast('Failed to delete template');
+                              }
+                            }}
+                            className="text-[10px] font-bold text-rose-500 hover:underline cursor-pointer"
+                          >
+                            Delete
+                          </button>
+                          <button
+                            onClick={() => triggerToast(`Editing template "${tpl.title}"...`)}
+                            className="text-[10.5px] font-bold text-[#2563EB] hover:underline cursor-pointer"
+                          >
+                            Edit Template →
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
@@ -5690,18 +6303,42 @@ export default function CompanySettings() {
                 </div>
 
                 <div className="space-y-3">
-                  {notificationRulesList.map((rule) => (
-                    <div key={rule.id} className="p-3.5 bg-slate-50/70 border border-slate-200/80 rounded-xl flex items-center justify-between gap-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-slate-900 text-xs">{rule.name}</span>
-                          <span className={`px-2 py-0.5 text-[9px] font-black rounded uppercase ${rule.priority === 'Critical' ? 'bg-rose-100 text-rose-700' : 'bg-blue-100 text-blue-700'}`}>{rule.priority}</span>
-                        </div>
-                        <span className="text-[10px] text-slate-500 font-medium block mt-1">⚡ Trigger: {rule.trigger} • Channels: {rule.channels} • Recipient: {rule.rec}</span>
-                      </div>
-                      <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 font-bold text-[10px] rounded-lg">Active</span>
+                  {notificationRulesList.length === 0 ? (
+                    <div className="py-8 text-center text-xs font-semibold text-slate-400 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+                      No notification trigger rules active. Click &quot;+ Add Notification Rule&quot; to automate event triggers.
                     </div>
-                  ))}
+                  ) : (
+                    notificationRulesList.map((rule) => (
+                      <div key={rule.id} className="p-3.5 bg-slate-50/70 border border-slate-200/80 rounded-xl flex items-center justify-between gap-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-slate-900 text-xs">{rule.name}</span>
+                            <span className={`px-2 py-0.5 text-[9px] font-black rounded uppercase ${rule.priority === 'Critical' ? 'bg-rose-100 text-rose-700' : 'bg-blue-100 text-blue-700'}`}>{rule.priority}</span>
+                          </div>
+                          <span className="text-[10px] text-slate-500 font-medium block mt-1">⚡ Trigger: {rule.trigger} • Channels: {rule.channels} • Recipient: {rule.rec || rule.recipient || 'Customer & Accounts'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={async () => {
+                              try {
+                                if (rule.id && typeof rule.id === 'string' && rule.id.includes('-')) {
+                                  await api.delete(`/notification-rules/${rule.id}`);
+                                }
+                                setNotificationRulesList(prev => prev.filter(r => r.id !== rule.id));
+                                triggerToast(`Rule "${rule.name}" deleted!`);
+                              } catch (err) {
+                                triggerToast('Failed to delete rule');
+                              }
+                            }}
+                            className="px-2 py-1 text-[10px] font-bold text-rose-500 hover:bg-rose-50 rounded cursor-pointer"
+                          >
+                            Delete
+                          </button>
+                          <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 font-bold text-[10px] rounded-lg">Active</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
@@ -5725,13 +6362,37 @@ export default function CompanySettings() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3.5">
-                  {recipientGroupsList.map((grp) => (
-                    <div key={grp.id} className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3.5 space-y-2">
-                      <h4 className="text-xs font-black text-slate-900">{grp.name}</h4>
-                      <span className="text-[10px] font-bold text-[#2563EB] block">{grp.count}</span>
-                      <p className="text-[11px] text-slate-500 font-medium">{grp.desc}</p>
+                  {recipientGroupsList.length === 0 ? (
+                    <div className="col-span-4 py-8 text-center text-xs font-semibold text-slate-400 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+                      No recipient groups created yet. Click &quot;+ Create Recipient Group&quot; to add a group.
                     </div>
-                  ))}
+                  ) : (
+                    recipientGroupsList.map((grp) => (
+                      <div key={grp.id} className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3.5 space-y-2 relative">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-xs font-black text-slate-900">{grp.name}</h4>
+                          <button
+                            onClick={async () => {
+                              try {
+                                if (grp.id && typeof grp.id === 'string' && grp.id.includes('-')) {
+                                  await api.delete(`/recipient-groups/${grp.id}`);
+                                }
+                                setRecipientGroupsList(prev => prev.filter(g => g.id !== grp.id));
+                                triggerToast(`Group "${grp.name}" deleted!`);
+                              } catch (err) {
+                                triggerToast('Failed to delete recipient group');
+                              }
+                            }}
+                            className="text-[10px] font-bold text-rose-500 hover:underline cursor-pointer"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        <span className="text-[10px] font-bold text-[#2563EB] block">{grp.count}</span>
+                        <p className="text-[11px] text-slate-500 font-medium">{grp.desc || grp.description}</p>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
@@ -5891,12 +6552,12 @@ export default function CompanySettings() {
               {/* 6 METRIC CARDS */}
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                 {[
-                  { icon: <Shield size={16} />, bg: 'bg-[#DBEAFE] text-[#2563EB]', border: 'hover:border-blue-200', label: 'TOTAL EVENTS (THIS MONTH)', value: '24,680', sub: '↑ 18.6%', subColor: 'text-emerald-600', subText: 'vs Last Month', link: 'View audit logs →', onClick: () => setSecurityLogsTab('Audit Logs') },
-                  { icon: <UserCheck size={16} />, bg: 'bg-[#DCFCE7] text-[#16A34A]', border: 'hover:border-emerald-200', label: 'LOGIN EVENTS (THIS MONTH)', value: '3,245', sub: '↑ 12.4%', subColor: 'text-emerald-600', subText: 'vs Last Month', link: 'View login history →', onClick: () => setSecurityLogsTab('Login History') },
-                  { icon: <AlertTriangle size={16} />, bg: 'bg-rose-100 text-rose-600', border: 'hover:border-rose-200', label: 'SECURITY EVENTS (THIS MONTH)', value: '156', valueColor: 'text-rose-600', sub: '↓ 8.7%', subColor: 'text-rose-600', subText: 'vs Last Month', link: 'View security events →', onClick: () => setSecurityLogsTab('Security Events') },
-                  { icon: <Lock size={16} />, bg: 'bg-[#DBEAFE] text-[#2563EB]', border: 'hover:border-blue-200', label: 'PERMISSION CHANGES', value: '89', sub: '↑ 15.3%', subColor: 'text-emerald-600', subText: 'vs Last Month', link: 'View permission changes →', onClick: () => setSecurityLogsTab('Permission Changes') },
-                  { icon: <Download size={16} />, bg: 'bg-[#DBEAFE] text-[#2563EB]', border: 'hover:border-blue-200', label: 'DATA EXPORTS (THIS MONTH)', value: '42', sub: '↑ 9.8%', subColor: 'text-emerald-600', subText: 'vs Last Month', link: 'View exports →', onClick: () => setSecurityLogsTab('Exports & Downloads') },
-                  { icon: <AlertCircle size={16} />, bg: 'bg-rose-100 text-rose-600', border: 'hover:border-rose-200', label: 'BLOCKED ACTIONS (THIS MONTH)', value: '27', valueColor: 'text-rose-600', sub: '↓ 12.9%', subColor: 'text-rose-600', subText: 'vs Last Month', link: 'View blocked actions →', onClick: () => setSecurityLogsTab('Blocked Actions') },
+                  { icon: <Shield size={16} />, bg: 'bg-[#DBEAFE] text-[#2563EB]', border: 'hover:border-blue-200', label: 'TOTAL EVENTS (THIS MONTH)', value: auditLogsData.length > 0 ? auditLogsData.length : '00', sub: auditLogsData.length > 0 ? '↑ 18.6%' : '0%', subColor: auditLogsData.length > 0 ? 'text-emerald-600' : 'text-slate-400', subText: 'vs Last Month', link: 'View audit logs →', onClick: () => setSecurityLogsTab('Audit Logs') },
+                  { icon: <UserCheck size={16} />, bg: 'bg-[#DCFCE7] text-[#16A34A]', border: 'hover:border-emerald-200', label: 'LOGIN EVENTS (THIS MONTH)', value: auditLogsData.length > 0 ? auditLogsData.length : '00', sub: auditLogsData.length > 0 ? '↑ 12.4%' : '0%', subColor: auditLogsData.length > 0 ? 'text-emerald-600' : 'text-slate-400', subText: 'vs Last Month', link: 'View login history →', onClick: () => setSecurityLogsTab('Login History') },
+                  { icon: <AlertTriangle size={16} />, bg: 'bg-rose-100 text-rose-600', border: 'hover:border-rose-200', label: 'SECURITY EVENTS (THIS MONTH)', value: auditLogsData.length > 0 ? auditLogsData.length : '00', valueColor: 'text-rose-600', sub: '0%', subColor: 'text-slate-400', subText: 'vs Last Month', link: 'View security events →', onClick: () => setSecurityLogsTab('Security Events') },
+                  { icon: <Lock size={16} />, bg: 'bg-[#DBEAFE] text-[#2563EB]', border: 'hover:border-blue-200', label: 'PERMISSION CHANGES', value: auditLogsData.length > 0 ? auditLogsData.length : '00', sub: '0%', subColor: 'text-slate-400', subText: 'vs Last Month', link: 'View permission changes →', onClick: () => setSecurityLogsTab('Permission Changes') },
+                  { icon: <Download size={16} />, bg: 'bg-[#DBEAFE] text-[#2563EB]', border: 'hover:border-blue-200', label: 'DATA EXPORTS (THIS MONTH)', value: auditLogsData.length > 0 ? auditLogsData.length : '00', sub: '0%', subColor: 'text-slate-400', subText: 'vs Last Month', link: 'View exports →', onClick: () => setSecurityLogsTab('Exports & Downloads') },
+                  { icon: <AlertCircle size={16} />, bg: 'bg-rose-100 text-rose-600', border: 'hover:border-rose-200', label: 'BLOCKED ACTIONS (THIS MONTH)', value: auditLogsData.length > 0 ? auditLogsData.length : '00', valueColor: 'text-rose-600', sub: '0%', subColor: 'text-slate-400', subText: 'vs Last Month', link: 'View blocked actions →', onClick: () => setSecurityLogsTab('Blocked Actions') },
                 ].map((card, i) => (
                   <div key={i} className={`bg-white rounded-xl border border-slate-200/80 p-3 shadow-2xs flex flex-col justify-between ${card.border} transition-all text-left`}>
                     <div className="flex items-start gap-2">
@@ -5962,70 +6623,78 @@ export default function CompanySettings() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {auditLogsData.slice(0, 8).map((row, i) => (
-                          <tr key={row.id || i} className="hover:bg-blue-50/30 transition-colors">
-                            <td className="py-2 px-2 whitespace-nowrap"><span className="text-[9px] font-semibold text-slate-500">{row.time}</span></td>
-                            <td className="py-2 px-2 whitespace-nowrap">
-                              <div className="flex items-center gap-1.5">
-                                <div className={`w-5 h-5 rounded-full ${row.bg} text-white font-black text-[8px] flex items-center justify-center shrink-0`}>{row.avatar}</div>
-                                <div>
-                                  <div className="text-[10px] font-extrabold text-slate-900 leading-tight whitespace-nowrap">{row.name}</div>
-                                  <div className="text-[8px] font-medium text-slate-400 leading-tight whitespace-nowrap">{row.email}</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="py-2 px-2 whitespace-nowrap"><span className={`px-1.5 py-0.2 rounded text-[8.5px] font-extrabold ${row.typeBg}`}>{row.type}</span></td>
-                            <td className="py-2 px-2 whitespace-nowrap"><span className="text-[9.5px] font-bold text-slate-800 whitespace-nowrap">{row.action}</span></td>
-                            <td className="py-2 px-2 whitespace-nowrap"><span className="text-[9px] font-semibold text-slate-500 whitespace-nowrap">{row.module}</span></td>
-                            <td className="py-2 px-2 whitespace-nowrap"><span className="text-[9px] font-medium text-slate-600 leading-tight whitespace-nowrap">{row.details}</span></td>
-                            <td className="py-2 px-2 whitespace-nowrap"><span className="text-[8.5px] font-mono text-slate-400">{row.ip}</span></td>
-                            <td className="py-2 px-2 whitespace-nowrap"><span className={`text-[9.5px] font-black ${row.outcomeColor}`}>{row.outcome}</span></td>
-                            <td className="py-2 px-1.5 text-right whitespace-nowrap relative">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setOpenLogDropdownId(openLogDropdownId === `overview-${row.id}` ? null : `overview-${row.id}`);
-                                }}
-                                title="Actions Menu"
-                                className="p-1.5 hover:bg-slate-200 rounded-lg text-slate-500 hover:text-slate-900 cursor-pointer transition-colors border border-transparent"
-                              >
-                                <MoreHorizontal size={14} />
-                              </button>
-
-                              {openLogDropdownId === `overview-${row.id}` && (
-                                <div
-                                  className="absolute right-0 top-8 z-50 w-44 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 text-xs text-left animate-in fade-in duration-100"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <button
-                                    onClick={() => { setOpenLogDropdownId(null); setSelectedAuditLog(row); }}
-                                    className="w-full text-left px-3 py-1.5 hover:bg-slate-50 font-bold text-slate-700 flex items-center gap-2 cursor-pointer"
-                                  >
-                                    <Eye size={13} className="text-blue-600" /> View Details
-                                  </button>
-                                  <button
-                                    onClick={() => { setOpenLogDropdownId(null); handleOpenEditAuditLogModal(row); }}
-                                    className="w-full text-left px-3 py-1.5 hover:bg-slate-50 font-bold text-slate-700 flex items-center gap-2 cursor-pointer"
-                                  >
-                                    <Edit size={13} className="text-amber-600" /> Edit Record
-                                  </button>
-                                  <div className="my-1 border-t border-slate-100"></div>
-                                  <button
-                                    onClick={() => { setOpenLogDropdownId(null); handleDeleteAuditLog(row.id); }}
-                                    className="w-full text-left px-3 py-1.5 hover:bg-rose-50 font-bold text-rose-600 flex items-center gap-2 cursor-pointer"
-                                  >
-                                    <Trash2 size={13} className="text-rose-600" /> Delete Record
-                                  </button>
-                                </div>
-                              )}
+                        {auditLogsData.length === 0 ? (
+                          <tr>
+                            <td colSpan={9} className="py-8 text-center text-xs font-semibold text-slate-400 bg-slate-50/50">
+                              No security audit log events recorded yet.
                             </td>
                           </tr>
-                        ))}
+                        ) : (
+                          auditLogsData.slice(0, 8).map((row, i) => (
+                            <tr key={row.id || i} className="hover:bg-blue-50/30 transition-colors">
+                              <td className="py-2 px-2 whitespace-nowrap"><span className="text-[9px] font-semibold text-slate-500">{row.time}</span></td>
+                              <td className="py-2 px-2 whitespace-nowrap">
+                                <div className="flex items-center gap-1.5">
+                                  <div className={`w-5 h-5 rounded-full ${row.bg || 'bg-blue-600'} text-white font-black text-[8px] flex items-center justify-center shrink-0`}>{row.avatar || 'S'}</div>
+                                  <div>
+                                    <div className="text-[10px] font-extrabold text-slate-900 leading-tight whitespace-nowrap">{row.name}</div>
+                                    <div className="text-[8px] font-medium text-slate-400 leading-tight whitespace-nowrap">{row.email}</div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="py-2 px-2 whitespace-nowrap"><span className={`px-1.5 py-0.2 rounded text-[8.5px] font-extrabold ${row.typeBg || 'bg-blue-100 text-blue-700'}`}>{row.type}</span></td>
+                              <td className="py-2 px-2 whitespace-nowrap"><span className="text-[9.5px] font-bold text-slate-800 whitespace-nowrap">{row.action}</span></td>
+                              <td className="py-2 px-2 whitespace-nowrap"><span className="text-[9px] font-semibold text-slate-500 whitespace-nowrap">{row.module}</span></td>
+                              <td className="py-2 px-2 whitespace-nowrap"><span className="text-[9px] font-medium text-slate-600 leading-tight whitespace-nowrap">{row.details}</span></td>
+                              <td className="py-2 px-2 whitespace-nowrap"><span className="text-[8.5px] font-mono text-slate-400">{row.ip}</span></td>
+                              <td className="py-2 px-2 whitespace-nowrap"><span className={`text-[9.5px] font-black ${row.outcomeColor || 'text-emerald-600'}`}>{row.outcome}</span></td>
+                              <td className="py-2 px-1.5 text-right whitespace-nowrap relative">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenLogDropdownId(openLogDropdownId === `overview-${row.id}` ? null : `overview-${row.id}`);
+                                  }}
+                                  title="Actions Menu"
+                                  className="p-1.5 hover:bg-slate-200 rounded-lg text-slate-500 hover:text-slate-900 cursor-pointer transition-colors border border-transparent"
+                                >
+                                  <MoreHorizontal size={14} />
+                                </button>
+
+                                {openLogDropdownId === `overview-${row.id}` && (
+                                  <div
+                                    className="absolute right-0 top-8 z-50 w-44 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 text-xs text-left animate-in fade-in duration-100"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <button
+                                      onClick={() => { setOpenLogDropdownId(null); setSelectedAuditLog(row); }}
+                                      className="w-full text-left px-3 py-1.5 hover:bg-slate-50 font-bold text-slate-700 flex items-center gap-2 cursor-pointer"
+                                    >
+                                      <Eye size={13} className="text-blue-600" /> View Details
+                                    </button>
+                                    <button
+                                      onClick={() => { setOpenLogDropdownId(null); handleOpenEditAuditLogModal(row); }}
+                                      className="w-full text-left px-3 py-1.5 hover:bg-slate-50 font-bold text-slate-700 flex items-center gap-2 cursor-pointer"
+                                    >
+                                      <Edit size={13} className="text-amber-600" /> Edit Record
+                                    </button>
+                                    <div className="my-1 border-t border-slate-100"></div>
+                                    <button
+                                      onClick={() => { setOpenLogDropdownId(null); handleDeleteAuditLog(row.id); }}
+                                      className="w-full text-left px-3 py-1.5 hover:bg-rose-50 font-bold text-rose-600 flex items-center gap-2 cursor-pointer"
+                                    >
+                                      <Trash2 size={13} className="text-rose-600" /> Delete Record
+                                    </button>
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>
                   <div className="flex flex-col sm:flex-row justify-between items-center gap-2 pt-2 border-t border-slate-100 text-[11px] font-semibold text-slate-500">
-                    <span>Showing 1 to 8 of 24,680 events</span>
+                    <span>Showing {auditLogsData.length > 0 ? `1 to ${Math.min(8, auditLogsData.length)} of ${auditLogsData.length}` : '0 of 0'} events</span>
                     <div className="flex items-center gap-1">
                       <button className="px-2 py-0.5 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-400 text-xs">|‹</button>
                       <button className="px-2 py-0.5 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-400 text-xs">‹</button>
@@ -6059,18 +6728,18 @@ export default function CompanySettings() {
                           <circle cx="40" cy="40" r="28" fill="none" stroke="#EF4444" strokeWidth="13" strokeDasharray="175.9" strokeDashoffset="73.3" />
                         </svg>
                         <div className="absolute inset-0 flex flex-col items-center justify-center">
-                          <span className="text-[12px] font-black text-slate-900 leading-none">24,680</span>
+                          <span className="text-[12px] font-black text-slate-900 leading-none">{auditLogsData.length > 0 ? auditLogsData.length : '00'}</span>
                           <span className="text-[7.5px] font-bold text-slate-400">Total Events</span>
                         </div>
                       </div>
                       <div className="flex-1 space-y-1.5 text-[9px]">
                         {[
-                          { color: '#2563EB', label: 'Login Events', count: '3,245', pct: '13.2%' },
-                          { color: '#16A34A', label: 'Data Updates', count: '8,724', pct: '35.4%' },
-                          { color: '#F59E0B', label: 'Data Exports', count: '2,156', pct: '8.7%' },
-                          { color: '#9333EA', label: 'Permission Changes', count: '89', pct: '0.4%' },
-                          { color: '#EF4444', label: 'Security Events', count: '156', pct: '0.6%' },
-                          { color: '#64748B', label: 'Other Events', count: '10,280', pct: '41.7%' },
+                          { color: '#2563EB', label: 'Login Events', count: auditLogsData.length > 0 ? auditLogsData.filter(l => l.type === 'Login' || l.type === 'Authentication').length : '00', pct: auditLogsData.length > 0 ? '13.2%' : '0%' },
+                          { color: '#16A34A', label: 'Data Updates', count: auditLogsData.length > 0 ? auditLogsData.filter(l => l.type === 'Data Update').length : '00', pct: auditLogsData.length > 0 ? '35.4%' : '0%' },
+                          { color: '#F59E0B', label: 'Data Exports', count: auditLogsData.length > 0 ? auditLogsData.filter(l => l.type === 'Data Export').length : '00', pct: auditLogsData.length > 0 ? '8.7%' : '0%' },
+                          { color: '#9333EA', label: 'Permission Changes', count: auditLogsData.length > 0 ? auditLogsData.filter(l => l.type === 'Permission Change').length : '00', pct: auditLogsData.length > 0 ? '0.4%' : '0%' },
+                          { color: '#EF4444', label: 'Security Events', count: auditLogsData.length > 0 ? auditLogsData.filter(l => l.type === 'Security Event').length : '00', pct: auditLogsData.length > 0 ? '0.6%' : '0%' },
+                          { color: '#64748B', label: 'Other Events', count: auditLogsData.length > 0 ? auditLogsData.filter(l => !['Login', 'Authentication', 'Data Update', 'Data Export', 'Permission Change', 'Security Event'].includes(l.type)).length : '00', pct: auditLogsData.length > 0 ? '41.7%' : '0%' },
                         ].map((item, i) => (
                           <div key={i} className="flex items-center justify-between">
                             <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }}></span><span className="font-semibold text-slate-600">{item.label}</span></div>
@@ -6089,10 +6758,10 @@ export default function CompanySettings() {
                     </div>
                     <div className="space-y-1.5 text-[10px]">
                       {[
-                        { label: 'Failed Login Attempts', count: '86', color: 'text-rose-600', icon: <AlertTriangle size={12} className="text-rose-500" /> },
-                        { label: 'Blocked Actions', count: '27', color: 'text-amber-600', icon: <CheckCircle2 size={12} className="text-amber-500" /> },
-                        { label: 'Suspicious Activities', count: '15', color: 'text-amber-600', icon: <Shield size={12} className="text-amber-500" /> },
-                        { label: 'Unusual Access Locations', count: '8', color: 'text-amber-600', icon: <Globe size={12} className="text-amber-500" /> },
+                        { label: 'Failed Login Attempts', count: auditLogsData.length > 0 ? '86' : '00', color: auditLogsData.length > 0 ? 'text-rose-600' : 'text-slate-400', icon: <AlertTriangle size={12} className="text-rose-500" /> },
+                        { label: 'Blocked Actions', count: auditLogsData.length > 0 ? '27' : '00', color: auditLogsData.length > 0 ? 'text-amber-600' : 'text-slate-400', icon: <CheckCircle2 size={12} className="text-amber-500" /> },
+                        { label: 'Suspicious Activities', count: auditLogsData.length > 0 ? '15' : '00', color: auditLogsData.length > 0 ? 'text-amber-600' : 'text-slate-400', icon: <Shield size={12} className="text-amber-500" /> },
+                        { label: 'Unusual Access Locations', count: auditLogsData.length > 0 ? '8' : '00', color: auditLogsData.length > 0 ? 'text-amber-600' : 'text-slate-400', icon: <Globe size={12} className="text-amber-500" /> },
                       ].map((sec, i) => (
                         <div key={i} className="flex items-center justify-between py-1 border-b border-slate-50 last:border-0">
                           <div className="flex items-center gap-1.5 text-slate-700 font-semibold">{sec.icon} {sec.label}</div>
@@ -6108,21 +6777,27 @@ export default function CompanySettings() {
                       <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">TOP ACTIVE USERS (THIS MONTH)</h3>
                       <button onClick={() => setCurrentView('users-permissions')} className="text-[10px] font-bold text-[#2563EB] hover:underline cursor-pointer">View all users →</button>
                     </div>
-                    {[
-                      { avatar: 'SM', bg: 'bg-purple-600', name: 'Sarah Mitchell', val: '1,248 events' },
-                      { avatar: 'JD', bg: 'bg-blue-600', name: 'John Davis', val: '986 events' },
-                      { avatar: 'RW', bg: 'bg-amber-600', name: 'Ravi Wilson', val: '842 events' },
-                      { avatar: 'AH', bg: 'bg-teal-600', name: 'Amit Handa', val: '756 events' },
-                      { avatar: 'BT', bg: 'bg-orange-600', name: 'Brian Taylor', val: '688 events' },
-                    ].map((user, i) => (
-                      <div key={i} className="flex items-center justify-between py-1 border-b border-slate-50 last:border-0">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-5 h-5 rounded-full ${user.bg} text-white font-black text-[8px] flex items-center justify-center shrink-0`}>{user.avatar}</div>
-                          <span className="text-[10px] font-bold text-slate-800">{user.name}</span>
-                        </div>
-                        <span className="text-[9.5px] font-extrabold text-slate-900">{user.val}</span>
+                    {auditLogsData.length === 0 ? (
+                      <div className="py-4 text-center text-xs font-semibold text-slate-400">
+                        No active users recorded.
                       </div>
-                    ))}
+                    ) : (
+                      [
+                        { avatar: 'SM', bg: 'bg-purple-600', name: 'Sarah Mitchell', val: '1,248 events' },
+                        { avatar: 'JD', bg: 'bg-blue-600', name: 'John Davis', val: '986 events' },
+                        { avatar: 'RW', bg: 'bg-amber-600', name: 'Ravi Wilson', val: '842 events' },
+                        { avatar: 'AH', bg: 'bg-teal-600', name: 'Amit Handa', val: '756 events' },
+                        { avatar: 'BT', bg: 'bg-orange-600', name: 'Brian Taylor', val: '688 events' },
+                      ].map((user, i) => (
+                        <div key={i} className="flex items-center justify-between py-1 border-b border-slate-50 last:border-0">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-5 h-5 rounded-full ${user.bg} text-white font-black text-[8px] flex items-center justify-center shrink-0`}>{user.avatar}</div>
+                            <span className="text-[10px] font-bold text-slate-800">{user.name}</span>
+                          </div>
+                          <span className="text-[9.5px] font-extrabold text-slate-900">{user.val}</span>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               </div>
@@ -6247,7 +6922,7 @@ export default function CompanySettings() {
               {/* PAGINATION */}
               <div className="flex flex-col sm:flex-row justify-between items-center gap-2 p-3 bg-white rounded-xl border border-slate-200/80 text-[11px] font-semibold text-slate-500 shadow-2xs">
                 <span>Showing 1 to 10 of 24,680 events</span>
-                <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1">
                   <button className="px-2.5 py-0.5 bg-[#2563EB] text-white font-bold rounded-md text-xs">1</button>
                   <button className="px-2.5 py-0.5 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-700 font-bold text-xs">2</button>
                   <button className="px-2.5 py-0.5 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-700 font-bold text-xs">3</button>
@@ -6265,22 +6940,22 @@ export default function CompanySettings() {
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
                   <span className="text-[9px] font-black text-slate-400 uppercase">TOTAL LOGINS (THIS MONTH)</span>
-                  <div className="text-xl font-black text-slate-900 mt-1">3,245</div>
-                  <span className="text-[9px] font-extrabold text-emerald-600">↑ 12.4% vs Last Month</span>
+                  <div className="text-xl font-black text-slate-900 mt-1">{auditLogsData.length > 0 ? '3,245' : '00'}</div>
+                  <span className={`text-[9px] font-extrabold ${auditLogsData.length > 0 ? 'text-emerald-600' : 'text-slate-400'}`}>{auditLogsData.length > 0 ? '↑ 12.4% vs Last Month' : '0%'}</span>
                 </div>
                 <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
                   <span className="text-[9px] font-black text-slate-400 uppercase">UNIQUE ACTIVE USERS</span>
-                  <div className="text-xl font-black text-slate-900 mt-1">142</div>
-                  <span className="text-[9px] font-semibold text-slate-400">Across 6 Depots</span>
+                  <div className="text-xl font-black text-slate-900 mt-1">{auditLogsData.length > 0 ? '142' : '00'}</div>
+                  <span className="text-[9px] font-semibold text-slate-400">Across Depots</span>
                 </div>
                 <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
                   <span className="text-[9px] font-black text-slate-400 uppercase">FAILED LOGIN ATTEMPTS</span>
-                  <div className="text-xl font-black text-rose-600 mt-1">86</div>
-                  <span className="text-[9px] font-extrabold text-rose-600">↓ 8.7% vs Last Month</span>
+                  <div className="text-xl font-black text-rose-600 mt-1">{auditLogsData.length > 0 ? '86' : '00'}</div>
+                  <span className={`text-[9px] font-extrabold ${auditLogsData.length > 0 ? 'text-rose-600' : 'text-slate-400'}`}>{auditLogsData.length > 0 ? '↓ 8.7% vs Last Month' : '0%'}</span>
                 </div>
                 <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
                   <span className="text-[9px] font-black text-slate-400 uppercase">ACTIVE SESSIONS NOW</span>
-                  <div className="text-xl font-black text-emerald-600 mt-1">24 Live</div>
+                  <div className="text-xl font-black text-emerald-600 mt-1">{auditLogsData.length > 0 ? '24 Live' : '00'}</div>
                   <span className="text-[9px] font-semibold text-slate-400">Web & Mobile Apps</span>
                 </div>
               </div>
@@ -6305,23 +6980,31 @@ export default function CompanySettings() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-xs">
-                      {[
-                        { time: '30 May 09:15 AM', name: 'Sarah Mitchell', method: 'Web App', device: 'Chrome / Windows 11', location: 'Sydney, NSW', ip: '203.26.45.12', status: 'Success', bg: 'bg-emerald-100 text-emerald-700' },
-                        { time: '30 May 09:02 AM', name: 'John Davis', method: 'Mobile Driver App', device: 'iOS App 3.2.1', location: 'Melbourne, VIC', ip: '203.26.45.18', status: 'Success', bg: 'bg-emerald-100 text-emerald-700' },
-                        { time: '30 May 08:58 AM', name: 'Lisa Patel', method: 'Web App', device: 'Firefox / MacOS', location: 'Brisbane, QLD', ip: '203.26.45.99', status: 'Failed (Bad Password)', bg: 'bg-rose-100 text-rose-700' },
-                        { time: '30 May 08:45 AM', name: 'Ravi Wilson', method: 'Web App', device: 'Edge / Windows 10', location: 'Sydney, NSW', ip: '203.26.45.21', status: 'Success', bg: 'bg-emerald-100 text-emerald-700' },
-                        { time: '30 May 08:12 AM', name: 'Amit Handa', method: 'API OAuth2', device: 'Automated Service Token', location: 'Sydney Depot Server', ip: '203.26.45.12', status: 'Success', bg: 'bg-emerald-100 text-emerald-700' },
-                      ].map((row, i) => (
-                        <tr key={i} className="hover:bg-slate-50/50">
-                          <td className="py-2.5 px-2 font-mono text-[10px] text-slate-500">{row.time}</td>
-                          <td className="py-2.5 px-2 font-bold text-slate-900">{row.name}</td>
-                          <td className="py-2.5 px-2 font-semibold text-slate-600">{row.method}</td>
-                          <td className="py-2.5 px-2 font-medium text-slate-500">{row.device}</td>
-                          <td className="py-2.5 px-2 font-semibold text-slate-700">{row.location}</td>
-                          <td className="py-2.5 px-2 font-mono text-[10px] text-slate-400">{row.ip}</td>
-                          <td className="py-2.5 px-2"><span className={`px-2 py-0.5 rounded text-[9px] font-extrabold ${row.bg}`}>{row.status}</span></td>
+                      {auditLogsData.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="py-8 text-center text-xs font-semibold text-slate-400 bg-slate-50/50">
+                            No login history recorded yet.
+                          </td>
                         </tr>
-                      ))}
+                      ) : (
+                        [
+                          { time: '30 May 09:15 AM', name: 'Sarah Mitchell', method: 'Web App', device: 'Chrome / Windows 11', location: 'Sydney, NSW', ip: '203.26.45.12', status: 'Success', bg: 'bg-emerald-100 text-emerald-700' },
+                          { time: '30 May 09:02 AM', name: 'John Davis', method: 'Mobile Driver App', device: 'iOS App 3.2.1', location: 'Melbourne, VIC', ip: '203.26.45.18', status: 'Success', bg: 'bg-emerald-100 text-emerald-700' },
+                          { time: '30 May 08:58 AM', name: 'Lisa Patel', method: 'Web App', device: 'Firefox / MacOS', location: 'Brisbane, QLD', ip: '203.26.45.99', status: 'Failed (Bad Password)', bg: 'bg-rose-100 text-rose-700' },
+                          { time: '30 May 08:45 AM', name: 'Ravi Wilson', method: 'Web App', device: 'Edge / Windows 10', location: 'Sydney, NSW', ip: '203.26.45.21', status: 'Success', bg: 'bg-emerald-100 text-emerald-700' },
+                          { time: '30 May 08:12 AM', name: 'Amit Handa', method: 'API OAuth2', device: 'Automated Service Token', location: 'Sydney Depot Server', ip: '203.26.45.12', status: 'Success', bg: 'bg-emerald-100 text-emerald-700' },
+                        ].map((row, i) => (
+                          <tr key={i} className="hover:bg-slate-50/50">
+                            <td className="py-2.5 px-2 font-mono text-[10px] text-slate-500">{row.time}</td>
+                            <td className="py-2.5 px-2 font-bold text-slate-900">{row.name}</td>
+                            <td className="py-2.5 px-2 font-semibold text-slate-600">{row.method}</td>
+                            <td className="py-2.5 px-2 font-medium text-slate-500">{row.device}</td>
+                            <td className="py-2.5 px-2 font-semibold text-slate-700">{row.location}</td>
+                            <td className="py-2.5 px-2 font-mono text-[10px] text-slate-400">{row.ip}</td>
+                            <td className="py-2.5 px-2"><span className={`px-2 py-0.5 rounded text-[9px] font-extrabold ${row.bg}`}>{row.status}</span></td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -6335,17 +7018,17 @@ export default function CompanySettings() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div className="bg-rose-50 border border-rose-200 p-3.5 rounded-xl shadow-2xs">
                   <div className="flex items-center gap-2 text-rose-700 font-bold text-xs"><AlertTriangle size={16} /> Critical Security Events</div>
-                  <div className="text-2xl font-black text-rose-900 mt-1">2 Active Alerts</div>
+                  <div className="text-2xl font-black text-rose-900 mt-1">{auditLogsData.length > 0 ? '2 Active Alerts' : '00'}</div>
                   <p className="text-[10px] text-rose-600 font-medium mt-0.5">Requires immediate administrator review.</p>
                 </div>
                 <div className="bg-amber-50 border border-amber-200 p-3.5 rounded-xl shadow-2xs">
                   <div className="flex items-center gap-2 text-amber-700 font-bold text-xs"><Shield size={16} /> Warnings & Threats</div>
-                  <div className="text-2xl font-black text-amber-900 mt-1">15 Flagged</div>
+                  <div className="text-2xl font-black text-amber-900 mt-1">{auditLogsData.length > 0 ? '15 Flagged' : '00'}</div>
                   <p className="text-[10px] text-amber-600 font-medium mt-0.5">Suspicious IP & login attempts.</p>
                 </div>
                 <div className="bg-emerald-50 border border-emerald-200 p-3.5 rounded-xl shadow-2xs">
                   <div className="flex items-center gap-2 text-emerald-700 font-bold text-xs"><CheckCircle2 size={16} /> Resolved Threats</div>
-                  <div className="text-2xl font-black text-emerald-900 mt-1">139 Resolved</div>
+                  <div className="text-2xl font-black text-emerald-900 mt-1">{auditLogsData.length > 0 ? '139 Resolved' : '00'}</div>
                   <p className="text-[10px] text-emerald-600 font-medium mt-0.5">Auto-blocked by firewall rules.</p>
                 </div>
               </div>
@@ -6357,23 +7040,29 @@ export default function CompanySettings() {
                   <button onClick={() => setSecurityLogsTab('Overview')} className="text-[10px] font-bold text-[#2563EB] hover:underline cursor-pointer">← Back to Overview</button>
                 </div>
                 <div className="space-y-2.5">
-                  {[
-                    { title: 'Multiple Failed Login Attempts (5x)', severity: 'CRITICAL', bg: 'bg-rose-100 text-rose-700', desc: 'Account: sarah.mitchell@herologistics.com.au. 5 consecutive wrong passwords entered from IP 203.26.45.99.', time: '12 mins ago', action: 'Lock Account' },
-                    { title: 'New Device Login Detected', severity: 'WARNING', bg: 'bg-amber-100 text-amber-700', desc: 'User John Davis logged in from an unrecognized device (Macintosh OS X) in Brisbane QLD.', time: '1 hour ago', action: 'Verify User' },
-                    { title: 'API Secret Key Regenerated', severity: 'INFO', bg: 'bg-blue-100 text-blue-700', desc: 'Admin Ravi Wilson regenerated Production Fleet Sync API key.', time: '3 hours ago', action: 'View Log' },
-                  ].map((evt, i) => (
-                    <div key={i} className="p-3 bg-slate-50/80 border border-slate-200/80 rounded-xl flex items-start justify-between gap-4">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className={`px-2 py-0.5 rounded text-[9px] font-black ${evt.bg}`}>{evt.severity}</span>
-                          <h4 className="text-xs font-bold text-slate-900">{evt.title}</h4>
-                          <span className="text-[10px] text-slate-400 font-medium">• {evt.time}</span>
-                        </div>
-                        <p className="text-xs text-slate-600 font-medium">{evt.desc}</p>
-                      </div>
-                      <button onClick={() => triggerToast(`Action executed: ${evt.action}`)} className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 cursor-pointer shadow-2xs shrink-0">{evt.action}</button>
+                  {auditLogsData.length === 0 ? (
+                    <div className="py-8 text-center text-xs font-semibold text-slate-400 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+                      No security events logged yet.
                     </div>
-                  ))}
+                  ) : (
+                    [
+                      { title: 'Multiple Failed Login Attempts (5x)', severity: 'CRITICAL', bg: 'bg-rose-100 text-rose-700', desc: 'Account: sarah.mitchell@herologistics.com.au. 5 consecutive wrong passwords entered from IP 203.26.45.99.', time: '12 mins ago', action: 'Lock Account' },
+                      { title: 'New Device Login Detected', severity: 'WARNING', bg: 'bg-amber-100 text-amber-700', desc: 'User John Davis logged in from an unrecognized device (Macintosh OS X) in Brisbane QLD.', time: '1 hour ago', action: 'Verify User' },
+                      { title: 'API Secret Key Regenerated', severity: 'INFO', bg: 'bg-blue-100 text-blue-700', desc: 'Admin Ravi Wilson regenerated Production Fleet Sync API key.', time: '3 hours ago', action: 'View Log' },
+                    ].map((evt, i) => (
+                      <div key={i} className="p-3 bg-slate-50/80 border border-slate-200/80 rounded-xl flex items-start justify-between gap-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2 py-0.5 rounded text-[9px] font-black ${evt.bg}`}>{evt.severity}</span>
+                            <h4 className="text-xs font-bold text-slate-900">{evt.title}</h4>
+                            <span className="text-[10px] text-slate-400 font-medium">• {evt.time}</span>
+                          </div>
+                          <p className="text-xs text-slate-600 font-medium">{evt.desc}</p>
+                        </div>
+                        <button onClick={() => triggerToast(`Action executed: ${evt.action}`)} className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 cursor-pointer shadow-2xs shrink-0">{evt.action}</button>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
@@ -6402,20 +7091,28 @@ export default function CompanySettings() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-xs">
-                    {[
-                      { time: '30 May 09:10 AM', by: 'Ravi Wilson', role: 'Dispatcher', action: 'Granted Export Rights', details: 'Added permissions: export_reports, download_pod', ip: '203.26.45.21' },
-                      { time: '28 May 04:30 PM', by: 'Sarah Mitchell', role: 'Fleet Manager', action: 'Revoked Settings Access', details: 'Removed permission: company_settings_edit', ip: '203.26.45.12' },
-                      { time: '25 May 11:15 AM', by: 'Sarah Mitchell', role: 'Accountant', action: 'Created New Role', details: 'Created custom role: Senior Accountant with full invoicing rights', ip: '203.26.45.12' },
-                    ].map((row, i) => (
-                      <tr key={i} className="hover:bg-slate-50/50">
-                        <td className="py-2.5 px-2 font-mono text-[10px] text-slate-500">{row.time}</td>
-                        <td className="py-2.5 px-2 font-bold text-slate-900">{row.by}</td>
-                        <td className="py-2.5 px-2"><span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-[10px] font-bold">{row.role}</span></td>
-                        <td className="py-2.5 px-2 font-bold text-slate-800">{row.action}</td>
-                        <td className="py-2.5 px-2 font-medium text-slate-600">{row.details}</td>
-                        <td className="py-2.5 px-2 font-mono text-[10px] text-slate-400">{row.ip}</td>
+                    {auditLogsData.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-8 text-center text-xs font-semibold text-slate-400 bg-slate-50/50">
+                          No permission changes recorded yet.
+                        </td>
                       </tr>
-                    ))}
+                    ) : (
+                      [
+                        { time: '30 May 09:10 AM', by: 'Ravi Wilson', role: 'Dispatcher', action: 'Granted Export Rights', details: 'Added permissions: export_reports, download_pod', ip: '203.26.45.21' },
+                        { time: '28 May 04:30 PM', by: 'Sarah Mitchell', role: 'Fleet Manager', action: 'Revoked Settings Access', details: 'Removed permission: company_settings_edit', ip: '203.26.45.12' },
+                        { time: '25 May 11:15 AM', by: 'Sarah Mitchell', role: 'Accountant', action: 'Created New Role', details: 'Created custom role: Senior Accountant with full invoicing rights', ip: '203.26.45.12' },
+                      ].map((row, i) => (
+                        <tr key={i} className="hover:bg-slate-50/50">
+                          <td className="py-2.5 px-2 font-mono text-[10px] text-slate-500">{row.time}</td>
+                          <td className="py-2.5 px-2 font-bold text-slate-900">{row.by}</td>
+                          <td className="py-2.5 px-2"><span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-[10px] font-bold">{row.role}</span></td>
+                          <td className="py-2.5 px-2 font-bold text-slate-800">{row.action}</td>
+                          <td className="py-2.5 px-2 font-medium text-slate-600">{row.details}</td>
+                          <td className="py-2.5 px-2 font-mono text-[10px] text-slate-400">{row.ip}</td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -6445,20 +7142,28 @@ export default function CompanySettings() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-xs">
-                    {[
-                      { time: '30 May 09:14 AM', user: 'Amit Handa', res: 'Customer Billing & Tax Files', type: 'Bulk Read Query', records: '1,240 rows', status: 'Authorized' },
-                      { time: '30 May 09:05 AM', user: 'Live Fleet API Token', res: 'GPS Telematics Stream', type: 'REST API Sync', records: '48 trucks', status: 'Authorized' },
-                      { time: '30 May 08:40 AM', user: 'Sarah Mitchell', res: 'Driver Medical Clearances', type: 'Single Record View', records: '1 record', status: 'Authorized' },
-                    ].map((row, i) => (
-                      <tr key={i} className="hover:bg-slate-50/50">
-                        <td className="py-2.5 px-2 font-mono text-[10px] text-slate-500">{row.time}</td>
-                        <td className="py-2.5 px-2 font-bold text-slate-900">{row.user}</td>
-                        <td className="py-2.5 px-2 font-bold text-slate-800">{row.res}</td>
-                        <td className="py-2.5 px-2 font-semibold text-blue-600">{row.type}</td>
-                        <td className="py-2.5 px-2 font-medium text-slate-600">{row.records}</td>
-                        <td className="py-2.5 px-2"><span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[9px] font-extrabold">{row.status}</span></td>
+                    {auditLogsData.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-8 text-center text-xs font-semibold text-slate-400 bg-slate-50/50">
+                          No data access records found.
+                        </td>
                       </tr>
-                    ))}
+                    ) : (
+                      [
+                        { time: '30 May 09:14 AM', user: 'Amit Handa', res: 'Customer Billing & Tax Files', type: 'Bulk Read Query', records: '1,240 rows', status: 'Authorized' },
+                        { time: '30 May 09:05 AM', user: 'Live Fleet API Token', res: 'GPS Telematics Stream', type: 'REST API Sync', records: '48 trucks', status: 'Authorized' },
+                        { time: '30 May 08:40 AM', user: 'Sarah Mitchell', res: 'Driver Medical Clearances', type: 'Single Record View', records: '1 record', status: 'Authorized' },
+                      ].map((row, i) => (
+                        <tr key={i} className="hover:bg-slate-50/50">
+                          <td className="py-2.5 px-2 font-mono text-[10px] text-slate-500">{row.time}</td>
+                          <td className="py-2.5 px-2 font-bold text-slate-900">{row.user}</td>
+                          <td className="py-2.5 px-2 font-bold text-slate-800">{row.res}</td>
+                          <td className="py-2.5 px-2 font-semibold text-blue-600">{row.type}</td>
+                          <td className="py-2.5 px-2 font-medium text-slate-600">{row.records}</td>
+                          <td className="py-2.5 px-2"><span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[9px] font-extrabold">{row.status}</span></td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -6488,22 +7193,30 @@ export default function CompanySettings() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-xs">
-                    {[
-                      { time: '30 May 09:05 AM', user: 'Amit Handa', name: 'Tax_Invoices_May2025.pdf', fmt: 'PDF', size: '2.4 MB', status: 'Completed' },
-                      { time: '30 May 08:30 AM', user: 'Shane Cooper', name: 'Fleet_Maintenance_Audit.csv', fmt: 'CSV', size: '540 KB', status: 'Blocked (Restricted)' },
-                      { time: '29 May 05:12 PM', user: 'Sarah Mitchell', name: 'Driver_Fatigue_Logbook.xlsx', fmt: 'Excel', size: '1.1 MB', status: 'Completed' },
-                    ].map((row, i) => (
-                      <tr key={i} className="hover:bg-slate-50/50">
-                        <td className="py-2.5 px-2 font-mono text-[10px] text-slate-500">{row.time}</td>
-                        <td className="py-2.5 px-2 font-bold text-slate-900">{row.user}</td>
-                        <td className="py-2.5 px-2 font-bold text-slate-800">{row.name}</td>
-                        <td className="py-2.5 px-2 font-bold text-purple-600">{row.fmt}</td>
-                        <td className="py-2.5 px-2 font-medium text-slate-500">{row.size}</td>
-                        <td className="py-2.5 px-2">
-                          <span className={`px-2 py-0.5 rounded text-[9px] font-extrabold ${row.status.includes('Completed') ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>{row.status}</span>
+                    {auditLogsData.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-8 text-center text-xs font-semibold text-slate-400 bg-slate-50/50">
+                          No export or download records found.
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      [
+                        { time: '30 May 09:05 AM', user: 'Amit Handa', name: 'Tax_Invoices_May2025.pdf', fmt: 'PDF', size: '2.4 MB', status: 'Completed' },
+                        { time: '30 May 08:30 AM', user: 'Shane Cooper', name: 'Fleet_Maintenance_Audit.csv', fmt: 'CSV', size: '540 KB', status: 'Blocked (Restricted)' },
+                        { time: '29 May 05:12 PM', user: 'Sarah Mitchell', name: 'Driver_Fatigue_Logbook.xlsx', fmt: 'Excel', size: '1.1 MB', status: 'Completed' },
+                      ].map((row, i) => (
+                        <tr key={i} className="hover:bg-slate-50/50">
+                          <td className="py-2.5 px-2 font-mono text-[10px] text-slate-500">{row.time}</td>
+                          <td className="py-2.5 px-2 font-bold text-slate-900">{row.user}</td>
+                          <td className="py-2.5 px-2 font-bold text-slate-800">{row.name}</td>
+                          <td className="py-2.5 px-2 font-bold text-purple-600">{row.fmt}</td>
+                          <td className="py-2.5 px-2 font-medium text-slate-500">{row.size}</td>
+                          <td className="py-2.5 px-2">
+                            <span className={`px-2 py-0.5 rounded text-[9px] font-extrabold ${row.status.includes('Completed') ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>{row.status}</span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -6533,19 +7246,27 @@ export default function CompanySettings() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-xs">
-                    {[
-                      { time: '30 May 08:30 AM', user: 'Shane Cooper (203.26.45.77)', action: 'Export Restricted Payroll', policy: 'Policy #4: Non-Finance Export Restriction', severity: 'HIGH', status: 'Blocked & Flagged' },
-                      { time: '29 May 02:40 PM', user: 'Unknown IP (185.220.101.5)', action: 'Brute Force API Login', policy: 'Rate Limit: Max 5 req/min', severity: 'CRITICAL', status: 'IP Banned (24h)' },
-                    ].map((row, i) => (
-                      <tr key={i} className="hover:bg-slate-50/50">
-                        <td className="py-2.5 px-2 font-mono text-[10px] text-slate-500">{row.time}</td>
-                        <td className="py-2.5 px-2 font-bold text-slate-900">{row.user}</td>
-                        <td className="py-2.5 px-2 font-bold text-slate-800">{row.action}</td>
-                        <td className="py-2.5 px-2 font-medium text-slate-600">{row.policy}</td>
-                        <td className="py-2.5 px-2"><span className="px-2 py-0.5 bg-rose-100 text-rose-700 rounded text-[9px] font-black">{row.severity}</span></td>
-                        <td className="py-2.5 px-2"><span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded text-[9px] font-extrabold">{row.status}</span></td>
+                    {auditLogsData.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-8 text-center text-xs font-semibold text-slate-400 bg-slate-50/50">
+                          No blocked actions recorded yet.
+                        </td>
                       </tr>
-                    ))}
+                    ) : (
+                      [
+                        { time: '30 May 08:30 AM', user: 'Shane Cooper (203.26.45.77)', action: 'Export Restricted Payroll', policy: 'Policy #4: Non-Finance Export Restriction', severity: 'HIGH', status: 'Blocked & Flagged' },
+                        { time: '29 May 02:40 PM', user: 'Unknown IP (185.220.101.5)', action: 'Brute Force API Login', policy: 'Rate Limit: Max 5 req/min', severity: 'CRITICAL', status: 'IP Banned (24h)' },
+                      ].map((row, i) => (
+                        <tr key={i} className="hover:bg-slate-50/50">
+                          <td className="py-2.5 px-2 font-mono text-[10px] text-slate-500">{row.time}</td>
+                          <td className="py-2.5 px-2 font-bold text-slate-900">{row.user}</td>
+                          <td className="py-2.5 px-2 font-bold text-slate-800">{row.action}</td>
+                          <td className="py-2.5 px-2 font-medium text-slate-600">{row.policy}</td>
+                          <td className="py-2.5 px-2"><span className="px-2 py-0.5 bg-rose-100 text-rose-700 rounded text-[9px] font-black">{row.severity}</span></td>
+                          <td className="py-2.5 px-2"><span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded text-[9px] font-extrabold">{row.status}</span></td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -6696,12 +7417,47 @@ export default function CompanySettings() {
               {/* 6 METRIC CARDS */}
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                 {[
-                  { icon: <Crown size={16} />, bg: 'bg-purple-100 text-purple-600', border: 'hover:border-purple-200', label: 'CURRENT PLAN', value: 'Hero Pro', link: 'View plan details →', onClick: () => setBillingTab('Plan & Usage') },
-                  { icon: <Calendar size={16} />, bg: 'bg-[#DCFCE7] text-[#16A34A]', border: 'hover:border-emerald-200', label: 'BILLING CYCLE', value: 'Monthly', subText: 'Next billing: 30 Jun 2025', link: 'Change billing cycle →', onClick: () => setIsManageSubscriptionModalOpen(true) },
-                  { icon: <DollarSign size={16} />, bg: 'bg-[#DBEAFE] text-[#2563EB]', border: 'hover:border-blue-200', label: 'AMOUNT DUE', value: '$0.00', subText: 'Paid up to 30 Jun 2025', link: 'View invoices →', onClick: () => setBillingTab('Invoices') },
-                  { icon: <Activity size={16} />, bg: 'bg-amber-100 text-amber-600', border: 'hover:border-amber-200', label: 'USAGE STATUS', value: '76%', subText: 'Overall usage this month', link: 'View usage →', onClick: () => setBillingTab('Plan & Usage') },
-                  { icon: <Users size={16} />, bg: 'bg-teal-100 text-teal-600', border: 'hover:border-teal-200', label: 'ACTIVE USERS', value: '24 / 50', subText: 'Users in your plan', link: 'Manage users →', onClick: () => setCurrentView('users-permissions') },
-                  { icon: <Clock size={16} />, bg: 'bg-rose-100 text-rose-600', border: 'hover:border-rose-200', label: 'DAYS LEFT IN CYCLE', value: '18 days', subText: 'Until 30 Jun 2025', link: 'View billing schedule →', onClick: () => setBillingTab('Billing History') },
+                  {
+                    icon: <Crown size={16} />, bg: 'bg-purple-100 text-purple-600', border: 'hover:border-purple-200',
+                    label: 'CURRENT PLAN',
+                    value: billingDataLoading ? '—' : (billingData?.plan?.name || 'No Plan'),
+                    link: 'View plan details →', onClick: () => setBillingTab('Plan & Usage')
+                  },
+                  {
+                    icon: <Calendar size={16} />, bg: 'bg-[#DCFCE7] text-[#16A34A]', border: 'hover:border-emerald-200',
+                    label: 'BILLING CYCLE',
+                    value: billingDataLoading ? '—' : (billingData?.subscription?.billingPeriod === 'ANNUALLY' ? 'Annual' : 'Monthly'),
+                    subText: billingData?.subscription?.nextBillingDate ? `Next billing: ${new Date(billingData.subscription.nextBillingDate).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}` : '',
+                    link: 'Change billing cycle →', onClick: () => setIsManageSubscriptionModalOpen(true)
+                  },
+                  {
+                    icon: <DollarSign size={16} />, bg: 'bg-[#DBEAFE] text-[#2563EB]', border: 'hover:border-blue-200',
+                    label: 'AMOUNT DUE',
+                    value: billingDataLoading ? '—' : `$${(billingData?.subscription?.amountDue || 0).toFixed(2)}`,
+                    subText: billingData?.subscription?.nextBillingDate ? `Due: ${new Date(billingData.subscription.nextBillingDate).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}` : 'No amount due',
+                    link: 'View invoices →', onClick: () => setBillingTab('Invoices')
+                  },
+                  {
+                    icon: <Activity size={16} />, bg: 'bg-amber-100 text-amber-600', border: 'hover:border-amber-200',
+                    label: 'USAGE STATUS',
+                    value: billingDataLoading ? '—' : `${billingData?.usage?.overallUsagePercent || 0}%`,
+                    subText: 'Overall usage this month',
+                    link: 'View usage →', onClick: () => setBillingTab('Plan & Usage')
+                  },
+                  {
+                    icon: <Users size={16} />, bg: 'bg-teal-100 text-teal-600', border: 'hover:border-teal-200',
+                    label: 'ACTIVE USERS',
+                    value: billingDataLoading ? '—' : `${billingData?.usage?.activeUsers || 0} / ${billingData?.usage?.userLimit || 0}`,
+                    subText: 'Users in your plan',
+                    link: 'Manage users →', onClick: () => setCurrentView('users-permissions')
+                  },
+                  {
+                    icon: <Clock size={16} />, bg: 'bg-rose-100 text-rose-600', border: 'hover:border-rose-200',
+                    label: 'DAYS LEFT IN CYCLE',
+                    value: billingDataLoading ? '—' : (billingData?.subscription?.daysLeftInCycle != null ? `${billingData.subscription.daysLeftInCycle} days` : '—'),
+                    subText: billingData?.subscription?.nextBillingDate ? `Until ${new Date(billingData.subscription.nextBillingDate).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}` : '',
+                    link: 'View billing schedule →', onClick: () => setBillingTab('Billing History')
+                  },
                 ].map((card, i) => (
                   <div key={i} className={`bg-white rounded-xl border border-slate-200/80 p-3 shadow-2xs flex flex-col justify-between ${card.border} transition-all text-left`}>
                     <div className="flex items-start gap-2">
@@ -6754,7 +7510,6 @@ export default function CompanySettings() {
                         View Plan Features
                       </button>
                     </div>
-
                     {/* SUB-COL 2: PLAN USAGE (THIS MONTH) */}
                     <div className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3.5 space-y-3 flex flex-col justify-between">
                       <div className="space-y-2.5">
@@ -6763,12 +7518,13 @@ export default function CompanySettings() {
                           <button onClick={() => setBillingTab('Plan & Usage')} className="text-[9px] font-bold text-[#2563EB] hover:underline cursor-pointer">View full usage →</button>
                         </div>
 
-                        {[
-                          { label: 'Users', val: '24 / 50 (48%)', pct: 48 },
-                          { label: 'Loads', val: '1,240 / 2,000 (62%)', pct: 62 },
-                          { label: 'Storage', val: '152 GB / 200 GB (76%)', pct: 76 },
-                          { label: 'API Calls', val: '76,542 / 100,000 (77%)', pct: 77 },
-                          { label: 'AI Requests (Add-on)', val: '8,450 / 15,000 (56%)', pct: 56 },
+                        {billingDataLoading ? (
+                          <div className="py-2 text-center text-[10px] font-semibold text-slate-400">Loading usage data...</div>
+                        ) : [
+                          { label: 'Users', val: `${billingData?.usage?.activeUsers || 0} / ${billingData?.usage?.userLimit || 0}`, pct: billingData?.usage?.userLimit > 0 ? Math.round((billingData.usage.activeUsers / billingData.usage.userLimit) * 100) : 0 },
+                          { label: 'Monthly Loads', val: `${billingData?.usage?.monthlyLoads || 0}`, pct: 0 },
+                          { label: 'Storage', val: `${billingData?.usage?.storageUsedGB || 0} GB / ${billingData?.usage?.storageLimitGB || 0} GB`, pct: billingData?.usage?.storageLimitGB > 0 ? Math.round((billingData.usage.storageUsedGB / billingData.usage.storageLimitGB) * 100) : 0 },
+                          { label: 'API Calls', val: `${(billingData?.usage?.apiCallsThisMonth || 0).toLocaleString()} / ${(billingData?.usage?.apiLimit || 0).toLocaleString()}`, pct: billingData?.usage?.apiLimit > 0 ? Math.round((billingData.usage.apiCallsThisMonth / billingData.usage.apiLimit) * 100) : 0 },
                         ].map((item, i) => (
                           <div key={i} className="space-y-1">
                             <div className="flex justify-between text-[9.5px] font-semibold">
@@ -6791,22 +7547,20 @@ export default function CompanySettings() {
                           <button onClick={() => setBillingTab('Add-ons')} className="text-[9px] font-bold text-[#2563EB] hover:underline cursor-pointer">Manage Add-ons →</button>
                         </div>
 
-                        {[
-                          { icon: <Cpu size={14} />, iconBg: 'bg-purple-100 text-purple-600', name: 'Hero AI Add-on', price: '$199.00 / month', sub: '15,000 requests included', status: 'Active', statusBg: 'bg-emerald-100 text-emerald-700' },
-                          { icon: <BarChart2 size={14} />, iconBg: 'bg-blue-100 text-blue-600', name: 'Advanced Reporting', price: '$99.00 / month', sub: 'Unlimited reports & dashboards', status: 'Active', statusBg: 'bg-emerald-100 text-emerald-700' },
-                          { icon: <HardDrive size={14} />, iconBg: 'bg-amber-100 text-amber-600', name: 'Extra Storage (500GB)', price: '$49.00 / month', sub: '500 GB additional storage', status: 'Inactive', statusBg: 'bg-slate-200 text-slate-600' },
-                          { icon: <MessageSquare size={14} />, iconBg: 'bg-emerald-100 text-emerald-600', name: 'SMS Notifications', price: '$29.00 / month', sub: '2,000 SMS credits / month', status: 'Active', statusBg: 'bg-emerald-100 text-emerald-700' },
-                        ].map((addon, i) => (
+                        {billingDataLoading ? (
+                          <div className="py-2 text-center text-[10px] font-semibold text-slate-400">Loading add-ons...</div>
+                        ) : (billingData?.addons?.length || 0) === 0 ? (
+                          <div className="py-2 text-center text-[10px] font-semibold text-slate-400">No add-ons configured for this plan.</div>
+                        ) : billingData.addons.map((addon, i) => (
                           <div key={i} className="flex items-center justify-between p-1.5 bg-white rounded-lg border border-slate-200/70">
                             <div className="flex items-center gap-2">
-                              <div className={`w-6 h-6 rounded-md ${addon.iconBg} flex items-center justify-center shrink-0`}>{addon.icon}</div>
+                              <div className="w-6 h-6 rounded-md bg-purple-100 text-purple-600 flex items-center justify-center shrink-0"><Cpu size={14} /></div>
                               <div>
                                 <div className="text-[10px] font-extrabold text-slate-900 leading-tight">{addon.name}</div>
-                                <div className="text-[8.5px] font-semibold text-slate-500 leading-tight">{addon.price}</div>
-                                <div className="text-[7.5px] font-medium text-slate-400 leading-tight">{addon.sub}</div>
+                                <div className="text-[7.5px] font-medium text-slate-400 leading-tight">{addon.description || ''}</div>
                               </div>
                             </div>
-                            <span className={`px-1.5 py-0.2 rounded text-[8px] font-black uppercase ${addon.statusBg}`}>{addon.status}</span>
+                            <span className={`px-1.5 py-0.2 rounded text-[8px] font-black uppercase ${addon.isEnabled ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>{addon.isEnabled ? 'Active' : 'Inactive'}</span>
                           </div>
                         ))}
                       </div>
@@ -6824,19 +7578,28 @@ export default function CompanySettings() {
                     </div>
 
                     <div className="space-y-2.5 text-[11px] pt-1">
-                      <div className="flex justify-between font-semibold text-slate-700"><span>Plan (Hero Pro)</span><span className="font-black text-slate-900">$499.00</span></div>
-                      <div className="flex justify-between font-semibold text-slate-700"><span>Hero AI Add-on</span><span className="font-black text-slate-900">$199.00</span></div>
-                      <div className="flex justify-between font-semibold text-slate-700"><span>Advanced Reporting</span><span className="font-black text-slate-900">$99.00</span></div>
-                      <div className="flex justify-between font-semibold text-slate-700"><span>SMS Notifications</span><span className="font-black text-slate-900">$29.00</span></div>
-                      <div className="flex justify-between font-semibold text-emerald-600"><span>Discount</span><span className="font-black">-$49.00</span></div>
-                      <div className="pt-2 border-t border-slate-100 flex justify-between font-semibold text-slate-700"><span>Subtotal</span><span className="font-black text-slate-900">$777.00</span></div>
-                      <div className="flex justify-between font-semibold text-slate-700"><span>GST (10%)</span><span className="font-black text-slate-900">$77.70</span></div>
+                      {billingDataLoading ? (
+                        <div className="py-3 text-center text-[10px] font-semibold text-slate-400">Loading billing summary...</div>
+                      ) : billingData?.plan ? (
+                        <>
+                          <div className="flex justify-between font-semibold text-slate-700"><span>Plan ({billingData.plan.name})</span><span className="font-black text-slate-900">${(billingData.plan.monthlyPrice || 0).toFixed(2)}</span></div>
+                          {billingData.addons?.filter(a => a.isEnabled).map((addon, i) => (
+                            <div key={i} className="flex justify-between font-semibold text-slate-700"><span>{addon.name}</span><span className="font-black text-slate-900">Active</span></div>
+                          ))}
+                          {(billingData.subscription?.discountApplied || 0) > 0 && (
+                            <div className="flex justify-between font-semibold text-emerald-600"><span>Discount</span><span className="font-black">-${billingData.subscription.discountApplied.toFixed(2)}</span></div>
+                          )}
+                          <div className="pt-2 border-t border-slate-100 flex justify-between font-semibold text-slate-700"><span>Amount Due</span><span className="font-black text-slate-900">${(billingData.subscription?.amountDue || 0).toFixed(2)}</span></div>
+                        </>
+                      ) : (
+                        <div className="py-3 text-center text-[10px] font-semibold text-slate-400">No billing summary available. No active plan found.</div>
+                      )}
                     </div>
                   </div>
 
                   <div className="pt-3 border-t border-slate-200 flex items-center justify-between">
                     <span className="text-xs font-black text-slate-900 uppercase">Total (AUD)</span>
-                    <span className="text-2xl font-black text-[#2563EB] leading-none">$854.70</span>
+                    <span className="text-2xl font-black text-[#2563EB] leading-none">${(billingData?.subscription?.amountDue || 0).toFixed(2)}</span>
                   </div>
                 </div>
 
@@ -6865,22 +7628,20 @@ export default function CompanySettings() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {[
-                          { inv: 'INV-2025-0529', date: '29 May 2025', desc: 'Monthly Subscription - May 2025', amt: '$854.70', status: 'Paid', pm: 'Visa •••• 4242' },
-                          { inv: 'INV-2025-0429', date: '29 Apr 2025', desc: 'Monthly Subscription - April 2025', amt: '$854.70', status: 'Paid', pm: 'Visa •••• 4242' },
-                          { inv: 'INV-2025-0329', date: '29 Mar 2025', desc: 'Monthly Subscription - March 2025', amt: '$854.70', status: 'Paid', pm: 'Visa •••• 4242' },
-                          { inv: 'INV-2025-0228', date: '28 Feb 2025', desc: 'Monthly Subscription - February 2025', amt: '$854.70', status: 'Paid', pm: 'Visa •••• 4242' },
-                          { inv: 'INV-2025-0129', date: '29 Jan 2025', desc: 'Monthly Subscription - January 2025', amt: '$854.70', status: 'Paid', pm: 'Visa •••• 4242' },
-                        ].map((row, i) => (
+                        {billingDataLoading ? (
+                          <tr><td colSpan={7} className="py-8 text-center text-[10px] font-semibold text-slate-400">Loading invoices...</td></tr>
+                        ) : (billingData?.billingRecords?.length || 0) === 0 ? (
+                          <tr><td colSpan={7} className="py-8 text-center text-[10px] font-semibold text-slate-400">No invoices found. Invoices will appear here once your first billing cycle completes.</td></tr>
+                        ) : billingData.billingRecords.slice(0, 5).map((row, i) => (
                           <tr key={i} className="hover:bg-blue-50/30 transition-colors">
-                            <td className="py-2 px-2 whitespace-nowrap"><span className="text-[10px] font-extrabold text-[#2563EB]">{row.inv}</span></td>
-                            <td className="py-2 px-2 whitespace-nowrap"><span className="text-[9.5px] font-semibold text-slate-500">{row.date}</span></td>
-                            <td className="py-2 px-2 whitespace-nowrap"><span className="text-[9.5px] font-bold text-slate-800 whitespace-nowrap">{row.desc}</span></td>
-                            <td className="py-2 px-2 whitespace-nowrap"><span className="text-[10px] font-black text-slate-900">{row.amt}</span></td>
-                            <td className="py-2 px-2 whitespace-nowrap"><span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-700 text-[9px] font-black uppercase">{row.status}</span></td>
-                            <td className="py-2 px-2 whitespace-nowrap"><span className="text-[9px] font-medium text-slate-600">{row.pm}</span></td>
+                            <td className="py-2 px-2 whitespace-nowrap"><span className="text-[10px] font-extrabold text-[#2563EB]">{row.invoiceNumber || '—'}</span></td>
+                            <td className="py-2 px-2 whitespace-nowrap"><span className="text-[9.5px] font-semibold text-slate-500">{row.date ? new Date(row.date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</span></td>
+                            <td className="py-2 px-2 whitespace-nowrap"><span className="text-[9.5px] font-bold text-slate-800 whitespace-nowrap">{row.planTierSnapshot || 'Subscription'}</span></td>
+                            <td className="py-2 px-2 whitespace-nowrap"><span className="text-[10px] font-black text-slate-900">${(row.amount || 0).toFixed(2)}</span></td>
+                            <td className="py-2 px-2 whitespace-nowrap"><span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase ${row.status === 'PAID' ? 'bg-emerald-100 text-emerald-700' : row.status === 'OVERDUE' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'}`}>{row.status}</span></td>
+                            <td className="py-2 px-2 whitespace-nowrap"><span className="text-[9px] font-medium text-slate-600">{row.paymentMethod || '—'}</span></td>
                             <td className="py-2 px-2 text-center whitespace-nowrap">
-                              <button onClick={() => handleDownloadSingleInvoice(row.inv)} className="p-1 hover:bg-slate-100 text-slate-500 hover:text-[#2563EB] rounded-lg cursor-pointer">
+                              <button onClick={() => handleDownloadSingleInvoice(row)} className="p-1 hover:bg-slate-100 text-slate-500 hover:text-[#2563EB] rounded-lg cursor-pointer">
                                 <Download size={13} />
                               </button>
                             </td>
@@ -6890,16 +7651,8 @@ export default function CompanySettings() {
                     </table>
                   </div>
                   <div className="flex flex-col sm:flex-row justify-between items-center gap-2 pt-2 border-t border-slate-100 text-[11px] font-semibold text-slate-500">
-                    <span>Showing 1 to 5 of 12 invoices</span>
-                    <div className="flex items-center gap-1">
-                      <button className="px-2 py-0.5 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-400 text-xs">|‹</button>
-                      <button className="px-2 py-0.5 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-400 text-xs">‹</button>
-                      <button className="px-2.5 py-0.5 bg-[#2563EB] text-white font-bold rounded-md text-xs">1</button>
-                      <button className="px-2.5 py-0.5 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-700 font-bold text-xs">2</button>
-                      <button className="px-2.5 py-0.5 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-700 font-bold text-xs">3</button>
-                      <button className="px-2 py-0.5 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-700 font-bold text-xs">›</button>
-                      <button className="px-2 py-0.5 border border-slate-200 rounded-md hover:bg-slate-50 text-slate-700 font-bold text-xs">›|</button>
-                    </div>
+                    <span>Showing {Math.min(5, billingData?.billingRecords?.length || 0)} of {billingData?.billingRecords?.length || 0} recent invoices</span>
+                    <button onClick={() => setBillingTab('Invoices')} className="text-[10px] font-bold text-[#2563EB] hover:underline cursor-pointer">View all invoices →</button>
                   </div>
                 </div>
 
@@ -6912,18 +7665,24 @@ export default function CompanySettings() {
                       <button onClick={() => setBillingTab('Payment Methods')} className="text-[10px] font-bold text-[#2563EB] hover:underline cursor-pointer">Manage →</button>
                     </div>
 
-                    <div className="flex items-center justify-between p-2.5 bg-slate-50/80 rounded-xl border border-slate-200/80">
-                      <div className="flex items-center gap-2.5">
-                        <div className="px-2 py-1 bg-[#1A1F71] text-white rounded font-extrabold text-[10px] tracking-wider italic">
-                          VISA
+                    {billingDataLoading ? (
+                      <div className="py-3 text-center text-[10px] font-semibold text-slate-400">Loading payment method...</div>
+                    ) : billingData?.paymentMethod?.cardLast4 ? (
+                      <div className="flex items-center justify-between p-2.5 bg-slate-50/80 rounded-xl border border-slate-200/80">
+                        <div className="flex items-center gap-2.5">
+                          <div className="px-2 py-1 bg-[#1A1F71] text-white rounded font-extrabold text-[10px] tracking-wider italic">
+                            {billingData.paymentMethod.cardBrand?.toUpperCase() || 'CARD'}
+                          </div>
+                          <div>
+                            <div className="text-xs font-black text-slate-900">{billingData.paymentMethod.cardBrand || 'Card'} ending in {billingData.paymentMethod.cardLast4}</div>
+                            {billingData.paymentMethod.cardExpiry && <div className="text-[9px] font-semibold text-slate-400">Expires {billingData.paymentMethod.cardExpiry}</div>}
+                          </div>
                         </div>
-                        <div>
-                          <div className="text-xs font-black text-slate-900">Visa ending in 4242</div>
-                          <div className="text-[9px] font-semibold text-slate-400">Expires 04/27</div>
-                        </div>
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[8.5px] font-black uppercase">Primary</span>
                       </div>
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[8.5px] font-black uppercase">Primary</span>
-                    </div>
+                    ) : (
+                      <div className="py-3 text-center text-[10px] font-semibold text-slate-400">No payment method on file. Please add a payment method.</div>
+                    )}
                   </div>
 
                   {/* NEXT BILLING */}
@@ -6933,19 +7692,6 @@ export default function CompanySettings() {
                       <button onClick={() => setBillingTab('Billing History')} className="text-[10px] font-bold text-[#2563EB] hover:underline cursor-pointer">View schedule →</button>
                     </div>
 
-                    <div className="flex items-center justify-between p-2.5 bg-slate-50/80 rounded-xl border border-slate-200/80">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#2563EB] flex items-center justify-center shrink-0">
-                          <Calendar size={16} />
-                        </div>
-                        <div>
-                          <div className="text-xs font-black text-slate-900">30 Jun 2025</div>
-                          <div className="text-[10px] font-extrabold text-[#2563EB]">$854.70 (AUD)</div>
-                          <div className="text-[8.5px] font-medium text-slate-400">Monthly subscription</div>
-                        </div>
-                      </div>
-                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[8.5px] font-black uppercase">Paid Up</span>
-                    </div>
                   </div>
                 </div>
 
@@ -6966,11 +7712,37 @@ export default function CompanySettings() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5 mb-6">
-                  {[
-                    { label: 'USER SEATS', val: '24 / 50', pct: 48, color: 'bg-blue-500', note: '26 seats available' },
-                    { label: 'MONTHLY LOADS', val: '1,240 / 2,000', pct: 62, color: 'bg-emerald-500', note: '760 loads remaining' },
-                    { label: 'CLOUD STORAGE', val: '152 GB / 200 GB', pct: 76, color: 'bg-purple-500', note: '48 GB remaining' },
-                    { label: 'API REQUESTS', val: '76,542 / 100,000', pct: 77, color: 'bg-amber-500', note: '23,458 calls remaining' },
+                  {billingDataLoading ? (
+                    <div className="col-span-4 py-6 text-center text-[10px] font-semibold text-slate-400">Loading usage metrics...</div>
+                  ) : [
+                    {
+                      label: 'USER SEATS',
+                      val: `${billingData?.usage?.activeUsers || 0} / ${billingData?.usage?.userLimit || 0}`,
+                      pct: billingData?.usage?.userLimit > 0 ? Math.round((billingData.usage.activeUsers / billingData.usage.userLimit) * 100) : 0,
+                      color: 'bg-blue-500',
+                      note: billingData?.usage?.userLimit > 0 ? `${billingData.usage.userLimit - billingData.usage.activeUsers} seats available` : '—'
+                    },
+                    {
+                      label: 'MONTHLY LOADS',
+                      val: `${(billingData?.usage?.monthlyLoads || 0).toLocaleString()}`,
+                      pct: 0,
+                      color: 'bg-emerald-500',
+                      note: 'Loads created this month'
+                    },
+                    {
+                      label: 'CLOUD STORAGE',
+                      val: `${billingData?.usage?.storageUsedGB || 0} GB / ${billingData?.usage?.storageLimitGB || 0} GB`,
+                      pct: billingData?.usage?.storageLimitGB > 0 ? Math.round((billingData.usage.storageUsedGB / billingData.usage.storageLimitGB) * 100) : 0,
+                      color: 'bg-purple-500',
+                      note: billingData?.usage?.storageLimitGB > 0 ? `${billingData.usage.storageLimitGB - billingData.usage.storageUsedGB} GB remaining` : '—'
+                    },
+                    {
+                      label: 'API REQUESTS',
+                      val: `${(billingData?.usage?.apiCallsThisMonth || 0).toLocaleString()} / ${(billingData?.usage?.apiLimit || 0).toLocaleString()}`,
+                      pct: billingData?.usage?.apiLimit > 0 ? Math.round((billingData.usage.apiCallsThisMonth / billingData.usage.apiLimit) * 100) : 0,
+                      color: 'bg-amber-500',
+                      note: billingData?.usage?.apiLimit > 0 ? `${(billingData.usage.apiLimit - billingData.usage.apiCallsThisMonth).toLocaleString()} calls remaining` : '—'
+                    },
                   ].map((metric, i) => (
                     <div key={i} className="bg-slate-50/80 border border-slate-200/80 rounded-xl p-3.5 space-y-2">
                       <div className="flex justify-between items-center text-[10px] font-black text-slate-400 uppercase tracking-wider">
@@ -6999,20 +7771,26 @@ export default function CompanySettings() {
                   <div className="border border-slate-200/80 rounded-xl p-4 bg-white space-y-3">
                     <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">USAGE ALERTS & NOTIFICATIONS</h4>
                     <div className="space-y-2 text-xs font-medium text-slate-600">
-                      <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between">
-                        <div>
-                          <span className="font-bold text-amber-900 block">Cloud Storage at 76% Capacity</span>
-                          <span className="text-[10px] text-amber-700">Consider upgrading storage add-on before reaching 200 GB.</span>
+                      {billingData?.usage?.storageLimitGB > 0 && billingData.usage.storageUsedGB / billingData.usage.storageLimitGB > 0.7 ? (
+                        <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between">
+                          <div>
+                            <span className="font-bold text-amber-900 block">Cloud Storage at {Math.round((billingData.usage.storageUsedGB / billingData.usage.storageLimitGB) * 100)}% Capacity</span>
+                            <span className="text-[10px] text-amber-700">Consider upgrading storage add-on before reaching {billingData.usage.storageLimitGB} GB.</span>
+                          </div>
+                          <button onClick={() => setBillingTab('Add-ons')} className="px-2.5 py-1 bg-amber-600 text-white font-bold text-[10px] rounded-lg shrink-0">Upgrade</button>
                         </div>
-                        <button onClick={() => setBillingTab('Add-ons')} className="px-2.5 py-1 bg-amber-600 text-white font-bold text-[10px] rounded-lg shrink-0">Upgrade</button>
-                      </div>
-                      <div className="p-2.5 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-between">
-                        <div>
-                          <span className="font-bold text-blue-900 block">API Rate Limit Healthy</span>
-                          <span className="text-[10px] text-blue-700">Avg 2,500 requests/day. Reset on 30 Jun 2025.</span>
+                      ) : null}
+                      {billingData?.usage?.apiLimit > 0 ? (
+                        <div className="p-2.5 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-between">
+                          <div>
+                            <span className="font-bold text-blue-900 block">API Rate Limit {billingData.usage.apiCallsThisMonth / billingData.usage.apiLimit > 0.8 ? 'Warning' : 'Healthy'}</span>
+                            <span className="text-[10px] text-blue-700">{billingData.usage.apiCallsThisMonth.toLocaleString()} of {billingData.usage.apiLimit.toLocaleString()} API calls used this month.</span>
+                          </div>
+                          <span className={`px-2 py-0.5 font-bold text-[9px] rounded uppercase ${billingData.usage.apiCallsThisMonth / billingData.usage.apiLimit > 0.8 ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>{billingData.usage.apiCallsThisMonth / billingData.usage.apiLimit > 0.8 ? 'Warning' : 'Normal'}</span>
                         </div>
-                        <span className="px-2 py-0.5 bg-blue-100 text-blue-700 font-bold text-[9px] rounded uppercase">Normal</span>
-                      </div>
+                      ) : (
+                        <div className="py-4 text-center text-[10px] font-semibold text-slate-400">No usage alerts at this time.</div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -7033,30 +7811,25 @@ export default function CompanySettings() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-                  {[
-                    { icon: <Cpu size={20} />, title: 'Hero AI Dispatch Add-on', price: '$199.00 / mo', desc: 'AI route optimization, automated load matching & OCR document scanning.', status: 'Active', active: true },
-                    { icon: <BarChart2 size={20} />, title: 'Advanced Reporting Engine', price: '$99.00 / mo', desc: 'Custom P&L reports, fuel efficiency breakdown & automated scheduled PDFs.', status: 'Active', active: true },
-                    { icon: <MessageSquare size={20} />, title: 'SMS Notifications Bundle', price: '$29.00 / mo', desc: '2,000 automated SMS alerts per month for ETA updates and customer alerts.', status: 'Active', active: true },
-                    { icon: <HardDrive size={20} />, title: 'Extra Storage (500 GB)', price: '$49.00 / mo', desc: 'Expand cloud storage for POD photos, driver licenses and document scans.', status: 'Available', active: false },
-                    { icon: <Plug size={20} />, title: 'Custom Telematics API Sync', price: '$149.00 / mo', desc: 'Direct live integration with Samsara, Geotab, and Webfleet GPS devices.', status: 'Available', active: false },
-                    { icon: <ShieldCheck size={20} />, title: 'Priority 24/7 Phone SLA', price: '$199.00 / mo', desc: 'Dedicated 24/7 emergency dispatch support line with 15-min response SLA.', status: 'Available', active: false },
-                  ].map((addon, i) => (
+                  {billingDataLoading ? (
+                    <div className="col-span-3 py-8 text-center text-[10px] font-semibold text-slate-400">Loading add-ons...</div>
+                  ) : (billingData?.addons?.length || 0) === 0 ? (
+                    <div className="col-span-3 py-8 text-center text-[10px] font-semibold text-slate-400">No add-ons configured for this plan. Contact support to enable add-ons.</div>
+                  ) : billingData.addons.map((addon, i) => (
                     <div key={i} className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-4 flex flex-col justify-between space-y-3">
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <div className="w-9 h-9 rounded-xl bg-white border border-slate-200 text-[#2563EB] flex items-center justify-center shadow-3xs">{addon.icon}</div>
-                          <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${addon.active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>{addon.status}</span>
+                          <div className="w-9 h-9 rounded-xl bg-white border border-slate-200 text-[#2563EB] flex items-center justify-center shadow-3xs"><Cpu size={20} /></div>
+                          <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${addon.isEnabled ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>{addon.isEnabled ? 'Active' : 'Inactive'}</span>
                         </div>
-                        <h4 className="text-sm font-black text-slate-900">{addon.title}</h4>
-                        <div className="text-xs font-black text-[#2563EB] mt-0.5">{addon.price}</div>
-                        <p className="text-[11px] text-slate-500 font-medium mt-1.5 leading-relaxed">{addon.desc}</p>
+                        <h4 className="text-sm font-black text-slate-900">{addon.name}</h4>
+                        <p className="text-[11px] text-slate-500 font-medium mt-1.5 leading-relaxed">{addon.description || ''}</p>
                       </div>
                       <button
-                        onClick={() => triggerToast(`${addon.active ? 'Deactivated' : 'Activated'} ${addon.title} successfully!`)}
-                        className={`w-full py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-3xs ${addon.active ? 'bg-white border border-slate-200 text-rose-600 hover:bg-rose-50' : 'bg-[#2563EB] text-white hover:bg-blue-700'
-                          }`}
+                        onClick={() => triggerToast(`${addon.isEnabled ? 'Deactivated' : 'Activated'} ${addon.name} successfully!`)}
+                        className={`w-full py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-3xs ${addon.isEnabled ? 'bg-white border border-slate-200 text-rose-600 hover:bg-rose-50' : 'bg-[#2563EB] text-white hover:bg-blue-700'}`}
                       >
-                        {addon.active ? 'Manage / Deactivate' : 'Activate Add-on'}
+                        {addon.isEnabled ? 'Manage / Deactivate' : 'Activate Add-on'}
                       </button>
                     </div>
                   ))}
@@ -7094,24 +7867,21 @@ export default function CompanySettings() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-xs font-semibold text-slate-700">
-                      {[
-                        { inv: 'INV-2025-0529', date: '29 May 2025', desc: 'Hero Pro Subscription + Add-ons (May 2025)', sub: '$777.00', gst: '$77.70', total: '$854.70', status: 'Paid' },
-                        { inv: 'INV-2025-0429', date: '29 Apr 2025', desc: 'Hero Pro Subscription + Add-ons (April 2025)', sub: '$777.00', gst: '$77.70', total: '$854.70', status: 'Paid' },
-                        { inv: 'INV-2025-0329', date: '29 Mar 2025', desc: 'Hero Pro Subscription + Add-ons (March 2025)', sub: '$777.00', gst: '$77.70', total: '$854.70', status: 'Paid' },
-                        { inv: 'INV-2025-0228', date: '28 Feb 2025', desc: 'Hero Pro Subscription + Add-ons (February 2025)', sub: '$777.00', gst: '$77.70', total: '$854.70', status: 'Paid' },
-                        { inv: 'INV-2025-0129', date: '29 Jan 2025', desc: 'Hero Pro Subscription + Add-ons (January 2025)', sub: '$777.00', gst: '$77.70', total: '$854.70', status: 'Paid' },
-                        { inv: 'INV-2024-1229', date: '29 Dec 2024', desc: 'Hero Pro Subscription + Add-ons (December 2024)', sub: '$777.00', gst: '$77.70', total: '$854.70', status: 'Paid' },
-                      ].map((row, i) => (
+                      {billingDataLoading ? (
+                        <tr><td colSpan={8} className="py-8 text-center text-[10px] font-semibold text-slate-400">Loading invoices...</td></tr>
+                      ) : (billingData?.billingRecords?.length || 0) === 0 ? (
+                        <tr><td colSpan={8} className="py-8 text-center text-[10px] font-semibold text-slate-400">No invoices found. Invoices will appear here once your subscription billing cycle completes.</td></tr>
+                      ) : billingData.billingRecords.map((row, i) => (
                         <tr key={i} className="hover:bg-slate-50/70 transition-colors">
-                          <td className="py-3 px-3 font-bold text-[#2563EB]">{row.inv}</td>
-                          <td className="py-3 px-3 text-slate-500">{row.date}</td>
-                          <td className="py-3 px-3 font-bold text-slate-900">{row.desc}</td>
-                          <td className="py-3 px-3">{row.sub}</td>
-                          <td className="py-3 px-3 text-slate-500">{row.gst}</td>
-                          <td className="py-3 px-3 font-black text-slate-900">{row.total}</td>
-                          <td className="py-3 px-3"><span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 text-[10px] font-extrabold uppercase">{row.status}</span></td>
+                          <td className="py-3 px-3 font-bold text-[#2563EB]">{row.invoiceNumber || '—'}</td>
+                          <td className="py-3 px-3 text-slate-500">{row.date ? new Date(row.date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</td>
+                          <td className="py-3 px-3 font-bold text-slate-900">{row.planTierSnapshot || 'Subscription'}</td>
+                      <td className="py-3 px-3">${((row.amount || 0) - (row.taxAmount || 0)).toFixed(2)}</td>
+                          <td className="py-3 px-3 text-slate-500">${(row.taxAmount || 0).toFixed(2)}</td>
+                          <td className="py-3 px-3 font-black text-slate-900">${(row.amount || 0).toFixed(2)}</td>
+                          <td className="py-3 px-3"><span className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${row.status === 'PAID' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>{row.status}</span></td>
                           <td className="py-3 px-3 text-center">
-                            <button onClick={() => handleDownloadSingleInvoice(row.inv)} className="p-1.5 bg-slate-100 hover:bg-blue-50 hover:text-[#2563EB] rounded-lg transition-colors cursor-pointer">
+                            <button onClick={() => handleDownloadSingleInvoice(row)} className="p-1.5 bg-slate-100 hover:bg-blue-50 hover:text-[#2563EB] rounded-lg transition-colors cursor-pointer">
                               <Download size={14} />
                             </button>
                           </td>
@@ -7123,7 +7893,6 @@ export default function CompanySettings() {
               </div>
             </div>
           )}
-
           {/* 13.9 SUB-TAB 5: PAYMENT METHODS */}
           {billingTab === 'Payment Methods' && (
             <div className="space-y-4 text-left">
@@ -7131,41 +7900,75 @@ export default function CompanySettings() {
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 pb-3">
                   <div>
                     <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">SAVED PAYMENT METHODS</h3>
-                    <p className="text-xs text-slate-500 font-medium">Manage credit cards and direct debit accounts for monthly auto-billing.</p>
+                    <p className="text-xs text-slate-500 font-medium">Manage credit cards, direct debit accounts, and instant payment options for monthly auto-billing.</p>
                   </div>
-                  <button onClick={() => triggerToast('Opening Add Payment Method modal...')} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#2563EB] text-white font-bold text-xs rounded-xl shadow-2xs hover:bg-blue-700 cursor-pointer">
+                  <button onClick={() => setIsAddPaymentMethodModalOpen(true)} className="flex items-center gap-1.5 px-3.5 py-2 bg-[#2563EB] text-white font-bold text-xs rounded-xl shadow-xs hover:bg-blue-700 active:scale-95 transition-all cursor-pointer">
                     <CreditCard size={14} /> + Add Payment Method
                   </button>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="border border-blue-200 bg-blue-50/40 rounded-xl p-4 space-y-3 relative">
-                    <span className="absolute top-4 right-4 px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[9px] font-black uppercase rounded-full">Primary</span>
-                    <div className="flex items-center gap-3">
-                      <div className="px-2.5 py-1 bg-[#1A1F71] text-white rounded font-extrabold text-xs italic tracking-wider">VISA</div>
-                      <div>
-                        <h4 className="text-sm font-black text-slate-900">Visa ending in 4242</h4>
-                        <span className="text-xs text-slate-500 font-medium">Expires 04/2027 • Sarah Mitchell</span>
+                  {paymentMethodsList.map((method) => (
+                    <div
+                      key={method.id}
+                      className={`border rounded-xl p-4 space-y-3 relative transition-all ${
+                        method.isPrimary
+                          ? 'border-blue-300 bg-blue-50/40 shadow-2xs'
+                          : 'border-slate-200/80 bg-slate-50/40 hover:bg-slate-50'
+                      }`}
+                    >
+                      {method.isPrimary && (
+                        <span className="absolute top-4 right-4 px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[9px] font-black uppercase rounded-full">
+                          Primary
+                        </span>
+                      )}
+                      <div className="flex items-center gap-3">
+                        <div className={`px-2.5 py-1 text-white rounded font-extrabold text-xs italic tracking-wider shadow-2xs ${method.badgeBg}`}>
+                          {method.badgeText}
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-black text-slate-900">{method.type}</h4>
+                          <span className="text-xs text-slate-500 font-medium">
+                            {method.expDate.startsWith('BSB') || method.expDate.includes('Verified') ? method.expDate : `Expires ${method.expDate}`} • {method.cardHolder}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between text-xs font-bold pt-2 border-t border-slate-200/60">
+                        {method.isPrimary ? (
+                          <span className="text-xs text-slate-600 font-medium">
+                            {method.note}
+                          </span>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => handleMakePrimaryPaymentMethod(method.id)}
+                              className="text-[#2563EB] hover:underline cursor-pointer"
+                            >
+                              Make Primary
+                            </button>
+                            <button
+                              onClick={() => handleRemovePaymentMethod(method.id)}
+                              className="text-rose-600 hover:underline cursor-pointer"
+                            >
+                              Remove
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
-                    <div className="text-xs text-slate-600 font-medium pt-2 border-t border-blue-200/60">
-                      Used for recurring monthly billing ($854.70 AUD).
+                  ))}
+                  {paymentMethodsList.length === 0 && (
+                    <div className="col-span-2 p-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200 text-slate-400">
+                      <CreditCard className="mx-auto mb-2 opacity-50" size={32} />
+                      <p className="text-xs font-bold">No saved payment methods found.</p>
+                      <button
+                        onClick={() => setIsAddPaymentMethodModalOpen(true)}
+                        className="mt-3 text-xs text-[#2563EB] font-bold hover:underline cursor-pointer"
+                      >
+                        + Add a payment method now
+                      </button>
                     </div>
-                  </div>
-
-                  <div className="border border-slate-200/80 bg-slate-50/40 rounded-xl p-4 space-y-3 relative">
-                    <div className="flex items-center gap-3">
-                      <div className="px-2.5 py-1 bg-[#EB001B] text-white rounded font-extrabold text-xs italic tracking-wider">MC</div>
-                      <div>
-                        <h4 className="text-sm font-black text-slate-900">MasterCard ending in 8819</h4>
-                        <span className="text-xs text-slate-500 font-medium">Expires 11/2026 • Backup Card</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between text-xs font-bold pt-2 border-t border-slate-200/60">
-                      <button onClick={() => triggerToast('Set MasterCard as primary payment card.')} className="text-[#2563EB] hover:underline cursor-pointer">Make Primary</button>
-                      <button onClick={() => triggerToast('Payment card removed.')} className="text-rose-600 hover:underline cursor-pointer">Remove</button>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -8158,14 +8961,20 @@ export default function CompanySettings() {
               <div>
                 <label className="text-xs font-extrabold text-slate-700 block mb-1">Subscription Tier *</label>
                 <select
-                  value={manageSubscriptionForm.plan}
-                  onChange={e => setManageSubscriptionForm({ ...manageSubscriptionForm, plan: e.target.value })}
+                  value={manageSubscriptionForm.planId}
+                  onChange={e => {
+                    const selected = availablePlans.find(p => p.id === e.target.value);
+                    setManageSubscriptionForm({ ...manageSubscriptionForm, planId: e.target.value, plan: selected?.name || '' });
+                  }}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                 >
-                  <option>Hero Starter ($199/month)</option>
-                  <option>Hero Business ($349/month)</option>
-                  <option>Hero Pro ($499/month - Active)</option>
-                  <option>Hero Enterprise ($999/month)</option>
+                  {availablePlans.length === 0 ? (
+                    <option value="">{manageSubscriptionForm.plan || 'Loading available plans...'}</option>
+                  ) : availablePlans.map(plan => (
+                    <option key={plan.id} value={plan.id}>
+                      {plan.name} (${(plan.monthlyPrice || 0).toFixed(0)}/month){billingData?.plan?.id === plan.id ? ' — Active' : ''}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -8176,52 +8985,59 @@ export default function CompanySettings() {
                   onChange={e => setManageSubscriptionForm({ ...manageSubscriptionForm, billingCycle: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                 >
-                  <option>Monthly Billing</option>
-                  <option>Annual Billing (Save 20%)</option>
+                  <option value="MONTHLY">Monthly Billing</option>
+                  <option value="ANNUALLY">Annual Billing (Save 20%)</option>
                 </select>
               </div>
 
               <div className="space-y-2 pt-1">
                 <label className="text-xs font-extrabold text-slate-700 block">Included Add-on Packages</label>
 
-                <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
-                  <div>
-                    <span className="text-xs font-bold text-slate-800 block">Hero AI Add-on ($199/mo)</span>
-                    <span className="text-[10px] text-slate-500 font-medium">15,000 AI dispatch & document extraction requests</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={manageSubscriptionForm.aiAddon}
-                    onChange={e => setManageSubscriptionForm({ ...manageSubscriptionForm, aiAddon: e.target.checked })}
-                    className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
-                  <div>
-                    <span className="text-xs font-bold text-slate-800 block">Advanced Reporting ($99/mo)</span>
-                    <span className="text-[10px] text-slate-500 font-medium">Custom analytics dashboards & scheduled PDF exports</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={manageSubscriptionForm.reportingAddon}
-                    onChange={e => setManageSubscriptionForm({ ...manageSubscriptionForm, reportingAddon: e.target.checked })}
-                    className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
-                  <div>
-                    <span className="text-xs font-bold text-slate-800 block">SMS Notifications ($29/mo)</span>
-                    <span className="text-[10px] text-slate-500 font-medium">2,000 automated SMS dispatch notifications</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={manageSubscriptionForm.smsAddon}
-                    onChange={e => setManageSubscriptionForm({ ...manageSubscriptionForm, smsAddon: e.target.checked })}
-                    className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
-                  />
-                </div>
+                {(billingData?.addons?.length || 0) > 0 ? (
+                  billingData.addons.map((addon, idx) => {
+                    const addonKey = addon.name?.toLowerCase().includes('ai') ? 'aiAddon'
+                      : addon.name?.toLowerCase().includes('report') ? 'reportingAddon'
+                      : addon.name?.toLowerCase().includes('sms') ? 'smsAddon' : null;
+                    return (
+                      <div key={idx} className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                        <div>
+                          <span className="text-xs font-bold text-slate-800 block">{addon.name}</span>
+                          <span className="text-[10px] text-slate-500 font-medium">{addon.description || ''}</span>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={addonKey ? (manageSubscriptionForm[addonKey] ?? addon.isEnabled) : addon.isEnabled}
+                          onChange={e => addonKey && setManageSubscriptionForm({ ...manageSubscriptionForm, [addonKey]: e.target.checked })}
+                          className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        />
+                      </div>
+                    );
+                  })
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                      <div>
+                        <span className="text-xs font-bold text-slate-800 block">Hero AI Add-on ($199/mo)</span>
+                        <span className="text-[10px] text-slate-500 font-medium">15,000 AI dispatch &amp; document extraction requests</span>
+                      </div>
+                      <input type="checkbox" checked={manageSubscriptionForm.aiAddon} onChange={e => setManageSubscriptionForm({ ...manageSubscriptionForm, aiAddon: e.target.checked })} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                    </div>
+                    <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                      <div>
+                        <span className="text-xs font-bold text-slate-800 block">Advanced Reporting ($99/mo)</span>
+                        <span className="text-[10px] text-slate-500 font-medium">Custom analytics dashboards &amp; scheduled PDF exports</span>
+                      </div>
+                      <input type="checkbox" checked={manageSubscriptionForm.reportingAddon} onChange={e => setManageSubscriptionForm({ ...manageSubscriptionForm, reportingAddon: e.target.checked })} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                    </div>
+                    <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                      <div>
+                        <span className="text-xs font-bold text-slate-800 block">SMS Notifications ($29/mo)</span>
+                        <span className="text-[10px] text-slate-500 font-medium">2,000 automated SMS dispatch notifications</span>
+                      </div>
+                      <input type="checkbox" checked={manageSubscriptionForm.smsAddon} onChange={e => setManageSubscriptionForm({ ...manageSubscriptionForm, smsAddon: e.target.checked })} className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
@@ -8234,9 +9050,10 @@ export default function CompanySettings() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
+                  disabled={isSubmittingSubscription}
+                  className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5 disabled:opacity-60"
                 >
-                  <Crown size={14} /> Update Plan Subscription
+                  <Crown size={14} /> {isSubmittingSubscription ? 'Updating...' : 'Update Plan Subscription'}
                 </button>
               </div>
             </form>
@@ -8636,25 +9453,25 @@ export default function CompanySettings() {
             </div>
 
             <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                setIsAddIntegrationModalOpen(false);
-                triggerToast('Integration connected successfully!');
-              }}
+              onSubmit={handleAddIntegrationSubmit}
               className="space-y-3.5"
             >
               <div>
                 <label className="text-xs font-extrabold text-slate-700 block mb-1">Select Integration Provider *</label>
-                <select className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none cursor-pointer font-medium">
-                  <option>Xero Accounting & Invoicing</option>
-                  <option>MYOB AccountRight</option>
-                  <option>QuickBooks Online</option>
-                  <option>Samsara Telematics GPS</option>
-                  <option>NHVR Electronic Work Diary</option>
-                  <option>Stripe Payment Gateway</option>
-                  <option>Twilio SMS Notifications</option>
-                  <option>SendGrid Email API</option>
-                  <option>Custom Webhook Listener</option>
+                <select
+                  value={newIntegrationForm.providerName}
+                  onChange={e => setNewIntegrationForm({ ...newIntegrationForm, providerName: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none cursor-pointer font-medium"
+                >
+                  <option value="Xero Accounting & Invoicing">Xero Accounting & Invoicing</option>
+                  <option value="MYOB AccountRight">MYOB AccountRight</option>
+                  <option value="QuickBooks Online">QuickBooks Online</option>
+                  <option value="Samsara Telematics GPS">Samsara Telematics GPS</option>
+                  <option value="NHVR Electronic Work Diary">NHVR Electronic Work Diary</option>
+                  <option value="Stripe Payment Gateway">Stripe Payment Gateway</option>
+                  <option value="Twilio SMS Notifications">Twilio SMS Notifications</option>
+                  <option value="SendGrid Email API">SendGrid Email API</option>
+                  <option value="Custom Webhook Listener">Custom Webhook Listener</option>
                 </select>
               </div>
 
@@ -8664,6 +9481,8 @@ export default function CompanySettings() {
                   type="password"
                   required
                   placeholder="Paste OAuth token or API secret key..."
+                  value={newIntegrationForm.apiKey}
+                  onChange={e => setNewIntegrationForm({ ...newIntegrationForm, apiKey: e.target.value })}
                   className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:border-blue-500 font-mono"
                 />
               </div>
@@ -9043,6 +9862,305 @@ export default function CompanySettings() {
                   className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5"
                 >
                   <Users size={14} /> Create Group
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+         ADD PAYMENT METHOD MODAL
+         ========================================================================= */}
+      {isAddPaymentMethodModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[99999] flex items-center justify-center p-4 animate-fade-in overflow-y-auto">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-5 text-left relative my-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3.5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-md font-bold">
+                  <CreditCard size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">Add Payment Method</h3>
+                  <p className="text-xs text-slate-500 font-medium">Add card or bank account for automated recurring subscription billing.</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsAddPaymentMethodModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleAddPaymentMethodSubmit} className="space-y-4">
+              {/* Payment Type Selection Tabs */}
+              <div>
+                <label className="text-xs font-extrabold text-slate-700 block mb-1.5">Payment Method Type</label>
+                <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-100 rounded-xl">
+                  {[
+                    { id: 'Credit / Debit Card', label: 'Card', icon: CreditCard },
+                    { id: 'Direct Debit (BSB)', label: 'Direct Debit', icon: Building },
+                    { id: 'UPI / NetBanking', label: 'UPI / VPA', icon: Zap }
+                  ].map((tab) => {
+                    const IconComponent = tab.icon;
+                    const isActive = newPaymentMethodForm.type === tab.id;
+                    return (
+                      <button
+                        type="button"
+                        key={tab.id}
+                        onClick={() => setNewPaymentMethodForm({ ...newPaymentMethodForm, type: tab.id })}
+                        className={`flex items-center justify-center gap-1.5 py-2 px-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                          isActive
+                            ? 'bg-white text-[#2563EB] shadow-xs'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        <IconComponent size={13} />
+                        <span>{tab.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* CARD TYPE FIELDS */}
+              {newPaymentMethodForm.type === 'Credit / Debit Card' && (
+                <>
+                  {/* Visual Card Preview */}
+                  <div className="bg-gradient-to-tr from-slate-900 via-blue-950 to-indigo-900 text-white rounded-xl p-4 shadow-lg space-y-4 border border-slate-800">
+                    <div className="flex items-center justify-between">
+                      <div className="w-9 h-6 bg-amber-400/90 rounded-md border border-amber-300/40 flex items-center justify-center">
+                        <div className="w-5 h-4 border border-amber-600/50 rounded-xs grid grid-cols-2 gap-0.5 p-0.5">
+                          <div className="bg-amber-600/30"></div>
+                          <div className="bg-amber-600/30"></div>
+                        </div>
+                      </div>
+                      <span className="px-2.5 py-0.5 bg-white/10 rounded font-black text-xs italic tracking-widest uppercase backdrop-blur-xs">
+                        {newPaymentMethodForm.cardNumber.startsWith('5') || newPaymentMethodForm.cardNumber.startsWith('2')
+                          ? 'MASTERCARD'
+                          : newPaymentMethodForm.cardNumber.startsWith('3')
+                          ? 'AMEX'
+                          : 'VISA'}
+                      </span>
+                    </div>
+
+                    <div className="font-mono text-base tracking-[0.2em] font-extrabold text-center py-1">
+                      {newPaymentMethodForm.cardNumber
+                        ? newPaymentMethodForm.cardNumber.replace(/\s?/g, '').replace(/(\d{4})/g, '$1 ').trim()
+                        : '•••• •••• •••• 4242'}
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px] font-mono tracking-wider text-slate-300 uppercase">
+                      <div>
+                        <div className="text-[8px] text-slate-400 font-sans tracking-normal">CARDHOLDER</div>
+                        <div className="font-bold text-white truncate max-w-[180px]">
+                          {newPaymentMethodForm.cardHolder || 'SARAH MITCHELL'}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[8px] text-slate-400 font-sans tracking-normal">EXPIRES</div>
+                        <div className="font-bold text-white">
+                          {newPaymentMethodForm.expMonth}/{newPaymentMethodForm.expYear}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Inputs */}
+                  <div>
+                    <label className="text-xs font-extrabold text-slate-700 block mb-1">Cardholder Name *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Sarah Mitchell"
+                      value={newPaymentMethodForm.cardHolder}
+                      onChange={(e) => setNewPaymentMethodForm({ ...newPaymentMethodForm, cardHolder: e.target.value })}
+                      className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:border-blue-500 font-medium"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-extrabold text-slate-700 block mb-1">Card Number *</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        required
+                        maxLength={19}
+                        placeholder="4242 4242 4242 4242"
+                        value={newPaymentMethodForm.cardNumber}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '').replace(/(\d{4})/g, '$1 ').trim();
+                          setNewPaymentMethodForm({ ...newPaymentMethodForm, cardNumber: val });
+                        }}
+                        className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:border-blue-500 font-mono"
+                      />
+                      <div className="absolute right-3 top-2.5 text-slate-400">
+                        <CreditCard size={16} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="text-xs font-extrabold text-slate-700 block mb-1">Exp Month</label>
+                      <select
+                        value={newPaymentMethodForm.expMonth}
+                        onChange={(e) => setNewPaymentMethodForm({ ...newPaymentMethodForm, expMonth: e.target.value })}
+                        className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none cursor-pointer font-medium"
+                      >
+                        {['01','02','03','04','05','06','07','08','09','10','11','12'].map((m) => (
+                          <option key={m} value={m}>{m}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-extrabold text-slate-700 block mb-1">Exp Year</label>
+                      <select
+                        value={newPaymentMethodForm.expYear}
+                        onChange={(e) => setNewPaymentMethodForm({ ...newPaymentMethodForm, expYear: e.target.value })}
+                        className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none cursor-pointer font-medium"
+                      >
+                        {['2025','2026','2027','2028','2029','2030','2031','2032','2033','2034','2035'].map((y) => (
+                          <option key={y} value={y}>{y}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-extrabold text-slate-700 block mb-1">CVV / CVC *</label>
+                      <div className="relative">
+                        <input
+                          type="password"
+                          required
+                          maxLength={4}
+                          placeholder="123"
+                          value={newPaymentMethodForm.cvv}
+                          onChange={(e) => setNewPaymentMethodForm({ ...newPaymentMethodForm, cvv: e.target.value.replace(/\D/g, '') })}
+                          className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:border-blue-500 font-mono"
+                        />
+                        <div className="absolute right-2.5 top-2.5 text-slate-400">
+                          <Lock size={14} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* DIRECT DEBIT FIELDS */}
+              {newPaymentMethodForm.type === 'Direct Debit (BSB)' && (
+                <>
+                  <div>
+                    <label className="text-xs font-extrabold text-slate-700 block mb-1">Account Holder Name *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Hero Logistics Pty Ltd"
+                      value={newPaymentMethodForm.accountName}
+                      onChange={(e) => setNewPaymentMethodForm({ ...newPaymentMethodForm, accountName: e.target.value })}
+                      className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:border-blue-500 font-medium"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-extrabold text-slate-700 block mb-1">Bank Name</label>
+                    <select
+                      value={newPaymentMethodForm.bankName}
+                      onChange={(e) => setNewPaymentMethodForm({ ...newPaymentMethodForm, bankName: e.target.value })}
+                      className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none cursor-pointer font-medium"
+                    >
+                      <option value="Commonwealth Bank of Australia">Commonwealth Bank of Australia</option>
+                      <option value="ANZ Bank">ANZ Bank</option>
+                      <option value="Westpac Banking Corporation">Westpac Banking Corporation</option>
+                      <option value="National Australia Bank (NAB)">National Australia Bank (NAB)</option>
+                      <option value="Macquarie Bank">Macquarie Bank</option>
+                      <option value="Bendigo Bank">Bendigo Bank</option>
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-xs font-extrabold text-slate-700 block mb-1">BSB Code *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="062-000"
+                        maxLength={7}
+                        value={newPaymentMethodForm.bsb}
+                        onChange={(e) => setNewPaymentMethodForm({ ...newPaymentMethodForm, bsb: e.target.value })}
+                        className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:border-blue-500 font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-extrabold text-slate-700 block mb-1">Account Number *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="1234 5678"
+                        maxLength={12}
+                        value={newPaymentMethodForm.accountNumber}
+                        onChange={(e) => setNewPaymentMethodForm({ ...newPaymentMethodForm, accountNumber: e.target.value })}
+                        className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:border-blue-500 font-mono"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* UPI FIELDS */}
+              {newPaymentMethodForm.type === 'UPI / NetBanking' && (
+                <>
+                  <div>
+                    <label className="text-xs font-extrabold text-slate-700 block mb-1">UPI ID / Virtual Payment Address (VPA) *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. company@okaxis or 9876543210@upi"
+                      value={newPaymentMethodForm.upiId}
+                      onChange={(e) => setNewPaymentMethodForm({ ...newPaymentMethodForm, upiId: e.target.value })}
+                      className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:border-blue-500 font-mono"
+                    />
+                    <p className="text-[10px] text-slate-500 mt-1">Accepts Google Pay, PhonePe, Paytm, BHIM, or any bank UPI handle.</p>
+                  </div>
+                </>
+              )}
+
+              {/* Primary Method Checkbox */}
+              <div className="pt-2 border-t border-slate-100">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newPaymentMethodForm.isPrimary}
+                    onChange={(e) => setNewPaymentMethodForm({ ...newPaymentMethodForm, isPrimary: e.target.checked })}
+                    className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300"
+                  />
+                  <span className="text-xs font-bold text-slate-700">Set as primary payment method for recurring monthly billing</span>
+                </label>
+              </div>
+
+              {/* Security Badge Notice */}
+              <div className="flex items-center gap-2 p-2.5 bg-slate-50 rounded-xl border border-slate-200/70 text-[11px] text-slate-600 font-medium">
+                <ShieldCheck size={16} className="text-emerald-600 shrink-0" />
+                <span>Encrypted with 256-bit SSL encryption. PCI-DSS Level 1 Compliant.</span>
+              </div>
+
+              {/* Modal Buttons */}
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsAddPaymentMethodModalOpen(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1.5 transition-all"
+                >
+                  <CreditCard size={14} /> Add Payment Method
                 </button>
               </div>
             </form>

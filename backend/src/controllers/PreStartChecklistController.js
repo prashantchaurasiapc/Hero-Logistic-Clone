@@ -8,12 +8,15 @@ exports.getAll = async (req, res, next) => {
   try {
     const { where, skip, take, orderBy, currentPage, pageSize } = buildPrismaQuery(req.query);
     
-    // Optional: Inject tenant scope here if applicable
-    // if (req.tenantId) where.tenantId = req.tenantId;
+    if (req.tenantId) where.companyId = req.tenantId;
 
     const [data, total] = await Promise.all([
       prisma.preStartChecklist.findMany({
-        where, skip, take, orderBy
+        where, skip, take, orderBy,
+        include: {
+          driver: true,
+          load: true
+        }
       }),
       prisma.preStartChecklist.count({ where })
     ]);
@@ -29,9 +32,15 @@ exports.getAll = async (req, res, next) => {
 exports.getById = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
-    // if (req.tenantId) where.tenantId = req.tenantId;
+    if (req.tenantId) where.companyId = req.tenantId;
 
-    const data = await prisma.preStartChecklist.findFirst({ where });
+    const data = await prisma.preStartChecklist.findFirst({
+      where,
+      include: {
+        driver: true,
+        load: true
+      }
+    });
     
     if (!data) {
       return sendError(res, {
@@ -50,10 +59,14 @@ exports.getById = async (req, res, next) => {
 exports.create = async (req, res, next) => {
   try {
     const payload = { ...req.body };
-    // if (req.tenantId) payload.tenantId = req.tenantId;
+    if (req.tenantId && !payload.companyId) payload.companyId = req.tenantId;
 
     const data = await prisma.preStartChecklist.create({
-      data: payload
+      data: payload,
+      include: {
+        driver: true,
+        load: true
+      }
     });
     return sendSuccess(res, data, HTTP_STATUS.CREATED);
   } catch (error) {

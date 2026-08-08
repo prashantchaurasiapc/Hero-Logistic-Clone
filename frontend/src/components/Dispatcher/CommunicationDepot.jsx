@@ -633,6 +633,7 @@ export default function CommunicationDepot() {
                 </p>
               </div>
             </div>
+            </div>
 
             {/* Right Column: Conversation Details */}
             <div className="w-full lg:w-[300px] bg-white lg:border-l border-t lg:border-t-0 border-slate-200 flex flex-col flex-shrink-0 min-h-[400px] lg:min-h-0">

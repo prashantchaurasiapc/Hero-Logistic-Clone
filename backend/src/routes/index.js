@@ -82,8 +82,10 @@ const authRoutes = require('./AuthRoutes');
 const DocumentRoutes = require('./DocumentRoutes');
 const SuperAdminDashboardRoutes = require('./SuperAdminDashboardRoutes');
 const PaymentGatewayConfigRoutes = require('./PaymentGatewayConfigRoutes');
+const WorkflowRuleRoutes = require('./WorkflowRuleRoutes');
 
 router.use('/auth', authRoutes);
+router.use('/workflow-rules', WorkflowRuleRoutes);
 router.use('/companys', CompanyRoutes);
 router.use('/subscription-plans', SubscriptionPlanRoutes);
 router.use('/support-tickets', SupportTicketRoutes);
@@ -161,9 +163,33 @@ router.use('/staging-areas', StagingAreaRoutes);
 router.use('/networked-printers', NetworkedPrinterRoutes);
 router.use('/warehouse-label-prints', WarehouseLabelPrintRoutes);
 router.use('/print-spooler-jobs', PrintSpoolerJobRoutes);
-router.use('/documents', DocumentRoutes);
+const CompanyAdminDashboardRoutes = require('./CompanyAdminDashboardRoutes');
+const CompanyAdminPortalRoutes = require('./CompanyAdminPortalRoutes');
+const AiModelRoutes = require('./AiModelRoutes');
+const NotificationTemplateRoutes = require('./NotificationTemplateRoutes');
+const NotificationRuleRoutes = require('./NotificationRuleRoutes');
+const RecipientGroupRoutes = require('./RecipientGroupRoutes');
+
+router.use('/ai-models', AiModelRoutes);
+router.use('/notification-templates', NotificationTemplateRoutes);
+router.use('/notification-rules', NotificationRuleRoutes);
+router.use('/recipient-groups', RecipientGroupRoutes);
+
+router.use('/company-admin', CompanyAdminPortalRoutes);
+router.use('/company-admin/dashboard', CompanyAdminDashboardRoutes);
 router.use('/super-admin/dashboard', SuperAdminDashboardRoutes);
 router.use('/payment-gateway-config', PaymentGatewayConfigRoutes);
 router.use('/dashboard-metrics', SuperAdminDashboardRoutes);
+
+// Direct menu aliases for top-level routes
+router.use('/live-tracking', CompanyAdminPortalRoutes);
+router.use('/pricing', CompanyAdminPortalRoutes);
+router.use('/payroll', CompanyAdminPortalRoutes);
+router.use('/finance', CompanyAdminPortalRoutes);
+router.use('/knowledge-base', CompanyAdminPortalRoutes);
+router.use('/roles-permissions', CompanyAdminPortalRoutes);
+router.use('/company-settings', CompanyAdminPortalRoutes);
+router.use('/safety-checklists', CompanyAdminPortalRoutes);
+router.use('/delivery-issues', CompanyAdminPortalRoutes);
 
 module.exports = router;

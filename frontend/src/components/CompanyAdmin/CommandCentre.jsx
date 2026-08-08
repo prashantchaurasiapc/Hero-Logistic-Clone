@@ -1,77 +1,193 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Plus, ChevronDown, Package, Truck, DollarSign, Building2, MapPin,
-  UserPlus, FileText, MoreVertical, Search, ArrowUpRight, ArrowDownRight,
-  AlertCircle, MessageSquare, Clock, Map, CheckCircle2, XCircle, Download, Mail,
-  Users, Radio, Activity, Navigation
+  UserPlus, FileText, MoreVertical, ArrowUpRight,
+  Download, Mail, Users, XCircle, Loader2, AlertCircle, RefreshCw
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import api from '../../services/api';
 
 export default function CommandCentre() {
   const navigate = useNavigate();
   const location = useLocation();
   const isDispatcher = location.pathname.startsWith('/dispatcher');
   
-  const [showAssignDriver, setShowAssignDriver] = React.useState(false);
-  const [showTrackLoad, setShowTrackLoad] = React.useState(false);
-  const [showCreateCustomer, setShowCreateCustomer] = React.useState(false);
-  const [showCreateInvoice, setShowCreateInvoice] = React.useState(false);
-  const [showMoreActions, setShowMoreActions] = React.useState(false);
-  
-  const [showAddNewTruck, setShowAddNewTruck] = React.useState(false);
-  const [showExportReport, setShowExportReport] = React.useState(false);
-  const [showSendBroadcast, setShowSendBroadcast] = React.useState(false);
-  const [showSupportTicket, setShowSupportTicket] = React.useState(false);
+  // Dashboard API state
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [dashboardData, setDashboardData] = useState(null);
 
-  // --- MOCK DATA ---
-  const loadStatusData = [
-    { name: 'Draft', value: 1245, color: '#94A3B8' }, // slate-400
-    { name: 'Assigned', value: 2156, color: '#3B82F6' }, // blue-500
-    { name: 'In Transit', value: 6342, color: '#0EA5E9' }, // sky-500
-    { name: 'Delivered', value: 2739, color: '#10B981' }, // emerald-500
-    { name: 'Cancelled', value: 120, color: '#EF4444' } // rose-500
+  // Modal display states
+  const [showAssignDriver, setShowAssignDriver] = useState(false);
+  const [showTrackLoad, setShowTrackLoad] = useState(false);
+  const [showCreateCustomer, setShowCreateCustomer] = useState(false);
+  const [showCreateInvoice, setShowCreateInvoice] = useState(false);
+  const [showMoreActions, setShowMoreActions] = useState(false);
+  const [showAddNewTruck, setShowAddNewTruck] = useState(false);
+  const [showExportReport, setShowExportReport] = useState(false);
+  const [showSendBroadcast, setShowSendBroadcast] = useState(false);
+  const [showSupportTicket, setShowSupportTicket] = useState(false);
+
+  // Form states for modals
+  const [assignForm, setAssignForm] = useState({ loadId: '', driverId: '', truckId: '', trailerId: '' });
+  const [trackSearch, setTrackSearch] = useState('');
+  const [customerForm, setCustomerForm] = useState({ name: '', contactPerson: '', email: '', phone: '' });
+  const [invoiceForm, setInvoiceForm] = useState({ selectedLoads: [] });
+  const [truckForm, setTruckForm] = useState({ make: '', rego: '', vin: '', category: 'TRUCK' });
+  const [ticketForm, setTicketForm] = useState({ subject: '', category: 'OPERATIONS', description: '', priority: 'MEDIUM' });
+  const [broadcastForm, setBroadcastForm] = useState({ targetGroup: 'ALL_DRIVERS', message: '' });
+
+  // Modal data fetched dynamically
+  const [modalLoads, setModalLoads] = useState([]);
+  const [modalDrivers, setModalDrivers] = useState([]);
+  const [modalVehicles, setModalVehicles] = useState([]);
+  const [submittingAction, setSubmittingAction] = useState(false);
+
+  // Load real-time dashboard data from backend API
+  const fetchDashboardMetrics = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await api.get('/company-admin/command-centre');
+      if (res.data && res.data.success) {
+        setDashboardData(res.data.data);
+      } else {
+        setError('Failed to fetch dashboard metrics');
+      }
+    } catch (err) {
+      console.error('Error fetching command centre metrics:', err);
+      setError(err.response?.data?.error?.message || 'Server connection error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardMetrics();
+  }, []);
+
+  // Fetch dropdown data when Assign Driver modal opens
+  const handleOpenAssignDriverModal = async () => {
+    setShowAssignDriver(true);
+    try {
+      const [loadsRes, driversRes, vehiclesRes] = await Promise.all([
+        api.get('/loads?pageSize=20'),
+        api.get('/drivers?pageSize=20'),
+        api.get('/vehicles?pageSize=20')
+      ]);
+      setModalLoads(loadsRes.data?.data || []);
+      setModalDrivers(driversRes.data?.data || []);
+      setModalVehicles(vehiclesRes.data?.data || []);
+    } catch (err) {
+      console.error('Error fetching assign modal data:', err);
+    }
+  };
+
+  // Submit Driver Assignment
+  const handleConfirmAssignment = async (e) => {
+    e.preventDefault();
+    if (!assignForm.loadId) return alert('Please select a Target Load.');
+    try {
+      setSubmittingAction(true);
+      await api.put(`/loads/${assignForm.loadId}`, {
+        driverId: assignForm.driverId || undefined,
+        truckId: assignForm.truckId || undefined,
+        status: 'ASSIGNED'
+      });
+      alert('Driver and Fleet Vehicle assigned to load successfully!');
+      setShowAssignDriver(false);
+      fetchDashboardMetrics();
+    } catch (err) {
+      alert(err.response?.data?.error?.message || 'Failed to assign driver to load');
+    } finally {
+      setSubmittingAction(false);
+    }
+  };
+
+  // Submit Create Customer
+  const handleSaveCustomer = async (e) => {
+    e.preventDefault();
+    if (!customerForm.name) return alert('Company Name is required.');
+    try {
+      setSubmittingAction(true);
+      await api.post('/customers', customerForm);
+      alert('Customer created successfully!');
+      setShowCreateCustomer(false);
+      setCustomerForm({ name: '', contactPerson: '', email: '', phone: '' });
+      fetchDashboardMetrics();
+    } catch (err) {
+      alert(err.response?.data?.error?.message || 'Failed to create customer');
+    } finally {
+      setSubmittingAction(false);
+    }
+  };
+
+  // Submit Save Truck
+  const handleSaveTruck = async (e) => {
+    e.preventDefault();
+    if (!truckForm.rego) return alert('Registration plate is required.');
+    try {
+      setSubmittingAction(true);
+      await api.post('/vehicles', truckForm);
+      alert('New Vehicle added to fleet successfully!');
+      setShowAddNewTruck(false);
+      setTruckForm({ make: '', rego: '', vin: '', category: 'TRUCK' });
+      fetchDashboardMetrics();
+    } catch (err) {
+      alert(err.response?.data?.error?.message || 'Failed to create vehicle');
+    } finally {
+      setSubmittingAction(false);
+    }
+  };
+
+  // Submit Support Ticket
+  const handleSaveTicket = async (e) => {
+    e.preventDefault();
+    if (!ticketForm.subject) return alert('Subject is required.');
+    try {
+      setSubmittingAction(true);
+      await api.post('/support-tickets', ticketForm);
+      alert('Support ticket created successfully!');
+      setShowSupportTicket(false);
+      setTicketForm({ subject: '', category: 'OPERATIONS', description: '', priority: 'MEDIUM' });
+      fetchDashboardMetrics();
+    } catch (err) {
+      alert(err.response?.data?.error?.message || 'Failed to create support ticket');
+    } finally {
+      setSubmittingAction(false);
+    }
+  };
+
+  // Extract metrics or fallbacks safely from real API response
+  const kpis = dashboardData?.kpis || {
+    totalLoads: 0,
+    activeLoads: 0,
+    totalDrivers: 0,
+    activeFleet: 0,
+    totalBranches: 0,
+    totalWarehouses: 0,
+    totalCustomers: 0,
+    openTicketsCount: 0,
+    totalRevenue: 0
+  };
+
+  const loadStatusData = dashboardData?.loadStatusData || [
+    { name: 'Draft', value: 0, color: '#94A3B8' },
+    { name: 'Assigned', value: 0, color: '#3B82F6' },
+    { name: 'In Transit', value: 0, color: '#0EA5E9' },
+    { name: 'Delivered', value: 0, color: '#10B981' },
+    { name: 'Cancelled', value: 0, color: '#EF4444' }
   ];
 
-  const recentLoads = [
-    { id: 'L-12548', route: 'Sydney → Melbourne', status: 'In Transit', driver: 'John D.', statusColor: 'text-blue-600 bg-blue-50 border-blue-200' },
-    { id: 'L-12547', route: 'Brisbane → Adelaide', status: 'Assigned', driver: 'Mike T.', statusColor: 'text-purple-600 bg-purple-50 border-purple-200' },
-    { id: 'L-12546', route: 'Perth → Fremantle', status: 'Picked Up', driver: 'Sarah K.', statusColor: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
-    { id: 'L-12545', route: 'Melbourne → Sydney', status: 'Delivered', driver: 'John D.', statusColor: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
-    { id: 'L-12544', route: 'Auckland → Hamilton', status: 'Draft', driver: '-', statusColor: 'text-slate-600 bg-slate-50 border-slate-200' },
-  ];
+  const recentLoads = dashboardData?.recentLoads || [];
+  const driverAlerts = dashboardData?.driverAlerts || [];
+  const unreadMessages = dashboardData?.unreadMessages || [];
+  const pendingInvoices = dashboardData?.pendingInvoices || [];
+  const truckMaintenance = dashboardData?.truckMaintenance || [];
+  const recentTickets = dashboardData?.recentTickets || [];
 
-  const driverAlerts = [
-    { name: 'John D.', issue: 'License expires in 5 days', date: '20 May', avatar: 'https://i.pravatar.cc/150?u=1' },
-    { name: 'Mike T.', issue: 'Fatigue breach - Yesterday', date: '19 May', avatar: 'https://i.pravatar.cc/150?u=2' },
-    { name: 'Sarah K.', issue: 'Pre-start not completed', date: '19 May', avatar: 'https://i.pravatar.cc/150?u=3' },
-    { name: 'David L.', issue: 'Maintenance overdue', date: '18 May', avatar: 'https://i.pravatar.cc/150?u=4' },
-  ];
-
-  const unreadMessages = [
-    { name: 'John D.', msg: 'At delivery location, waiting for gate access.', time: '10:24 AM', count: 2, avatar: 'https://i.pravatar.cc/150?u=1' },
-    { name: 'Dispatch Team', msg: 'New load L-12548 assigned to you.', time: '09:15 AM', count: 1, avatar: null, icon: <Truck className="w-5 h-5 text-white" />, iconBg: 'bg-indigo-500' },
-    { name: 'Mike T.', msg: 'Can you confirm pickup time window?', time: '08:47 AM', count: 3, avatar: 'https://i.pravatar.cc/150?u=2' },
-  ];
-
-  const pendingInvoices = [
-    { id: 'INV-3021', client: 'ABC Motors', amount: '$78,450.00', due: 'Due in 5 days' },
-    { id: 'INV-3020', client: 'Fast Logistics', amount: '$61,230.00', due: 'Due in 7 days' },
-    { id: 'INV-3019', client: 'Prime Carriers', amount: '$48,920.00', due: 'Due in 10 days' },
-    { id: 'INV-3018', client: 'Northline Trans...', amount: '$42,050.00', due: 'Due in 12 days' },
-  ];
-
-  const truckMaintenance = [
-    { name: 'Truck 101 (Volvo)', reg: 'Reg: ABC123', metric: '10,000 km', due: 'Due in 4 days', isOverdue: false },
-    { name: 'Truck 117 (Scania)', reg: 'Reg: XYZ987', metric: '5,500 km', due: 'Overdue', isOverdue: true },
-    { name: 'Truck 104 (Kenworth)', reg: 'Reg: KEN104', metric: '8,000 km', due: 'Due in 8 days', isOverdue: false },
-  ];
-
-  const recentTickets = [
-    { id: '#4587', title: 'Login issue', status: 'Open', date: '20 May', statusColor: 'text-blue-600 bg-blue-50 border-blue-200' },
-    { id: '#4586', title: 'Error on invoice', status: 'In Progress', date: '20 May', statusColor: 'text-orange-600 bg-orange-50 border-orange-200' },
-    { id: '#4585', title: 'Feature request', status: 'Waiting', date: '19 May', statusColor: 'text-purple-600 bg-purple-50 border-purple-200' },
-  ];
+  const totalLoadCount = loadStatusData.reduce((acc, curr) => acc + (curr.value || 0), 0) || kpis.totalLoads || 0;
 
   return (
     <div className="flex-grow bg-[#F8FAFC] p-6 lg:p-8 w-full text-left font-sans overflow-y-auto min-h-0">
@@ -79,106 +195,125 @@ export default function CommandCentre() {
       {/* HEADER */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 mb-1 tracking-tight">Command Centre</h1>
-          <p className="text-sm font-medium text-slate-500">Overview of your fleet operations</p>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-black text-slate-900 mb-1 tracking-tight">Command Centre</h1>
+            {loading && <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />}
+          </div>
+          <p className="text-sm font-medium text-slate-500">Live operational oversight & fleet analytics</p>
         </div>
-        <button 
-          onClick={() => navigate(isDispatcher ? '/dispatcher/loads' : '/company-admin/loads', { state: { openNewLoadModal: true } })}
-          className="bg-[#FFCC00] hover:bg-[#FACC15] text-black font-bold text-sm px-4 py-2.5 rounded-xl shadow-sm transition-colors flex items-center gap-2">
-          <Plus className="w-4 h-4 stroke-[3px]" /> New Load <ChevronDown className="w-4 h-4 ml-1 opacity-70" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={fetchDashboardMetrics}
+            disabled={loading}
+            className="p-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl shadow-xs transition-colors flex items-center gap-1 text-xs font-bold"
+            title="Refresh Real-time Metrics">
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+          <button 
+            onClick={() => navigate(isDispatcher ? '/dispatcher/loads' : '/company-admin/loads', { state: { openNewLoadModal: true } })}
+            className="bg-[#FFCC00] hover:bg-[#FACC15] text-black font-bold text-sm px-4 py-2.5 rounded-xl shadow-xs transition-colors flex items-center gap-2">
+            <Plus className="w-4 h-4 stroke-[3px]" /> New Load <ChevronDown className="w-4 h-4 ml-1 opacity-70" />
+          </button>
+        </div>
       </div>
 
-      {/* KPI SUMMARY CARDS */}
+      {/* ERROR BANNER IF API FAILED */}
+      {error && (
+        <div className="mb-6 p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl flex items-center justify-between text-xs font-bold">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-5 h-5 text-rose-500 shrink-0" />
+            <span>{error}</span>
+          </div>
+          <button onClick={fetchDashboardMetrics} className="underline font-black hover:text-rose-900">Retry API</button>
+        </div>
+      )}
+
+      {/* KPI SUMMARY CARDS (POWERED BY REAL DB DATA) */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4 mb-6">
-        {/* Loads */}
-        <div className="bg-white rounded-2xl p-4 border border-blue-200 shadow-sm relative overflow-hidden group">
+        {/* Loads MTD */}
+        <div className="bg-white rounded-2xl p-4 border border-blue-200 shadow-xs relative overflow-hidden group">
           <div className="flex justify-between items-start mb-2">
             <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-600 uppercase tracking-wider">
               <Package className="w-3.5 h-3.5 text-blue-500" /> Loads (MTD)
             </div>
             <div className="text-[10px] font-black text-emerald-500 flex items-center">
-              <ArrowUpRight className="w-3 h-3 mr-0.5" /> 14%
+              <ArrowUpRight className="w-3 h-3 mr-0.5" /> Real-time
             </div>
           </div>
-          <div className="text-2xl font-black text-slate-900 leading-none mb-1">12,482</div>
-          <div className="text-[9px] font-medium text-slate-400">vs last month 10,927</div>
+          <div className="text-2xl font-black text-slate-900 leading-none mb-1">{kpis.totalLoads.toLocaleString()}</div>
+          <div className="text-[9px] font-medium text-slate-400">{kpis.activeLoads} active in transit</div>
         </div>
 
         {/* Active Fleet */}
-        <div className="bg-white rounded-2xl p-4 border border-emerald-200 shadow-sm relative overflow-hidden group">
+        <div className="bg-white rounded-2xl p-4 border border-emerald-200 shadow-xs relative overflow-hidden group">
           <div className="flex justify-between items-start mb-2">
             <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-600 uppercase tracking-wider">
               <Truck className="w-3.5 h-3.5 text-emerald-500" /> Active Fleet
             </div>
             <div className="text-[10px] font-black text-emerald-500 flex items-center">
-              <ArrowUpRight className="w-3 h-3 mr-0.5" /> 2%
+              <ArrowUpRight className="w-3 h-3 mr-0.5" /> Live
             </div>
           </div>
-          <div className="text-2xl font-black text-slate-900 leading-none mb-1">415</div>
-          <div className="text-[9px] font-medium text-slate-400">of 462 total</div>
+          <div className="text-2xl font-black text-slate-900 leading-none mb-1">{kpis.activeFleet.toLocaleString()}</div>
+          <div className="text-[9px] font-medium text-slate-400">Total operational vehicles</div>
         </div>
 
-        {/* Monthly Revenue (Company Admin) OR Active Drivers (Dispatcher) */}
+        {/* Monthly Revenue or Active Drivers */}
         {!isDispatcher ? (
-          <div className="bg-white rounded-2xl p-4 border border-purple-200 shadow-sm relative overflow-hidden group">
+          <div className="bg-white rounded-2xl p-4 border border-purple-200 shadow-xs relative overflow-hidden group">
             <div className="flex justify-between items-start mb-2">
               <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-600 uppercase tracking-wider">
-                <DollarSign className="w-3.5 h-3.5 text-purple-500" /> Monthly Revenue
-              </div>
-              <div className="text-[10px] font-black text-emerald-500 flex items-center">
-                <ArrowUpRight className="w-3 h-3 mr-0.5" /> 4.5%
+                <DollarSign className="w-3.5 h-3.5 text-purple-500" /> Pending Rev.
               </div>
             </div>
-            <div className="text-2xl font-black text-slate-900 leading-none mb-1">$1.2M</div>
-            <div className="text-[9px] font-medium text-slate-400">vs last month $1.15M</div>
+            <div className="text-2xl font-black text-slate-900 leading-none mb-1">
+              ${(kpis.totalRevenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            </div>
+            <div className="text-[9px] font-medium text-slate-400">Total customer invoices</div>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl p-4 border border-purple-200 shadow-sm relative overflow-hidden group">
+          <div className="bg-white rounded-2xl p-4 border border-purple-200 shadow-xs relative overflow-hidden group">
             <div className="flex justify-between items-start mb-2">
               <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-600 uppercase tracking-wider">
                 <Users className="w-3.5 h-3.5 text-purple-500" /> Active Drivers
               </div>
-              <div className="text-[10px] font-black text-emerald-500 flex items-center">
-                <ArrowUpRight className="w-3 h-3 mr-0.5" /> 100%
-              </div>
             </div>
-            <div className="text-2xl font-black text-slate-900 leading-none mb-1">38 Drivers</div>
-            <div className="text-[9px] font-medium text-slate-400">On Active Shift Today</div>
+            <div className="text-2xl font-black text-slate-900 leading-none mb-1">{kpis.totalDrivers} Drivers</div>
+            <div className="text-[9px] font-medium text-slate-400">Registered company drivers</div>
           </div>
         )}
 
         {/* Branches */}
-        <div className="bg-white rounded-2xl p-4 border border-orange-200 shadow-sm relative overflow-hidden group">
+        <div className="bg-white rounded-2xl p-4 border border-orange-200 shadow-xs relative overflow-hidden group">
           <div className="flex justify-between items-start mb-2">
             <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-600 uppercase tracking-wider">
               <Building2 className="w-3.5 h-3.5 text-orange-500" /> Branches
             </div>
           </div>
-          <div className="text-2xl font-black text-slate-900 leading-none mb-1">12</div>
-          <div className="text-[9px] font-medium text-slate-400">Active branches</div>
+          <div className="text-2xl font-black text-slate-900 leading-none mb-1">{kpis.totalBranches}</div>
+          <div className="text-[9px] font-medium text-slate-400">Operational depots</div>
         </div>
 
-        {/* Total Depots */}
-        <div className="bg-white rounded-2xl p-4 border border-teal-200 shadow-sm relative overflow-hidden group">
+        {/* Warehouses */}
+        <div className="bg-white rounded-2xl p-4 border border-teal-200 shadow-xs relative overflow-hidden group">
           <div className="flex justify-between items-start mb-2">
             <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-600 uppercase tracking-wider">
-              <MapPin className="w-3.5 h-3.5 text-teal-500" /> Total Depots
+              <MapPin className="w-3.5 h-3.5 text-teal-500" /> Warehouses
             </div>
           </div>
-          <div className="text-2xl font-black text-slate-900 leading-none mb-1">24</div>
-          <div className="text-[9px] font-medium text-slate-400">Across 3 countries</div>
+          <div className="text-2xl font-black text-slate-900 leading-none mb-1">{kpis.totalWarehouses}</div>
+          <div className="text-[9px] font-medium text-slate-400">Storage & staging facilities</div>
         </div>
       </div>
 
       {/* QUICK ACTIONS */}
-      <div className="bg-white border border-emerald-300 rounded-2xl p-4 sm:p-5 shadow-sm mb-6">
+      <div className="bg-white border border-emerald-300 rounded-2xl p-4 sm:p-5 shadow-xs mb-6">
         <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4">Quick Actions</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4 sm:divide-x divide-slate-100">
           
           <button 
             onClick={() => navigate(isDispatcher ? '/dispatcher/loads' : '/company-admin/loads', { state: { openNewLoadModal: true } })}
-            className="flex items-start gap-3 pl-0 pr-2 group text-left">
+            className="flex items-start gap-3 pl-0 pr-2 group text-left cursor-pointer">
             <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:bg-blue-100 transition-colors">
               <Plus className="w-4 h-4 stroke-[3px]" />
             </div>
@@ -189,8 +324,8 @@ export default function CommandCentre() {
           </button>
 
           <button 
-            onClick={() => setShowAssignDriver(true)}
-            className="flex items-start gap-3 pl-4 pr-2 group text-left">
+            onClick={handleOpenAssignDriverModal}
+            className="flex items-start gap-3 pl-4 pr-2 group text-left cursor-pointer">
             <div className="w-8 h-8 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 group-hover:bg-purple-100 transition-colors">
               <UserPlus className="w-4 h-4 stroke-[2.5px]" />
             </div>
@@ -202,7 +337,7 @@ export default function CommandCentre() {
 
           <button 
             onClick={() => setShowTrackLoad(true)}
-            className="flex items-start gap-3 pl-4 pr-2 group text-left">
+            className="flex items-start gap-3 pl-4 pr-2 group text-left cursor-pointer">
             <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 group-hover:bg-emerald-100 transition-colors">
               <MapPin className="w-4 h-4 stroke-[2.5px]" />
             </div>
@@ -214,7 +349,7 @@ export default function CommandCentre() {
 
           <button 
             onClick={() => setShowCreateCustomer(true)}
-            className="flex items-start gap-3 pl-4 pr-2 group text-left">
+            className="flex items-start gap-3 pl-4 pr-2 group text-left cursor-pointer">
             <div className="w-8 h-8 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center shrink-0 group-hover:bg-orange-100 transition-colors">
               <Building2 className="w-4 h-4 stroke-[2.5px]" />
             </div>
@@ -227,7 +362,7 @@ export default function CommandCentre() {
           {!isDispatcher ? (
             <button 
               onClick={() => setShowCreateInvoice(true)}
-              className="flex items-start gap-3 pl-4 pr-2 group text-left">
+              className="flex items-start gap-3 pl-4 pr-2 group text-left cursor-pointer">
               <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 group-hover:bg-indigo-100 transition-colors">
                 <FileText className="w-4 h-4 stroke-[2.5px]" />
               </div>
@@ -239,7 +374,7 @@ export default function CommandCentre() {
           ) : (
             <button 
               onClick={() => navigate('/dispatcher/drivers')}
-              className="flex items-start gap-3 pl-4 pr-2 group text-left">
+              className="flex items-start gap-3 pl-4 pr-2 group text-left cursor-pointer">
               <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 group-hover:bg-indigo-100 transition-colors">
                 <Users className="w-4 h-4 stroke-[2.5px]" />
               </div>
@@ -253,7 +388,7 @@ export default function CommandCentre() {
           <div className="relative pl-4 pr-0">
             <button 
               onClick={() => setShowMoreActions(!showMoreActions)}
-              className="flex items-start gap-3 group text-left w-full">
+              className="flex items-start gap-3 group text-left w-full cursor-pointer">
               <div className="w-8 h-8 rounded-full bg-slate-50 text-slate-600 flex items-center justify-center shrink-0 group-hover:bg-slate-100 transition-colors">
                 <MoreVertical className="w-4 h-4 stroke-[2.5px]" />
               </div>
@@ -266,22 +401,22 @@ export default function CommandCentre() {
             {showMoreActions && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setShowMoreActions(false)} />
-                <div className="absolute left-4 top-full mt-2 w-[180px] bg-white rounded-xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] border border-slate-100 overflow-hidden z-50 py-1.5">
+                <div className="absolute left-4 top-full mt-2 w-[180px] bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden z-50 py-1.5">
                   <button 
                     onClick={() => { setShowMoreActions(false); setShowAddNewTruck(true); }} 
-                    className="w-full flex items-center gap-3 px-4 py-2 hover:bg-slate-50 transition-colors">
+                    className="w-full flex items-center gap-3 px-4 py-2 hover:bg-slate-50 transition-colors text-left cursor-pointer">
                     <Truck className="w-4 h-4 text-blue-600" />
                     <span className="text-sm font-semibold text-blue-600">Add New Truck</span>
                   </button>
                   <button 
                     onClick={() => { setShowMoreActions(false); setShowExportReport(true); }} 
-                    className="w-full flex items-center gap-3 px-4 py-2 hover:bg-slate-50 transition-colors">
+                    className="w-full flex items-center gap-3 px-4 py-2 hover:bg-slate-50 transition-colors text-left cursor-pointer">
                     <Download className="w-4 h-4 text-blue-600" />
                     <span className="text-sm font-semibold text-blue-600">Export Report</span>
                   </button>
                   <button 
                     onClick={() => { setShowMoreActions(false); setShowSendBroadcast(true); }} 
-                    className="w-full flex items-center gap-3 px-4 py-2 hover:bg-slate-50 transition-colors">
+                    className="w-full flex items-center gap-3 px-4 py-2 hover:bg-slate-50 transition-colors text-left cursor-pointer">
                     <Mail className="w-4 h-4 text-blue-600" />
                     <span className="text-sm font-semibold text-blue-600">Send Broadcast</span>
                   </button>
@@ -293,14 +428,14 @@ export default function CommandCentre() {
         </div>
       </div>
 
-      {/* MAIN GRID */}
+      {/* MAIN REAL-TIME DASHBOARD GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* COLUMN 1 */}
         <div className="space-y-6">
           
-          {/* Load Status (MTD) */}
-          <div className="bg-white border border-blue-300 rounded-2xl p-5 shadow-sm">
+          {/* Load Status (MTD) Chart */}
+          <div className="bg-white border border-blue-300 rounded-2xl p-5 shadow-xs">
             <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest mb-4">Load Status (MTD)</h3>
             <div className="flex items-center">
               <div className="w-32 h-32 shrink-0 relative">
@@ -315,28 +450,28 @@ export default function CommandCentre() {
                       stroke="none"
                     >
                       {loadStatusData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
+                        <Cell key={`cell-${index}`} fill={entry.color || '#3B82F6'} />
                       ))}
                     </Pie>
                     <Tooltip cursor={false} />
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <span className="text-sm font-black text-slate-900">12,482</span>
+                  <span className="text-sm font-black text-slate-900">{totalLoadCount.toLocaleString()}</span>
                   <span className="text-[7px] font-bold text-slate-400 uppercase tracking-wider">Total Loads</span>
                 </div>
               </div>
               <div className="flex-grow pl-4 space-y-2">
                 {loadStatusData.map((status, i) => {
-                  const percentage = Math.round((status.value / 12482) * 100);
+                  const percentage = totalLoadCount > 0 ? Math.round((status.value / totalLoadCount) * 100) : 0;
                   return (
                     <div key={i} className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: status.color }}></span>
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: status.color || '#3B82F6' }}></span>
                         <span className="font-semibold text-slate-600">{status.name}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <span className="font-bold text-slate-900">{status.value.toLocaleString()}</span>
+                        <span className="font-bold text-slate-900">{(status.value || 0).toLocaleString()}</span>
                         <span className="font-medium text-slate-400 text-[10px]">({percentage}%)</span>
                       </div>
                     </div>
@@ -347,59 +482,65 @@ export default function CommandCentre() {
           </div>
 
           {/* Unread Messages */}
-          <div className="bg-white border border-purple-300 rounded-2xl p-5 shadow-sm">
+          <div className="bg-white border border-purple-300 rounded-2xl p-5 shadow-xs">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Unread Messages</h3>
-              <button className="text-[10px] font-bold text-blue-600 hover:underline">View all</button>
+              <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Unread Messages & Driver Alerts</h3>
+              <button onClick={() => navigate('/company-admin/messages')} className="text-[10px] font-bold text-blue-600 hover:underline">View all</button>
             </div>
             <div className="space-y-4">
-              {unreadMessages.map((msg, i) => (
-                <div key={i} className="flex gap-3">
-                  <div className="relative shrink-0">
-                    {msg.avatar ? (
-                      <img src={msg.avatar} alt={msg.name} className="w-10 h-10 rounded-full object-cover border border-slate-200" />
-                    ) : (
-                      <div className={`w-10 h-10 rounded-full ${msg.iconBg} flex items-center justify-center`}>
-                        {msg.icon}
-                      </div>
-                    )}
-                    <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-rose-500 border-2 border-white text-[8px] font-bold text-white flex items-center justify-center">
-                      {msg.count}
-                    </span>
-                  </div>
-                  <div className="flex-grow min-w-0">
-                    <div className="flex justify-between items-baseline mb-0.5">
-                      <span className="text-xs font-bold text-slate-900 truncate pr-2">{msg.name}</span>
-                      <span className="text-[9px] font-medium text-slate-400 shrink-0">{msg.time}</span>
+              {unreadMessages.length === 0 ? (
+                <div className="py-6 text-center text-slate-400 text-xs font-medium">No unread messages</div>
+              ) : (
+                unreadMessages.map((msg, i) => (
+                  <div key={i} className="flex gap-3">
+                    <div className="relative shrink-0">
+                      {msg.avatar ? (
+                        <img src={msg.avatar} alt={msg.name} className="w-10 h-10 rounded-full object-cover border border-slate-200" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center">
+                          <Truck className="w-5 h-5 text-white" />
+                        </div>
+                      )}
+                      {msg.count > 0 && (
+                        <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-rose-500 border-2 border-white text-[8px] font-bold text-white flex items-center justify-center">
+                          {msg.count}
+                        </span>
+                      )}
                     </div>
-                    <p className="text-[11px] font-medium text-slate-500 truncate leading-snug">{msg.msg}</p>
+                    <div className="flex-grow min-w-0">
+                      <div className="flex justify-between items-baseline mb-0.5">
+                        <span className="text-xs font-bold text-slate-900 truncate pr-2">{msg.name}</span>
+                        <span className="text-[9px] font-medium text-slate-400 shrink-0">{msg.time}</span>
+                      </div>
+                      <p className="text-[11px] font-medium text-slate-500 truncate leading-snug">{msg.msg}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
           {/* Support Tickets Overview */}
-          <div className="bg-white border border-amber-300 rounded-2xl p-5 shadow-sm">
+          <div className="bg-white border border-amber-300 rounded-2xl p-5 shadow-xs">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Support Tickets Overview</h3>
-              <button className="text-[10px] font-bold text-blue-600 hover:underline">View all</button>
+              <button onClick={() => navigate('/company-admin/knowledge-base')} className="text-[10px] font-bold text-blue-600 hover:underline">View all</button>
             </div>
             <div className="grid grid-cols-4 gap-2 text-center">
               <div className="border border-blue-200 bg-blue-50/50 rounded-xl py-3 px-1">
-                <div className="text-xl font-black text-blue-600 mb-0.5">5</div>
+                <div className="text-xl font-black text-blue-600 mb-0.5">{dashboardData?.ticketStats?.open || 0}</div>
                 <div className="text-[9px] font-bold text-slate-600 uppercase">Open</div>
               </div>
               <div className="border border-amber-200 bg-amber-50/50 rounded-xl py-3 px-1">
-                <div className="text-xl font-black text-amber-500 mb-0.5">3</div>
+                <div className="text-xl font-black text-amber-500 mb-0.5">{dashboardData?.ticketStats?.inProgress || 0}</div>
                 <div className="text-[9px] font-bold text-slate-600 uppercase">In Progress</div>
               </div>
               <div className="border border-purple-200 bg-purple-50/50 rounded-xl py-3 px-1">
-                <div className="text-xl font-black text-purple-600 mb-0.5">1</div>
+                <div className="text-xl font-black text-purple-600 mb-0.5">{dashboardData?.ticketStats?.waiting || 0}</div>
                 <div className="text-[9px] font-bold text-slate-600 uppercase">Waiting</div>
               </div>
               <div className="border border-emerald-200 bg-emerald-50/50 rounded-xl py-3 px-1">
-                <div className="text-xl font-black text-emerald-500 mb-0.5">12</div>
+                <div className="text-xl font-black text-emerald-500 mb-0.5">{dashboardData?.ticketStats?.resolved || 0}</div>
                 <div className="text-[9px] font-bold text-slate-600 uppercase">Resolved</div>
               </div>
             </div>
@@ -410,11 +551,11 @@ export default function CommandCentre() {
         {/* COLUMN 2 */}
         <div className="space-y-6">
           
-          {/* Recent Loads */}
-          <div className="bg-white border border-blue-300 rounded-2xl p-5 shadow-sm">
+          {/* Recent Loads Table */}
+          <div className="bg-white border border-blue-300 rounded-2xl p-5 shadow-xs">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Recent Loads</h3>
-              <button className="text-[10px] font-bold text-blue-600 hover:underline">View all</button>
+              <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Recent Freight Loads</h3>
+              <button onClick={() => navigate('/company-admin/loads')} className="text-[10px] font-bold text-blue-600 hover:underline">View all</button>
             </div>
             
             <table className="w-full text-left">
@@ -427,99 +568,99 @@ export default function CommandCentre() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {recentLoads.map((load, i) => (
-                  <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="py-3 text-[10px] font-bold text-slate-500">{load.id}</td>
-                    <td className="py-3 text-[11px] font-extrabold text-slate-800">{load.route}</td>
-                    <td className="py-3">
-                      <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider border ${load.statusColor}`}>
-                        {load.status}
-                      </span>
-                    </td>
-                    <td className="py-3 text-[10px] font-bold text-slate-700 text-right">{load.driver}</td>
+                {recentLoads.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="py-6 text-center text-slate-400 text-xs font-medium">No recent loads in database</td>
                   </tr>
-                ))}
+                ) : (
+                  recentLoads.map((load, i) => (
+                    <tr key={i} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="py-3 text-[10px] font-bold text-slate-500">{load.id}</td>
+                      <td className="py-3 text-[11px] font-extrabold text-slate-800">{load.route}</td>
+                      <td className="py-3">
+                        <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider border ${load.statusColor}`}>
+                          {load.status}
+                        </span>
+                      </td>
+                      <td className="py-3 text-[10px] font-bold text-slate-700 text-right">{load.driver}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
 
-          {/* Pending Invoices (Company Admin) OR Active Driver Roster (Dispatcher) */}
+          {/* Pending Invoices */}
           {!isDispatcher ? (
-            <div className="bg-white border border-emerald-300 rounded-2xl p-5 shadow-sm">
+            <div className="bg-white border border-emerald-300 rounded-2xl p-5 shadow-xs">
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest mb-1">Pending Invoices</h3>
-                  <div className="text-2xl font-black text-slate-900 leading-none">$287,650.00</div>
-                  <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-1">Total Pending</div>
+                  <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest mb-1">Pending Customer Invoices</h3>
+                  <div className="text-2xl font-black text-slate-900 leading-none">
+                    ${(kpis.totalRevenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  </div>
+                  <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-1">Total Outstanding</div>
                 </div>
-                <button className="text-[10px] font-bold text-blue-600 hover:underline">View all</button>
+                <button onClick={() => navigate('/company-admin/finance')} className="text-[10px] font-bold text-blue-600 hover:underline">View all</button>
               </div>
               
               <div className="space-y-0 divide-y divide-slate-100">
-                {pendingInvoices.map((inv, i) => (
-                  <div key={i} className="py-3 flex justify-between items-center group cursor-pointer hover:bg-slate-50 px-2 -mx-2 rounded-lg transition-colors">
-                    <div className="flex gap-4 items-center">
-                      <span className="text-[10px] font-bold text-slate-400">{inv.id}</span>
-                      <span className="text-xs font-extrabold text-slate-800">{inv.client}</span>
+                {pendingInvoices.length === 0 ? (
+                  <div className="py-6 text-center text-slate-400 text-xs font-medium">No pending invoices</div>
+                ) : (
+                  pendingInvoices.map((inv, i) => (
+                    <div key={i} className="py-3 flex justify-between items-center group cursor-pointer hover:bg-slate-50 px-2 -mx-2 rounded-lg transition-colors">
+                      <div className="flex gap-4 items-center">
+                        <span className="text-[10px] font-bold text-slate-400">{inv.id}</span>
+                        <span className="text-xs font-extrabold text-slate-800">{inv.client}</span>
+                      </div>
+                      <div className="flex gap-4 items-center">
+                        <span className="text-xs font-black text-slate-900">{inv.amount}</span>
+                        <span className={`text-[9px] font-bold uppercase ${inv.due.includes('Overdue') ? 'text-rose-500' : 'text-slate-400'}`}>
+                          {inv.due}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex gap-4 items-center">
-                      <span className="text-xs font-black text-slate-900">{inv.amount}</span>
-                      <span className={`text-[9px] font-bold uppercase ${inv.due.includes('Overdue') ? 'text-rose-500' : 'text-slate-400'}`}>
-                        {inv.due}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           ) : (
-            <div className="bg-white border border-emerald-300 rounded-2xl p-5 shadow-sm">
+            <div className="bg-white border border-emerald-300 rounded-2xl p-5 shadow-xs">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest mb-1">Active Driver Duty & Roster</h3>
-                  <div className="text-2xl font-black text-slate-900 leading-none">38 Active Drivers</div>
-                  <div className="text-[9px] font-bold text-emerald-600 uppercase tracking-wider mt-1">100% Pre-Start Approved</div>
+                  <div className="text-2xl font-black text-slate-900 leading-none">{kpis.totalDrivers} Active Drivers</div>
                 </div>
                 <button onClick={() => navigate('/dispatcher/drivers')} className="text-[10px] font-bold text-blue-600 hover:underline">View Roster</button>
-              </div>
-              
-              <div className="space-y-2.5">
-                {[
-                  { name: 'John Doe', truck: 'TRK-101 (Volvo FH540)', status: 'En Route', statusBg: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-                  { name: 'Mike Thompson', truck: 'TRK-117 (Scania T500)', status: 'Active Run', statusBg: 'bg-blue-50 text-blue-700 border-blue-200' },
-                  { name: 'Sarah Mitchell', truck: 'TRK-104 (Kenworth T680)', status: 'Loading Stop', statusBg: 'bg-purple-50 text-purple-700 border-purple-200' },
-                  { name: 'David Wilson', truck: 'TRK-108 (Freightliner)', status: 'On Duty', statusBg: 'bg-amber-50 text-amber-700 border-amber-200' },
-                ].map((drv, i) => (
-                  <div key={i} className="py-2 px-2.5 bg-slate-50 border border-slate-100 rounded-xl flex justify-between items-center">
-                    <div>
-                      <p className="text-xs font-black text-slate-900">{drv.name}</p>
-                      <p className="text-[9.5px] font-bold text-slate-400">{drv.truck}</p>
-                    </div>
-                    <span className={`px-2 py-0.5 rounded text-[9px] font-extrabold uppercase border ${drv.statusBg}`}>{drv.status}</span>
-                  </div>
-                ))}
               </div>
             </div>
           )}
 
-          {/* Recent Tickets */}
-          <div className="bg-white border border-indigo-300 rounded-2xl p-5 shadow-sm">
-            <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest mb-4">Recent Tickets</h3>
+          {/* Recent Tickets Table */}
+          <div className="bg-white border border-indigo-300 rounded-2xl p-5 shadow-xs">
+            <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest mb-4">Recent Support Tickets</h3>
             
             <table className="w-full text-left">
               <tbody className="divide-y divide-slate-50">
-                {recentTickets.map((ticket, i) => (
-                  <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="py-3 text-[10px] font-bold text-slate-400">{ticket.id}</td>
-                    <td className="py-3 text-[11px] font-extrabold text-slate-800">{ticket.title}</td>
-                    <td className="py-3">
-                      <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider border ${ticket.statusColor}`}>
-                        {ticket.status}
-                      </span>
-                    </td>
-                    <td className="py-3 text-[10px] font-medium text-slate-400 text-right">{ticket.date}</td>
+                {recentTickets.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="py-6 text-center text-slate-400 text-xs font-medium">No open tickets</td>
                   </tr>
-                ))}
+                ) : (
+                  recentTickets.map((ticket, i) => (
+                    <tr key={i} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="py-3 text-[10px] font-bold text-slate-400">{ticket.id}</td>
+                      <td className="py-3 text-[11px] font-extrabold text-slate-800">{ticket.title}</td>
+                      <td className="py-3">
+                        <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider border ${ticket.statusColor}`}>
+                          {ticket.status}
+                        </span>
+                      </td>
+                      <td className="py-3 text-[10px] font-medium text-slate-400 text-right">{ticket.date}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -529,72 +670,80 @@ export default function CommandCentre() {
         {/* COLUMN 3 */}
         <div className="space-y-6">
           
-          {/* Driver Alerts */}
-          <div className="bg-white border border-orange-300 rounded-2xl p-5 shadow-sm">
+          {/* Driver Compliance & License Alerts */}
+          <div className="bg-white border border-orange-300 rounded-2xl p-5 shadow-xs">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Driver Alerts</h3>
-              <button className="text-[10px] font-bold text-blue-600 hover:underline">View all</button>
+              <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Driver Compliance & Alerts</h3>
+              <button onClick={() => navigate('/company-admin/drivers')} className="text-[10px] font-bold text-blue-600 hover:underline">View all</button>
             </div>
             
             <div className="space-y-4">
-              {driverAlerts.map((alert, i) => (
-                <div key={i} className="flex justify-between items-center">
-                  <div className="flex items-center gap-3">
-                    <img src={alert.avatar} alt={alert.name} className="w-8 h-8 rounded-full border border-slate-200" />
-                    <div>
-                      <div className="text-[11px] font-extrabold text-slate-900 leading-tight mb-0.5">{alert.name}</div>
-                      <div className="text-[10px] font-medium text-slate-500">{alert.issue}</div>
+              {driverAlerts.length === 0 ? (
+                <div className="py-6 text-center text-slate-400 text-xs font-medium">No compliance warnings</div>
+              ) : (
+                driverAlerts.map((alert, i) => (
+                  <div key={i} className="flex justify-between items-center">
+                    <div className="flex items-center gap-3">
+                      <img src={alert.avatar || 'https://i.pravatar.cc/150'} alt={alert.name} className="w-8 h-8 rounded-full border border-slate-200" />
+                      <div>
+                        <div className="text-[11px] font-extrabold text-slate-900 leading-tight mb-0.5">{alert.name}</div>
+                        <div className="text-[10px] font-medium text-slate-500">{alert.issue}</div>
+                      </div>
                     </div>
+                    <span className="text-[9px] font-medium text-slate-400">{alert.date}</span>
                   </div>
-                  <span className="text-[9px] font-medium text-slate-400">{alert.date}</span>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
           {/* Truck Maintenance Due */}
-          <div className="bg-white border border-rose-300 rounded-2xl p-5 shadow-sm">
+          <div className="bg-white border border-rose-300 rounded-2xl p-5 shadow-xs">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Truck Maintenance Due</h3>
-              <button className="text-[10px] font-bold text-blue-600 hover:underline">View all</button>
+              <button onClick={() => navigate('/company-admin/vehicles')} className="text-[10px] font-bold text-blue-600 hover:underline">View all</button>
             </div>
             
             <div className="space-y-4">
-              {truckMaintenance.map((truck, i) => (
-                <div key={i} className="flex justify-between items-center">
-                  <div className="flex gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
-                      <Truck className="w-4 h-4 text-slate-400" />
+              {truckMaintenance.length === 0 ? (
+                <div className="py-6 text-center text-slate-400 text-xs font-medium">All trucks serviced & compliant</div>
+              ) : (
+                truckMaintenance.map((truck, i) => (
+                  <div key={i} className="flex justify-between items-center">
+                    <div className="flex gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0">
+                        <Truck className="w-4 h-4 text-slate-400" />
+                      </div>
+                      <div>
+                        <div className="text-[11px] font-extrabold text-slate-900 leading-tight mb-0.5">{truck.name}</div>
+                        <div className="text-[9px] font-bold text-slate-400">{truck.reg}</div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="text-[11px] font-extrabold text-slate-900 leading-tight mb-0.5">{truck.name}</div>
-                      <div className="text-[9px] font-bold text-slate-400">{truck.reg}</div>
+                    <div className="text-right">
+                      <div className="text-[11px] font-black text-slate-700 leading-tight mb-0.5">{truck.metric}</div>
+                      <div className={`text-[9px] font-bold uppercase tracking-wider ${truck.isOverdue ? 'text-rose-500' : 'text-slate-400'}`}>
+                        {truck.due}
+                      </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-[11px] font-black text-slate-700 leading-tight mb-0.5">{truck.metric}</div>
-                    <div className={`text-[9px] font-bold uppercase tracking-wider ${truck.isOverdue ? 'text-rose-500' : 'text-slate-400'}`}>
-                      {truck.due}
-                    </div>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
-          {/* Need Help? */}
-          <div className="bg-white border border-emerald-300 rounded-2xl p-5 shadow-sm">
-            <h3 className="text-[11px] font-black text-blue-600 uppercase tracking-widest mb-2">Need Help?</h3>
-            <p className="text-xs font-medium text-slate-500 mb-4">Search our knowledge base or raise a new ticket.</p>
+          {/* Need Help? Support & Knowledge Base */}
+          <div className="bg-white border border-emerald-300 rounded-2xl p-5 shadow-xs">
+            <h3 className="text-[11px] font-black text-blue-600 uppercase tracking-widest mb-2">Need Operations Help?</h3>
+            <p className="text-xs font-medium text-slate-500 mb-4">Search logistics knowledge base or submit a new support ticket.</p>
             <div className="flex gap-3">
               <button 
                 onClick={() => navigate('/company-admin/knowledge-base')}
-                className="flex-1 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-[10px] font-bold py-2.5 rounded-xl transition-colors">
+                className="flex-1 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-[10px] font-bold py-2.5 rounded-xl transition-colors cursor-pointer">
                 Knowledge Base
               </button>
               <button 
                 onClick={() => setShowSupportTicket(true)}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold py-2.5 rounded-xl shadow-sm transition-colors">
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold py-2.5 rounded-xl shadow-xs transition-colors cursor-pointer">
                 New Support Ticket
               </button>
             </div>
@@ -607,7 +756,7 @@ export default function CommandCentre() {
       {/* Assign Driver & Fleet Asset Modal */}
       {showAssignDriver && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[580px] overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-150">
+          <form onSubmit={handleConfirmAssignment} className="bg-white rounded-2xl shadow-2xl w-full max-w-[580px] overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-150">
             <div className="px-6 py-4 bg-slate-900 text-white flex justify-between items-center">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-sm">
@@ -618,80 +767,66 @@ export default function CommandCentre() {
                   <p className="text-[10px] text-slate-400 font-medium">Allocate driver, truck, and trailer to dispatch run</p>
                 </div>
               </div>
-              <button onClick={() => setShowAssignDriver(false)} className="text-slate-400 hover:text-white p-1 cursor-pointer">
+              <button type="button" onClick={() => setShowAssignDriver(false)} className="text-slate-400 hover:text-white p-1 cursor-pointer">
                 <XCircle className="w-5 h-5" />
               </button>
             </div>
 
             <div className="p-6 space-y-4 text-xs font-sans">
-              {/* Select Active Load */}
+              {/* Select Target Load */}
               <div>
                 <label className="block text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1.5">
                   Target Freight Load <span className="text-rose-500">*</span>
                 </label>
-                <select className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-purple-500 cursor-pointer">
-                  <option>L-12544 · Auckland → Hamilton (Car Carrier • 4 Vehicles)</option>
-                  <option>L-12546 · Perth → Fremantle (General Linehaul • 22T)</option>
-                  <option>L-12548 · Sydney → Melbourne (B-Double • 34 Pallets)</option>
+                <select 
+                  value={assignForm.loadId}
+                  onChange={(e) => setAssignForm({ ...assignForm, loadId: e.target.value })}
+                  required
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-purple-500 cursor-pointer">
+                  <option value="">Select a load from database...</option>
+                  {modalLoads.map((load) => (
+                    <option key={load.id} value={load.id}>
+                      {load.loadRef || load.id} · {load.originCity || 'Depot'} → {load.destCity || 'Destination'} ({load.status})
+                    </option>
+                  ))}
                 </select>
               </div>
 
-              {/* Assignment Type Selector (Driver / Truck / Trailer) */}
+              {/* Select Available Driver */}
               <div>
                 <label className="block text-[11px] font-black text-slate-400 uppercase tracking-wider mb-1.5">
-                  Select Available Driver <span className="text-rose-500">*</span>
+                  Select Driver <span className="text-rose-500">*</span>
                 </label>
-                <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
-                  {[
-                    { name: 'Sam Mitchell', code: 'DRV-101', role: 'MC Class • Linehaul', status: 'Available', hours: '8.5 hrs remaining', fatigue: 'Low Risk', bg: 'border-emerald-500 bg-emerald-50/40' },
-                    { name: 'John Doe', code: 'DRV-104', role: 'HC Class • Car Carrier', status: 'Available', hours: '10.0 hrs remaining', fatigue: 'Low Risk', bg: 'border-slate-200 hover:border-purple-300 bg-white' },
-                    { name: 'Mike Thompson', code: 'DRV-108', role: 'MC Class • B-Double', status: 'Rest Period Over', hours: '7.0 hrs remaining', fatigue: 'Medium Risk', bg: 'border-slate-200 hover:border-purple-300 bg-white' },
-                    { name: 'Sarah Mitchell', code: 'DRV-112', role: 'HC Class • Local P&D', status: 'Available', hours: '9.0 hrs remaining', fatigue: 'Low Risk', bg: 'border-slate-200 hover:border-purple-300 bg-white' },
-                  ].map((drv, i) => (
-                    <div key={i} className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${drv.bg}`}>
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 font-black flex items-center justify-center text-xs shrink-0">
-                          {drv.name.split(' ').map(n=>n[0]).join('')}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-black text-slate-900 text-xs">{drv.name}</span>
-                            <span className="text-[10px] font-mono font-bold text-slate-400">({drv.code})</span>
-                          </div>
-                          <span className="text-[10px] font-medium text-slate-500">{drv.role}</span>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-100 text-emerald-700 block mb-0.5">{drv.hours}</span>
-                        <span className="text-[9px] font-bold text-slate-400">{drv.fatigue}</span>
-                      </div>
-                    </div>
+                <select
+                  value={assignForm.driverId}
+                  onChange={(e) => setAssignForm({ ...assignForm, driverId: e.target.value })}
+                  required
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-purple-500 cursor-pointer">
+                  <option value="">Select a driver from database...</option>
+                  {modalDrivers.map((driver) => (
+                    <option key={driver.id} value={driver.id}>
+                      {driver.firstName} {driver.lastName} ({driver.driverCode || driver.id.slice(0, 8)}) - {driver.licenceCategory || 'Linehaul'}
+                    </option>
                   ))}
-                </div>
+                </select>
               </div>
 
-              {/* Assign Vehicle & Trailer */}
-              <div className="grid grid-cols-2 gap-3 pt-1">
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">
-                    Assign Truck / Vehicle
-                  </label>
-                  <select className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-purple-500 cursor-pointer">
-                    <option>TRK-101 · Volvo FH 540 (Active)</option>
-                    <option>TRK-117 · Scania T500 (Available)</option>
-                    <option>TRK-104 · Kenworth T680 (Ready)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">
-                    Assign Trailer Asset
-                  </label>
-                  <select className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-purple-500 cursor-pointer">
-                    <option>TRL-201 · B-Double Car Carrier</option>
-                    <option>TRL-202 · Flatbed 45ft</option>
-                    <option>TRL-203 · Refrigerated Thermo</option>
-                  </select>
-                </div>
+              {/* Assign Vehicle */}
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">
+                  Assign Truck / Vehicle
+                </label>
+                <select 
+                  value={assignForm.truckId}
+                  onChange={(e) => setAssignForm({ ...assignForm, truckId: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-purple-500 cursor-pointer">
+                  <option value="">Select a vehicle from fleet database...</option>
+                  {modalVehicles.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.rego || v.id} · {v.make} {v.model} ({v.status})
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -704,17 +839,15 @@ export default function CommandCentre() {
                 Cancel
               </button>
               <button 
-                type="button" 
-                onClick={() => {
-                  setShowAssignDriver(false);
-                  alert('✅ Driver Sam Mitchell & Vehicle TRK-101 assigned to load L-12544 successfully!');
-                }} 
-                className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold shadow-md shadow-purple-600/20 transition-colors cursor-pointer text-xs"
+                type="submit"
+                disabled={submittingAction}
+                className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold shadow-md shadow-purple-600/20 transition-colors cursor-pointer text-xs flex items-center gap-1.5"
               >
+                {submittingAction && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 Confirm Assignment
               </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
 
@@ -730,9 +863,22 @@ export default function CommandCentre() {
               <div className="w-14 h-14 text-[#10B981] flex items-center justify-center mb-3">
                 <MapPin className="w-10 h-10" />
               </div>
-              <p className="text-sm text-slate-600 mb-5">Enter a Load ID or VIN to view its current location on the live map.</p>
-              <input type="text" placeholder="e.g. L-12345" className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-center text-slate-700 focus:outline-none focus:border-emerald-500 mb-5" />
-              <button onClick={() => setShowTrackLoad(false)} className="w-full py-2.5 bg-[#10B981] hover:bg-emerald-600 text-white text-sm font-bold rounded-lg shadow-sm">Find on Map</button>
+              <p className="text-sm text-slate-600 mb-5">Enter a Load Ref or VIN to open live telemetry map.</p>
+              <input 
+                type="text" 
+                value={trackSearch}
+                onChange={(e) => setTrackSearch(e.target.value)}
+                placeholder="e.g. PO-123456" 
+                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-center text-slate-700 focus:outline-none focus:border-emerald-500 mb-5" 
+              />
+              <button 
+                onClick={() => {
+                  setShowTrackLoad(false);
+                  navigate('/company-admin/live-tracking', { state: { search: trackSearch } });
+                }} 
+                className="w-full py-2.5 bg-[#10B981] hover:bg-emerald-600 text-white text-sm font-bold rounded-lg shadow-xs cursor-pointer">
+                Find on Live Map
+              </button>
             </div>
           </div>
         </div>
@@ -741,208 +887,139 @@ export default function CommandCentre() {
       {/* Add New Customer Modal */}
       {showCreateCustomer && (
         <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-[540px] overflow-hidden">
+          <form onSubmit={handleSaveCustomer} className="bg-white rounded-xl shadow-xl w-full max-w-[540px] overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
               <h2 className="text-lg font-bold text-slate-800">Add New Customer</h2>
-              <button onClick={() => setShowCreateCustomer(false)} className="text-slate-400 hover:text-slate-600"><XCircle className="w-5 h-5" /></button>
+              <button type="button" onClick={() => setShowCreateCustomer(false)} className="text-slate-400 hover:text-slate-600"><XCircle className="w-5 h-5" /></button>
             </div>
             <div className="px-6 py-5 space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-slate-600 mb-1.5">Company Name</label>
-                <input type="text" className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-blue-500" />
+                <label className="block text-sm font-semibold text-slate-600 mb-1.5">Company Name *</label>
+                <input 
+                  type="text" 
+                  required
+                  value={customerForm.name}
+                  onChange={(e) => setCustomerForm({ ...customerForm, name: e.target.value })}
+                  placeholder="e.g. Apex Logistics Pty Ltd"
+                  className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-blue-500" 
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-slate-600 mb-1.5">Contact Name</label>
-                  <input type="text" className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-blue-500" />
+                  <input 
+                    type="text" 
+                    value={customerForm.contactPerson}
+                    onChange={(e) => setCustomerForm({ ...customerForm, contactPerson: e.target.value })}
+                    placeholder="e.g. John Smith"
+                    className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-blue-500" 
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-slate-600 mb-1.5">Email</label>
-                  <input type="email" className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-blue-500" />
+                  <input 
+                    type="email" 
+                    value={customerForm.email}
+                    onChange={(e) => setCustomerForm({ ...customerForm, email: e.target.value })}
+                    placeholder="john@apex.com"
+                    className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-blue-500" 
+                  />
                 </div>
               </div>
             </div>
-            <div className="px-6 py-4 flex justify-end gap-3 bg-white mt-2">
-              <button onClick={() => setShowCreateCustomer(false)} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800">Cancel</button>
-              <button onClick={() => setShowCreateCustomer(false)} className="px-5 py-2 bg-[#2563eb] hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-sm">Save Customer</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Generate Invoice Modal */}
-      {showCreateInvoice && (
-        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-[540px] overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-              <h2 className="text-lg font-bold text-slate-800">Generate Invoice</h2>
-              <button onClick={() => setShowCreateInvoice(false)} className="text-slate-400 hover:text-slate-600"><XCircle className="w-5 h-5" /></button>
-            </div>
-            <div className="px-6 py-5">
-              <p className="text-sm text-slate-600 mb-4">Select completed loads to generate a combined invoice.</p>
-              <div className="border border-slate-200 rounded-lg p-3.5 space-y-3.5">
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input type="checkbox" className="mt-1 w-4 h-4 text-purple-600 border-slate-300 rounded focus:ring-purple-500" />
-                  <div>
-                    <div className="text-sm font-bold text-slate-800">L-12545 (Melbourne → Sydney)</div>
-                    <div className="text-xs font-medium text-slate-500">Delivered - $1,450.00</div>
-                  </div>
-                </label>
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input type="checkbox" className="mt-1 w-4 h-4 text-purple-600 border-slate-300 rounded focus:ring-purple-500" />
-                  <div>
-                    <div className="text-sm font-bold text-slate-800">L-12501 (Sydney → Brisbane)</div>
-                    <div className="text-xs font-medium text-slate-500">Delivered - $2,100.00</div>
-                  </div>
-                </label>
-              </div>
-            </div>
-            <div className="px-6 py-4 flex justify-end gap-3 bg-white mt-1">
-              <button onClick={() => setShowCreateInvoice(false)} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800">Cancel</button>
-              <button onClick={() => setShowCreateInvoice(false)} className="px-5 py-2 bg-[#5b21b6] hover:bg-purple-800 text-white text-sm font-bold rounded-lg shadow-sm flex items-center gap-2">
-                <FileText className="w-4 h-4" /> Generate Invoice
+            <div className="px-6 py-4 flex justify-end gap-3 bg-white mt-2 border-t border-slate-100">
+              <button type="button" onClick={() => setShowCreateCustomer(false)} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800">Cancel</button>
+              <button type="submit" disabled={submittingAction} className="px-5 py-2 bg-[#2563eb] hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-xs flex items-center gap-1.5 cursor-pointer">
+                {submittingAction && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                Save Customer
               </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
 
       {/* Add New Truck Modal */}
       {showAddNewTruck && (
         <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-[540px] overflow-hidden">
+          <form onSubmit={handleSaveTruck} className="bg-white rounded-xl shadow-xl w-full max-w-[540px] overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-              <h2 className="text-lg font-bold text-slate-800">Add New Truck</h2>
-              <button onClick={() => setShowAddNewTruck(false)} className="text-slate-400 hover:text-slate-600"><XCircle className="w-5 h-5" /></button>
+              <h2 className="text-lg font-bold text-slate-800">Add New Truck / Fleet Vehicle</h2>
+              <button type="button" onClick={() => setShowAddNewTruck(false)} className="text-slate-400 hover:text-slate-600"><XCircle className="w-5 h-5" /></button>
             </div>
             <div className="px-6 py-5 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-600 mb-1.5">Truck Name/Model</label>
-                  <input type="text" placeholder="e.g. Volvo FH16" className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-blue-500" />
+                  <label className="block text-sm font-semibold text-slate-600 mb-1.5">Make / Model</label>
+                  <input 
+                    type="text" 
+                    value={truckForm.make}
+                    onChange={(e) => setTruckForm({ ...truckForm, make: e.target.value })}
+                    placeholder="e.g. Volvo FH540" 
+                    className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-blue-500" 
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-600 mb-1.5">Registration Number</label>
-                  <input type="text" placeholder="e.g. ABC-1234" className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-blue-500" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-600 mb-1.5">Assigned Driver (Optional)</label>
-                <select className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-blue-500">
-                  <option>Select a driver</option>
-                  <option>John Doe</option>
-                  <option>Sam Mitchell</option>
-                </select>
-              </div>
-            </div>
-            <div className="px-6 py-4 flex justify-end gap-3 bg-white mt-2">
-              <button onClick={() => setShowAddNewTruck(false)} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800">Cancel</button>
-              <button onClick={() => setShowAddNewTruck(false)} className="px-5 py-2 bg-[#2563eb] hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-sm">Save Truck</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Export Report Modal */}
-      {showExportReport && (
-        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-[540px] overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-              <h2 className="text-lg font-bold text-slate-800">Export Report</h2>
-              <button onClick={() => setShowExportReport(false)} className="text-slate-400 hover:text-slate-600"><XCircle className="w-5 h-5" /></button>
-            </div>
-            <div className="px-6 py-5 space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-slate-600 mb-1.5">Report Type</label>
-                <select className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-blue-500">
-                  <option>Overall Performance Report</option>
-                  <option>Fleet Activity Report</option>
-                  <option>Financial Summary</option>
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-600 mb-1.5">Start Date</label>
-                  <input type="date" className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-blue-500" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-600 mb-1.5">End Date</label>
-                  <input type="date" className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-blue-500" />
+                  <label className="block text-sm font-semibold text-slate-600 mb-1.5">Rego Plate *</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={truckForm.rego}
+                    onChange={(e) => setTruckForm({ ...truckForm, rego: e.target.value })}
+                    placeholder="e.g. ABC123" 
+                    className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-blue-500" 
+                  />
                 </div>
               </div>
             </div>
-            <div className="px-6 py-4 flex justify-end gap-3 bg-white mt-2">
-              <button onClick={() => setShowExportReport(false)} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800">Cancel</button>
-              <button onClick={() => setShowExportReport(false)} className="px-5 py-2 bg-[#2563eb] hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-sm flex items-center gap-2">
-                <Download className="w-4 h-4" /> Export
+            <div className="px-6 py-4 flex justify-end gap-3 bg-white mt-2 border-t border-slate-100">
+              <button type="button" onClick={() => setShowAddNewTruck(false)} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800">Cancel</button>
+              <button type="submit" disabled={submittingAction} className="px-5 py-2 bg-[#2563eb] hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-xs flex items-center gap-1.5 cursor-pointer">
+                {submittingAction && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                Save Vehicle
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Send Broadcast Modal */}
-      {showSendBroadcast && (
-        <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-[540px] overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-              <h2 className="text-lg font-bold text-slate-800">Send Broadcast</h2>
-              <button onClick={() => setShowSendBroadcast(false)} className="text-slate-400 hover:text-slate-600"><XCircle className="w-5 h-5" /></button>
-            </div>
-            <div className="px-6 py-5 space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-slate-600 mb-1.5">Recipients</label>
-                <select className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-blue-500">
-                  <option>All Active Drivers</option>
-                  <option>Depot Managers</option>
-                  <option>Entire Fleet Team</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-600 mb-1.5">Message Content</label>
-                <textarea rows="4" placeholder="Enter your broadcast message here..." className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-blue-500 resize-none"></textarea>
-              </div>
-            </div>
-            <div className="px-6 py-4 flex justify-end gap-3 bg-white mt-2">
-              <button onClick={() => setShowSendBroadcast(false)} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800">Cancel</button>
-              <button onClick={() => setShowSendBroadcast(false)} className="px-5 py-2 bg-[#2563eb] hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-sm flex items-center gap-2">
-                <Mail className="w-4 h-4" /> Send Message
-              </button>
-            </div>
-          </div>
+          </form>
         </div>
       )}
 
       {/* Support Ticket Modal */}
       {showSupportTicket && (
         <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-[540px] overflow-hidden">
+          <form onSubmit={handleSaveTicket} className="bg-white rounded-xl shadow-xl w-full max-w-[540px] overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
               <h2 className="text-lg font-bold text-slate-800">New Support Ticket</h2>
-              <button onClick={() => setShowSupportTicket(false)} className="text-slate-400 hover:text-slate-600"><XCircle className="w-5 h-5" /></button>
+              <button type="button" onClick={() => setShowSupportTicket(false)} className="text-slate-400 hover:text-slate-600"><XCircle className="w-5 h-5" /></button>
             </div>
             <div className="px-6 py-5 space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-slate-600 mb-1.5">Issue Type</label>
-                <select className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-blue-500">
-                  <option>Software Bug / Error</option>
-                  <option>Billing Issue</option>
-                  <option>Feature Request</option>
-                  <option>Other</option>
-                </select>
+                <label className="block text-sm font-semibold text-slate-600 mb-1.5">Subject *</label>
+                <input 
+                  type="text" 
+                  required
+                  value={ticketForm.subject}
+                  onChange={(e) => setTicketForm({ ...ticketForm, subject: e.target.value })}
+                  placeholder="e.g. Issue generating customer invoice" 
+                  className="w-full px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-blue-500" 
+                />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-slate-600 mb-1.5">Description</label>
-                <textarea rows="4" placeholder="Please describe the issue in detail..." className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-blue-500 resize-none"></textarea>
+                <textarea 
+                  rows="4" 
+                  value={ticketForm.description}
+                  onChange={(e) => setTicketForm({ ...ticketForm, description: e.target.value })}
+                  placeholder="Describe your request..." 
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-blue-500 resize-none"></textarea>
               </div>
             </div>
-            <div className="px-6 py-4 flex justify-end gap-3 bg-white mt-2">
-              <button onClick={() => setShowSupportTicket(false)} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800">Cancel</button>
-              <button onClick={() => setShowSupportTicket(false)} className="px-5 py-2 bg-[#2563eb] hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-sm">
+            <div className="px-6 py-4 flex justify-end gap-3 bg-white mt-2 border-t border-slate-100">
+              <button type="button" onClick={() => setShowSupportTicket(false)} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800">Cancel</button>
+              <button type="submit" disabled={submittingAction} className="px-5 py-2 bg-[#2563eb] hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-xs flex items-center gap-1.5 cursor-pointer">
+                {submittingAction && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 Submit Ticket
               </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
 

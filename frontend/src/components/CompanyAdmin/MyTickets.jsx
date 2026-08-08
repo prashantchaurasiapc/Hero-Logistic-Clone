@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   Ticket, 
@@ -8,81 +8,111 @@ import {
   CheckCircle2, 
   MessageSquare, 
   Send, 
-  Paperclip,
   Plus,
   Search,
   Filter,
-  Clock,
-  Check
+  Check,
+  RefreshCw
 } from 'lucide-react';
-
-const initialTickets = [
-  { id: 'TKT-8902', subject: 'Issue with assigning driver to load', updated: 'Updated 2 hours ago', status: 'OPEN', priority: 'High', created: 'Oct 24, 2026' },
-  { id: 'TKT-8875', subject: 'Billing cycle clarification', updated: 'Updated 1 day ago', status: 'IN PROGRESS', priority: 'Medium', created: 'Oct 22, 2026' },
-  { id: 'TKT-8810', subject: 'Cannot access yard map', updated: 'Updated Oct 16, 2026', status: 'RESOLVED', priority: 'High', created: 'Oct 15, 2026' },
-  { id: 'TKT-8799', subject: 'Feature request: Custom export fields', updated: 'Updated Oct 14, 2026', status: 'RESOLVED', priority: 'Low', created: 'Oct 10, 2026' },
-];
-
-const chatHistory = {
-  'TKT-8902': [
-    { from: 'user', text: 'I am experiencing this issue since yesterday. Can someone help?', time: 'Oct 23, 2026, 10:30 AM' },
-    { from: 'support', text: 'Hi, we are looking into this right now. We will update you shortly.', time: 'Oct 23, 2026, 11:15 AM' },
-  ],
-  'TKT-8875': [
-    { from: 'user', text: 'Can you clarify the billing cycle dates?', time: 'Oct 22, 2026, 09:00 AM' },
-    { from: 'support', text: 'Our billing cycle runs from the 1st to the 30th of each month.', time: 'Oct 22, 2026, 09:45 AM' },
-  ],
-  'TKT-8810': [
-    { from: 'user', text: 'I cannot access the yard map after the last update.', time: 'Oct 15, 2026, 03:00 PM' },
-    { from: 'support', text: 'This has been resolved. Please clear your browser cache and try again.', time: 'Oct 16, 2026, 10:00 AM' },
-  ],
-  'TKT-8799': [
-    { from: 'user', text: 'It would be great to have custom export fields for the CSV.', time: 'Oct 10, 2026, 11:00 AM' },
-    { from: 'support', text: 'Thank you for the feedback! This has been added to our roadmap.', time: 'Oct 14, 2026, 02:00 PM' },
-  ],
-};
+import api from '../../services/api';
 
 const StatusBadge = ({ status }) => {
+  const normStatus = status === 'IN_PROGRESS' ? 'IN PROGRESS' : status;
   const styles = {
     'OPEN': { bg: 'bg-amber-50 text-amber-700 border-amber-200', icon: '⏱' },
     'IN PROGRESS': { bg: 'bg-indigo-50 text-indigo-700 border-indigo-200', icon: '⏱' },
     'RESOLVED': { bg: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: '✓' },
+    'CLOSED': { bg: 'bg-slate-50 text-slate-700 border-slate-200', icon: '✓' },
   };
-  const s = styles[status] || styles['OPEN'];
+  const s = styles[normStatus] || styles['OPEN'];
   return (
     <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border whitespace-nowrap ${s.bg}`}>
-      <span>{s.icon}</span> {status}
+      <span>{s.icon}</span> {normStatus}
     </span>
   );
 };
 
 const PriorityLabel = ({ priority }) => {
-  const colors = { High: 'text-rose-600 bg-rose-50 border-rose-200', Medium: 'text-amber-600 bg-amber-50 border-amber-200', Low: 'text-slate-600 bg-slate-50 border-slate-200' };
+  const normP = priority ? (priority.charAt(0).toUpperCase() + priority.slice(1).toLowerCase()) : 'Medium';
+  const colors = { 
+    High: 'text-rose-600 bg-rose-50 border-rose-200', 
+    Urgent: 'text-rose-700 bg-rose-100 border-rose-300 font-black',
+    Medium: 'text-amber-600 bg-amber-50 border-amber-200', 
+    Low: 'text-slate-600 bg-slate-50 border-slate-200' 
+  };
   return (
-    <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-extrabold border ${colors[priority] || 'text-slate-600'}`}>
-      {priority}
+    <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-extrabold border ${colors[normP] || 'text-slate-600'}`}>
+      {normP}
     </span>
   );
 };
 
 export default function MyTickets() {
-  const [tickets, setTickets] = useState(initialTickets);
+  const [tickets, setTickets] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState(null);
   const [search, setSearch] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
   const [filterPriority, setFilterPriority] = useState('All Priorities');
   const [showRaiseModal, setShowRaiseModal] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [chatMsg, setChatMsg] = useState('');
-  const [chats, setChats] = useState(chatHistory);
+  const [sendingMsg, setSendingMsg] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
   const [attachedFile, setAttachedFile] = useState(null);
 
   const fileInputRef = useRef(null);
   const [form, setForm] = useState({ subject: '', category: '', priority: 'Medium', description: '' });
 
+  const triggerToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3500);
+  };
+
+  const fetchTickets = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/support-tickets');
+      const data = res.data?.data || res.data || [];
+      const list = Array.isArray(data) ? data : (data.items || []);
+
+      const mapped = list.map(t => {
+        const pNorm = t.priority ? (t.priority.charAt(0).toUpperCase() + t.priority.slice(1).toLowerCase()) : 'Medium';
+        return {
+          id: t.ticketNumber ? `TKT-${t.ticketNumber}` : `TKT-${t.id.slice(0, 4)}`,
+          dbId: t.id,
+          subject: t.subject || 'Support Request',
+          updated: t.updatedAt ? `Updated ${new Date(t.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : 'Just now',
+          status: t.status === 'IN_PROGRESS' ? 'IN PROGRESS' : (t.status || 'OPEN'),
+          priority: pNorm,
+          rawPriority: t.priority || 'MEDIUM',
+          created: t.createdAt ? new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Today',
+          message: t.message || t.description || 'No description provided.',
+          replies: (t.replies || []).map(r => ({
+            from: r.author ? (r.author.role === 'COMPANY_ADMIN' ? 'user' : 'support') : 'user',
+            authorName: r.author?.name || 'User',
+            text: r.message,
+            time: r.createdAt ? new Date(r.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'Just now'
+          }))
+        };
+      });
+
+      setTickets(mapped);
+    } catch (err) {
+      console.error('Error fetching support tickets:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTickets();
+  }, [fetchTickets]);
+
   const filtered = tickets.filter(t => {
     const matchSearch = t.id.toLowerCase().includes(search.toLowerCase()) || t.subject.toLowerCase().includes(search.toLowerCase());
-    const matchPriority = filterPriority === 'All Priorities' || t.priority === filterPriority;
+    const matchPriority = filterPriority === 'All Priorities' || t.priority.toLowerCase() === filterPriority.toLowerCase();
     return matchSearch && matchPriority;
   });
 
@@ -101,36 +131,64 @@ export default function MyTickets() {
     if (file) setAttachedFile(file);
   };
 
-  const handleSubmitTicket = (e) => {
+  const handleSubmitTicket = async (e) => {
     e.preventDefault();
     if (!form.subject.trim()) { setFormError('Please enter a subject.'); return; }
     if (!form.description.trim()) { setFormError('Please enter a description.'); return; }
     setFormError('');
+    setSubmitting(true);
 
-    const newId = `TKT-${8700 + Math.floor(Math.random() * 99)}`;
-    const newTicket = {
-      id: newId,
-      subject: form.subject,
-      updated: 'Just now',
-      status: 'OPEN',
-      priority: form.priority,
-      created: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-    };
-    setTickets(prev => [newTicket, ...prev]);
-    setChats(prev => ({ ...prev, [newId]: [] }));
-    setForm({ subject: '', category: '', priority: 'Medium', description: '' });
-    setAttachedFile(null);
-    setShowRaiseModal(false);
+    try {
+      const payload = {
+        subject: form.subject.trim(),
+        category: form.category || 'General Support',
+        priority: form.priority ? form.priority.toUpperCase() : 'MEDIUM',
+        description: form.description.trim()
+      };
+
+      await api.post('/support-tickets', payload);
+      triggerToast('Support Ticket submitted successfully!');
+      setForm({ subject: '', category: '', priority: 'Medium', description: '' });
+      setAttachedFile(null);
+      setShowRaiseModal(false);
+      await fetchTickets();
+    } catch (err) {
+      console.error('Error submitting ticket:', err);
+      setFormError('Failed to submit ticket. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const handleSendMsg = () => {
+  const handleSendMsg = async () => {
     if (!chatMsg.trim() || !selectedTicket) return;
-    const now = new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
-    setChats(prev => ({
-      ...prev,
-      [selectedTicket.id]: [...(prev[selectedTicket.id] || []), { from: 'user', text: chatMsg, time: now }],
-    }));
-    setChatMsg('');
+    setSendingMsg(true);
+
+    try {
+      const res = await api.post(`/support-tickets/${selectedTicket.dbId}/replies`, { message: chatMsg.trim() });
+      const newReply = res.data?.data || res.data;
+      
+      const replyObj = {
+        from: 'user',
+        authorName: 'You',
+        text: chatMsg.trim(),
+        time: new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+      };
+
+      setSelectedTicket(prev => ({
+        ...prev,
+        replies: [...(prev.replies || []), replyObj]
+      }));
+
+      setChatMsg('');
+      triggerToast('Reply sent successfully!');
+      fetchTickets();
+    } catch (err) {
+      console.error('Error sending reply:', err);
+      triggerToast('Failed to send reply.');
+    } finally {
+      setSendingMsg(false);
+    }
   };
 
   return (
@@ -138,18 +196,35 @@ export default function MyTickets() {
       className="min-h-screen bg-[#F8FAFC] p-4 sm:p-6 lg:p-8 font-sans text-left relative"
       onClick={() => filterOpen && setFilterOpen(false)}
     >
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed top-6 right-6 z-[99999] bg-slate-900 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-2 text-xs font-bold animate-bounce">
+          <Check className="text-emerald-400 w-4 h-4 stroke-[3]" />
+          <span>{toast}</span>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">My Tickets</h1>
-          <p className="text-sm text-slate-500 font-medium mt-1">Track and manage your support requests</p>
+          <p className="text-sm text-slate-500 font-medium mt-1">Track and manage your support requests in real time</p>
         </div>
-        <button 
-          onClick={() => setShowRaiseModal(true)}
-          className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm transition-colors cursor-pointer shrink-0 uppercase tracking-wider"
-        >
-          <Plus size={16} strokeWidth={2.5} /> Raise New Ticket
-        </button>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={fetchTickets}
+            className="p-2.5 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl transition-colors shadow-2xs cursor-pointer"
+            title="Refresh Tickets"
+          >
+            <RefreshCw size={16} className={loading ? 'animate-spin text-indigo-600' : ''} />
+          </button>
+          <button 
+            onClick={() => setShowRaiseModal(true)}
+            className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm transition-colors cursor-pointer shrink-0 uppercase tracking-wider active:scale-95"
+          >
+            <Plus size={16} strokeWidth={2.5} /> Raise New Ticket
+          </button>
+        </div>
       </div>
 
       {/* Table Card */}
@@ -201,29 +276,39 @@ export default function MyTickets() {
               </tr>
             </thead>
             <tbody className="text-[13px]">
-              {filtered.map((t) => (
-                <tr key={t.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
-                  <td className="py-4 px-6 font-black text-slate-900">{t.id}</td>
-                  <td className="py-4 px-6 max-w-[320px] whitespace-normal">
-                    <div className="font-bold text-slate-900 leading-tight">{t.subject}</div>
-                    <div className="text-[11px] text-slate-400 font-semibold mt-0.5">{t.updated}</div>
-                  </td>
-                  <td className="py-4 px-6"><StatusBadge status={t.status} /></td>
-                  <td className="py-4 px-6"><PriorityLabel priority={t.priority} /></td>
-                  <td className="py-4 px-6 text-slate-500 font-medium">{t.created}</td>
-                  <td className="py-4 px-6">
-                    <button 
-                      onClick={() => setSelectedTicket(t)}
-                      className="text-indigo-600 hover:text-indigo-800 text-[12px] font-extrabold tracking-wide hover:underline bg-none border-none cursor-pointer"
-                    >
-                      VIEW DETAILS
-                    </button>
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="py-12 text-center text-slate-400 font-bold">
+                    <RefreshCw size={20} className="animate-spin inline-block mr-2 text-indigo-600" />
+                    Loading tickets from database...
                   </td>
                 </tr>
-              ))}
-              {filtered.length === 0 && (
+              ) : filtered.length > 0 ? (
+                filtered.map((t) => (
+                  <tr key={t.dbId || t.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                    <td className="py-4 px-6 font-black text-slate-900 font-mono">{t.id}</td>
+                    <td className="py-4 px-6 max-w-[320px] whitespace-normal">
+                      <div className="font-bold text-slate-900 leading-tight">{t.subject}</div>
+                      <div className="text-[11px] text-slate-400 font-semibold mt-0.5">{t.updated}</div>
+                    </td>
+                    <td className="py-4 px-6"><StatusBadge status={t.status} /></td>
+                    <td className="py-4 px-6"><PriorityLabel priority={t.priority} /></td>
+                    <td className="py-4 px-6 text-slate-500 font-medium">{t.created}</td>
+                    <td className="py-4 px-6">
+                      <button 
+                        onClick={() => setSelectedTicket(t)}
+                        className="text-indigo-600 hover:text-indigo-800 text-[12px] font-extrabold tracking-wide hover:underline bg-none border-none cursor-pointer"
+                      >
+                        VIEW DETAILS
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
                 <tr>
-                  <td colSpan={6} className="py-10 text-center text-slate-400 font-semibold">No tickets found.</td>
+                  <td colSpan={6} className="py-12 text-center text-slate-400 font-semibold">
+                    No support tickets found in database. Click <strong className="text-indigo-600 font-extrabold">+ Raise New Ticket</strong> to submit one.
+                  </td>
                 </tr>
               )}
             </tbody>
@@ -234,7 +319,7 @@ export default function MyTickets() {
       {/* ── Raise New Ticket Modal ── */}
       {showRaiseModal && createPortal(
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-[9999] overflow-y-auto" onClick={() => setShowRaiseModal(false)}>
-          <div className="bg-white rounded-2xl w-full max-w-[540px] shadow-2xl overflow-hidden border border-slate-200 my-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-2xl w-full max-w-[540px] shadow-2xl overflow-hidden border border-slate-200 my-auto text-left" onClick={e => e.stopPropagation()}>
             
             {/* Modal header */}
             <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-white">
@@ -274,6 +359,7 @@ export default function MyTickets() {
                   onChange={e => setForm({ ...form, subject: e.target.value })}
                   placeholder="E.g. Unable to view latest invoice or load details" 
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-colors" 
+                  required
                 />
               </div>
 
@@ -288,12 +374,11 @@ export default function MyTickets() {
                     onChange={e => setForm({ ...form, category: e.target.value })}
                     className="w-full border border-slate-200 bg-white rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-colors cursor-pointer"
                   >
-                    <option value="">Select Category</option>
-                    <option>Billing & Invoices</option>
-                    <option>Technical Issue</option>
-                    <option>Feature Request</option>
-                    <option>Driver / Load Issue</option>
-                    <option>Other / General</option>
+                    <option value="General Support">General Support</option>
+                    <option value="Billing & Invoices">Billing &amp; Invoices</option>
+                    <option value="Technical Issue">Technical Issue</option>
+                    <option value="Feature Request">Feature Request</option>
+                    <option value="Driver / Load Issue">Driver / Load Issue</option>
                   </select>
                 </div>
 
@@ -334,6 +419,7 @@ export default function MyTickets() {
                   placeholder="Please describe your issue in detail..." 
                   rows={4}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-colors resize-none leading-relaxed" 
+                  required
                 />
               </div>
 
@@ -379,9 +465,10 @@ export default function MyTickets() {
                 </button>
                 <button 
                   type="submit"
-                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors shadow-sm cursor-pointer flex items-center gap-2"
+                  disabled={submitting}
+                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors shadow-sm cursor-pointer flex items-center gap-2 disabled:opacity-50"
                 >
-                  <Ticket size={14} /> Submit Ticket
+                  <Ticket size={14} /> {submitting ? 'Submitting...' : 'Submit Ticket'}
                 </button>
               </div>
             </form>
@@ -393,7 +480,7 @@ export default function MyTickets() {
       {/* ── Ticket Details Modal ── */}
       {selectedTicket && createPortal(
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-[9999] overflow-y-auto" onClick={() => setSelectedTicket(null)}>
-          <div className="bg-white rounded-2xl w-full max-w-[550px] max-h-[85vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200 my-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-2xl w-full max-w-[550px] max-h-[85vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200 my-auto text-left" onClick={e => e.stopPropagation()}>
             
             {/* Modal header */}
             <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-white shrink-0">
@@ -420,15 +507,15 @@ export default function MyTickets() {
               <div>
                 <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest mb-2">Problem Description</h4>
                 <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs text-slate-700 leading-relaxed font-medium">
-                  The user reported an issue related to: <strong className="text-slate-900 font-bold">{selectedTicket.subject}</strong>. Priority is set to <strong className="text-slate-900 font-bold">{selectedTicket.priority}</strong> and status is <strong className="text-slate-900 font-bold">{selectedTicket.status}</strong>.
+                  {selectedTicket.message || selectedTicket.subject}
                 </div>
               </div>
 
               {/* Chat History */}
               <div>
-                <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest mb-3">Chat History</h4>
+                <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest mb-3">Chat History &amp; Replies</h4>
                 <div className="space-y-3">
-                  {(chats[selectedTicket.id] || []).map((msg, i) => {
+                  {(selectedTicket.replies || []).map((msg, i) => {
                     const isUser = msg.from === 'user';
                     return (
                       <div key={i} className={`flex items-end gap-2.5 ${isUser ? 'flex-row' : 'flex-row-reverse'}`}>
@@ -450,8 +537,8 @@ export default function MyTickets() {
                       </div>
                     );
                   })}
-                  {(chats[selectedTicket.id] || []).length === 0 && (
-                    <p className="text-center text-xs text-slate-400 font-bold py-4">No messages yet.</p>
+                  {(selectedTicket.replies || []).length === 0 && (
+                    <p className="text-center text-xs text-slate-400 font-bold py-4">No replies yet. Use the chat box below to reply.</p>
                   )}
                 </div>
               </div>
@@ -463,14 +550,16 @@ export default function MyTickets() {
                 value={chatMsg} 
                 onChange={e => setChatMsg(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSendMsg()}
-                placeholder="Type a message..."
+                placeholder="Type a reply message..."
+                disabled={sendingMsg}
                 className="flex-1 bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-colors" 
               />
               <button 
                 onClick={handleSendMsg}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+                disabled={sendingMsg}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer shrink-0 disabled:opacity-50"
               >
-                <Send size={14} /> Send
+                <Send size={14} /> {sendingMsg ? 'Sending...' : 'Send'}
               </button>
             </div>
           </div>

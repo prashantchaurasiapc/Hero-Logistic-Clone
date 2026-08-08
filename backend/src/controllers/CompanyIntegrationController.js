@@ -49,12 +49,77 @@ exports.getById = async (req, res, next) => {
 // Create new CompanyIntegration
 exports.create = async (req, res, next) => {
   try {
-    const payload = { ...req.body };
-    // if (req.tenantId) payload.tenantId = req.tenantId;
+    const { providerName, apiKey, status, integrationType } = req.body;
 
-    const data = await prisma.companyIntegration.create({
-      data: payload
-    });
+    if (!providerName) {
+      return sendError(res, {
+        code: ERROR_CODES.VALIDATION_ERROR,
+        message: 'Integration provider name is required'
+      }, HTTP_STATUS.BAD_REQUEST);
+    }
+
+    let companyId = req.body.companyId;
+    if (!companyId) {
+      const comp = await prisma.company.findFirst();
+      if (comp) companyId = comp.id;
+    }
+
+    let typeEnum = 'CUSTOM';
+    if (integrationType) {
+      typeEnum = integrationType;
+    } else {
+      const pLower = String(providerName).toLowerCase();
+      if (pLower.includes('xero') || pLower.includes('myob') || pLower.includes('quickbooks')) {
+        typeEnum = 'ACCOUNTING';
+      } else if (pLower.includes('samsara') || pLower.includes('nhvr') || pLower.includes('eld') || pLower.includes('gps')) {
+        typeEnum = 'ELD';
+      }
+    }
+
+    let statusEnum = 'CONNECTED';
+    if (status) {
+      const sUpper = String(status).toUpperCase();
+      if (['CONNECTED', 'VERIFIED', 'OPERATIONAL', 'ACTIVE', 'NOT_CONNECTED'].includes(sUpper)) {
+        statusEnum = sUpper;
+      }
+    }
+
+    let data;
+    if (companyId) {
+      data = await prisma.companyIntegration.upsert({
+        where: {
+          companyId_providerName: {
+            companyId,
+            providerName: providerName.trim()
+          }
+        },
+        update: {
+          apiKey: apiKey ? apiKey.trim() : null,
+          status: statusEnum,
+          integrationType: typeEnum,
+          lastSync: new Date()
+        },
+        create: {
+          companyId,
+          providerName: providerName.trim(),
+          apiKey: apiKey ? apiKey.trim() : null,
+          status: statusEnum,
+          integrationType: typeEnum,
+          lastSync: new Date()
+        }
+      });
+    } else {
+      data = await prisma.companyIntegration.create({
+        data: {
+          providerName: providerName.trim(),
+          apiKey: apiKey ? apiKey.trim() : null,
+          status: statusEnum,
+          integrationType: typeEnum,
+          lastSync: new Date()
+        }
+      });
+    }
+
     return sendSuccess(res, data, HTTP_STATUS.CREATED);
   } catch (error) {
     next(error);

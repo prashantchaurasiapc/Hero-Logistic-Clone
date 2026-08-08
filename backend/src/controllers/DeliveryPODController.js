@@ -8,12 +8,17 @@ exports.getAll = async (req, res, next) => {
   try {
     const { where, skip, take, orderBy, currentPage, pageSize } = buildPrismaQuery(req.query);
     
-    // Optional: Inject tenant scope here if applicable
-    // if (req.tenantId) where.tenantId = req.tenantId;
+    if (req.tenantId) where.load = { companyId: req.tenantId };
 
     const [data, total] = await Promise.all([
       prisma.deliveryPOD.findMany({
-        where, skip, take, orderBy
+        where, skip, take, orderBy,
+        include: {
+          load: {
+            include: { driver: true, customer: true }
+          },
+          driver: true
+        }
       }),
       prisma.deliveryPOD.count({ where })
     ]);
@@ -29,9 +34,17 @@ exports.getAll = async (req, res, next) => {
 exports.getById = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
-    // if (req.tenantId) where.tenantId = req.tenantId;
+    if (req.tenantId) where.load = { companyId: req.tenantId };
 
-    const data = await prisma.deliveryPOD.findFirst({ where });
+    const data = await prisma.deliveryPOD.findFirst({
+      where,
+      include: {
+        load: {
+          include: { driver: true, customer: true }
+        },
+        driver: true
+      }
+    });
     
     if (!data) {
       return sendError(res, {
@@ -50,10 +63,13 @@ exports.getById = async (req, res, next) => {
 exports.create = async (req, res, next) => {
   try {
     const payload = { ...req.body };
-    // if (req.tenantId) payload.tenantId = req.tenantId;
 
     const data = await prisma.deliveryPOD.create({
-      data: payload
+      data: payload,
+      include: {
+        load: true,
+        driver: true
+      }
     });
     return sendSuccess(res, data, HTTP_STATUS.CREATED);
   } catch (error) {

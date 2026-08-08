@@ -8,12 +8,16 @@ exports.getAll = async (req, res, next) => {
   try {
     const { where, skip, take, orderBy, currentPage, pageSize } = buildPrismaQuery(req.query);
     
-    // Optional: Inject tenant scope here if applicable
-    // if (req.tenantId) where.tenantId = req.tenantId;
+    if (req.tenantId) where.companyId = req.tenantId;
 
     const [data, total] = await Promise.all([
       prisma.vehicle.findMany({
-        where, skip, take, orderBy
+        where, skip, take, orderBy,
+        include: {
+          currentDriver: true,
+          company: true,
+          truckLoads: { take: 5, orderBy: { createdAt: 'desc' } }
+        }
       }),
       prisma.vehicle.count({ where })
     ]);
@@ -29,9 +33,17 @@ exports.getAll = async (req, res, next) => {
 exports.getById = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
-    // if (req.tenantId) where.tenantId = req.tenantId;
+    if (req.tenantId) where.companyId = req.tenantId;
 
-    const data = await prisma.vehicle.findFirst({ where });
+    const data = await prisma.vehicle.findFirst({
+      where,
+      include: {
+        currentDriver: true,
+        company: true,
+        truckLoads: true,
+        telemetryHistory: { take: 10, orderBy: { timestamp: 'desc' } }
+      }
+    });
     
     if (!data) {
       return sendError(res, {
@@ -50,7 +62,7 @@ exports.getById = async (req, res, next) => {
 exports.create = async (req, res, next) => {
   try {
     const payload = { ...req.body };
-    // if (req.tenantId) payload.tenantId = req.tenantId;
+    if (req.tenantId && !payload.companyId) payload.companyId = req.tenantId;
 
     if (!payload.companyId) {
       const firstCompany = await prisma.company.findFirst();
@@ -60,7 +72,11 @@ exports.create = async (req, res, next) => {
     }
 
     const data = await prisma.vehicle.create({
-      data: payload
+      data: payload,
+      include: {
+        currentDriver: true,
+        company: true
+      }
     });
     return sendSuccess(res, data, HTTP_STATUS.CREATED);
   } catch (error) {
