@@ -59,13 +59,14 @@ export default function SupportTickets() {
       if (ticketsRes.status === 'fulfilled' && ticketsRes.value.data?.success) {
         setTickets(ticketsRes.value.data.data.map(t => ({
           id: t.id,
-          company: t.companyId || 'Unknown Company',
+          displayId: t.ticketNumber ? t.ticketNumber.toString().padStart(3, '0') : t.id.substring(0, 5),
+          company: t.company?.name || t.companyId || 'Unknown Company',
           subject: t.subject,
           priority: t.priority,
           status: t.status,
-          assignee: t.assignedTo || 'Unassigned',
+          assignee: t.assigneeTier || 'Unassigned',
           created: new Date(t.createdAt).toLocaleDateString(),
-          message: t.description || 'No description provided.'
+          message: t.message || t.description || 'No description provided.'
         })));
       }
 
@@ -125,10 +126,10 @@ export default function SupportTickets() {
     e.preventDefault();
     try {
       setIsLoading(true);
-      const res = await api.put(`/support-tickets/${assignForm.ticketId}`, { assignedTo: assignForm.assigneeTier });
+      const res = await api.put(`/support-tickets/${assignForm.ticketId}`, { assigneeTier: assignForm.assigneeTier });
       if (res.data?.success) {
         setShowAssignModal(false);
-        showNotification(`Ticket #${assignForm.ticketId} assigned to ${assignForm.assigneeTier}.`);
+        showNotification(`Ticket #${assignForm.ticketId.substring(0, 5)} assigned to ${assignForm.assigneeTier}.`);
         fetchTickets();
       }
     } catch (err) {
@@ -154,11 +155,11 @@ export default function SupportTickets() {
       setIsLoading(true);
       const [replyRes] = await Promise.all([
         api.post('/ticket-replies', { ticketId: selectedTicket.id, message: replyPayload }),
-        api.put(`/support-tickets/${selectedTicket.id}`, { status: 'RESOLVED', assignedTo: 'Super Admin' })
+        api.put(`/support-tickets/${selectedTicket.id}`, { status: 'RESOLVED', assigneeTier: 'Super Admin' })
       ]);
       if (replyRes.data?.success) {
         setShowResponderModal(false);
-        showNotification(`Ticket #${selectedTicket.id} has been marked as RESOLVED.`);
+        showNotification(`Ticket #${selectedTicket.displayId} has been marked as RESOLVED.`);
         fetchTickets();
       }
     } catch (err) {
@@ -178,11 +179,11 @@ export default function SupportTickets() {
     try {
       setIsLoading(true);
       await Promise.all([
-        api.put(`/support-tickets/${resolveForm.ticketId}`, { status: 'RESOLVED', assignedTo: 'Super Admin' }),
+        api.put(`/support-tickets/${resolveForm.ticketId}`, { status: 'RESOLVED', assigneeTier: 'Super Admin' }),
         api.post('/ticket-replies', { ticketId: resolveForm.ticketId, message: resolveForm.notes || 'Resolved directly by Super Admin.' })
       ]);
       setShowResolveModal(false);
-      showNotification(`Ticket #${resolveForm.ticketId} resolved.`);
+      showNotification(`Ticket #${resolveForm.ticketId.substring(0, 5)} resolved.`);
       fetchTickets();
     } catch (err) {
       showNotification('Error resolving ticket.');
@@ -193,7 +194,7 @@ export default function SupportTickets() {
 
   const handleExportCSV = () => {
     const headers = ['Ticket ID', 'Company', 'Subject', 'Priority', 'Status', 'Assignee', 'Created Date'];
-    const rows = tickets.map(t => [`#${t.id}`, t.company, t.subject, t.priority, t.status, t.assignee, t.created]);
+    const rows = tickets.map(t => [`#${t.displayId}`, t.company, t.subject, t.priority, t.status, t.assignee, t.created]);
     const csvContent = "data:text/csv;charset=utf-8,"
       + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
@@ -215,6 +216,7 @@ export default function SupportTickets() {
   const filteredTickets = tickets.filter(t => {
     const matchesSearch = t.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.displayId.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t.id.toString().includes(searchQuery);
     const matchesPriority = priorityFilter === 'All' || t.priority === priorityFilter;
     const matchesStatus = statusFilter === 'All' || t.status === statusFilter;
@@ -389,7 +391,7 @@ export default function SupportTickets() {
               ) : (
                 filteredTickets.map((t) => (
                 <tr key={t.id} className="hover:bg-slate-50/10">
-                  <td className="py-4 text-slate-500">#{t.id}</td>
+                  <td className="py-4 text-slate-500">#{t.displayId}</td>
                   <td className="py-4 font-extrabold text-slate-800">{t.company}</td>
                   <td className="py-4 text-slate-800">{t.subject}</td>
                   <td className="py-4">
@@ -445,7 +447,7 @@ export default function SupportTickets() {
         <div className="space-y-4">
           {responseHistory.map((h, idx) => (
             <div key={idx} className="border-l-4 border-brand-500 pl-4 py-1">
-              <h4 className="text-xs font-extrabold text-slate-800">Ticket #{h.ticketId} — {h.subject}</h4>
+              <h4 className="text-xs font-extrabold text-slate-800">Ticket #{h.ticketId.substring(0, 5)} — {h.subject}</h4>
               <p className="text-xs font-semibold text-slate-500 mt-1">{h.response}</p>
             </div>
           ))}
@@ -576,7 +578,7 @@ export default function SupportTickets() {
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-[10px] font-black text-slate-400 font-mono tracking-wider uppercase">
-                      Ticket #{selectedTicket.id}
+                      Ticket #{selectedTicket.displayId}
                     </span>
                     <span className="bg-slate-100 text-slate-500 border border-slate-200 text-[9px] font-black uppercase px-3 py-1 rounded-xl">
                       {selectedTicket.status}
@@ -650,12 +652,12 @@ export default function SupportTickets() {
                 </label>
                 <select
                   value={assignForm.ticketId}
-                  onChange={(e) => setAssignForm({ ...assignForm, ticketId: Number(e.target.value) })}
+                  onChange={(e) => setAssignForm({ ...assignForm, ticketId: e.target.value })}
                   className="w-full px-4 py-3.5 bg-white border border-slate-200 text-[13px] font-semibold rounded-xl focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none text-slate-700 cursor-pointer shadow-sm transition-all"
                 >
                   {tickets.filter(t => t.status === 'OPEN').map(t => (
                     <option key={t.id} value={t.id}>
-                      #{t.id} - {t.subject} ({t.company})
+                      #{t.displayId} - {t.subject} ({t.company})
                     </option>
                   ))}
                 </select>
@@ -714,12 +716,12 @@ export default function SupportTickets() {
                 </label>
                 <select
                   value={resolveForm.ticketId}
-                  onChange={(e) => setResolveForm({ ...resolveForm, ticketId: Number(e.target.value) })}
+                  onChange={(e) => setResolveForm({ ...resolveForm, ticketId: e.target.value })}
                   className="w-full px-4 py-3.5 bg-white border border-slate-200 text-[13px] font-semibold rounded-xl focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none text-slate-700 cursor-pointer shadow-sm transition-all"
                 >
                   {tickets.filter(t => t.status === 'OPEN').map(t => (
                     <option key={t.id} value={t.id}>
-                      #{t.id} - {t.subject} ({t.company})
+                      #{t.displayId} - {t.subject} ({t.company})
                     </option>
                   ))}
                 </select>

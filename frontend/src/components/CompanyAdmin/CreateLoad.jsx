@@ -5,12 +5,9 @@ import {
   Upload, ChevronDown, ChevronLeft, AlertCircle, CheckCircle, Info,
   Camera, X, Search, Flag, MoreVertical
 } from 'lucide-react';
-<<<<<<< HEAD
 import api from '../../services/api';
-=======
 import { dispatcherRepository } from '../../services/dispatcherRepository';
 import { dispatcherStore } from '../../services/dispatcherStore';
->>>>>>> 510360406c49ef37ec9df0a02865d4b64f4a0264
 
 const STOP_TYPES = ['Pickup', 'Drop-off'];
 const PRIORITIES  = ['Normal', 'Urgent', 'High'];
@@ -253,7 +250,6 @@ export default function CreateLoad({ onBack }) {
   const updateItem = (id, field, value) =>
     setItems(prev => prev.map(i => i.id === id ? { ...i, [field]: value } : i));
 
-<<<<<<< HEAD
   const [submitting, setSubmitting] = useState(false);
 
   const saveLoadToDatabase = async (targetStatus = 'ACTIVE') => {
@@ -306,31 +302,6 @@ export default function CreateLoad({ onBack }) {
   const handleActivate = (e) => {
     if (e) e.preventDefault();
     saveLoadToDatabase('ACTIVE');
-=======
-  const handleActivate = async (e) => {
-    e.preventDefault();
-    try {
-      const created = await dispatcherRepository.createLoad({
-        customer: formData.customer,
-        status: 'In Transit',
-        routeFrom: stops[0]?.address || 'Sydney',
-        routeTo: stops[stops.length - 1]?.address || 'Melbourne',
-        driver: formData.driver,
-        vehicle: formData.truck,
-        reqDate: formData.loadDate
-      });
-
-      if (created) {
-        alert('Load activated and saved to database successfully!');
-        onBack();
-      } else {
-        alert('Failed to save load. Please check form fields.');
-      }
-    } catch (error) {
-      console.error('Error activating load:', error);
-      alert('Error saving load to database.');
-    }
->>>>>>> 510360406c49ef37ec9df0a02865d4b64f4a0264
   };
 
   return (
