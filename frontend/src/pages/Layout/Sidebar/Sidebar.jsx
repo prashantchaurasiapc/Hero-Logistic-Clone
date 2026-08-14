@@ -92,12 +92,32 @@ const roleConfigs = {
         items: [
           { label: 'All Loads', path: '/company-admin/loads' },
           { label: 'Load Inbox', path: '/company-admin/load-inbox' },
-          { label: 'Customers', path: '/company-admin/customers' },
+          { label: 'Planning / Dispatch Overview', path: '/company-admin/planning-board' },
         ]
       },
+      { icon: <FiUsers />, label: 'Customers', path: '/company-admin/customers' },
       { icon: <FiNavigation />, label: 'Live Tracking', path: '/company-admin/live-tracking' },
-      { icon: <FiUsers />, label: 'Drivers', path: '/company-admin/drivers' },
-      { icon: <FiTruck />, label: 'Vehicles', path: '/company-admin/vehicles' },
+      {
+        key: 'company-drivers-menu',
+        icon: <FiUsers />,
+        label: 'Drivers & Staff',
+        path: '/company-admin/drivers',
+        items: [
+          { label: 'Drivers', path: '/company-admin/drivers' },
+          { label: 'Availability & Leave', path: '/company-admin/availability-leave' },
+        ]
+      },
+      {
+        key: 'company-fleet-menu',
+        icon: <FiTruck />,
+        label: 'Fleet',
+        path: '/company-admin/vehicles',
+        items: [
+          { label: 'Vehicles / Trucks', path: '/company-admin/vehicles' },
+          { label: 'Trailers', path: '/company-admin/trailers' },
+          { label: 'Maintenance & Compliance', path: '/company-admin/fleet-maintenance' },
+        ]
+      },
       { icon: <FiMapPin />, label: 'Branches', path: '/company-admin/branches' },
       { icon: <FiLayers />, label: 'Assets', path: '/company-admin/assets' },
       { icon: <FiHome />, label: 'Warehouse', path: '/company-admin/warehouse' },

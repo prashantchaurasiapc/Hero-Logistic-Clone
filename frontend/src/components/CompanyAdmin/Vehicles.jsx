@@ -190,6 +190,9 @@ const Vehicles = () => {
   const [isLoading, setIsLoading] = React.useState(false);
   const [toast, setToast] = React.useState(null);
 
+  const isTrailersView = window.location.pathname.includes('/trailers');
+  const isMaintenanceView = window.location.pathname.includes('/fleet-maintenance');
+
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3500);
@@ -617,12 +620,15 @@ const Vehicles = () => {
     e.preventDefault();
     const fd = new FormData(e.target);
     try {
+      const typeVal = fd.get('type') || 'Prime Mover';
+      const categoryVal = (typeVal.toLowerCase().includes('trailer') || isTrailersView) ? 'TRAILER' : 'TRUCK';
       const payload = {
         rego: (fd.get('reg') || '').toUpperCase(),
         make: fd.get('make') || '',
         model: fd.get('model') || '',
         year: fd.get('year') ? parseInt(fd.get('year')) : undefined,
-        category: fd.get('type') || 'TRUCK',
+        category: categoryVal,
+        type: typeVal,
         color: fd.get('color') || '',
         vin: fd.get('vin') || '',
         engineNumber: fd.get('engine') || '',
@@ -664,8 +670,18 @@ const Vehicles = () => {
       v.branch.toLowerCase().includes(search.toLowerCase()) ||
       v.driver.toLowerCase().includes(search.toLowerCase());
 
-    if (statusFilter === 'ALL') return matchesSearch;
-    return matchesSearch && v.status === statusFilter;
+    if (!matchesSearch) return false;
+
+    // Filter by pathname category
+    const isTrailer = v.type === 'TRAILER' || v.type?.toLowerCase().includes('trailer');
+    if (isTrailersView) {
+      if (!isTrailer) return false;
+    } else {
+      if (isTrailer) return false;
+    }
+
+    if (statusFilter === 'ALL') return true;
+    return v.status === statusFilter;
   });
 
   if (managingVehicle) {
@@ -3537,17 +3553,17 @@ const Vehicles = () => {
               <div className="flex items-center gap-2 text-xs font-semibold text-gray-500 mb-2">
                 <span>Home</span>
                 <ChevronRight size={12} />
-                <span>Vehicles</span>
+                <span>{isTrailersView ? 'Trailers' : 'Vehicles'}</span>
                 <ChevronRight size={12} />
-                <span>Vehicles List</span>
+                <span>{isTrailersView ? 'Trailers List' : 'Vehicles List'}</span>
                 <ChevronRight size={12} />
-                <span className="text-gray-900 font-bold">Add Vehicle</span>
+                <span className="text-gray-900 font-bold">{isTrailersView ? 'Add Trailer' : 'Add Vehicle'}</span>
                 <div className="ml-auto flex items-center gap-1.5 text-gray-500 text-xs">
                   <Shield size={12}/> <span className="hidden sm:inline">Guide & Compliance</span>
                 </div>
               </div>
-              <h2 className="text-2xl font-black text-gray-900 tracking-tight leading-none mb-2">Add New Vehicle</h2>
-              <p className="text-xs text-gray-500 font-medium">Create a new vehicle profile by entering all required information.</p>
+              <h2 className="text-2xl font-black text-gray-900 tracking-tight leading-none mb-2">{isTrailersView ? 'Add New Trailer' : 'Add New Vehicle'}</h2>
+              <p className="text-xs text-gray-500 font-medium">{isTrailersView ? 'Create a new trailer profile by entering all required information.' : 'Create a new vehicle profile by entering all required information.'}</p>
             </div>
             <div className="flex items-center gap-3">
               <button type="button" onClick={() => setShowAddModal(false)} className="px-5 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-sm">
@@ -3614,10 +3630,22 @@ const Vehicles = () => {
                 <div>
                   <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">TYPE *</label>
                   <select name="type" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
-                    <option>Prime Mover</option>
-                    <option>Car Carrier</option>
-                    <option>Heavy Rigid (HR)</option>
-                    <option>General Freight</option>
+                    {isTrailersView ? (
+                      <>
+                        <option value="Flatbed Trailer">Flatbed Trailer</option>
+                        <option value="Refrigerated Box">Refrigerated Box</option>
+                        <option value="Low Loader">Low Loader</option>
+                        <option value="Curtainsider">Curtainsider</option>
+                        <option value="Tanker">Tanker</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="Prime Mover">Prime Mover</option>
+                        <option value="Car Carrier">Car Carrier</option>
+                        <option value="Heavy Rigid (HR)">Heavy Rigid (HR)</option>
+                        <option value="General Freight">General Freight</option>
+                      </>
+                    )}
                   </select>
                 </div>
 
@@ -3817,9 +3845,11 @@ const Vehicles = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-[22px] font-bold text-gray-900 tracking-tight leading-none mb-1 flex items-center gap-2">
-            Vehicle List <Shield className="w-5 h-5 text-purple-600" />
+            {isTrailersView ? 'Trailer List' : isMaintenanceView ? 'Fleet Maintenance & Compliance' : 'Vehicle List'} <Shield className="w-5 h-5 text-purple-600" />
           </h1>
-          <p className="text-gray-500 text-[13px] font-medium mt-1">View and manage all vehicles in your fleet.</p>
+          <p className="text-gray-500 text-[13px] font-medium mt-1">
+            {isTrailersView ? 'View and manage all trailers in your fleet.' : isMaintenanceView ? 'Track, schedule, and manage all fleet services and compliance due dates.' : 'View and manage all vehicles in your fleet.'}
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
           <button
@@ -3832,7 +3862,7 @@ const Vehicles = () => {
             }}
             className="border border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100 text-[13px] font-semibold py-2 px-4 rounded-lg transition-colors flex items-center gap-2 shadow-sm cursor-pointer whitespace-nowrap flex-grow sm:flex-grow-0 justify-center"
           >
-            <Plus className="w-4 h-4" /> Add Vehicle
+            <Plus className="w-4 h-4" /> {isTrailersView ? 'Add Trailer' : 'Add Vehicle'}
           </button>
           <button className="border border-gray-200 text-gray-700 hover:bg-gray-50 text-[13px] font-semibold py-2 px-4 rounded-lg transition-colors flex items-center shadow-sm cursor-pointer whitespace-nowrap flex-grow sm:flex-grow-0 justify-center">
             More Actions <ChevronDownIcon size={14} className="ml-1" />

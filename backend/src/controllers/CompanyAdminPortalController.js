@@ -8,7 +8,11 @@ const { getTenantWhere } = require('../middlewares/tenantResolver');
  * Utility helper to resolve effective companyId (may return null for reads)
  */
 function resolveCompanyId(req) {
-  return req.tenantId || req.user?.companyId || req.user?.tenantId || null;
+  const companyId = req.tenantId || req.user?.companyId || req.user?.tenantId || null;
+  if (!companyId) {
+    throw new Error('Tenant context is missing or invalid.');
+  }
+  return companyId;
 }
 
 /**
@@ -173,6 +177,36 @@ exports.updateLoad = async (req, res, next) => {
       else delete payload.priority;
     }
 
+    // Handle nested route stops updates
+    if (Array.isArray(payload.stops)) {
+      await prisma.routeStop.deleteMany({ where: { loadId: targetLoad.id } });
+      payload.stops = {
+        create: payload.stops.map((s, idx) => ({
+          type: s.type || 'PICKUP',
+          sequenceIndex: s.sequenceIndex ?? idx,
+          address: s.address || 'Location Stop',
+          contactName: s.contactName || null,
+          contactPhone: s.contactPhone || null
+        }))
+      };
+    }
+
+    // Handle nested cargo items updates
+    if (Array.isArray(payload.items)) {
+      await prisma.loadItem.deleteMany({ where: { loadId: targetLoad.id } });
+      payload.items = {
+        create: payload.items.map(item => ({
+          stockRef: item.stockRef || item.rego || 'ITEM-REF',
+          make: item.make || null,
+          model: item.model || null,
+          rego: item.rego || null,
+          vin: item.vin || null,
+          quantity: item.quantity || 1,
+          notes: typeof item.notes === 'string' ? item.notes : JSON.stringify(item)
+        }))
+      };
+    }
+
     const data = await prisma.load.update({
       where: { id: targetLoad.id },
       data: payload,
@@ -185,12 +219,24 @@ exports.updateLoad = async (req, res, next) => {
 exports.deleteLoad = async (req, res, next) => {
   try {
     const { id } = req.params;
-    await prisma.routeStop.deleteMany({ where: { loadId: id } });
-    await prisma.loadItem.deleteMany({ where: { loadId: id } });
-    await prisma.loadExpense.deleteMany({ where: { loadId: id } });
-    await prisma.document.deleteMany({ where: { loadId: id } });
-    await prisma.loadActivity.deleteMany({ where: { loadId: id } });
-    await prisma.load.delete({ where: { id } });
+    const companyId = await resolveCompanyId(req);
+    
+    const targetLoad = await prisma.load.findFirst({
+      where: { id, companyId }
+    });
+    if (!targetLoad) {
+      return sendError(res, {
+        code: ERROR_CODES.NOT_FOUND,
+        message: 'Load not found or unauthorized'
+      }, HTTP_STATUS.NOT_FOUND);
+    }
+
+    await prisma.routeStop.deleteMany({ where: { loadId: targetLoad.id } });
+    await prisma.loadItem.deleteMany({ where: { loadId: targetLoad.id } });
+    await prisma.loadExpense.deleteMany({ where: { loadId: targetLoad.id } });
+    await prisma.document.deleteMany({ where: { loadId: targetLoad.id } });
+    await prisma.loadActivity.deleteMany({ where: { loadId: targetLoad.id } });
+    await prisma.load.delete({ where: { id: targetLoad.id } });
     return sendSuccess(res, { id, message: 'Load deleted successfully' });
   } catch (error) { next(error); }
 };
@@ -232,14 +278,14 @@ exports.createLoadInvoice = async (req, res, next) => {
     if (!customerId) {
       const custName = targetLoad.customerName || 'General Customer';
       let cust = await prisma.customer.findFirst({
-        where: { name: { contains: custName } }
+        where: { name: { contains: custName }, companyId }
       });
       if (!cust) {
         cust = await prisma.customer.create({
           data: {
             id: require('crypto').randomUUID(),
             name: custName,
-            companyId: targetLoad.companyId
+            companyId
           }
         });
       }
@@ -254,7 +300,43 @@ exports.createLoadInvoice = async (req, res, next) => {
 
     const crypto = require('crypto');
     const invNum = `INV-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
-    const finalAmount = parseFloat(amount) || 0;
+    
+    let finalAmount = parseFloat(amount);
+    if (isNaN(finalAmount) || finalAmount <= 0) {
+      const stops = await prisma.routeStop.findMany({
+        where: { loadId: targetLoad.id },
+        orderBy: { sequenceIndex: 'asc' }
+      });
+      const pickup = stops.find(s => s.type === 'PICKUP') || stops[0];
+      const dropoff = stops.find(s => s.type === 'DROPOFF') || stops[stops.length - 1];
+
+      let rule = null;
+      if (pickup && dropoff) {
+        const oCity = pickup.address.split(',')[0].trim();
+        const dCity = dropoff.address.split(',')[0].trim();
+        rule = await prisma.lanePricingRule.findFirst({
+          where: {
+            companyId,
+            origin: { contains: oCity },
+            destination: { contains: dCity }
+          }
+        });
+      }
+
+      if (rule) {
+        const linehaul = rule.baseLinehaulRate || 1200;
+        const surcharge = rule.fuelSurcharge || 14.5;
+        finalAmount = linehaul * (1 + surcharge / 100);
+      } else {
+        const truck = targetLoad.truckId ? await prisma.vehicle.findUnique({ where: { id: targetLoad.truckId } }) : null;
+        const rate = (truck && truck.model) ? await prisma.vehicleTypeRate.findFirst({ where: { companyId, vehicleType: truck.model } }) : null;
+        if (rate) {
+          finalAmount = rate.hourlyRate * 8;
+        } else {
+          finalAmount = 1500;
+        }
+      }
+    }
 
     const invoice = await prisma.customerInvoice.create({
       data: {
@@ -997,30 +1079,50 @@ exports.createPayrollRun = async (req, res, next) => {
       drivers = seeded.map(d => ({ id: d.id }));
     }
 
-    const basePayAmount = parseFloat(basePay) || 1000;
-    const grossEarnings = basePayAmount;
-    const paygTax = grossEarnings * 0.2;
-    const superAmount = grossEarnings * 0.11;
-    const totalDeductions = paygTax + superAmount;
-    const netPay = grossEarnings - totalDeductions;
-
     // Create PayPeriod for each driver in the batch
-    const payPeriodData = drivers.map(d => ({
-      id: require('crypto').randomUUID(),
-      driverId: d.id,
-      periodStart: new Date(periodStart),
-      periodEnd: new Date(periodEnd),
-      payDate: payDate ? new Date(payDate) : null,
-      frequency: frequency || 'WEEKLY',
-      status: 'DRAFT',
-      basePay: basePayAmount,
-      grossEarnings,
-      paygTax,
-      superAmount,
-      totalDeductions,
-      netPay,
-      companyId
-    }));
+    const payPeriodData = [];
+    for (const d of drivers) {
+      const driverObj = await prisma.driver.findUnique({
+        where: { id: d.id },
+        select: { payRate: true, payType: true }
+      });
+      
+      const timesheets = await prisma.timesheet.findMany({
+        where: {
+          driverId: d.id,
+          date: { gte: new Date(periodStart), lte: new Date(periodEnd) },
+          status: 'APPROVED'
+        }
+      });
+      const totalHours = timesheets.reduce((sum, t) => sum + (t.workMinutes || 0), 0) / 60;
+      
+      let driverGross = parseFloat(basePay) || 1000;
+      if (totalHours > 0 && driverObj && driverObj.payRate) {
+        driverGross = totalHours * driverObj.payRate;
+      }
+
+      const driverTax = driverGross * 0.2;
+      const driverSuper = driverGross * 0.11;
+      const driverDeductions = driverTax + driverSuper;
+      const driverNet = driverGross - driverDeductions;
+
+      payPeriodData.push({
+        id: require('crypto').randomUUID(),
+        driverId: d.id,
+        periodStart: new Date(periodStart),
+        periodEnd: new Date(periodEnd),
+        payDate: payDate ? new Date(payDate) : null,
+        frequency: frequency || 'WEEKLY',
+        status: 'DRAFT',
+        basePay: parseFloat(basePay) || 1000,
+        grossEarnings: driverGross,
+        paygTax: driverTax,
+        superAmount: driverSuper,
+        totalDeductions: driverDeductions,
+        netPay: driverNet,
+        companyId
+      });
+    }
 
     // Use createMany for efficiency
     await prisma.payPeriod.createMany({ data: payPeriodData });
@@ -1036,7 +1138,7 @@ exports.createPayrollRun = async (req, res, next) => {
       message: `Payroll run created for ${drivers.length} drivers`,
       runName: name || `Payroll Run ${new Date(periodStart).toLocaleDateString()} - ${new Date(periodEnd).toLocaleDateString()}`,
       driverCount: drivers.length,
-      totalGross: basePayAmount * drivers.length,
+      totalGross: payPeriodData.reduce((sum, p) => sum + p.grossEarnings, 0),
       payPeriods: created
     }, HTTP_STATUS.CREATED);
   } catch (error) { next(error); }
@@ -2827,7 +2929,10 @@ exports.createWarehouseStock = async (req, res, next) => {
 exports.getWarehouseMovements = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const data = await prisma.itemMovement.findMany({ where: { warehouseId: id } });
+    const data = await prisma.itemMovement.findMany({
+      where: { item: { warehouseId: id } },
+      include: { item: true, loadLane: true, stagingArea: true, performedBy: true }
+    });
     return sendSuccess(res, data);
   } catch (error) { next(error); }
 };
@@ -2835,7 +2940,46 @@ exports.getWarehouseMovements = async (req, res, next) => {
 exports.createWarehouseMovement = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const data = await prisma.itemMovement.create({ data: { ...req.body, warehouseId: id } });
+    const { itemId, type, fromLocation, toLocation, quantity, reason, loadLaneId, stagingAreaId, zone, row, bay, position, performedById } = req.body;
+
+    const data = await prisma.itemMovement.create({
+      data: {
+        itemId,
+        type: type || 'MOVE',
+        fromLocation,
+        toLocation,
+        quantity: quantity || 1,
+        reason: reason || 'Internal Warehouse Movement',
+        loadLaneId: loadLaneId || null,
+        stagingAreaId: stagingAreaId || null,
+        performedById: performedById || req.user?.id || null
+      },
+      include: { item: true }
+    });
+
+    const updateData = {};
+    if (loadLaneId) {
+      updateData.loadLaneId = loadLaneId;
+      updateData.stagingAreaId = null;
+      updateData.stockStatus = 'STAGED';
+    } else if (stagingAreaId) {
+      updateData.stagingAreaId = stagingAreaId;
+      updateData.loadLaneId = null;
+      updateData.stockStatus = 'STAGED';
+    } else {
+      updateData.stockStatus = 'IN_STORAGE';
+    }
+    
+    if (zone) updateData.zone = zone;
+    if (row) updateData.row = row;
+    if (bay) updateData.bay = bay;
+    if (position) updateData.position = position;
+
+    await prisma.loadItem.update({
+      where: { id: itemId },
+      data: updateData
+    });
+
     return sendSuccess(res, data, HTTP_STATUS.CREATED);
   } catch (error) { next(error); }
 };

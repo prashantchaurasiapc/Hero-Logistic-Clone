@@ -2,10 +2,10 @@ const express = require('express');
 const router = express.Router();
 const ctrl = require('../controllers/CompanyAdminPortalController');
 const { verifyToken } = require('../middlewares/auth');
-const { resolveTenant } = require('../middlewares/tenantResolver');
+const { resolveTenant, requireTenant } = require('../middlewares/tenantResolver');
 
 // Apply auth & tenant resolver middleware across all Company Admin routes
-router.use(verifyToken, resolveTenant);
+router.use(verifyToken, resolveTenant, requireTenant);
 
 // 1. Command Centre / Dashboard
 router.get('/command-centre', ctrl.getCommandCentre);
