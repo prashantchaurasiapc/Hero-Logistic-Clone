@@ -69,14 +69,58 @@ const ALLOWED_VEHICLE_FIELDS = new Set([
 
 const sanitizePayload = (rawPayload) => {
   const clean = {};
-  for (const key of Object.keys(rawPayload)) {
-    if (ALLOWED_VEHICLE_FIELDS.has(key) && rawPayload[key] !== undefined) {
-      clean[key] = rawPayload[key];
+
+  if (rawPayload.rego) clean.rego = String(rawPayload.rego).trim();
+  if (rawPayload.plate) clean.plate = String(rawPayload.plate).trim();
+  if (rawPayload.vin) clean.vin = String(rawPayload.vin).trim();
+
+  if (rawPayload.make !== undefined) {
+    const makeStr = String(rawPayload.make || '').trim();
+    if (makeStr.includes(' ') && !rawPayload.model) {
+      const parts = makeStr.split(' ');
+      clean.make = parts[0];
+      clean.model = parts.slice(1).join(' ');
+    } else {
+      clean.make = makeStr;
     }
+  }
+
+  if (rawPayload.model !== undefined && !clean.model) {
+    clean.model = String(rawPayload.model || '').trim();
+  }
+
+  if (rawPayload.status) {
+    const s = String(rawPayload.status).toUpperCase().replace(/\s+/g, '_');
+    if (['IN_TRANSIT', 'IDLE', 'MAINTENANCE', 'ALERT'].includes(s)) {
+      clean.status = s;
+    } else if (s === 'ACTIVE' || s === 'AVAILABLE') {
+      clean.status = 'IDLE';
+    } else if (s === 'OUT_OF_SERVICE') {
+      clean.status = 'ALERT';
+    }
+  }
+
+  if (rawPayload.category) {
+    const c = String(rawPayload.category).toUpperCase();
+    if (['TRUCK', 'TRAILER'].includes(c)) {
+      clean.category = c;
+    } else {
+      clean.category = 'TRUCK';
+    }
+  }
+
+  if (rawPayload.odometerKm !== undefined && rawPayload.odometerKm !== null) {
+    const num = parseInt(String(rawPayload.odometerKm).replace(/[^0-9]/g, ''), 10);
+    if (!isNaN(num)) clean.odometerKm = num;
+  }
+
+  if (rawPayload.notes !== undefined) {
+    clean.notes = rawPayload.notes;
   }
   if (rawPayload.year) {
     clean.notes = clean.notes ? `${clean.notes} | Year: ${rawPayload.year}` : `Year: ${rawPayload.year}`;
   }
+
   return clean;
 };
 
@@ -155,7 +199,7 @@ exports.update = async (req, res, next) => {
     const where = { id };
 
     // Check version if optimistic concurrency is required
-    const ifMatch = req.headers['if-match'];
+    const ifMatch = req.headers ? req.headers['if-match'] : undefined;
     if (ifMatch) {
       where.version = parseInt(ifMatch.replace(/"/g, ''), 10);
     }

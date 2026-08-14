@@ -2169,11 +2169,12 @@ export default function Drivers() {
         <form onSubmit={async (e) => {
           e.preventDefault();
           const fd = new FormData(e.target);
-          const firstName = fd.get('FirstName') || '';
-          const lastName = fd.get('LastName') || '';
-          const driverCode = fd.get('EmployeeIDManualEditOption') || ('DRV00' + Math.floor(Math.random() * 100));
-          const phone = fd.get('PhoneNumber') || '';
-          const email = fd.get('EmailAddress') || '';
+          const firstName = fd.get('FirstName') || fd.get('firstName') || '';
+          const lastName = fd.get('LastName') || fd.get('lastName') || '';
+          const driverCode = fd.get('EmployeeIDManualEditOption') || fd.get('driverCode') || ('DRV00' + Math.floor(Math.random() * 100));
+          const phone = fd.get('PhoneNumber') || fd.get('phone') || '';
+          const email = fd.get('EmailAddress') || fd.get('email') || '';
+          const avatarUrl = photoPreview || fd.get('avatarUrl') || (isEditMode && selectedDriver ? selectedDriver.avatar : '');
           const licenceType = fd.get('LicenceType') || 'HR (Heavy Rigid)';
           const licenceNumber = fd.get('LicenceNumber') || '';
           const status = fd.get('DriverStatus') || 'Available';
@@ -2181,17 +2182,29 @@ export default function Drivers() {
 
           try {
             if (isEditMode && selectedDriver) {
-              await api.put(`/drivers/${selectedDriver.id}`, {
+              const res = await api.put(`/drivers/${selectedDriver.id}`, {
                 firstName,
                 lastName,
                 driverCode,
                 phone,
                 email,
+                avatarUrl,
                 licenceType,
                 licenceNumber,
                 status,
                 dob
               });
+              const updatedName = `${firstName} ${lastName}`.trim() || driverCode;
+              setSelectedDriver(prev => ({
+                ...prev,
+                name: updatedName,
+                phone: phone || prev.phone,
+                email: email || prev.email,
+                avatar: avatarUrl || prev.avatar,
+                licence: licenceType || prev.licence,
+                licenceNo: licenceNumber || prev.licenceNo,
+                status: status || prev.status
+              }));
             } else {
               await api.post('/drivers', {
                 firstName,
@@ -2199,6 +2212,7 @@ export default function Drivers() {
                 driverCode,
                 phone,
                 email,
+                avatarUrl,
                 licenceType,
                 licenceNumber,
                 status,

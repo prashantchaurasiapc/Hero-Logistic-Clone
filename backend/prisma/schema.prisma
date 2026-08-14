@@ -568,6 +568,7 @@ model Company {
   aiModelRegistries     AiModelRegistry[]
   notificationTemplates NotificationTemplate[]
   notificationRules     NotificationRule[]
+  onboardingHandovers   OnboardingHandover[]
   recipientGroups       RecipientGroup[]
 
   securityRetentionDays  String?  @default("90 Days")
@@ -786,7 +787,7 @@ model Driver {
   // 1. Personal Information
   firstName        String?
   lastName         String?
-  avatarUrl        String?
+  avatarUrl        String?   @db.Text
   dob              DateTime?
   gender           String?
   nationality      String?
@@ -1545,6 +1546,7 @@ model Lead {
   proposals  Proposal[]
   tasks      FollowUpTask[]
   activities SalesActivity[]
+  handover   OnboardingHandover?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1625,6 +1627,29 @@ model SalesActivity {
   timestamp DateTime @default(now())
 
   @@map("sales_activity")
+}
+
+model OnboardingHandover {
+  id              String   @id @default(uuid())
+  leadId          String   @unique
+  lead            Lead     @relation(fields: [leadId], references: [id])
+  companyName     String
+  primaryContact  String
+  adminEmail      String
+  adminPhone      String?
+  transportNiche  String?
+  fleetSize       String?
+  selectedPlan    String?
+  billingFreq     String?  @default("Monthly")
+  agreedPrice     Float?
+  status          String   @default("READY_FOR_PROVISIONING")
+  notes           String?  @db.Text
+  companyId       String?
+  company         Company? @relation(fields: [companyId], references: [id])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("onboarding_handover")
 }
 
 model EmailTemplate {

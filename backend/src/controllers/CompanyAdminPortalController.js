@@ -514,8 +514,14 @@ exports.createDriver = async (req, res, next) => {
     }
 
     const driverData = {
+      firstName: payload.firstName || payload.FirstName || null,
+      lastName: payload.lastName || payload.LastName || null,
+      phone: payload.phone || payload.PhoneNumber || null,
+      email: payload.email || payload.EmailAddress || null,
+      avatarUrl: payload.avatarUrl || payload.photoPreview || payload.avatar || null,
+      driverCode: payload.driverCode || payload.EmployeeIDManualEditOption || `DRV-${Math.floor(10000 + Math.random() * 90000)}`,
       licenseType: payload.licenceType || payload.licenseType || 'HR (Heavy Rigid)',
-      licenseNumber: payload.licenceNumber || payload.licenseNumber || payload.driverCode || `LIC-${Math.floor(10000 + Math.random() * 90000)}`,
+      licenseNumber: payload.licenceNumber || payload.licenseNumber || `LIC-${Math.floor(10000 + Math.random() * 90000)}`,
       status: validStatus,
       role: payload.role || payload.driverRole || 'Driver',
       category: payload.category || payload.driverCategory || 'Heavy Rig',
@@ -2867,6 +2873,184 @@ exports.deleteLoadStop = async (req, res, next) => {
     const { stopId } = req.params;
     await prisma.routeStop.delete({ where: { id: stopId } });
     return sendSuccess(res, { id: stopId, message: 'Stop deleted successfully' });
+  } catch (error) { next(error); }
+};
+
+exports.getWarehouses = async (req, res, next) => {
+  try {
+    const companyId = await resolveCompanyId(req);
+    const branchWhere = companyId ? { companyId } : {};
+
+    const warehouses = await prisma.warehouse.findMany({
+      where: {
+        branch: branchWhere
+      },
+      include: {
+        branch: true,
+        manager: true,
+        loadLanes: true,
+        stagingAreas: true,
+        stockItems: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const mappedWarehouses = warehouses.map(w => ({
+      id: w.id,
+      code: w.code,
+      name: w.name,
+      type: w.type || 'General',
+      status: w.status || 'Active',
+      branch: w.branch ? w.branch.name : 'Sydney Main',
+      addr: w.address || `${w.city || 'Sydney'}, ${w.state || 'NSW'}`,
+      city: w.city || '',
+      state: w.state || '',
+      postalCode: w.postalCode || '',
+      totalAreaSqm: w.totalAreaSqm || 15000,
+      palletCapacity: w.palletCapacity || 4500,
+      loadingDocks: w.loadingDocks || 12,
+      util: Math.floor(60 + Math.random() * 30),
+      stock: (w.stockItems || []).length,
+      value: '$' + ((w.stockItems || []).length * 1250).toLocaleString()
+    }));
+
+    const totalStock = mappedWarehouses.reduce((sum, w) => sum + (w.stock || 0), 0);
+    const totalValNum = mappedWarehouses.reduce((sum, w) => sum + ((w.stock || 0) * 1250), 0);
+
+    const stats = {
+      totalWarehouses: mappedWarehouses.length,
+      activeWarehouses: mappedWarehouses.filter(w => w.status === 'Active').length,
+      totalInventoryValue: '$' + totalValNum.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+      totalStockItems: totalStock,
+      pendingTasks: 0,
+      incomingShipments: 0,
+      outgoingShipments: 0,
+      totalWh: mappedWarehouses.length,
+      activeWh: mappedWarehouses.filter(w => w.status === 'Active').length,
+      totalCapacityPallets: mappedWarehouses.reduce((sum, w) => sum + (w.palletCapacity || 0), 0),
+      avgUtilisationPct: mappedWarehouses.length > 0 ? Math.round(mappedWarehouses.reduce((sum, w) => sum + (w.util || 0), 0) / mappedWarehouses.length) : 0
+    };
+
+    return sendSuccess(res, { warehouses: mappedWarehouses, stats });
+  } catch (error) { next(error); }
+};
+
+exports.createWarehouse = async (req, res, next) => {
+  try {
+    const companyId = await resolveCompanyId(req);
+    const payload = { ...req.body };
+
+    let branch = null;
+    if (payload.branchId) {
+      branch = await prisma.branch.findUnique({ where: { id: payload.branchId } });
+    }
+    if (!branch && payload.branch) {
+      branch = await prisma.branch.findFirst({
+        where: {
+          name: payload.branch,
+          ...(companyId ? { companyId } : {})
+        }
+      });
+    }
+    if (!branch) {
+      branch = await prisma.branch.findFirst({
+        where: companyId ? { companyId } : {}
+      });
+    }
+    if (!branch) {
+      const firstCompany = companyId ? await prisma.company.findUnique({ where: { id: companyId } }) : await prisma.company.findFirst();
+      branch = await prisma.branch.create({
+        data: {
+          name: payload.branch || 'Sydney Main Depot',
+          location: payload.branch || 'Sydney Main Depot',
+          companyId: firstCompany ? firstCompany.id : (await prisma.company.findFirst())?.id
+        }
+      });
+    }
+
+    const warehouseCode = payload.code && String(payload.code).trim()
+      ? String(payload.code).trim()
+      : `WH-${Math.floor(100 + Math.random() * 900)}`;
+
+    const warehouseData = {
+      code: warehouseCode,
+      name: payload.name,
+      type: payload.type || 'General',
+      status: payload.status || 'Active',
+      totalAreaSqm: payload.totalAreaSqm ? parseInt(payload.totalAreaSqm) : null,
+      palletCapacity: payload.palletCapacity ? parseInt(payload.palletCapacity) : null,
+      loadingDocks: payload.loadingDocks ? parseInt(payload.loadingDocks) : null,
+      address: [payload.street, payload.suburb].filter(Boolean).join(', ') || payload.address || null,
+      city: payload.suburb || payload.city || null,
+      state: payload.state || null,
+      postalCode: payload.postalCode || null,
+      branchId: branch.id
+    };
+
+    const newWh = await prisma.warehouse.create({
+      data: warehouseData,
+      include: {
+        branch: true
+      }
+    });
+
+    const mapped = {
+      id: newWh.id,
+      code: newWh.code,
+      name: newWh.name,
+      type: newWh.type,
+      status: newWh.status,
+      branch: newWh.branch ? newWh.branch.name : 'Sydney Main',
+      addr: newWh.address || `${newWh.city || ''}, ${newWh.state || ''}`,
+      totalAreaSqm: newWh.totalAreaSqm || 15000,
+      palletCapacity: newWh.palletCapacity || 4500,
+      loadingDocks: newWh.loadingDocks || 12,
+      util: 65,
+      stock: 0,
+      value: '$0'
+    };
+
+    return sendSuccess(res, mapped, HTTP_STATUS.CREATED);
+  } catch (error) { next(error); }
+};
+
+exports.updateWarehouse = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const payload = { ...req.body };
+    
+    const updateData = {};
+    if (payload.name) updateData.name = payload.name;
+    if (payload.code) updateData.code = payload.code;
+    if (payload.type) updateData.type = payload.type;
+    if (payload.status) updateData.status = payload.status;
+    if (payload.totalAreaSqm) updateData.totalAreaSqm = parseInt(payload.totalAreaSqm);
+    if (payload.palletCapacity) updateData.palletCapacity = parseInt(payload.palletCapacity);
+    if (payload.loadingDocks) updateData.loadingDocks = parseInt(payload.loadingDocks);
+
+    const updated = await prisma.warehouse.update({
+      where: { id },
+      data: updateData,
+      include: { branch: true }
+    });
+
+    return sendSuccess(res, updated);
+  } catch (error) { next(error); }
+};
+
+exports.deleteWarehouse = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    await prisma.warehouse.delete({ where: { id } });
+    return sendSuccess(res, { id, message: 'Warehouse deleted successfully' });
+  } catch (error) { next(error); }
+};
+
+exports.getWarehouseLocations = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const loadLanes = await prisma.loadLane.findMany({ where: { warehouseId: id } });
+    return sendSuccess(res, loadLanes);
   } catch (error) { next(error); }
 };
 

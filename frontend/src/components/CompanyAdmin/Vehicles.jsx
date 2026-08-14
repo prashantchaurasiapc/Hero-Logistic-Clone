@@ -3528,20 +3528,36 @@ const Vehicles = () => {
               <button onClick={closeEditModal} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 font-bold hover:bg-white text-xs cursor-pointer">Cancel</button>
               <button onClick={async (e) => {
                 try {
-                  await api.put(`/vehicles/${editVehicleModal.id}`, {
-                    rego: editVehicleModal.reg,
+                  const payload = {
+                    rego: editVehicleModal.reg || editVehicleModal.rego,
                     make: editVehicleModal.make,
                     model: editVehicleModal.model,
                     year: editVehicleModal.year ? parseInt(editVehicleModal.year) : undefined,
                     status: editVehicleModal.status,
+                    category: editVehicleModal.type,
                     odometerKm: editVehicleModal.odometer ? parseInt(String(editVehicleModal.odometer).replace(/[^0-9]/g,'')) : undefined,
                     notes: editVehicleModal.notes
-                  });
+                  };
+                  await api.put(`/vehicles/${editVehicleModal.id}`, payload);
                   fetchVehicles();
-                  if (managingVehicle && managingVehicle.id === editVehicleModal.id) setManagingVehicle(editVehicleModal);
+                  const updatedVehicleObj = {
+                    ...editVehicleModal,
+                    reg: payload.rego,
+                    rego: payload.rego,
+                    make: editVehicleModal.make,
+                    model: editVehicleModal.model || '',
+                    name: editVehicleModal.make ? editVehicleModal.make : editVehicleModal.name,
+                    status: editVehicleModal.status || 'ACTIVE'
+                  };
+                  if (managingVehicle && managingVehicle.id === editVehicleModal.id) {
+                    setManagingVehicle(updatedVehicleObj);
+                  }
                   closeEditModal(e);
                   showToast('Vehicle updated successfully!');
-                } catch (err) { showToast('Failed to update vehicle.', 'error'); }
+                } catch (err) {
+                  console.error('Failed to update vehicle:', err);
+                  showToast('Failed to update vehicle.', 'error');
+                }
               }} className="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 text-xs shadow-sm cursor-pointer">Save Changes</button>
             </div>
           </div>
