@@ -69,3 +69,75 @@ exports.requirePermission = (requiredPermission) => {
     }, HTTP_STATUS.FORBIDDEN);
   };
 };
+
+/**
+ * Checks if user has any of the allowed roles
+ * Usage: router.get('/sales', verifyToken, requireRole('SUPER_ADMIN', 'SALES'), ...)
+ */
+exports.requireRole = (...allowedRoles) => {
+  return (req, res, next) => {
+    if (!req.user || !req.user.role) {
+      return sendError(res, {
+        code: ERROR_CODES.UNAUTHORIZED_ACCESS,
+        message: 'Authentication required.'
+      }, HTTP_STATUS.UNAUTHORIZED);
+    }
+
+    if (req.user.role === 'SUPER_ADMIN' || allowedRoles.includes(req.user.role)) {
+      return next();
+    }
+
+    return sendError(res, {
+      code: ERROR_CODES.UNAUTHORIZED_ACCESS,
+      message: `Access denied. Requires one of roles: ${allowedRoles.join(', ')}`
+    }, HTTP_STATUS.FORBIDDEN);
+  };
+};
+
+/**
+ * Ensures user is authenticated for Sales domain
+ * Sets salesScope: 'TEAM' for SALES_FULL_ACCESS / SUPER_ADMIN or 'OWN' for SALES_REP
+ */
+exports.requireSalesAccess = (req, res, next) => {
+  if (!req.user) {
+    return sendError(res, {
+      code: ERROR_CODES.UNAUTHORIZED_ACCESS,
+      message: 'Authentication required for Sales Portal.'
+    }, HTTP_STATUS.UNAUTHORIZED);
+  }
+
+  const role = req.user.role;
+  const accessProfile = req.user.accessProfile;
+
+  if (role === 'SUPER_ADMIN' || role === 'COMPANY_ADMIN' || accessProfile === 'SALES_FULL_ACCESS') {
+    req.salesScope = 'TEAM';
+    return next();
+  }
+
+  if (role === 'SALES') {
+    if (accessProfile === 'SALES_REP') {
+      req.salesScope = 'OWN';
+    } else {
+      req.salesScope = 'TEAM';
+    }
+    return next();
+  }
+
+  return sendError(res, {
+    code: ERROR_CODES.UNAUTHORIZED_ACCESS,
+    message: 'Access denied to Sales Portal.'
+  }, HTTP_STATUS.FORBIDDEN);
+};
+
+/**
+ * Guard to deny Sales staff from accessing operational logistics routes
+ */
+exports.denySalesFromLogistics = (req, res, next) => {
+  if (req.user && req.user.role === 'SALES') {
+    return sendError(res, {
+      code: ERROR_CODES.UNAUTHORIZED_ACCESS,
+      message: 'Sales staff are not authorized to perform operational logistics actions.'
+    }, HTTP_STATUS.FORBIDDEN);
+  }
+  next();
+};

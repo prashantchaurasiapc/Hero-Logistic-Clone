@@ -5,23 +5,32 @@ import {
 } from 'lucide-react';
 import { crmRepository } from '../../services/crmRepository';
 import { crmStore } from '../../services/crmStore';
+import { useAuth } from '../../context/AuthContext';
+import { getSalesReps } from '../../services/api';
 
 export default function SalesReports() {
+  const { user } = useAuth();
   // Database States
   const [leads, setLeads] = useState([]);
   const [demos, setDemos] = useState([]);
   const [trials, setTrials] = useState([]);
   const [proposals, setProposals] = useState([]);
+  const [salesReps, setSalesReps] = useState([]);
+  const [selectedRepFilter, setSelectedRepFilter] = useState('ALL');
 
   // UI States
-  const [activeRole, setActiveRole] = useState('Sales Director');
-  const [showRoleDropdown, setShowRoleDropdown] = useState(false);
   const [activeTab, setActiveTab] = useState('LEADS');
 
   // Subscribe to crmStore
   useEffect(() => {
     // Sync with database
     crmRepository.syncWithBackend();
+
+    getSalesReps().then(res => {
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        setSalesReps(res.data.data);
+      }
+    }).catch(err => console.error('Error fetching reps in reports:', err));
 
     const syncDb = () => {
       const freshLeads = crmRepository.getLeads();
@@ -30,14 +39,16 @@ export default function SalesReports() {
       setDemos(db.crmDemos || []);
       setTrials(db.crmTrials || []);
       setProposals(db.crmProposals || []);
+      const reps = crmRepository.getSalesReps();
+      if (reps?.length) setSalesReps(reps);
     };
     syncDb();
     const unsubscribe = crmStore.subscribe(syncDb);
     return () => unsubscribe();
   }, []);
 
-  const repsList = ['Alex Wright', 'Sarah K.', 'Michael Scott', 'Jan Levinson', 'Ryan Howard'];
-
+  // --- Dynamically extract reps from leads ---
+  const repsList = Array.from(new Set(leads.map(l => l.rep?.name).filter(Boolean)));
   const tabs = ['LEADS', 'CONVERSIONS', 'REVENUE', 'DEMOS', 'TRIALS', 'PROPOSALS', 'REP PERFORMANCE', 'ACTIVITIES'];
 
   // --- Computed Metrics for LEADS tab ---
@@ -56,7 +67,7 @@ export default function SalesReports() {
 
   // --- Rep Performance computed ---
   const repStats = repsList.map(rep => {
-    const repLeads = leads.filter(l => l.rep === rep);
+    const repLeads = leads.filter(l => l.rep?.name === rep);
     const won = repLeads.filter(l => l.stage === 'Won').length;
     const pipeline = repLeads.filter(l => !['Won', 'Lost'].includes(l.stage)).length;
     const rev = repLeads.reduce((s, l) => s + (l.revenue || 0), 0);
@@ -73,28 +84,110 @@ export default function SalesReports() {
     count: leads.filter(l => l.stage === stage).length
   }));
 
-  // --- Export simulation ---
+  // --- Export actual logic ---
   const handleExport = (type) => {
-    alert(`Exporting ${activeTab} report as ${type}...`);
+    if (type === 'PDF') {
+      window.print();
+      return;
+    }
+
+    if (type === 'CSV/EXCEL') {
+      let dataToExport = [];
+      let headers = [];
+
+      if (activeTab === 'LEADS') {
+        headers = ['Company', 'Rep', 'Niche', 'Revenue', 'Stage', 'Score'];
+        dataToExport = leads.map(l => [l.company, l.rep, l.niche, l.revenue, l.stage, l.score]);
+      } else if (activeTab === 'DEMOS') {
+        headers = ['Company', 'Presenter', 'Date', 'Time', 'Status'];
+        dataToExport = demos.map(d => [d.company, d.presenter, d.date, d.time, d.status]);
+      } else if (activeTab === 'TRIALS') {
+        headers = ['Company', 'Admin', 'Days Remaining', 'Status'];
+        dataToExport = trials.map(t => [t.company, t.admin, t.daysRemaining, t.status]);
+      } else if (activeTab === 'PROPOSALS') {
+        headers = ['Company', 'Value', 'Total', 'Validity', 'Status'];
+        dataToExport = proposals.map(p => [p.company, p.value, p.total, p.validity, p.status]);
+      } else if (activeTab === 'REP PERFORMANCE') {
+        headers = ['Account Executive', 'Total Leads', 'Pipeline', 'Won', 'Revenue'];
+        dataToExport = repStats.map(r => [r.rep, r.total, r.pipeline, r.won, r.revenue]);
+      } else {
+        alert(`Exporting ${activeTab} data directly is not applicable. Please select a table tab like LEADS or DEMOS.`);
+        return;
+      }
+
+      const csvContent = [
+        headers.join(','),
+        ...dataToExport.map(row => row.map(cell => `"${String(cell || '').replace(/"/g, '""')}"`).join(','))
+      ].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `${activeTab.toLowerCase()}_report.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
 
   return (
-    <div className="flex-grow bg-[#F8FAFC] p-6 space-y-6 overflow-y-auto w-full text-left font-sans flex flex-col h-full min-h-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+    <div className="flex-grow bg-[#F8FAFC] p-6 space-y-6 overflow-y-auto w-full text-left font-sans flex flex-col h-full min-h-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] print:overflow-visible print:h-auto print:block">
 
       {/* Header */}
-      <div className="flex justify-between items-center mb-2">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
         <div>
           <h1 className="text-2xl font-black text-slate-900 mb-1">
-            Sales Report
+            Sales Reports & Performance Analytics
           </h1>
-          <p className="text-sm font-medium text-slate-500">
-            Complete end-to-end client conversion console backed by secure localStorage registry tables.
+          <p className="text-xs font-medium text-slate-500">
+            Pipeline conversion metrics, revenue distribution, and sales team efficiency analytics.
           </p>
+        </div>
+
+        <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+          {/* Authenticated Identity Indicator */}
+          <div className="flex items-center gap-2 bg-slate-100 border border-slate-200 px-3.5 py-2 rounded-xl text-xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <div>
+              <span className="text-[9px] text-slate-400 font-bold block uppercase tracking-wider leading-none">Logged In</span>
+              <strong className="text-slate-900 font-extrabold text-[11px] leading-tight block">{user?.name || 'Sales Officer'}</strong>
+            </div>
+            <span className="ml-1.5 px-2 py-0.5 bg-amber-100 text-amber-900 font-black text-[9px] rounded-md uppercase">
+              {user?.role === 'SUPER_ADMIN' ? 'SUPER_ADMIN' : user?.accessProfile || 'SALES_FULL_ACCESS'}
+            </span>
+          </div>
+
+          {/* Filter by Sales Rep (Full Access only) */}
+          {(user?.role === 'SUPER_ADMIN' || user?.accessProfile !== 'SALES_REP') && (
+            <div className="relative">
+              <select
+                value={selectedRepFilter}
+                onChange={(e) => setSelectedRepFilter(e.target.value)}
+                className="bg-white border border-slate-300 text-slate-700 text-xs font-bold px-3 py-2.5 rounded-xl focus:outline-none cursor-pointer shadow-xs hover:border-amber-400 transition-colors"
+              >
+                <option value="ALL">All Sales Reps</option>
+                {salesReps.map(rep => (
+                  <option key={rep.id} value={rep.id}>{rep.name || rep.email}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Export Dropdown / Action */}
+          <button
+            onClick={() => handleExport('CSV/EXCEL')}
+            className="flex items-center gap-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs px-3.5 py-2.5 rounded-xl font-bold transition-all shadow-xs cursor-pointer"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Export CSV
+          </button>
         </div>
       </div>
 
       {/* Main Report Panel */}
-      <div className="shrink-0 bg-white border border-slate-200/80 rounded-2xl shadow-xs flex flex-col overflow-hidden">
+      <div className="shrink-0 bg-white border border-slate-200/80 rounded-2xl shadow-xs flex flex-col overflow-hidden print:overflow-visible print:border-none print:shadow-none">
 
         {/* Tab Bar */}
         <div className="flex items-center gap-2 px-6 pt-5 pb-4 border-b border-slate-100 overflow-x-auto scrollbar-none shrink-0">
@@ -204,14 +297,22 @@ export default function SalesReports() {
 
                 {/* Bars */}
                 {(() => {
+                  const newLeadCount = leads.filter(l => l.stage === 'New Lead').length;
+                  const demoCount = leads.filter(l => l.stage === 'Demo Booked' || l.stage === 'Demo Completed').length;
+                  const trialCount = leads.filter(l => l.stage === 'Trial Started').length;
+                  const proposalCount = leads.filter(l => l.stage === 'Proposal Sent' || l.stage === 'Negotiation').length;
+                  const wonCountStg = leads.filter(l => l.stage === 'Won').length;
+
                   const data = [
-                    { label: 'New Lead', value: 6, color: 'bg-indigo-500' },
-                    { label: 'Demo', value: 20, color: 'bg-blue-500' },
-                    { label: 'Trial', value: 21, color: 'bg-emerald-500' },
-                    { label: 'Proposal', value: 15, color: 'bg-amber-500' },
-                    { label: 'Won', value: 5, color: 'bg-teal-500' },
+                    { label: 'New Lead', value: newLeadCount, color: 'bg-indigo-500' },
+                    { label: 'Demo', value: demoCount, color: 'bg-blue-500' },
+                    { label: 'Trial', value: trialCount, color: 'bg-emerald-500' },
+                    { label: 'Proposal', value: proposalCount, color: 'bg-amber-500' },
+                    { label: 'Won', value: wonCountStg, color: 'bg-teal-500' },
                   ];
-                  const maxVal = 24;
+                  
+                  const maxVal = Math.max(...data.map(d => d.value), 5); // Fallback to 5 to avoid div by 0
+
                   return data.map(item => (
                     <div key={item.label} className="relative z-10 w-full flex flex-col items-center justify-end h-full">
                       <div className={`w-full rounded-t-md ${item.color} transition-all`} style={{ height: `${(item.value / maxVal) * 100}%` }}></div>
@@ -224,15 +325,25 @@ export default function SalesReports() {
               {/* Stat Boxes below chart */}
               <div className="grid grid-cols-3 gap-4 shrink-0">
                 <div className="border border-slate-200 rounded-2xl p-6 text-center shadow-xs">
-                  <div className="text-3xl font-black text-[#e6b800]">10%</div>
+                  <div className="text-3xl font-black text-[#e6b800]">{leads.length > 0 ? Math.round((wonCount / leads.length) * 100) : 0}%</div>
                   <div className="text-[11px] font-black text-slate-500 uppercase tracking-widest mt-1">CONVERSION RATE</div>
                 </div>
                 <div className="border border-slate-200 rounded-2xl p-6 text-center shadow-xs">
-                  <div className="text-3xl font-black text-emerald-500">35%</div>
+                  {(() => {
+                     const demoGrp = leads.filter(l => ['Demo Booked', 'Demo Completed', 'Trial Started', 'Proposal Sent', 'Negotiation', 'Won'].includes(l.stage)).length;
+                     const trialGrp = leads.filter(l => ['Trial Started', 'Proposal Sent', 'Negotiation', 'Won'].includes(l.stage)).length;
+                     const rate = demoGrp > 0 ? Math.round((trialGrp / demoGrp) * 100) : 0;
+                     return <div className="text-3xl font-black text-emerald-500">{rate}%</div>
+                  })()}
                   <div className="text-[11px] font-black text-slate-500 uppercase tracking-widest mt-1">DEMO → TRIAL RATE</div>
                 </div>
                 <div className="border border-slate-200 rounded-2xl p-6 text-center shadow-xs">
-                  <div className="text-3xl font-black text-[#e6b800]">33%</div>
+                  {(() => {
+                     const propGrp = leads.filter(l => ['Proposal Sent', 'Negotiation', 'Won'].includes(l.stage)).length;
+                     const wonGrp = leads.filter(l => l.stage === 'Won').length;
+                     const rate = propGrp > 0 ? Math.round((wonGrp / propGrp) * 100) : 0;
+                     return <div className="text-3xl font-black text-[#e6b800]">{rate}%</div>
+                  })()}
                   <div className="text-[11px] font-black text-slate-500 uppercase tracking-widest mt-1">PROPOSAL ACCEPT RATE</div>
                 </div>
               </div>
@@ -248,16 +359,38 @@ export default function SalesReports() {
 
               <div className="grid grid-cols-3 gap-4 shrink-0">
                 <div className="border border-slate-200 rounded-2xl p-6 text-center shadow-xs">
-                  <div className="text-3xl font-black text-[#e6b800]">$124,071</div>
-                  <div className="text-[11px] font-black text-slate-500 uppercase tracking-widest mt-1">MONTHLY MRR</div>
+                  {(() => {
+                     const mrr = leads.filter(l => l.stage === 'Won').reduce((s, l) => s + (l.revenue || 0), 0);
+                     return (
+                       <>
+                         <div className="text-3xl font-black text-[#e6b800]">${mrr.toLocaleString()}</div>
+                         <div className="text-[11px] font-black text-slate-500 uppercase tracking-widest mt-1">MONTHLY MRR (WON)</div>
+                       </>
+                     );
+                  })()}
                 </div>
                 <div className="border border-slate-200 rounded-2xl p-6 text-center shadow-xs">
-                  <div className="text-3xl font-black text-emerald-500">$1,488,852</div>
-                  <div className="text-[11px] font-black text-slate-500 uppercase tracking-widest mt-1">ANNUAL ARR</div>
+                  {(() => {
+                     const mrr = leads.filter(l => l.stage === 'Won').reduce((s, l) => s + (l.revenue || 0), 0);
+                     const arr = mrr * 12;
+                     return (
+                       <>
+                         <div className="text-3xl font-black text-emerald-500">${arr.toLocaleString()}</div>
+                         <div className="text-[11px] font-black text-slate-500 uppercase tracking-widest mt-1">ANNUAL ARR (WON)</div>
+                       </>
+                     );
+                  })()}
                 </div>
                 <div className="border border-slate-200 rounded-2xl p-6 text-center shadow-xs">
-                  <div className="text-3xl font-black text-[#e6b800]">$306,960</div>
-                  <div className="text-[11px] font-black text-slate-500 uppercase tracking-widest mt-1">PIPELINE VALUE</div>
+                  {(() => {
+                     const pipelineValue = leads.filter(l => !['Won', 'Lost'].includes(l.stage)).reduce((s, l) => s + (l.revenue || 0), 0);
+                     return (
+                       <>
+                         <div className="text-3xl font-black text-[#e6b800]">${pipelineValue.toLocaleString()}</div>
+                         <div className="text-[11px] font-black text-slate-500 uppercase tracking-widest mt-1">PIPELINE VALUE</div>
+                       </>
+                     );
+                  })()}
                 </div>
               </div>
 
@@ -265,29 +398,31 @@ export default function SalesReports() {
               <div className="relative h-64 border border-slate-200 rounded-xl bg-white p-6 pb-10 flex items-end justify-between gap-4 mt-4">
                 {/* Y-Axis labels and gridlines */}
                 <div className="absolute inset-0 p-6 pb-10 pointer-events-none flex flex-col justify-between">
-                  {[60000, 45000, 30000, 15000, 0].map(val => (
-                    <div key={val} className="w-full flex items-center justify-between border-b border-dashed border-slate-200 relative h-0">
-                      <span className="absolute -left-6 text-[10px] text-slate-400 font-mono translate-y-1/2">{val}</span>
-                    </div>
-                  ))}
+                  {(() => {
+                    const stages = ['New Lead', 'Contacted', 'Demo Booked', 'Demo Completed', 'Trial Started', 'Proposal Sent', 'Negotiation'];
+                    const maxRev = Math.max(...stages.map(stage => leads.filter(l => l.stage === stage).reduce((s, l) => s + (l.revenue || 0), 0)), 1000);
+                    const step = Math.ceil(maxRev / 4);
+                    return [step * 4, step * 3, step * 2, step * 1, 0].map(val => (
+                      <div key={val} className="w-full flex items-center justify-between border-b border-dashed border-slate-200 relative h-0">
+                        <span className="absolute -left-6 text-[10px] text-slate-400 font-mono translate-y-1/2">{val >= 1000 ? (val/1000).toFixed(1) + 'k' : val}</span>
+                      </div>
+                    ));
+                  })()}
                 </div>
 
                 {/* Bars */}
                 {(() => {
-                  const data = [
-                    { label: 'New Lead', value: 48000 },
-                    { label: 'Contacted', value: 51000 },
-                    { label: 'Demo Booked', value: 41000 },
-                    { label: 'Demo Completed', value: 44000 },
-                    { label: 'Trial Started', value: 47000 },
-                    { label: 'Proposal Sent', value: 37000 },
-                    { label: 'Negotiation', value: 39000 },
-                  ];
-                  const maxVal = 60000;
+                  const stages = ['New Lead', 'Contacted', 'Demo Booked', 'Demo Completed', 'Trial Started', 'Proposal Sent', 'Negotiation'];
+                  const data = stages.map(stage => ({
+                    label: stage,
+                    value: leads.filter(l => l.stage === stage).reduce((s, l) => s + (l.revenue || 0), 0)
+                  }));
+                  const maxVal = Math.max(...data.map(d => d.value), 1000); // Fallback to avoid div by 0
+
                   return data.map(item => (
                     <div key={item.label} className="relative z-10 w-full flex flex-col items-center justify-end h-full group cursor-pointer">
                       <div className="w-[90%] rounded-t-sm bg-[#FFD54F] hover:bg-[#ffcc00] transition-all border border-[#ffcc00]" style={{ height: `${(item.value / maxVal) * 100}%` }}></div>
-                      <span className="absolute -bottom-6 text-[9px] text-slate-400 font-semibold">{item.label}</span>
+                      <span className="absolute -bottom-6 text-[9px] text-slate-400 font-semibold text-center leading-tight">{item.label}</span>
                     </div>
                   ));
                 })()}

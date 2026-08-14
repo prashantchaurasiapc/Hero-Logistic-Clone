@@ -8,14 +8,32 @@ exports.getAll = async (req, res, next) => {
   try {
     const { where, skip, take, orderBy, currentPage, pageSize } = buildPrismaQuery(req.query);
     
-    // Optional: Inject tenant scope here if applicable
-    // if (req.tenantId) where.tenantId = req.tenantId;
+    // RBAC Scoping
+    if (req.salesScope === 'OWN' && req.user && req.user.id) {
+      where.OR = [
+        { presenterId: req.user.id },
+        { lead: { repId: req.user.id } }
+      ];
+    } else if (req.query.repId) {
+      where.OR = [
+        { presenterId: req.query.repId },
+        { lead: { repId: req.query.repId } }
+      ];
+    }
 
     const [data, total] = await Promise.all([
       prisma.demoBooking.findMany({
-        where, skip, take, orderBy,
+        where,
+        skip,
+        take,
+        orderBy: orderBy.length ? orderBy : [{ scheduledAt: 'desc' }],
         include: {
-          lead: { select: { companyName: true, contactName: true } }
+          lead: {
+            select: { id: true, companyName: true, contactName: true, email: true, phone: true, stage: true, repId: true, rep: { select: { id: true, name: true } } }
+          },
+          presenter: {
+            select: { id: true, name: true, email: true }
+          }
         }
       }),
       prisma.demoBooking.count({ where })
@@ -32,9 +50,14 @@ exports.getAll = async (req, res, next) => {
 exports.getById = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
-    // if (req.tenantId) where.tenantId = req.tenantId;
 
-    const data = await prisma.demoBooking.findFirst({ where });
+    const data = await prisma.demoBooking.findFirst({
+      where,
+      include: {
+        lead: true,
+        presenter: { select: { id: true, name: true, email: true } }
+      }
+    });
     
     if (!data) {
       return sendError(res, {
@@ -54,7 +77,12 @@ exports.create = async (req, res, next) => {
   try {
     const payload = { ...req.body };
 
-    // Fallback: If presenterId is not a valid UUID, find a sales user
+    // Set presenter if missing
+    if (!payload.presenterId) {
+      payload.presenterId = req.user?.id;
+    }
+
+    // Verify presenter exists
     let validPresenter = false;
     if (payload.presenterId && payload.presenterId.length === 36) {
       const userExists = await prisma.user.findUnique({
@@ -74,51 +102,80 @@ exports.create = async (req, res, next) => {
     }
 
     const data = await prisma.demoBooking.create({
-      data: payload
+      data: payload,
+      include: {
+        lead: true,
+        presenter: { select: { id: true, name: true, email: true } }
+      }
     });
+
+    // Update lead stage to DEMO_BOOKED if currently earlier in pipeline
+    if (data.leadId) {
+      await prisma.lead.update({
+        where: { id: data.leadId },
+        data: { stage: 'DEMO_BOOKED' }
+      });
+
+      // Audit activity
+      await prisma.salesActivity.create({
+        data: {
+          leadId: data.leadId,
+          title: 'Demo Scheduled',
+          description: `Live software walkthrough scheduled for ${new Date(data.scheduledAt).toLocaleDateString()}`,
+          performedById: req.user?.id || data.presenterId,
+          timestamp: new Date()
+        }
+      });
+    }
+
     return sendSuccess(res, data, HTTP_STATUS.CREATED);
   } catch (error) {
     next(error);
   }
 };
 
-// Update DemoBooking with Optimistic Concurrency check
+// Update DemoBooking
 exports.update = async (req, res, next) => {
   try {
     const { id } = req.params;
     const updateData = { ...req.body };
-    
     const where = { id };
-    // if (req.tenantId) where.tenantId = req.tenantId;
 
-    // Check version if optimistic concurrency is required
-    const ifMatch = req.headers['if-match'];
-    if (ifMatch) {
-      where.version = parseInt(ifMatch.replace(/"/g, ''), 10);
-    }
-
-    try {
-      const data = await prisma.demoBooking.update({
-        where,
-        data: updateData
-      });
-      return sendSuccess(res, data);
-    } catch (e) {
-      if (e.code === 'P2025') {
-        if (ifMatch) {
-          return sendError(res, {
-            code: ERROR_CODES.RESOURCE_CONFLICT,
-            message: 'Resource was updated by another user or does not exist.'
-          }, HTTP_STATUS.CONFLICT);
-        }
-        return sendError(res, {
-          code: ERROR_CODES.NOT_FOUND,
-          message: 'DemoBooking not found'
-        }, HTTP_STATUS.NOT_FOUND);
+    const data = await prisma.demoBooking.update({
+      where,
+      data: updateData,
+      include: {
+        lead: true,
+        presenter: { select: { id: true, name: true, email: true } }
       }
-      throw e;
+    });
+
+    // If marked completed, update lead stage to DEMO_COMPLETED
+    if (updateData.status === 'COMPLETED' && data.leadId) {
+      await prisma.lead.update({
+        where: { id: data.leadId },
+        data: { stage: 'DEMO_COMPLETED' }
+      });
+
+      await prisma.salesActivity.create({
+        data: {
+          leadId: data.leadId,
+          title: 'Demo Completed',
+          description: `Product demonstration successfully completed. Notes: ${data.feedback || 'Walkthrough completed.'}`,
+          performedById: req.user?.id || data.presenterId,
+          timestamp: new Date()
+        }
+      });
     }
+
+    return sendSuccess(res, data);
   } catch (error) {
+    if (error.code === 'P2025') {
+      return sendError(res, {
+        code: ERROR_CODES.NOT_FOUND,
+        message: 'DemoBooking not found'
+      }, HTTP_STATUS.NOT_FOUND);
+    }
     next(error);
   }
 };
@@ -127,11 +184,7 @@ exports.update = async (req, res, next) => {
 exports.delete = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
-    // if (req.tenantId) where.tenantId = req.tenantId;
-
     await prisma.demoBooking.delete({ where });
-    
-    // 204 No Content for successful delete
     return res.status(HTTP_STATUS.NO_CONTENT).send();
   } catch (error) {
     if (error.code === 'P2025') {

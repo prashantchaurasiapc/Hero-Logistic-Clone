@@ -5,15 +5,18 @@ import {
 } from 'lucide-react';
 import { crmRepository } from '../../services/crmRepository';
 import { crmStore } from '../../services/crmStore';
+import { useAuth } from '../../context/AuthContext';
+import { getSalesReps } from '../../services/api';
 
 export default function Proposals() {
+  const { user } = useAuth();
   // Database States
   const [proposals, setProposals] = useState([]);
   const [leads, setLeads] = useState([]);
+  const [salesReps, setSalesReps] = useState([]);
+  const [selectedRepFilter, setSelectedRepFilter] = useState('ALL');
 
   // UI States
-  const [activeRole, setActiveRole] = useState('Sales Director');
-  const [showRoleDropdown, setShowRoleDropdown] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState(null);
 
   // Modal States
@@ -41,11 +44,19 @@ export default function Proposals() {
     // Sync with database
     crmRepository.syncWithBackend();
 
+    getSalesReps().then(res => {
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        setSalesReps(res.data.data);
+      }
+    }).catch(err => console.error('Error fetching reps in proposals:', err));
+
     const syncDb = () => {
       const db = crmRepository.getCrmDatabase();
       const list = db.crmProposals || [];
       setProposals(list);
       setLeads(crmRepository.getLeads());
+      const reps = crmRepository.getSalesReps();
+      if (reps?.length) setSalesReps(reps);
     };
     syncDb();
     const unsubscribe = crmStore.subscribe(syncDb);
@@ -175,9 +186,12 @@ Authorized Signature: _______________________
   };
 
   const filteredProposals = proposals.filter(p => {
-    if (activeRole !== 'Sales Director') {
-      const lead = leads.find(l => l.id === p.leadId);
-      return lead ? lead.rep === activeRole : false;
+    const lead = leads.find(l => l.id === p.leadId);
+    if (user?.accessProfile === 'SALES_REP') {
+      if (lead && lead.repId !== user?.id && lead.rep !== user?.name) return false;
+    }
+    if (selectedRepFilter !== 'ALL' && lead) {
+      if (lead.repId !== selectedRepFilter && lead.rep !== selectedRepFilter) return false;
     }
     return true;
   });
@@ -213,11 +227,47 @@ Authorized Signature: _______________________
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-2 font-medium">
-            Complete end-to-end client conversion console backed by secure localStorage registry tables.
+            Commercial proposals, terms generation, and contract status tracking.
           </p>
         </div>
 
+        <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+          {/* Authenticated Identity Indicator */}
+          <div className="flex items-center gap-2 bg-slate-100 border border-slate-200 px-3.5 py-2 rounded-xl text-xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <div>
+              <span className="text-[9px] text-slate-400 font-bold block uppercase tracking-wider leading-none">Logged In</span>
+              <strong className="text-slate-900 font-extrabold text-[11px] leading-tight block">{user?.name || 'Sales Officer'}</strong>
+            </div>
+            <span className="ml-1.5 px-2 py-0.5 bg-amber-100 text-amber-900 font-black text-[9px] rounded-md uppercase">
+              {user?.role === 'SUPER_ADMIN' ? 'SUPER_ADMIN' : user?.accessProfile || 'SALES_FULL_ACCESS'}
+            </span>
+          </div>
 
+          {/* Filter by Sales Rep (Full Access only) */}
+          {(user?.role === 'SUPER_ADMIN' || user?.accessProfile !== 'SALES_REP') && (
+            <div className="relative">
+              <select
+                value={selectedRepFilter}
+                onChange={(e) => setSelectedRepFilter(e.target.value)}
+                className="bg-white border border-slate-300 text-slate-700 text-xs font-bold px-3 py-2.5 rounded-xl focus:outline-none cursor-pointer shadow-xs hover:border-amber-400 transition-colors"
+              >
+                <option value="ALL">All Sales Reps</option>
+                {salesReps.map(rep => (
+                  <option key={rep.id} value={rep.id}>{rep.name || rep.email}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <button 
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white text-xs px-4 py-2.5 rounded-xl font-bold transition-all shadow-xs cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Create Proposal
+          </button>
+        </div>
       </div>
 
       {/* Dual Panel Workspace */}

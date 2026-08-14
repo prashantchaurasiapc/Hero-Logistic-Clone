@@ -9,15 +9,18 @@ import {
 import { crmRepository } from '../../services/crmRepository';
 import { crmStore } from '../../services/crmStore';
 import { crmWorkflowEngine } from '../../services/crmEngines';
+import { convertLeadToCompany, getSalesReps } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 export default function PipelineBoard() {
   const navigate = useNavigate();
-  // Database States loaded from localStorage crmStore
+  const { user } = useAuth();
+  // Database States loaded from crmStore
   const [leads, setLeads] = useState([]);
+  const [salesReps, setSalesReps] = useState([]);
+  const [selectedRepFilter, setSelectedRepFilter] = useState('ALL');
   
   // UI states
-  const [activeRole, setActiveRole] = useState('Sales Director');
-  const [showRoleDropdown, setShowRoleDropdown] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
   const [draggedOverColumn, setDraggedOverColumn] = useState(null); // column stage name
   const [inspectorTab, setInspectorTab] = useState('Overview');
@@ -55,7 +58,6 @@ export default function PipelineBoard() {
   // Toast feedback state
   const [toast, setToast] = useState(null);
 
-  // Subscribe to crmStore changes to ensure reactive localStorage binding
   useEffect(() => {
     // Sync with database
     crmRepository.syncWithBackend();
@@ -63,10 +65,19 @@ export default function PipelineBoard() {
     // Initial fetch
     setLeads(crmRepository.getLeads());
     
+    // Fetch sales reps
+    getSalesReps().then(res => {
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        setSalesReps(res.data.data);
+      }
+    }).catch(err => console.error('Error fetching sales reps:', err));
+    
     // Subscribe to store mutations
     const unsubscribe = crmStore.subscribe(() => {
       const freshLeads = crmRepository.getLeads();
       setLeads(freshLeads);
+      const freshReps = crmRepository.getSalesReps();
+      if (freshReps?.length) setSalesReps(freshReps);
     });
     
     return () => unsubscribe();
@@ -196,14 +207,14 @@ export default function PipelineBoard() {
   };
 
   // Add Lead form submit
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
     if (!modalForm.company || !modalForm.name || !modalForm.email) {
       alert('Please fill out all required fields.');
       return;
     }
 
-    const newLead = crmRepository.createLead(modalForm);
+    const newLead = await crmRepository.createLead(modalForm);
     setToast({ 
       type: 'success', 
       text: `${modalForm.company}`, 
@@ -211,33 +222,27 @@ export default function PipelineBoard() {
     });
     
     // Workflow trigger stage update if not New Lead
-    if (modalForm.stage !== 'New Lead') {
-      crmWorkflowEngine.handleStageChange(newLead.id, modalForm.stage, 'Initial custom intake stage');
+    if (modalForm.stage !== 'New Lead' && newLead?.id) {
+      await crmWorkflowEngine.handleStageChange(newLead.id, modalForm.stage, 'Initial custom intake stage');
     }
-
     setShowAddModal(false);
   };
 
-  // Provision Trial Sandbox
-  const handleProvisionTrial = (lead) => {
-    crmWorkflowEngine.handleStageChange(lead.id, 'Trial Started', 'Sandbox demo workspace provisioned');
-    setToast({ 
-      type: 'success', 
-      text: `${lead.company}`, 
-      actionText: 'trial sandbox workspace provisioned!' 
-    });
-  };
-
-  // Rep filtering based on Role selected
+  // Rep filtering based on Role selected and Rep filter
   const filteredLeads = leads.filter(lead => {
-    if (activeRole === 'Sales Director') return true;
-    return lead.rep === activeRole;
+    if (user?.accessProfile === 'SALES_REP') {
+      if (lead.repId !== user?.id && lead.rep !== user?.name) return false;
+    }
+    if (selectedRepFilter !== 'ALL') {
+      return lead.repId === selectedRepFilter || lead.rep === selectedRepFilter;
+    }
+    return true;
   });
 
   return (
     <div className="flex-grow bg-[#F8FAFC] p-6 space-y-6 overflow-y-auto w-full text-left font-sans flex flex-col h-full min-h-0">
       
-      {/* Toast Notification (Bottom Center aligned to match screenshot) */}
+      {/* Toast Notification (Bottom Center aligned) */}
       {toast && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center justify-between gap-3 px-5 py-3.5 bg-white border border-slate-200 text-slate-800 rounded-xl shadow-xl text-xs font-bold animate-slide-in min-w-[340px]">
           <div className="flex items-center gap-2">
@@ -256,17 +261,53 @@ export default function PipelineBoard() {
       )}
 
       {/* Header Container */}
-      <div className="flex justify-between items-center mb-2 shrink-0">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2 shrink-0">
         <div>
           <h1 className="text-2xl font-black text-slate-900 mb-1">
             Pipeline Board
           </h1>
           <p className="text-xs font-medium text-slate-500">
-            Complete end-to-end client conversion console backed by secure localStorage registry tables.
+            Real-time visual carrier pipeline synchronized with platform CRM backend database.
           </p>
         </div>
 
+        <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+          {/* Authenticated Identity Indicator */}
+          <div className="flex items-center gap-2 bg-slate-100 border border-slate-200 px-3.5 py-2 rounded-xl text-xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <div>
+              <span className="text-[9px] text-slate-400 font-bold block uppercase tracking-wider leading-none">Logged In</span>
+              <strong className="text-slate-900 font-extrabold text-[11px] leading-tight block">{user?.name || 'Sales Officer'}</strong>
+            </div>
+            <span className="ml-1.5 px-2 py-0.5 bg-amber-100 text-amber-900 font-black text-[9px] rounded-md uppercase">
+              {user?.role === 'SUPER_ADMIN' ? 'SUPER_ADMIN' : user?.accessProfile || 'SALES_FULL_ACCESS'}
+            </span>
+          </div>
 
+          {/* Filter by Sales Rep (Full Access only) */}
+          {(user?.role === 'SUPER_ADMIN' || user?.accessProfile !== 'SALES_REP') && (
+            <div className="relative">
+              <select
+                value={selectedRepFilter}
+                onChange={(e) => setSelectedRepFilter(e.target.value)}
+                className="bg-white border border-slate-300 text-slate-700 text-xs font-bold px-3 py-2.5 rounded-xl focus:outline-none cursor-pointer shadow-xs hover:border-amber-400 transition-colors"
+              >
+                <option value="ALL">All Sales Reps</option>
+                {salesReps.map(rep => (
+                  <option key={rep.id} value={rep.id}>{rep.name || rep.email}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <button 
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white text-xs px-4 py-2.5 rounded-xl font-bold transition-all shadow-xs cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Add Prospect
+          </button>
+        </div>
       </div>
 
       {/* Subheader Banner */}
@@ -347,7 +388,7 @@ export default function PipelineBoard() {
                         {/* Rep first name */}
                         <div className="flex items-center gap-1">
                           <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                          <span>{lead.rep.split(' ')[0]}</span>
+                          <span>{(lead.rep || 'Unassigned').split(' ')[0]}</span>
                         </div>
                         {/* Fleet Trucks */}
                         <div className="flex items-center gap-1 font-mono">
@@ -505,13 +546,13 @@ export default function PipelineBoard() {
                         className="whitespace-nowrap bg-[#311B92] text-white text-[11px] font-bold px-4 py-2.5 rounded-full cursor-pointer hover:bg-[#281577] transition-colors shadow-xs"
                       >Recommend Plan</button>
                       <button 
-                        onClick={() => { setIsMarkedWon(true); }}
+                        onClick={() => { handleUpdateStage(selectedLead.id, 'Won'); setIsMarkedWon(true); }}
                         className="whitespace-nowrap bg-[#004D40] text-white text-[11px] font-bold px-4 py-2.5 rounded-full cursor-pointer hover:bg-[#003B31] transition-colors shadow-xs"
                       >
                         Mark Won
                       </button>
                       <button 
-                        onClick={() => { setIsMarkedWon(false); }}
+                        onClick={() => { handleUpdateStage(selectedLead.id, 'Lost'); setIsMarkedWon(false); }}
                         className="whitespace-nowrap bg-[#4A0000] text-white text-[11px] font-bold px-4 py-2.5 rounded-full cursor-pointer hover:bg-[#330000] transition-colors shadow-xs"
                       >
                         Mark Lost

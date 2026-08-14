@@ -3,19 +3,37 @@ const { sendSuccess, sendList, sendError } = require('../utils/apiResponse');
 const { buildPrismaQuery, buildPaginationMeta } = require('../utils/queryBuilder');
 const { HTTP_STATUS, ERROR_CODES } = require('../config/constants');
 
-// Get all FollowUpTasks with pagination, sorting and filtering
+// Get all FollowUpTasks with pagination, sorting, filtering and RBAC scoping
 exports.getAll = async (req, res, next) => {
   try {
     const { where, skip, take, orderBy, currentPage, pageSize } = buildPrismaQuery(req.query);
     
-    // Optional: Inject tenant scope here if applicable
-    // if (req.tenantId) where.tenantId = req.tenantId;
+    // RBAC Scoping
+    if (req.salesScope === 'OWN' && req.user && req.user.id) {
+      where.OR = [
+        { repId: req.user.id },
+        { lead: { repId: req.user.id } }
+      ];
+    } else if (req.query.repId) {
+      where.OR = [
+        { repId: req.query.repId },
+        { lead: { repId: req.query.repId } }
+      ];
+    }
 
     const [data, total] = await Promise.all([
       prisma.followUpTask.findMany({
-        where, skip, take, orderBy,
+        where,
+        skip,
+        take,
+        orderBy: orderBy.length ? orderBy : [{ dueDate: 'asc' }],
         include: {
-          lead: { select: { companyName: true, contactName: true } }
+          lead: {
+            select: { id: true, companyName: true, contactName: true, email: true, phone: true, stage: true, repId: true, rep: { select: { id: true, name: true } } }
+          },
+          rep: {
+            select: { id: true, name: true, email: true }
+          }
         }
       }),
       prisma.followUpTask.count({ where })
@@ -32,9 +50,14 @@ exports.getAll = async (req, res, next) => {
 exports.getById = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
-    // if (req.tenantId) where.tenantId = req.tenantId;
 
-    const data = await prisma.followUpTask.findFirst({ where });
+    const data = await prisma.followUpTask.findFirst({
+      where,
+      include: {
+        lead: true,
+        rep: { select: { id: true, name: true, email: true } }
+      }
+    });
     
     if (!data) {
       return sendError(res, {
@@ -53,6 +76,10 @@ exports.getById = async (req, res, next) => {
 exports.create = async (req, res, next) => {
   try {
     const payload = { ...req.body };
+
+    if (!payload.repId) {
+      payload.repId = req.user?.id;
+    }
 
     // Fallback: If repId is not a valid UUID, find a sales user
     let validRep = false;
@@ -84,51 +111,72 @@ exports.create = async (req, res, next) => {
     }
 
     const data = await prisma.followUpTask.create({
-      data: payload
+      data: payload,
+      include: {
+        lead: true,
+        rep: { select: { id: true, name: true, email: true } }
+      }
     });
+
+    if (data.leadId) {
+      await prisma.salesActivity.create({
+        data: {
+          leadId: data.leadId,
+          title: `Follow-Up Scheduled (${data.type || 'Task'})`,
+          description: `Follow-up task scheduled for ${new Date(data.dueDate).toLocaleDateString()}: ${data.description}`,
+          performedById: req.user?.id || data.repId,
+          timestamp: new Date()
+        }
+      });
+    }
+
     return sendSuccess(res, data, HTTP_STATUS.CREATED);
   } catch (error) {
     next(error);
   }
 };
 
-// Update FollowUpTask with Optimistic Concurrency check
+// Update FollowUpTask
 exports.update = async (req, res, next) => {
   try {
     const { id } = req.params;
     const updateData = { ...req.body };
-    
     const where = { id };
-    // if (req.tenantId) where.tenantId = req.tenantId;
 
-    // Check version if optimistic concurrency is required
-    const ifMatch = req.headers['if-match'];
-    if (ifMatch) {
-      where.version = parseInt(ifMatch.replace(/"/g, ''), 10);
+    if (updateData.dueDate) {
+      updateData.dueDate = new Date(updateData.dueDate);
     }
 
-    try {
-      const data = await prisma.followUpTask.update({
-        where,
-        data: updateData
-      });
-      return sendSuccess(res, data);
-    } catch (e) {
-      if (e.code === 'P2025') {
-        if (ifMatch) {
-          return sendError(res, {
-            code: ERROR_CODES.RESOURCE_CONFLICT,
-            message: 'Resource was updated by another user or does not exist.'
-          }, HTTP_STATUS.CONFLICT);
-        }
-        return sendError(res, {
-          code: ERROR_CODES.NOT_FOUND,
-          message: 'FollowUpTask not found'
-        }, HTTP_STATUS.NOT_FOUND);
+    const data = await prisma.followUpTask.update({
+      where,
+      data: updateData,
+      include: {
+        lead: true,
+        rep: { select: { id: true, name: true, email: true } }
       }
-      throw e;
+    });
+
+    // If marked completed, log sales activity
+    if (updateData.status === 'COMPLETED' && data.leadId) {
+      await prisma.salesActivity.create({
+        data: {
+          leadId: data.leadId,
+          title: `Follow-Up Completed (${data.type || 'Task'})`,
+          description: `Follow-up action marked complete: ${data.description}`,
+          performedById: req.user?.id || data.repId,
+          timestamp: new Date()
+        }
+      });
     }
+
+    return sendSuccess(res, data);
   } catch (error) {
+    if (error.code === 'P2025') {
+      return sendError(res, {
+        code: ERROR_CODES.NOT_FOUND,
+        message: 'FollowUpTask not found'
+      }, HTTP_STATUS.NOT_FOUND);
+    }
     next(error);
   }
 };
@@ -137,11 +185,7 @@ exports.update = async (req, res, next) => {
 exports.delete = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
-    // if (req.tenantId) where.tenantId = req.tenantId;
-
     await prisma.followUpTask.delete({ where });
-    
-    // 204 No Content for successful delete
     return res.status(HTTP_STATUS.NO_CONTENT).send();
   } catch (error) {
     if (error.code === 'P2025') {

@@ -7,15 +7,18 @@ import {
 import { crmRepository } from '../../services/crmRepository';
 import { crmStore } from '../../services/crmStore';
 import { crmWorkflowEngine } from '../../services/crmEngines';
+import { useAuth } from '../../context/AuthContext';
+import { getSalesReps } from '../../services/api';
 
 export default function DemoBookings() {
-  // Database States loaded from localStorage crmStore
+  const { user } = useAuth();
+  // Database States loaded from crmStore
   const [demos, setDemos] = useState([]);
   const [leads, setLeads] = useState([]);
+  const [salesReps, setSalesReps] = useState([]);
+  const [selectedRepFilter, setSelectedRepFilter] = useState('ALL');
   
   // UI states
-  const [activeRole, setActiveRole] = useState('Sales Director');
-  const [showRoleDropdown, setShowRoleDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentMonth, setCurrentMonth] = useState({ month: 6, year: 2026, label: 'July 2026' }); // 0-indexed: 6 is July
   
@@ -28,7 +31,8 @@ export default function DemoBookings() {
     leadId: '',
     date: '',
     time: '10:00 AM',
-    presenter: 'Alex Wright',
+    presenterId: '',
+    presenter: '',
     notes: ''
   });
   
@@ -40,20 +44,32 @@ export default function DemoBookings() {
   // Toast feedback state
   const [toast, setToast] = useState(null);
 
-  // Subscribe to crmStore changes to ensure reactive localStorage binding
+  // Subscribe to crmStore changes to ensure reactive binding
   useEffect(() => {
     // Sync with database
     crmRepository.syncWithBackend();
 
+    getSalesReps().then(res => {
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        setSalesReps(res.data.data);
+      }
+    }).catch(err => console.error('Error fetching reps in demos:', err));
+
     const syncDb = () => {
-      const db = crmRepository.getCrmDatabase();
-      setDemos(db.demos);
+      setDemos(crmRepository.getDemos());
       const freshLeads = crmRepository.getLeads();
       setLeads(freshLeads);
+      const freshReps = crmRepository.getSalesReps();
+      if (freshReps?.length) setSalesReps(freshReps);
       
       // Auto-set first lead in booking form if empty
       if (freshLeads.length > 0) {
-        setBookForm(prev => ({ ...prev, leadId: prev.leadId || freshLeads[0].id }));
+        setBookForm(prev => ({ 
+          ...prev, 
+          leadId: prev.leadId || freshLeads[0].id,
+          presenterId: prev.presenterId || freshReps[0]?.id || '',
+          presenter: prev.presenter || freshReps[0]?.name || ''
+        }));
       }
     };
 
@@ -148,9 +164,11 @@ export default function DemoBookings() {
   // Filter Demos based on role and text search
   const filteredDemos = demos.filter(demo => {
     // Role filter
-    let matchesRole = true;
-    if (activeRole !== 'Sales Director') {
-      matchesRole = demo.presenter === activeRole;
+    if (user?.accessProfile === 'SALES_REP') {
+      if (demo.presenterId !== user?.id && demo.presenter !== user?.name) return false;
+    }
+    if (selectedRepFilter !== 'ALL') {
+      if (demo.presenterId !== selectedRepFilter && demo.presenter !== selectedRepFilter) return false;
     }
 
     // Text search
@@ -159,20 +177,15 @@ export default function DemoBookings() {
       demo.presenter.toLowerCase().includes(searchQuery.toLowerCase()) ||
       demo.contact.toLowerCase().includes(searchQuery.toLowerCase());
 
-    return matchesRole && matchesSearch;
+    return matchesSearch;
   });
 
   // Calendar cells mapping for July 2026 (Wednesday is July 1st, 31 days)
-  // We represent the grid starting Sunday:
-  // Sun, Mon, Tue are blank (indexes 0, 1, 2)
-  // July 1 is index 3
   const getCalendarDays = () => {
     const days = [];
-    // 3 blank spaces for Sunday, Monday, Tuesday
     for (let i = 0; i < 3; i++) {
       days.push({ day: null, dateStr: '' });
     }
-    // 31 days of July
     for (let d = 1; d <= 31; d++) {
       const dateStr = `2026-07-${d.toString().padStart(2, '0')}`;
       days.push({ day: d, dateStr });
@@ -200,17 +213,53 @@ export default function DemoBookings() {
       )}
 
       {/* Header Container */}
-      <div className="flex justify-between items-center mb-2 shrink-0">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2 shrink-0">
         <div>
           <h1 className="text-2xl font-black text-slate-900 mb-1">
             Demo Booking
           </h1>
           <p className="text-xs font-medium text-slate-500">
-            Complete end-to-end client conversion console backed by secure localStorage registry tables.
+            Interactive software demonstration scheduler and prospect feedback console.
           </p>
         </div>
 
+        <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+          {/* Authenticated Identity Indicator */}
+          <div className="flex items-center gap-2 bg-slate-100 border border-slate-200 px-3.5 py-2 rounded-xl text-xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <div>
+              <span className="text-[9px] text-slate-400 font-bold block uppercase tracking-wider leading-none">Logged In</span>
+              <strong className="text-slate-900 font-extrabold text-[11px] leading-tight block">{user?.name || 'Sales Officer'}</strong>
+            </div>
+            <span className="ml-1.5 px-2 py-0.5 bg-amber-100 text-amber-900 font-black text-[9px] rounded-md uppercase">
+              {user?.role === 'SUPER_ADMIN' ? 'SUPER_ADMIN' : user?.accessProfile || 'SALES_FULL_ACCESS'}
+            </span>
+          </div>
 
+          {/* Filter by Sales Rep (Full Access only) */}
+          {(user?.role === 'SUPER_ADMIN' || user?.accessProfile !== 'SALES_REP') && (
+            <div className="relative">
+              <select
+                value={selectedRepFilter}
+                onChange={(e) => setSelectedRepFilter(e.target.value)}
+                className="bg-white border border-slate-300 text-slate-700 text-xs font-bold px-3 py-2.5 rounded-xl focus:outline-none cursor-pointer shadow-xs hover:border-amber-400 transition-colors"
+              >
+                <option value="ALL">All Sales Reps</option>
+                {salesReps.map(rep => (
+                  <option key={rep.id} value={rep.id}>{rep.name || rep.email}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <button 
+            onClick={() => openBookModal()}
+            className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white text-xs px-4 py-2.5 rounded-xl font-bold transition-all shadow-xs cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Schedule Demo
+          </button>
+        </div>
       </div>
 
       {/* Main Double Panel Workspace */}

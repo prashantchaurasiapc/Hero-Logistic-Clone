@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const LeadController = require('../controllers/LeadController');
-// const auth = require('../middlewares/auth');
+const { verifyToken, requireSalesAccess } = require('../middlewares/auth');
 
-// Default open for testing, uncomment auth to protect routes
-// router.use(auth.verifyToken);
+router.use(verifyToken);
+router.use(requireSalesAccess);
 
 router.route('/')
   .get(LeadController.getAll)
@@ -15,6 +15,8 @@ router.route('/:id')
   .put(LeadController.update)
   .delete(LeadController.delete);
 
+router.put('/:id/stage', LeadController.updateStage);
+router.put('/:id/assign-rep', LeadController.assignRep);
 router.post('/:id/convert-to-company', LeadController.convertToCompany);
 
 module.exports = router;

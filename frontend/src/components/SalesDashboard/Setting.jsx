@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import { crmRepository } from '../../services/crmRepository';
 import { crmStore } from '../../services/crmStore';
+import { useAuth } from '../../context/AuthContext';
 
 // ---- Default Templates ----
 const DEFAULT_TEMPLATES = {
@@ -46,6 +47,7 @@ Best,
 };
 
 export default function Settings() {
+  const { user } = useAuth();
   const TEMPLATES_STORAGE_KEY = 'hero_crm_email_templates';
 
   // Template State
@@ -66,11 +68,7 @@ export default function Settings() {
   const [newSourceInput, setNewSourceInput] = useState('');
 
   // UI States
-  const [activeRole, setActiveRole] = useState('Sales Director');
-  const [showRoleDropdown, setShowRoleDropdown] = useState(false);
   const [toast, setToast] = useState(null);
-
-  const repsList = ['Alex Wright', 'Sarah K.', 'Michael Scott', 'Jan Levinson', 'Ryan Howard'];
 
   // Load template details when templates state or selectedTemplate changes
   useEffect(() => {
@@ -137,6 +135,10 @@ export default function Settings() {
   };
 
   const handleDeleteStage = (stage) => {
+    if (FIXED_STAGES.includes(stage)) {
+      setToast({ text: `Core database pipeline stage "${stage}" cannot be deleted.` });
+      return;
+    }
     const updated = stages.filter(s => s !== stage);
     crmRepository.saveStages(updated);
     setToast({ text: `Stage "${stage}" removed.` });
@@ -158,8 +160,11 @@ export default function Settings() {
     setToast({ text: `Source "${source}" removed.` });
   };
 
-  // Fixed stages that cannot be deleted
-  const FIXED_STAGES = ['New Lead'];
+  // Fixed core stages that cannot be deleted
+  const FIXED_STAGES = [
+    'New Lead', 'Contacted', 'Demo Booked', 'Demo Completed',
+    'Trial Started', 'Proposal Sent', 'Negotiation', 'Won', 'Lost'
+  ];
 
   return (
     <div className="flex-grow bg-[#F8FAFC] p-6 space-y-6 overflow-y-auto w-full text-left font-sans flex flex-col h-full min-h-0">
@@ -173,14 +178,28 @@ export default function Settings() {
       )}
 
       {/* Header */}
-      <div className="flex justify-between items-center mb-2">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
         <div>
           <h1 className="text-2xl font-black text-slate-900 mb-1">
-            Settings
+            Sales Settings & Presets
           </h1>
-          <p className="text-sm font-medium text-slate-500">
-            Complete end-to-end client conversion console backed by secure localStorage registry tables.
+          <p className="text-xs font-medium text-slate-500">
+            Configure CRM communication templates, pipeline lifecycle stages, and acquisition sources.
           </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {/* Authenticated Identity Indicator */}
+          <div className="flex items-center gap-2 bg-slate-100 border border-slate-200 px-3.5 py-2 rounded-xl text-xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <div>
+              <span className="text-[9px] text-slate-400 font-bold block uppercase tracking-wider leading-none">Logged In</span>
+              <strong className="text-slate-900 font-extrabold text-[11px] leading-tight block">{user?.name || 'Sales Officer'}</strong>
+            </div>
+            <span className="ml-1.5 px-2 py-0.5 bg-amber-100 text-amber-900 font-black text-[9px] rounded-md uppercase">
+              {user?.role === 'SUPER_ADMIN' ? 'SUPER_ADMIN' : user?.accessProfile || 'SALES_FULL_ACCESS'}
+            </span>
+          </div>
         </div>
       </div>
 
