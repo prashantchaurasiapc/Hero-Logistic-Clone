@@ -1334,13 +1334,30 @@ export default function CompanySettings() {
     triggerToast('Company settings exported to JSON successfully!');
   };
 
-  const handleSaveCompanySettings = () => {
+  const handleSaveCompanySettings = async () => {
     setIsSavingCompanySettings(true);
     triggerToast('Saving company configuration changes...');
-    setTimeout(() => {
-      setIsSavingCompanySettings(false);
+    try {
+      await api.put('/company-admin/settings', {
+        companyName: companyDetails.companyName,
+        phone: companyDetails.phone,
+        email: companyDetails.email,
+        registeredAddress: companyDetails.registeredAddress,
+        website: companyDetails.website,
+        branding: {
+          primary: branding.primary,
+          secondary: branding.secondary,
+          accent: branding.accent
+        }
+      });
       triggerToast('Company settings saved successfully!');
-    }, 800);
+      fetchCompanySettings();
+    } catch (err) {
+      console.error('Error saving company settings:', err);
+      triggerToast(err.response?.data?.error?.message || 'Failed to save company settings', 'error');
+    } finally {
+      setIsSavingCompanySettings(false);
+    }
   };
 
   const getCategoryBadgeColor = (cat) => {

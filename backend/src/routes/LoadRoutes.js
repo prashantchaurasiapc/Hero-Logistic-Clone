@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const LoadController = require('../controllers/LoadController');
+const { verifyToken } = require('../middlewares/auth');
+const { resolveTenant } = require('../middlewares/tenantResolver');
 const { requireIdempotency } = require('../middlewares/idempotency');
-// const auth = require('../middlewares/auth');
 
-// Default open for testing, uncomment auth to protect routes
-// router.use(auth.verifyToken);
+router.use(verifyToken, resolveTenant);
 
 router.route('/')
   .get(LoadController.getAll)

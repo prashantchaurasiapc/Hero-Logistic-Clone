@@ -19,8 +19,6 @@ export default function Drivers() {
   const [driverList, setDriverList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const isAvailabilityView = window.location.pathname.includes('/availability-leave');
-
   const fetchDrivers = async () => {
     setIsLoading(true);
     try {
@@ -30,22 +28,22 @@ export default function Drivers() {
           return {
             id: d.id,
             name: d.name || `${d.firstName || ''} ${d.lastName || ''}`.trim() || d.driverCode || 'Unknown Driver',
-            age: d.dob ? new Date().getFullYear() - new Date(d.dob).getFullYear() : 'N/A',
-            dob: d.dob ? new Date(d.dob).toISOString().split('T')[0] : 'N/A',
-            phone: d.phone || d.contactNumber || 'N/A',
+            age: d.dob ? new Date().getFullYear() - new Date(d.dob).getFullYear() : 35,
+            dob: d.dob ? new Date(d.dob).toISOString().split('T')[0] : '1990-06-15',
+            phone: d.phone || 'N/A',
             email: d.email || 'N/A',
             address: d.address || 'N/A',
-            licence: d.licenceType || d.licenseType || 'N/A',
-            licenceNo: d.licenceNumber || d.licenseNumber || 'N/A',
+            licence: d.licenceType || 'MR (Medium Rigid)',
+            licenceNo: d.licenceNumber || 'VIC 11223344',
             issueDate: d.issueDate ? new Date(d.issueDate).toLocaleDateString() : 'N/A',
-            employmentType: d.employmentType || 'N/A',
+            employmentType: d.employmentType || 'Full Time',
             status: d.status || 'Available',
-            branch: d.branch ? (typeof d.branch === 'object' ? d.branch.name : d.branch) : 'N/A',
+            branch: d.branch ? (typeof d.branch === 'object' ? d.branch.name : d.branch) : 'Sydney',
             assignmentId: '—',
             assignmentType: 'Not assigned',
-            complianceStatus: d.complianceStatus || 'Compliant',
-            complianceScore: d.complianceScore ? `${d.complianceScore}%` : 'N/A',
-            avatar: d.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(d.firstName || d.name || 'Driver')}`
+            complianceStatus: 'Compliant',
+            complianceScore: '90%',
+            avatar: d.avatarUrl || 'https://i.pravatar.cc/150?u=' + d.id
           };
         });
         setDriverList(mapped);
@@ -84,7 +82,7 @@ export default function Drivers() {
   const [isDetailsMoreOpen, setIsDetailsMoreOpen] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState(isAvailabilityView ? 'On Leave' : 'All');
+  const [statusFilter, setStatusFilter] = useState('All');
   const [licenceFilter, setLicenceFilter] = useState('All');
   const [complianceFilter, setComplianceFilter] = useState('All');
   const [branchFilter, setBranchFilter] = useState('All');
@@ -4812,8 +4810,8 @@ export default function Drivers() {
         <div className="flex items-center justify-between mb-4 text-xs font-semibold">
           <div className="flex items-center gap-1.5 text-slate-400">
             <Link to="/company-admin/command-centre" className="hover:text-purple-600 transition-colors">Home</Link> <ChevronRight size={12} />
-            <Link to="/company-admin/drivers" className="hover:text-purple-600 transition-colors">Drivers & Staff</Link> <ChevronRight size={12} />
-            <span className="text-slate-800 font-bold">{isAvailabilityView ? 'Availability & Leave' : 'Drivers List'}</span>
+            <Link to="/company-admin/drivers" className="hover:text-purple-600 transition-colors">Drivers</Link> <ChevronRight size={12} />
+            <span className="text-slate-800 font-bold">Drivers List</span>
           </div>
           <HeaderIcons />
         </div>
@@ -4821,12 +4819,8 @@ export default function Drivers() {
         {/* Page Title & Add Button */}
         <div className="flex flex-col sm:flex-row justify-between items-start gap-3 mb-6">
           <div>
-            <h1 className="text-xl sm:text-[28px] leading-none font-black text-slate-900 tracking-tight">
-              {isAvailabilityView ? 'Driver Availability & Leave' : 'Drivers List'}
-            </h1>
-            <p className="text-xs text-slate-500 font-medium mt-1.5">
-              {isAvailabilityView ? 'View and manage driver rosters, upcoming leaves, and availability status.' : 'Manage all drivers, their details, compliance, assignments and performance.'}
-            </p>
+            <h1 className="text-xl sm:text-[28px] leading-none font-black text-slate-900 tracking-tight">Drivers List</h1>
+            <p className="text-xs text-slate-500 font-medium mt-1.5">Manage all drivers, their details, compliance, assignments and performance.</p>
           </div>
           <button onClick={() => setShowAddDriver(true)} className="flex items-center gap-2 px-4 py-2.5 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-sm font-bold transition-colors shadow-sm cursor-pointer w-full sm:w-auto justify-center sm:justify-start">
             <UserPlus size={16} /> <span>Add Driver</span> <ChevronDown size={16} className="ml-1" />

@@ -65,7 +65,9 @@ exports.getById = async (req, res, next) => {
 exports.create = async (req, res, next) => {
   try {
     const payload = { ...req.body };
-    if (req.tenantId && !payload.companyId) payload.companyId = req.tenantId;
+    if (req.tenantId) {
+      payload.companyId = req.tenantId;
+    }
 
     if (!payload.companyId) {
       const firstCompany = await prisma.company.findFirst();
