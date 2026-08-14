@@ -42,7 +42,7 @@ function GradientHeader({ icon: Icon, title, subtitle, onClose, color = '#1e40af
 }
 
 /* ---------- ASSIGN SHIFT MODAL ---------- */
-function AssignShiftModal({ worker, onClose, onAssign }) {
+function AssignShiftModal({ worker, onClose, onAssign, workersList = [] }) {
   const [form, setForm] = useState({
     date: '', startTime: '06:00', endTime: '14:00',
     shiftType: 'Regular', role: worker?.role || '', notes: ''
@@ -64,7 +64,7 @@ function AssignShiftModal({ worker, onClose, onAssign }) {
               <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Worker *</label>
               <select required className="w-full h-10 px-3 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:outline-none focus:border-blue-500">
                 <option value="">Select worker...</option>
-                {mockWorkers.map(w => <option key={w.id} value={w.id}>{w.name} — {w.role}</option>)}
+                {workersList.map(w => <option key={w.id} value={w.id}>{w.name} — {w.role}</option>)}
               </select>
             </div>
           )}

@@ -43,15 +43,15 @@ export default function DispatcherLoads() {
 
   // Create Load Form Inputs State
   const [newLoadForm, setNewLoadForm] = useState({
-    customer: 'BMW Australia',
-    routeFrom: 'Melbourne',
-    routeTo: 'Geelong',
-    driver: 'John Doe',
-    vehicle: 'MAN TGX 26.580',
-    trailer: 'TR-01 (10 Car)',
-    status: 'In Transit',
-    reqDate: '23 May 2026',
-    reqTime: '05:00 PM'
+    customer: '',
+    routeFrom: '',
+    routeTo: '',
+    driver: '',
+    vehicle: '',
+    trailer: '',
+    status: 'Planned',
+    reqDate: '',
+    reqTime: ''
   });
 
   // Filter States

@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   User, Phone, Mail, MapPin, Settings, Globe, Clock, Calendar as CalendarIcon,
   Shield, Check, Monitor, Smartphone, Tablet, Link2, ChevronRight, 
   Lock, Edit3, Grid, CalendarDays, Truck, Map, MessageSquare, History, Bell
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Profile() {
+  const { user } = useAuth();
   const [toast, setToast] = useState(null);
   const showToast = (msg) => {
     setToast(msg);
@@ -14,12 +16,23 @@ export default function Profile() {
 
   // Editable Profile State Variables
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const [fullName, setFullName] = useState('John Smith');
-  const [mobileNumber, setMobileNumber] = useState('+61 412 345 678');
-  const [emailAddress, setEmailAddress] = useState('john.smith@herols.com.au');
-  const [dob, setDob] = useState('15 Mar 1988');
-  const [address, setAddress] = useState('12 George Street, Sydney NSW 2000, Australia');
-  const [emergencyContact, setEmergencyContact] = useState('Emma Smith (Wife) +61 433 222 111');
+  const [fullName, setFullName] = useState(user?.name || 'Dispatcher User');
+  const [mobileNumber, setMobileNumber] = useState(user?.phone || 'N/A');
+  const [emailAddress, setEmailAddress] = useState(user?.email || 'dispatcher@herols.com');
+  const [dob, setDob] = useState(user?.dob || 'N/A');
+  const [address, setAddress] = useState(user?.address || 'N/A');
+  const [emergencyContact, setEmergencyContact] = useState(user?.emergencyContact || 'N/A');
+
+  useEffect(() => {
+    if (user) {
+      if (user.name) setFullName(user.name);
+      if (user.email) setEmailAddress(user.email);
+      if (user.phone) setMobileNumber(user.phone);
+      if (user.dob) setDob(user.dob);
+      if (user.address) setAddress(user.address);
+      if (user.emergencyContact) setEmergencyContact(user.emergencyContact);
+    }
+  }, [user]);
 
   // Temporary Edit Form State Variables
   const [tempFullName, setTempFullName] = useState('');

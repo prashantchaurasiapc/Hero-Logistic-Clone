@@ -30,12 +30,12 @@ export default function FleetMonitor() {
   // Send Location Modal State
   const [isSendLocationModalOpen, setIsSendLocationModalOpen] = useState(false);
   const [locationFormData, setLocationFormData] = useState({
-    driverId: 'DRV-101',
-    presetName: 'Sydney Depot',
-    address: '14 Logistics Way, Chullora NSW 2190',
-    lat: '-33.8845',
-    lng: '151.0452',
-    notes: 'Proceed directly to Gate B. Contact terminal supervisor upon arrival.',
+    driverId: '',
+    presetName: '',
+    address: '',
+    lat: '',
+    lng: '',
+    notes: '',
     channel: 'App Push + SMS',
     includeNav: true,
     reqAck: true
@@ -194,7 +194,24 @@ export default function FleetMonitor() {
   const driversList = liveDrivers;
 
   // Currently selected driver object
-  const selectedDriver = driversList.find(d => d.id === selectedDriverId) || driversList[0];
+  const selectedDriver = driversList.find(d => d.id === selectedDriverId) || driversList[0] || {
+    id: 'DRV-NONE',
+    name: 'Select a Driver',
+    avatar: 'https://ui-avatars.com/api/?name=Driver',
+    status: 'Offline',
+    statusStyle: 'bg-slate-100 text-slate-700 border-slate-200',
+    statusDot: 'bg-slate-400',
+    loadId: 'N/A',
+    speed: '0 km/h',
+    heading: 'N',
+    lastUpdate: 'N/A',
+    toDest: '-',
+    customer: 'N/A',
+    routeFrom: 'N/A',
+    routeTo: 'N/A',
+    vehicle: 'N/A',
+    phone: 'N/A'
+  };
 
   // Filtered driver list
   const filteredDrivers = driversList.filter(d => {

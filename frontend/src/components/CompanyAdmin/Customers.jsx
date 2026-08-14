@@ -71,13 +71,13 @@ export default function Customers() {
           name: c.name,
           abn: c.abn || 'N/A',
           type: c.type === 'BUSINESS' ? 'Business' : c.type === 'CORPORATE' ? 'Corporate' : (c.type || 'Business'),
-          contactName: c.contactName || 'Primary Contact',
-          contactEmail: c.email || 'contact@example.com',
+          contactName: c.contactName || 'N/A',
+          contactEmail: c.email || 'N/A',
           contactPhone: c.phone || 'N/A',
           transportModules: Array.isArray(c.transportModules) ? c.transportModules : (c.transportModules ? JSON.parse(c.transportModules) : ['truck']),
           billingTerms: c.billingTerms || '14 Days EOM',
           billingType: 'EOM',
-          manager: c.accountManager ? `${c.accountManager.firstName || ''} ${c.accountManager.lastName || ''}`.trim() : 'Sarah Mitchell',
+          manager: c.accountManager ? `${c.accountManager.firstName || ''} ${c.accountManager.lastName || ''}`.trim() : (c.accountManagerName || 'N/A'),
           status: c.status === 'INACTIVE' ? 'Inactive' : 'Active'
         }));
         setCustomersList(mapped);

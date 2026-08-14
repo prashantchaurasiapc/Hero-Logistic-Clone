@@ -1,19 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   User, Lock, Sliders, LifeBuoy, Camera, Mail, Building2, Save, 
   Key, Bell, AlertTriangle, MessageSquare, Table, FileText, Send, 
   CheckCircle, ShieldCheck
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 export default function SystemSettings() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('account');
   const [toastMessage, setToastMessage] = useState('');
   
   // My Account form state
   const [profile, setProfile] = useState({
-    loginHandle: 'Sarah Mitchell',
-    primaryEmail: 'sarah.m@herologistics.com'
+    loginHandle: user?.name || user?.email || '',
+    primaryEmail: user?.email || ''
   });
+
+  useEffect(() => {
+    if (user) {
+      setProfile({
+        loginHandle: user.name || user.email || '',
+        primaryEmail: user.email || ''
+      });
+    }
+  }, [user]);
 
   // Security form state
   const [passwords, setPasswords] = useState({
