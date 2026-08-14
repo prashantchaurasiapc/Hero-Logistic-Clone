@@ -343,15 +343,29 @@ export default function MembershipPlans() {
     if (mode === 'configure' && plan) {
       setSelectedPlan(plan);
       setFormName(plan.name);
-      setFormVersion(plan.version.replace('v', ''));
+      setFormVersion(plan.version ? String(plan.version).replace('v', '') : '1.0.0');
       setFormStatus(plan.status);
       setFormDesc(`Description outline of licensing rules for ${plan.name}.`);
+      setFormMonthlyPrice(plan.monthlyPrice !== undefined ? plan.monthlyPrice : 199);
+      setFormAnnualPrice(plan.annualPrice !== undefined ? plan.annualPrice : (plan.monthlyPrice ? plan.monthlyPrice * 10 : 1990));
+      setFormUsersLimit(plan.users !== undefined ? plan.users : (plan.usersLimit !== undefined ? plan.usersLimit : 10));
+      setFormDriversLimit(plan.drivers !== undefined ? plan.drivers : (plan.driversLimit !== undefined ? plan.driversLimit : 20));
+      setFormVehiclesLimit(plan.vehicles !== undefined ? plan.vehicles : (plan.vehiclesLimit !== undefined ? plan.vehiclesLimit : 20));
+      setFormStorageGB(plan.storage ? parseInt(String(plan.storage).replace(/[^0-9]/g, '')) || 10 : (plan.storageLimitGB || 10));
+      setFormTrialDays(plan.trialDays !== undefined ? plan.trialDays : 14);
     } else {
       setSelectedPlan(null);
       setFormName('');
       setFormVersion('1.0.0');
       setFormStatus('Draft');
       setFormDesc('');
+      setFormMonthlyPrice(199);
+      setFormAnnualPrice(1990);
+      setFormUsersLimit(10);
+      setFormDriversLimit(20);
+      setFormVehiclesLimit(20);
+      setFormStorageGB(10);
+      setFormTrialDays(14);
     }
     setShowWizard(true);
   };
@@ -2095,32 +2109,36 @@ export default function MembershipPlans() {
                       <div>
                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Max User Logins</label>
                         <input
-                          type="text"
-                          defaultValue="50"
+                          type="number"
+                          value={formUsersLimit}
+                          onChange={(e) => setFormUsersLimit(e.target.value)}
                           className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 rounded-xl focus:outline-none text-slate-800 text-xs font-bold"
                         />
                       </div>
                       <div>
                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Max Drivers</label>
                         <input
-                          type="text"
-                          defaultValue="100"
+                          type="number"
+                          value={formDriversLimit}
+                          onChange={(e) => setFormDriversLimit(e.target.value)}
                           className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 rounded-xl focus:outline-none text-slate-800 text-xs font-bold"
                         />
                       </div>
                       <div>
                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Max Fleet Vehicles</label>
                         <input
-                          type="text"
-                          defaultValue="100"
+                          type="number"
+                          value={formVehiclesLimit}
+                          onChange={(e) => setFormVehiclesLimit(e.target.value)}
                           className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 rounded-xl focus:outline-none text-slate-800 text-xs font-bold"
                         />
                       </div>
                       <div>
                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Cloud Storage (GB)</label>
                         <input
-                          type="text"
-                          defaultValue="100"
+                          type="number"
+                          value={formStorageGB}
+                          onChange={(e) => setFormStorageGB(e.target.value)}
                           className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 rounded-xl focus:outline-none text-slate-800 text-xs font-bold"
                         />
                       </div>
@@ -2192,7 +2210,11 @@ export default function MembershipPlans() {
                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Monthly Price ($)</label>
                         <input
                           type="number"
-                          defaultValue="499"
+                          value={formMonthlyPrice}
+                          onChange={(e) => {
+                            setFormMonthlyPrice(e.target.value);
+                            setFormAnnualPrice(e.target.value ? Number(e.target.value) * 10 : '');
+                          }}
                           className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 rounded-xl focus:outline-none text-slate-800 text-xs font-bold"
                         />
                       </div>
@@ -2200,7 +2222,8 @@ export default function MembershipPlans() {
                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Annual Price ($)</label>
                         <input
                           type="number"
-                          defaultValue="4990"
+                          value={formAnnualPrice}
+                          onChange={(e) => setFormAnnualPrice(e.target.value)}
                           className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 rounded-xl focus:outline-none text-slate-800 text-xs font-bold"
                         />
                       </div>
@@ -2208,7 +2231,8 @@ export default function MembershipPlans() {
                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Trial Period Days</label>
                         <input
                           type="number"
-                          defaultValue="14"
+                          value={formTrialDays}
+                          onChange={(e) => setFormTrialDays(e.target.value)}
                           className="w-full px-3.5 py-2.5 bg-white border border-slate-200 focus:border-brand-500 rounded-xl focus:outline-none text-slate-800 text-xs font-bold"
                         />
                       </div>

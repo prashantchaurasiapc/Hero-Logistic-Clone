@@ -111,11 +111,7 @@ exports.create = async (req, res, next) => {
 // Update Vehicle with Optimistic Concurrency check
 exports.update = async (req, res, next) => {
   try {
-    const { id } = req.params;
-<<<<<<< HEAD
     const updateData = sanitizePayload(req.body);
-=======
-    const updateData = { ...req.body };
 
     if (req.tenantId) {
       const existing = await prisma.vehicle.findFirst({
@@ -128,7 +124,6 @@ exports.update = async (req, res, next) => {
         }, HTTP_STATUS.NOT_FOUND);
       }
     }
->>>>>>> b0a24e87e300f02a5292e7cf5fdee1bcafeb4bc6
     
     const where = { id };
 
