@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import api from '../../services/api';
 import { createPortal } from 'react-dom';
 import {
   Users, UserCheck, UserPlus, UserMinus, Star, Search, Plus, Upload, Download, MoreVertical,
@@ -56,7 +57,42 @@ const initialDocuments = [
 ];
 
 export default function Customers() {
-  const [customersList, setCustomersList] = useState(mockCustomers);
+  const [customersList, setCustomersList] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const fetchCustomersFromApi = async () => {
+    try {
+      setIsLoading(true);
+      const res = await api.get('/customers');
+      const dbData = res.data?.data || res.data || [];
+      if (Array.isArray(dbData)) {
+        const mapped = dbData.map((c) => ({
+          id: c.id,
+          name: c.name,
+          abn: c.abn || 'N/A',
+          type: c.type === 'BUSINESS' ? 'Business' : c.type === 'CORPORATE' ? 'Corporate' : (c.type || 'Business'),
+          contactName: c.contactName || 'Primary Contact',
+          contactEmail: c.email || 'contact@example.com',
+          contactPhone: c.phone || 'N/A',
+          transportModules: Array.isArray(c.transportModules) ? c.transportModules : (c.transportModules ? JSON.parse(c.transportModules) : ['truck']),
+          billingTerms: c.billingTerms || '14 Days EOM',
+          billingType: 'EOM',
+          manager: c.accountManager ? `${c.accountManager.firstName || ''} ${c.accountManager.lastName || ''}`.trim() : 'Sarah Mitchell',
+          status: c.status === 'INACTIVE' ? 'Inactive' : 'Active'
+        }));
+        setCustomersList(mapped);
+      }
+    } catch (err) {
+      console.error('Error fetching customers from API:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCustomersFromApi();
+  }, []);
+
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
@@ -271,8 +307,8 @@ export default function Customers() {
   const openEditCustomer = (customer) => {
     setEditCustomerForm({
       id: customer.id,
-      name: customer.name || '',
-      abn: customer.abn || '',
+      name: customer.name || 'FreightCo Logistics',
+      abn: customer.abn || '68 961 770 797',
       acn: customer.acn || '123 456 789',
       type: customer.type || 'Corporate',
       billingTerms: customer.billingTerms || '14 Days EOM',
@@ -304,43 +340,22 @@ export default function Customers() {
     setActiveActionMenu(null);
   };
 
-  const handleSaveEditCustomer = (e) => {
+  const handleSaveEditCustomer = async (e) => {
     e.preventDefault();
-    const updatedList = customersList.map(c => {
-      if (c.id === editCustomerForm.id) {
-        return {
-          ...c,
-          name: editCustomerForm.name,
-          abn: editCustomerForm.abn,
-          type: editCustomerForm.type,
-          billingTerms: editCustomerForm.billingTerms,
-          manager: editCustomerForm.manager,
-          status: editCustomerForm.status,
-        };
-      }
-      return c;
-    });
-    setCustomersList(updatedList);
-
-    if (selectedCustomer && selectedCustomer.id === editCustomerForm.id) {
-      setSelectedCustomer({
-        ...selectedCustomer,
+    try {
+      await api.put(`/customers/${editCustomerForm.id}`, {
         name: editCustomerForm.name,
         abn: editCustomerForm.abn,
-        type: editCustomerForm.type,
-        billingTerms: editCustomerForm.billingTerms,
-        manager: editCustomerForm.manager,
-        status: editCustomerForm.status
+        type: editCustomerForm.type?.toUpperCase() === 'CORPORATE' ? 'CORPORATE' : 'BUSINESS',
+        status: editCustomerForm.status?.toUpperCase() === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE',
+        billingTerms: editCustomerForm.billingTerms
       });
-      setCompanyInfo(prev => ({
-        ...prev,
-        tradingName: editCustomerForm.name,
-        abn: editCustomerForm.abn,
-        acn: editCustomerForm.acn,
-        status: editCustomerForm.status
-      }));
+      await fetchCustomersFromApi();
+    } catch (err) {
+      console.error('Error updating customer via API:', err);
+    } finally {
+      setShowEditCustomerModal(false);
     }
-    setShowEditCustomerModal(false);
   };
 
   const handleSaveAssignManager = (e) => {
@@ -362,15 +377,20 @@ export default function Customers() {
     setShowAssignManagerModal(false);
   };
 
-  const handleConfirmDelete = (e) => {
+  const handleConfirmDelete = async (e) => {
     if (e) e.preventDefault();
-    const updatedList = customersList.filter(c => c.id !== deleteCustomerForm.id);
-    setCustomersList(updatedList);
-
-    if (selectedCustomer && selectedCustomer.id === deleteCustomerForm.id) {
-      setSelectedCustomer(null);
+    try {
+      await api.delete(`/customers/${deleteCustomerForm.id}`);
+      await fetchCustomersFromApi();
+    } catch (err) {
+      console.error('Error deleting customer via API:', err);
+      setCustomersList(prev => prev.filter(c => c.id !== deleteCustomerForm.id));
+    } finally {
+      if (selectedCustomer && selectedCustomer.id === deleteCustomerForm.id) {
+        setSelectedCustomer(null);
+      }
+      setShowDeleteModal(false);
     }
-    setShowDeleteModal(false);
   };
 
   // Contacts live state
@@ -455,7 +475,17 @@ Please sign in at security.`);
   const [showDocPreview, setShowDocPreview] = useState(true);
   const [docSearchQuery, setDocSearchQuery] = useState('');
 
-  const [newCustomerForm, setNewCustomerForm] = useState({ name: '', abn: '', type: 'Corporate' });
+  const [newCustomerForm, setNewCustomerForm] = useState({
+    name: '',
+    abn: '',
+    acn: '',
+    type: 'Corporate',
+    status: 'Active',
+    category: 'Strategic Account',
+    billingTerms: '14 Days EOM',
+    creditLimit: '250000',
+    manager: 'Sarah Mitchell'
+  });
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All States');
@@ -481,36 +511,52 @@ Please sign in at security.`);
     else setActiveActionMenu(id);
   };
 
-  const handleSaveCustomer = (e) => {
+  const handleSaveCustomer = async (e) => {
     e.preventDefault();
     if (!newCustomerForm.name) return;
 
-    const baseId = newCustomerForm.name.slice(0, 2).toUpperCase();
-    let uniqueId = baseId;
-    let counter = 1;
-    while (customersList.some(c => c.id === uniqueId)) {
-      uniqueId = `${baseId}${counter}`;
-      counter++;
+    try {
+      const res = await api.post('/customers', {
+        name: newCustomerForm.name,
+        abn: newCustomerForm.abn || null,
+        type: newCustomerForm.type?.toUpperCase() === 'CORPORATE' ? 'CORPORATE' : 'BUSINESS',
+        status: newCustomerForm.status?.toUpperCase() === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE',
+        billingTerms: newCustomerForm.billingTerms
+      });
+      if (res.data?.data || res.data?.success) {
+        await fetchCustomersFromApi();
+      }
+    } catch (err) {
+      console.error('Error creating customer via API:', err);
+      const newCustomer = {
+        id: Date.now().toString(),
+        name: newCustomerForm.name,
+        abn: newCustomerForm.abn || 'N/A',
+        type: newCustomerForm.type,
+        contactName: 'Primary Contact',
+        contactEmail: 'contact@example.com',
+        contactPhone: 'N/A',
+        transportModules: ['truck'],
+        billingTerms: newCustomerForm.billingTerms || '14 Days EOM',
+        billingType: 'EOM',
+        manager: newCustomerForm.manager || 'Sarah Mitchell',
+        status: newCustomerForm.status || 'Active'
+      };
+      setCustomersList(prev => [newCustomer, ...prev]);
+    } finally {
+      setNewCustomerForm({
+        name: '',
+        abn: '',
+        acn: '',
+        type: 'Corporate',
+        status: 'Active',
+        category: 'Strategic Account',
+        billingTerms: '14 Days EOM',
+        creditLimit: '250000',
+        manager: 'Sarah Mitchell'
+      });
+      setShowAddModal(false);
     }
-
-    const newCustomer = {
-      id: uniqueId,
-      name: newCustomerForm.name,
-      abn: newCustomerForm.abn || 'N/A',
-      type: newCustomerForm.type,
-      contactName: 'New Contact',
-      contactEmail: 'contact@example.com',
-      contactPhone: 'N/A',
-      transportModules: ['truck'],
-      billingTerms: '14 Days',
-      billingType: 'EOM',
-      manager: 'Sarah Mitchell',
-      status: 'Active'
-    };
-
-    setCustomersList([newCustomer, ...customersList]);
-    setNewCustomerForm({ name: '', abn: '', type: 'Corporate' });
-    setShowAddModal(false);
   };
 
   if (selectedCustomer) {
@@ -587,8 +633,8 @@ Please sign in at security.`);
                 </div>
               </div>
             ) : (
-              <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-black text-2xl border border-blue-100 shrink-0">
-                {selectedCustomer.id}
+              <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-black text-xl border border-blue-100 shrink-0 shadow-xs">
+                {selectedCustomer.name ? selectedCustomer.name.slice(0, 2).toUpperCase() : 'FL'}
               </div>
             )}
             <div>
@@ -5117,9 +5163,9 @@ Please sign in at security.`);
               <Users size={18} />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-xl font-black text-slate-900 leading-tight">156</div>
+              <div className="text-xl font-black text-slate-900 leading-tight">{customersList.length}</div>
               <div className="text-[11px] font-bold text-slate-700 mt-0.5 truncate">Total Customers</div>
-              <div className="text-[10px] font-semibold text-slate-400 mt-0.5 truncate">40 New</div>
+              <div className="text-[10px] font-semibold text-slate-400 mt-0.5 truncate">{customersList.length} Registered</div>
             </div>
           </div>
 
@@ -5129,9 +5175,9 @@ Please sign in at security.`);
               <UserCheck size={18} />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-xl font-black text-slate-900 leading-tight">128</div>
+              <div className="text-xl font-black text-slate-900 leading-tight">{customersList.filter(c => c.status === 'Active').length}</div>
               <div className="text-[11px] font-bold text-slate-700 mt-0.5 truncate">Active Customers</div>
-              <div className="text-[10px] font-semibold text-slate-400 mt-0.5 truncate">81.5% of total</div>
+              <div className="text-[10px] font-semibold text-slate-400 mt-0.5 truncate">Active &amp; Verified</div>
             </div>
           </div>
 
@@ -5141,7 +5187,7 @@ Please sign in at security.`);
               <UserPlus size={18} />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-xl font-black text-slate-900 leading-tight">12</div>
+              <div className="text-xl font-black text-slate-900 leading-tight">{customersList.length}</div>
               <div className="text-[11px] font-bold text-slate-700 mt-0.5 truncate">Customers (This Month)</div>
               <div className="text-[10px] font-semibold text-slate-400 mt-0.5 truncate">Newly added</div>
             </div>
@@ -5153,9 +5199,9 @@ Please sign in at security.`);
               <UserMinus size={18} />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-xl font-black text-slate-900 leading-tight">28</div>
+              <div className="text-xl font-black text-slate-900 leading-tight">{customersList.filter(c => c.status === 'Inactive').length}</div>
               <div className="text-[11px] font-bold text-slate-700 mt-0.5 truncate">Inactive Customers</div>
-              <div className="text-[10px] font-semibold text-slate-400 mt-0.5 truncate">17.5% of total</div>
+              <div className="text-[10px] font-semibold text-slate-400 mt-0.5 truncate">Suspended/Inactive</div>
             </div>
           </div>
 
@@ -5165,9 +5211,9 @@ Please sign in at security.`);
               <Star size={18} />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-black text-slate-900 leading-tight truncate">ABC Motors ...</div>
+              <div className="text-sm font-black text-slate-900 leading-tight truncate">{customersList[0]?.name || 'No Customers'}</div>
               <div className="text-[11px] font-bold text-slate-700 mt-0.5 truncate">Top Customer (YTD)</div>
-              <div className="text-[10px] font-semibold text-slate-400 mt-0.5 uppercase tracking-wider truncate">LTV: $2.4M (12 MO)</div>
+              <div className="text-[10px] font-semibold text-slate-400 mt-0.5 uppercase tracking-wider truncate">Active Account</div>
             </div>
           </div>
         </div>
@@ -5196,7 +5242,6 @@ Please sign in at security.`);
                     <option value="All States">All States</option>
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
-                    <option value="Suspended">Suspended</option>
                   </select>
                   <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 </div>
@@ -5206,8 +5251,8 @@ Please sign in at security.`);
                 <div className="relative">
                   <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} className="appearance-none pl-3 pr-8 py-2 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 bg-white focus:outline-none focus:border-blue-500 cursor-pointer w-full">
                     <option value="All Types">All Types</option>
-                    <option value="Corporate">Corporate</option>
                     <option value="Business">Business</option>
+                    <option value="Corporate">Corporate</option>
                   </select>
                   <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 </div>
@@ -5219,7 +5264,6 @@ Please sign in at security.`);
                     <option value="All Mods">All Mods</option>
                     <option value="Truck">Truck</option>
                     <option value="Box">Box</option>
-                    <option value="Alert">Alert</option>
                   </select>
                   <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 </div>
@@ -5265,7 +5309,7 @@ Please sign in at security.`);
           {/* Data Table */}
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col overflow-hidden">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 border-b border-slate-100 bg-slate-50/50 gap-3">
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">38 customers found</span>
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{filteredCustomers.length} customers found</span>
               <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                 <button className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-xs hover:bg-slate-50 flex items-center gap-1.5 cursor-pointer flex-grow sm:flex-grow-0 justify-center">
                   <Package size={12} /> Columns
@@ -5295,96 +5339,110 @@ Please sign in at security.`);
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
-                  {filteredCustomers.map((c) => (
-                    <tr key={c.id} className="hover:bg-slate-50/80 transition-colors group">
-                      <td className="py-3 px-4"><input type="checkbox" className="rounded border-slate-300" /></td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-3 cursor-pointer" onClick={() => setSelectedCustomer(c)}>
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${c.type === 'Business' ? 'bg-blue-50 text-blue-600 border border-blue-100' : 'bg-indigo-50 text-indigo-600 border border-indigo-100'
-                            }`}>
-                            {c.id}
+                  {filteredCustomers.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="py-16 text-center">
+                        <div className="flex flex-col items-center justify-center">
+                          <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mb-3">
+                            <Users size={24} className="text-slate-400" />
                           </div>
-                          <div>
-                            <p className="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{c.name}</p>
-                            <p className="text-[10px] text-slate-400 mt-0.5 uppercase tracking-wider">ABN: {c.abn}</p>
-                          </div>
+                          <p className="text-sm font-black text-slate-800 mb-1">No customers registered yet</p>
+                          <p className="text-xs text-slate-400 max-w-sm mb-4">Click &quot;+ Add Customer&quot; above to create your first real customer in the database.</p>
                         </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${c.type === 'Corporate' ? 'bg-indigo-50 text-indigo-600' : 'bg-blue-50 text-blue-600'
-                          }`}>
-                          {c.type}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div>
-                          <p className="text-sm font-bold text-slate-900">{c.contactName}</p>
-                          <p className="text-[10px] text-slate-400 mt-0.5">{c.contactEmail}</p>
-                          <p className="text-[10px] text-slate-400">{c.contactPhone}</p>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-1.5">
-                          {c.transportModules?.includes('truck') && (
-                            <div className="w-7 h-7 rounded border border-slate-200 bg-slate-50 text-slate-600 flex items-center justify-center">
-                              <Truck size={12} />
-                            </div>
-                          )}
-                          {c.transportModules?.includes('box') && (
-                            <div className="w-7 h-7 rounded border border-slate-200 bg-slate-50 text-slate-600 flex items-center justify-center">
-                              <Package size={12} />
-                            </div>
-                          )}
-                          {c.transportModules?.includes('alert') && (
-                            <div className="w-7 h-7 rounded border border-slate-200 bg-slate-50 text-slate-600 flex items-center justify-center">
-                              <AlertCircle size={12} />
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div>
-                          <p className="text-sm font-bold text-slate-900">{c.billingTerms}</p>
-                          <p className="text-[10px] text-slate-400 mt-0.5">{c.billingType}</p>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div>
-                          <p className="text-sm font-bold text-slate-900">{c.manager}</p>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-md border ${c.status === 'Active' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' :
-                          c.status === 'Inactive' ? 'bg-red-50 border-red-100 text-red-600' :
-                            'bg-amber-50 border-amber-100 text-amber-600'
-                          }`}>
-                          {c.status}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-right relative">
-                        <button onClick={() => toggleActionMenu(c.id)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer inline-flex items-center justify-center">
-                          <MoreVertical size={16} />
-                        </button>
-                        {activeActionMenu === c.id && (
-                          <div className="absolute right-8 top-10 w-48 bg-white border border-slate-100 rounded-xl shadow-lg py-1 z-50 text-left">
-                            <button onClick={() => setSelectedCustomer(c)} className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer">
-                              <Eye size={14} className="text-slate-400" /> View Details
-                            </button>
-                            <button onClick={() => openEditCustomer(c)} className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer">
-                              <Edit size={14} className="text-slate-400" /> Edit Customer
-                            </button>
-                            <button onClick={() => openAssignManager(c)} className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer">
-                              <UserCircle size={14} className="text-slate-400" /> Assign Manager
-                            </button>
-                            <div className="my-1 border-t border-slate-50"></div>
-                            <button onClick={() => openDeleteCustomer(c)} className="w-full text-left px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer">
-                              <Trash2 size={14} /> Delete
-                            </button>
-                          </div>
-                        )}
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    filteredCustomers.map((c) => (
+                      <tr key={c.id} className="hover:bg-slate-50/80 transition-colors group">
+                        <td className="py-3 px-4"><input type="checkbox" className="rounded border-slate-300" /></td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setSelectedCustomer(c)}>
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${c.type === 'Business' ? 'bg-blue-50 text-blue-600 border border-blue-100' : 'bg-indigo-50 text-indigo-600 border border-indigo-100'
+                              }`}>
+                              {c.name ? c.name.slice(0, 2).toUpperCase() : 'CU'}
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{c.name}</p>
+                              <p className="text-[10px] text-slate-400 mt-0.5 uppercase tracking-wider">ABN: {c.abn}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${c.type === 'Corporate' ? 'bg-indigo-50 text-indigo-600' : 'bg-blue-50 text-blue-600'
+                            }`}>
+                            {c.type}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div>
+                            <p className="text-sm font-bold text-slate-900">{c.contactName}</p>
+                            <p className="text-[10px] text-slate-400 mt-0.5">{c.contactEmail}</p>
+                            <p className="text-[10px] text-slate-400">{c.contactPhone}</p>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-1.5">
+                            {c.transportModules?.includes('truck') && (
+                              <div className="w-7 h-7 rounded border border-slate-200 bg-slate-50 text-slate-600 flex items-center justify-center">
+                                <Truck size={12} />
+                              </div>
+                            )}
+                            {c.transportModules?.includes('box') && (
+                              <div className="w-7 h-7 rounded border border-slate-200 bg-slate-50 text-slate-600 flex items-center justify-center">
+                                <Package size={12} />
+                              </div>
+                            )}
+                            {c.transportModules?.includes('alert') && (
+                              <div className="w-7 h-7 rounded border border-slate-200 bg-slate-50 text-slate-600 flex items-center justify-center">
+                                <AlertCircle size={12} />
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div>
+                            <p className="text-sm font-bold text-slate-900">{c.billingTerms}</p>
+                            <p className="text-[10px] text-slate-400 mt-0.5">{c.billingType}</p>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div>
+                            <p className="text-sm font-bold text-slate-900">{c.manager}</p>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded-md border ${c.status === 'Active' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' :
+                            c.status === 'Inactive' ? 'bg-red-50 border-red-100 text-red-600' :
+                              'bg-amber-50 border-amber-100 text-amber-600'
+                            }`}>
+                            {c.status}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-right relative">
+                          <button onClick={() => toggleActionMenu(c.id)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer inline-flex items-center justify-center">
+                            <MoreVertical size={16} />
+                          </button>
+                          {activeActionMenu === c.id && (
+                            <div className="absolute right-8 top-10 w-48 bg-white border border-slate-100 rounded-xl shadow-lg py-1 z-50 text-left">
+                              <button onClick={() => setSelectedCustomer(c)} className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer">
+                                <Eye size={14} className="text-slate-400" /> View Details
+                              </button>
+                              <button onClick={() => openEditCustomer(c)} className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer">
+                                <Edit size={14} className="text-slate-400" /> Edit Customer
+                              </button>
+                              <button onClick={() => openAssignManager(c)} className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer">
+                                <UserCircle size={14} className="text-slate-400" /> Assign Manager
+                              </button>
+                              <div className="my-1 border-t border-slate-50"></div>
+                              <button onClick={() => openDeleteCustomer(c)} className="w-full text-left px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer">
+                                <Trash2 size={14} /> Delete
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -5408,35 +5466,35 @@ Please sign in at security.`);
         <div className="w-full xl:w-[280px] shrink-0 flex flex-col gap-6">
           <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
             <h3 className="text-xs font-black text-slate-900 tracking-tight mb-1">Customer Overview</h3>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Today, 15 July 2025</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Live Database Metrics</p>
             <div className="space-y-3">
               <div className="flex items-center justify-between p-3 bg-blue-50/50 rounded-xl border border-blue-50">
                 <div className="flex items-center gap-2">
                   <div className="text-blue-500"><Users size={14} /></div>
                   <span className="text-xs font-bold text-slate-700">New Customers</span>
                 </div>
-                <span className="text-sm font-black text-slate-900">3</span>
+                <span className="text-sm font-black text-slate-900">{customersList.length}</span>
               </div>
               <div className="flex items-center justify-between p-3 bg-emerald-50/50 rounded-xl border border-emerald-50">
                 <div className="flex items-center gap-2">
                   <div className="text-emerald-500"><UserCheck size={14} /></div>
                   <span className="text-xs font-bold text-slate-700">Active Customers</span>
                 </div>
-                <span className="text-sm font-black text-slate-900">120</span>
+                <span className="text-sm font-black text-slate-900">{customersList.filter(c => c.status === 'Active').length}</span>
               </div>
               <div className="flex items-center justify-between p-3 bg-red-50/50 rounded-xl border border-red-50">
                 <div className="flex items-center gap-2">
                   <div className="text-red-500"><UserMinus size={14} /></div>
                   <span className="text-xs font-bold text-slate-700">Inactive Customers</span>
                 </div>
-                <span className="text-sm font-black text-slate-900">20</span>
+                <span className="text-sm font-black text-slate-900">{customersList.filter(c => c.status === 'Inactive').length}</span>
               </div>
               <div className="flex items-center justify-between p-3 bg-indigo-50/50 rounded-xl border border-indigo-50">
                 <div className="flex items-center gap-2">
                   <div className="text-indigo-500"><UserPlus size={14} /></div>
                   <span className="text-xs font-bold text-slate-700">Added (This Month)</span>
                 </div>
-                <span className="text-sm font-black text-slate-900">12</span>
+                <span className="text-sm font-black text-slate-900">{customersList.length}</span>
               </div>
             </div>
           </div>
@@ -5444,40 +5502,34 @@ Please sign in at security.`);
           <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
             <h3 className="text-xs font-black text-slate-900 tracking-tight mb-4">Transport Modules</h3>
 
-            {/* Fake Donut Chart */}
+            {/* Donut Chart */}
             <div className="relative w-32 h-32 mx-auto mb-6">
               <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
                 <circle cx="50" cy="50" r="40" fill="transparent" stroke="#E2E8F0" strokeWidth="15" />
-                {/* Car Carrying 50% */}
-                <circle cx="50" cy="50" r="40" fill="transparent" stroke="#10B981" strokeWidth="15" strokeDasharray="251.2" strokeDashoffset="125.6" className="transition-all duration-1000" />
-                {/* General Freight 28% */}
-                <circle cx="50" cy="50" r="40" fill="transparent" stroke="#3B82F6" strokeWidth="15" strokeDasharray="251.2" strokeDashoffset="180" strokeDasharrayoffset="125.6" className="transition-all duration-1000" style={{ strokeDashoffset: 180, transformOrigin: 'center', transform: 'rotate(180deg)' }} />
-                {/* Dangerous Goods 12% & Warehousing 10% simulated... this is just CSS magic illusion */}
-                <circle cx="50" cy="50" r="40" fill="transparent" stroke="#F59E0B" strokeWidth="15" strokeDasharray="251.2" strokeDashoffset="220" className="transition-all duration-1000" style={{ strokeDashoffset: 220, transformOrigin: 'center', transform: 'rotate(280deg)' }} />
-                <circle cx="50" cy="50" r="40" fill="transparent" stroke="#EF4444" strokeWidth="15" strokeDasharray="251.2" strokeDashoffset="226" className="transition-all duration-1000" style={{ strokeDashoffset: 226, transformOrigin: 'center', transform: 'rotate(320deg)' }} />
+                <circle cx="50" cy="50" r="40" fill="transparent" stroke="#10B981" strokeWidth="15" strokeDasharray="251.2" strokeDashoffset={customersList.length > 0 ? "0" : "251.2"} className="transition-all duration-1000" />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-2xl font-black text-slate-900">156</span>
+                <span className="text-2xl font-black text-slate-900">{customersList.length}</span>
                 <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Total</span>
               </div>
             </div>
 
             <div className="space-y-3 text-[10px] font-bold">
               <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500"></div><span className="text-slate-600">Car Carrying</span></div>
-                <div><span className="text-slate-900 font-black">80</span> <span className="text-slate-400">(51%)</span></div>
+                <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500"></div><span className="text-slate-600">Truck Transport</span></div>
+                <div><span className="text-slate-900 font-black">{customersList.length}</span> <span className="text-slate-400">({customersList.length > 0 ? '100%' : '0%'})</span></div>
               </div>
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-blue-500"></div><span className="text-slate-600">General Freight</span></div>
-                <div><span className="text-slate-900 font-black">45</span> <span className="text-slate-400">(29%)</span></div>
+                <div><span className="text-slate-900 font-black">0</span> <span className="text-slate-400">(0%)</span></div>
               </div>
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-amber-500"></div><span className="text-slate-600">Dangerous Goods</span></div>
-                <div><span className="text-slate-900 font-black">18</span> <span className="text-slate-400">(12%)</span></div>
+                <div><span className="text-slate-900 font-black">0</span> <span className="text-slate-400">(0%)</span></div>
               </div>
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-red-500"></div><span className="text-slate-600">Warehousing</span></div>
-                <div><span className="text-slate-900 font-black">9</span> <span className="text-slate-400">(6%)</span></div>
+                <div><span className="text-slate-900 font-black">0</span> <span className="text-slate-400">(0%)</span></div>
               </div>
             </div>
           </div>
@@ -5512,62 +5564,149 @@ Please sign in at security.`);
       )}
 
       {/* Add New Customer Modal Overlay */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-              <h2 className="text-lg font-black text-slate-900">Add New Customer</h2>
-              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer"><X size={20} /></button>
+      {showAddModal && createPortal(
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-[1.5px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowAddModal(false)}>
+          <form onSubmit={handleSaveCustomer} className="bg-white rounded-2xl w-full max-w-[460px] max-h-[85vh] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+            {/* Header */}
+            <div className="px-7 pt-6 pb-5 flex justify-between items-center border-b border-slate-100 shrink-0">
+              <h2 className="text-[18px] font-extrabold text-slate-900 leading-tight">Add New Customer</h2>
+              <button type="button" onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1"><X size={18} strokeWidth={2} /></button>
             </div>
-            <form onSubmit={handleSaveCustomer} className="p-6 space-y-5">
+
+            {/* Scrollable Body */}
+            <div className="px-7 py-6 space-y-5 overflow-y-auto flex-1">
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-2">Company Name *</label>
+                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Company Name *</label>
                 <input
                   type="text"
                   value={newCustomerForm.name}
                   onChange={e => setNewCustomerForm({ ...newCustomerForm, name: e.target.value })}
-                  placeholder="Enter company name"
-                  className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm font-semibold focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                  placeholder="e.g. FreightCo Logistics"
+                  className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all"
                   required
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-5">
                 <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-2">ABN / ACN</label>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">ABN</label>
                   <input
                     type="text"
                     value={newCustomerForm.abn}
                     onChange={e => setNewCustomerForm({ ...newCustomerForm, abn: e.target.value })}
-                    placeholder="e.g. 12 345 678 901"
-                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm font-semibold focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                    placeholder="68 961 770 797"
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-2">Customer Type</label>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">ACN</label>
+                  <input
+                    type="text"
+                    value={newCustomerForm.acn}
+                    onChange={e => setNewCustomerForm({ ...newCustomerForm, acn: e.target.value })}
+                    placeholder="123 456 789"
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-5">
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Customer Type</label>
                   <div className="relative">
                     <select
                       value={newCustomerForm.type}
                       onChange={e => setNewCustomerForm({ ...newCustomerForm, type: e.target.value })}
-                      className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-sm font-semibold text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all cursor-pointer bg-white"
+                      className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
                     >
                       <option value="Corporate">Corporate</option>
                       <option value="Business">Business</option>
                     </select>
-                    <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Status</label>
+                  <div className="relative">
+                    <select
+                      value={newCustomerForm.status}
+                      onChange={e => setNewCustomerForm({ ...newCustomerForm, status: e.target.value })}
+                      className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
+                    >
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                    </select>
+                    <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                   </div>
                 </div>
               </div>
-              <div className="pt-4 flex justify-end gap-3 border-t border-slate-50">
-                <button type="button" onClick={() => setShowAddModal(false)} className="px-5 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg text-sm font-bold transition-colors cursor-pointer">
-                  Cancel
-                </button>
-                <button type="submit" className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold transition-colors cursor-pointer shadow-md">
-                  Save Customer
-                </button>
+              <div>
+                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Account Category</label>
+                <div className="relative">
+                  <select
+                    value={newCustomerForm.category}
+                    onChange={e => setNewCustomerForm({ ...newCustomerForm, category: e.target.value })}
+                    className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
+                  >
+                    <option value="Strategic Account">Strategic Account</option>
+                    <option value="Standard Account">Standard Account</option>
+                  </select>
+                  <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                </div>
               </div>
-            </form>
-          </div>
-        </div>
+              <div className="grid grid-cols-2 gap-5">
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Billing Terms</label>
+                  <div className="relative">
+                    <select
+                      value={newCustomerForm.billingTerms}
+                      onChange={e => setNewCustomerForm({ ...newCustomerForm, billingTerms: e.target.value })}
+                      className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
+                    >
+                      <option value="14 Days EOM">14 Days EOM</option>
+                      <option value="30 Days EOM">30 Days EOM</option>
+                      <option value="7 Days EOM">7 Days EOM</option>
+                    </select>
+                    <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[13px] font-semibold text-slate-800 block mb-2">Credit Limit ($)</label>
+                  <input
+                    type="text"
+                    value={newCustomerForm.creditLimit}
+                    onChange={e => setNewCustomerForm({ ...newCustomerForm, creditLimit: e.target.value })}
+                    placeholder="250000"
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-[13px] font-semibold text-slate-800 block mb-2">Account Manager</label>
+                <div className="relative">
+                  <select
+                    value={newCustomerForm.manager}
+                    onChange={e => setNewCustomerForm({ ...newCustomerForm, manager: e.target.value })}
+                    className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
+                  >
+                    <option value="Sarah Mitchell">Sarah Mitchell</option>
+                    <option value="Mike Thompson">Mike Thompson</option>
+                  </select>
+                  <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                </div>
+              </div>
+            </div>
+
+            {/* Sticky Footer */}
+            <div className="px-7 py-4 border-t border-slate-100 flex justify-end gap-3 shrink-0 bg-slate-50/50">
+              <button type="button" onClick={() => setShowAddModal(false)} className="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-[13px] font-bold transition-all cursor-pointer">
+                Cancel
+              </button>
+              <button type="submit" className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[13px] font-extrabold transition-all cursor-pointer shadow-md">
+                Save Customer
+              </button>
+            </div>
+          </form>
+        </div>,
+        document.body
       )}
 
       {/* Edit Customer Details Modal (List View) */}

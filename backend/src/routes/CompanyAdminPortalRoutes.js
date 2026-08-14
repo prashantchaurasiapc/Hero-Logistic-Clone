@@ -14,8 +14,17 @@ router.get('/dashboard', ctrl.getCommandCentre);
 // 2. Loads
 router.get('/loads', ctrl.getLoads);
 router.post('/loads', ctrl.createLoad);
+router.get('/loads/:id', ctrl.getLoadById);
+router.get('/loads/:id/stops', ctrl.getLoadStops);
+router.post('/loads/:id/stops', ctrl.createLoadStop);
+router.put('/loads/:id/stops/:stopId', ctrl.updateLoadStop);
+router.delete('/loads/:id/stops/:stopId', ctrl.deleteLoadStop);
+router.get('/loads/:id/expenses', ctrl.getLoadExpenses);
+router.post('/loads/:id/expenses', ctrl.createLoadExpense);
+router.delete('/loads/:id/expenses/:expenseId', ctrl.deleteLoadExpense);
 router.get('/loads/:id/invoices', ctrl.getLoadInvoices);
 router.post('/loads/:id/invoices', ctrl.createLoadInvoice);
+router.delete('/loads/:id/invoices/:invoiceId', ctrl.deleteLoadInvoice);
 router.get('/loads/:id/documents', ctrl.getLoadDocuments);
 router.post('/loads/:id/documents', ctrl.createLoadDocument);
 router.put('/loads/:id', ctrl.updateLoad);

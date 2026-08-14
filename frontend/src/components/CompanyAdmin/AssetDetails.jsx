@@ -432,8 +432,8 @@ export default function AssetDetails({ assetData, onBack }) {
                 </div>
                 <div>
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Branch / Location</span>
-                  <span className="text-xs font-bold text-slate-900 block">{asset.branch}</span>
-                  <span className="text-[10px] text-slate-500 font-semibold block">{asset.location}</span>
+                  <span className="text-xs font-bold text-slate-900 block">{typeof asset.branch === 'object' ? (asset.branch?.name || asset.branch?.location || 'Sydney Head Office') : (asset.branch || 'Sydney Head Office')}</span>
+                  <span className="text-[10px] text-slate-500 font-semibold block">{typeof asset.location === 'object' ? (asset.location?.name || asset.location?.location || 'Yard') : (asset.location || 'Yard')}</span>
                 </div>
                 <div>
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Serial / Number</span>
@@ -525,16 +525,16 @@ export default function AssetDetails({ assetData, onBack }) {
                   </div>
                   <div>
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Branch / Location</span>
-                    <span className="text-xs font-bold text-slate-800">{asset.branch}</span>
-                    <span className="text-[10px] text-slate-500 font-semibold block">{asset.location}</span>
+                    <span className="text-xs font-bold text-slate-800">{typeof asset.branch === 'object' ? (asset.branch?.name || asset.branch?.location || 'Sydney Head Office') : (asset.branch || 'Sydney Head Office')}</span>
+                    <span className="text-[10px] text-slate-500 font-semibold block">{typeof asset.location === 'object' ? (asset.location?.name || asset.location?.location || 'Yard') : (asset.location || 'Yard')}</span>
                   </div>
                   <div>
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Current Location</span>
-                    <span className="text-xs font-bold text-slate-800">{asset.currentLocation}</span>
+                    <span className="text-xs font-bold text-slate-800">{typeof asset.currentLocation === 'object' ? (asset.currentLocation?.name || asset.currentLocation?.location || 'Warehouse 1') : (asset.currentLocation || 'Warehouse 1')}</span>
                   </div>
                   <div>
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-0.5">Assigned To</span>
-                    <span className="text-xs font-bold text-slate-800">{asset.assignedTo}</span>
+                    <span className="text-xs font-bold text-slate-800">{typeof asset.assignedTo === 'object' ? (asset.assignedTo?.name || 'Warehouse 1') : (asset.assignedTo || 'Warehouse 1')}</span>
                   </div>
                 </div>
 

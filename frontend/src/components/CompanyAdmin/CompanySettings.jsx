@@ -6999,7 +6999,7 @@ export default function CompanySettings() {
                             <td className="py-2.5 px-2 font-bold text-slate-900">{row.name}</td>
                             <td className="py-2.5 px-2 font-semibold text-slate-600">{row.method}</td>
                             <td className="py-2.5 px-2 font-medium text-slate-500">{row.device}</td>
-                            <td className="py-2.5 px-2 font-semibold text-slate-700">{row.location}</td>
+                            <td className="py-2.5 px-2 font-semibold text-slate-700">{typeof row.location === 'object' ? (row.location?.name || row.location?.location || 'N/A') : (row.location || 'N/A')}</td>
                             <td className="py-2.5 px-2 font-mono text-[10px] text-slate-400">{row.ip}</td>
                             <td className="py-2.5 px-2"><span className={`px-2 py-0.5 rounded text-[9px] font-extrabold ${row.bg}`}>{row.status}</span></td>
                           </tr>

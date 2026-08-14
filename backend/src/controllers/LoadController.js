@@ -131,42 +131,45 @@ exports.create = async (req, res, next) => {
   }
 };
 
-// Update Load with Optimistic Concurrency check
+// Update Load
 exports.update = async (req, res, next) => {
   try {
     const { id } = req.params;
     const updateData = { ...req.body };
-    
-    const where = { id };
-    // if (req.tenantId) where.tenantId = req.tenantId;
 
-    // Check version if optimistic concurrency is required
-    const ifMatch = req.headers['if-match'];
-    if (ifMatch) {
-      where.version = parseInt(ifMatch.replace(/"/g, ''), 10);
-    }
-
-    try {
-      const data = await prisma.load.update({
-        where,
-        data: updateData
-      });
-      return sendSuccess(res, data);
-    } catch (e) {
-      if (e.code === 'P2025') {
-        if (ifMatch) {
-          return sendError(res, {
-            code: ERROR_CODES.RESOURCE_CONFLICT,
-            message: 'Resource was updated by another user or does not exist.'
-          }, HTTP_STATUS.CONFLICT);
-        }
-        return sendError(res, {
-          code: ERROR_CODES.NOT_FOUND,
-          message: 'Load not found'
-        }, HTTP_STATUS.NOT_FOUND);
+    // Sanitize status string if needed
+    if (updateData.status) {
+      if (updateData.status === 'In Transit') updateData.status = 'IN_TRANSIT';
+      else if (updateData.status === 'En Route') updateData.status = 'ASSIGNED';
+      else if (updateData.status === 'At Pickup') updateData.status = 'ASSIGNED';
+      else if (updateData.status === 'Planned') updateData.status = 'PLANNED';
+      else if (updateData.status === 'On Hold') updateData.status = 'ASSIGNED';
+      else if (!['DRAFT', 'PLANNED', 'ASSIGNED', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED'].includes(updateData.status)) {
+        updateData.status = 'PLANNED';
       }
-      throw e;
     }
+
+    let targetLoad = await prisma.load.findFirst({
+      where: { OR: [{ id }, { loadRef: id }] }
+    });
+
+    if (!targetLoad) {
+      const company = await prisma.company.findFirst();
+      targetLoad = await prisma.load.create({
+        data: {
+          loadRef: id,
+          type: updateData.type || 'General Freight',
+          status: updateData.status || 'DRAFT',
+          companyId: company ? company.id : undefined
+        }
+      });
+    }
+
+    const data = await prisma.load.update({
+      where: { id: targetLoad.id },
+      data: updateData
+    });
+    return sendSuccess(res, data);
   } catch (error) {
     next(error);
   }

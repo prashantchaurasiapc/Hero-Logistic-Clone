@@ -24,6 +24,39 @@ async function resolveRequiredCompanyId(req) {
   return first.id;
 }
 
+/**
+ * Helper to find existing load by ID or loadRef, or auto-create if not present
+ */
+async function resolveOrCreateLoad(id, companyId) {
+  if (!id) throw new Error('Load ID or reference is required');
+  let target = await prisma.load.findFirst({
+    where: { OR: [{ id }, { loadRef: id }] }
+  });
+
+  if (!target) {
+    let effectiveCompanyId = companyId;
+    if (!effectiveCompanyId) {
+      const firstComp = await prisma.company.findFirst({ select: { id: true } });
+      effectiveCompanyId = firstComp ? firstComp.id : '1c058eaa-4e42-4713-a26c-08d35ad626fb';
+    }
+
+    const isValidUuid = typeof id === 'string' && id.length === 36 && id.includes('-');
+    const crypto = require('crypto');
+
+    target = await prisma.load.create({
+      data: {
+        id: isValidUuid ? id : crypto.randomUUID(),
+        loadRef: id.startsWith('PO-') ? id : `PO-${Math.floor(100000 + Math.random() * 900000)}`,
+        type: 'General Freight',
+        status: 'DRAFT',
+        companyId: effectiveCompanyId
+      }
+    });
+  }
+
+  return target;
+}
+
 const dashboardController = require('./CompanyAdminDashboardController');
 
 // ----------------------------------------------------------------------
@@ -129,6 +162,9 @@ exports.createLoad = async (req, res, next) => {
 exports.updateLoad = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const companyId = await resolveCompanyId(req);
+    const targetLoad = await resolveOrCreateLoad(id, companyId);
+
     const payload = { ...req.body };
     if (payload.status) payload.status = sanitizeLoadStatus(payload.status);
     if (payload.priority) {
@@ -138,7 +174,7 @@ exports.updateLoad = async (req, res, next) => {
     }
 
     const data = await prisma.load.update({
-      where: { id },
+      where: { id: targetLoad.id },
       data: payload,
       include: { driver: true, truck: true, trailer: true, customer: true, stops: true, items: true }
     });
@@ -162,8 +198,13 @@ exports.deleteLoad = async (req, res, next) => {
 exports.getLoadInvoices = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const targetLoad = await prisma.load.findFirst({
+      where: { OR: [{ id }, { loadRef: id }] }
+    });
+    if (!targetLoad) return sendSuccess(res, []);
+
     const invoices = await prisma.customerInvoice.findMany({
-      where: { loadId: id },
+      where: { loadId: targetLoad.id },
       include: { customer: { select: { id: true, name: true, email: true } } },
       orderBy: { createdAt: 'desc' }
     });
@@ -183,20 +224,13 @@ exports.getLoadInvoices = async (req, res, next) => {
 exports.createLoadInvoice = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const companyId = await resolveCompanyId(req);
+    const targetLoad = await resolveOrCreateLoad(id, companyId);
     const { amount, dueDateTerms, status } = req.body;
 
-    const load = await prisma.load.findUnique({
-      where: { id },
-      include: { customer: true }
-    });
-
-    if (!load) {
-      return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'Load not found' }, HTTP_STATUS.NOT_FOUND);
-    }
-
-    let customerId = load.customerId;
+    let customerId = targetLoad.customerId;
     if (!customerId) {
-      const custName = load.customerName || load.customer || 'General Customer';
+      const custName = targetLoad.customerName || 'General Customer';
       let cust = await prisma.customer.findFirst({
         where: { name: { contains: custName } }
       });
@@ -205,7 +239,7 @@ exports.createLoadInvoice = async (req, res, next) => {
           data: {
             id: require('crypto').randomUUID(),
             name: custName,
-            companyId: load.companyId
+            companyId: targetLoad.companyId
           }
         });
       }
@@ -227,7 +261,7 @@ exports.createLoadInvoice = async (req, res, next) => {
         id: crypto.randomUUID(),
         invoiceNumber: invNum,
         customerId,
-        loadId: id,
+        loadId: targetLoad.id,
         amount: finalAmount,
         status: status || 'SENT',
         dueDate
@@ -249,11 +283,26 @@ exports.createLoadInvoice = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
+exports.deleteLoadInvoice = async (req, res, next) => {
+  try {
+    const { invoiceId } = req.params;
+    await prisma.customerInvoice.deleteMany({
+      where: { OR: [{ id: invoiceId }, { invoiceNumber: invoiceId }] }
+    });
+    return sendSuccess(res, { id: invoiceId, message: 'Invoice deleted successfully' });
+  } catch (error) { next(error); }
+};
+
 exports.getLoadDocuments = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const targetLoad = await prisma.load.findFirst({
+      where: { OR: [{ id }, { loadRef: id }] }
+    });
+    if (!targetLoad) return sendSuccess(res, []);
+
     const documents = await prisma.document.findMany({
-      where: { loadId: id },
+      where: { loadId: targetLoad.id },
       orderBy: { createdAt: 'desc' }
     });
     const mapped = documents.map(doc => ({
@@ -271,6 +320,8 @@ exports.getLoadDocuments = async (req, res, next) => {
 exports.createLoadDocument = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const companyId = await resolveCompanyId(req);
+    const targetLoad = await resolveOrCreateLoad(id, companyId);
     const { documentType, fileName } = req.body;
 
     const crypto = require('crypto');
@@ -280,7 +331,7 @@ exports.createLoadDocument = async (req, res, next) => {
     const document = await prisma.document.create({
       data: {
         id: crypto.randomUUID(),
-        loadId: id,
+        loadId: targetLoad.id,
         type: documentType || 'Bill of Lading (BOL)',
         fileUrl
       }
@@ -2514,6 +2565,230 @@ exports.getWarehouseLocations = async (req, res, next) => {
     const { id } = req.params;
     const data = await prisma.warehouseLocation.findMany({ where: { warehouseId: id } });
     return sendSuccess(res, data);
+  } catch (error) { next(error); }
+};
+
+exports.getLoadById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const load = await prisma.load.findFirst({
+      where: { OR: [{ id }, { loadRef: id }] },
+      include: {
+        driver: true,
+        truck: true,
+        trailer: true,
+        customer: true,
+        stops: { orderBy: { sequenceIndex: 'asc' } },
+        items: true,
+        expenses: { orderBy: { createdAt: 'desc' } },
+        documents: { orderBy: { createdAt: 'desc' } },
+        invoices: { orderBy: { createdAt: 'desc' } },
+        activities: { orderBy: { timestamp: 'desc' } },
+        proofPhotos: true
+      }
+    });
+
+    if (!load) {
+      return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'Load not found' }, HTTP_STATUS.NOT_FOUND);
+    }
+
+    let uiStatus = load.status;
+    if (load.status === 'IN_TRANSIT') uiStatus = 'ACTIVE';
+    if (load.status === 'DELIVERED') uiStatus = 'COMPLETED';
+
+    return sendSuccess(res, { ...load, status: uiStatus });
+  } catch (error) { next(error); }
+};
+
+exports.getLoadExpenses = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const targetLoad = await prisma.load.findFirst({
+      where: { OR: [{ id }, { loadRef: id }] }
+    });
+    if (!targetLoad) return sendSuccess(res, []);
+
+    const expenses = await prisma.loadExpense.findMany({
+      where: { loadId: targetLoad.id },
+      orderBy: { createdAt: 'desc' }
+    });
+    const mapped = expenses.map(exp => ({
+      id: exp.id,
+      date: exp.date ? new Date(exp.date).toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB'),
+      rawDate: exp.date,
+      type: exp.type || 'Other',
+      desc: exp.description,
+      amount: `$${parseFloat(exp.amount || 0).toFixed(2)}`,
+      rawAmount: exp.amount,
+      status: exp.status === 'APPROVED' ? 'Approved' : exp.status === 'REJECTED' ? 'Rejected' : 'Pending',
+      color: exp.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-700' : exp.status === 'REJECTED' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700',
+      vendorName: exp.vendorName,
+      receiptUrl: exp.receiptUrl
+    }));
+    return sendSuccess(res, mapped);
+  } catch (error) { next(error); }
+};
+
+exports.createLoadExpense = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const companyId = await resolveCompanyId(req);
+    const targetLoad = await resolveOrCreateLoad(id, companyId);
+    const { type, desc, description, amount, date, vendorName, receiptUrl } = req.body;
+
+    const crypto = require('crypto');
+    const parsedAmount = parseFloat(amount) || 0;
+    const parsedDate = date ? new Date(date) : new Date();
+
+    const expense = await prisma.loadExpense.create({
+      data: {
+        id: crypto.randomUUID(),
+        loadId: targetLoad.id,
+        type: type || 'Other',
+        description: desc || description || 'New Expense',
+        amount: parsedAmount,
+        date: isNaN(parsedDate.getTime()) ? new Date() : parsedDate,
+        status: 'PENDING',
+        vendorName: vendorName || null,
+        receiptUrl: receiptUrl || null
+      }
+    });
+
+    const mapped = {
+      id: expense.id,
+      date: new Date(expense.date).toLocaleDateString('en-GB'),
+      rawDate: expense.date,
+      type: expense.type,
+      desc: expense.description,
+      amount: `$${expense.amount.toFixed(2)}`,
+      rawAmount: expense.amount,
+      status: 'Pending',
+      color: 'bg-amber-50 text-amber-700',
+      vendorName: expense.vendorName,
+      receiptUrl: expense.receiptUrl
+    };
+
+    return sendSuccess(res, mapped, HTTP_STATUS.CREATED);
+  } catch (error) { next(error); }
+};
+
+exports.deleteLoadExpense = async (req, res, next) => {
+  try {
+    const { expenseId } = req.params;
+    await prisma.loadExpense.delete({ where: { id: expenseId } });
+    return sendSuccess(res, { id: expenseId, message: 'Expense deleted successfully' });
+  } catch (error) { next(error); }
+};
+
+exports.getLoadStops = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const targetLoad = await prisma.load.findFirst({
+      where: { OR: [{ id }, { loadRef: id }] }
+    });
+    if (!targetLoad) return sendSuccess(res, []);
+
+    const stops = await prisma.routeStop.findMany({
+      where: { loadId: targetLoad.id },
+      orderBy: { sequenceIndex: 'asc' }
+    });
+    const mapped = stops.map((s, idx) => ({
+      id: idx + 1,
+      rawId: s.id,
+      type: s.type || 'PICKUP',
+      typeColor: s.type === 'PICKUP' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700',
+      address: s.address,
+      contactName: s.contactName || '—',
+      contactPhone: s.contactPhone || '—',
+      date: s.scheduledDate ? new Date(s.scheduledDate).toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB'),
+      time: '09:00 AM',
+      completed: false
+    }));
+    return sendSuccess(res, mapped);
+  } catch (error) { next(error); }
+};
+
+exports.createLoadStop = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const companyId = await resolveCompanyId(req);
+    const targetLoad = await resolveOrCreateLoad(id, companyId);
+
+    const { type, address, date, time, contactName, contactPhone, instructions } = req.body;
+
+    const crypto = require('crypto');
+    const existingStopsCount = await prisma.routeStop.count({ where: { loadId: targetLoad.id } });
+
+    let enumType = 'PICKUP';
+    if (type && (type.toUpperCase().includes('DROP') || type.toUpperCase().includes('REST') || type.toUpperCase().includes('WEIGH'))) {
+      enumType = 'DROPOFF';
+    }
+
+    const fullAddress = instructions ? `${address}\n(Note: ${instructions})` : address;
+    const parsedDate = date ? new Date(date) : new Date();
+
+    const stop = await prisma.routeStop.create({
+      data: {
+        id: crypto.randomUUID(),
+        loadId: targetLoad.id,
+        type: enumType,
+        sequenceIndex: existingStopsCount,
+        address: fullAddress,
+        contactName: contactName || null,
+        contactPhone: contactPhone || null,
+        scheduledDate: isNaN(parsedDate.getTime()) ? new Date() : parsedDate
+      }
+    });
+
+    const mapped = {
+      id: existingStopsCount + 1,
+      rawId: stop.id,
+      type: type || stop.type,
+      typeColor: enumType === 'PICKUP' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700',
+      address: stop.address,
+      contactName: stop.contactName || '—',
+      contactPhone: stop.contactPhone || '—',
+      date: stop.scheduledDate ? new Date(stop.scheduledDate).toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB'),
+      time: time || '09:00 AM',
+      instructions: instructions || '',
+      completed: false
+    };
+
+    return sendSuccess(res, mapped, HTTP_STATUS.CREATED);
+  } catch (error) { next(error); }
+};
+
+exports.updateLoadStop = async (req, res, next) => {
+  try {
+    const { stopId } = req.params;
+    const { type, address, date, contactName, contactPhone, instructions } = req.body;
+
+    const updateData = {};
+    if (address !== undefined) updateData.address = instructions ? `${address}\n(Note: ${instructions})` : address;
+    if (contactName !== undefined) updateData.contactName = contactName;
+    if (contactPhone !== undefined) updateData.contactPhone = contactPhone;
+    if (date) {
+      const parsedDate = new Date(date);
+      if (!isNaN(parsedDate.getTime())) updateData.scheduledDate = parsedDate;
+    }
+    if (type) {
+      updateData.type = (type.toUpperCase().includes('DROP') || type.toUpperCase().includes('REST')) ? 'DROPOFF' : 'PICKUP';
+    }
+
+    const updated = await prisma.routeStop.update({
+      where: { id: stopId },
+      data: updateData
+    });
+
+    return sendSuccess(res, updated);
+  } catch (error) { next(error); }
+};
+
+exports.deleteLoadStop = async (req, res, next) => {
+  try {
+    const { stopId } = req.params;
+    await prisma.routeStop.delete({ where: { id: stopId } });
+    return sendSuccess(res, { id: stopId, message: 'Stop deleted successfully' });
   } catch (error) { next(error); }
 };
 

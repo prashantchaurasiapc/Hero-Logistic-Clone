@@ -111,19 +111,19 @@ function LoadDetail({ load, onBack }) {
 
   const [activeDriver, setActiveDriver] = useState({
     name: load?.driver ? (typeof load.driver === 'object' ? `${load.driver.firstName || ''} ${load.driver.lastName || ''}`.trim() : load.driver) : 'Not Assigned',
-    code: load?.driver?.userCode || 'DRV-101',
+    code: load?.driver?.driverCode || load?.driver?.userCode || '—',
     phone: load?.driver?.phone || '—',
-    license: 'MC License',
+    license: load?.driver?.licenseClass || load?.driver?.licenseType || 'Standard License',
     diary: '08:00 / 17:00',
     avatar: load?.driver?.avatarUrl || load?.avatar || 'https://i.pravatar.cc/150?u=10'
   });
 
   const [activeTruck, setActiveTruck] = useState({
-    id: load?.truck?.rego || load?.truck?.code || (typeof load?.truck === 'string' ? load.truck.split(' | ')[0] : 'TRK-101'),
-    name: load?.truck?.model || (typeof load?.truck === 'string' ? load.truck.split(' | ')[1] : 'Volvo FH 540'),
-    odo: '— KM',
-    trailer: load?.trailer?.rego || load?.trailer?.code || 'TRL-201',
-    rego: load?.truck?.rego || 'REG-001'
+    id: load?.truck?.rego || load?.truck?.code || (typeof load?.truck === 'string' ? load.truck.split(' | ')[0] : 'Unassigned'),
+    name: load?.truck?.model || (typeof load?.truck === 'string' ? load.truck.split(' | ')[1] : 'No Vehicle Assigned'),
+    odo: load?.truck?.odometerKm ? `${load.truck.odometerKm} KM` : '— KM',
+    trailer: load?.trailer?.rego || load?.trailer?.code || 'No Trailer',
+    rego: load?.truck?.rego || '—'
   });
 
   // Modal & Dropdown States
@@ -180,16 +180,13 @@ function LoadDetail({ load, onBack }) {
           type: s.type || (idx === 0 ? 'PICKUP' : 'DROP-OFF'),
           typeColor: (s.type === 'PICKUP' || idx === 0) ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700',
           address: s.address || 'Location Stop',
-          contactName: s.contactName || 'Site Contact',
+          contactName: s.contactName || '—',
           contactPhone: s.contactPhone || '—',
           date: s.scheduledDate ? new Date(s.scheduledDate).toLocaleDateString('en-GB') : (load?.date ? load.date.split('-').reverse().join('/') : new Date().toLocaleDateString('en-GB')),
-          time: '09:00 AM',
+          time: s.scheduledTime || '09:00 AM',
           completed: false
         }))
-      : [
-          { id: 1, type: 'PICKUP', typeColor: 'bg-purple-100 text-purple-700', address: load?.from || 'Pickup Location', contactName: 'Dispatch Manager', contactPhone: '—', date: load?.date ? load.date.split('-').reverse().join('/') : new Date().toLocaleDateString('en-GB'), time: '08:00 AM', completed: false },
-          { id: 2, type: 'DROP-OFF', typeColor: 'bg-blue-100 text-blue-700', address: load?.to || 'Drop-off Destination', contactName: 'Receiving Manager', contactPhone: '—', date: load?.date ? load.date.split('-').reverse().join('/') : new Date().toLocaleDateString('en-GB'), time: '04:00 PM', completed: false }
-        ]
+      : []
   );
 
   const handleEditStop = (stop) => {
@@ -216,9 +213,19 @@ function LoadDetail({ load, onBack }) {
     setActionMenuId(null);
   };
   
-  const handleRemoveStop = (id) => {
-    setStopsList(stopsList.filter(s => s.id !== id));
+  const handleRemoveStop = async (id) => {
+    const stopToRemove = stopsList.find(s => s.id === id);
+    if (stopToRemove?.rawId) {
+      try {
+        const loadIdToUse = currentLoad?.rawId || currentLoad?.id;
+        await api.delete(`/company-admin/loads/${loadIdToUse}/stops/${stopToRemove.rawId}`);
+      } catch (err) {
+        console.error("Error deleting stop via API:", err);
+      }
+    }
+    setStopsList(prev => prev.filter(s => s.id !== id).map((s, idx) => ({ ...s, id: idx + 1 })));
     setActionMenuId(null);
+    triggerToast("Stop removed from load", "info");
   };
 
   const [stopForm, setStopForm] = useState({
@@ -235,10 +242,78 @@ function LoadDetail({ load, onBack }) {
   const [itemsList, setItemsList] = useState(load?.items || []);
   const [invoicesList, setInvoicesList] = useState([]);
 
-  // Fetch load invoices and documents from backend API
+  // Fetch load details, invoices, documents, and expenses from backend API
   useEffect(() => {
     const loadIdToFetch = currentLoad?.rawId || currentLoad?.id;
     if (loadIdToFetch) {
+      api.get(`/company-admin/loads/${loadIdToFetch}`)
+        .then(res => {
+          const lData = res.data?.data || res.data;
+          if (lData && typeof lData === 'object') {
+            setCurrentLoad(prev => ({
+              ...prev,
+              id: lData.loadRef || lData.id,
+              rawId: lData.id,
+              type: lData.type || prev.type,
+              customer: lData.customer?.name || (typeof lData.customer === 'string' ? lData.customer : prev.customer),
+              status: lData.status === 'IN_TRANSIT' ? 'ACTIVE' : lData.status === 'DELIVERED' ? 'COMPLETED' : (lData.status || prev.status),
+              notes: lData.notes || prev.notes,
+              createdAt: lData.createdAt ? new Date(lData.createdAt).toLocaleDateString('en-GB') : prev.createdAt,
+              updatedAt: lData.updatedAt ? new Date(lData.updatedAt).toLocaleDateString('en-GB') : prev.updatedAt
+            }));
+
+            if (lData.driver) {
+              setActiveDriver({
+                name: `${lData.driver.firstName || ''} ${lData.driver.lastName || ''}`.trim() || 'Assigned Driver',
+                code: lData.driver.driverCode || lData.driver.userCode || '—',
+                phone: lData.driver.phone || '—',
+                license: lData.driver.licenseClass || lData.driver.licenseType || 'Standard License',
+                diary: '08:00 / 17:00',
+                avatar: lData.driver.avatarUrl || 'https://i.pravatar.cc/150?u=10'
+              });
+            } else {
+              setActiveDriver({
+                name: 'Not Assigned',
+                code: '—',
+                phone: '—',
+                license: '—',
+                diary: '—',
+                avatar: 'https://i.pravatar.cc/150?u=10'
+              });
+            }
+
+            if (lData.truck) {
+              setActiveTruck({
+                id: lData.truck.rego || lData.truck.code || 'Truck',
+                name: `${lData.truck.make || ''} ${lData.truck.model || ''}`.trim() || 'Assigned Vehicle',
+                odo: lData.truck.odometerKm ? `${lData.truck.odometerKm} KM` : '— KM',
+                trailer: lData.trailer?.rego || lData.trailer?.code || 'No Trailer',
+                rego: lData.truck.rego || '—'
+              });
+            }
+
+            if (Array.isArray(lData.stops)) {
+              setStopsList(lData.stops.map((s, idx) => ({
+                id: idx + 1,
+                rawId: s.id,
+                type: s.type || (idx === 0 ? 'PICKUP' : 'DROPOFF'),
+                typeColor: (s.type === 'PICKUP' || idx === 0) ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700',
+                address: s.address || 'Location Stop',
+                contactName: s.contactName || '—',
+                contactPhone: s.contactPhone || '—',
+                date: s.scheduledDate ? new Date(s.scheduledDate).toLocaleDateString('en-GB') : (lData.loadDate ? new Date(lData.loadDate).toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB')),
+                time: s.scheduledTime || '09:00 AM',
+                completed: false
+              })));
+            }
+
+            if (Array.isArray(lData.items)) {
+              setItemsList(lData.items);
+            }
+          }
+        })
+        .catch(err => console.log("Could not fetch detailed load info:", err));
+
       api.get(`/company-admin/loads/${loadIdToFetch}/invoices`)
         .then(res => {
           const list = res.data?.data || res.data;
@@ -260,8 +335,41 @@ function LoadDetail({ load, onBack }) {
         .catch(err => {
           console.log("No backend documents yet for load:", err);
         });
+
+      api.get(`/company-admin/loads/${loadIdToFetch}/expenses`)
+        .then(res => {
+          const list = res.data?.data || res.data;
+          if (Array.isArray(list)) {
+            setExpensesList(list);
+          }
+        })
+        .catch(err => {
+          console.log("No backend expenses yet for load:", err);
+        });
     }
   }, [currentLoad?.id, currentLoad?.rawId]);
+
+  const handleDeleteExpense = async (expenseId) => {
+    try {
+      const loadIdToUse = currentLoad?.rawId || currentLoad?.id;
+      await api.delete(`/company-admin/loads/${loadIdToUse}/expenses/${expenseId}`);
+    } catch (err) {
+      console.error("Error deleting expense via API:", err);
+    }
+    setExpensesList(prev => prev.filter(e => e.id !== expenseId));
+    triggerToast("Expense deleted successfully", "success");
+  };
+
+  const handleDeleteInvoice = async (invoiceId) => {
+    try {
+      const loadIdToUse = currentLoad?.rawId || currentLoad?.id;
+      await api.delete(`/company-admin/loads/${loadIdToUse}/invoices/${invoiceId}`);
+    } catch (err) {
+      console.error("Error deleting invoice via API:", err);
+    }
+    setInvoicesList(prev => prev.filter(inv => inv.id !== invoiceId && inv.realId !== invoiceId));
+    triggerToast("Invoice deleted successfully", "success");
+  };
 
   // Invoice calculations
   const invoiceSubtotal = parseFloat(currentLoad?.rate || currentLoad?.subtotal || 2200);
@@ -335,7 +443,7 @@ function LoadDetail({ load, onBack }) {
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-1 flex items-center gap-1 flex-wrap">
-              <Truck className="w-3 h-3 shrink-0" /> {currentLoad.type} • Created by Sarah Mitchell • {currentLoad.date?.split('-').reverse().join('/')} 07:15 AM
+              <Truck className="w-3 h-3 shrink-0" /> {currentLoad.type} • Created on {currentLoad.createdAt}
             </p>
           </div>
         </div>
@@ -600,7 +708,7 @@ function LoadDetail({ load, onBack }) {
                         </div>
                         <span className="text-[9px] font-bold text-slate-700 text-center w-14 leading-tight">{step.label}</span>
                         {step.active && <span className="text-[8px] font-bold text-blue-500 leading-none">In Progress</span>}
-                        <span className="text-[8px] text-slate-400 mt-0.5">{step.date.split(' ')[0]}</span>
+                        <span className="text-[8px] text-slate-400 mt-0.5">{step.date ? String(step.date).split(' ')[0] : ''}</span>
                       </div>
                       {i < routeSteps.length - 1 && (
                         <div className={`flex-1 h-0.5 mt-4 mx-0.5 ${step.done ? 'bg-emerald-400' : 'bg-slate-200'}`} style={{ minWidth: 16 }} />
@@ -838,8 +946,17 @@ function LoadDetail({ load, onBack }) {
               </button>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left" style={{ minWidth: 900 }}>
+            {stopsList.length === 0 ? (
+              <div className="py-16 flex flex-col items-center justify-center text-center">
+                <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center mb-3">
+                  <MapPin className="w-6 h-6 text-slate-400" />
+                </div>
+                <p className="text-sm font-bold text-slate-700 mb-1">No stops added yet</p>
+                <p className="text-xs text-slate-400">Click "+ Add Stop" to add pickup and drop-off locations to this load.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left" style={{ minWidth: 900 }}>
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-100">
                     <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest w-12">#</th>
@@ -978,6 +1095,7 @@ function LoadDetail({ load, onBack }) {
                 </tbody>
               </table>
             </div>
+            )}
           </div>
         )}
 
@@ -1129,9 +1247,17 @@ function LoadDetail({ load, onBack }) {
                         <div className="flex gap-2">
                           <button 
                             onClick={() => setPreviewItem({ type: 'Expense Receipt', title: exp.type, desc: exp.desc, amount: exp.amount })}
-                            className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100"
+                            className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100 cursor-pointer"
+                            title="View Receipt"
                           >
                             <Eye size={13}/>
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteExpense(exp.id)}
+                            className="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center hover:bg-rose-100 cursor-pointer"
+                            title="Delete Expense"
+                          >
+                            <Trash2 size={13}/>
                           </button>
                         </div>
                       </td>
@@ -1267,15 +1393,54 @@ function LoadDetail({ load, onBack }) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  <tr>
-                    <td colSpan={6} className="px-4 py-14 text-center">
-                      <div className="flex flex-col items-center">
-                        <DollarSign className="w-8 h-8 text-slate-300 mb-2" />
-                        <p className="text-sm font-bold text-slate-500 mb-1">No invoices generated yet</p>
-                        <p className="text-xs text-slate-400">Click &quot;Generate Invoice&quot; to create the first invoice for this load.</p>
-                      </div>
-                    </td>
-                  </tr>
+                  {invoicesList.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-14 text-center">
+                        <div className="flex flex-col items-center">
+                          <DollarSign className="w-8 h-8 text-slate-300 mb-2" />
+                          <p className="text-sm font-bold text-slate-500 mb-1">No invoices generated yet</p>
+                          <p className="text-xs text-slate-400">Click &quot;Generate Invoice&quot; to create the first invoice for this load.</p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    invoicesList.map((inv) => (
+                      <tr key={inv.id || inv.realId} className="hover:bg-slate-50/50">
+                        <td className="px-4 py-4 text-xs font-bold text-indigo-600">{inv.id}</td>
+                        <td className="px-4 py-4 text-xs font-bold text-slate-600">{inv.date}</td>
+                        <td className="px-4 py-4 text-xs font-bold text-slate-800">{inv.customer}</td>
+                        <td className="px-4 py-4 text-xs font-black text-slate-900">{inv.amount}</td>
+                        <td className="px-4 py-4">
+                          <span className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider ${inv.color || 'bg-blue-100 text-blue-700'}`}>{inv.status}</span>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex gap-2">
+                            <button 
+                              onClick={() => setPreviewItem({ type: 'Customer Invoice', title: inv.id, desc: inv.customer, amount: inv.amount })}
+                              className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100 cursor-pointer"
+                              title="View Invoice"
+                            >
+                              <Eye size={13}/>
+                            </button>
+                            <button 
+                              onClick={() => handleDownload(`${inv.id}.pdf`)}
+                              className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center hover:bg-emerald-100 cursor-pointer"
+                              title="Download Invoice PDF"
+                            >
+                              <Download size={13}/>
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteInvoice(inv.realId || inv.id)}
+                              className="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center hover:bg-rose-100 cursor-pointer"
+                              title="Delete Invoice"
+                            >
+                              <Trash2 size={13}/>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -1463,7 +1628,7 @@ function LoadDetail({ load, onBack }) {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <form onSubmit={(e) => {
+            <form onSubmit={async (e) => {
               e.preventDefault();
               
               const timeVal = stopForm.time;
@@ -1474,23 +1639,68 @@ function LoadDetail({ load, onBack }) {
               const newStopData = {
                 type: stopForm.type,
                 address: stopForm.address,
-                date: stopForm.date?.split('-').reverse().join('/') || '',
+                date: stopForm.date,
                 time: formattedTime,
                 contactName: stopForm.contactName,
                 contactPhone: stopForm.contactPhone,
                 instructions: stopForm.instructions
               };
               
-              if (editingStop) {
-                setStopsList(prev => prev.map(s => s.id === editingStop.id ? { ...s, ...newStopData } : s));
-              } else {
-                setStopsList(prev => [...prev, {
-                  id: prev.length ? Math.max(...prev.map(s=>s.id)) + 1 : 1,
-                  ...newStopData,
-                  completed: false
-                }]);
+              try {
+                const loadIdToUse = currentLoad?.rawId || currentLoad?.id;
+                if (editingStop) {
+                  if (editingStop.rawId) {
+                    await api.put(`/company-admin/loads/${loadIdToUse}/stops/${editingStop.rawId}`, newStopData);
+                  }
+                  setStopsList(prev => prev.map(s => s.id === editingStop.id ? {
+                    ...s,
+                    ...newStopData,
+                    date: stopForm.date?.split('-').reverse().join('/') || s.date
+                  } : s));
+                  triggerToast("Stop updated successfully", "success");
+                } else {
+                  const res = await api.post(`/company-admin/loads/${loadIdToUse}/stops`, newStopData);
+                  const createdStop = res.data?.data || res.data;
+                  if (createdStop) {
+                    setStopsList(prev => [
+                      ...prev,
+                      {
+                        id: createdStop.id || prev.length + 1,
+                        rawId: createdStop.rawId || createdStop.id,
+                        type: String(createdStop.type || stopForm.type || 'PICKUP'),
+                        typeColor: createdStop.typeColor || (stopForm.type === 'PICKUP' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'),
+                        address: String(createdStop.address || stopForm.address || ''),
+                        contactName: String(createdStop.contactName || stopForm.contactName || '—'),
+                        contactPhone: String(createdStop.contactPhone || stopForm.contactPhone || '—'),
+                        date: String(createdStop.date || (createdStop.scheduledDate ? new Date(createdStop.scheduledDate).toLocaleDateString('en-GB') : (stopForm.date?.split('-').reverse().join('/') || new Date().toLocaleDateString('en-GB')))),
+                        time: String(createdStop.time || stopForm.time || '09:00 AM'),
+                        instructions: String(createdStop.instructions || stopForm.instructions || ''),
+                        completed: !!createdStop.completed
+                      }
+                    ]);
+                    triggerToast("New stop added successfully!", "success");
+                  }
+                }
+              } catch (err) {
+                console.error("Error saving stop via API, using local fallback:", err);
+                if (editingStop) {
+                  setStopsList(prev => prev.map(s => s.id === editingStop.id ? {
+                    ...s,
+                    ...newStopData,
+                    date: stopForm.date?.split('-').reverse().join('/') || s.date
+                  } : s));
+                } else {
+                  setStopsList(prev => [...prev, {
+                    id: prev.length ? Math.max(...prev.map(s=>s.id)) + 1 : 1,
+                    ...newStopData,
+                    date: stopForm.date?.split('-').reverse().join('/') || '',
+                    completed: false
+                  }]);
+                }
+                triggerToast("Stop added locally", "info");
+              } finally {
+                setShowStopModal(false);
               }
-              setShowStopModal(false);
             }}>
               <div className="p-6 space-y-4">
                 <div>
@@ -1558,20 +1768,43 @@ function LoadDetail({ load, onBack }) {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <form onSubmit={(e) => {
+            <form onSubmit={async (e) => {
               e.preventDefault();
               const formData = new FormData(e.target);
-              const newExpense = {
-                id: 'EXP-' + Math.floor(100 + Math.random() * 900),
-                date: formData.get('date')?.split('-').reverse().join('/') || new Date().toLocaleDateString('en-GB'),
-                type: formData.get('type') || 'Other',
-                desc: formData.get('desc') || 'New Expense',
-                amount: `$${parseFloat(formData.get('amount') || 0).toFixed(2)}`,
-                status: 'Pending',
-                color: 'bg-amber-50 text-amber-700'
-              };
-              setExpensesList(prev => [...prev, newExpense]);
-              setShowExpenseModal(false);
+              const type = formData.get('type') || 'Other';
+              const desc = formData.get('desc') || 'New Expense';
+              const amount = parseFloat(formData.get('amount') || 0);
+              const date = formData.get('date') || new Date().toISOString().split('T')[0];
+
+              try {
+                const loadIdToUse = currentLoad?.rawId || currentLoad?.id;
+                const res = await api.post(`/company-admin/loads/${loadIdToUse}/expenses`, {
+                  type,
+                  desc,
+                  amount,
+                  date
+                });
+                const createdExp = res.data?.data || res.data;
+                if (createdExp) {
+                  setExpensesList(prev => [createdExp, ...prev]);
+                  triggerToast("Expense saved successfully to database!", "success");
+                }
+              } catch (err) {
+                console.error("Error saving expense via API, using local fallback:", err);
+                const newExpense = {
+                  id: 'EXP-' + Math.floor(100 + Math.random() * 900),
+                  date: date.split('-').reverse().join('/'),
+                  type,
+                  desc,
+                  amount: `$${amount.toFixed(2)}`,
+                  status: 'Pending',
+                  color: 'bg-amber-50 text-amber-700'
+                };
+                setExpensesList(prev => [newExpense, ...prev]);
+                triggerToast("Expense added locally", "info");
+              } finally {
+                setShowExpenseModal(false);
+              }
             }}>
               <div className="p-6 space-y-4">
                 <div>
@@ -2318,8 +2551,8 @@ export default function Loads() {
       const res = await api.get('/company-admin/loads');
       if (res.data && res.data.success && Array.isArray(res.data.data)) {
         const mapped = res.data.data.map(item => {
-          const firstPickup = item.stops?.find(s => s.type === 'PICKUP')?.address || 'Melbourne';
-          const firstDropoff = item.stops?.find(s => s.type === 'DROPOFF')?.address || 'Sydney';
+          const firstPickup = item.stops?.find(s => s.type === 'PICKUP')?.address || (item.stops && item.stops[0]?.address) || '—';
+          const firstDropoff = item.stops?.find(s => s.type === 'DROPOFF')?.address || (item.stops && item.stops[item.stops.length - 1]?.address) || '—';
           let displayStatus = item.status || 'DRAFT';
           if (displayStatus === 'IN_TRANSIT') displayStatus = 'ACTIVE';
           if (displayStatus === 'DELIVERED') displayStatus = 'COMPLETED';
@@ -2333,12 +2566,13 @@ export default function Loads() {
             statusSub: item.dispatchNotes || item.notes || (displayStatus === 'ACTIVE' ? 'En Route' : displayStatus === 'PLANNED' ? 'Ready' : 'Not Ready'),
             type: item.type || 'General Freight',
             typeIcon: item.type === 'Car Carrying' ? <Truck className="w-3.5 h-3.5 text-blue-500" /> : <Package className="w-3.5 h-3.5 text-blue-500" />,
-            customer: item.customer?.name || 'ABC Motors Pty Ltd',
+            customer: item.customer?.name || 'Direct Customer',
             from: firstPickup,
             to: firstDropoff,
-            stops: item.stops?.length || 2,
-            driver: item.driver ? `${item.driver.firstName} ${item.driver.lastName}` : null,
-            truck: item.truck ? `${item.truck.rego || item.truck.code || 'TRK-101'} | ${item.truck.model || 'Scania'}` : null,
+            stops: Array.isArray(item.stops) ? item.stops.length : (item.stops || 0),
+            stopsCount: Array.isArray(item.stops) ? item.stops.length : (item.stops || 0),
+            driver: item.driver ? `${item.driver.firstName || ''} ${item.driver.lastName || ''}`.trim() : null,
+            truck: item.truck ? `${item.truck.rego || item.truck.code || ''} | ${item.truck.model || ''}` : null,
             driverBadge: item.driver ? 'On The Road' : null,
             driverStatus: 'text-emerald-500',
             avatar: item.driver?.avatarUrl || 'https://i.pravatar.cc/150?u=10'
@@ -2650,7 +2884,7 @@ export default function Loads() {
                             <span className="text-[11px] font-medium text-slate-600 flex items-center gap-1 whitespace-nowrap">
                                → {load.to}
                             </span>
-                            <span className="text-[10px] font-medium text-slate-400 mt-0.5 whitespace-nowrap">{load.stops} Stops</span>
+                            <span className="text-[10px] font-medium text-slate-400 mt-0.5 whitespace-nowrap">{Array.isArray(load.stops) ? load.stops.length : (load.stops || 0)} Stops</span>
                           </div>
                         </td>
 

@@ -269,8 +269,8 @@ function DraftModal({ draft, onClose, onApprove, onReject }) {
         {/* ── Footer Buttons ── */}
         <div style={{ padding: '14px 20px', background: '#ffffff', borderTop: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexShrink: 0 }}>
           <button
-            onClick={() => { onReject(draft.id); onClose(); }}
-            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', background: '#fff', border: '1px solid #fca5a5', color: '#dc2626', fontWeight: 700, borderRadius: 10, cursor: 'pointer', fontSize: 12, transition: 'all 0.15s' }}
+            onClick={() => { onReject(draft); }}
+            style={{ display: 'flex', items: 'center', gap: 5, padding: '8px 14px', background: '#fff', border: '1px solid #fca5a5', color: '#dc2626', fontWeight: 700, borderRadius: 10, cursor: 'pointer', fontSize: 12, transition: 'all 0.15s' }}
             onMouseEnter={e => { e.currentTarget.style.background = '#fef2f2'; }}
             onMouseLeave={e => { e.currentTarget.style.background = '#fff'; }}
           >
@@ -286,7 +286,7 @@ function DraftModal({ draft, onClose, onApprove, onReject }) {
               Close
             </button>
             <button
-              onClick={() => { onApprove(draft.id); onClose(); }}
+              onClick={() => { onApprove(draft); }}
               style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', background: '#4f46e5', color: '#fff', fontWeight: 800, borderRadius: 10, cursor: 'pointer', fontSize: 12, border: 'none', boxShadow: '0 2px 8px rgba(79,70,229,0.25)', transition: 'all 0.15s' }}
               onMouseEnter={e => { e.currentTarget.style.background = '#4338ca'; }}
               onMouseLeave={e => { e.currentTarget.style.background = '#4f46e5'; }}
@@ -584,63 +584,64 @@ export default function LoadInbox() {
   const [data, setData]                 = useState([]);
   const [selected, setSelected]         = useState(null);
 
+  const fetchDraftLoads = async () => {
+    try {
+      const res = await api.get('/loads?status=DRAFT');
+      const dbLoads = res.data?.data || [];
+      
+      const formatted = dbLoads.map((load, i) => {
+        const sourceLabels = ['portal', 'email', 'file'];
+        const sourceColors = {
+          portal: { color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
+          email: { color: '#4f46e5', bg: '#eef2ff', border: '#c7d2fe' },
+          file: { color: '#db2777', bg: '#fdf2f8', border: '#fbcfe8' }
+        };
+        
+        const source = sourceLabels[i % sourceLabels.length];
+        const driver = load.driver || {};
+        const vehicle = load.truck || {};
+        
+        return {
+          id: load.id,
+          ref: load.loadRef || `PO-${1000 + i}`,
+          source,
+          sourceLabel: source === 'portal' ? 'Customer Portal' : source === 'email' ? 'Email Booking' : 'PDF Upload',
+          sourceIcon: source === 'portal' ? Globe : source === 'email' ? Mail : FileText,
+          sourceColor: sourceColors[source],
+          time: 'Recently',
+          urgent: load.priority === 'HIGH' || load.priority === 'URGENT',
+          confidence: 'High',
+          driver: driver.firstName ? `${driver.firstName} ${driver.lastName}` : 'Unassigned',
+          avatar: driver.firstName ? `${driver.firstName[0]}${driver.lastName?.[0] || ''}` : 'U',
+          avatarColor: '#2563eb',
+          driverPhone: driver.contactNumber || 'N/A',
+          driverLicence: driver.licenseType || 'N/A',
+          vehicle: vehicle.rego ? `${vehicle.rego} · ${vehicle.make}` : 'Unassigned',
+          trailer: 'Trailer TBD',
+          volume: `${load.loadItems?.length || 0} Vehicles`,
+          from: load.pickupStop?.address || 'Pickup TBD',
+          to: load.dropoffStop?.address || 'Dropoff TBD',
+          pickupDate: load.pickupStop?.scheduledTime ? new Date(load.pickupStop.scheduledTime).toLocaleString() : 'TBD',
+          deliveryDate: load.dropoffStop?.scheduledTime ? new Date(load.dropoffStop.scheduledTime).toLocaleString() : 'TBD',
+          accentColor: '#4f46e5',
+          notes: load.notes || 'No notes provided.',
+          manifests: load.loadItems?.map((item, idx) => ({
+            rego: item.rego || `TBD-${idx}`,
+            vin: item.vin || 'N/A',
+            model: `${item.make || ''} ${item.model || ''}`.trim() || 'Unknown Vehicle',
+            colour: item.color || 'Unknown',
+            conf: 'High'
+          })) || []
+        };
+      });
+      
+      setData(formatted);
+    } catch (error) {
+      console.error('Failed to fetch draft loads:', error);
+    }
+  };
+
   useEffect(() => {
-    const fetchDraftLoads = async () => {
-      try {
-        const res = await api.get('/loads?status=DRAFT');
-        const dbLoads = res.data?.data || [];
-        
-        const formatted = dbLoads.map((load, i) => {
-          const sourceLabels = ['portal', 'email', 'file'];
-          const sourceColors = {
-            portal: { color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
-            email: { color: '#4f46e5', bg: '#eef2ff', border: '#c7d2fe' },
-            file: { color: '#db2777', bg: '#fdf2f8', border: '#fbcfe8' }
-          };
-          
-          const source = sourceLabels[i % sourceLabels.length];
-          const driver = load.driver || {};
-          const vehicle = load.truck || {};
-          
-          return {
-            id: load.id,
-            ref: `PO-${1000 + i}`,
-            source,
-            sourceLabel: source === 'portal' ? 'Customer Portal' : source === 'email' ? 'Email Booking' : 'PDF Upload',
-            sourceIcon: source === 'portal' ? Globe : source === 'email' ? Mail : FileText,
-            sourceColor: sourceColors[source],
-            time: 'Recently',
-            urgent: load.priority === 'HIGH' || load.priority === 'URGENT',
-            confidence: 'High',
-            driver: driver.firstName ? `${driver.firstName} ${driver.lastName}` : 'Unassigned',
-            avatar: driver.firstName ? `${driver.firstName[0]}${driver.lastName?.[0] || ''}` : 'U',
-            avatarColor: '#2563eb',
-            driverPhone: driver.contactNumber || 'N/A',
-            driverLicence: driver.licenseType || 'N/A',
-            vehicle: vehicle.rego ? `${vehicle.rego} · ${vehicle.make}` : 'Unassigned',
-            trailer: 'Trailer TBD',
-            volume: `${load.loadItems?.length || 0} Vehicles`,
-            from: load.pickupStop?.address || 'Pickup TBD',
-            to: load.dropoffStop?.address || 'Dropoff TBD',
-            pickupDate: load.pickupStop?.scheduledTime ? new Date(load.pickupStop.scheduledTime).toLocaleString() : 'TBD',
-            deliveryDate: load.dropoffStop?.scheduledTime ? new Date(load.dropoffStop.scheduledTime).toLocaleString() : 'TBD',
-            accentColor: '#4f46e5',
-            notes: load.notes || 'No notes provided.',
-            manifests: load.loadItems?.map((item, idx) => ({
-              rego: item.rego || `TBD-${idx}`,
-              vin: item.vin || 'N/A',
-              model: `${item.make || ''} ${item.model || ''}`.trim() || 'Unknown Vehicle',
-              colour: item.color || 'Unknown',
-              conf: 'High'
-            })) || []
-          };
-        });
-        
-        setData(formatted);
-      } catch (error) {
-        console.error('Failed to fetch draft loads:', error);
-      }
-    };
     fetchDraftLoads();
   }, []);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -651,32 +652,53 @@ export default function LoadInbox() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleApprove = async (id) => {
+  const handleApprove = async (draftObj) => {
+    const idToUse = typeof draftObj === 'object' ? (draftObj.id || draftObj.ref) : draftObj;
     try {
-      await api.put(`/loads/${id}`, { status: 'ASSIGNED' });
-      setData(prev => prev.filter(d => d.id !== id));
-      showToast(`Load ${id} approved & dispatched!`, 'success');
-      setSelected(null);
+      await api.put(`/loads/${idToUse}`, { status: 'ASSIGNED' });
+      showToast(`Load approved & dispatched!`, 'success');
     } catch (error) {
-      showToast(`Failed to approve Load ${id}`, 'error');
+      console.error('Failed to approve load:', error);
+      showToast(`Failed to approve load`, 'error');
+    } finally {
+      setSelected(null);
+      await fetchDraftLoads();
     }
   };
   
-  const handleReject = async (id) => {
+  const handleReject = async (draftObj) => {
+    const idToUse = typeof draftObj === 'object' ? (draftObj.id || draftObj.ref) : draftObj;
     try {
-      await api.put(`/loads/${id}`, { status: 'CANCELLED' });
-      setData(prev => prev.filter(d => d.id !== id));
-      showToast(`Load ${id} rejected.`, 'error');
-      setSelected(null);
+      await api.put(`/loads/${idToUse}`, { status: 'CANCELLED' });
+      showToast(`Load rejected.`, 'info');
     } catch (error) {
-      showToast(`Failed to reject Load ${id}`, 'error');
+      console.error('Failed to reject load:', error);
+      showToast(`Failed to reject load`, 'error');
+    } finally {
+      setSelected(null);
+      await fetchDraftLoads();
     }
   };
 
-  const handleCreateManualLoad = (newLoad) => {
-    setData(prev => [newLoad, ...prev]);
+  const handleCreateManualLoad = async (newLoad) => {
+    try {
+      const res = await api.post('/loads', {
+        status: 'DRAFT',
+        loadRef: newLoad.ref,
+        notes: newLoad.notes,
+        priority: newLoad.urgent ? 'HIGH' : 'NORMAL'
+      });
+      if (res.data?.success) {
+        await fetchDraftLoads();
+      } else {
+        setData(prev => [newLoad, ...prev]);
+      }
+    } catch (err) {
+      console.error('Error creating manual load in DB:', err);
+      setData(prev => [newLoad, ...prev]);
+    }
     setShowCreateModal(false);
-    showToast(`Manual Load ${newLoad.id} created & dispatched!`, 'success');
+    showToast(`Manual Load ${newLoad.ref} created!`, 'success');
   };
 
   const filtered = data.filter(d => {

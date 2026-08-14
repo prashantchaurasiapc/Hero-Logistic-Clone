@@ -614,12 +614,18 @@ export default function Assets() {
                       </td>
                       
                       <td className="p-4">
-                        <div className="text-xs font-bold text-slate-800">{asset.branch}</div>
-                        <div className="text-[10px] font-semibold text-slate-500 mt-0.5">{asset.location}</div>
+                        <div className="text-xs font-bold text-slate-800">
+                          {typeof asset.branch === 'object' ? (asset.branch?.name || asset.branch?.location || 'Sydney Head Office') : (asset.branch || 'Sydney Head Office')}
+                        </div>
+                        <div className="text-[10px] font-semibold text-slate-500 mt-0.5">
+                          {typeof asset.location === 'object' ? (asset.location?.name || asset.location?.location || 'Yard') : (asset.location || 'Yard')}
+                        </div>
                       </td>
                       
                       <td className="p-4">
-                        <div className="text-xs font-semibold text-slate-600">{asset.assignedTo}</div>
+                        <div className="text-xs font-semibold text-slate-600">
+                          {typeof asset.assignedTo === 'object' ? (asset.assignedTo?.name || 'Unassigned') : (asset.assignedTo || 'Unassigned')}
+                        </div>
                       </td>
                       
                       <td className="p-4">
