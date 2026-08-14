@@ -6,10 +6,12 @@ const { HTTP_STATUS, ERROR_CODES } = require('../config/constants');
 // Get all AiActivityLogs with pagination, sorting and filtering
 exports.getAll = async (req, res, next) => {
   try {
-    const { where, skip, take, orderBy, currentPage, pageSize } = buildPrismaQuery(req.query);
+    let { where, skip, take, orderBy, currentPage, pageSize } = buildPrismaQuery(req.query);
     
-    // Optional: Inject tenant scope here if applicable
-    // if (req.tenantId) where.tenantId = req.tenantId;
+    // AiActivityLog uses 'timestamp' instead of 'createdAt'
+    if (orderBy && orderBy[0] && orderBy[0].createdAt) {
+      orderBy = [{ timestamp: orderBy[0].createdAt }];
+    }
 
     const [data, total] = await Promise.all([
       prisma.aiActivityLog.findMany({

@@ -50,10 +50,20 @@ exports.getById = async (req, res, next) => {
 exports.create = async (req, res, next) => {
   try {
     const payload = { ...req.body };
-    // if (req.tenantId) payload.tenantId = req.tenantId;
+    
+    // Attempt to get the current authenticated user, fallback to the first user if not found (for mock/dev)
+    let user = req.user ? await prisma.user.findUnique({ where: { id: req.user.id } }) : null;
+    if (!user) {
+      user = await prisma.user.findFirst();
+    }
+    
+    if (user) {
+      payload.authorId = user.id;
+    }
 
     const data = await prisma.ticketReply.create({
-      data: payload
+      data: payload,
+      include: { author: { select: { id: true, name: true, email: true, role: true } } }
     });
     return sendSuccess(res, data, HTTP_STATUS.CREATED);
   } catch (error) {

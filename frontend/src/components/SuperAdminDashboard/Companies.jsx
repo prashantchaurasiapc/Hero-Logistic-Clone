@@ -1126,7 +1126,7 @@ export default function Companies() {
                 if (res.data?.success) {
                   showNotification(`Configurations saved for ${name}`);
                   setShowEditCompanyModal(false);
-                  fetchCompanies();
+                  fetchCompaniesAndPlans();
                 }
               } catch (err) {
                 showNotification('Error updating company.');
@@ -1188,7 +1188,7 @@ export default function Companies() {
                     if (res.data?.success) {
                       showNotification(`Suspended license for ${selectedActionCompany.name}`);
                       setShowSuspendCompanyModal(false);
-                      fetchCompanies();
+                      fetchCompaniesAndPlans();
                     }
                   } catch (err) {
                     showNotification('Error suspending company.');
@@ -1581,7 +1581,7 @@ export default function Companies() {
               {/* Action Buttons */}
               <div className="flex items-center gap-4">
                 <button
-                  onClick={fetchCompanies}
+                  onClick={fetchCompaniesAndPlans}
                   className="flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-[11px] py-2 px-4 rounded-xl transition-all cursor-pointer shadow-sm"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} /> Refresh
