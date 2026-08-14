@@ -9,82 +9,7 @@ import {
 } from 'lucide-react';
 
 /* ─── DATA ──────────────────────────────────────────────────── */
-const DRAFTS = [
-  {
-    id: 'DRAFT-1092', ref: 'PO-48821',
-    source: 'email', sourceLabel: 'Email Booking', sourceIcon: Mail,
-    sourceColor: { color: '#4f46e5', bg: '#eef2ff', border: '#c7d2fe' },
-    time: '10 mins ago', urgent: true,
-    confidence: 'High',
-    driver: 'Michael Chen', avatar: 'MC', avatarColor: '#2563eb',
-    driverPhone: '+61 422 111 222', driverLicence: 'MC Class',
-    vehicle: 'TRK-101 · Volvo FH540', trailer: 'TRL-201 · Car Carrier 4-Level',
-    volume: '2 Vehicles', from: 'Melbourne VIC', to: 'Brisbane QLD',
-    pickupDate: '30 Jul 2025, 07:00 AM', deliveryDate: '31 Jul 2025, 05:00 PM',
-    accentColor: '#ef4444',
-    notes: 'Call 30 mins before arrival. Gate code: 1234.',
-    manifests: [
-      { rego: 'ABC234', vin: '1FA6P8CF0H5XXXXXX', model: '2023 Ford Mustang GT', colour: 'Red', conf: 'High' },
-      { rego: 'XYZ987', vin: 'SALWA2BV4DAXXXXXX', model: '2022 Range Rover Sport', colour: 'White', conf: 'High' },
-    ],
-  },
-  {
-    id: 'DRAFT-1091', ref: 'PO-48817',
-    source: 'portal', sourceLabel: 'Customer Portal', sourceIcon: Globe,
-    sourceColor: { color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
-    time: '45 mins ago', urgent: false,
-    confidence: 'High',
-    driver: 'Sarah Connor', avatar: 'SC', avatarColor: '#059669',
-    driverPhone: '+61 433 222 333', driverLicence: 'HC Class',
-    vehicle: 'TRK-117 · Scania T500', trailer: 'TRL-202 · Flatbed 45ft',
-    volume: '1 Vehicle', from: 'Sydney NSW', to: 'Perth WA',
-    pickupDate: '30 Jul 2025, 09:00 AM', deliveryDate: '02 Aug 2025, 03:00 PM',
-    accentColor: '#f59e0b',
-    notes: 'Fragile — handle with care.',
-    manifests: [
-      { rego: 'TSL001', vin: 'JTMAB3FV7NDXXXXXX', model: '2023 Tesla Model Y', colour: 'Pearl White', conf: 'High' },
-    ],
-  },
-  {
-    id: 'DRAFT-1088', ref: 'PO-48810',
-    source: 'file', sourceLabel: 'PDF Upload', sourceIcon: FileText,
-    sourceColor: { color: '#db2777', bg: '#fdf2f8', border: '#fbcfe8' },
-    time: '2 hrs ago', urgent: false,
-    confidence: 'Medium',
-    driver: 'James Park', avatar: 'JP', avatarColor: '#ea580c',
-    driverPhone: '+61 411 333 444', driverLicence: 'MC Class',
-    vehicle: 'TRK-104 · Kenworth T680', trailer: 'TRL-203 · B-Double Car Carrier',
-    volume: '4 Vehicles', from: 'Brisbane QLD', to: 'Adelaide SA',
-    pickupDate: '30 Jul 2025, 11:00 AM', deliveryDate: '01 Aug 2025, 02:00 PM',
-    accentColor: '#f59e0b',
-    notes: 'Please ensure all straps are checked. Customer contact: Lisa (0422-999-888).',
-    manifests: [
-      { rego: 'BMW001', vin: 'WBA5A3C03NFXXXXXX', model: '2023 BMW 330i', colour: 'Alpine White', conf: 'High' },
-      { rego: 'BMW002', vin: 'WBA5A3C08NFXXXXXX', model: '2023 BMW 330i', colour: 'Black Sapphire', conf: 'Medium' },
-      { rego: 'HIL001', vin: 'JA3AZ3FV8NDXXXXXX', model: '2021 Toyota HiLux SR5', colour: 'Grey', conf: 'High' },
-      { rego: 'DEF001', vin: 'SALWA2BV7DAXXXXXX', model: '2022 Land Rover Defender', colour: 'Fuji White', conf: 'Medium' },
-    ],
-  },
-  {
-    id: 'DRAFT-1085', ref: 'PO-48805',
-    source: 'email', sourceLabel: 'Email Booking', sourceIcon: Mail,
-    sourceColor: { color: '#4f46e5', bg: '#eef2ff', border: '#c7d2fe' },
-    time: '3 hrs ago', urgent: false,
-    confidence: 'Low',
-    driver: 'David Wilson', avatar: 'DW', avatarColor: '#475569',
-    driverPhone: '+61 499 444 555', driverLicence: 'HC Class',
-    vehicle: 'TRK-108 · Freightliner', trailer: 'TRL-205 · Flatbed Standard',
-    volume: '3 Vehicles', from: 'Perth WA', to: 'Melbourne VIC',
-    pickupDate: '31 Jul 2025, 06:00 AM', deliveryDate: '03 Aug 2025, 12:00 PM',
-    accentColor: '#cbd5e1',
-    notes: 'Low confidence — some VINs need manual verification before approval.',
-    manifests: [
-      { rego: 'TYT001', vin: 'JTMAB3FV7ND000111', model: '2022 Toyota RAV4', colour: 'Celestite', conf: 'Low' },
-      { rego: 'MAZ001', vin: 'JM3KFBDL0N0000222', model: '2023 Mazda CX-5', colour: 'Soul Red', conf: 'Medium' },
-      { rego: 'HON001', vin: 'JHMCR2F50PC000333', model: '2021 Honda CR-V', colour: 'Platinum White', conf: 'Low' },
-    ],
-  },
-];
+const DRAFTS = [];
 
 const CONF_STYLE = {
   High:   { bg: '#d1fae5', color: '#065f46', border: '#a7f3d0' },
@@ -303,20 +228,20 @@ function DraftModal({ draft, onClose, onApprove, onReject }) {
 /* ─── CREATE MANUAL LOAD MODAL ─────────────────────────────── */
 function CreateManualLoadModal({ onClose, onCreate }) {
   const [ref, setRef] = useState(`PO-${Math.floor(10000 + Math.random() * 90000)}`);
-  const [customer, setCustomer] = useState('FreightCo');
+  const [customer, setCustomer] = useState('');
   const [urgent, setUrgent] = useState(false);
-  const [driver, setDriver] = useState('Michael Chen');
-  const [from, setFrom] = useState('Melbourne VIC');
-  const [to, setTo] = useState('Brisbane QLD');
-  const [pickupDate, setPickupDate] = useState('30 Jul 2025, 08:00 AM');
-  const [deliveryDate, setDeliveryDate] = useState('31 Jul 2025, 05:00 PM');
-  const [vehicle, setVehicle] = useState('TRK-101 · Volvo FH540');
-  const [trailer, setTrailer] = useState('TRL-201 · Car Carrier 4-Level');
-  const [rego, setRego] = useState('ABC999');
-  const [vin, setVin] = useState('1FA6P8CF0H599999');
-  const [model, setModel] = useState('2024 Ford Mustang GT');
-  const [colour, setColour] = useState('Red');
-  const [notes, setNotes] = useState('Call driver 30 mins before arrival. Gate code #1234.');
+  const [driver, setDriver] = useState('');
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  const [pickupDate, setPickupDate] = useState('');
+  const [deliveryDate, setDeliveryDate] = useState('');
+  const [vehicle, setVehicle] = useState('');
+  const [trailer, setTrailer] = useState('');
+  const [rego, setRego] = useState('');
+  const [vin, setVin] = useState('');
+  const [model, setModel] = useState('');
+  const [colour, setColour] = useState('');
+  const [notes, setNotes] = useState('');
 
   // Close on Escape key
   useEffect(() => {

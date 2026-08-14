@@ -366,6 +366,69 @@ export default function SuperAdminDashboard() {
               </table>
             </div>
           </div>
+
+          {/* Left Column Bottom Cards 2-Column Grid */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+            {/* Subscription Monitoring */}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 flex flex-col justify-between">
+              <div>
+                <h3 className="text-[15px] font-extrabold text-slate-900 mb-1">Subscription Monitoring</h3>
+                <p className="text-[11px] font-medium text-slate-400 mb-6">Monitor plans lifecycle metrics.</p>
+
+                <div className="space-y-4 mb-8 text-left">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[12px] font-semibold text-slate-500">Active Plans</span>
+                    <span className="text-[12px] font-black text-slate-900">4 active</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[12px] font-semibold text-slate-500">Expiring This Month</span>
+                    <span className="text-[12px] font-black text-amber-500">1 plan</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[12px] font-semibold text-slate-500">Overdue Payments</span>
+                    <span className="text-[12px] font-black text-[#10B981]">0 overdue</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[12px] font-semibold text-slate-500">Upgrade Opportunities</span>
+                    <span className="text-[12px] font-black text-amber-500">2 accounts</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <button onClick={() => setShowChangeSubModal(true)} className="bg-brand-500 text-slate-900 hover:bg-[#F0C800] font-bold text-[11px] py-3 rounded-xl transition-all shadow-sm cursor-pointer">
+                  Change Sub
+                </button>
+                <button onClick={() => setShowRenewSubModal(true)} className="bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 font-bold text-[11px] py-3 rounded-xl transition-all shadow-sm cursor-pointer">
+                  Renew
+                </button>
+                <button onClick={() => setShowUpgradeSubModal(true)} className="bg-[#10B981] text-white hover:bg-[#059669] font-bold text-[11px] py-3 rounded-xl transition-all shadow-sm cursor-pointer">
+                  Upgrade
+                </button>
+              </div>
+            </div>
+
+            {/* Recent Platform Activity */}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 text-left">
+              <h3 className="text-[15px] font-extrabold text-slate-900 mb-1">Recent Platform Activity</h3>
+              <p className="text-[11px] font-medium text-slate-400 mb-6">Real-time SaaS system administrative actions audit feed.</p>
+
+              <div className="space-y-6">
+                <div className="border-b border-slate-100 pb-5">
+                  <p className="text-[12px] font-bold text-slate-700 leading-relaxed mb-2">
+                    Company Created: Falcon Logistics LLC provisioned on Professional Plan. (Falcon Logistics LLC)
+                  </p>
+                  <p className="text-[9px] font-bold text-slate-400 tracking-wider">06/24/2026, 02:12:15 PM</p>
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold text-slate-700 leading-relaxed mb-2">
+                    Plan Changed: Swift Cargo Express upgraded to Professional Tier. (Swift Cargo Express)
+                  </p>
+                  <p className="text-[9px] font-bold text-slate-400 tracking-wider">06/24/2026, 12:45:00 PM</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Right Column (Widgets) */}
@@ -503,64 +566,6 @@ export default function SuperAdminDashboard() {
               <button onClick={() => setShowResolveTicketModal(true)} className="bg-[#10B981] text-white hover:bg-[#059669] font-bold text-[11px] py-3 rounded-xl transition-all shadow-sm cursor-pointer">
                 Resolve Ticket
               </button>
-            </div>
-          </div>
-
-          {/* Subscription Monitoring */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
-            <h3 className="text-[15px] font-extrabold text-slate-900 mb-1">Subscription Monitoring</h3>
-            <p className="text-[11px] font-medium text-slate-400 mb-6">Monitor plans lifecycle metrics.</p>
-
-            <div className="space-y-4 mb-8 text-left">
-              <div className="flex justify-between items-center">
-                <span className="text-[12px] font-semibold text-slate-500">Active Plans</span>
-                <span className="text-[12px] font-black text-slate-900">4 active</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-[12px] font-semibold text-slate-500">Expiring This Month</span>
-                <span className="text-[12px] font-black text-amber-500">1 plan</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-[12px] font-semibold text-slate-500">Overdue Payments</span>
-                <span className="text-[12px] font-black text-[#10B981]">0 overdue</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-[12px] font-semibold text-slate-500">Upgrade Opportunities</span>
-                <span className="text-[12px] font-black text-amber-500">2 accounts</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              <button onClick={() => setShowChangeSubModal(true)} className="bg-brand-500 text-slate-900 hover:bg-[#F0C800] font-bold text-[11px] py-3 rounded-xl transition-all shadow-sm cursor-pointer">
-                Change Sub
-              </button>
-              <button onClick={() => setShowRenewSubModal(true)} className="bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 font-bold text-[11px] py-3 rounded-xl transition-all shadow-sm cursor-pointer">
-                Renew
-              </button>
-              <button onClick={() => setShowUpgradeSubModal(true)} className="bg-[#10B981] text-white hover:bg-[#059669] font-bold text-[11px] py-3 rounded-xl transition-all shadow-sm cursor-pointer">
-                Upgrade
-              </button>
-            </div>
-          </div>
-
-          {/* Recent Platform Activity */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 text-left">
-            <h3 className="text-[15px] font-extrabold text-slate-900 mb-1">Recent Platform Activity</h3>
-            <p className="text-[11px] font-medium text-slate-400 mb-6">Real-time SaaS system administrative actions audit feed.</p>
-
-            <div className="space-y-6">
-              <div className="border-b border-slate-100 pb-5">
-                <p className="text-[12px] font-bold text-slate-700 leading-relaxed mb-2">
-                  Company Created: Falcon Logistics LLC provisioned on Professional Plan. (Falcon Logistics LLC)
-                </p>
-                <p className="text-[9px] font-bold text-slate-400 tracking-wider">06/24/2026, 02:12:15 PM</p>
-              </div>
-              <div>
-                <p className="text-[12px] font-bold text-slate-700 leading-relaxed mb-2">
-                  Plan Changed: Swift Cargo Express upgraded to Professional Tier. (Swift Cargo Express)
-                </p>
-                <p className="text-[9px] font-bold text-slate-400 tracking-wider">06/24/2026, 12:45:00 PM</p>
-              </div>
             </div>
           </div>
 

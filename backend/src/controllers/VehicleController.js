@@ -58,18 +58,42 @@ exports.getById = async (req, res, next) => {
   }
 };
 
+const ALLOWED_VEHICLE_FIELDS = new Set([
+  'id', 'rego', 'plate', 'make', 'model', 'category', 'color', 'vin', 
+  'engineNumber', 'odometerKm', 'maintenanceDueKm', 'fuelType', 'regType', 
+  'regState', 'regIssueDate', 'regExpiryDate', 'maxDistPerTripKm', 
+  'primaryMechanic', 'preferredRoutes', 'preferredRegions', 'dgCertified', 
+  'hvCertified', 'notes', 'status', 'companyId', 'currentLocation', 
+  'currentSpeed', 'fuelLevel', 'engineTemp', 'lastPing', 'currentDriverId'
+]);
+
+const sanitizePayload = (rawPayload) => {
+  const clean = {};
+  for (const key of Object.keys(rawPayload)) {
+    if (ALLOWED_VEHICLE_FIELDS.has(key) && rawPayload[key] !== undefined) {
+      clean[key] = rawPayload[key];
+    }
+  }
+  if (rawPayload.year) {
+    clean.notes = clean.notes ? `${clean.notes} | Year: ${rawPayload.year}` : `Year: ${rawPayload.year}`;
+  }
+  return clean;
+};
+
 // Create new Vehicle
 exports.create = async (req, res, next) => {
   try {
-    const payload = { ...req.body };
-    if (req.tenantId && !payload.companyId) payload.companyId = req.tenantId;
+    const rawPayload = { ...req.body };
+    if (req.tenantId && !rawPayload.companyId) rawPayload.companyId = req.tenantId;
 
-    if (!payload.companyId) {
+    if (!rawPayload.companyId) {
       const firstCompany = await prisma.company.findFirst();
       if (firstCompany) {
-        payload.companyId = firstCompany.id;
+        rawPayload.companyId = firstCompany.id;
       }
     }
+
+    const payload = sanitizePayload(rawPayload);
 
     const data = await prisma.vehicle.create({
       data: payload,
@@ -87,8 +111,7 @@ exports.create = async (req, res, next) => {
 // Update Vehicle with Optimistic Concurrency check
 exports.update = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const updateData = { ...req.body };
+    const updateData = sanitizePayload(req.body);
 
     if (req.tenantId) {
       const existing = await prisma.vehicle.findFirst({

@@ -22,13 +22,13 @@ export default function CommandCentre() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newLoadForm, setNewLoadForm] = useState({
     customer: '',
-    status: 'In Transit',
+    status: 'Planned',
     routeFrom: '',
     routeTo: '',
-    driver: 'John Doe',
-    vehicle: 'MAN TGX 26.580',
-    reqDate: '2026-05-25',
-    reqTime: '09:00 AM'
+    driver: '',
+    vehicle: '',
+    reqDate: '',
+    reqTime: ''
   });
 
   // Top Filter Row States
@@ -436,16 +436,50 @@ export default function CommandCentre() {
 
   // Filtered Loads for Left Panel
   const filteredLoads = loads.filter(load => {
-    const matchesSearch = 
-      load.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      load.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      load.driver.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      load.vehicle.toLowerCase().includes(searchQuery.toLowerCase());
+    const getDriverStr = (drv) => {
+      if (!drv) return '';
+      if (typeof drv === 'string') return drv;
+      if (typeof drv === 'object') {
+        return drv.name || `${drv.firstName || ''} ${drv.lastName || ''}`.trim() || drv.driverCode || '';
+      }
+      return String(drv);
+    };
 
-    const matchesBranch = selectedBranch === 'All Branches' || load.depot.toLowerCase().includes(selectedBranch.toLowerCase());
-    const matchesStatus = selectedStatus === 'All Statuses' || load.status.toLowerCase() === selectedStatus.toLowerCase();
-    const matchesDriver = selectedDriver === 'All Drivers' || load.driver.toLowerCase() === selectedDriver.toLowerCase();
-    const matchesCustomer = selectedCustomer === 'All Customers' || load.customer.toLowerCase() === selectedCustomer.toLowerCase();
+    const getCustomerStr = (cust) => {
+      if (!cust) return '';
+      if (typeof cust === 'string') return cust;
+      if (typeof cust === 'object') return cust.name || '';
+      return String(cust);
+    };
+
+    const getVehicleStr = (vhc) => {
+      if (!vhc) return '';
+      if (typeof vhc === 'string') return vhc;
+      if (typeof vhc === 'object') return `${vhc.make || ''} ${vhc.model || ''}`.trim() || vhc.rego || '';
+      return String(vhc);
+    };
+
+    const driverStr = getDriverStr(load.driver).toLowerCase();
+    const customerStr = getCustomerStr(load.customer).toLowerCase();
+    const vehicleStr = getVehicleStr(load.vehicle || load.truck).toLowerCase();
+    const loadIdStr = String(load.id || '').toLowerCase();
+    const searchQueryStr = searchQuery.toLowerCase();
+
+    const matchesSearch = 
+      loadIdStr.includes(searchQueryStr) ||
+      customerStr.includes(searchQueryStr) ||
+      driverStr.includes(searchQueryStr) ||
+      vehicleStr.includes(searchQueryStr);
+
+    const depotStr = (load.depot || load.routeFrom || '').toLowerCase();
+    const branchQuery = selectedBranch.replace(' Depot', '').toLowerCase();
+    const matchesBranch = selectedBranch === 'All Branches' || depotStr.includes(branchQuery);
+    const matchesStatus = selectedStatus === 'All Statuses' || String(load.status || '').toLowerCase() === selectedStatus.toLowerCase();
+    const matchesDriver = selectedDriver === 'All Drivers' || (selectedDriver && driverStr.includes(selectedDriver.toLowerCase()));
+    const matchesCustomer = selectedCustomer === 'All Customers' || (selectedCustomer && customerStr.includes(selectedCustomer.toLowerCase()));
+    const matchesDestination = selectedDestination === 'All Destinations' || String(load.routeTo || '').toLowerCase().includes(selectedDestination.toLowerCase());
+    const matchesNiche = selectedNiche === 'All Types' || String(load.type || '').toLowerCase().includes(selectedNiche.toLowerCase());
+    const matchesVehicle = selectedVehicle === 'All' || (selectedVehicle && vehicleStr.includes(selectedVehicle.toLowerCase()));
 
     const matchesTab = 
       activeLoadTab === 'All' ? true :
@@ -454,11 +488,15 @@ export default function CommandCentre() {
       activeLoadTab === 'Completed' ? load.status === 'Completed' :
       activeLoadTab === 'On Hold' ? load.status === 'On Hold' : true;
 
-    return matchesSearch && matchesBranch && matchesStatus && matchesDriver && matchesCustomer && matchesTab;
+    return matchesSearch && matchesBranch && matchesStatus && matchesDriver && matchesCustomer && matchesDestination && matchesNiche && matchesVehicle && matchesTab;
   });
 
   // Filtered Drivers for Bottom Section
   const filteredDrivers = drivers.filter(driver => {
+    if (selectedWorker !== 'All') {
+      if (selectedWorker === 'Shift A' && driver.shift && !driver.shift.toLowerCase().includes('a') && !driver.shift.toLowerCase().includes('morning')) return false;
+      if (selectedWorker === 'Shift B' && driver.shift && !driver.shift.toLowerCase().includes('b') && !driver.shift.toLowerCase().includes('evening')) return false;
+    }
     if (activeDriverTab.includes('All')) return true;
     if (activeDriverTab.includes('On Duty')) return driver.status === 'On Duty';
     if (activeDriverTab.includes('En Route')) return driver.status === 'En Route';

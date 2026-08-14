@@ -560,8 +560,8 @@ export default function UserManagement() {
             </button>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full xl:w-auto xl:justify-end">
-            <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 scrollbar-hide">
+          <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto lg:justify-end">
+            <div className="flex items-center gap-2 overflow-x-auto sm:w-auto pb-1 sm:pb-0 scrollbar-hide shrink-0">
               <button
                 onClick={exportCSV}
                 className="border border-amber-500 hover:bg-amber-50/10 text-yellow-600 font-extrabold text-[11px] px-3.5 py-2 rounded-xl transition-colors cursor-pointer bg-white whitespace-nowrap"
@@ -582,7 +582,7 @@ export default function UserManagement() {
               </button>
             </div>
 
-            <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
+            <div className="flex items-center gap-2.5 shrink-0 flex-wrap sm:flex-nowrap">
               {/* Density selector */}
               <div className="bg-slate-100 p-0.5 rounded-xl flex gap-0.5 border border-slate-200 shrink-0">
                 {['COMPACT', 'DEFAULT', 'RELAXED'].map((mode) => (
@@ -601,10 +601,10 @@ export default function UserManagement() {
               </div>
 
               {/* Columns button */}
-              <div className="relative text-left" ref={columnsMenuRef}>
+              <div className="relative text-left shrink-0" ref={columnsMenuRef}>
                 <button
                   onClick={() => setShowColumnsMenu(!showColumnsMenu)}
-                  className="bg-white border border-black hover:bg-slate-50 text-slate-700 font-extrabold text-[11px] px-4 py-2.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+                  className="bg-white border border-black hover:bg-slate-50 text-slate-700 font-extrabold text-[11px] px-3.5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-xs whitespace-nowrap"
                 >
                   <Settings className="w-3.5 h-3.5 text-slate-500" />
                   <span>COLUMNS</span>

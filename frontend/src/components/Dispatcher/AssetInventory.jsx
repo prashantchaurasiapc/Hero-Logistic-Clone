@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Search, Plus, MapPin, Trash2, Edit, X, List, Grid, Check, 
   ChevronRight, Calendar, AlertTriangle, ShieldCheck, HelpCircle,
