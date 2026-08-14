@@ -185,58 +185,6 @@ const VehicleDocUploadBox = ({ title }) => {
   );
 };
 
-const VehiclePhotoUpload = () => {
-  const [photoUrl, setPhotoUrl] = React.useState('https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?q=80&w=256&auto=format&fit=crop');
-  const fileInputRef = React.useRef(null);
-
-  const handlePhotoSelect = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setPhotoUrl(event.target.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  return (
-    <div className="flex flex-col items-center gap-2 w-32 shrink-0">
-      <div className="text-[9px] font-black text-gray-500 tracking-widest uppercase mb-1">VEHICLE PHOTO</div>
-      <input 
-        type="file" 
-        ref={fileInputRef} 
-        className="hidden" 
-        accept="image/*" 
-        onChange={handlePhotoSelect} 
-      />
-      <div 
-        onClick={() => fileInputRef.current?.click()} 
-        className="relative w-24 h-24 rounded-full overflow-hidden border border-gray-200 hover:border-purple-500 cursor-pointer group bg-gray-50 flex items-center justify-center shadow-sm"
-        title="Click to upload vehicle photo"
-      >
-        <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
-          <Camera className="w-5 h-5 text-white mb-1" />
-          <span className="text-[9px] font-bold text-white uppercase tracking-wider">Upload</span>
-        </div>
-        <img src={photoUrl} className="w-full h-full object-cover" alt="Truck" />
-      </div>
-      <button 
-        type="button" 
-        onClick={() => fileInputRef.current?.click()}
-        className="w-full text-center text-[10px] font-bold px-2 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded mt-1 transition-colors cursor-pointer"
-      >
-        Choose Photo
-      </button>
-      <input 
-        type="hidden" 
-        name="photoUrl" 
-        value={photoUrl} 
-      />
-    </div>
-  );
-};
-
 const Vehicles = () => {
   const [vehicles, setVehicles] = React.useState([]);
   const [isLoading, setIsLoading] = React.useState(false);
@@ -3646,7 +3594,17 @@ const Vehicles = () => {
             </div>
             <div className="p-6 flex flex-col md:flex-row gap-8">
               {/* Photo Upload */}
-              <VehiclePhotoUpload />
+              <div className="flex flex-col items-center gap-2 w-32 shrink-0">
+                <div className="text-[9px] font-black text-gray-500 tracking-widest uppercase mb-1">VEHICLE PHOTO</div>
+                <div className="relative w-24 h-24 rounded-full overflow-hidden border border-gray-200 hover:border-purple-400 cursor-pointer group bg-gray-50 flex items-center justify-center">
+                  <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                    <Camera className="w-5 h-5 text-white mb-1" />
+                    <span className="text-[9px] font-bold text-white uppercase tracking-wider">Upload</span>
+                  </div>
+                  <img src="https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?q=80&w=256&auto=format&fit=crop" className="w-full h-full object-cover" alt="Truck" />
+                </div>
+                <input type="text" placeholder="https://images.unsplash.com..." defaultValue="https://images.unsplash.co..." className="w-full text-center text-[9px] px-2 py-1.5 bg-gray-50 border border-gray-200 rounded mt-2 focus:outline-none focus:border-purple-400 text-gray-500" />
+              </div>
 
               {/* Vehicle Fields */}
               <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

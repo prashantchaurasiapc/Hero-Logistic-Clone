@@ -45,6 +45,10 @@ exports.getAll = async (req, res, next) => {
   try {
     const { where, skip, take, orderBy, currentPage, pageSize } = buildPrismaQuery(req.query);
 
+    if (req.tenantId) {
+      where.companyId = req.tenantId;
+    }
+
     const [data, total] = await Promise.all([
       prisma.user.findMany({
         where, skip, take, orderBy,
@@ -66,6 +70,9 @@ exports.getAll = async (req, res, next) => {
 exports.getById = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
+    if (req.tenantId) {
+      where.companyId = req.tenantId;
+    }
 
     const data = await prisma.user.findFirst({ where });
     
@@ -100,7 +107,15 @@ exports.create = async (req, res, next) => {
     const hashedPassword = await bcrypt.hash(rawPassword, 10);
 
     let companyId = req.body.companyId;
-    if (PLATFORM_ROLES.includes(roleEnum)) {
+    if (req.tenantId) {
+      if (PLATFORM_ROLES.includes(roleEnum)) {
+        return sendError(res, {
+          code: ERROR_CODES.UNAUTHORIZED_ACCESS,
+          message: 'You cannot create platform staff users.'
+        }, HTTP_STATUS.FORBIDDEN);
+      }
+      companyId = req.tenantId;
+    } else if (PLATFORM_ROLES.includes(roleEnum)) {
       companyId = null;
     } else if (TENANT_ROLES.includes(roleEnum)) {
       if (!companyId) {
@@ -157,6 +172,18 @@ exports.update = async (req, res, next) => {
     const { id } = req.params;
     const { name, email, password, role, phone, status, companyId } = req.body;
 
+    if (req.tenantId) {
+      const existingUser = await prisma.user.findFirst({
+        where: { id, companyId: req.tenantId }
+      });
+      if (!existingUser) {
+        return sendError(res, {
+          code: ERROR_CODES.NOT_FOUND,
+          message: 'User not found in this company context'
+        }, HTTP_STATUS.NOT_FOUND);
+      }
+    }
+
     const updateData = {};
     if (name !== undefined) updateData.name = name.trim();
     if (email !== undefined) updateData.email = email.trim().toLowerCase();
@@ -166,6 +193,12 @@ exports.update = async (req, res, next) => {
     let roleEnum = undefined;
     if (role !== undefined) {
       roleEnum = mapRoleEnum(role);
+      if (req.tenantId && PLATFORM_ROLES.includes(roleEnum)) {
+        return sendError(res, {
+          code: ERROR_CODES.UNAUTHORIZED_ACCESS,
+          message: 'You cannot assign platform staff roles.'
+        }, HTTP_STATUS.FORBIDDEN);
+      }
       updateData.role = roleEnum;
     }
 
@@ -179,7 +212,9 @@ exports.update = async (req, res, next) => {
       if (PLATFORM_ROLES.includes(currentRole)) {
         updateData.companyId = null;
       } else {
-        if (companyId !== undefined) {
+        if (req.tenantId) {
+          updateData.companyId = req.tenantId;
+        } else if (companyId !== undefined) {
           updateData.companyId = companyId || null;
         }
       }
@@ -221,14 +256,28 @@ exports.update = async (req, res, next) => {
 // Delete User
 exports.delete = async (req, res, next) => {
   try {
-    const where = { id: req.params.id };
+    const { id } = req.params;
+
+    if (req.tenantId) {
+      const existingUser = await prisma.user.findFirst({
+        where: { id, companyId: req.tenantId }
+      });
+      if (!existingUser) {
+        return sendError(res, {
+          code: ERROR_CODES.NOT_FOUND,
+          message: 'User not found in this company context'
+        }, HTTP_STATUS.NOT_FOUND);
+      }
+    }
+
+    const where = { id };
     
     // Clean up safe dependent records
-    await prisma.userSession.deleteMany({ where: { userId: req.params.id } });
-    await prisma.shift.deleteMany({ where: { userId: req.params.id } });
+    await prisma.userSession.deleteMany({ where: { userId: id } });
+    await prisma.shift.deleteMany({ where: { userId: id } });
     
     // Disconnect optional relations
-    await prisma.driver.updateMany({ where: { userId: req.params.id }, data: { userId: null } });
+    await prisma.driver.updateMany({ where: { userId: id }, data: { userId: null } });
 
     await prisma.user.delete({ where });
     return res.status(HTTP_STATUS.NO_CONTENT).send();

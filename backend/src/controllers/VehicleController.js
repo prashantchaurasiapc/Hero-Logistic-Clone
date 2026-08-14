@@ -84,7 +84,9 @@ const sanitizePayload = (rawPayload) => {
 exports.create = async (req, res, next) => {
   try {
     const rawPayload = { ...req.body };
-    if (req.tenantId && !rawPayload.companyId) rawPayload.companyId = req.tenantId;
+    if (req.tenantId) {
+      rawPayload.companyId = req.tenantId;
+    }
 
     const effectiveCompanyId = rawPayload.companyId || (await prisma.company.findFirst())?.id;
 
@@ -135,6 +137,7 @@ exports.create = async (req, res, next) => {
 // Update Vehicle with Optimistic Concurrency check
 exports.update = async (req, res, next) => {
   try {
+    const { id } = req.params;
     const updateData = sanitizePayload(req.body);
 
     if (req.tenantId) {

@@ -642,6 +642,16 @@ exports.createAsset = async (req, res, next) => {
     const companyId = await resolveCompanyId(req);
     const payload = { ...req.body };
     if (companyId && !payload.companyId) payload.companyId = companyId;
+
+    if (companyId && payload.branchId) {
+      const branchObj = await prisma.branch.findFirst({
+        where: { id: payload.branchId, companyId }
+      });
+      if (!branchObj) {
+        return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'Branch not found in this company context' }, HTTP_STATUS.NOT_FOUND);
+      }
+    }
+
     const data = await prisma.asset.create({ data: payload, include: { branch: true } });
     return sendSuccess(res, data, HTTP_STATUS.CREATED);
   } catch (error) { next(error); }
@@ -666,7 +676,18 @@ exports.getWarehouses = async (req, res, next) => {
 
 exports.createWarehouse = async (req, res, next) => {
   try {
+    const companyId = await resolveCompanyId(req);
     const payload = { ...req.body };
+
+    if (companyId && payload.branchId) {
+      const branchObj = await prisma.branch.findFirst({
+        where: { id: payload.branchId, companyId }
+      });
+      if (!branchObj) {
+        return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'Branch not found in this company context' }, HTTP_STATUS.NOT_FOUND);
+      }
+    }
+
     const data = await prisma.warehouse.create({ data: payload, include: { branch: true } });
     return sendSuccess(res, data, HTTP_STATUS.CREATED);
   } catch (error) { next(error); }
