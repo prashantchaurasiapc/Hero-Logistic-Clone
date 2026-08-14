@@ -4,13 +4,23 @@ const { sendSuccess, sendList, sendError } = require('../utils/apiResponse');
 const { buildPrismaQuery, buildPaginationMeta } = require('../utils/queryBuilder');
 const { HTTP_STATUS, ERROR_CODES } = require('../config/constants');
 
+const PLATFORM_ROLES = [
+  'SUPER_ADMIN', 'PLATFORM_OWNER', 'PLATFORM_ADMIN', 'SALES',
+  'ONBOARDING', 'SUPPORT_AGENT', 'PLATFORM_FINANCE', 'TECHNICAL_SUPPORT', 'AUDITOR'
+];
+
+const TENANT_ROLES = [
+  'COMPANY_ADMIN', 'DISPATCHER', 'DRIVER', 'WAREHOUSE', 'YARD', 'ACCOUNTS', 'CUSTOMER', 'USER'
+];
+
 // Helper to map UI role string to DB Role enum
 const mapRoleEnum = (roleStr) => {
   if (!roleStr) return 'COMPANY_ADMIN';
   const rUpper = String(roleStr).toUpperCase().trim().replace(/\s+/g, '_');
   const validRoles = [
-    'SUPER_ADMIN', 'PLATFORM_OWNER', 'COMPANY_ADMIN', 'SALES',
-    'DISPATCHER', 'DRIVER', 'WAREHOUSE', 'YARD', 'ACCOUNTS', 'CUSTOMER', 'USER'
+    'SUPER_ADMIN', 'PLATFORM_OWNER', 'PLATFORM_ADMIN', 'SALES',
+    'ONBOARDING', 'SUPPORT_AGENT', 'PLATFORM_FINANCE', 'TECHNICAL_SUPPORT', 'AUDITOR',
+    'COMPANY_ADMIN', 'DISPATCHER', 'DRIVER', 'WAREHOUSE', 'YARD', 'ACCOUNTS', 'CUSTOMER', 'USER'
   ];
   if (validRoles.includes(rUpper)) return rUpper;
   if (rUpper === 'ADMIN') return 'COMPANY_ADMIN';
@@ -39,7 +49,7 @@ exports.getAll = async (req, res, next) => {
       prisma.user.findMany({
         where, skip, take, orderBy,
         include: {
-          company: { select: { name: true } }
+          company: { select: { id: true, name: true } }
         }
       }),
       prisma.user.count({ where })
@@ -84,16 +94,27 @@ exports.create = async (req, res, next) => {
       }, HTTP_STATUS.BAD_REQUEST);
     }
 
-    let companyId = req.body.companyId;
-    if (!companyId) {
-      const comp = await prisma.company.findFirst();
-      if (comp) companyId = comp.id;
-    }
-
     const roleEnum = mapRoleEnum(role);
     const statusEnum = mapStatusEnum(status);
     const rawPassword = password || 'HeroPass@123';
     const hashedPassword = await bcrypt.hash(rawPassword, 10);
+
+    let companyId = req.body.companyId;
+    if (PLATFORM_ROLES.includes(roleEnum)) {
+      companyId = null;
+    } else if (TENANT_ROLES.includes(roleEnum)) {
+      if (!companyId) {
+        const comp = await prisma.company.findFirst();
+        if (comp) {
+          companyId = comp.id;
+        } else {
+          return sendError(res, {
+            code: ERROR_CODES.VALIDATION_ERROR,
+            message: 'Company context (companyId) is required for tenant users.'
+          }, HTTP_STATUS.BAD_REQUEST);
+        }
+      }
+    }
 
     const userCount = await prisma.user.count();
     const userCode = `US-${1000 + userCount + 1}`;
@@ -107,7 +128,7 @@ exports.create = async (req, res, next) => {
         phone: phone ? phone.trim() : null,
         status: statusEnum,
         userCode,
-        ...(companyId && { companyId })
+        companyId: companyId || null
       },
       include: {
         company: { select: { id: true, name: true } }
@@ -141,8 +162,29 @@ exports.update = async (req, res, next) => {
     if (email !== undefined) updateData.email = email.trim().toLowerCase();
     if (phone !== undefined) updateData.phone = phone ? phone.trim() : null;
     if (status !== undefined) updateData.status = mapStatusEnum(status);
-    if (role !== undefined) updateData.role = mapRoleEnum(role);
-    if (companyId !== undefined) updateData.companyId = companyId;
+    
+    let roleEnum = undefined;
+    if (role !== undefined) {
+      roleEnum = mapRoleEnum(role);
+      updateData.role = roleEnum;
+    }
+
+    if (roleEnum !== undefined || companyId !== undefined) {
+      let currentRole = roleEnum;
+      if (!currentRole) {
+        const userRec = await prisma.user.findUnique({ where: { id } });
+        currentRole = userRec?.role;
+      }
+      
+      if (PLATFORM_ROLES.includes(currentRole)) {
+        updateData.companyId = null;
+      } else {
+        if (companyId !== undefined) {
+          updateData.companyId = companyId || null;
+        }
+      }
+    }
+
     if (password && password.trim().length > 0) {
       updateData.password = await bcrypt.hash(password, 10);
     }

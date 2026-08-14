@@ -92,9 +92,20 @@ exports.update = async (req, res, next) => {
   try {
     const { id } = req.params;
     const updateData = { ...req.body };
+
+    if (req.tenantId) {
+      const existing = await prisma.driver.findFirst({
+        where: { id, companyId: req.tenantId }
+      });
+      if (!existing) {
+        return sendError(res, {
+          code: ERROR_CODES.NOT_FOUND,
+          message: 'Driver not found in this company context'
+        }, HTTP_STATUS.NOT_FOUND);
+      }
+    }
     
     const where = { id };
-    // if (req.tenantId) where.tenantId = req.tenantId;
 
     // Check version if optimistic concurrency is required
     const ifMatch = req.headers['if-match'];
@@ -131,8 +142,21 @@ exports.update = async (req, res, next) => {
 // Delete Driver
 exports.delete = async (req, res, next) => {
   try {
-    const where = { id: req.params.id };
-    // if (req.tenantId) where.tenantId = req.tenantId;
+    const { id } = req.params;
+
+    if (req.tenantId) {
+      const existing = await prisma.driver.findFirst({
+        where: { id, companyId: req.tenantId }
+      });
+      if (!existing) {
+        return sendError(res, {
+          code: ERROR_CODES.NOT_FOUND,
+          message: 'Driver not found in this company context'
+        }, HTTP_STATUS.NOT_FOUND);
+      }
+    }
+
+    const where = { id };
 
     await prisma.driver.delete({ where });
     

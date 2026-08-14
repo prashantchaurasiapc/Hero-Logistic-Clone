@@ -11,9 +11,7 @@ import api from '../../services/api';
    ROLE BADGE CONFIGURATIONS & PERMISSIONS LIST
    ============================================================ */
 const ROLE_OPTIONS = [
-  { id: 'Super Admin', label: 'Super Admin (Platform)', color: 'bg-purple-100 text-purple-700 border-purple-200', icon: Shield },
   { id: 'Company Admin', label: 'Company Admin', color: 'bg-blue-100 text-blue-700 border-blue-200', icon: Building },
-  { id: 'Sales Rep', label: 'Sales Rep', color: 'bg-indigo-100 text-indigo-700 border-indigo-200', icon: Users },
   { id: 'Dispatcher', label: 'Dispatcher', color: 'bg-amber-100 text-amber-800 border-amber-200', icon: UserCheck },
   { id: 'Driver', label: 'Driver', color: 'bg-emerald-100 text-emerald-700 border-emerald-200', icon: Users },
   { id: 'Warehouse Manager', label: 'Warehouse Manager', color: 'bg-teal-100 text-teal-700 border-teal-200', icon: Building },
@@ -22,29 +20,60 @@ const ROLE_OPTIONS = [
   { id: 'Customer', label: 'Customer Portal User', color: 'bg-violet-100 text-violet-700 border-violet-200', icon: Users },
 ];
 
+const mapTenantRoleToApi = (roleLabel) => {
+  if (roleLabel === 'Warehouse Manager') return 'WAREHOUSE';
+  if (roleLabel === 'Yard Attendant') return 'YARD';
+  if (roleLabel === 'Accounts Manager') return 'ACCOUNTS';
+  return roleLabel.toUpperCase().replace(/ /g, '_');
+};
+
 export default function UserManagement() {
   const navigate = useNavigate();
 
   const [users, setUsers] = useState([]);
+  const [companiesList, setCompaniesList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const fetchCompanies = async () => {
+    try {
+      const res = await api.get('/companys');
+      if (res.data?.success) {
+        setCompaniesList(res.data.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch companies', err);
+    }
+  };
 
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
       const res = await api.get('/users');
       if (res.data?.success) {
-        setUsers(res.data.data.map(u => ({
-          id: u.id,
-          name: u.name,
-          email: u.email,
-          phone: u.phone || 'N/A',
-          role: u.role.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' '),
-          company: u.company?.name || 'Platform Level',
-          status: u.isActive ? 'ACTIVE' : 'INACTIVE',
-          lastLogin: u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : 'Never',
-          created: new Date(u.createdAt).toLocaleDateString(),
-          permissions: ['Basic Access']
-        })));
+        const tenantRoles = [
+          'Company Admin', 'Dispatcher', 'Driver', 'Warehouse Manager',
+          'Yard Attendant', 'Accounts Manager', 'Customer'
+        ];
+        const mappedUsers = res.data.data.map(u => {
+          let roleLabel = u.role.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+          if (roleLabel === 'Warehouse') roleLabel = 'Warehouse Manager';
+          if (roleLabel === 'Yard') roleLabel = 'Yard Attendant';
+          if (roleLabel === 'Accounts') roleLabel = 'Accounts Manager';
+          return {
+            id: u.id,
+            name: u.name,
+            email: u.email,
+            phone: u.phone || 'N/A',
+            role: roleLabel,
+            company: u.company?.name || 'Platform Level',
+            companyId: u.companyId,
+            status: u.status || (u.isActive ? 'ACTIVE' : 'INACTIVE'),
+            lastLogin: u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : 'Never',
+            created: new Date(u.createdAt).toLocaleDateString(),
+            permissions: ['Basic Access']
+          };
+        });
+        setUsers(mappedUsers.filter(u => tenantRoles.includes(u.role)));
       }
     } catch (err) {
       console.error('Failed to fetch users', err);
@@ -55,6 +84,7 @@ export default function UserManagement() {
 
   useEffect(() => {
     fetchUsers();
+    fetchCompanies();
   }, []);
 
   // Toolbar & Search state
@@ -96,7 +126,8 @@ export default function UserManagement() {
     email: '',
     phone: '',
     role: 'Company Admin',
-    company: 'Falcon Logistics LLC',
+    company: '',
+    companyId: '',
     password: '123',
     status: 'ACTIVE'
   });
@@ -130,52 +161,43 @@ export default function UserManagement() {
   }, [toast]);
 
   // Handle Login As User (Impersonate / Direct Login)
-  const handleLoginAsUser = (user) => {
-    const sessionData = {
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      company: user.company
-    };
-    localStorage.setItem('hero_session', JSON.stringify(sessionData));
+  const handleLoginAsUser = async (user) => {
+    try {
+      const reason = window.prompt(`Please enter the reason for impersonating ${user.name}:`, "Technical Support Session");
+      if (reason === null) return; // user cancelled
 
-    showNotification(`Logging in as ${user.name} (${user.role})...`);
-    setActiveActionsMenu(null);
-    setShowInspectorModal(false);
+      showNotification(`Initiating secure impersonation session...`);
 
-    setTimeout(() => {
-      switch (user.role) {
-        case 'Super Admin':
-          navigate('/admin/dashboard');
-          break;
-        case 'Company Admin':
-          navigate('/company-admin/command-centre');
-          break;
-        case 'Sales Rep':
-          navigate('/sales/dashboard');
-          break;
-        case 'Dispatcher':
-          navigate('/dispatcher/command-center');
-          break;
-        case 'Driver':
-          navigate('/driver/dashboard');
-          break;
-        case 'Warehouse Manager':
-          navigate('/warehouse/dashboard');
-          break;
-        case 'Yard Attendant':
-          navigate('/yard/dashboard');
-          break;
-        case 'Accounts Manager':
-          navigate('/accounts/dashboard');
-          break;
-        case 'Customer':
-          navigate('/customer/dashboard');
-          break;
-        default:
-          navigate('/admin/dashboard');
+      const res = await api.post('/auth/impersonate', {
+        targetUserId: user.id,
+        reason: reason
+      });
+
+      if (res.data?.success) {
+        const originalSession = JSON.parse(localStorage.getItem('hero_session') || '{}');
+        const sessionData = {
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          company: user.company,
+          isImpersonating: true,
+          originalUser: originalSession
+        };
+        localStorage.setItem('hero_session', JSON.stringify(sessionData));
+        localStorage.setItem('hero_impersonating', 'true');
+
+        showNotification(`Logged in as ${user.name}! Redirecting...`);
+        setActiveActionsMenu(null);
+        setShowInspectorModal(false);
+
+        setTimeout(() => {
+          window.location.href = '/company-admin/command-centre';
+        }, 800);
       }
-    }, 900);
+    } catch (err) {
+      console.error(err);
+      showNotification(err.response?.data?.error?.message || 'Failed to initiate impersonation session.');
+    }
   };
 
   // Handle Add User Submit
@@ -188,14 +210,15 @@ export default function UserManagement() {
         name: formData.name,
         email: formData.email,
         phone: formData.phone || null,
-        role: formData.role.toUpperCase().replace(/ /g, '_'),
+        role: mapTenantRoleToApi(formData.role),
+        companyId: formData.companyId || null,
         password: formData.password || '123',
-        isActive: formData.status === 'ACTIVE'
+        status: formData.status
       });
       if (res.data?.success) {
         showNotification(`User "${formData.name}" added successfully!`);
         setShowAddUserModal(false);
-        setFormData({ name: '', email: '', phone: '', role: 'Company Admin', company: 'Falcon Logistics LLC', password: '123', status: 'ACTIVE' });
+        setFormData({ name: '', email: '', phone: '', role: 'Company Admin', company: '', companyId: '', password: '123', status: 'ACTIVE' });
         fetchUsers();
       }
     } catch (err) {
@@ -215,8 +238,9 @@ export default function UserManagement() {
         name: formData.name,
         email: formData.email,
         phone: formData.phone || null,
-        role: formData.role.toUpperCase().replace(/ /g, '_'),
-        isActive: formData.status === 'ACTIVE'
+        role: mapTenantRoleToApi(formData.role),
+        companyId: formData.companyId || null,
+        status: formData.status
       });
       if (res.data?.success) {
         showNotification(`User "${formData.name}" updated successfully.`);
@@ -273,6 +297,7 @@ export default function UserManagement() {
       phone: user.phone,
       role: user.role,
       company: user.company,
+      companyId: user.companyId || '',
       password: user.password || '123',
       status: user.status
     });
@@ -422,10 +447,10 @@ export default function UserManagement() {
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pb-2">
         <div>
           <h1 className="text-xl sm:text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
-            Super Admin <span className="text-slate-400 font-black">•</span> User Management
+            Super Admin <span className="text-slate-400 font-black">•</span> Tenant User Lookup
           </h1>
           <p className="text-[11px] sm:text-xs text-slate-400 font-semibold mt-1">
-            Manage system-wide user credentials, set passwords, and switch/login as any platform role instantly.
+            Search and inspect active tenant user accounts, check their status, and simulate platform support sessions.
           </p>
         </div>
 
@@ -441,7 +466,7 @@ export default function UserManagement() {
             onClick={() => setShowAddUserModal(true)}
             className="bg-brand-500 hover:bg-brand-600 text-black font-extrabold text-xs px-4 sm:px-5 py-2.5 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm whitespace-nowrap flex-1 sm:flex-none"
           >
-            <UserPlus className="w-4 h-4" /> Add Platform User
+            <UserPlus className="w-4 h-4" /> Add Tenant User
           </button>
         </div>
       </div>
@@ -997,13 +1022,13 @@ export default function UserManagement() {
                 <div className="space-y-1.5">
                   <label className="block text-xs font-extrabold text-slate-700">Company / Tenant *</label>
                   <select
-                    value={formData.company}
-                    onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                    value={formData.companyId}
+                    onChange={(e) => setFormData({ ...formData, companyId: e.target.value })}
                     className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-brand-500 focus:outline-none cursor-pointer"
                   >
-                    <option value="Hero Logistics Global (Platform)">Hero Logistics Global (Platform)</option>
-                    {uniqueCompanies.map(c => (
-                      <option key={c} value={c}>{c}</option>
+                    <option value="">Select Company...</option>
+                    {companiesList.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                   </select>
                 </div>
@@ -1132,13 +1157,13 @@ export default function UserManagement() {
                 <div className="space-y-1.5">
                   <label className="block text-xs font-extrabold text-slate-700">Company Tenant</label>
                   <select
-                    value={formData.company}
-                    onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                    value={formData.companyId}
+                    onChange={(e) => setFormData({ ...formData, companyId: e.target.value })}
                     className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold focus:border-brand-500 focus:outline-none cursor-pointer"
                   >
-                    <option value="Hero Logistics Global (Platform)">Hero Logistics Global (Platform)</option>
-                    {uniqueCompanies.map(c => (
-                      <option key={c} value={c}>{c}</option>
+                    <option value="">Select Company...</option>
+                    {companiesList.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                   </select>
                 </div>

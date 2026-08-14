@@ -1063,8 +1063,11 @@ export default function Companies() {
                   className="w-full px-4 py-3 bg-white border border-slate-200 focus:border-brand-500 text-xs font-bold rounded-xl focus:outline-none text-slate-800 cursor-pointer"
                 >
                   <option value="ACTIVE">ACTIVE</option>
+                  <option value="PROVISIONING">PROVISIONING</option>
                   <option value="TRIAL">TRIAL</option>
                   <option value="HOLD">HOLD</option>
+                  <option value="SUSPENDED">SUSPENDED</option>
+                  <option value="CLOSED">CLOSED</option>
                 </select>
               </div>
 

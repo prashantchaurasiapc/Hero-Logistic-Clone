@@ -8,5 +8,7 @@ router.post('/logout', AuthController.logout);
 
 // Protected routes
 router.get('/me', verifyToken, AuthController.me);
+router.post('/impersonate', verifyToken, AuthController.impersonate);
+router.post('/impersonate/exit', verifyToken, AuthController.exitImpersonate);
 
 module.exports = router;
