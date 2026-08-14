@@ -1426,11 +1426,15 @@ Known Limitations:
 | [`DocumentRoutes.js`](file:///c:/Users/Kiaan%20technology/Desktop/kiaan-technology/Hero-Logistic-Clone-14-8-2026/backend/src/routes/DocumentRoutes.js) | Backend Routing | Enabled auth & tenant resolver globally. | No | Secures documents. |
 | [`SupportTicketRoutes.js`](file:///c:/Users/Kiaan%20technology/Desktop/kiaan-technology/Hero-Logistic-Clone-14-8-2026/backend/src/routes/SupportTicketRoutes.js) | Backend Routing | Enabled auth & tenant resolver globally. | No | Secures support tickets. |
 | [`PreStartChecklistRoutes.js`](file:///c:/Users/Kiaan%20technology/Desktop/kiaan-technology/Hero-Logistic-Clone-14-8-2026/backend/src/routes/PreStartChecklistRoutes.js) | Backend Routing | Enabled auth & tenant resolver globally. | No | Secures safety checklists. |
+| [`UserRoutes.js`](file:///c:/Users/Kiaan%20technology/Desktop/kiaan-technology/Hero-Logistic-Clone-14-8-2026/backend/src/routes/UserRoutes.js) | Backend Routing | Secured route with verifyToken and resolveTenant. | No | Enforces tenant scope. |
 | [`DriverController.js`](file:///c:/Users/Kiaan%20technology/Desktop/kiaan-technology/Hero-Logistic-Clone-14-8-2026/backend/src/controllers/DriverController.js) | Backend Controller | Enforced companyId scope check on Driver creation. | No | Hardens tenant boundary. |
 | [`VehicleController.js`](file:///c:/Users/Kiaan%20technology/Desktop/kiaan-technology/Hero-Logistic-Clone-14-8-2026/backend/src/controllers/VehicleController.js) | Backend Controller | Fixed missing `id` param reference in update and enforced req.tenantId scope. | No | Bugfix + isolation hardening. |
 | [`LoadController.js`](file:///c:/Users/Kiaan%20technology/Desktop/kiaan-technology/Hero-Logistic-Clone-14-8-2026/backend/src/controllers/LoadController.js) | Backend Controller | Enforced companyId on create payload from context. | No | Hardens load creation boundary. |
+| [`UserController.js`](file:///c:/Users/Kiaan%20technology/Desktop/kiaan-technology/Hero-Logistic-Clone-14-8-2026/backend/src/controllers/UserController.js) | Backend Controller | Enforced companyId context, platform role block, and random unique userCode. | No | Hardens tenant user management boundary. |
 | [`CompanyAdminPortalController.js`](file:///c:/Users/Kiaan%20technology/Desktop/kiaan-technology/Hero-Logistic-Clone-14-8-2026/backend/src/controllers/CompanyAdminPortalController.js) | Backend Controller | Validated that branchId belongs to active company in createAsset & createWarehouse. | No | Strong cross-tenant branch validation. |
-| [`CompanySettings.jsx`](file:///c:/Users/Kiaan%20technology/Desktop/kiaan-technology/Hero-Logistic-Clone-14-8-2026/frontend/src/components/CompanyAdmin/CompanySettings.jsx) | Frontend Component | Connected `handleSaveCompanySettings` to real backend update settings PUT endpoint. | No | Extends setup persistence. |
+| [`Sidebar.jsx`](file:///c:/Users/Kiaan%20technology/Desktop/kiaan-technology/Hero-Logistic-Clone-14-8-2026/frontend/src/pages/Layout/Sidebar/Sidebar.jsx) | Frontend Navigation | Added User Management dropdown submenu (User, Role & Permission) and removed old link. | No | Resolves visual layout. |
+| [`App.jsx`](file:///c:/Users/Kiaan%20technology/Desktop/kiaan-technology/Hero-Logistic-Clone-14-8-2026/frontend/src/App.jsx) | Frontend Routing | Mapped direct `/users` route to CompanySettings layout. | No | Standardizes direct user lookup navigation. |
+| [`CompanySettings.jsx`](file:///c:/Users/Kiaan%20technology/Desktop/kiaan-technology/Hero-Logistic-Clone-14-8-2026/frontend/src/components/CompanyAdmin/CompanySettings.jsx) | Frontend Component | Implemented settings save call and dynamic pathname path matching for currentView sync. | No | Extends setup persistence. |
 
 ---
 
@@ -1463,7 +1467,7 @@ Known Limitations:
 ```text
 Command: node tests/company_admin.test.js
 Result: SUCCESS
-Passed: 3/3 Tests (6/6 Assertions)
+Passed: 4/4 Tests (9/9 Assertions)
 Failed: 0
 Notes:
 --- STARTING COMPANY ADMIN FLOW & COMPLIANCE TESTS ---
@@ -1479,6 +1483,10 @@ Test 2: Tenant isolation on Vehicle operations...
 Test 3: Enforcing branch boundary constraints on Warehouse/Asset creation...
   ✓ Warehouse creation rejected when branch belongs to different company.
   ✓ Asset creation rejected when branch belongs to different company.
+Test 4: UserController tenant boundaries & role enforcement...
+  ✓ Creation of Platform user by Tenant Admin rejected with 403.
+  ✓ Tenant user (DISPATCHER) successfully created under Company A context.
+  ✓ User created in Company A is not visible in Company B listings.
 Cleanup: Cleaning up database records...
   ✓ Cleanup finished.
 --- ALL COMPANY ADMIN COMPLIANCE TESTS PASSED SUCCESSFULLY ---

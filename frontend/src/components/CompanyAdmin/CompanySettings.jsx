@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import api from '../../services/api';
 import {
   Building, Users, Award, Plug, Cpu, ShieldCheck, CheckCircle2, Clock,
@@ -13,7 +14,14 @@ import {
 } from 'lucide-react';
 
 export default function CompanySettings() {
-  const [currentView, setCurrentView] = useState('dashboard'); // Default to 13.1 Settings Dashboard
+  const location = useLocation();
+  const getInitialView = () => {
+    if (location.pathname.endsWith('/users')) {
+      return 'users-permissions';
+    }
+    return 'dashboard';
+  };
+  const [currentView, setCurrentView] = useState(getInitialView());
   const [billingTab, setBillingTab] = useState('Overview');
   const [securityLogsTab, setSecurityLogsTab] = useState('Overview');
   const [notificationsTab, setNotificationsTab] = useState('Overview');
@@ -660,6 +668,15 @@ export default function CompanySettings() {
   useEffect(() => {
     fetchCompanySettings();
   }, [fetchCompanySettings]);
+
+  useEffect(() => {
+    if (location.pathname.endsWith('/users')) {
+      setCurrentView('users-permissions');
+      setUsersTab('Users');
+    } else if (location.pathname.endsWith('/company-settings') || location.pathname.endsWith('/settings')) {
+      setCurrentView('dashboard');
+    }
+  }, [location.pathname]);
 
 
   // Form State for 13.2 Company Settings
