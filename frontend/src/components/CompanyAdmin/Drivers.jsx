@@ -38,7 +38,7 @@ export default function Drivers() {
             issueDate: d.issueDate ? new Date(d.issueDate).toLocaleDateString() : 'N/A',
             employmentType: d.employmentType || 'Full Time',
             status: d.status || 'Available',
-            branch: d.branch || 'Sydney',
+            branch: d.branch ? (typeof d.branch === 'object' ? d.branch.name : d.branch) : 'Sydney',
             assignmentId: '—',
             assignmentType: 'Not assigned',
             complianceStatus: 'Compliant',
