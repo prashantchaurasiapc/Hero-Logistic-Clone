@@ -132,7 +132,7 @@ exports.create = async (req, res, next) => {
     }
 
     const userCount = await prisma.user.count();
-    const userCode = `US-${1000 + userCount + 1}`;
+    const userCode = `US-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000)}`;
 
     const data = await prisma.user.create({
       data: {

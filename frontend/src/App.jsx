@@ -255,6 +255,7 @@ function App() {
             <Route path="knowledge-base" element={<KnowledgeBase />} />
             <Route path="company-settings" element={<CompanySettings />} />
             <Route path="settings" element={<CompanySettings />} />
+            <Route path="users" element={<CompanySettings />} />
             <Route path="subscription-billing" element={<SubscriptionBilling />} />
             <Route path="my-profile" element={<MyProfile />} />
             <Route path="safety-checklists" element={<SafetyChecklists />} />

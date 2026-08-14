@@ -111,6 +111,15 @@ const roleConfigs = {
 
     subMenus: [
       {
+        key: 'company-user-management',
+        icon: <FiUsers />,
+        label: 'User Management',
+        items: [
+          { label: 'User', path: '/company-admin/users' },
+          { label: 'Role & Permission', path: '/company-admin/roles-permissions' },
+        ],
+      },
+      {
         key: 'support',
         icon: <FiHelpCircle />,
         label: 'Support & Knowledge Base',
@@ -122,7 +131,6 @@ const roleConfigs = {
       },
     ],
     extraItems: [
-      { icon: <FiShield />, label: 'Roles & Permissions', path: '/company-admin/roles-permissions' },
       { icon: <FiSettings />, label: 'Settings', path: '/company-admin/company-settings' },
       { icon: <FiShield />, label: 'Safety Checklists', path: '/company-admin/safety-checklists' },
       { icon: <FiAlertTriangle />, label: 'Delivery Issues', path: '/company-admin/delivery-issues' },
