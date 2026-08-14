@@ -185,65 +185,10 @@ const VehicleDocUploadBox = ({ title }) => {
   );
 };
 
-const VehiclePhotoUpload = () => {
-  const [photoUrl, setPhotoUrl] = React.useState('https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?q=80&w=256&auto=format&fit=crop');
-  const fileInputRef = React.useRef(null);
-
-  const handlePhotoSelect = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setPhotoUrl(event.target.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  return (
-    <div className="flex flex-col items-center gap-2 w-32 shrink-0">
-      <div className="text-[9px] font-black text-gray-500 tracking-widest uppercase mb-1">VEHICLE PHOTO</div>
-      <input 
-        type="file" 
-        ref={fileInputRef} 
-        className="hidden" 
-        accept="image/*" 
-        onChange={handlePhotoSelect} 
-      />
-      <div 
-        onClick={() => fileInputRef.current?.click()} 
-        className="relative w-24 h-24 rounded-full overflow-hidden border border-gray-200 hover:border-purple-500 cursor-pointer group bg-gray-50 flex items-center justify-center shadow-sm"
-        title="Click to upload vehicle photo"
-      >
-        <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
-          <Camera className="w-5 h-5 text-white mb-1" />
-          <span className="text-[9px] font-bold text-white uppercase tracking-wider">Upload</span>
-        </div>
-        <img src={photoUrl} className="w-full h-full object-cover" alt="Truck" />
-      </div>
-      <button 
-        type="button" 
-        onClick={() => fileInputRef.current?.click()}
-        className="w-full text-center text-[10px] font-bold px-2 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded mt-1 transition-colors cursor-pointer"
-      >
-        Choose Photo
-      </button>
-      <input 
-        type="hidden" 
-        name="photoUrl" 
-        value={photoUrl} 
-      />
-    </div>
-  );
-};
-
 const Vehicles = () => {
   const [vehicles, setVehicles] = React.useState([]);
   const [isLoading, setIsLoading] = React.useState(false);
   const [toast, setToast] = React.useState(null);
-
-  const isTrailersView = window.location.pathname.includes('/trailers');
-  const isMaintenanceView = window.location.pathname.includes('/fleet-maintenance');
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -271,7 +216,7 @@ const Vehicles = () => {
           compliance: v.compliance || 'Compliant',
           nextServiceDate: v.maintenanceDueKm ? `${v.maintenanceDueKm.toLocaleString()} km` : '—',
           nextServiceDays: '',
-          img: v.photoUrl || 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60',
+          img: v.photoUrl || v.photo || (v.notes && v.notes.includes('Photo:') ? v.notes.split('Photo:')[1].split('|')[0].trim() : '') || 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60',
           color: v.color || '',
           vin: v.vin || '',
           engineNumber: v.engineNumber || '',
@@ -672,15 +617,12 @@ const Vehicles = () => {
     e.preventDefault();
     const fd = new FormData(e.target);
     try {
-      const typeVal = fd.get('type') || 'Prime Mover';
-      const categoryVal = (typeVal.toLowerCase().includes('trailer') || isTrailersView) ? 'TRAILER' : 'TRUCK';
       const payload = {
         rego: (fd.get('reg') || '').toUpperCase(),
         make: fd.get('make') || '',
         model: fd.get('model') || '',
         year: fd.get('year') ? parseInt(fd.get('year')) : undefined,
-        category: categoryVal,
-        type: typeVal,
+        category: fd.get('type') || 'TRUCK',
         color: fd.get('color') || '',
         vin: fd.get('vin') || '',
         engineNumber: fd.get('engine') || '',
@@ -693,7 +635,7 @@ const Vehicles = () => {
         preferredRegions: fd.get('preferredRegions') || '',
         maxDistPerTripKm: fd.get('maxDist') ? parseInt(fd.get('maxDist')) : undefined,
         dgCertified: fd.get('dgCertified') === 'Yes',
-        notes: fd.get('notes') || ''
+        notes: fd.get('photoUrl') ? `${fd.get('notes') || ''} | Photo:${fd.get('photoUrl')}` : (fd.get('notes') || '')
       };
       await api.post('/vehicles', payload);
       fetchVehicles();
@@ -717,23 +659,30 @@ const Vehicles = () => {
   };
 
   const filteredVehicles = vehicles.filter(v => {
-    const matchesSearch = v.id.toLowerCase().includes(search.toLowerCase()) ||
-      v.reg.toLowerCase().includes(search.toLowerCase()) ||
-      v.branch.toLowerCase().includes(search.toLowerCase()) ||
-      v.driver.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = !search.trim() || 
+      (v.id && String(v.id).toLowerCase().includes(search.toLowerCase())) ||
+      (v.reg && String(v.reg).toLowerCase().includes(search.toLowerCase())) ||
+      (v.make && String(v.make).toLowerCase().includes(search.toLowerCase())) ||
+      (v.branch && String(v.branch).toLowerCase().includes(search.toLowerCase())) ||
+      (v.driver && String(v.driver).toLowerCase().includes(search.toLowerCase()));
 
-    if (!matchesSearch) return false;
+    if (statusFilter === 'ALL') return matchesSearch;
 
-    // Filter by pathname category
-    const isTrailer = v.type === 'TRAILER' || v.type?.toLowerCase().includes('trailer');
-    if (isTrailersView) {
-      if (!isTrailer) return false;
-    } else {
-      if (isTrailer) return false;
+    const vStatus = String(v.status || '').toUpperCase().replace(/\s+/g, '_');
+    if (statusFilter === 'ACTIVE') {
+      return matchesSearch && (vStatus === 'ACTIVE' || vStatus === 'IDLE' || vStatus === 'IN_TRANSIT' || vStatus === 'AVAILABLE');
+    }
+    if (statusFilter === 'MAINTENANCE') {
+      return matchesSearch && (vStatus === 'MAINTENANCE' || vStatus === 'IN_MAINTENANCE' || vStatus === 'SERVICE');
+    }
+    if (statusFilter === 'OUT OF SERVICE' || statusFilter === 'OUT_OF_SERVICE') {
+      return matchesSearch && (vStatus === 'OUT_OF_SERVICE' || vStatus === 'ALERT' || vStatus === 'BREAKDOWN');
+    }
+    if (statusFilter === 'INACTIVE') {
+      return matchesSearch && (vStatus === 'INACTIVE' || vStatus === 'SOLD' || vStatus === 'DEACTIVATED');
     }
 
-    if (statusFilter === 'ALL') return true;
-    return v.status === statusFilter;
+    return matchesSearch && (vStatus === statusFilter || String(v.status || '').toUpperCase() === statusFilter);
   });
 
   if (managingVehicle) {
@@ -890,12 +839,20 @@ const Vehicles = () => {
               {/* Vehicle Photos */}
               <div className="flex flex-col gap-2 shrink-0">
                 <div className="w-full sm:w-[300px] h-[200px] rounded-xl overflow-hidden shadow-sm relative border border-gray-100">
-                   <img src={managingVehicle.img || 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60'} alt="Vehicle Main" className="w-full h-full object-cover" />
+                   <img 
+                     src={managingVehicle.img || managingVehicle.photoUrl || (managingVehicle.notes && managingVehicle.notes.includes('Photo:') ? managingVehicle.notes.split('Photo:')[1].split('|')[0].trim() : null) || 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60'} 
+                     alt="Vehicle Main" 
+                     className="w-full h-full object-cover" 
+                   />
                 </div>
                 <div className="grid grid-cols-4 gap-2 w-full sm:w-[300px]">
                    {[1, 2, 3].map((num) => (
                      <div key={num} className="h-16 rounded-lg overflow-hidden cursor-pointer opacity-70 hover:opacity-100 transition-opacity border border-gray-100">
-                        <img src={managingVehicle.img || 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60'} alt="Thumb" className="w-full h-full object-cover" />
+                        <img 
+                          src={managingVehicle.img || managingVehicle.photoUrl || (managingVehicle.notes && managingVehicle.notes.includes('Photo:') ? managingVehicle.notes.split('Photo:')[1].split('|')[0].trim() : null) || 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60'} 
+                          alt="Thumb" 
+                          className="w-full h-full object-cover" 
+                        />
                      </div>
                    ))}
                    <div className="h-16 rounded-lg bg-[#1a202c] text-white flex items-center justify-center font-bold text-sm cursor-pointer shadow-sm hover:bg-black transition-colors">
@@ -3605,17 +3562,17 @@ const Vehicles = () => {
               <div className="flex items-center gap-2 text-xs font-semibold text-gray-500 mb-2">
                 <span>Home</span>
                 <ChevronRight size={12} />
-                <span>{isTrailersView ? 'Trailers' : 'Vehicles'}</span>
+                <span>Vehicles</span>
                 <ChevronRight size={12} />
-                <span>{isTrailersView ? 'Trailers List' : 'Vehicles List'}</span>
+                <span>Vehicles List</span>
                 <ChevronRight size={12} />
-                <span className="text-gray-900 font-bold">{isTrailersView ? 'Add Trailer' : 'Add Vehicle'}</span>
+                <span className="text-gray-900 font-bold">Add Vehicle</span>
                 <div className="ml-auto flex items-center gap-1.5 text-gray-500 text-xs">
                   <Shield size={12}/> <span className="hidden sm:inline">Guide & Compliance</span>
                 </div>
               </div>
-              <h2 className="text-2xl font-black text-gray-900 tracking-tight leading-none mb-2">{isTrailersView ? 'Add New Trailer' : 'Add New Vehicle'}</h2>
-              <p className="text-xs text-gray-500 font-medium">{isTrailersView ? 'Create a new trailer profile by entering all required information.' : 'Create a new vehicle profile by entering all required information.'}</p>
+              <h2 className="text-2xl font-black text-gray-900 tracking-tight leading-none mb-2">Add New Vehicle</h2>
+              <p className="text-xs text-gray-500 font-medium">Create a new vehicle profile by entering all required information.</p>
             </div>
             <div className="flex items-center gap-3">
               <button type="button" onClick={() => setShowAddModal(false)} className="px-5 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-lg text-xs font-bold transition-all cursor-pointer shadow-sm">
@@ -3637,7 +3594,17 @@ const Vehicles = () => {
             </div>
             <div className="p-6 flex flex-col md:flex-row gap-8">
               {/* Photo Upload */}
-              <VehiclePhotoUpload />
+              <div className="flex flex-col items-center gap-2 w-32 shrink-0">
+                <div className="text-[9px] font-black text-gray-500 tracking-widest uppercase mb-1">VEHICLE PHOTO</div>
+                <div className="relative w-24 h-24 rounded-full overflow-hidden border border-gray-200 hover:border-purple-400 cursor-pointer group bg-gray-50 flex items-center justify-center">
+                  <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                    <Camera className="w-5 h-5 text-white mb-1" />
+                    <span className="text-[9px] font-bold text-white uppercase tracking-wider">Upload</span>
+                  </div>
+                  <img src="https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?q=80&w=256&auto=format&fit=crop" className="w-full h-full object-cover" alt="Truck" />
+                </div>
+                <input type="text" placeholder="https://images.unsplash.com..." defaultValue="https://images.unsplash.co..." className="w-full text-center text-[9px] px-2 py-1.5 bg-gray-50 border border-gray-200 rounded mt-2 focus:outline-none focus:border-purple-400 text-gray-500" />
+              </div>
 
               {/* Vehicle Fields */}
               <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -3672,22 +3639,10 @@ const Vehicles = () => {
                 <div>
                   <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">TYPE *</label>
                   <select name="type" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
-                    {isTrailersView ? (
-                      <>
-                        <option value="Flatbed Trailer">Flatbed Trailer</option>
-                        <option value="Refrigerated Box">Refrigerated Box</option>
-                        <option value="Low Loader">Low Loader</option>
-                        <option value="Curtainsider">Curtainsider</option>
-                        <option value="Tanker">Tanker</option>
-                      </>
-                    ) : (
-                      <>
-                        <option value="Prime Mover">Prime Mover</option>
-                        <option value="Car Carrier">Car Carrier</option>
-                        <option value="Heavy Rigid (HR)">Heavy Rigid (HR)</option>
-                        <option value="General Freight">General Freight</option>
-                      </>
-                    )}
+                    <option>Prime Mover</option>
+                    <option>Car Carrier</option>
+                    <option>Heavy Rigid (HR)</option>
+                    <option>General Freight</option>
                   </select>
                 </div>
 
@@ -3887,11 +3842,9 @@ const Vehicles = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-[22px] font-bold text-gray-900 tracking-tight leading-none mb-1 flex items-center gap-2">
-            {isTrailersView ? 'Trailer List' : isMaintenanceView ? 'Fleet Maintenance & Compliance' : 'Vehicle List'} <Shield className="w-5 h-5 text-purple-600" />
+            Vehicle List <Shield className="w-5 h-5 text-purple-600" />
           </h1>
-          <p className="text-gray-500 text-[13px] font-medium mt-1">
-            {isTrailersView ? 'View and manage all trailers in your fleet.' : isMaintenanceView ? 'Track, schedule, and manage all fleet services and compliance due dates.' : 'View and manage all vehicles in your fleet.'}
-          </p>
+          <p className="text-gray-500 text-[13px] font-medium mt-1">View and manage all vehicles in your fleet.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
           <button
@@ -3904,7 +3857,7 @@ const Vehicles = () => {
             }}
             className="border border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100 text-[13px] font-semibold py-2 px-4 rounded-lg transition-colors flex items-center gap-2 shadow-sm cursor-pointer whitespace-nowrap flex-grow sm:flex-grow-0 justify-center"
           >
-            <Plus className="w-4 h-4" /> {isTrailersView ? 'Add Trailer' : 'Add Vehicle'}
+            <Plus className="w-4 h-4" /> Add Vehicle
           </button>
           <button className="border border-gray-200 text-gray-700 hover:bg-gray-50 text-[13px] font-semibold py-2 px-4 rounded-lg transition-colors flex items-center shadow-sm cursor-pointer whitespace-nowrap flex-grow sm:flex-grow-0 justify-center">
             More Actions <ChevronDownIcon size={14} className="ml-1" />

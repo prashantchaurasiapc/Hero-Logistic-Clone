@@ -234,13 +234,9 @@ function App() {
             <Route path="command-centre" element={<CommandCentre />} />
             <Route path="loads" element={<Loads />} />
             <Route path="load-inbox" element={<LoadInbox />} />
-            <Route path="planning-board" element={<TerminalWorkspace />} />
             <Route path="live-tracking" element={<LiveTracking />} />
             <Route path="drivers" element={<Drivers />} />
-            <Route path="availability-leave" element={<Drivers />} />
             <Route path="vehicles" element={<Vehicles />} />
-            <Route path="trailers" element={<Vehicles />} />
-            <Route path="fleet-maintenance" element={<Vehicles />} />
             <Route path="customers" element={<Customers />} />
             <Route path="branches" element={<Branches />} />
             <Route path="locations" element={<Branches />} />

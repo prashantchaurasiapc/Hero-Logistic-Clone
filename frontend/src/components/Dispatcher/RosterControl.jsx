@@ -167,11 +167,11 @@ export default function RosterControl() {
         const dbDrivers = res.data?.data || [];
         const formatted = dbDrivers.map(d => ({
           id: d.id,
-          name: d.firstName ? `${d.firstName} ${d.lastName}` : d.driverCode,
+          name: (d.firstName || d.lastName) ? `${d.firstName || ''} ${d.lastName || ''}`.trim() : (d.driverCode || d.name || 'Unknown Worker'),
           role: 'Car Carrier Driver',
           category: 'Drivers',
           skills: [d.licenseType || 'Standard'],
-          phone: d.contactNumber || 'N/A',
+          phone: d.contactNumber || d.phone || 'N/A',
           email: d.email || 'N/A',
           certifications: [
             { name: 'Driver License', status: 'valid', detail: 'Active' }
@@ -218,12 +218,13 @@ export default function RosterControl() {
   };
 
   const filteredWorkers = useMemo(() => {
+    const s = String(filters.search || '').toLowerCase().trim();
     return workers.filter(worker => {
-      const searchMatch = !filters.search ||
-        worker.name.toLowerCase().includes(filters.search.toLowerCase()) ||
-        worker.role.toLowerCase().includes(filters.search.toLowerCase());
+      const wName = String(worker.name || '').toLowerCase();
+      const wRole = String(worker.role || '').toLowerCase();
+      const searchMatch = !s || wName.includes(s) || wRole.includes(s);
       const roleMatch = filters.role === 'All Roles' || worker.role === filters.role;
-      const typeMatch = filters.type === 'All Types' || worker.category?.toLowerCase().includes(filters.type.toLowerCase());
+      const typeMatch = filters.type === 'All Types' || String(worker.category || '').toLowerCase().includes(String(filters.type || '').toLowerCase());
       return searchMatch && roleMatch && typeMatch;
     });
   }, [workers, filters]);

@@ -18,8 +18,19 @@ import api from '../../services/api';
 export default function Drivers() {
   const [driverList, setDriverList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const driverFileInputRef = useRef(null);
 
-  const isAvailabilityView = window.location.pathname.includes('/availability-leave');
+  const handlePhotoUploadChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const fetchDrivers = async () => {
     setIsLoading(true);
@@ -30,22 +41,22 @@ export default function Drivers() {
           return {
             id: d.id,
             name: d.name || `${d.firstName || ''} ${d.lastName || ''}`.trim() || d.driverCode || 'Unknown Driver',
-            age: d.dob ? new Date().getFullYear() - new Date(d.dob).getFullYear() : 'N/A',
-            dob: d.dob ? new Date(d.dob).toISOString().split('T')[0] : 'N/A',
-            phone: d.phone || d.contactNumber || 'N/A',
+            age: d.dob ? new Date().getFullYear() - new Date(d.dob).getFullYear() : 35,
+            dob: d.dob ? new Date(d.dob).toISOString().split('T')[0] : '1990-06-15',
+            phone: d.phone || 'N/A',
             email: d.email || 'N/A',
             address: d.address || 'N/A',
-            licence: d.licenceType || d.licenseType || 'N/A',
-            licenceNo: d.licenceNumber || d.licenseNumber || 'N/A',
+            licence: d.licenceType || 'MR (Medium Rigid)',
+            licenceNo: d.licenceNumber || 'VIC 11223344',
             issueDate: d.issueDate ? new Date(d.issueDate).toLocaleDateString() : 'N/A',
-            employmentType: d.employmentType || 'N/A',
+            employmentType: d.employmentType || 'Full Time',
             status: d.status || 'Available',
-            branch: d.branch ? (typeof d.branch === 'object' ? d.branch.name : d.branch) : 'N/A',
+            branch: d.branch ? (typeof d.branch === 'object' ? d.branch.name : d.branch) : 'Sydney',
             assignmentId: '—',
             assignmentType: 'Not assigned',
-            complianceStatus: d.complianceStatus || 'Compliant',
-            complianceScore: d.complianceScore ? `${d.complianceScore}%` : 'N/A',
-            avatar: d.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(d.firstName || d.name || 'Driver')}`
+            complianceStatus: 'Compliant',
+            complianceScore: '90%',
+            avatar: d.avatarUrl || 'https://i.pravatar.cc/150?u=' + d.id
           };
         });
         setDriverList(mapped);
@@ -84,7 +95,7 @@ export default function Drivers() {
   const [isDetailsMoreOpen, setIsDetailsMoreOpen] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState(isAvailabilityView ? 'On Leave' : 'All');
+  const [statusFilter, setStatusFilter] = useState('All');
   const [licenceFilter, setLicenceFilter] = useState('All');
   const [complianceFilter, setComplianceFilter] = useState('All');
   const [branchFilter, setBranchFilter] = useState('All');
@@ -2223,8 +2234,43 @@ export default function Drivers() {
               <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
                 <div className="col-span-1 flex flex-col items-center gap-3">
                   <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest self-start">Profile Photo</label>
-                  <img src={isEditMode ? selectedDriver?.avatar : "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80"} alt="Avatar Preview" className="w-24 h-24 rounded-full object-cover border-4 border-slate-100" />
-                  <input type="text" defaultValue="https://pravatar.cc/150?u..." className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-[10px] text-slate-500 text-center focus:outline-none" />
+                  <div className="relative group cursor-pointer" onClick={() => driverFileInputRef.current?.click()}>
+                    <img 
+                      src={photoPreview || (isEditMode ? selectedDriver?.avatar : "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80")} 
+                      alt="Avatar Preview" 
+                      className="w-24 h-24 rounded-full object-cover border-4 border-slate-100 shadow-sm transition-transform group-hover:scale-105" 
+                    />
+                    <div className="absolute inset-0 bg-black/40 rounded-full flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Upload size={16} />
+                      <span className="text-[9px] font-bold mt-1">Upload</span>
+                    </div>
+                  </div>
+
+                  <input 
+                    type="file" 
+                    ref={driverFileInputRef} 
+                    accept="image/*" 
+                    className="hidden" 
+                    onChange={handlePhotoUploadChange} 
+                  />
+
+                  <button 
+                    type="button" 
+                    onClick={() => driverFileInputRef.current?.click()} 
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-lg text-[10px] font-bold transition-all cursor-pointer shadow-xs"
+                  >
+                    <Upload size={12} />
+                    <span>Upload Photo</span>
+                  </button>
+                  
+                  <input 
+                    type="text" 
+                    name="avatarUrl"
+                    value={photoPreview || (isEditMode ? (selectedDriver?.avatar || '') : "https://pravatar.cc/150?u...")} 
+                    onChange={(e) => setPhotoPreview(e.target.value)}
+                    placeholder="Or paste image URL"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-[10px] text-slate-600 text-center focus:outline-none focus:border-purple-500" 
+                  />
                 </div>
                 <div className="col-span-1 md:col-span-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5">
                   <InputField label="First Name" defaultValue={defaultData.firstName} />
@@ -4812,8 +4858,8 @@ export default function Drivers() {
         <div className="flex items-center justify-between mb-4 text-xs font-semibold">
           <div className="flex items-center gap-1.5 text-slate-400">
             <Link to="/company-admin/command-centre" className="hover:text-purple-600 transition-colors">Home</Link> <ChevronRight size={12} />
-            <Link to="/company-admin/drivers" className="hover:text-purple-600 transition-colors">Drivers & Staff</Link> <ChevronRight size={12} />
-            <span className="text-slate-800 font-bold">{isAvailabilityView ? 'Availability & Leave' : 'Drivers List'}</span>
+            <Link to="/company-admin/drivers" className="hover:text-purple-600 transition-colors">Drivers</Link> <ChevronRight size={12} />
+            <span className="text-slate-800 font-bold">Drivers List</span>
           </div>
           <HeaderIcons />
         </div>
@@ -4821,12 +4867,8 @@ export default function Drivers() {
         {/* Page Title & Add Button */}
         <div className="flex flex-col sm:flex-row justify-between items-start gap-3 mb-6">
           <div>
-            <h1 className="text-xl sm:text-[28px] leading-none font-black text-slate-900 tracking-tight">
-              {isAvailabilityView ? 'Driver Availability & Leave' : 'Drivers List'}
-            </h1>
-            <p className="text-xs text-slate-500 font-medium mt-1.5">
-              {isAvailabilityView ? 'View and manage driver rosters, upcoming leaves, and availability status.' : 'Manage all drivers, their details, compliance, assignments and performance.'}
-            </p>
+            <h1 className="text-xl sm:text-[28px] leading-none font-black text-slate-900 tracking-tight">Drivers List</h1>
+            <p className="text-xs text-slate-500 font-medium mt-1.5">Manage all drivers, their details, compliance, assignments and performance.</p>
           </div>
           <button onClick={() => setShowAddDriver(true)} className="flex items-center gap-2 px-4 py-2.5 bg-purple-700 hover:bg-purple-800 text-white rounded-lg text-sm font-bold transition-colors shadow-sm cursor-pointer w-full sm:w-auto justify-center sm:justify-start">
             <UserPlus size={16} /> <span>Add Driver</span> <ChevronDown size={16} className="ml-1" />

@@ -84,19 +84,45 @@ const sanitizePayload = (rawPayload) => {
 exports.create = async (req, res, next) => {
   try {
     const rawPayload = { ...req.body };
-    if (req.tenantId && !rawPayload.companyId) rawPayload.companyId = req.tenantId;
-
-    if (!rawPayload.companyId) {
-      const firstCompany = await prisma.company.findFirst();
-      if (firstCompany) {
-        rawPayload.companyId = firstCompany.id;
-      }
+    if (req.tenantId) {
+      rawPayload.companyId = req.tenantId;
     }
 
-    const payload = sanitizePayload(rawPayload);
+    const effectiveCompanyId = rawPayload.companyId || (await prisma.company.findFirst())?.id;
+
+    let validCategory = 'TRUCK';
+    if (rawPayload.category) {
+      const c = String(rawPayload.category).toUpperCase();
+      if (['TRUCK', 'TRAILER'].includes(c)) validCategory = c;
+    }
+
+    let validStatus = 'IDLE';
+    if (rawPayload.status) {
+      const s = String(rawPayload.status).toUpperCase().replace(/\s+/g, '_');
+      if (['IN_TRANSIT', 'IDLE', 'MAINTENANCE', 'ALERT'].includes(s)) validStatus = s;
+      else if (s === 'ACTIVE' || s === 'AVAILABLE') validStatus = 'IDLE';
+    }
+
+    const regoVal = rawPayload.rego && String(rawPayload.rego).trim() ? String(rawPayload.rego).trim() : `REG-${Math.floor(10000 + Math.random() * 90000)}`;
+    const vinVal = rawPayload.vin && String(rawPayload.vin).trim() ? String(rawPayload.vin).trim() : `VIN-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    const vehicleData = {
+      rego: regoVal,
+      vin: vinVal,
+      make: rawPayload.make || 'Freightliner',
+      model: rawPayload.model || 'Cascadia',
+      plate: rawPayload.plate || regoVal,
+      category: validCategory,
+      status: validStatus,
+      color: rawPayload.color || null,
+      fuelType: rawPayload.fuelType || 'Diesel',
+      odometerKm: rawPayload.odometerKm && !isNaN(rawPayload.odometerKm) ? parseInt(rawPayload.odometerKm) : 0,
+      maintenanceDueKm: rawPayload.maintenanceDueKm && !isNaN(rawPayload.maintenanceDueKm) ? parseInt(rawPayload.maintenanceDueKm) : null,
+      companyId: effectiveCompanyId
+    };
 
     const data = await prisma.vehicle.create({
-      data: payload,
+      data: vehicleData,
       include: {
         currentDriver: true,
         company: true
@@ -111,6 +137,7 @@ exports.create = async (req, res, next) => {
 // Update Vehicle with Optimistic Concurrency check
 exports.update = async (req, res, next) => {
   try {
+    const { id } = req.params;
     const updateData = sanitizePayload(req.body);
 
     if (req.tenantId) {
