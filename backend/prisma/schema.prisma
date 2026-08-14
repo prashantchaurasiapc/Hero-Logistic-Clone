@@ -13,8 +13,14 @@ datasource db {
 enum Role {
   SUPER_ADMIN
   PLATFORM_OWNER
-  COMPANY_ADMIN
+  PLATFORM_ADMIN
   SALES
+  ONBOARDING
+  SUPPORT_AGENT
+  PLATFORM_FINANCE
+  TECHNICAL_SUPPORT
+  AUDITOR
+  COMPANY_ADMIN
   DISPATCHER
   DRIVER
   WAREHOUSE
@@ -25,10 +31,12 @@ enum Role {
 }
 
 enum CompanyStatus {
+  PROVISIONING
   ACTIVE
   HOLD
   SUSPENDED
   TRIAL
+  CLOSED
 }
 
 enum TicketStatus {
@@ -56,8 +64,11 @@ enum BillingPeriod {
 }
 
 enum SubscriptionStatus {
+  TRIAL
   ACTIVE
   HOLD
+  PAST_DUE
+  SUSPENDED
   EXPIRED
   CANCELLED
 }
@@ -2542,4 +2553,18 @@ model RecipientGroup {
   updatedAt DateTime @updatedAt
 
   @@map("recipient_group")
+}
+
+model ImpersonationSession {
+  id              String    @id @default(uuid())
+  actorId         String
+  targetUserId    String
+  targetCompanyId String
+  reason          String    @db.Text
+  startedAt       DateTime  @default(now())
+  endedAt         DateTime?
+  ipAddress       String?
+  userAgent       String?   @db.Text
+
+  @@map("impersonation_session")
 }

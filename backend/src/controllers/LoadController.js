@@ -149,11 +149,22 @@ exports.update = async (req, res, next) => {
       }
     }
 
+    const findWhere = { OR: [{ id }, { loadRef: id }] };
+    if (req.tenantId) {
+      findWhere.companyId = req.tenantId;
+    }
+
     let targetLoad = await prisma.load.findFirst({
-      where: { OR: [{ id }, { loadRef: id }] }
+      where: findWhere
     });
 
     if (!targetLoad) {
+      if (req.tenantId) {
+        return sendError(res, {
+          code: ERROR_CODES.NOT_FOUND,
+          message: 'Load not found in this company context'
+        }, HTTP_STATUS.NOT_FOUND);
+      }
       const company = await prisma.company.findFirst();
       targetLoad = await prisma.load.create({
         data: {
@@ -178,10 +189,24 @@ exports.update = async (req, res, next) => {
 // Delete Load
 exports.delete = async (req, res, next) => {
   try {
-    const where = { id: req.params.id };
-    // if (req.tenantId) where.tenantId = req.tenantId;
+    const { id } = req.params;
+    const findWhere = { id };
+    if (req.tenantId) {
+      findWhere.companyId = req.tenantId;
+    }
 
-    await prisma.load.delete({ where });
+    const targetLoad = await prisma.load.findFirst({
+      where: findWhere
+    });
+
+    if (!targetLoad) {
+      return sendError(res, {
+        code: ERROR_CODES.NOT_FOUND,
+        message: 'Load not found in this company context'
+      }, HTTP_STATUS.NOT_FOUND);
+    }
+
+    await prisma.load.delete({ where: { id: targetLoad.id } });
     
     // 204 No Content for successful delete
     return res.status(HTTP_STATUS.NO_CONTENT).send();

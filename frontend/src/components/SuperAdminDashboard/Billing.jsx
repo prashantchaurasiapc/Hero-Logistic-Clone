@@ -248,10 +248,10 @@ export default function Billing() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl text-slate-900 leading-8 capitalize font-black flex items-center gap-2">
-            Super Admin • Billing
+            Super Admin • Platform Billing
           </h1>
           <p className="text-sm font-medium text-slate-500">
-            Configure global licensing rules, audit tenant margins, and resolve support tickets.
+            Configure global licensing rules, audit tenant margins, and monitor platform revenue collections.
           </p>
         </div>
         <button
@@ -265,8 +265,8 @@ export default function Billing() {
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {[
-          { name: 'TOTAL REVENUE', value: `$${liveKpi.totalRevenue.toLocaleString()}`, desc: 'Cumulative collected revenue', change: '+12%', isPositive: true },
-          { name: 'MONTHLY MRR', value: `$${liveKpi.mrr.toLocaleString()}`, desc: 'Current monthly baseline', change: '+8%', isPositive: true },
+          { name: 'TOTAL REVENUE', value: `$${liveKpi.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, desc: 'Cumulative collected revenue', change: '+12%', isPositive: true },
+          { name: 'MONTHLY MRR', value: `$${liveKpi.mrr.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, desc: 'Current monthly baseline', change: '+8%', isPositive: true },
           { name: 'PAID INVOICES', value: liveKpi.paidCount.toString(), desc: 'Successfully collected', change: 'Stable', isPositive: false },
           { name: 'UNPAID INVOICES', value: liveKpi.unpaidCount.toString(), desc: 'Awaiting payment', change: 'Alert', isPositive: true, isAlert: true },
           { name: 'FAILED PAYMENTS', value: liveKpi.failedCount.toString(), desc: 'Gateway errors', change: '0 issues', isPositive: false },
