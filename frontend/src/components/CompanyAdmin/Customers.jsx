@@ -6,44 +6,7 @@ import {
   ChevronDown, ArrowRight, ArrowLeft, Eye, Edit, UserCircle, Trash2, Check, MapPin, Phone, Mail, Globe, Clock, Package, CheckCircle2, FileText, ChevronLeft, Building2, Briefcase, Lock, List, Settings, DollarSign, Activity, AlertCircle, Wrench, Truck, Calendar, Filter, X, MessageSquare, ToggleLeft, ToggleRight, Info, Map, Car, Calculator, Shield, ExternalLink, ChevronRight
 } from 'lucide-react';
 
-const mockCustomers = [
-  {
-    id: 'FR', name: 'FreightCo', abn: '68 961 770 797', type: 'Business',
-    contactName: 'Casey Davis', contactEmail: 'casey.davis@example.com', contactPhone: '0415 166 693',
-    transportModules: ['truck', 'box'], billingTerms: '14 Days', billingType: 'EOM',
-    manager: 'Sarah Mitchell', status: 'Active'
-  },
-  {
-    id: 'SP', name: 'Speedy Logistics', abn: '35 903 976 656', type: 'Corporate',
-    contactName: 'Morgan Brown', contactEmail: 'morgan.brown@example.com', contactPhone: '0483 561 533',
-    transportModules: ['truck', 'box'], billingTerms: '30 Days', billingType: 'EOM',
-    manager: 'Mike Thompson', status: 'Active'
-  },
-  {
-    id: 'AP', name: 'Apex Transport', abn: '15 285 448 181', type: 'Business',
-    contactName: 'Casey Doe', contactEmail: 'casey.doe@example.com', contactPhone: '0478 711 869',
-    transportModules: ['truck'], billingTerms: '7 Days', billingType: 'EOM',
-    manager: 'Sarah Mitchell', status: 'Inactive'
-  },
-  {
-    id: 'BL', name: 'BlueWave Lines', abn: '39 310 255 839', type: 'Business',
-    contactName: 'Alex Brown', contactEmail: 'alex.brown@example.com', contactPhone: '0466 545 768',
-    transportModules: ['alert'], billingTerms: '30 Days', billingType: 'EOM',
-    manager: 'Mike Thompson', status: 'Suspended'
-  },
-  {
-    id: 'CO', name: 'Continental Movers', abn: '18 460 423 451', type: 'Corporate',
-    contactName: 'Casey Brown', contactEmail: 'casey.brown@example.com', contactPhone: '0452 192 690',
-    transportModules: ['alert', 'box'], billingTerms: '14 Days', billingType: 'EOM',
-    manager: 'Mike Thompson', status: 'Active'
-  },
-  {
-    id: 'DY', name: 'Dynamic Hauling', abn: '56 177 771 113', type: 'Corporate',
-    contactName: 'Chris Jackson', contactEmail: 'chris.jackson@example.com', contactPhone: '0493 502 999',
-    transportModules: ['truck', 'alert'], billingTerms: '30 Days', billingType: 'EOM',
-    manager: 'Mike Thompson', status: 'Active'
-  },
-];
+const mockCustomers = [];
 
 const initialDocuments = [
   { name: 'Master Service Agreement.pdf', size: '2.4 MB', ver: 'Version 2.1', cat: 'Contracts', type: 'Agreement', userName: 'Sarah Mitchell', userInitials: 'SM', date: '01/07/2025', time: '10:24 AM', status: 'Active' },

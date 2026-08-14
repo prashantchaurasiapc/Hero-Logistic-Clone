@@ -18,6 +18,19 @@ import api from '../../services/api';
 export default function Drivers() {
   const [driverList, setDriverList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const driverFileInputRef = useRef(null);
+
+  const handlePhotoUploadChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const fetchDrivers = async () => {
     setIsLoading(true);
@@ -2221,8 +2234,43 @@ export default function Drivers() {
               <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
                 <div className="col-span-1 flex flex-col items-center gap-3">
                   <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest self-start">Profile Photo</label>
-                  <img src={isEditMode ? selectedDriver?.avatar : "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80"} alt="Avatar Preview" className="w-24 h-24 rounded-full object-cover border-4 border-slate-100" />
-                  <input type="text" defaultValue="https://pravatar.cc/150?u..." className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-[10px] text-slate-500 text-center focus:outline-none" />
+                  <div className="relative group cursor-pointer" onClick={() => driverFileInputRef.current?.click()}>
+                    <img 
+                      src={photoPreview || (isEditMode ? selectedDriver?.avatar : "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80")} 
+                      alt="Avatar Preview" 
+                      className="w-24 h-24 rounded-full object-cover border-4 border-slate-100 shadow-sm transition-transform group-hover:scale-105" 
+                    />
+                    <div className="absolute inset-0 bg-black/40 rounded-full flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Upload size={16} />
+                      <span className="text-[9px] font-bold mt-1">Upload</span>
+                    </div>
+                  </div>
+
+                  <input 
+                    type="file" 
+                    ref={driverFileInputRef} 
+                    accept="image/*" 
+                    className="hidden" 
+                    onChange={handlePhotoUploadChange} 
+                  />
+
+                  <button 
+                    type="button" 
+                    onClick={() => driverFileInputRef.current?.click()} 
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-lg text-[10px] font-bold transition-all cursor-pointer shadow-xs"
+                  >
+                    <Upload size={12} />
+                    <span>Upload Photo</span>
+                  </button>
+                  
+                  <input 
+                    type="text" 
+                    name="avatarUrl"
+                    value={photoPreview || (isEditMode ? (selectedDriver?.avatar || '') : "https://pravatar.cc/150?u...")} 
+                    onChange={(e) => setPhotoPreview(e.target.value)}
+                    placeholder="Or paste image URL"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-[10px] text-slate-600 text-center focus:outline-none focus:border-purple-500" 
+                  />
                 </div>
                 <div className="col-span-1 md:col-span-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-5">
                   <InputField label="First Name" defaultValue={defaultData.firstName} />

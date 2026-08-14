@@ -503,8 +503,33 @@ exports.createDriver = async (req, res, next) => {
   try {
     const companyId = await resolveCompanyId(req);
     const payload = { ...req.body };
-    if (companyId && !payload.companyId) payload.companyId = companyId;
-    const data = await prisma.driver.create({ data: payload, include: { branch: true } });
+    const effectiveCompanyId = companyId || payload.companyId || (await prisma.company.findFirst())?.id;
+
+    let validStatus = 'AVAILABLE';
+    if (payload.status) {
+      const s = String(payload.status).toUpperCase().replace(/\s+/g, '_');
+      if (['ON_DUTY', 'OFF_DUTY', 'ON_LEAVE', 'UNAVAILABLE', 'AVAILABLE'].includes(s)) {
+        validStatus = s;
+      }
+    }
+
+    const driverData = {
+      licenseType: payload.licenceType || payload.licenseType || 'HR (Heavy Rigid)',
+      licenseNumber: payload.licenceNumber || payload.licenseNumber || payload.driverCode || `LIC-${Math.floor(10000 + Math.random() * 90000)}`,
+      status: validStatus,
+      role: payload.role || payload.driverRole || 'Driver',
+      category: payload.category || payload.driverCategory || 'Heavy Rig',
+      shift: payload.shift || 'Morning',
+      notes: payload.notes || null,
+      companyId: effectiveCompanyId
+    };
+
+    if (payload.dob) {
+      const d = new Date(payload.dob);
+      if (!isNaN(d.getTime())) driverData.joiningDate = d;
+    }
+
+    const data = await prisma.driver.create({ data: driverData, include: { branch: true } });
     return sendSuccess(res, data, HTTP_STATUS.CREATED);
   } catch (error) { next(error); }
 };
@@ -529,9 +554,41 @@ exports.getVehicles = async (req, res, next) => {
 exports.createVehicle = async (req, res, next) => {
   try {
     const companyId = await resolveCompanyId(req);
-    const payload = { ...req.body };
-    if (companyId && !payload.companyId) payload.companyId = companyId;
-    const data = await prisma.vehicle.create({ data: payload, include: { branch: true } });
+    const rawPayload = { ...req.body };
+    const effectiveCompanyId = companyId || rawPayload.companyId || (await prisma.company.findFirst())?.id;
+
+    let validCategory = 'TRUCK';
+    if (rawPayload.category) {
+      const c = String(rawPayload.category).toUpperCase();
+      if (['TRUCK', 'TRAILER'].includes(c)) validCategory = c;
+    }
+
+    let validStatus = 'IDLE';
+    if (rawPayload.status) {
+      const s = String(rawPayload.status).toUpperCase().replace(/\s+/g, '_');
+      if (['IN_TRANSIT', 'IDLE', 'MAINTENANCE', 'ALERT'].includes(s)) validStatus = s;
+      else if (s === 'ACTIVE' || s === 'AVAILABLE') validStatus = 'IDLE';
+    }
+
+    const regoVal = rawPayload.rego && String(rawPayload.rego).trim() ? String(rawPayload.rego).trim() : `REG-${Math.floor(10000 + Math.random() * 90000)}`;
+    const vinVal = rawPayload.vin && String(rawPayload.vin).trim() ? String(rawPayload.vin).trim() : `VIN-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    const vehicleData = {
+      rego: regoVal,
+      vin: vinVal,
+      make: rawPayload.make || 'Freightliner',
+      model: rawPayload.model || 'Cascadia',
+      plate: rawPayload.plate || regoVal,
+      category: validCategory,
+      status: validStatus,
+      color: rawPayload.color || null,
+      fuelType: rawPayload.fuelType || 'Diesel',
+      odometerKm: rawPayload.odometerKm && !isNaN(rawPayload.odometerKm) ? parseInt(rawPayload.odometerKm) : 0,
+      maintenanceDueKm: rawPayload.maintenanceDueKm && !isNaN(rawPayload.maintenanceDueKm) ? parseInt(rawPayload.maintenanceDueKm) : null,
+      companyId: effectiveCompanyId
+    };
+
+    const data = await prisma.vehicle.create({ data: vehicleData, include: { currentDriver: true } });
     return sendSuccess(res, data, HTTP_STATUS.CREATED);
   } catch (error) { next(error); }
 };

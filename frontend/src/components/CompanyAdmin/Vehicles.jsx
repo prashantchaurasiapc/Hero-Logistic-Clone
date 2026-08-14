@@ -268,7 +268,7 @@ const Vehicles = () => {
           compliance: v.compliance || 'Compliant',
           nextServiceDate: v.maintenanceDueKm ? `${v.maintenanceDueKm.toLocaleString()} km` : '—',
           nextServiceDays: '',
-          img: v.photoUrl || 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60',
+          img: v.photoUrl || v.photo || (v.notes && v.notes.includes('Photo:') ? v.notes.split('Photo:')[1].split('|')[0].trim() : '') || 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60',
           color: v.color || '',
           vin: v.vin || '',
           engineNumber: v.engineNumber || '',
@@ -687,7 +687,7 @@ const Vehicles = () => {
         preferredRegions: fd.get('preferredRegions') || '',
         maxDistPerTripKm: fd.get('maxDist') ? parseInt(fd.get('maxDist')) : undefined,
         dgCertified: fd.get('dgCertified') === 'Yes',
-        notes: fd.get('notes') || ''
+        notes: fd.get('photoUrl') ? `${fd.get('notes') || ''} | Photo:${fd.get('photoUrl')}` : (fd.get('notes') || '')
       };
       await api.post('/vehicles', payload);
       fetchVehicles();
@@ -711,13 +711,30 @@ const Vehicles = () => {
   };
 
   const filteredVehicles = vehicles.filter(v => {
-    const matchesSearch = v.id.toLowerCase().includes(search.toLowerCase()) ||
-      v.reg.toLowerCase().includes(search.toLowerCase()) ||
-      v.branch.toLowerCase().includes(search.toLowerCase()) ||
-      v.driver.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = !search.trim() || 
+      (v.id && String(v.id).toLowerCase().includes(search.toLowerCase())) ||
+      (v.reg && String(v.reg).toLowerCase().includes(search.toLowerCase())) ||
+      (v.make && String(v.make).toLowerCase().includes(search.toLowerCase())) ||
+      (v.branch && String(v.branch).toLowerCase().includes(search.toLowerCase())) ||
+      (v.driver && String(v.driver).toLowerCase().includes(search.toLowerCase()));
 
     if (statusFilter === 'ALL') return matchesSearch;
-    return matchesSearch && v.status === statusFilter;
+
+    const vStatus = String(v.status || '').toUpperCase().replace(/\s+/g, '_');
+    if (statusFilter === 'ACTIVE') {
+      return matchesSearch && (vStatus === 'ACTIVE' || vStatus === 'IDLE' || vStatus === 'IN_TRANSIT' || vStatus === 'AVAILABLE');
+    }
+    if (statusFilter === 'MAINTENANCE') {
+      return matchesSearch && (vStatus === 'MAINTENANCE' || vStatus === 'IN_MAINTENANCE' || vStatus === 'SERVICE');
+    }
+    if (statusFilter === 'OUT OF SERVICE' || statusFilter === 'OUT_OF_SERVICE') {
+      return matchesSearch && (vStatus === 'OUT_OF_SERVICE' || vStatus === 'ALERT' || vStatus === 'BREAKDOWN');
+    }
+    if (statusFilter === 'INACTIVE') {
+      return matchesSearch && (vStatus === 'INACTIVE' || vStatus === 'SOLD' || vStatus === 'DEACTIVATED');
+    }
+
+    return matchesSearch && (vStatus === statusFilter || String(v.status || '').toUpperCase() === statusFilter);
   });
 
   if (managingVehicle) {
@@ -874,12 +891,20 @@ const Vehicles = () => {
               {/* Vehicle Photos */}
               <div className="flex flex-col gap-2 shrink-0">
                 <div className="w-full sm:w-[300px] h-[200px] rounded-xl overflow-hidden shadow-sm relative border border-gray-100">
-                   <img src={managingVehicle.img || 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60'} alt="Vehicle Main" className="w-full h-full object-cover" />
+                   <img 
+                     src={managingVehicle.img || managingVehicle.photoUrl || (managingVehicle.notes && managingVehicle.notes.includes('Photo:') ? managingVehicle.notes.split('Photo:')[1].split('|')[0].trim() : null) || 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60'} 
+                     alt="Vehicle Main" 
+                     className="w-full h-full object-cover" 
+                   />
                 </div>
                 <div className="grid grid-cols-4 gap-2 w-full sm:w-[300px]">
                    {[1, 2, 3].map((num) => (
                      <div key={num} className="h-16 rounded-lg overflow-hidden cursor-pointer opacity-70 hover:opacity-100 transition-opacity border border-gray-100">
-                        <img src={managingVehicle.img || 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60'} alt="Thumb" className="w-full h-full object-cover" />
+                        <img 
+                          src={managingVehicle.img || managingVehicle.photoUrl || (managingVehicle.notes && managingVehicle.notes.includes('Photo:') ? managingVehicle.notes.split('Photo:')[1].split('|')[0].trim() : null) || 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60'} 
+                          alt="Thumb" 
+                          className="w-full h-full object-cover" 
+                        />
                      </div>
                    ))}
                    <div className="h-16 rounded-lg bg-[#1a202c] text-white flex items-center justify-center font-bold text-sm cursor-pointer shadow-sm hover:bg-black transition-colors">

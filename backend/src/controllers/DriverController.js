@@ -67,15 +67,34 @@ exports.create = async (req, res, next) => {
     const payload = { ...req.body };
     if (req.tenantId && !payload.companyId) payload.companyId = req.tenantId;
 
-    if (!payload.companyId) {
-      const firstCompany = await prisma.company.findFirst();
-      if (firstCompany) {
-        payload.companyId = firstCompany.id;
+    const effectiveCompanyId = payload.companyId || (await prisma.company.findFirst())?.id;
+
+    let validStatus = 'AVAILABLE';
+    if (payload.status) {
+      const s = String(payload.status).toUpperCase().replace(/\s+/g, '_');
+      if (['ON_DUTY', 'OFF_DUTY', 'ON_LEAVE', 'UNAVAILABLE', 'AVAILABLE'].includes(s)) {
+        validStatus = s;
       }
     }
 
+    const driverData = {
+      licenseType: payload.licenceType || payload.licenseType || 'HR (Heavy Rigid)',
+      licenseNumber: payload.licenceNumber || payload.licenseNumber || payload.driverCode || `LIC-${Math.floor(10000 + Math.random() * 90000)}`,
+      status: validStatus,
+      role: payload.role || payload.driverRole || 'Driver',
+      category: payload.category || payload.driverCategory || 'Heavy Rig',
+      shift: payload.shift || 'Morning',
+      notes: payload.notes || null,
+      companyId: effectiveCompanyId
+    };
+
+    if (payload.dob) {
+      const d = new Date(payload.dob);
+      if (!isNaN(d.getTime())) driverData.joiningDate = d;
+    }
+
     const data = await prisma.driver.create({
-      data: payload,
+      data: driverData,
       include: {
         branch: true,
         manager: true
