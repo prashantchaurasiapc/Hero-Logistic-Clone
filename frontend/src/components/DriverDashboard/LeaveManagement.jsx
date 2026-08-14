@@ -39,6 +39,8 @@ export default function LeaveManagement() {
     setTimeout(() => setToastMsg(''), 4000);
   };
 
+  const [leaveList, setLeaveList] = useState([]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!startDate) {
@@ -49,19 +51,22 @@ export default function LeaveManagement() {
       return;
     }
     
+    const newLeave = {
+      id: Date.now(),
+      type: leaveType,
+      dates: `${startDate}${endDate ? ` - ${endDate}` : ''}`,
+      status: 'SUBMITTED',
+      statusColor: 'bg-amber-50 text-amber-800 border border-amber-200'
+    };
+    setLeaveList(prev => [newLeave, ...prev]);
     setShowErrorPopup(false);
-    triggerToast('Successfully submitted', 'success');
+    triggerToast('Leave application submitted successfully', 'success');
     
     // Reset form
     setStartDate('');
     setEndDate('');
     setReason('');
   };
-
-  const mockData = [
-    { id: 1, type: 'Annual Leave', dates: '07/04/2026 -\n07/06/2026', status: 'APPROVED', statusColor: 'bg-gray-100 text-[#64748B] border border-gray-200' },
-    { id: 2, type: 'Sick Leave', dates: '06/05/2026 -\n06/06/2026', status: 'APPROVED', statusColor: 'bg-gray-100 text-[#64748B] border border-gray-200' }
-  ];
 
   const toggleRow = (id) => {
     setSelectedRows(prev => 
@@ -318,7 +323,8 @@ export default function LeaveManagement() {
 
           {/* Mobile Card Layout (Visible only on mobile/small screens) */}
           <div className="block sm:hidden space-y-4">
-            {mockData.map((row, index) => {
+            {leaveList.length > 0 ? (
+              leaveList.map((row, index) => {
               const isSelected = selectedRows.includes(row.id);
               
               let cardPadding = 'p-4';
@@ -388,7 +394,12 @@ export default function LeaveManagement() {
                   )}
                 </div>
               );
-            })}
+            })
+          ) : (
+            <div className="p-6 text-center text-xs text-slate-400 font-bold bg-white rounded-2xl border border-slate-200">
+              No leave requests submitted.
+            </div>
+          )}
           </div>
 
           {/* Desktop Table Layout (Visible on tablet/desktop) */}
@@ -398,11 +409,11 @@ export default function LeaveManagement() {
                 <tr className="border-b border-gray-100 bg-white">
                   <th className="p-4 w-12 text-center">
                     <button 
-                      onClick={() => setSelectedRows(selectedRows.length === mockData.length ? [] : mockData.map(d => d.id))}
+                      onClick={() => setSelectedRows(selectedRows.length === leaveList.length ? [] : leaveList.map(d => d.id))}
                       className="cursor-pointer"
                     >
-                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selectedRows.length === mockData.length ? 'border-[#0F172A] bg-[#0F172A] text-white' : 'border-[#94A3B8]'}`}>
-                        {selectedRows.length === mockData.length && <Check className="w-3 h-3" strokeWidth={4} />}
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${selectedRows.length > 0 && selectedRows.length === leaveList.length ? 'border-[#0F172A] bg-[#0F172A] text-white' : 'border-[#94A3B8]'}`}>
+                        {selectedRows.length > 0 && selectedRows.length === leaveList.length && <Check className="w-3 h-3" strokeWidth={4} />}
                       </div>
                     </button>
                   </th>
@@ -412,7 +423,8 @@ export default function LeaveManagement() {
                 </tr>
               </thead>
               <tbody>
-                {mockData.map((row, index) => {
+                {leaveList.length > 0 ? (
+                  leaveList.map((row, index) => {
                   const isSelected = selectedRows.includes(row.id);
                   return (
                   <tr key={index} className={`border-b border-gray-50 hover:bg-gray-50/50 transition-colors ${
@@ -446,7 +458,15 @@ export default function LeaveManagement() {
                       </td>
                     )}
                   </tr>
-                )})}
+                );
+              })
+            ) : (
+                <tr>
+                  <td colSpan="4" className="p-8 text-center text-xs text-gray-400 font-bold">
+                    No leave requests submitted yet. Use the form above to submit your leave request.
+                  </td>
+                </tr>
+              )}
               </tbody>
             </table>
           </div>

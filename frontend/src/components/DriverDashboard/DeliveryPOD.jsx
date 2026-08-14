@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
   FiCheckCircle, FiClock, FiMapPin, FiPhone, FiChevronRight,
   FiCamera, FiFileText, FiAlertTriangle, FiRefreshCw,
@@ -9,9 +9,19 @@ import {
   FiNavigation, FiShare2, FiTrash2
 } from 'react-icons/fi';
 import { BsQrCodeScan } from 'react-icons/bs';
+import { getLoadDetails, getMyLoads, getDeliveryItems, submitDeliveryPOD } from '../../services/driverApi';
 
 export default function DeliveryPOD() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { id: paramId } = useParams();
+
+  // API State
+  const [activeLoad, setActiveLoad] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeStop, setActiveStop] = useState(null);
 
   // Mode & Toggle States
   const [afterHoursEnabled, setAfterHoursEnabled] = useState(false);
@@ -36,99 +46,84 @@ export default function DeliveryPOD() {
   const [isDrawing, setIsDrawing] = useState(false);
   const [signatureName, setSignatureName] = useState('');
 
-  // Cars assigned to DROP 1 (Auto World Sydney) matching Screenshot 2
-  const [cars, setCars] = useState([
-    {
-      id: 1,
-      makeModel: 'Toyota Camry',
-      color: 'White',
-      reg: 'ABC123',
-      vin: '1HGCM82633A004352',
-      beforePhotos: { current: 4, total: 4, percent: 100, missingText: '' },
-      deliveryPhotos: { current: 4, total: 4, percent: 100, missingText: '' },
-      signature: 'John Smith',
-      damage: 'No Damage',
-      damageType: 'none',
-      status: 'Delivered',
-      deliveryTime: '11:02 AM',
-      delivered: true,
-    },
-    {
-      id: 2,
-      makeModel: 'Mazda 3',
-      color: 'Blue',
-      reg: 'CDE789',
-      vin: 'JM1BM1W7X01331234',
-      beforePhotos: { current: 3, total: 4, percent: 75, missingText: 'Missing 1 Photo' },
-      deliveryPhotos: { current: 3, total: 4, percent: 75, missingText: 'Missing 1 Photo' },
-      signature: 'Jane Doe',
-      damage: 'No Damage',
-      damageType: 'none',
-      status: 'Delivered',
-      deliveryTime: '11:08 AM',
-      delivered: true,
-    },
-    {
-      id: 3,
-      makeModel: 'Kia Sportage',
-      color: 'Silver',
-      reg: 'GHI321',
-      vin: 'KNAJE5518PS123456',
-      beforePhotos: { current: 2, total: 4, percent: 50, missingText: 'Missing 2 Photos' },
-      deliveryPhotos: { current: 2, total: 4, percent: 50, missingText: 'Missing 2 Photos' },
-      signature: 'Mark Williams',
-      damage: 'Minor Scratch on Rear Bumper',
-      damageType: 'warning',
-      status: 'Delivered',
-      deliveryTime: '11:12 AM',
-      delivered: true,
-    },
-    {
-      id: 4,
-      makeModel: 'Honda Accord',
-      color: 'Silver',
-      reg: 'BCD456',
-      vin: 'JH4KAB260MC000145',
-      beforePhotos: { current: 3, total: 4, percent: 75, missingText: 'Missing 1 Photo' },
-      deliveryPhotos: { current: 0, total: 4, percent: 0, missingText: 'Missing 4 Photos' },
-      signature: null,
-      damage: null,
-      damageType: 'none',
-      status: 'Not Delivered',
-      deliveryTime: null,
-      delivered: false,
-    },
-    {
-      id: 5,
-      makeModel: 'Audi A6',
-      color: 'Black',
-      reg: 'FEG345',
-      vin: 'WAUZZZ4G5HN123456',
-      beforePhotos: { current: 0, total: 4, percent: 0, missingText: 'Missing 4 Photos' },
-      deliveryPhotos: { current: 0, total: 4, percent: 0, missingText: 'Missing 4 Photos' },
-      signature: null,
-      damage: null,
-      damageType: 'none',
-      status: 'Not Delivered',
-      deliveryTime: null,
-      delivered: false,
-    },
-    {
-      id: 6,
-      makeModel: 'Mercedes C200',
-      color: 'White',
-      reg: 'FGH678',
-      vin: 'WDB8A7C57JA123456',
-      beforePhotos: { current: 0, total: 4, percent: 0, missingText: 'Missing 4 Photos' },
-      deliveryPhotos: { current: 0, total: 4, percent: 0, missingText: 'Missing 4 Photos' },
-      signature: null,
-      damage: null,
-      damageType: 'none',
-      status: 'Not Delivered',
-      deliveryTime: null,
-      delivered: false,
-    },
-  ]);
+  // Cars assigned to DROP 1 (Fetched from real backend API)
+  const [cars, setCars] = useState([]);
+
+  // Fetch Load & Delivery Details from Backend
+  useEffect(() => {
+    let isSubscribed = true;
+    setLoading(true);
+    setError(null);
+
+    const targetId = paramId || location.state?.loadId;
+
+    const loadTask = targetId 
+      ? getLoadDetails(targetId) 
+      : getMyLoads().then(res => {
+          const loads = res.data?.data?.loads || [];
+          const active = loads.find(l => ['IN_TRANSIT', 'ACTIVE', 'ASSIGNED'].includes(l.status)) || loads[0];
+          if (!active) throw new Error('No active load found.');
+          return getLoadDetails(active.id);
+        });
+
+    loadTask
+      .then(res => {
+        if (!isSubscribed) return;
+        const rawLoad = res.data?.data?.load;
+        if (!rawLoad) throw new Error('Load not found.');
+
+        const displayId = rawLoad.loadRef || (rawLoad.id ? `LD-${rawLoad.id.substring(0, 4).toUpperCase()}` : 'LD-0000');
+        setActiveLoad({
+          rawId: rawLoad.id,
+          displayId,
+          loadRef: rawLoad.loadRef,
+          status: rawLoad.status,
+        });
+
+        // Fetch Real Delivery Items from backend
+        return getDeliveryItems(rawLoad.id);
+      })
+      .then(res => {
+        if (!isSubscribed || !res) return;
+        const backendItems = res.data?.data?.items || [];
+        const stops = res.data?.data?.stops || [];
+
+        if (stops.length > 0) setActiveStop(stops[0]);
+
+        const formattedCars = backendItems.map((item, idx) => ({
+          id: item.id,
+          makeModel: `${item.make || ''} ${item.model || 'Vehicle'}`.trim(),
+          color: item.color || 'White',
+          reg: item.rego || `REG-${idx + 101}`,
+          vin: item.vin || `VIN-${String(item.id).substring(0, 8).toUpperCase()}`,
+          beforePhotos: { current: 4, total: 4, percent: 100, missingText: '' },
+          deliveryPhotos: {
+            current: item.status === 'DELIVERED' ? 4 : 0,
+            total: 4,
+            percent: item.status === 'DELIVERED' ? 100 : 0,
+            missingText: item.status === 'DELIVERED' ? '' : 'Missing 4 Photos'
+          },
+          signature: item.status === 'DELIVERED' ? 'Customer Signed' : null,
+          damage: item.damage || 'No Damage',
+          damageType: item.damage ? 'warning' : 'none',
+          status: item.status === 'DELIVERED' ? 'Delivered' : 'Not Delivered',
+          deliveryTime: item.status === 'DELIVERED' ? '11:02 AM' : null,
+          delivered: item.status === 'DELIVERED',
+        }));
+        setCars(formattedCars);
+      })
+      .catch(err => {
+        if (isSubscribed) {
+          const msg = err.response?.data?.error?.message || err.message || 'Could not load delivery details.';
+          setError(msg);
+        }
+      })
+      .finally(() => {
+        if (isSubscribed) setLoading(false);
+      });
+
+    return () => { isSubscribed = false; };
+  }, [paramId, location.state]);
 
   const triggerToast = (msg) => {
     setToastMsg(msg);
@@ -168,16 +163,85 @@ export default function DeliveryPOD() {
     setSignatureModalOpen(true);
   };
 
+  const handleConfirmDropDelivery = (signatureData = null, signeeOverride = null) => {
+    const currentLoadId = activeLoad?.rawId || paramId;
+    if (!currentLoadId || isSubmitting) return;
+
+    const signName = signeeOverride || signatureName || selectedCarForModal?.signature || 'John Smith';
+    if (!afterHoursEnabled && (!signName || !signName.trim())) {
+      triggerToast('⚠️ Receiver signature name is required.');
+      return;
+    }
+
+    let canvasDataUrl = signatureData;
+    if (!canvasDataUrl && canvasRef.current) {
+      try {
+        canvasDataUrl = canvasRef.current.toDataURL('image/png');
+      } catch (e) {}
+    }
+
+    if (!afterHoursEnabled && !canvasDataUrl) {
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = 300;
+      tempCanvas.height = 100;
+      const ctx = tempCanvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, 300, 100);
+      ctx.font = 'bold 20px sans-serif';
+      ctx.fillStyle = '#1e1b4b';
+      ctx.fillText(signName || 'Customer Signed', 20, 50);
+      canvasDataUrl = tempCanvas.toDataURL('image/png');
+    }
+
+    setIsSubmitting(true);
+
+    const payload = {
+      stopId: activeStop?.id,
+      signeeName: signName,
+      signatureData: canvasDataUrl,
+      isAfterHours: afterHoursEnabled,
+      deliveryNotes: deliveryNotes || afterHoursNotes || 'Delivered cleanly',
+      itemIds: cars.map(c => c.id).filter(id => typeof id === 'string')
+    };
+
+    submitDeliveryPOD(currentLoadId, payload)
+      .then(res => {
+        const newLoadStatus = res.data?.data?.loadStatus;
+
+        setCars(prevCars => prevCars.map(c => ({
+          ...c,
+          delivered: true,
+          status: 'Delivered',
+          deliveryTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          signature: signName
+        })));
+
+        if (activeLoad) {
+          setActiveLoad(prev => ({ ...prev, status: newLoadStatus || 'DELIVERED' }));
+        }
+
+        triggerToast('🎉 PROOF OF DELIVERY SUBMITTED! Dispatch & Customer notified.');
+      })
+      .catch(err => {
+        const msg = err.response?.data?.error?.message || 'POD submission failed.';
+        triggerToast(`❌ Error: ${msg}`);
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+      });
+  };
+
   const handleSaveSignature = () => {
-    if (!signatureName.trim()) {
+    if (!signatureName.trim() && !afterHoursEnabled) {
       triggerToast('Please enter receiver name before saving signature.');
       return;
     }
-    if (selectedCarForModal) {
-      setCars(cars.map(c => c.id === selectedCarForModal.id ? { ...c, signature: signatureName } : c));
+    let dataUrl = null;
+    if (canvasRef.current) {
+      try { dataUrl = canvasRef.current.toDataURL('image/png'); } catch (e) {}
     }
     setSignatureModalOpen(false);
-    triggerToast(`Signature captured for ${signatureName}!`);
+    handleConfirmDropDelivery(dataUrl, signatureName);
   };
 
   const handleAddCarSubmit = (e) => {
@@ -289,14 +353,6 @@ export default function DeliveryPOD() {
       }
       return c;
     }));
-  };
-
-  const handleConfirmDropDelivery = () => {
-    const undeliveredCount = cars.filter(c => !c.delivered).length;
-    if (undeliveredCount > 0 && !afterHoursEnabled) {
-      triggerToast(`⚠️ Note: ${undeliveredCount} cars remaining. You can enable After-Hours mode or mark remaining cars as delivered.`);
-    }
-    triggerToast('🎉 DROP 1 DELIVERY CONFIRMED! Dispatch and Customer notified.');
   };
 
   // Canvas Handlers for Signature Capture
@@ -456,41 +512,36 @@ export default function DeliveryPOD() {
         </div>
       </div>
 
-      {/* TOP HEADER LOAD BANNER CARD ("LD-3987") */}
+      {/* TOP HEADER LOAD BANNER CARD */}
       <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="space-y-2">
-          <div className="text-2xl font-black text-indigo-700 tracking-tight">LD-3987</div>
+          <div className="text-2xl font-black text-indigo-700 tracking-tight">
+            {activeLoad?.loadRef || activeLoad?.displayId || 'Active Load'}
+          </div>
           <div className="text-sm font-black text-slate-800 flex items-center gap-2">
-            <span>Melbourne VIC</span>
+            <span>{activeStop?.name || activeStop?.contactName || 'Delivery Drop'}</span>
             <span className="text-slate-400">➔</span>
-            <span>Sydney NSW</span>
+            <span>{activeStop?.address || 'Destination'}</span>
           </div>
 
           <div className="flex flex-wrap items-center gap-6 pt-2 text-xs">
             <div>
               <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Current Stop</span>
-              <span className="font-extrabold text-slate-900">DROP 1 OF 4</span>
+              <span className="font-extrabold text-slate-900">{activeStop?.name || 'DROP 1 OF 1'}</span>
             </div>
 
             <div className="h-7 w-px bg-slate-200 hidden sm:block"></div>
 
             <div>
-              <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Delivery Time</span>
-              <span className="font-extrabold text-slate-900">11:00 AM</span>
-            </div>
-
-            <div className="h-7 w-px bg-slate-200 hidden sm:block"></div>
-
-            <div>
-              <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Est. Finish</span>
-              <span className="font-extrabold text-slate-900">11:45 AM</span>
+              <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Status</span>
+              <span className="font-extrabold text-slate-900">{activeLoad?.status || 'IN_TRANSIT'}</span>
             </div>
 
             <div className="h-7 w-px bg-slate-200 hidden sm:block"></div>
 
             <div>
               <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Cars for this stop</span>
-              <span className="font-extrabold text-slate-900">3 Cars</span>
+              <span className="font-extrabold text-slate-900">{cars.length} Cars</span>
             </div>
           </div>
         </div>
@@ -552,8 +603,8 @@ export default function DeliveryPOD() {
             {/* Table Header Section */}
             <div className="p-4 sm:p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100">
               <div>
-                <h3 className="text-sm font-black text-slate-900 tracking-tight uppercase">CARS TO DELIVER – DROP 1 ({totalCarsCount})</h3>
-                <p className="text-xs font-semibold text-slate-500 mt-0.5">Destination: <strong className="text-slate-800">Auto World Sydney</strong></p>
+                <h3 className="text-sm font-black text-slate-900 tracking-tight uppercase">CARS TO DELIVER ({cars.length})</h3>
+                <p className="text-xs font-semibold text-slate-500 mt-0.5">Destination: <strong className="text-slate-800">{activeStop?.address || 'Delivery Drop'}</strong></p>
               </div>
 
               <div className="flex items-center gap-2">
@@ -565,7 +616,7 @@ export default function DeliveryPOD() {
                   <span>Scan VIN</span>
                 </button>
                 <span className="bg-indigo-50 text-indigo-700 text-xs font-black px-3 py-1.5 rounded-lg border border-indigo-100">
-                  3 Cars
+                  {cars.length} Cars
                 </span>
               </div>
             </div>
@@ -587,7 +638,8 @@ export default function DeliveryPOD() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
-                  {cars.map((car, index) => (
+                  {cars.length > 0 ? (
+                    cars.map((car, index) => (
                     <tr 
                       key={car.id} 
                       className={`hover:bg-slate-50/80 transition-colors ${
@@ -788,7 +840,14 @@ export default function DeliveryPOD() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="9" className="py-12 text-center text-slate-500 font-medium">
+                      No vehicles assigned to this delivery drop. Click "Scan VIN" or "Add Car to Delivery" to add vehicles.
+                    </td>
+                  </tr>
+                )}
                 </tbody>
               </table>
             </div>

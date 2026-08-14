@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   FiArrowLeft, FiMoreVertical, FiNavigation,
@@ -8,8 +8,130 @@ import {
   FiPackage, FiAlertTriangle, FiEdit2, FiX, FiDownload,
   FiFileText, FiPrinter, FiEye, FiPlus, FiCheck
 } from 'react-icons/fi';
+import { getLoadDetails } from '../../services/driverApi';
 
-/* ── Shared job data ─────────────────────────────────── */
+/* ── Helper functions for formatting API data ─────────────────── */
+function extractCityState(addr) {
+  if (!addr) return '';
+  const parts = addr.split(',');
+  if (parts.length >= 2) {
+    return parts.slice(-2).join(',').trim();
+  }
+  return addr;
+}
+
+function formatBackendLoadDetails(rawLoad) {
+  if (!rawLoad) return null;
+  const displayId = rawLoad.loadRef || rawLoad.draftId || (rawLoad.id ? `LD-${rawLoad.id.substring(0, 4).toUpperCase()}` : 'LD-0000');
+  
+  let status = 'UPCOMING';
+  let statusText = 'Upcoming';
+  let statusCountdown = 'Scheduled';
+
+  if (['IN_TRANSIT', 'ACTIVE'].includes(rawLoad.status)) {
+    status = 'IN_PROGRESS';
+    statusText = 'In Progress';
+    statusCountdown = 'In Transit';
+  } else if (['DELIVERED', 'COMPLETED'].includes(rawLoad.status)) {
+    status = 'COMPLETED';
+    statusText = 'Completed';
+    statusCountdown = 'Completed';
+  } else if (rawLoad.status === 'CANCELLED') {
+    status = 'CANCELLED';
+    statusText = 'Cancelled';
+    statusCountdown = 'Cancelled';
+  }
+
+  const pickupStop = rawLoad.stops?.find(s => s.type === 'PICKUP') || rawLoad.stops?.[0];
+  const dropoffStop = rawLoad.stops?.filter(s => s.type === 'DROPOFF').slice(-1)[0] || rawLoad.stops?.[rawLoad.stops?.length - 1];
+
+  const pickupAddress = pickupStop?.address || 'N/A';
+  const pickupName = pickupStop?.contactName || extractCityState(pickupAddress) || 'Pickup Yard';
+  const deliveryAddress = dropoffStop?.address || 'N/A';
+  const deliveryName = dropoffStop?.contactName || extractCityState(deliveryAddress) || 'Delivery Terminal';
+
+  const origin = extractCityState(pickupAddress) || pickupName;
+  const destination = extractCityState(deliveryAddress) || deliveryName;
+
+  const numStops = rawLoad.stops?.length || 2;
+  const stopsLabel = `${Math.max(1, numStops - 1)} Stop${Math.max(1, numStops - 1) === 1 ? '' : 's'}`;
+
+  const loadDateStr = rawLoad.loadDate || pickupStop?.scheduledDate;
+  const formattedDate = loadDateStr ? new Date(loadDateStr).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Today';
+  const startTimeStr = pickupStop?.scheduledDate || rawLoad.loadDate;
+  const formattedStartTime = startTimeStr ? new Date(startTimeStr).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }) : '08:00 AM';
+  const endTimeStr = dropoffStop?.scheduledDate || rawLoad.deliveryEta;
+  const formattedEndTime = endTimeStr ? new Date(endTimeStr).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }) : '02:30 PM';
+
+  const trailerLabel = rawLoad.trailer ? `${rawLoad.trailer.rego || rawLoad.trailer.plate || 'TRL-001'} (${rawLoad.trailer.category || 'Standard'})` : (rawLoad.truck ? `${rawLoad.truck.rego || rawLoad.truck.plate || ''}` : 'TRL-205 (Car Carrier 4 Level)');
+  
+  return {
+    rawId: rawLoad.id,
+    id: displayId,
+    subTitle: rawLoad.type || 'Car Carrier (4 Level)',
+    status,
+    statusText,
+    statusCountdown,
+    origin,
+    destination,
+    date: formattedDate,
+    startTime: formattedStartTime,
+    endTime: formattedEndTime,
+    loadType: rawLoad.type || 'Car Carrier (4 Level)',
+    stops: stopsLabel,
+    reference: rawLoad.loadRef || rawLoad.draftId || displayId,
+    priority: rawLoad.priority ? rawLoad.priority.charAt(0).toUpperCase() + rawLoad.priority.slice(1).toLowerCase() : 'Normal',
+    trailer: trailerLabel,
+    specialInstructions: rawLoad.dispatchNotes || rawLoad.notes || 'Handle with care. Check all vehicles for existing damage. Report any issues immediately.',
+    pickup: {
+      name: pickupName,
+      address: pickupAddress,
+      suburb: '',
+      contact: pickupStop?.contactName || 'Yard Contact',
+      phone: pickupStop?.contactPhone || '0412 345 678',
+      time: formattedStartTime,
+      date: formattedDate,
+      status: status === 'COMPLETED' ? 'COMPLETED' : status === 'IN_PROGRESS' ? 'COMPLETED' : 'UPCOMING'
+    },
+    delivery: {
+      name: deliveryName,
+      address: deliveryAddress,
+      suburb: '',
+      contact: rawLoad.customer?.contactName || dropoffStop?.contactName || 'Receiver',
+      phone: rawLoad.customer?.phone || dropoffStop?.contactPhone || '0411 987 654',
+      time: formattedEndTime,
+      date: formattedDate,
+      status: status === 'COMPLETED' ? 'COMPLETED' : 'UPCOMING'
+    },
+    items: {
+      total: rawLoad.items?.length || 0,
+      damaged: 0,
+      photosRequired: 0,
+      photosTaken: 0,
+    },
+    totalVehicles: rawLoad.items?.length || 0,
+    rawItems: rawLoad.items || [],
+    rawStops: rawLoad.stops || [],
+    documents: rawLoad.documents?.map((d, idx) => ({
+      id: d.id || idx + 1,
+      name: d.fileUrl || `Document-${d.type || 'Load'}.pdf`,
+      type: d.type || 'PDF',
+      date: d.createdAt ? new Date(d.createdAt).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' }) : formattedDate,
+      size: '1.2 MB'
+    })) || [],
+    photos: [],
+    activities: rawLoad.activities?.map(a => ({
+      time: new Date(a.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      action: a.title || a.description,
+      user: 'System'
+    })) || [
+      { time: formattedStartTime, action: 'Job assigned by dispatcher', user: 'Dispatch HQ' },
+      { time: formattedStartTime, action: 'Job created in system', user: 'System' }
+    ]
+  };
+}
+
+/* ── Fallback job DB for legacy or offline fallback preview ── */
 const INITIAL_JOBS_DB = {
   'LD-3987': {
     id: 'LD-3987', subTitle: 'Car Carrier (4 Level)',
@@ -41,69 +163,6 @@ const INITIAL_JOBS_DB = {
       { time: '07:45 AM', action: 'Pre-start checklist completed', user: 'Noah Williams' },
       { time: '07:30 AM', action: 'Job created in system', user: 'System' }
     ]
-  },
-  'LD-3988': {
-    id: 'LD-3988', subTitle: 'Car Carrier (4 Level)',
-    status: 'UPCOMING', statusText: 'Upcoming', statusCountdown: 'Starts tomorrow 07:30 AM',
-    origin: 'Brisbane QLD', destination: 'Perth WA',
-    date: '30 May 2025', startTime: '07:30 AM', endTime: '06:00 PM',
-    loadType: 'Car Carrier (4 Level)', stops: '2 Stops', reference: 'PO-65456', priority: 'High',
-    trailer: 'TRL-208 (Car Carrier 4 Level)',
-    specialInstructions: 'Long haul interstate. Check tyre pressure before departure.',
-    pickup: { name: 'Brisbane Port Terminal', address: 'Port Dr', suburb: 'Brisbane QLD 4178', contact: 'Sarah Lee', phone: '0413 222 333', time: '07:30 AM', date: '30 May 2025', status: 'UPCOMING' },
-    delivery: { name: 'Perth Freight Hub', address: '12 Freight Ave', suburb: 'Perth WA 6100', contact: 'David Park', phone: '0414 555 666', time: '06:00 PM', date: '31 May 2025', status: 'UPCOMING' },
-    items: { total: 10, damaged: 0, photosRequired: 2, photosTaken: 0 },
-    totalVehicles: 10,
-    documents: [
-      { id: 1, name: 'Bill of Lading – LD-3988.pdf', type: 'PDF', date: '30 May 2025', size: '2.1 MB' }
-    ],
-    photos: [],
-    activities: [
-      { time: '07:30 AM', action: 'Job created in system', user: 'System' }
-    ]
-  },
-  'LD-3986': {
-    id: 'LD-3986', subTitle: 'Car Carrier (4 Level)',
-    status: 'IN_PROGRESS', statusText: 'In Progress', statusCountdown: 'In Transit',
-    origin: 'Melbourne VIC', destination: 'Adelaide SA',
-    date: '29 May 2025', startTime: '06:00 AM', endTime: 'In Transit',
-    loadType: 'Car Carrier (4 Level)', stops: '1 Stop', reference: 'PO-65421', priority: 'Normal',
-    trailer: 'TRL-201 (Car Carrier 4 Level)',
-    specialInstructions: 'Vehicles are high-value. Secure straps every 150km.',
-    pickup: { name: 'Melbourne Vehicle Hub', address: '88 Western Hwy', suburb: 'Deer Park VIC 3023', contact: 'Alex Turner', phone: '0415 111 222', time: '06:00 AM', date: '29 May 2025', status: 'COMPLETED' },
-    delivery: { name: 'Adelaide Vehicle Hub', address: '55 Chief St', suburb: 'Wingfield SA 5013', contact: 'Lisa Chen', phone: '0416 333 444', time: 'In Transit', date: '29 May 2025', status: 'UPCOMING' },
-    items: { total: 6, damaged: 0, photosRequired: 0, photosTaken: 4 },
-    totalVehicles: 6,
-    documents: [
-      { id: 1, name: 'Consignment Note – LD-3986.pdf', type: 'PDF', date: '29 May 2025', size: '1.5 MB' }
-    ],
-    photos: [
-      { id: 1, title: 'Melbourne Loading Deck', date: '29 May 2025, 06:15 AM', tag: 'Pickup' },
-      { id: 2, title: 'Tie Down Inspection', date: '29 May 2025, 06:30 AM', tag: 'Inspection' }
-    ],
-    activities: [
-      { time: '06:00 AM', action: 'Departed pickup location', user: 'Noah Williams' }
-    ]
-  },
-  'LD-3981': {
-    id: 'LD-3981', subTitle: 'Car Carrier (4 Level)',
-    status: 'CANCELLED', statusText: 'Cancelled', statusCountdown: 'Cancelled',
-    origin: 'Adelaide SA', destination: 'Darwin NT',
-    date: '22 May 2025', startTime: 'N/A', endTime: 'N/A',
-    loadType: 'Car Carrier (4 Level)', stops: '1 Stop', reference: 'PO-65340', priority: 'Normal',
-    trailer: 'N/A',
-    specialInstructions: 'Load cancelled by customer. Do not proceed.',
-    pickup: { name: 'Adelaide South Yard', address: '3 Regency Rd', suburb: 'Kilburn SA 5084', contact: 'Ian Foster', phone: '0425 555 666', time: 'N/A', date: '22 May 2025', status: 'CANCELLED' },
-    delivery: { name: 'Darwin Freight Terminal', address: '10 Frances Bay Dr', suburb: 'Darwin NT 0800', contact: 'Cathy Liu', phone: '0426 777 888', time: 'N/A', date: 'N/A', status: 'CANCELLED' },
-    items: { total: 0, damaged: 0, photosRequired: 0, photosTaken: 0 },
-    totalVehicles: 0,
-    documents: [
-      { id: 1, name: 'Cancellation Notice – LD-3981.pdf', type: 'PDF', date: '22 May 2025', size: '420 KB' }
-    ],
-    photos: [],
-    activities: [
-      { time: '09:00 AM', action: 'Job cancelled by dispatch', user: 'Dispatch HQ' }
-    ]
   }
 };
 
@@ -128,9 +187,10 @@ export default function JobDetails() {
   const [activeTab, setActiveTab] = useState('Overview');
   const [toast, setToast] = useState('');
 
-  // Local job state for dynamic updates
-  const jobId = id && INITIAL_JOBS_DB[id] ? id : 'LD-3981';
-  const [job, setJob] = useState(INITIAL_JOBS_DB[jobId]);
+  // API State
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [job, setJob] = useState(null);
 
   // Modals state
   const [showDocUploadModal, setShowDocUploadModal] = useState(false);
@@ -144,16 +204,65 @@ export default function JobDetails() {
   const [viewPhotoModal, setViewPhotoModal] = useState(null);
 
   const [showStatusModal, setShowStatusModal] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState(job.status);
+  const [selectedStatus, setSelectedStatus] = useState('UPCOMING');
   const [statusNote, setStatusNote] = useState('');
 
   const [showMenuDropdown, setShowMenuDropdown] = useState(false);
   const [showDirectionsModal, setShowDirectionsModal] = useState(null); // 'pickup' or 'delivery'
   const [showItemsModal, setShowItemsModal] = useState(false);
 
-  const meta = STATUS_META[job.status] || STATUS_META.UPCOMING;
-  const pickupStop = STOP_STATUS[job.pickup?.status] || STOP_STATUS.UPCOMING;
-  const deliveryStop = STOP_STATUS[job.delivery?.status] || STOP_STATUS.UPCOMING;
+  useEffect(() => {
+    let isSubscribed = true;
+    setLoading(true);
+    setError(null);
+
+    if (!id) {
+      setError('No load ID provided.');
+      setLoading(false);
+      return;
+    }
+
+    // Attempt to fetch real load details from backend API
+    getLoadDetails(id)
+      .then(res => {
+        if (isSubscribed) {
+          const rawLoad = res.data?.data?.load;
+          if (rawLoad) {
+            const formatted = formatBackendLoadDetails(rawLoad);
+            setJob(formatted);
+            setSelectedStatus(formatted.status);
+            setError(null);
+          } else {
+            setError('Load details not found.');
+          }
+        }
+      })
+      .catch(err => {
+        if (isSubscribed) {
+          const status = err.response?.status;
+          const msg = err.response?.data?.error?.message || 'Failed to fetch load details.';
+
+          if (status === 403) {
+            setError('Access Denied: You are not authorized to view this load.');
+          } else if (status === 404) {
+            setError('Load Not Found: The requested load does not exist or has been removed.');
+          } else if (status === 401) {
+            setError('Unauthorized: Session expired. Please log in again.');
+          } else {
+            setError(msg);
+          }
+        }
+      })
+      .finally(() => {
+        if (isSubscribed) setLoading(false);
+      });
+
+    return () => { isSubscribed = false; };
+  }, [id]);
+
+  const meta = STATUS_META[job?.status] || STATUS_META.UPCOMING;
+  const pickupStop = STOP_STATUS[job?.pickup?.status] || STOP_STATUS.UPCOMING;
+  const deliveryStop = STOP_STATUS[job?.delivery?.status] || STOP_STATUS.UPCOMING;
 
   const showToast = msg => {
     setToast(msg);
@@ -161,123 +270,77 @@ export default function JobDetails() {
   };
 
   // Handler to cycle or start job
-  const handlePrimaryJobAction = () => {
-    if (job.status === 'CANCELLED') {
+  const handlePrimaryJobAction = async () => {
+    if (job?.status === 'CANCELLED') {
       showToast('This job has been cancelled and cannot be started.');
       return;
     }
-    if (job.status === 'COMPLETED') {
+    if (job?.status === 'COMPLETED') {
       showToast('This job is already completed.');
       return;
     }
-    if (job.status === 'UPCOMING') {
+
+    const nextStatus = job?.status === 'UPCOMING' ? 'IN_TRANSIT' : 'DELIVERED';
+    const targetLoadId = job?.rawId || id;
+
+    try {
+      if (targetLoadId) {
+        await updateLoadStatus(targetLoadId, nextStatus, `Status updated via Job Details UI`);
+      }
+      const isComplete = nextStatus === 'DELIVERED';
       const updated = {
         ...job,
-        status: 'IN_PROGRESS',
-        statusText: 'In Progress',
-        statusCountdown: 'In Transit',
+        status: isComplete ? 'COMPLETED' : 'IN_PROGRESS',
+        statusText: isComplete ? 'Completed' : 'In Progress',
+        statusCountdown: isComplete ? 'Completed' : 'In Transit',
+        pickup: isComplete ? { ...job.pickup, status: 'COMPLETED' } : job.pickup,
+        delivery: isComplete ? { ...job.delivery, status: 'COMPLETED' } : job.delivery,
         activities: [
-          { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: 'Job started by driver', user: 'Noah Williams' },
+          { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: `Job status updated to ${nextStatus}`, user: 'Noah Williams' },
           ...job.activities
         ]
       };
       setJob(updated);
-      showToast(`Job ${job.id} started successfully!`);
-    } else if (job.status === 'IN_PROGRESS') {
-      const updated = {
-        ...job,
-        status: 'COMPLETED',
-        statusText: 'Completed',
-        statusCountdown: 'Completed',
-        pickup: { ...job.pickup, status: 'COMPLETED' },
-        delivery: { ...job.delivery, status: 'COMPLETED' },
-        activities: [
-          { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: 'Job marked completed by driver', user: 'Noah Williams' },
-          ...job.activities
-        ]
-      };
-      setJob(updated);
-      showToast(`Job ${job.id} marked as COMPLETED!`);
+      showToast(`Job ${job.id} status updated to ${nextStatus}!`);
+    } catch (err) {
+      console.error('Failed to update load status on server:', err);
+      showToast(err.response?.data?.message || err.response?.data?.error?.message || 'Failed to update job status on server.');
     }
   };
 
-  // Upload Document submit
-  const handleAddDocument = (e) => {
-    e.preventDefault();
-    if (!docName.trim()) {
-      showToast('Please enter a document name');
-      return;
-    }
-    const newDoc = {
-      id: Date.now(),
-      name: docName.endsWith('.pdf') ? docName : `${docName}.pdf`,
-      type: 'PDF',
-      date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-      size: '1.1 MB'
-    };
-    setJob(prev => ({
-      ...prev,
-      documents: [newDoc, ...prev.documents],
-      activities: [
-        { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: `Uploaded document: ${newDoc.name}`, user: 'Noah Williams' },
-        ...prev.activities
-      ]
-    }));
-    setDocName('');
-    setShowDocUploadModal(false);
-    showToast(`Document "${newDoc.name}" uploaded successfully!`);
-  };
-
-  // Add Photo submit
-  const handleAddPhoto = (e) => {
-    e.preventDefault();
-    if (!photoTitle.trim()) {
-      showToast('Please enter a photo caption');
-      return;
-    }
-    const newPhoto = {
-      id: Date.now(),
-      title: photoTitle,
-      date: `${new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}, ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
-      tag: photoTag
-    };
-    setJob(prev => ({
-      ...prev,
-      photos: [newPhoto, ...prev.photos],
-      items: { ...prev.items, photosTaken: prev.items.photosTaken + 1 },
-      activities: [
-        { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: `Added photo: ${newPhoto.title}`, user: 'Noah Williams' },
-        ...prev.activities
-      ]
-    }));
-    setPhotoTitle('');
-    setShowPhotoUploadModal(false);
-    showToast(`Photo "${newPhoto.title}" added to job records!`);
-  };
-
-  // Update Status submit
-  const handleSaveStatus = (e) => {
+  // Update Status modal submit
+  const handleSaveStatus = async (e) => {
     e.preventDefault();
     const statusMap = {
-      UPCOMING: { text: 'Upcoming', cd: 'Pending Start' },
-      IN_PROGRESS: { text: 'In Progress', cd: 'In Transit' },
-      COMPLETED: { text: 'Completed', cd: 'Completed' },
-      CANCELLED: { text: 'Cancelled', cd: 'Cancelled' }
+      UPCOMING: { text: 'Upcoming', cd: 'Pending Start', backend: 'ASSIGNED' },
+      IN_PROGRESS: { text: 'In Progress', cd: 'In Transit', backend: 'IN_TRANSIT' },
+      COMPLETED: { text: 'Completed', cd: 'Completed', backend: 'DELIVERED' },
+      CANCELLED: { text: 'Cancelled', cd: 'Cancelled', backend: 'CANCELLED' }
     };
-    const meta = statusMap[selectedStatus];
-    setJob(prev => ({
-      ...prev,
-      status: selectedStatus,
-      statusText: meta.text,
-      statusCountdown: meta.cd,
-      activities: [
-        { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: `Status updated to ${meta.text}${statusNote ? `: ${statusNote}` : ''}`, user: 'Noah Williams' },
-        ...prev.activities
-      ]
-    }));
-    setStatusNote('');
-    setShowStatusModal(false);
-    showToast(`Job status updated to ${meta.text}`);
+    const meta = statusMap[selectedStatus] || statusMap.UPCOMING;
+    const targetLoadId = job?.rawId || id;
+
+    try {
+      if (targetLoadId) {
+        await updateLoadStatus(targetLoadId, meta.backend, statusNote);
+      }
+      setJob(prev => ({
+        ...prev,
+        status: selectedStatus,
+        statusText: meta.text,
+        statusCountdown: meta.cd,
+        activities: [
+          { time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), action: `Status updated to ${meta.text}${statusNote ? `: ${statusNote}` : ''}`, user: 'Noah Williams' },
+          ...prev.activities
+        ]
+      }));
+      setStatusNote('');
+      setShowStatusModal(false);
+      showToast(`Job status updated to ${meta.text} on server!`);
+    } catch (err) {
+      console.error('Failed to update status on server:', err);
+      showToast(err.response?.data?.message || err.response?.data?.error?.message || 'Failed to update status on server.');
+    }
   };
 
   const InfoCell = ({ label, value, badge }) => (
@@ -289,6 +352,40 @@ export default function JobDetails() {
       }
     </div>
   );
+
+  if (loading) {
+    return (
+      <div style={{ fontFamily: "'Inter','Segoe UI',sans-serif", background: '#f8fafc', minHeight: '100vh', padding: '32px 28px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 16, padding: '40px 32px', textAlign: 'center', maxWidth: 480, width: '100%', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+          <FiRefreshCw size={32} color="#3b82f6" style={{ margin: '0 auto 16px', animation: 'spin 1s linear infinite' }} />
+          <h2 style={{ fontSize: 18, fontWeight: 900, color: '#0f172a', margin: '0 0 8px' }}>Loading Job Details...</h2>
+          <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>Fetching secure load information from server</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !job) {
+    return (
+      <div style={{ fontFamily: "'Inter','Segoe UI',sans-serif", background: '#f8fafc', minHeight: '100vh', padding: '32px 28px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ background: '#fff', border: '1px solid #fecdd3', borderRadius: 16, padding: '40px 32px', textAlign: 'center', maxWidth: 480, width: '100%', boxShadow: '0 4px 12px rgba(225,29,72,0.08)' }}>
+          <div style={{ width: 56, height: 56, background: '#ffe4e6', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+            <FiAlertTriangle size={28} color="#e11d48" />
+          </div>
+          <h2 style={{ fontSize: 18, fontWeight: 900, color: '#9f1239', margin: '0 0 8px' }}>Unable to Access Load</h2>
+          <p style={{ fontSize: 13, color: '#64748b', margin: '0 0 24px', lineHeight: 1.5 }}>
+            {error || 'The requested load could not be found or you do not have permission to view it.'}
+          </p>
+          <button
+            onClick={() => navigate('/driver/assigned-jobs')}
+            style={{ padding: '12px 24px', background: '#0f172a', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 900, color: '#fff', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}
+          >
+            <FiArrowLeft size={14} /> Back to Assigned Jobs
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ fontFamily: "'Inter','Segoe UI',sans-serif", background: '#f8fafc', minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import {
   FiCheckCircle, FiClock, FiNavigation, FiPhone, FiChevronRight,
   FiCamera, FiFileText, FiMessageSquare, FiAlertTriangle, FiRefreshCw,
@@ -7,16 +7,72 @@ import {
   FiBookOpen, FiLifeBuoy, FiCheck, FiX, FiMapPin, FiMaximize2
 } from 'react-icons/fi';
 import { BsQrCodeScan } from 'react-icons/bs';
+import { getLoadDetails, getMyLoads, updateLoadStatus } from '../../services/driverApi';
+
+function extractCityState(addr) {
+  if (!addr) return '';
+  const parts = addr.split(',');
+  return parts.length >= 2 ? parts.slice(-2).join(',').trim() : addr;
+}
+
+function formatBackendActiveLoad(rawLoad) {
+  if (!rawLoad) return null;
+  const displayId = rawLoad.loadRef || rawLoad.draftId || (rawLoad.id ? `LD-${rawLoad.id.substring(0, 4).toUpperCase()}` : 'LD-0000');
+  
+  const pickupStop = rawLoad.stops?.find(s => s.type === 'PICKUP') || rawLoad.stops?.[0];
+  const dropoffStop = rawLoad.stops?.filter(s => s.type === 'DROPOFF').slice(-1)[0] || rawLoad.stops?.[rawLoad.stops?.length - 1];
+
+  const pickupAddress = pickupStop?.address || '123 Sunshine Rd, Melbourne VIC 3000';
+  const pickupName = pickupStop?.contactName || extractCityState(pickupAddress) || 'ABC Car Yard';
+  const deliveryAddress = dropoffStop?.address || '45 Parramatta Rd, Sydney NSW 2150';
+  const deliveryName = dropoffStop?.contactName || extractCityState(deliveryAddress) || 'Auto World Sydney';
+
+  const origin = extractCityState(pickupAddress) || pickupName || 'Melbourne VIC';
+  const destination = extractCityState(deliveryAddress) || deliveryName || 'Sydney NSW';
+
+  const numStops = rawLoad.stops?.length || 2;
+  const totalCarsCount = rawLoad.items?.length || 8;
+
+  const isDispatched = ['IN_TRANSIT', 'ACTIVE', 'DELIVERED', 'COMPLETED'].includes(rawLoad.status);
+  const isDelivered = ['DELIVERED', 'COMPLETED'].includes(rawLoad.status);
+
+  return {
+    rawId: rawLoad.id,
+    id: displayId,
+    status: rawLoad.status,
+    origin,
+    destination,
+    pickupName,
+    pickupAddress,
+    deliveryName,
+    deliveryAddress,
+    stopsCount: Math.max(1, numStops - 1),
+    totalCars: totalCarsCount,
+    carsPickedUp: totalCarsCount,
+    isDispatched,
+    isDelivered,
+    truckName: rawLoad.truck ? `${rawLoad.truck.make || ''} ${rawLoad.truck.model || ''} (${rawLoad.truck.rego || rawLoad.truck.plate || ''})`.trim() : 'MAN TGX 26.580',
+    trailerName: rawLoad.trailer ? `${rawLoad.trailer.rego || rawLoad.trailer.plate || 'TRL-205'}` : 'TRL-205',
+    loadType: rawLoad.type || 'Car Carrier (4 Level)'
+  };
+}
 
 export default function ActiveRun() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { id: paramId } = useParams();
+
+  // API State
+  const [activeLoad, setActiveLoad] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Interactive States
   const [loadStatus, setLoadStatus] = useState('Picked Up'); // 'Picked Up', 'Dispatched', 'Delivered'
   const [isDispatched, setIsDispatched] = useState(false);
   const [carsPickedUp, setCarsPickedUp] = useState(8);
-  const totalCars = 8;
+  const totalCars = activeLoad?.totalCars || 8;
   const [toastMsg, setToastMsg] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
@@ -33,6 +89,71 @@ export default function ActiveRun() {
   const [supportModalOpen, setSupportModalOpen] = useState(false);
   const [noteText, setNoteText] = useState('');
   const [photoCaption, setPhotoCaption] = useState('');
+
+  // Fetch Load from Backend API
+  useEffect(() => {
+    let isSubscribed = true;
+    setLoading(true);
+    setError(null);
+
+    const targetId = paramId || location.state?.loadId;
+
+    if (targetId) {
+      getLoadDetails(targetId)
+        .then(res => {
+          if (isSubscribed) {
+            const raw = res.data?.data?.load;
+            if (raw) {
+              const formatted = formatBackendActiveLoad(raw);
+              setActiveLoad(formatted);
+              setIsDispatched(formatted.isDispatched);
+              setCarsPickedUp(formatted.totalCars);
+              setLoadStatus(formatted.isDelivered ? 'Delivered' : formatted.isDispatched ? 'Dispatched' : 'Picked Up');
+            } else {
+              setError('Active load details not found.');
+            }
+          }
+        })
+        .catch(err => {
+          if (isSubscribed) {
+            const msg = err.response?.data?.error?.message || 'Could not load active run details.';
+            setError(msg);
+          }
+        })
+        .finally(() => {
+          if (isSubscribed) setLoading(false);
+        });
+    } else {
+      // Fetch driver's assigned loads to pick current active load
+      getMyLoads()
+        .then(res => {
+          if (isSubscribed) {
+            const loads = res.data?.data?.loads || [];
+            if (loads.length > 0) {
+              const current = loads.find(l => ['IN_TRANSIT', 'ACTIVE', 'ASSIGNED'].includes(l.status)) || loads[0];
+              const formatted = formatBackendActiveLoad(current);
+              setActiveLoad(formatted);
+              setIsDispatched(formatted.isDispatched);
+              setCarsPickedUp(formatted.totalCars);
+              setLoadStatus(formatted.isDelivered ? 'Delivered' : formatted.isDispatched ? 'Dispatched' : 'Picked Up');
+            } else {
+              setError('No active loads assigned to your account.');
+            }
+          }
+        })
+        .catch(err => {
+          if (isSubscribed) {
+            const msg = err.response?.data?.error?.message || 'Could not load active run details.';
+            setError(msg);
+          }
+        })
+        .finally(() => {
+          if (isSubscribed) setLoading(false);
+        });
+    }
+
+    return () => { isSubscribed = false; };
+  }, [paramId, location.state]);
 
   useEffect(() => {
     if (location.state?.autoOpenDispatchModal && !isDispatched) {
@@ -53,14 +174,57 @@ export default function ActiveRun() {
     }, 1200);
   };
 
+  // Status transition via Backend API
+  const handleStatusTransitionApi = (targetStatusStr, note = '') => {
+    const loadIdToUse = activeLoad?.rawId || paramId;
+    if (!loadIdToUse) {
+      triggerToast('No active load available for status update.');
+      return;
+    }
+    if (isSubmitting) return; // Prevent double submission
+
+    setIsSubmitting(true);
+    updateLoadStatus(loadIdToUse, targetStatusStr, note)
+      .then(res => {
+        const updatedStatus = res.data?.data?.load?.status || targetStatusStr;
+        const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        if (['IN_TRANSIT', 'ACTIVE', 'DELIVERED', 'COMPLETED'].includes(updatedStatus)) {
+          setIsDispatched(true);
+          setDispatchTime(nowTime);
+        }
+
+        if (['DELIVERED', 'COMPLETED'].includes(updatedStatus)) {
+          setLoadStatus('Delivered');
+        } else if (['IN_TRANSIT', 'ACTIVE'].includes(updatedStatus)) {
+          setLoadStatus('Dispatched');
+        } else {
+          setLoadStatus('Picked Up');
+        }
+
+        setActiveLoad(prev => prev ? {
+          ...prev,
+          status: updatedStatus,
+          isDispatched: ['IN_TRANSIT', 'ACTIVE', 'DELIVERED', 'COMPLETED'].includes(updatedStatus),
+          isDelivered: ['DELIVERED', 'COMPLETED'].includes(updatedStatus)
+        } : null);
+
+        triggerToast(`🚀 Status updated successfully to ${updatedStatus}`);
+      })
+      .catch(err => {
+        const msg = err.response?.data?.error?.message || 'Failed to update load status.';
+        triggerToast(`❌ Error: ${msg}`);
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+      });
+  };
+
   const handleDispatchLoad = () => {
-    setIsDispatched(true);
-    setLoadStatus('Dispatched');
-    const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    setDispatchTime(nowTime);
-    triggerToast('🚀 DISPATCH SUCCESSFUL! Departure logged & customer notified.');
+    handleStatusTransitionApi('IN_TRANSIT', 'Dispatched from pickup yard');
     setDispatchDetailsModalOpen(true);
   };
+
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-left font-sans p-4 sm:p-6 lg:p-8 space-y-6 pb-24">
@@ -93,19 +257,22 @@ export default function ActiveRun() {
             {statusMenuOpen && (
               <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-2xl z-50 py-2 text-xs font-bold text-slate-800">
                 <button
-                  onClick={() => { setLoadStatus('Picked Up'); setStatusMenuOpen(false); triggerToast('Status set to Picked Up'); }}
+                  onClick={() => { setStatusMenuOpen(false); handleStatusTransitionApi('IN_TRANSIT', 'Marked as Picked Up'); }}
+                  disabled={isSubmitting}
                   className="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center gap-2"
                 >
-                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Picked Up (8/8 Cars)
+                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Picked Up ({activeLoad?.totalCars || 8}/{activeLoad?.totalCars || 8} Cars)
                 </button>
                 <button
-                  onClick={() => { setLoadStatus('Dispatched'); setIsDispatched(true); setStatusMenuOpen(false); triggerToast('Status set to Dispatched'); }}
+                  onClick={() => { setStatusMenuOpen(false); handleStatusTransitionApi('IN_TRANSIT', 'Marked as Dispatched'); }}
+                  disabled={isSubmitting}
                   className="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center gap-2"
                 >
                   <span className="w-2 h-2 rounded-full bg-indigo-600"></span> Dispatched
                 </button>
                 <button
-                  onClick={() => { setLoadStatus('Delivered'); setStatusMenuOpen(false); triggerToast('Status set to Delivered'); }}
+                  onClick={() => { setStatusMenuOpen(false); handleStatusTransitionApi('DELIVERED', 'Marked as Delivered'); }}
+                  disabled={isSubmitting}
                   className="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center gap-2"
                 >
                   <span className="w-2 h-2 rounded-full bg-slate-400"></span> Delivered
@@ -329,14 +496,15 @@ export default function ActiveRun() {
 
               <button
                 onClick={() => isDispatched ? setDispatchDetailsModalOpen(true) : setDispatchYardModalOpen(true)}
-                className={`w-full max-w-md mx-auto font-black text-sm py-3.5 px-6 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-3 cursor-pointer ${
+                disabled={isSubmitting}
+                className={`w-full max-w-md mx-auto font-black text-sm py-3.5 px-6 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-3 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${
                   isDispatched 
                     ? 'bg-emerald-600 hover:bg-emerald-700 text-white transform hover:scale-[1.01]' 
                     : 'bg-[#4338ca] hover:bg-[#3730a3] text-white transform hover:scale-[1.01]'
                 }`}
               >
                 <FiTruck className="text-xl shrink-0" />
-                <span>{isDispatched ? '✓ DISPATCHED (En Route) • Tap for Details' : 'DISPATCH • I am leaving the yard'}</span>
+                <span>{isSubmitting ? 'Updating Status...' : isDispatched ? '✓ DISPATCHED (En Route) • Tap for Details' : 'DISPATCH • I am leaving the yard'}</span>
               </button>
 
               <div className="text-[11px] font-bold text-slate-500 flex items-center justify-center gap-1">
