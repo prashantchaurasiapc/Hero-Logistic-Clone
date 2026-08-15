@@ -11,9 +11,14 @@ exports.getAll = async (req, res, next) => {
     // Optional: Inject tenant scope here if applicable
     // if (req.tenantId) where.tenantId = req.tenantId;
 
+    if (req.query.driverId) {
+      where.driverId = req.query.driverId;
+    }
+
     const [data, total] = await Promise.all([
       prisma.document.findMany({
-        where, skip, take, orderBy
+        where, skip, take, orderBy,
+        include: { driver: true }
       }),
       prisma.document.count({ where })
     ]);

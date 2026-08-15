@@ -876,11 +876,161 @@ model Driver {
   vinScanEvents      VinScanEvent[]
   deliveryPods       DeliveryPOD[]
   offlineSyncItems   OfflineSyncItem[]
+  performanceLogs    PerformanceLog[]
+  allowances         DriverAllowance[]
+  deductions         DriverDeduction[]
+  leaveRequests      DriverLeaveRequest[]
+  payRates           DriverPayRate[]
+  activities         DriverActivity[]
+  messages           DriverMessage[]
+  superInfo          DriverSuperInfo?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("driver")
+}
+
+model PerformanceLog {
+  id         String   @id @default(uuid())
+  date       String
+  assignment String
+  route      String
+  score      String
+  status     String   @default("EXCELLENT")
+  remarks    String?  @db.Text
+  evaluator  String?
+
+  driverId   String
+  driver     Driver   @relation(fields: [driverId], references: [id])
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("performance_log")
+}
+
+model DriverAllowance {
+  id       String @id @default(uuid())
+  name     String
+  category String
+  type     String
+  amount   String
+  date     String
+  status   String @default("Approved")
+
+  driverId String
+  driver   Driver @relation(fields: [driverId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("driver_allowance")
+}
+
+model DriverDeduction {
+  id        String @id @default(uuid())
+  name      String
+  type      String
+  frequency String
+  amount    String
+  status    String @default("Active")
+
+  driverId String
+  driver   Driver @relation(fields: [driverId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("driver_deduction")
+}
+
+model DriverLeaveRequest {
+  id       String @id @default(uuid())
+  type     String
+  dates    String
+  days     String
+  approver String @default("HR Director")
+  status   String @default("Pending Approval")
+  notes    String? @db.Text
+
+  driverId String
+  driver   Driver @relation(fields: [driverId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("driver_leave_request")
+}
+
+model DriverPayRate {
+  id       String @id @default(uuid())
+  category String
+  type     String
+  rate     String
+  rule     String
+  status   String @default("Active")
+
+  driverId String
+  driver   Driver @relation(fields: [driverId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("driver_pay_rate")
+}
+
+model DriverActivity {
+  id          String   @id @default(uuid())
+  title       String
+  category    String   @default("Assignments")
+  status      String   @default("Verified")
+  description String   @db.Text
+  performedBy String   @default("Fleet Admin User")
+  time        String?
+  date        String?
+
+  driverId    String
+  driver      Driver   @relation(fields: [driverId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("driver_activity")
+}
+
+model DriverMessage {
+  id        String   @id @default(uuid())
+  subject   String
+  message   String   @db.Text
+  sender    String   @default("Fleet Admin")
+  status    String   @default("Sent")
+
+  driverId  String
+  driver    Driver   @relation(fields: [driverId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("driver_message")
+}
+
+model DriverSuperInfo {
+  id              String   @id @default(uuid())
+  fundName        String   @default("AustralianSuper")
+  memberNumber    String   @default("AS-102948")
+  usi             String   @default("STA0100AU")
+  rate            String   @default("11.5%")
+  ytdContribution String   @default("$0.00")
+  status          String   @default("Active & Compliant")
+
+  driverId        String   @unique
+  driver          Driver   @relation(fields: [driverId], references: [id])
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("driver_super_info")
 }
 
 model Vehicle {

@@ -15,4 +15,8 @@ router.route('/:id')
   .put(CustomerController.update)
   .delete(CustomerController.delete);
 
+router.route('/:id/contacts')
+  .get(CustomerController.getContacts)
+  .post(CustomerController.addContact);
+
 module.exports = router;

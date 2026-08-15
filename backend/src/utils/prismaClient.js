@@ -15,8 +15,9 @@ try {
   const dbUrl = process.env.DATABASE_URL || 'mysql://root:@localhost:3306/hero-logistic';
   const urlObj = new URL(dbUrl);
   
+  const host = (urlObj.hostname === 'localhost' || !urlObj.hostname) ? '127.0.0.1' : urlObj.hostname;
   const adapter = new PrismaMariaDb({
-    host: urlObj.hostname || 'localhost',
+    host,
     port: Number(urlObj.port) || 3306,
     user: urlObj.username || 'root',
     password: urlObj.password || '',

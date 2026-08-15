@@ -241,7 +241,12 @@ exports.delete = async (req, res, next) => {
 
     const where = { id };
 
-    await prisma.driver.delete({ where });
+    // Clean up or detach related records if any before deleting
+    await prisma.document.deleteMany({ where: { driverId: id } }).catch(() => {});
+    await prisma.load.updateMany({ where: { driverId: id }, data: { driverId: null } }).catch(() => {});
+    await prisma.vehicle.updateMany({ where: { assignedDriverId: id }, data: { assignedDriverId: null } }).catch(() => {});
+
+    await prisma.driver.delete({ where: { id } });
     
     // 204 No Content for successful delete
     return res.status(HTTP_STATUS.NO_CONTENT).send();
@@ -251,6 +256,12 @@ exports.delete = async (req, res, next) => {
         code: ERROR_CODES.NOT_FOUND,
         message: 'Driver not found'
       }, HTTP_STATUS.NOT_FOUND);
+    }
+    if (error.code === 'P2003') {
+      return sendError(res, {
+        code: ERROR_CODES.RESOURCE_CONFLICT,
+        message: 'Cannot delete driver because active operational records exist.'
+      }, HTTP_STATUS.CONFLICT);
     }
     next(error);
   }
