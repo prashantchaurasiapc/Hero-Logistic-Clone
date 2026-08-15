@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Search, Filter, Plus, ArrowRight, MoreVertical,
@@ -7,113 +7,10 @@ import {
   Layers, SlidersHorizontal, ArrowUpDown, Eye, Tag, UserCheck,
   ShieldAlert, FileText, Trash2, ArrowUpRight, Check, User
 } from 'lucide-react';
+import api from '../../../services/api';
 
-const initialLanes = [
-  {
-    id: '1',
-    name: 'Lane 1',
-    area: 'Main Yard',
-    status: 'Ready to Dispatch',
-    loadsCount: 2,
-    loadRef: 'LD-3985',
-    subRef: 'ABC123456',
-    vehicle: 'TRK-101 / TRL-309',
-    vehicleType: 'Car Carrier',
-    driver: 'John Smith',
-    estDispatch: '21/07/2026 11:00 AM'
-  },
-  {
-    id: '2',
-    name: 'Lane 2',
-    area: 'Main Yard',
-    status: 'In Progress',
-    loadsCount: 2,
-    loadRef: 'LD-3986',
-    subRef: 'DEF456789',
-    vehicle: 'TRK-102 / TRL-310',
-    vehicleType: 'Car Carrier',
-    driver: 'Mark Davis',
-    estDispatch: '21/07/2026 01:30 PM'
-  },
-  {
-    id: '3',
-    name: 'Lane 3',
-    area: 'Main Yard',
-    status: 'In Progress',
-    loadsCount: 1,
-    loadRef: 'LD-3984',
-    subRef: 'GHI789012',
-    vehicle: 'TRK-103 / TRL-311',
-    vehicleType: 'Car Carrier',
-    driver: 'Peter Brown',
-    estDispatch: '21/07/2026 02:00 PM'
-  },
-  {
-    id: '4',
-    name: 'Lane 4',
-    area: 'Overflow Yard',
-    status: 'Ready to Dispatch',
-    loadsCount: 1,
-    loadRef: 'LD-3987',
-    subRef: 'JKL012345',
-    vehicle: 'TRK-104 / TRL-312',
-    vehicleType: 'Car Carrier',
-    driver: 'Michael Lee',
-    estDispatch: '22/07/2026 08:30 AM'
-  },
-  {
-    id: '5',
-    name: 'Lane 5',
-    area: 'DG Staging Area',
-    status: 'Hold',
-    loadsCount: 1,
-    loadRef: 'LD-3990',
-    subRef: 'UN1203',
-    vehicle: 'TRK-105 / TRL-313',
-    vehicleType: 'General Freight',
-    driver: '-',
-    estDispatch: '-'
-  },
-  {
-    id: '6',
-    name: 'Lane 6',
-    area: 'Container Bay',
-    status: 'In Progress',
-    loadsCount: 2,
-    loadRef: 'LD-3991',
-    subRef: 'CONT-76890',
-    vehicle: 'TRK-201 / TRL-408',
-    vehicleType: 'Container',
-    driver: 'Ravi Patel',
-    estDispatch: '22/07/2026 10:00 AM'
-  },
-  {
-    id: '7',
-    name: 'Lane 7',
-    area: 'Machinery Bay',
-    status: 'Empty',
-    loadsCount: 0,
-    loadRef: '-',
-    subRef: '-',
-    vehicle: '-',
-    vehicleType: '',
-    driver: '-',
-    estDispatch: '-'
-  },
-  {
-    id: '8',
-    name: 'Lane 8',
-    area: 'Returns Lane',
-    status: 'Empty',
-    loadsCount: 0,
-    loadRef: '-',
-    subRef: '-',
-    vehicle: '-',
-    vehicleType: '',
-    driver: '-',
-    estDispatch: '-'
-  }
-];
+// Mock data removed in favor of dynamic API data
+const initialLanes = [];
 
 export default function WarehouseLoadLanes() {
   const navigate = useNavigate();
@@ -121,9 +18,43 @@ export default function WarehouseLoadLanes() {
   const isYard = location.pathname.startsWith('/yard');
 
   const [lanes, setLanes] = useState(initialLanes);
+  const [summary, setSummary] = useState({
+    totalLanes: 0,
+    activeLanes: 0,
+    loadsInProgress: 0,
+    readyToDispatch: 0,
+    overdueHold: 0,
+    readyCount: 0,
+    inProgressCount: 0,
+    holdCount: 0,
+    emptyCount: 0
+  });
+  const [upcomingDispatches, setUpcomingDispatches] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+
+  const fetchLanes = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/warehouse-portal/load-lanes');
+      if (res.data && res.data.success && res.data.data) {
+        const d = res.data.data;
+        if (d.lanes) setLanes(d.lanes);
+        if (d.summary) setSummary(d.summary);
+        if (d.upcomingDispatches) setUpcomingDispatches(d.upcomingDispatches);
+      }
+    } catch (err) {
+      console.error('Failed to fetch load lanes:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLanes();
+  }, []);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [newLaneName, setNewLaneName] = useState('');
   const [newLaneArea, setNewLaneArea] = useState('Main Yard');
@@ -915,8 +846,8 @@ export default function WarehouseLoadLanes() {
           </div>
           <div>
             <div className="wh-stat-title">TOTAL LOAD LANES</div>
-            <div className="wh-stat-num">8</div>
-            <div className="wh-stat-sub">Active lanes</div>
+            <div className="wh-stat-num">{summary.totalLanes}</div>
+            <div className="wh-stat-sub">{summary.activeLanes} Active lanes</div>
           </div>
         </div>
 
@@ -926,7 +857,7 @@ export default function WarehouseLoadLanes() {
           </div>
           <div>
             <div className="wh-stat-title">LOADS IN PROGRESS</div>
-            <div className="wh-stat-num">11</div>
+            <div className="wh-stat-num">{summary.loadsInProgress}</div>
             <div className="wh-stat-sub">Across all lanes</div>
           </div>
         </div>
@@ -937,7 +868,7 @@ export default function WarehouseLoadLanes() {
           </div>
           <div>
             <div className="wh-stat-title">READY TO DISPATCH</div>
-            <div className="wh-stat-num">7</div>
+            <div className="wh-stat-num">{summary.readyToDispatch}</div>
             <div className="wh-stat-sub">Waiting for pickup</div>
           </div>
         </div>
@@ -948,7 +879,7 @@ export default function WarehouseLoadLanes() {
           </div>
           <div>
             <div className="wh-stat-title">OVERDUE / HOLD</div>
-            <div className="wh-stat-num">2</div>
+            <div className="wh-stat-num">{summary.overdueHold}</div>
             <div className="wh-stat-sub">Requires attention</div>
           </div>
         </div>
@@ -1232,17 +1163,19 @@ export default function WarehouseLoadLanes() {
             <div className="wh-donut-wrap">
               <div className="wh-donut-chart">
                 <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
-                  {/* Ready 37% */}
-                  <circle cx="18" cy="18" r="14" fill="none" stroke="#22C55E" strokeWidth="4" strokeDasharray="33 100" />
-                  {/* In Progress 37% */}
-                  <circle cx="18" cy="18" r="14" fill="none" stroke="#3B82F6" strokeWidth="4" strokeDasharray="33 100" strokeDashoffset="-33" />
-                  {/* Hold 12% */}
-                  <circle cx="18" cy="18" r="14" fill="none" stroke="#F59E0B" strokeWidth="4" strokeDasharray="12 100" strokeDashoffset="-66" />
-                  {/* Empty 25% */}
-                  <circle cx="18" cy="18" r="14" fill="none" stroke="#94A3B8" strokeWidth="4" strokeDasharray="22 100" strokeDashoffset="-78" />
+                  {summary.totalLanes > 0 ? (
+                    <>
+                      <circle cx="18" cy="18" r="14" fill="none" stroke="#22C55E" strokeWidth="4" strokeDasharray={`${Math.round((summary.readyCount / summary.totalLanes) * 100)} 100`} />
+                      <circle cx="18" cy="18" r="14" fill="none" stroke="#3B82F6" strokeWidth="4" strokeDasharray={`${Math.round((summary.inProgressCount / summary.totalLanes) * 100)} 100`} strokeDashoffset={`-${Math.round((summary.readyCount / summary.totalLanes) * 100)}`} />
+                      <circle cx="18" cy="18" r="14" fill="none" stroke="#F59E0B" strokeWidth="4" strokeDasharray={`${Math.round((summary.holdCount / summary.totalLanes) * 100)} 100`} strokeDashoffset={`-${Math.round(((summary.readyCount + summary.inProgressCount) / summary.totalLanes) * 100)}`} />
+                      <circle cx="18" cy="18" r="14" fill="none" stroke="#94A3B8" strokeWidth="4" strokeDasharray={`${Math.round((summary.emptyCount / summary.totalLanes) * 100)} 100`} strokeDashoffset={`-${Math.round(((summary.readyCount + summary.inProgressCount + summary.holdCount) / summary.totalLanes) * 100)}`} />
+                    </>
+                  ) : (
+                    <circle cx="18" cy="18" r="14" fill="none" stroke="#E2E8F0" strokeWidth="4" strokeDasharray="100 100" />
+                  )}
                 </svg>
                 <div className="wh-donut-center">
-                  <span style={{ fontSize: '13px', fontWeight: 900 }}>8</span>
+                  <span style={{ fontSize: '13px', fontWeight: 900 }}>{summary.totalLanes}</span>
                   <span style={{ fontSize: '7px', color: '#64748B' }}>Lanes</span>
                 </div>
               </div>
@@ -1250,19 +1183,19 @@ export default function WarehouseLoadLanes() {
               <div className="wh-legend-list">
                 <div className="wh-legend-item">
                   <div className="wh-legend-dot" style={{ background: '#22C55E' }} />
-                  <span>Ready <strong>3 (37%)</strong></span>
+                  <span>Ready <strong>{summary.readyCount} ({summary.totalLanes ? Math.round((summary.readyCount / summary.totalLanes) * 100) : 0}%)</strong></span>
                 </div>
                 <div className="wh-legend-item">
                   <div className="wh-legend-dot" style={{ background: '#3B82F6' }} />
-                  <span>In Progress <strong>3 (37%)</strong></span>
+                  <span>In Progress <strong>{summary.inProgressCount} ({summary.totalLanes ? Math.round((summary.inProgressCount / summary.totalLanes) * 100) : 0}%)</strong></span>
                 </div>
                 <div className="wh-legend-item">
                   <div className="wh-legend-dot" style={{ background: '#F59E0B' }} />
-                  <span>Hold <strong>1 (12%)</strong></span>
+                  <span>Hold <strong>{summary.holdCount} ({summary.totalLanes ? Math.round((summary.holdCount / summary.totalLanes) * 100) : 0}%)</strong></span>
                 </div>
                 <div className="wh-legend-item">
                   <div className="wh-legend-dot" style={{ background: '#94A3B8' }} />
-                  <span>Empty <strong>2 (25%)</strong></span>
+                  <span>Empty <strong>{summary.emptyCount} ({summary.totalLanes ? Math.round((summary.emptyCount / summary.totalLanes) * 100) : 0}%)</strong></span>
                 </div>
               </div>
             </div>
@@ -1286,45 +1219,19 @@ export default function WarehouseLoadLanes() {
             </div>
 
             <div style={{ marginTop: '8px' }}>
-              <div className="wh-disp-row">
-                <div>
-                  <div className="wh-disp-load">LD-3985</div>
-                  <div className="wh-disp-lane">Lane 1</div>
-                </div>
-                <div className="wh-disp-time">21/07 11:00 AM</div>
-              </div>
-
-              <div className="wh-disp-row">
-                <div>
-                  <div className="wh-disp-load">LD-3986</div>
-                  <div className="wh-disp-lane">Lane 2</div>
-                </div>
-                <div className="wh-disp-time">21/07 01:30 PM</div>
-              </div>
-
-              <div className="wh-disp-row">
-                <div>
-                  <div className="wh-disp-load">LD-3984</div>
-                  <div className="wh-disp-lane">Lane 3</div>
-                </div>
-                <div className="wh-disp-time">21/07 02:00 PM</div>
-              </div>
-
-              <div className="wh-disp-row">
-                <div>
-                  <div className="wh-disp-load">LD-3987</div>
-                  <div className="wh-disp-lane">Lane 4</div>
-                </div>
-                <div className="wh-disp-time">22/07 08:30 AM</div>
-              </div>
-
-              <div className="wh-disp-row">
-                <div>
-                  <div className="wh-disp-load">LD-3991</div>
-                  <div className="wh-disp-lane">Lane 6</div>
-                </div>
-                <div className="wh-disp-time">22/07 10:00 AM</div>
-              </div>
+              {upcomingDispatches.length === 0 ? (
+                <div className="text-[11px] text-slate-400 py-3 text-center">No upcoming dispatches</div>
+              ) : (
+                upcomingDispatches.map((disp, idx) => (
+                  <div key={idx} className="wh-disp-row">
+                    <div>
+                      <div className="wh-disp-load">{disp.loadRef}</div>
+                      <div className="wh-disp-lane">{disp.lane}</div>
+                    </div>
+                    <div className="wh-disp-time">{disp.time}</div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 

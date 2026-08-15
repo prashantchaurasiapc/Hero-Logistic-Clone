@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../../services/api';
 import './WarehouseDashboard.css';
 import './YardDashboard.css';
 
@@ -51,11 +52,28 @@ export default function YardScanIn() {
   });
 
   // Mock table items
-  const [manifestItems, setManifestItems] = useState([
-    { id: 1, itemId: 'CTR-4402', desc: 'Standard dry van container', status: 'Completed', checked: false },
-    { id: 2, itemId: 'CTR-9104', desc: 'Refrigerated container (reefer)', status: 'Pending Spot', checked: false },
-    { id: 3, itemId: 'CTR-0029', desc: 'Flat rack heavy asset container', status: 'Pending Spot', checked: false }
-  ]);
+  const [manifestItems, setManifestItems] = useState([]);
+
+  useEffect(() => {
+    const fetchInboundItems = async () => {
+      try {
+        const res = await api.get('/load-items');
+        if (res.data && res.data.success) {
+          const fetched = res.data.data.map(item => ({
+            id: item.id,
+            itemId: item.stockRef || item.vin || item.id.substring(0, 8),
+            desc: item.description || 'Scanned container',
+            status: item.stockStatus || 'IN_STORAGE',
+            checked: false
+          }));
+          setManifestItems(fetched);
+        }
+      } catch (err) {
+        console.error('Error fetching inbound items', err);
+      }
+    };
+    fetchInboundItems();
+  }, []);
 
   const filteredItems = manifestItems.filter(item => {
     const q = searchQuery.toLowerCase().trim();
@@ -78,27 +96,40 @@ export default function YardScanIn() {
 
   const selectedCount = manifestItems.filter(item => item.checked).length;
 
-  const handleScanInSubmit = (e) => {
+  const handleScanInSubmit = async (e) => {
     e.preventDefault();
     if (!scanContainerId.trim() || !assignLocation.trim()) {
       alert('Please fill out all fields.');
       return;
     }
 
-    // Add new item to manifest list
-    const newItem = {
-      id: Date.now(),
-      itemId: scanContainerId,
-      desc: `Inbound scanned container`,
-      status: 'Pending Spot',
-      checked: false
-    };
+    try {
+      const res = await api.post('/load-items', {
+        stockRef: scanContainerId,
+        description: 'Inbound scanned container',
+        stockStatus: 'IN_STORAGE',
+        location: assignLocation
+      });
 
-    setManifestItems([newItem, ...manifestItems]);
-    setToast(`Container ${scanContainerId} scanned in to ${assignLocation} successfully.`);
-    setScanContainerId('');
-    setAssignLocation('');
-    setTimeout(() => setToast(null), 5000);
+      if (res.data && res.data.success) {
+        const item = res.data.data;
+        const newItem = {
+          id: item.id,
+          itemId: item.stockRef || item.id.substring(0,8),
+          desc: item.description,
+          status: item.stockStatus,
+          checked: false
+        };
+        setManifestItems([newItem, ...manifestItems]);
+        setToast(`Container ${scanContainerId} scanned in to ${assignLocation} successfully.`);
+        setScanContainerId('');
+        setAssignLocation('');
+        setTimeout(() => setToast(null), 5000);
+      }
+    } catch (err) {
+      console.error('Error scanning in', err);
+      alert('Failed to scan in item. Please try again.');
+    }
   };
 
   const handleScanQrSubmit = (scannedValue) => {

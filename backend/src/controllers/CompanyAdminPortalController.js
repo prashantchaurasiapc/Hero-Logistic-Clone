@@ -1876,15 +1876,60 @@ exports.getMessages = async (req, res, next) => {
     const companyId = await resolveCompanyId(req);
     const whereScope = companyId ? { companyId } : {};
 
-    const conversations = await prisma.conversation.findMany({
-      where: whereScope,
-      include: {
-        participants: { include: { user: true } },
-        messages: { take: 10, orderBy: { createdAt: 'asc' }, include: { sender: true } }
+    const [conversations, users, customers, templates] = await Promise.all([
+      prisma.conversation.findMany({
+        where: whereScope,
+        include: {
+          participants: { include: { user: { select: { id: true, name: true, email: true, role: true } } } },
+          messages: { take: 20, orderBy: { createdAt: 'asc' }, include: { sender: { select: { id: true, name: true, role: true } } } }
+        },
+        orderBy: { updatedAt: 'desc' }
+      }),
+      prisma.user.findMany({
+        where: companyId ? { OR: [{ companyId }, { companyId: null }] } : {},
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          status: true,
+          phone: true,
+          updatedAt: true
+        },
+        orderBy: { name: 'asc' }
+      }),
+      prisma.customer.findMany({
+        where: whereScope,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          status: true,
+          updatedAt: true
+        },
+        orderBy: { name: 'asc' }
+      }),
+      prisma.notificationTemplate.findMany({
+        orderBy: { createdAt: 'desc' }
+      })
+    ]);
+
+    const totalConversations = conversations.length;
+
+    return sendSuccess(res, {
+      conversations,
+      users,
+      customers,
+      templates,
+      metrics: {
+        unreadMessages: 0,
+        totalConversations,
+        pendingReplies: 0,
+        announcements: 0,
+        sentThisMonth: 0
       }
     });
-
-    return sendSuccess(res, { conversations });
   } catch (error) { next(error); }
 };
 

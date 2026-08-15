@@ -16,21 +16,21 @@ export default function WarehouseInbound() {
 
   // Inbound Details state
   const [inboundType, setInboundType] = useState('Purchase / Supplier Delivery');
-  const [inboundNo, setInboundNo] = useState('GR-1038');
-  const [supplier, setSupplier] = useState('ABC Motors');
-  const [refNote, setRefNote] = useState('DEL-887654');
+  const [inboundNo, setInboundNo] = useState('');
+  const [supplier, setSupplier] = useState('');
+  const [refNote, setRefNote] = useState('');
   const [transportType, setTransportType] = useState('Truck');
-  const [driver, setDriver] = useState('John Smith');
-  const [vehicleTrailer, setVehicleTrailer] = useState('TRK-101 / TRL-309');
-  const [dateTime, setDateTime] = useState('21/07/2026 10:20 AM');
+  const [driver, setDriver] = useState('');
+  const [vehicleTrailer, setVehicleTrailer] = useState('');
+  const [dateTime, setDateTime] = useState('');
   const [notes, setNotes] = useState('');
 
   // Location state
   const [receivingDepot, setReceivingDepot] = useState('Sydney Depot');
   const [warehouseYard, setWarehouseYard] = useState('Main Yard');
   const [zone, setZone] = useState('Zone A');
-  const [row, setRow] = useState('Row 4');
-  const [bay, setBay] = useState('Bay 12');
+  const [row, setRow] = useState('Row 1');
+  const [bay, setBay] = useState('Bay 1');
   const [stagingArea, setStagingArea] = useState('Staging Area 1');
 
   // Item Entry state
@@ -38,72 +38,23 @@ export default function WarehouseInbound() {
   const [itemType, setItemType] = useState('Vehicle (Car Carrying)');
   const [searchVinRego, setSearchVinRego] = useState('');
   
-  const [vin, setVin] = useState('JTDBE32K203456789');
-  const [regoPlate, setRegoPlate] = useState('ABC123');
-  const [make, setMake] = useState('Toyota');
-  const [model, setModel] = useState('Camry');
-  const [year, setYear] = useState('2023');
-  const [colour, setColour] = useState('White');
+  const [vin, setVin] = useState('');
+  const [regoPlate, setRegoPlate] = useState('');
+  const [make, setMake] = useState('');
+  const [model, setModel] = useState('');
+  const [year, setYear] = useState('');
+  const [colour, setColour] = useState('');
   const [condition, setCondition] = useState('Good');
   const [fuelType, setFuelType] = useState('Petrol');
   const [requirePhotos, setRequirePhotos] = useState(true);
   const [damageNoted, setDamageNoted] = useState(false);
 
   // Items List
-  const [itemsToReceive, setItemsToReceive] = useState([
-    {
-      id: '1',
-      type: 'Vehicle',
-      title: 'Toyota Camry',
-      vin: 'JTDBE32K203456789',
-      rego: 'ABC123',
-      location: 'Zone A / Row 4 / Bay 12 / Staging 1',
-      condition: 'Good',
-      damage: 'No Damage',
-      image: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?auto=format&fit=crop&w=400&q=80'
-    },
-    {
-      id: '2',
-      type: 'Vehicle',
-      title: 'Mazda 3',
-      vin: 'JM0BL10F200123456',
-      rego: 'DEF456',
-      location: 'Zone A / Row 4 / Bay 12 / Staging 1',
-      condition: 'Good',
-      damage: 'No Damage',
-      image: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=400&q=80'
-    },
-    {
-      id: '3',
-      type: 'Vehicle',
-      title: 'Honda Accord',
-      vin: '1HGCM82633A123456',
-      rego: 'GHI789',
-      location: 'Zone A / Row 4 / Bay 12 / Staging 1',
-      condition: 'Good',
-      damage: 'No Damage',
-      image: 'https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?auto=format&fit=crop&w=400&q=80'
-    },
-    {
-      id: '4',
-      type: 'Vehicle',
-      title: 'Toyota RAV4',
-      vin: 'JTMBFREV40J123456',
-      rego: 'JKL012',
-      location: 'Zone A / Row 4 / Bay 12 / Staging 1',
-      condition: 'Good',
-      damage: 'No Damage',
-      image: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=400&q=80'
-    }
-  ]);
+  const [itemsToReceive, setItemsToReceive] = useState([]);
 
   // Section 5 Documents & Photos Working State
-  const [uploadedDocs, setUploadedDocs] = useState([
-    { id: 'd1', name: 'Delivery_Note_DEL887654.pdf', size: '1.2 MB', time: '10:20 AM' }
-  ]);
-  const [uploadedPhotos, setUploadedPhotos] = useState([
-    { id: 'p1', name: 'Front_Bumper_Check.jpg', size: '2.4 MB', url: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?auto=format&fit=crop&w=200&q=80' }
-  ]);
+  const [uploadedDocs, setUploadedDocs] = useState([]);
+  const [uploadedPhotos, setUploadedPhotos] = useState([]);
 
   // Modal States
   const [importModalOpen, setImportModalOpen] = useState(false);
@@ -130,32 +81,14 @@ export default function WarehouseInbound() {
   };
 
   const handleAddAnotherItem = () => {
-    const nextNum = itemsToReceive.length + 1;
-    const defaultSampleVehicles = [
-      { make: 'Ford', model: 'Ranger Wildtrak', vin: `1FTER4FH${Math.floor(100000 + Math.random() * 900000)}`, rego: `XYZ${Math.floor(100 + Math.random() * 900)}`, image: 'https://images.unsplash.com/photo-1549317661-bd32c8ce0729?auto=format&fit=crop&w=400&q=80' },
-      { make: 'Nissan', model: 'X-Trail ST-L', vin: `JN1TCNT3${Math.floor(100000 + Math.random() * 900000)}`, rego: `MNO${Math.floor(100 + Math.random() * 900)}`, image: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=400&q=80' },
-      { make: 'Isuzu', model: 'D-Max LS-U', vin: `MPB11223${Math.floor(100000 + Math.random() * 900000)}`, rego: `KJH${Math.floor(100 + Math.random() * 900)}`, image: 'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&w=400&q=80' }
-    ];
-    const sample = defaultSampleVehicles[(nextNum - 1) % defaultSampleVehicles.length];
-
-    const newItem = {
-      id: String(Date.now()),
-      type: 'Vehicle',
-      title: `${sample.make} ${sample.model}`,
-      vin: sample.vin,
-      rego: sample.rego,
-      location: `${zone} / ${row} / ${bay} / ${stagingArea}`,
-      condition: 'Good',
-      damage: 'No Damage',
-      image: sample.image
-    };
-
-    setItemsToReceive(prev => [...prev, newItem]);
-
-    setVin(sample.vin);
-    setRegoPlate(sample.rego);
-    setMake(sample.make);
-    setModel(sample.model);
+    setVin('');
+    setRegoPlate('');
+    setMake('');
+    setModel('');
+    setYear('');
+    setColour('');
+    setCondition('Good');
+    setDamageNoted(false);
 
     const itemEntryElem = document.getElementById('section-item-entry');
     if (itemEntryElem) {
@@ -217,33 +150,8 @@ export default function WarehouseInbound() {
   };
 
   const handleSimulateCSVImport = () => {
-    const importedData = [
-      {
-        id: String(Date.now() + 1),
-        type: 'Vehicle',
-        title: 'Nissan X-Trail',
-        vin: 'JN1TCNT31U0098765',
-        rego: 'MNO345',
-        location: `${zone} / ${row} / ${bay}`,
-        condition: 'Good',
-        damage: 'No Damage',
-        image: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=400&q=80'
-      },
-      {
-        id: String(Date.now() + 2),
-        type: 'Vehicle',
-        title: 'Hyundai Tucson',
-        vin: 'KM8J33A45JU112233',
-        rego: 'PQR678',
-        location: `${zone} / ${row} / ${bay}`,
-        condition: 'Good',
-        damage: 'No Damage',
-        image: 'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&w=400&q=80'
-      }
-    ];
-    setItemsToReceive([...itemsToReceive, ...importedData]);
     setImportModalOpen(false);
-    alert('Successfully imported 2 items from CSV manifest!');
+    alert('CSV Import is not fully configured for production yet.');
   };
 
   const handleReceiveComplete = async () => {

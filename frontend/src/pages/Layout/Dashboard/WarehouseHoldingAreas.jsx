@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Search, Filter, Plus, ArrowRight, MoreVertical,
@@ -7,175 +7,59 @@ import {
   Download, Layers, SlidersHorizontal, ArrowUpRight, ChevronDown,
   Info, Eye, Tag, AlertCircle
 } from 'lucide-react';
+import api from '../../../services/api';
 
-const initialStagingAreas = [
-  {
-    id: '1',
-    code: 'SA-01',
-    name: 'Stage Area 1',
-    subLocation: 'Main Yard - Front',
-    zone: 'Zone A',
-    lane: 'Lane 1',
-    status: 'Active',
-    capacity: 20,
-    occupancy: 80,
-    stagedItems: 16,
-    awaitingMove: 3,
-    oldestItem: '2h 15m'
-  },
-  {
-    id: '2',
-    code: 'SA-02',
-    name: 'Stage Area 2',
-    subLocation: 'Main Yard - North',
-    zone: 'Zone A',
-    lane: 'Lane 2',
-    status: 'Active',
-    capacity: 18,
-    occupancy: 67,
-    stagedItems: 12,
-    awaitingMove: 2,
-    oldestItem: '1h 05m'
-  },
-  {
-    id: '3',
-    code: 'SA-03',
-    name: 'Stage Area 3',
-    subLocation: 'Warehouse 1 - Rear',
-    zone: 'Zone B',
-    lane: 'Lane 3',
-    status: 'Active',
-    capacity: 25,
-    occupancy: 88,
-    stagedItems: 22,
-    awaitingMove: 6,
-    oldestItem: '3h 42m'
-  },
-  {
-    id: '4',
-    code: 'SA-04',
-    name: 'Stage Area 4',
-    subLocation: 'Warehouse 1 - Side',
-    zone: 'Zone B',
-    lane: 'Lane 4',
-    status: 'Active',
-    capacity: 15,
-    occupancy: 53,
-    stagedItems: 8,
-    awaitingMove: 0,
-    oldestItem: '45m'
-  },
-  {
-    id: '5',
-    code: 'SA-05',
-    name: 'Stage Area 5',
-    subLocation: 'Warehouse 2 - Front',
-    zone: 'Zone C',
-    lane: 'Lane 5',
-    status: 'Active',
-    capacity: 22,
-    occupancy: 91,
-    stagedItems: 20,
-    awaitingMove: 7,
-    oldestItem: '4h 10m'
-  },
-  {
-    id: '6',
-    code: 'SA-06',
-    name: 'Stage Area 6',
-    subLocation: 'Container Yard',
-    zone: 'Zone C',
-    lane: 'Lane 6',
-    status: 'Active',
-    capacity: 30,
-    occupancy: 63,
-    stagedItems: 19,
-    awaitingMove: 4,
-    oldestItem: '1h 20m'
-  },
-  {
-    id: '7',
-    code: 'SA-07',
-    name: 'Stage Area 7',
-    subLocation: 'Hazmat Staging',
-    zone: 'Zone D',
-    lane: 'Lane 5',
-    status: 'Active',
-    capacity: 10,
-    occupancy: 40,
-    stagedItems: 4,
-    awaitingMove: 0,
-    oldestItem: '20m'
-  },
-  {
-    id: '8',
-    code: 'SA-08',
-    name: 'Stage Area 8',
-    subLocation: 'Value Storage Hold',
-    zone: 'Zone D',
-    lane: 'Lane 2',
-    status: 'Inactive',
-    capacity: 10,
-    occupancy: 0,
-    stagedItems: 0,
-    awaitingMove: 0,
-    oldestItem: '-'
-  }
-];
-
-const recentStagedItems = [
-  {
-    id: 'st-1',
-    image: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=80&q=80',
-    title: 'Toyota Hilux SRS',
-    ref: 'VIN: JTDKB3...234567',
-    area: 'Stage Area 1',
-    time: '10:32 AM'
-  },
-  {
-    id: 'st-2',
-    image: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=80&q=80',
-    title: 'Pallet – Auto Parts',
-    ref: 'SKU: PAL-889900112233',
-    area: 'Stage Area 3',
-    time: '10:21 AM'
-  },
-  {
-    id: 'st-3',
-    image: 'https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?auto=format&fit=crop&w=80&q=80',
-    title: 'Honda Accord',
-    ref: 'VIN: 1HGCM82633A123456',
-    area: 'Stage Area 2',
-    time: '10:15 AM'
-  },
-  {
-    id: 'st-4',
-    image: 'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&w=80&q=80',
-    title: '40ft Container',
-    ref: 'CONT: HJCU1234567',
-    area: 'Stage Area 6',
-    time: '10:05 AM'
-  },
-  {
-    id: 'st-5',
-    image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=80&q=80',
-    title: 'Forklift – Toyota 2.5T',
-    ref: 'SKU: EQP-778899',
-    area: 'Stage Area 5',
-    time: '09:58 AM'
-  }
-];
+// Mock data removed in favor of dynamic API data
+const initialStagingAreas = [];
+const recentStagedItems = [];
 
 export default function WarehouseHoldingAreas() {
   const navigate = useNavigate();
   const location = useLocation();
 
   const [areas, setAreas] = useState(initialStagingAreas);
+  const [summary, setSummary] = useState({
+    totalHoldingAreas: 0,
+    activeAreas: 0,
+    inactiveAreas: 0,
+    stagedItemsTotal: 0,
+    awaitingMoveTotal: 0,
+    overdueItemsTotal: 0,
+    readyForMovePercent: 0,
+    waitingOver2hPercent: 0,
+    waitingUnder2hPercent: 0,
+    overduePercent: 0
+  });
+  const [topOccupancy, setTopOccupancy] = useState([]);
+  const [recentStagedList, setRecentStagedList] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('All Staging Areas');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [zoneFilter, setZoneFilter] = useState('All');
   const [laneFilter, setLaneFilter] = useState('All');
+
+  const fetchHoldingAreas = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/warehouse-portal/holding-areas');
+      if (res.data && res.data.success && res.data.data) {
+        const d = res.data.data;
+        if (d.holdingAreas) setAreas(d.holdingAreas);
+        if (d.summary) setSummary(d.summary);
+        if (d.topOccupancy) setTopOccupancy(d.topOccupancy);
+        if (d.recentlyStaged) setRecentStagedList(d.recentlyStaged);
+      }
+    } catch (err) {
+      console.error('Failed to fetch holding areas:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchHoldingAreas();
+  }, []);
 
   const [createMoveModalOpen, setCreateMoveModalOpen] = useState(false);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
@@ -254,6 +138,7 @@ export default function WarehouseHoldingAreas() {
   });
 
   const handleRefresh = () => {
+    fetchHoldingAreas();
     showToast('Refreshed staging area inventory...');
   };
 
@@ -1042,8 +927,8 @@ export default function WarehouseHoldingAreas() {
           </div>
           <div>
             <div className="wh-st-stat-title">TOTAL STAGING AREAS</div>
-            <div className="wh-st-stat-num">12</div>
-            <div className="wh-st-stat-sub">8 Active | 4 Inactive</div>
+            <div className="wh-st-stat-num">{summary.totalHoldingAreas}</div>
+            <div className="wh-st-stat-sub">{summary.activeAreas} Active | {summary.inactiveAreas} Inactive</div>
           </div>
         </div>
 
@@ -1053,7 +938,7 @@ export default function WarehouseHoldingAreas() {
           </div>
           <div>
             <div className="wh-st-stat-title">STAGED ITEMS</div>
-            <div className="wh-st-stat-num">146</div>
+            <div className="wh-st-stat-num">{summary.stagedItemsTotal}</div>
             <div className="wh-st-stat-sub">Across all areas</div>
           </div>
         </div>
@@ -1064,7 +949,7 @@ export default function WarehouseHoldingAreas() {
           </div>
           <div>
             <div className="wh-st-stat-title">AWAITING MOVE</div>
-            <div className="wh-st-stat-num">32</div>
+            <div className="wh-st-stat-num">{summary.awaitingMoveTotal}</div>
             <div className="wh-st-stat-sub">Ready for load lane</div>
           </div>
         </div>
@@ -1075,7 +960,7 @@ export default function WarehouseHoldingAreas() {
           </div>
           <div>
             <div className="wh-st-stat-title">OVERDUE ITEMS</div>
-            <div className="wh-st-stat-num">6</div>
+            <div className="wh-st-stat-num">{summary.overdueItemsTotal}</div>
             <div className="wh-st-stat-sub">Exceeding time limit</div>
           </div>
         </div>
@@ -1323,7 +1208,7 @@ export default function WarehouseHoldingAreas() {
 
             {/* TABLE FOOTER */}
             <div className="wh-st-table-footer">
-              <div>Showing 1 to {filteredAreas.length} of 12 staging areas</div>
+              <div>Showing 1 to {filteredAreas.length} of {areas.length} staging areas</div>
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-1">
                   <button className="w-6 h-6 rounded border border-slate-300 flex items-center justify-center"><ChevronLeft size={14} /></button>
@@ -1367,17 +1252,13 @@ export default function WarehouseHoldingAreas() {
             <div className="wh-donut-wrap" style={{ marginTop: 8 }}>
               <div className="wh-donut-chart">
                 <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
-                  {/* Ready for Move 22% */}
-                  <circle cx="18" cy="18" r="14" fill="none" stroke="#22C55E" strokeWidth="4" strokeDasharray="22 100" />
-                  {/* Waiting > 2h 19% */}
-                  <circle cx="18" cy="18" r="14" fill="none" stroke="#F59E0B" strokeWidth="4" strokeDasharray="19 100" strokeDashoffset="-22" />
-                  {/* Waiting < 2h 55% */}
-                  <circle cx="18" cy="18" r="14" fill="none" stroke="#3B82F6" strokeWidth="4" strokeDasharray="55 100" strokeDashoffset="-41" />
-                  {/* Overdue 4% */}
-                  <circle cx="18" cy="18" r="14" fill="none" stroke="#EF4444" strokeWidth="4" strokeDasharray="4 100" strokeDashoffset="-96" />
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="#22C55E" strokeWidth="4" strokeDasharray={`${summary.readyForMovePercent} 100`} />
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="#F59E0B" strokeWidth="4" strokeDasharray={`${summary.waitingOver2hPercent} 100`} strokeDashoffset={`-${summary.readyForMovePercent}`} />
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="#3B82F6" strokeWidth="4" strokeDasharray={`${summary.waitingUnder2hPercent} 100`} strokeDashoffset={`-${summary.readyForMovePercent + summary.waitingOver2hPercent}`} />
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="#EF4444" strokeWidth="4" strokeDasharray={`${summary.overduePercent} 100`} strokeDashoffset={`-${summary.readyForMovePercent + summary.waitingOver2hPercent + summary.waitingUnder2hPercent}`} />
                 </svg>
                 <div className="wh-donut-center">
-                  <span style={{ fontSize: '13px', fontWeight: 900 }}>146</span>
+                  <span style={{ fontSize: '13px', fontWeight: 900 }}>{summary.stagedItemsTotal}</span>
                   <span style={{ fontSize: '7px', color: '#64748B' }}>Total</span>
                 </div>
               </div>
@@ -1385,19 +1266,19 @@ export default function WarehouseHoldingAreas() {
               <div className="wh-legend-list">
                 <div className="wh-legend-item">
                   <div className="wh-legend-dot" style={{ background: '#22C55E' }} />
-                  <span>Ready for Move <strong>32 (22%)</strong></span>
+                  <span>Ready for Move <strong>{summary.awaitingMoveTotal} ({summary.readyForMovePercent}%)</strong></span>
                 </div>
                 <div className="wh-legend-item">
                   <div className="wh-legend-dot" style={{ background: '#F59E0B' }} />
-                  <span>Waiting &gt; 2h <strong>28 (19%)</strong></span>
+                  <span>Waiting &gt; 2h <strong>0 ({summary.waitingOver2hPercent}%)</strong></span>
                 </div>
                 <div className="wh-legend-item">
                   <div className="wh-legend-dot" style={{ background: '#3B82F6' }} />
-                  <span>Waiting &lt; 2h <strong>80 (55%)</strong></span>
+                  <span>Waiting &lt; 2h <strong>{summary.stagedItemsTotal} ({summary.waitingUnder2hPercent}%)</strong></span>
                 </div>
                 <div className="wh-legend-item">
                   <div className="wh-legend-dot" style={{ background: '#EF4444' }} />
-                  <span>Overdue <strong>6 (4%)</strong></span>
+                  <span>Overdue <strong>{summary.overdueItemsTotal} ({summary.overduePercent}%)</strong></span>
                 </div>
               </div>
             </div>
@@ -1408,55 +1289,21 @@ export default function WarehouseHoldingAreas() {
             <div className="wh-st-side-title">TOP STAGING AREAS BY OCCUPANCY</div>
 
             <div style={{ marginTop: 8 }}>
-              <div className="wh-occ-rank-row">
-                <div className="wh-occ-rank-header">
-                  <span>1. Stage Area 5</span>
-                  <span className="text-red-600">91%</span>
-                </div>
-                <div className="wh-occ-rank-bg">
-                  <div className="wh-occ-rank-fill" style={{ width: '91%', background: '#EF4444' }} />
-                </div>
-              </div>
-
-              <div className="wh-occ-rank-row">
-                <div className="wh-occ-rank-header">
-                  <span>2. Stage Area 3</span>
-                  <span className="text-amber-600">88%</span>
-                </div>
-                <div className="wh-occ-rank-bg">
-                  <div className="wh-occ-rank-fill" style={{ width: '88%', background: '#F59E0B' }} />
-                </div>
-              </div>
-
-              <div className="wh-occ-rank-row">
-                <div className="wh-occ-rank-header">
-                  <span>3. Stage Area 1</span>
-                  <span className="text-green-600">80%</span>
-                </div>
-                <div className="wh-occ-rank-bg">
-                  <div className="wh-occ-rank-fill" style={{ width: '80%', background: '#22C55E' }} />
-                </div>
-              </div>
-
-              <div className="wh-occ-rank-row">
-                <div className="wh-occ-rank-header">
-                  <span>4. Stage Area 2</span>
-                  <span className="text-green-600">67%</span>
-                </div>
-                <div className="wh-occ-rank-bg">
-                  <div className="wh-occ-rank-fill" style={{ width: '67%', background: '#22C55E' }} />
-                </div>
-              </div>
-
-              <div className="wh-occ-rank-row">
-                <div className="wh-occ-rank-header">
-                  <span>5. Stage Area 6</span>
-                  <span className="text-green-600">63%</span>
-                </div>
-                <div className="wh-occ-rank-bg">
-                  <div className="wh-occ-rank-fill" style={{ width: '63%', background: '#22C55E' }} />
-                </div>
-              </div>
+              {topOccupancy.length === 0 ? (
+                <div className="text-[11px] text-slate-400 py-2 text-center">No staging occupancy data</div>
+              ) : (
+                topOccupancy.map((item, idx) => (
+                  <div key={idx} className="wh-occ-rank-row">
+                    <div className="wh-occ-rank-header">
+                      <span>{idx + 1}. {item.name}</span>
+                      <span className={item.occupancy > 80 ? "text-red-600" : item.occupancy > 50 ? "text-amber-600" : "text-green-600"}>{item.occupancy}%</span>
+                    </div>
+                    <div className="wh-occ-rank-bg">
+                      <div className="wh-occ-rank-fill" style={{ width: `${item.occupancy}%`, background: item.occupancy > 80 ? '#EF4444' : item.occupancy > 50 ? '#F59E0B' : '#22C55E' }} />
+                    </div>
+                  </div>
+                ))
+              )}
 
               <div className="text-[10px] font-bold text-blue-600 cursor-pointer mt-2 hover:underline">
                 View all staging areas
@@ -1474,19 +1321,25 @@ export default function WarehouseHoldingAreas() {
             </div>
 
             <div style={{ marginTop: 8 }}>
-              {recentStagedItems.map(item => (
-                <div key={item.id} className="wh-st-recent-item">
-                  <img src={item.image} alt={item.title} className="wh-st-recent-thumb" />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div className="font-extrabold text-slate-900 text-xs truncate">{item.title}</div>
-                    <div className="text-[9px] text-slate-500 font-mono truncate">{item.ref}</div>
+              {recentStagedList.length === 0 ? (
+                <div className="text-[11px] text-slate-400 py-3 text-center">No staged items yet</div>
+              ) : (
+                recentStagedList.map(item => (
+                  <div key={item.id} className="wh-st-recent-item">
+                    <div className="wh-st-recent-thumb flex items-center justify-center bg-slate-100 text-slate-400 font-bold text-xs">
+                      <Box size={14} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div className="font-extrabold text-slate-900 text-xs truncate">{item.title}</div>
+                      <div className="text-[9px] text-slate-500 font-mono truncate">{item.vin}</div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div className="text-[9.5px] font-bold text-slate-700">{item.area}</div>
+                      <div className="text-[9px] text-blue-600 font-bold">{item.time}</div>
+                    </div>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div className="text-[9.5px] font-bold text-slate-700">{item.area}</div>
-                    <div className="text-[9px] text-blue-600 font-bold">{item.time}</div>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 

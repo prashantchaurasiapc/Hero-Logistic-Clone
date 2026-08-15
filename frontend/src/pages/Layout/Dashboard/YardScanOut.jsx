@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../../services/api';
 import './WarehouseDashboard.css';
 import './YardDashboard.css';
 
@@ -51,9 +52,28 @@ export default function YardScanOut() {
   });
 
   // Mock table items
-  const [manifestItems, setManifestItems] = useState([
-    { id: 1, itemId: 'CTR-0018', desc: 'Red cargo container', status: 'Awaiting Release', checked: false }
-  ]);
+  const [manifestItems, setManifestItems] = useState([]);
+
+  useEffect(() => {
+    const fetchOutboundItems = async () => {
+      try {
+        const res = await api.get('/load-items');
+        if (res.data && res.data.success) {
+          const fetched = res.data.data.map(item => ({
+            id: item.id,
+            itemId: item.stockRef || item.vin || item.id.substring(0, 8),
+            desc: item.description || 'Scanned container',
+            status: item.stockStatus || 'IN_STORAGE',
+            checked: false
+          }));
+          setManifestItems(fetched);
+        }
+      } catch (err) {
+        console.error('Error fetching outbound items', err);
+      }
+    };
+    fetchOutboundItems();
+  }, []);
 
   const filteredItems = manifestItems.filter(item => {
     const q = searchQuery.toLowerCase().trim();
@@ -76,27 +96,40 @@ export default function YardScanOut() {
 
   const selectedCount = manifestItems.filter(item => item.checked).length;
 
-  const handleScanOutSubmit = (e) => {
+  const handleScanOutSubmit = async (e) => {
     e.preventDefault();
     if (!scanContainerId.trim() || !releaseGate.trim()) {
       alert('Please fill out all fields.');
       return;
     }
 
-    // Add new item to manifest list
-    const newItem = {
-      id: Date.now(),
-      itemId: scanContainerId,
-      desc: `Outbound scanned container`,
-      status: 'Awaiting Release',
-      checked: false
-    };
+    try {
+      const res = await api.post('/load-items', {
+        stockRef: scanContainerId,
+        description: 'Outbound scanned container',
+        stockStatus: 'DISPATCHED',
+        location: releaseGate
+      });
 
-    setManifestItems([newItem, ...manifestItems]);
-    setToast(`Container ${scanContainerId} scanned out to ${releaseGate} successfully.`);
-    setScanContainerId('');
-    setReleaseGate('');
-    setTimeout(() => setToast(null), 5000);
+      if (res.data && res.data.success) {
+        const item = res.data.data;
+        const newItem = {
+          id: item.id,
+          itemId: item.stockRef || item.id.substring(0,8),
+          desc: item.description,
+          status: item.stockStatus,
+          checked: false
+        };
+        setManifestItems([newItem, ...manifestItems]);
+        setToast(`Container ${scanContainerId} scanned out to ${releaseGate} successfully.`);
+        setScanContainerId('');
+        setReleaseGate('');
+        setTimeout(() => setToast(null), 5000);
+      }
+    } catch (err) {
+      console.error('Error scanning out', err);
+      alert('Failed to scan out item. Please try again.');
+    }
   };
 
   const handleScanQrSubmit = (scannedValue) => {
