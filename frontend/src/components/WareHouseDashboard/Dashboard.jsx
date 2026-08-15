@@ -79,52 +79,12 @@ const InfoIcon = ({ color = "currentColor", size = 16 }) => (
   </svg>
 );
 
-// === INITIAL MOCK DATA (Matching Screenshot 2) ===
-const initialInboundToday = [
-  { time: '10:30 AM', receiptNo: 'GR-1023', from: 'ABC Motors', items: '4 Vehicles', status: 'Pending' },
-  { time: '11:15 AM', receiptNo: 'GR-1024', from: 'National Fleet', items: '2 Vehicles', status: 'Pending' },
-  { time: '01:00 PM', receiptNo: 'GR-1025', from: 'EasyAuto', items: '6 Vehicles', status: 'Pending' },
-  { time: '02:45 PM', receiptNo: 'GR-1026', from: 'Premium Cars', items: '3 Vehicles', status: 'Pending' },
-];
+// === INITIAL MOCK DATA (Removed) ===
+const initialInboundToday = [];
+const initialLoadLanes = [];
+const initialRecentMovements = [];
 
-const initialLoadLanes = [
-  { lane: 'Lane 3', load: 'LD-3985', current: 6, total: 10, barColor: '#3B82F6', status: 'In Progress' },
-  { lane: 'Lane 4', load: 'LD-3987', current: 3, total: 10, barColor: '#F59E0B', status: 'In Progress' },
-  { lane: 'Lane 5', load: 'LD-3986', current: 4, total: 10, barColor: '#F59E0B', status: 'Staging' },
-  { lane: 'Lane 6', load: 'LD-3988', current: 2, total: 10, barColor: '#3B82F6', status: 'In Progress' },
-];
-
-const initialRecentMovements = [
-  { time: '08:10 AM', item: 'ABC123', action: 'Moved', location: 'Yard A / Row 4 / Bay 12' },
-  { time: '08:05 AM', item: 'DEF456', action: 'Received', location: 'Inbound' },
-  { time: '08:01 AM', item: 'GHI789', action: 'Moved', location: 'Load Lane 4' },
-  { time: '07:59 AM', item: 'JKL012', action: 'Staged', location: 'Load Lane 4' },
-  { time: '07:45 AM', item: 'MNO345', action: 'Moved', location: 'Yard B / Row 1 / Bay 3' },
-];
-
-const initialNotifications = [
-  {
-    id: 1,
-    icon: <LayoutGridIcon color="#3B82F6" size={16} />,
-    iconBg: '#EFF6FF',
-    text: 'Load LD-3987 has been assigned to Load Lane 4',
-    time: '2 min ago'
-  },
-  {
-    id: 2,
-    icon: <TruckIcon color="#EAB308" size={16} />,
-    iconBg: '#FEFCE8',
-    text: 'Vehicle DEF456 received from National Fleet',
-    time: '10 min ago'
-  },
-  {
-    id: 3,
-    icon: <InfoIcon color="#3B82F6" size={16} />,
-    iconBg: '#EFF6FF',
-    text: '5 items ready to move to Load Lanes',
-    time: '25 min ago'
-  }
-];
+const initialNotifications = [];
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -143,16 +103,16 @@ export default function Dashboard() {
   const [movementsList, setMovementsList] = useState(initialRecentMovements);
   const [notificationsList, setNotificationsList] = useState(initialNotifications);
   const [liveKpi, setLiveKpi] = useState({
-    inboundAwaiting: 12,
-    inYard: 48,
-    toMove: 5,
-    loadLanes: 3,
-    dispatchReady: 18,
-    yardCapacityPercent: 72,
-    totalCap: 200,
-    inYardCap: 144,
-    availCap: 56,
-    lastSync: '08:15 AM'
+    inboundAwaiting: 0,
+    inYard: 0,
+    toMove: 0,
+    loadLanes: 0,
+    dispatchReady: 0,
+    yardCapacityPercent: 0,
+    totalCap: 0,
+    inYardCap: 0,
+    availCap: 0,
+    lastSync: 'Syncing...'
   });
 
   const fetchLiveDashboard = async () => {
@@ -164,25 +124,25 @@ export default function Dashboard() {
         const d = res.data.data;
         if (d.overview) {
           setLiveKpi({
-            inboundAwaiting: d.overview.inboundAwaiting || 12,
-            inYard: d.overview.inYard || 48,
-            toMove: d.overview.toMove || 5,
-            loadLanes: d.overview.loadLanes || 3,
-            dispatchReady: d.overview.dispatchReady || 18,
-            yardCapacityPercent: d.overview.yardCapacity?.usedPercent || 72,
-            totalCap: d.overview.yardCapacity?.total || 200,
-            inYardCap: d.overview.yardCapacity?.inYard || 144,
-            availCap: d.overview.yardCapacity?.available || 56,
-            lastSync: d.overview.lastSync || '08:15 AM'
+            inboundAwaiting: d.overview.inboundAwaiting || 0,
+            inYard: d.overview.inYard || 0,
+            toMove: d.overview.toMove || 0,
+            loadLanes: d.overview.loadLanes || 0,
+            dispatchReady: d.overview.dispatchReady || 0,
+            yardCapacityPercent: d.overview.yardCapacity?.usedPercent || 0,
+            totalCap: d.overview.yardCapacity?.total || 0,
+            inYardCap: d.overview.yardCapacity?.inYard || 0,
+            availCap: d.overview.yardCapacity?.available || 0,
+            lastSync: d.overview.lastSync || new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
           });
         }
-        if (d.inboundToday && d.inboundToday.length > 0) {
+        if (d.inboundToday) {
           setInboundList(d.inboundToday);
         }
-        if (d.loadLanesOverview && d.loadLanesOverview.length > 0) {
+        if (d.loadLanesOverview) {
           setLoadLanesList(d.loadLanesOverview);
         }
-        if (d.recentMovements && d.recentMovements.length > 0) {
+        if (d.recentMovements) {
           setMovementsList(d.recentMovements);
         }
       }

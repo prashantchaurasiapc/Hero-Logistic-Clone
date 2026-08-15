@@ -562,7 +562,7 @@ exports.getLoadLanes = async (req, res, next) => {
       orderBy: { name: 'asc' },
       include: {
         loads: {
-          include: { customer: true, driver: true, truck: true, trailer: true }
+          include: { customer: true, driver: { include: { user: true } }, truck: true, trailer: true }
         },
         loadItems: true,
         warehouse: true
@@ -572,48 +572,68 @@ exports.getLoadLanes = async (req, res, next) => {
     const formattedLanes = lanes.map((lane, idx) => {
       const activeLoad = lane.loads?.[0];
       const count = lane.loadItems?.length || 0;
+      let status = 'Empty';
+      if (lane.status) {
+        status = lane.status;
+      } else if (activeLoad) {
+        status = activeLoad.status === 'READY_FOR_PICKUP' ? 'Ready to Dispatch' : 'In Progress';
+      }
+
       return {
         id: lane.id,
+        name: lane.name || `Lane ${idx + 1}`,
         laneNumber: `Lane ${idx + 1}`,
         laneName: lane.name || `Lane ${idx + 1}`,
-        area: idx === 3 ? 'Overflow Yard' : (idx === 4 ? 'DG Staging Area' : (idx === 5 ? 'Container Bay' : 'Main Yard')),
-        status: lane.status || 'In Progress',
-        loadCount: lane.loads?.length || (count > 0 ? 1 : 0),
-        currentLoadRef: activeLoad?.loadRef || (count > 0 ? `LD-398${idx + 4}` : '-'),
-        trailerVehicle: activeLoad ? `${activeLoad.truck?.rego || 'TRK-101'} / ${activeLoad.trailer?.rego || 'TRL-309'}` : (count > 0 ? `TRK-10${idx + 1} / TRL-31${idx}` : '-'),
-        carrierType: idx === 4 ? 'General Freight' : (idx === 5 ? 'Container' : 'Car Carrier'),
-        driver: activeLoad?.driver?.licenseNumber || (count > 0 ? 'John Smith' : '-'),
-        estDispatch: count > 0 ? '21/07/2026 11:00 AM' : '-',
+        area: lane.warehouse?.name || 'Main Yard',
+        status: status,
+        loadsCount: lane.loads?.length || 0,
+        loadRef: activeLoad?.loadNumber || '-',
+        subRef: activeLoad?.customer?.name || (lane.loadItems?.[0]?.vin ? `VIN: ${lane.loadItems[0].vin.slice(0, 8)}...` : '-'),
+        vehicle: activeLoad ? `${activeLoad.truck?.rego || activeLoad.truckId || 'Truck'} / ${activeLoad.trailer?.rego || activeLoad.trailerId || 'Trailer'}` : '-',
+        vehicleType: activeLoad ? (activeLoad.carrierType || 'Car Carrier') : '',
+        driver: activeLoad?.driver?.user ? activeLoad.driver.user.name : (activeLoad?.driver?.licenseNumber || '-'),
+        estDispatch: activeLoad?.scheduledPickupTime ? new Date(activeLoad.scheduledPickupTime).toLocaleString() : '-',
         progress: `${count} / 10`,
         items: lane.loadItems
       };
     });
 
-    const readyCount = formattedLanes.filter(l => l.status.includes('Ready')).length;
-    const inProgressCount = formattedLanes.filter(l => l.status.includes('Progress')).length;
-    const holdCount = formattedLanes.filter(l => l.status.includes('Hold')).length;
-    const emptyCount = formattedLanes.filter(l => l.status.includes('Empty') || l.loadCount === 0).length;
+    const readyCount = formattedLanes.filter(l => l.status.toLowerCase().includes('ready')).length;
+    const inProgressCount = formattedLanes.filter(l => l.status.toLowerCase().includes('progress')).length;
+    const holdCount = formattedLanes.filter(l => l.status.toLowerCase().includes('hold')).length;
+    const emptyCount = formattedLanes.filter(l => l.status.toLowerCase().includes('empty') || l.loadsCount === 0).length;
+    const totalLanesCount = formattedLanes.length;
+
+    const upcomingLoads = await prisma.load.findMany({
+      where: {
+        loadLaneId: { not: null },
+        status: { in: ['ASSIGNED', 'IN_PROGRESS', 'READY_FOR_PICKUP'] }
+      },
+      include: {
+        loadLane: true
+      },
+      orderBy: { scheduledPickupTime: 'asc' },
+      take: 5
+    });
 
     return sendSuccess(res, {
       summary: {
-        totalLanes: formattedLanes.length || 8,
-        activeLanes: formattedLanes.filter(l => l.loadCount > 0).length,
-        loadsInProgress: 11,
-        readyToDispatch: 7,
-        overdueHold: 2,
+        totalLanes: totalLanesCount,
+        activeLanes: formattedLanes.filter(l => l.loadsCount > 0).length,
+        loadsInProgress: inProgressCount,
+        readyToDispatch: readyCount,
+        overdueHold: holdCount,
         readyCount,
         inProgressCount,
         holdCount,
         emptyCount
       },
       lanes: formattedLanes,
-      upcomingDispatches: [
-        { loadRef: 'LD-3985', lane: 'Lane 1', time: '21/07 11:00 AM' },
-        { loadRef: 'LD-3986', lane: 'Lane 2', time: '21/07 01:30 PM' },
-        { loadRef: 'LD-3984', lane: 'Lane 3', time: '21/07 02:00 PM' },
-        { loadRef: 'LD-3987', lane: 'Lane 4', time: '22/07 08:30 AM' },
-        { loadRef: 'LD-3991', lane: 'Lane 6', time: '22/07 10:00 AM' }
-      ]
+      upcomingDispatches: upcomingLoads.map(l => ({
+        loadRef: l.loadNumber || l.id,
+        lane: l.loadLane?.name || 'Unassigned',
+        time: l.scheduledPickupTime ? new Date(l.scheduledPickupTime).toLocaleString() : 'Pending'
+      }))
     });
   } catch (error) {
     next(error);
@@ -858,57 +878,65 @@ exports.getHoldingAreas = async (req, res, next) => {
       orderBy: { name: 'asc' }
     });
 
-    const fallbackAreas = [
-      { id: '1', code: 'SA-01', name: 'Stage Area 1', zone: 'Zone A', location: 'Main Yard - Front', nextLane: 'Lane 1', status: 'Active', capacity: 20, occupancy: 80, stagedItems: 16, awaitingMove: 3, oldestItem: '2h 15m' },
-      { id: '2', code: 'SA-02', name: 'Stage Area 2', zone: 'Zone A', location: 'Main Yard - North', nextLane: 'Lane 2', status: 'Active', capacity: 18, occupancy: 67, stagedItems: 12, awaitingMove: 2, oldestItem: '1h 05m' },
-      { id: '3', code: 'SA-03', name: 'Stage Area 3', zone: 'Zone B', location: 'Warehouse 1 - Rear', nextLane: 'Lane 3', status: 'Active', capacity: 25, occupancy: 88, stagedItems: 22, awaitingMove: 6, oldestItem: '3h 42m' },
-      { id: '4', code: 'SA-04', name: 'Stage Area 4', zone: 'Zone B', location: 'Warehouse 1 - Side', nextLane: 'Lane 4', status: 'Active', capacity: 15, occupancy: 53, stagedItems: 8, awaitingMove: 0, oldestItem: '45m' },
-      { id: '5', code: 'SA-05', name: 'Stage Area 5', zone: 'Zone C', location: 'Warehouse 2 - Front', nextLane: 'Lane 5', status: 'Active', capacity: 22, occupancy: 91, stagedItems: 20, awaitingMove: 7, oldestItem: '4h 10m' },
-      { id: '6', code: 'SA-06', name: 'Stage Area 6', zone: 'Zone C', location: 'Container Yard', nextLane: 'Lane 6', status: 'Active', capacity: 30, occupancy: 63, stagedItems: 19, awaitingMove: 4, oldestItem: '1h 20m' },
-      { id: '7', code: 'SA-07', name: 'Stage Area 7', zone: 'Zone D', location: 'Hazmat Staging', nextLane: 'Lane 5', status: 'Active', capacity: 10, occupancy: 40, stagedItems: 4, awaitingMove: 0, oldestItem: '20m' }
-    ];
+    const stagedItemsCount = await prisma.loadItem.count({
+      where: {
+        stagingAreaId: { not: null }
+      }
+    });
+
+    const activeAreasCount = areas.filter(a => a.status !== 'INACTIVE' && a.status !== 'Inactive').length;
+    const inactiveAreasCount = areas.filter(a => a.status === 'INACTIVE' || a.status === 'Inactive').length;
+
+    const recentStaged = await prisma.loadItem.findMany({
+      where: {
+        stagingAreaId: { not: null }
+      },
+      include: {
+        stagingArea: true
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: 5
+    });
 
     return sendSuccess(res, {
       summary: {
-        totalHoldingAreas: 12,
-        activeAreas: 8,
-        inactiveAreas: 4,
-        stagedItemsTotal: 146,
-        awaitingMoveTotal: 32,
-        overdueItemsTotal: 6,
-        readyForMovePercent: 22,
-        waitingOver2hPercent: 19,
-        waitingUnder2hPercent: 55,
-        overduePercent: 4
+        totalHoldingAreas: areas.length,
+        activeAreas: activeAreasCount,
+        inactiveAreas: inactiveAreasCount,
+        stagedItemsTotal: stagedItemsCount,
+        awaitingMoveTotal: 0,
+        overdueItemsTotal: 0,
+        readyForMovePercent: stagedItemsCount > 0 ? 100 : 0,
+        waitingOver2hPercent: 0,
+        waitingUnder2hPercent: 0,
+        overduePercent: 0
       },
-      holdingAreas: areas.length > 0 ? areas.map((a, i) => ({
+      holdingAreas: areas.map((a, i) => ({
         id: a.id,
-        code: `SA-0${i + 1}`,
+        code: `SA-${String(i + 1).padStart(2, '0')}`,
         name: a.name || `Stage Area ${i + 1}`,
-        zone: `Zone ${String.fromCharCode(65 + (i % 4))}`,
+        zone: a.warehouse?.name || 'Main Yard',
         location: a.name,
-        nextLane: `Lane ${(i % 6) + 1}`,
+        subLocation: a.warehouse?.name || 'Main Yard',
+        lane: `Lane ${(i % 6) + 1}`,
         status: a.status || 'Active',
-        capacity: 20,
-        occupancy: 75,
-        stagedItems: a.loadItems?.length || 12,
-        awaitingMove: 3,
-        oldestItem: '1h 45m'
-      })) : fallbackAreas,
-      topOccupancy: [
-        { name: 'Stage Area 5', occupancy: 91 },
-        { name: 'Stage Area 3', occupancy: 88 },
-        { name: 'Stage Area 1', occupancy: 80 },
-        { name: 'Stage Area 2', occupancy: 67 },
-        { name: 'Stage Area 6', occupancy: 63 }
-      ],
-      recentlyStaged: [
-        { title: 'Toyota Hilux SRS', vin: 'JTDKB3...234567', area: 'Stage Area 1', time: '10:32 AM' },
-        { title: 'Pallet – Auto Parts', sku: 'SKU: PAL-889900112233', area: 'Stage Area 3', time: '10:21 AM' },
-        { title: 'Honda Accord', vin: '1HGCM82633A123456', area: 'Stage Area 2', time: '10:15 AM' },
-        { title: '40ft Container', container: 'CONT: HJCU1234567', area: 'Stage Area 6', time: '10:05 AM' },
-        { title: 'Forklift – Toyota 2.5T', sku: 'SKU: EQP-778899', area: 'Stage Area 5', time: '09:58 AM' }
-      ]
+        capacity: 25,
+        occupancy: a.loadItems?.length ? Math.min(Math.round((a.loadItems.length / 25) * 100), 100) : 0,
+        stagedItems: a.loadItems?.length || 0,
+        awaitingMove: 0,
+        oldestItem: '-'
+      })),
+      topOccupancy: areas.map(a => ({
+        name: a.name,
+        occupancy: a.loadItems?.length ? Math.min(Math.round((a.loadItems.length / 25) * 100), 100) : 0
+      })).sort((a, b) => b.occupancy - a.occupancy).slice(0, 5),
+      recentlyStaged: recentStaged.map(item => ({
+        id: item.id,
+        title: item.make ? `${item.make} ${item.model || ''}` : (item.vehicleType || item.stockRef || 'Item'),
+        vin: item.vin || item.stockRef || '',
+        area: item.stagingArea?.name || 'Staging Area',
+        time: new Date(item.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }))
     });
   } catch (error) {
     next(error);

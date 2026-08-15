@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Plus, X, Bell, ChevronDown, Check, FileText, Send,
   FileDown, DollarSign, Building, Sparkles, RefreshCw, Clock, Eye, Download
@@ -10,6 +11,7 @@ import api, { getSalesReps } from '../../services/api';
 import { jsPDF } from 'jspdf';
 
 export default function Proposals() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   // Database States
   const [proposals, setProposals] = useState([]);
@@ -1140,7 +1142,9 @@ export default function Proposals() {
                   <button
                     onClick={() => {
                       setShowConversionWizard(false);
-                      // navigate('/admin/companies'); // Direct to the companies list
+                      setWizardStep(1);
+                      crmRepository.syncWithBackend();
+                      navigate('/sales/dashboard');
                     }}
                     className="bg-[#ffcc00] hover:bg-[#e6b800] text-slate-900 font-extrabold text-[14px] px-8 py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all flex items-center justify-center gap-2 mx-auto cursor-pointer"
                   >
