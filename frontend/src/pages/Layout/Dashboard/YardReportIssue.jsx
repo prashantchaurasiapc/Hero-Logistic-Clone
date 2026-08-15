@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../../services/api';
 import './WarehouseDashboard.css';
 import './YardDashboard.css';
 
@@ -31,6 +32,8 @@ export default function YardReportIssue() {
   const [trailerId, setTrailerId] = useState('');
   const [description, setDescription] = useState('');
   const [severity, setSeverity] = useState('Medium (Requires repair)');
+  const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Checklist State
   const [checklist, setChecklist] = useState({
@@ -42,24 +45,7 @@ export default function YardReportIssue() {
   });
 
   // Active Safety Issues State
-  const [issues, setIssues] = useState([
-    {
-      id: 1,
-      category: 'Damage',
-      trailerId: 'TR-7712',
-      description: 'Rear container door seal torn. Water leak risk.',
-      loggedDate: '06/19/2026',
-      severity: 'High'
-    },
-    {
-      id: 2,
-      category: 'Missing Item',
-      trailerId: 'TR-1102',
-      description: 'Load securing chains missing from rear locker box.',
-      loggedDate: '06/18/2026',
-      severity: 'Low'
-    }
-  ]);
+  const [issues, setIssues] = useState([]);
 
   // UI State
   const [validationAlert, setValidationAlert] = useState(false);
@@ -67,11 +53,29 @@ export default function YardReportIssue() {
   const [selectedIssue, setSelectedIssue] = useState(null); // For details modal
   const [hoverBtn, setHoverBtn] = useState(null);
 
+  const fetchIssues = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/warehouse-portal/issues');
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        setIssues(res.data.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch issues:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchIssues();
+  }, []);
+
   const handleChecklistChange = (key) => {
     setChecklist(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = async (e) => {
     if (e) e.preventDefault();
 
     if (!trailerId.trim() || !description.trim()) {
@@ -80,37 +84,37 @@ export default function YardReportIssue() {
       return;
     }
 
-    const shortCategory = issueCategory.includes('Damage') ? 'Damage' : 'Missing Item';
-    const shortSeverity = severity.split(' ')[0]; // High, Medium, Low
+    setSubmitting(true);
+    try {
+      const res = await api.post('/warehouse-portal/report-issue', {
+        category: issueCategory,
+        trailerId: trailerId.trim(),
+        description: description.trim(),
+        severity,
+        checklist
+      });
 
-    const newIssue = {
-      id: Date.now(),
-      category: shortCategory,
-      trailerId: trailerId.trim(),
-      description: description.trim(),
-      loggedDate: new Date().toLocaleDateString('en-US', {
-        month: '2-digit',
-        day: '2-digit',
-        year: 'numeric'
-      }),
-      severity: shortSeverity
-    };
-
-    setIssues([newIssue, ...issues]);
-    setTrailerId('');
-    setDescription('');
-    setIssueCategory('Container Damage Report');
-    setSeverity('Medium (Requires repair)');
-    setChecklist({
-      doors: false,
-      tyres: false,
-      lights: false,
-      seals: false,
-      brakes: false
-    });
-
-    setToastMessage('Inspection report logged successfully.');
-    setTimeout(() => setToastMessage(''), 4000);
+      if (res.data?.success) {
+        setTrailerId('');
+        setDescription('');
+        setIssueCategory('Container Damage Report');
+        setSeverity('Medium (Requires repair)');
+        setChecklist({
+          doors: false,
+          tyres: false,
+          lights: false,
+          seals: false,
+          brakes: false
+        });
+        setToastMessage('Inspection report logged to database successfully.');
+        fetchIssues();
+        setTimeout(() => setToastMessage(''), 4000);
+      }
+    } catch (err) {
+      alert(err.response?.data?.error?.message || 'Failed to submit issue report.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleReportMissingItem = () => {
@@ -119,11 +123,16 @@ export default function YardReportIssue() {
     setTimeout(() => setToastMessage(''), 3000);
   };
 
-  const handleResolveReport = (issueId) => {
-    setIssues(prev => prev.filter(item => item.id !== issueId));
-    setSelectedIssue(null);
-    setToastMessage('Safety issue resolved and archived.');
-    setTimeout(() => setToastMessage(''), 4000);
+  const handleResolveReport = async (issueId) => {
+    try {
+      await api.delete(`/warehouse-portal/issues/${issueId}`);
+      setIssues(prev => prev.filter(item => item.id !== issueId));
+      setSelectedIssue(null);
+      setToastMessage('Safety issue resolved and archived.');
+      setTimeout(() => setToastMessage(''), 4000);
+    } catch (err) {
+      alert(err.response?.data?.error?.message || 'Failed to resolve issue.');
+    }
   };
 
   return (

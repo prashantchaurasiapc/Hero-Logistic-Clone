@@ -61,7 +61,15 @@ exports.me = async (req, res, next) => {
     }
     const freshUser = await prisma.user.findUnique({
       where: { id: targetId },
-      include: { customRole: true, company: true }
+      include: {
+        customRole: true,
+        company: true,
+        driverProfile: {
+          include: {
+            currentVehicle: true
+          }
+        }
+      }
     });
     if (freshUser) {
       delete freshUser.password;

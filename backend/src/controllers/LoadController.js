@@ -13,6 +13,9 @@ exports.getAll = async (req, res, next) => {
     if (req.user && req.user.role === 'DISPATCHER' && req.user.branchId && !req.user.permissions?.includes('dispatch.cross_branch.view')) {
       where.branchId = req.user.branchId;
     }
+    if (req.user && req.user.role === 'DRIVER') {
+      where.driver = { userId: req.user.id };
+    }
 
     const [data, total] = await Promise.all([
       prisma.load.findMany({
@@ -44,6 +47,9 @@ exports.getById = async (req, res, next) => {
     if (req.tenantId) where.companyId = req.tenantId;
     if (req.user && req.user.role === 'DISPATCHER' && req.user.branchId && !req.user.permissions?.includes('dispatch.cross_branch.view')) {
       where.branchId = req.user.branchId;
+    }
+    if (req.user && req.user.role === 'DRIVER') {
+      where.driver = { userId: req.user.id };
     }
 
     const data = await prisma.load.findFirst({
@@ -82,6 +88,14 @@ exports.create = async (req, res, next) => {
     }
     if (req.user && req.user.role === 'DISPATCHER' && req.user.branchId && !req.user.permissions?.includes('dispatch.cross_branch.view')) {
       payload.branchId = req.user.branchId;
+    }
+    if (req.user && req.user.role === 'DRIVER') {
+      if (!req.user.permissions?.includes('driver.owner_operator_load_create')) {
+        return sendError(res, {
+          code: ERROR_CODES.UNAUTHORIZED_ACCESS,
+          message: 'Drivers are not authorized to create loads.'
+        }, HTTP_STATUS.FORBIDDEN);
+      }
     }
 
     if (!payload.companyId) {
@@ -167,6 +181,9 @@ exports.update = async (req, res, next) => {
     if (req.user && req.user.role === 'DISPATCHER' && req.user.branchId && !req.user.permissions?.includes('dispatch.cross_branch.view')) {
       findWhere.branchId = req.user.branchId;
     }
+    if (req.user && req.user.role === 'DRIVER') {
+      findWhere.driver = { userId: req.user.id };
+    }
 
     let targetLoad = await prisma.load.findFirst({
       where: findWhere
@@ -210,6 +227,9 @@ exports.delete = async (req, res, next) => {
     }
     if (req.user && req.user.role === 'DISPATCHER' && req.user.branchId && !req.user.permissions?.includes('dispatch.cross_branch.view')) {
       findWhere.branchId = req.user.branchId;
+    }
+    if (req.user && req.user.role === 'DRIVER') {
+      findWhere.driver = { userId: req.user.id };
     }
 
     const targetLoad = await prisma.load.findFirst({

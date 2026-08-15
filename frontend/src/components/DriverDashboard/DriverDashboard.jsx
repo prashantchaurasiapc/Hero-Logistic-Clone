@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import {
   FiCheckSquare, FiPackage, FiUpload, FiClock,
   FiAlertTriangle, FiFileText, FiTruck, FiCoffee, FiDollarSign,
@@ -9,9 +10,23 @@ import {
 
 const DriverDashboard = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   // Status & Modal states
   const [driverStatus, setDriverStatus] = useState('On Duty');
+
+  useEffect(() => {
+    if (user?.driverProfile?.status) {
+      const statusMap = {
+        'AVAILABLE': 'On Duty',
+        'UNAVAILABLE': 'Off Duty',
+        'ON_DUTY': 'On Duty',
+        'OFF_DUTY': 'Off Duty',
+        'ON_LEAVE': 'On Leave'
+      };
+      setDriverStatus(statusMap[user.driverProfile.status] || user.driverProfile.status);
+    }
+  }, [user]);
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [quickMsg, setQuickMsg] = useState('');
@@ -60,7 +75,7 @@ const DriverDashboard = () => {
             </span>
           </div>
           <p className="text-xs font-semibold text-slate-500 leading-snug">
-            Welcome back, <strong className="text-slate-800">Noah Williams (JS)</strong> • Vehicle: <strong className="text-slate-800">TX-ROAD88 (Freightliner Cascadia)</strong> • Odometer: <strong className="font-mono text-slate-900">245,678 km</strong>
+            Welcome back, <strong className="text-slate-800">{user?.name || 'Noah Williams'}</strong> • Vehicle: <strong className="text-slate-800">{user?.driverProfile?.currentVehicle?.[0]?.rego ? `${user.driverProfile.currentVehicle[0].rego} (${user.driverProfile.currentVehicle[0].make} ${user.driverProfile.currentVehicle[0].model})` : 'TX-ROAD88 (Freightliner Cascadia)'}</strong> • Odometer: <strong className="font-mono text-slate-900">{user?.driverProfile?.currentVehicle?.[0]?.odometerKm ? `${user.driverProfile.currentVehicle[0].odometerKm.toLocaleString()} km` : '245,678 km'}</strong>
           </p>
         </div>
 

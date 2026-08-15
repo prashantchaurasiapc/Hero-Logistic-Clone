@@ -31,7 +31,14 @@ export const AuthProvider = ({ children }) => {
       try {
         const res = await api.get('/auth/me');
         if (res.data && res.data.success) {
-          setUser(res.data.data.user);
+          const fetchedUser = res.data.data.user;
+          setUser(fetchedUser);
+          localStorage.setItem('hero_session', JSON.stringify({
+            name: fetchedUser.name,
+            role: fetchedUser.role,
+            company: fetchedUser.company?.name || 'Hero Logistics',
+            email: fetchedUser.email
+          }));
         } else {
           // If the backend returns success: false
           logout();
@@ -57,7 +64,14 @@ export const AuthProvider = ({ children }) => {
         if (res.data.data.accessToken) {
           localStorage.setItem('token', res.data.data.accessToken);
         }
-        setUser(res.data.data.user);
+        const loggedInUser = res.data.data.user;
+        setUser(loggedInUser);
+        localStorage.setItem('hero_session', JSON.stringify({
+          name: loggedInUser.name,
+          role: loggedInUser.role,
+          company: loggedInUser.company?.name || 'Hero Logistics',
+          email: loggedInUser.email
+        }));
         setIsAuthenticated(true);
         return { success: true, user: res.data.data.user };
       }
@@ -77,6 +91,7 @@ export const AuthProvider = ({ children }) => {
       console.error('Logout failed on backend:', error);
     } finally {
       localStorage.removeItem('token');
+      localStorage.removeItem('hero_session');
       setUser(null);
       setIsAuthenticated(false);
     }

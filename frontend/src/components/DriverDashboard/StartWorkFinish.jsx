@@ -4,9 +4,30 @@ import {
   FiCheckCircle, FiCamera, FiAlertTriangle, FiFileText,
   FiMessageSquare, FiCheck, FiX, FiMinus, FiHelpCircle, FiChevronRight
 } from 'react-icons/fi';
+import { useAuth } from '../../context/AuthContext';
+import api from '../../services/api';
 
 export default function StartWork() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const isWarehouse = user?.role === 'WAREHOUSE_MANAGER' || user?.role === 'WAREHOUSE_STAFF' || user?.role === 'YARD_ATTENDANT';
+    if (isWarehouse) {
+      setItems([
+        { id: 1, label: 'Forklift - Brakes & Controls', status: 'pass' },
+        { id: 2, label: 'Forklift - Hydraulics & Lift Mast', status: 'pass' },
+        { id: 3, label: 'Forklift - Tyres & Steering', status: 'pass' },
+        { id: 4, label: 'Pallet Jack - General Condition', status: 'pass' },
+        { id: 5, label: 'RF Scanner - Battery & Connection', status: 'pass' },
+        { id: 6, label: 'Printer / Label Station - Loaded & Online', status: 'pass' },
+        { id: 7, label: 'Dock Doors & Levellers - Operational', status: 'pass' },
+        { id: 8, label: 'PPE - High-Vis Vest & Safety Boots', status: 'pass' },
+        { id: 9, label: 'Emergency Exits - Clear & Accessible', status: 'pass' },
+        { id: 10, label: 'First Aid & Fire Extinguisher - Checked', status: 'pass' }
+      ]);
+    }
+  }, [user]);
 
   // Toast notification state
   const [toastMessage, setToastMessage] = useState('');
@@ -57,17 +78,86 @@ export default function StartWork() {
   const completedCount = passCount + failCount + naCount;
   const completionPercentage = Math.round((completedCount / totalCount) * 100);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (failCount > 0) {
-      showToast('⚠️ Fail items detected! Please submit defect report before driving.');
-    } else {
-      showToast('✅ Safety Checklist submitted successfully! All clear.');
+    if (uncheckedCount > 0) {
+      showToast('⚠️ Please inspect all items before submitting.');
+      return;
+    }
+
+    try {
+      const isWarehouse = user?.role === 'WAREHOUSE_MANAGER' || user?.role === 'WAREHOUSE_STAFF' || user?.role === 'YARD_ATTENDANT';
+      const endpoint = isWarehouse ? '/warehouse-portal/safety-checklists' : '/pre-start-checklists';
+
+      const payload = {
+        vehicleRef: isWarehouse ? 'WH-EQUIP-101' : (user?.driverProfile?.currentVehicle?.[0]?.rego || 'TRK-101'),
+        trailerRef: isWarehouse ? 'NA' : 'TRL-205',
+        date: new Date(),
+        submittedAt: new Date(),
+        totalItems: totalCount,
+        passedCount: passCount,
+        failedCount: failCount,
+        naCount: naCount,
+        isDraft: false,
+        notes: notes,
+        items: {
+          create: items.map(item => ({
+            itemNumber: item.id,
+            itemLabel: item.label,
+            status: item.status === 'pass' ? 'PASS' : item.status === 'fail' ? 'FAIL' : item.status === 'na' ? 'NA' : 'NOT_CHECKED'
+          }))
+        }
+      };
+
+      const res = await api.post(endpoint, payload);
+      if (res.data?.success) {
+        showToast('✅ Safety Checklist submitted successfully!');
+        setTimeout(() => {
+          if (failCount > 0) {
+            navigate(isWarehouse ? '/warehouse/dashboard' : '/driver/incident-reporting');
+          } else {
+            navigate(isWarehouse ? '/warehouse/dashboard' : '/driver/dashboard');
+          }
+        }, 1500);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('❌ Failed to submit Safety Checklist.');
     }
   };
 
-  const handleSaveDraft = () => {
-    showToast('💾 Safety Checklist draft saved.');
+  const handleSaveDraft = async () => {
+    try {
+      const isWarehouse = user?.role === 'WAREHOUSE_MANAGER' || user?.role === 'WAREHOUSE_STAFF' || user?.role === 'YARD_ATTENDANT';
+      const endpoint = isWarehouse ? '/warehouse-portal/safety-checklists' : '/pre-start-checklists';
+
+      const payload = {
+        vehicleRef: isWarehouse ? 'WH-EQUIP-101' : (user?.driverProfile?.currentVehicle?.[0]?.rego || 'TRK-101'),
+        trailerRef: isWarehouse ? 'NA' : 'TRL-205',
+        date: new Date(),
+        totalItems: totalCount,
+        passedCount: passCount,
+        failedCount: failCount,
+        naCount: naCount,
+        isDraft: true,
+        notes: notes,
+        items: {
+          create: items.map(item => ({
+            itemNumber: item.id,
+            itemLabel: item.label,
+            status: item.status === 'pass' ? 'PASS' : item.status === 'fail' ? 'FAIL' : item.status === 'na' ? 'NA' : 'NOT_CHECKED'
+          }))
+        }
+      };
+
+      const res = await api.post(endpoint, payload);
+      if (res.data?.success) {
+        showToast('💾 Safety Checklist draft saved.');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('❌ Failed to save checklist draft.');
+    }
   };
 
   return (
