@@ -10,6 +10,9 @@ router.route('/')
   .get(ProposalController.getAll)
   .post(ProposalController.create);
 
+router.route('/:id/provision')
+  .post(ProposalController.provision);
+
 router.route('/:id')
   .get(ProposalController.getById)
   .put(ProposalController.update)
