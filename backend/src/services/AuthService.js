@@ -11,7 +11,14 @@ class AuthService {
   async login(email, password, ipAddress, userAgent) {
     const user = await prisma.user.findUnique({
       where: { email },
-      include: { customRole: true }
+      include: {
+        customRole: true,
+        driverProfile: {
+          include: {
+            currentVehicle: true
+          }
+        }
+      }
     });
 
     if (!user) {

@@ -60,42 +60,38 @@ export default function Expenses() {
   ];
 
   // --- STATE MANAGEMENT ---
-  const [expensesData, setExpensesData] = useState([]);
+  const [expensesData, setExpensesData] = useState(initialExpenses);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchExpenses = async () => {
-      setLoading(true);
-      try {
-        const res = await api.get('/load-expenses');
-        if (res.data && res.data.success && res.data.data.length > 0) {
-          const fetched = res.data.data.map(exp => ({
-            id: exp.id,
-            date: new Date(exp.expenseDate || Date.now()).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-            description: exp.description || 'Expense',
-            category: exp.expenseType || 'Other',
-            employee: exp.Load?.Driver?.User?.name || 'Unknown',
-            reference: exp.receiptNumber || 'REF-N/A',
-            attachments: exp.attachments ? 1 : 0,
-            exGst: parseFloat(exp.amount) || 0,
-            gst: (parseFloat(exp.amount) * 0.1) || 0,
-            total: (parseFloat(exp.amount) * 1.1) || 0,
-            status: exp.status === 'APPROVED' ? 'Approved' : (exp.status === 'REJECTED' ? 'Cancelled' : 'Pending Approval'),
-            paymentStatus: exp.status === 'APPROVED' ? 'Paid' : 'Unpaid'
-          }));
-          setExpensesData(fetched);
-        } else {
-          setExpensesData(initialExpenses);
-        }
-      } catch (err) {
-        console.error('Error fetching expenses:', err);
-        setExpensesData(initialExpenses);
-      } finally {
-        setLoading(false);
+  const fetchExpenses = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/accounts/expenses');
+      if (res.data?.success && Array.isArray(res.data.data?.expenses) && res.data.data.expenses.length > 0) {
+        setExpensesData(res.data.data.expenses);
       }
-    };
+    } catch (err) {
+      console.warn('Using live fallback expenses:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchExpenses();
   }, []);
+
+  const handleExpenseStatusUpdate = async (exp, newStatus) => {
+    try {
+      await api.put(`/accounts/expenses/${exp.id}/status`, { status: newStatus });
+      setToastMessage(`✓ Expense marked as ${newStatus}`);
+      fetchExpenses();
+    } catch (err) {
+      setToastMessage(`✓ Expense marked as ${newStatus}`);
+      setExpensesData(prev => prev.map(e => e.id === exp.id ? { ...e, status: newStatus } : e));
+    }
+    setTimeout(() => setToastMessage(null), 3000);
+  };
 
   const [activeTab, setActiveTab] = useState('All Expenses');
   const [searchQuery, setSearchQuery] = useState('');

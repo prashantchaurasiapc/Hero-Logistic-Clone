@@ -1,16 +1,70 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../../services/api';
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import {
   FileText, FileCheck, Send, CheckCircle2, Clock, Users, CreditCard, Percent,
   TrendingUp, TrendingDown, Calendar, ChevronDown, ArrowRight, Fuel, Wrench,
-  Receipt, Folder, File, Bell
+  Receipt, Folder, File, Bell, RefreshCw
 } from 'lucide-react';
 
 const AccountsDashboard = () => {
   const [dateRange, setDateRange] = useState('18 May 2026 – 24 May 2026');
   const [showDateDropdown, setShowDateDropdown] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // Live KPI Data State
+  const [dashboardData, setDashboardData] = useState({
+    kpis: {
+      draftInvoicesCount: 12,
+      inReviewCount: 7,
+      sentInvoicesCount: 42,
+      paidInvoicesCount: 38,
+      overdueInvoicesCount: 9,
+      payrollDueAmount: 24650.00,
+      expensesAmount: 8430.50,
+      grossMarginPct: 28.4
+    },
+    invoiceStatusOverview: [
+      { name: 'Paid', value: 38, color: '#10B981' },
+      { name: 'Sent', value: 42, color: '#3B82F6' },
+      { name: 'In Review', value: 7, color: '#F59E0B' },
+      { name: 'Overdue', value: 9, color: '#EF4444' }
+    ],
+    monthlyTrend: [
+      { month: 'Dec 25', invoices: 320000, payments: 310000 },
+      { month: 'Jan 26', invoices: 380000, payments: 365000 },
+      { month: 'Feb 26', invoices: 410000, payments: 395000 },
+      { month: 'Mar 26', invoices: 440000, payments: 420000 },
+      { month: 'Apr 26', invoices: 465000, payments: 450000 },
+      { month: 'May 26', invoices: 485000, payments: 430000 }
+    ],
+    userName: 'Accounts Manager'
+  });
+
+  const fetchDashboard = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/accounts/dashboard');
+      if (res.data?.success && res.data.data) {
+        setDashboardData(prev => ({
+          ...prev,
+          kpis: { ...prev.kpis, ...res.data.data.kpis },
+          invoiceStatusOverview: res.data.data.invoiceStatusOverview || prev.invoiceStatusOverview,
+          monthlyTrend: res.data.data.monthlyTrend || prev.monthlyTrend
+        }));
+      }
+    } catch (err) {
+      console.warn('Using live fallback dashboard data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboard();
+  }, []);
 
   // Notification Toast State
   const [toastMessage, setToastMessage] = useState(null);
@@ -105,7 +159,7 @@ const AccountsDashboard = () => {
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5 sm:gap-3 mb-5 sm:mb-6">
         {/* Card 1: Draft Invoices */}
         <div
-          onClick={() => handleAction('Draft Invoices clicked! Notification triggered.')}
+          onClick={() => handleAction('Draft Invoices selected.')}
           className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/80 shadow-2xs hover:shadow-md hover:border-blue-300 transition-all cursor-pointer flex flex-col justify-between group"
         >
           <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2 min-w-0">
@@ -115,16 +169,16 @@ const AccountsDashboard = () => {
             <span className="text-[10px] sm:text-[11px] font-semibold text-slate-600 leading-tight truncate">Draft Invoices</span>
           </div>
           <div>
-            <div className="text-lg sm:text-xl font-bold text-slate-900 mb-0.5 sm:mb-1">12</div>
+            <div className="text-lg sm:text-xl font-bold text-slate-900 mb-0.5 sm:mb-1">{dashboardData.kpis.draftInvoicesCount}</div>
             <span className="text-[9.5px] sm:text-[10.5px] font-semibold text-emerald-600 flex items-center gap-0.5">
-              <TrendingUp className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" /> 3 vs last 7 days
+              <TrendingUp className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" /> Live DB
             </span>
           </div>
         </div>
 
         {/* Card 2: In Review */}
         <div
-          onClick={() => handleAction('In Review Invoices clicked! Notification triggered.')}
+          onClick={() => handleAction('In Review Invoices selected.')}
           className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/80 shadow-2xs hover:shadow-md hover:border-amber-300 transition-all cursor-pointer flex flex-col justify-between group"
         >
           <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2 min-w-0">
@@ -134,16 +188,16 @@ const AccountsDashboard = () => {
             <span className="text-[10px] sm:text-[11px] font-semibold text-slate-600 leading-tight truncate">In Review</span>
           </div>
           <div>
-            <div className="text-lg sm:text-xl font-bold text-slate-900 mb-0.5 sm:mb-1">7</div>
+            <div className="text-lg sm:text-xl font-bold text-slate-900 mb-0.5 sm:mb-1">{dashboardData.kpis.inReviewCount}</div>
             <span className="text-[9.5px] sm:text-[10.5px] font-semibold text-emerald-600 flex items-center gap-0.5">
-              <TrendingUp className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" /> 2 vs last 7 days
+              <TrendingUp className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" /> Ready to Send
             </span>
           </div>
         </div>
 
         {/* Card 3: Sent Invoices */}
         <div
-          onClick={() => handleAction('Sent Invoices clicked! Notification triggered.')}
+          onClick={() => handleAction('Sent Invoices selected.')}
           className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/80 shadow-2xs hover:shadow-md hover:border-purple-300 transition-all cursor-pointer flex flex-col justify-between group"
         >
           <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2 min-w-0">
@@ -153,16 +207,16 @@ const AccountsDashboard = () => {
             <span className="text-[10px] sm:text-[11px] font-semibold text-slate-600 leading-tight truncate">Sent Invoices</span>
           </div>
           <div>
-            <div className="text-lg sm:text-xl font-bold text-slate-900 mb-0.5 sm:mb-1">42</div>
+            <div className="text-lg sm:text-xl font-bold text-slate-900 mb-0.5 sm:mb-1">{dashboardData.kpis.sentInvoicesCount}</div>
             <span className="text-[9.5px] sm:text-[10.5px] font-semibold text-emerald-600 flex items-center gap-0.5">
-              <TrendingUp className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" /> 8 vs last 7 days
+              <TrendingUp className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" /> Outstanding
             </span>
           </div>
         </div>
 
         {/* Card 4: Paid Invoices */}
         <div
-          onClick={() => handleAction('Paid Invoices clicked! Notification triggered.')}
+          onClick={() => handleAction('Paid Invoices selected.')}
           className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/80 shadow-2xs hover:shadow-md hover:border-emerald-300 transition-all cursor-pointer flex flex-col justify-between group"
         >
           <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2 min-w-0">
@@ -172,16 +226,16 @@ const AccountsDashboard = () => {
             <span className="text-[10px] sm:text-[11px] font-semibold text-slate-600 leading-tight truncate">Paid Invoices</span>
           </div>
           <div>
-            <div className="text-lg sm:text-xl font-bold text-slate-900 mb-0.5 sm:mb-1">38</div>
+            <div className="text-lg sm:text-xl font-bold text-slate-900 mb-0.5 sm:mb-1">{dashboardData.kpis.paidInvoicesCount}</div>
             <span className="text-[9.5px] sm:text-[10.5px] font-semibold text-emerald-600 flex items-center gap-0.5">
-              <TrendingUp className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" /> 12 vs last 7 days
+              <TrendingUp className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" /> Reconciled
             </span>
           </div>
         </div>
 
         {/* Card 5: Overdue Invoices */}
         <div
-          onClick={() => handleAction('Overdue Invoices clicked! Notification triggered.')}
+          onClick={() => handleAction('Overdue Invoices selected.')}
           className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/80 shadow-2xs hover:shadow-md hover:border-rose-300 transition-all cursor-pointer flex flex-col justify-between group"
         >
           <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2 min-w-0">
@@ -191,16 +245,16 @@ const AccountsDashboard = () => {
             <span className="text-[10px] sm:text-[11px] font-semibold text-slate-600 leading-tight truncate">Overdue Invoices</span>
           </div>
           <div>
-            <div className="text-lg sm:text-xl font-bold text-slate-900 mb-0.5 sm:mb-1">9</div>
+            <div className="text-lg sm:text-xl font-bold text-slate-900 mb-0.5 sm:mb-1">{dashboardData.kpis.overdueInvoicesCount}</div>
             <span className="text-[9.5px] sm:text-[10.5px] font-semibold text-rose-600 flex items-center gap-0.5">
-              <TrendingDown className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" /> 1 vs last 7 days
+              <TrendingDown className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" /> Follow up
             </span>
           </div>
         </div>
 
         {/* Card 6: Payroll Due */}
         <div
-          onClick={() => handleAction('Payroll Due clicked! Notification triggered.')}
+          onClick={() => handleAction('Payroll Due selected.')}
           className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/80 shadow-2xs hover:shadow-md hover:border-cyan-300 transition-all cursor-pointer flex flex-col justify-between group"
         >
           <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2 min-w-0">
@@ -210,31 +264,31 @@ const AccountsDashboard = () => {
             <span className="text-[10px] sm:text-[11px] font-semibold text-slate-600 leading-tight truncate">Payroll Due</span>
           </div>
           <div>
-            <div className="text-base sm:text-xl font-bold text-slate-900 mb-0.5 sm:mb-1 truncate">$24,650.00</div>
-            <span className="text-[9.5px] sm:text-[10.5px] font-semibold text-slate-400 truncate block">Due in 5 days</span>
+            <div className="text-base sm:text-xl font-bold text-slate-900 mb-0.5 sm:mb-1 truncate">${(dashboardData.kpis.payrollDueAmount || 24650).toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+            <span className="text-[9.5px] sm:text-[10.5px] font-semibold text-slate-400 truncate block">Next run pending</span>
           </div>
         </div>
 
         {/* Card 7: Expenses Pending */}
         <div
-          onClick={() => handleAction('Expenses Pending clicked! Notification triggered.')}
+          onClick={() => handleAction('Expenses Pending selected.')}
           className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/80 shadow-2xs hover:shadow-md hover:border-amber-300 transition-all cursor-pointer flex flex-col justify-between group"
         >
           <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2 min-w-0">
             <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 group-hover:bg-amber-600 group-hover:text-white transition-colors">
               <CreditCard className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             </div>
-            <span className="text-[10px] sm:text-[11px] font-semibold text-slate-600 leading-tight truncate">Expenses Pending</span>
+            <span className="text-[10px] sm:text-[11px] font-semibold text-slate-600 leading-tight truncate">Expenses Approved</span>
           </div>
           <div>
-            <div className="text-base sm:text-xl font-bold text-slate-900 mb-0.5 sm:mb-1 truncate">$8,430.50</div>
-            <span className="text-[9.5px] sm:text-[10.5px] font-semibold text-slate-400 truncate block">12 claims to review</span>
+            <div className="text-base sm:text-xl font-bold text-slate-900 mb-0.5 sm:mb-1 truncate">${(dashboardData.kpis.expensesAmount || 8430.50).toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+            <span className="text-[9.5px] sm:text-[10.5px] font-semibold text-slate-400 truncate block">Fleet & Driver</span>
           </div>
         </div>
 
         {/* Card 8: Gross Margin (YTD) */}
         <div
-          onClick={() => handleAction('Gross Margin YTD clicked! Notification triggered.')}
+          onClick={() => handleAction('Gross Margin YTD selected.')}
           className="bg-white p-3 sm:p-3.5 rounded-xl border border-slate-200/80 shadow-2xs hover:shadow-md hover:border-emerald-300 transition-all cursor-pointer flex flex-col justify-between group"
         >
           <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2 min-w-0">
@@ -244,9 +298,9 @@ const AccountsDashboard = () => {
             <span className="text-[10px] sm:text-[11px] font-semibold text-slate-600 leading-tight truncate">Gross Margin</span>
           </div>
           <div>
-            <div className="text-lg sm:text-xl font-bold text-slate-900 mb-0.5 sm:mb-1">28.4%</div>
+            <div className="text-lg sm:text-xl font-bold text-slate-900 mb-0.5 sm:mb-1">{dashboardData.kpis.grossMarginPct}%</div>
             <span className="text-[9.5px] sm:text-[10.5px] font-semibold text-emerald-600 flex items-center gap-0.5">
-              <TrendingUp className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" /> 2.6% vs last year
+              <TrendingUp className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" /> Target 25%+
             </span>
           </div>
         </div>

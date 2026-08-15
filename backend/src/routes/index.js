@@ -208,6 +208,10 @@ router.use('/dashboard-metrics', SuperAdminDashboardRoutes);
 // Warehouse Portal routes & aliases
 router.use('/warehouse-portal', WarehousePortalRoutes);
 
+// Accounts Portal dedicated routes
+const AccountsPortalRoutes = require('./AccountsPortalRoutes');
+router.use('/accounts', AccountsPortalRoutes);
+
 // Direct menu aliases for top-level routes
 router.use('/live-tracking', CompanyAdminPortalRoutes);
 router.use('/pricing', CompanyAdminPortalRoutes);

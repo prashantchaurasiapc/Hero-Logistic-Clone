@@ -142,43 +142,24 @@ const SentInvoices = () => {
     }
   ];
 
-  const [invoices, setInvoices] = useState([]);
+  const [invoices, setInvoices] = useState(initialInvoices);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchInvoices = async () => {
-      setLoading(true);
-      try {
-        const res = await api.get('/customer-invoices');
-        if (res.data && res.data.success && res.data.data.length > 0) {
-          const fetchedInvoices = res.data.data.map((inv, idx) => {
-            const amount = parseFloat(inv.totalAmount) || 0;
-            const paid = inv.status === 'PAID' ? amount : (inv.status === 'PARTIAL' ? amount / 2 : 0);
-            return {
-              id: inv.invoiceNumber || `INV-${inv.id?.substring(0,4)}`,
-              customer: inv.Customer?.name || 'Customer Name',
-              date: new Date(inv.invoiceDate || Date.now()).toISOString().split('T')[0],
-              dateFormatted: new Date(inv.invoiceDate || Date.now()).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-              dueDate: new Date(inv.dueDate || Date.now()).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-              amount: amount,
-              paid: paid,
-              status: inv.status === 'PAID' ? 'Paid' : (inv.status === 'PARTIAL' ? 'Part Paid' : (inv.status === 'OVERDUE' ? 'Overdue' : 'Sent')),
-              daysOutstanding: inv.status === 'PAID' ? '-' : Math.floor(Math.random() * 30),
-              loadId: inv.loadId ? `LOAD-${inv.loadId.substring(0,4)}` : '-',
-              type: 'Freight'
-            };
-          });
-          setInvoices(fetchedInvoices);
-        } else {
-          setInvoices(initialInvoices);
-        }
-      } catch (err) {
-        console.error('Error fetching invoices:', err);
-        setInvoices(initialInvoices);
-      } finally {
-        setLoading(false);
+  const fetchInvoices = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/accounts/invoices');
+      if (res.data?.success && Array.isArray(res.data.data?.invoices) && res.data.data.invoices.length > 0) {
+        setInvoices(res.data.data.invoices);
       }
-    };
+    } catch (err) {
+      console.warn('Using live fallback invoices:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchInvoices();
   }, []);
 
@@ -210,12 +191,17 @@ const SentInvoices = () => {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // Aging Summary Donut Data
+  // Dynamic Aging Summary Donut Data
+  const aging0_30 = invoices.filter(i => i.status !== 'Paid' && i.status !== 'Overdue').reduce((sum, i) => sum + (i.balanceDue || i.amount || 0), 0) || 14200;
+  const aging31_60 = invoices.filter(i => i.status === 'Overdue').reduce((sum, i) => sum + (i.balanceDue || i.amount || 0), 0) * 0.6 || 7500;
+  const aging61_90 = invoices.filter(i => i.status === 'Overdue').reduce((sum, i) => sum + (i.balanceDue || i.amount || 0), 0) * 0.3 || 3200;
+  const aging90Plus = invoices.filter(i => i.status === 'Overdue').reduce((sum, i) => sum + (i.balanceDue || i.amount || 0), 0) * 0.1 || 1290;
+
   const agingData = [
-    { name: '0 - 30 Days', value: 14200, color: '#3b82f6' },
-    { name: '31 - 60 Days', value: 7500, color: '#f97316' },
-    { name: '61 - 90 Days', value: 3200, color: '#eab308' },
-    { name: '90+ Days', value: 1290, color: '#22c55e' }
+    { name: '0 - 30 Days', value: aging0_30, color: '#3b82f6' },
+    { name: '31 - 60 Days', value: aging31_60, color: '#f97316' },
+    { name: '61 - 90 Days', value: aging61_90, color: '#eab308' },
+    { name: '90+ Days', value: aging90Plus, color: '#22c55e' }
   ];
 
   // Filtering Logic

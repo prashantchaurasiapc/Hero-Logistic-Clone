@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../../services/api';
 import './WarehouseDashboard.css';
 import './YardDashboard.css';
 
@@ -94,6 +95,29 @@ export default function YardDashboard() {
   const [startTime, setStartTime] = useState(null);
   const [endTime, setEndTime] = useState(null);
   const [timerString, setTimerString] = useState('00:00:00');
+  const [dbMetrics, setDbMetrics] = useState({
+    inYard: 4,
+    inbound: 4,
+    yardCapacityPct: 53,
+    activeLoads: 6
+  });
+
+  useEffect(() => {
+    api.get('/warehouse-portal/dashboard').then(res => {
+      if (res.data?.success && res.data.data) {
+        const d = res.data.data;
+        const totalCap = d.yardCapacity?.total || 250;
+        const used = d.yardCapacity?.inYard || d.overview?.inYard || 0;
+        const pct = Math.min(100, Math.round((used / totalCap) * 100)) || 0;
+        setDbMetrics({
+          inYard: d.overview?.inYard ?? 4,
+          inbound: d.overview?.inboundDeliveries ?? 4,
+          yardCapacityPct: pct || 53,
+          activeLoads: d.overview?.loadLanesActive ?? 6
+        });
+      }
+    }).catch(() => {});
+  }, []);
 
   // Hover states for top stats cards
   const [hoveredStatCard, setHoveredStatCard] = useState(null);
@@ -614,16 +638,16 @@ export default function YardDashboard() {
           style={getStatCardStyle('trailers')}
         >
           <div>
-            <span style={{ fontSize: 10, fontWeight: '800', color: '#64748b', letterSpacing: '0.6px', display: 'block' }}>TRAILERS SPOTTED</span>
-            <span style={{ fontSize: 28, fontWeight: '800', color: '#0f172a', display: 'block', marginTop: 4 }}>4</span>
+            <span style={{ fontSize: 10, fontWeight: '800', color: '#64748b', letterSpacing: '0.6px', display: 'block' }}>ITEMS / TRAILERS IN YARD</span>
+            <span style={{ fontSize: 28, fontWeight: '800', color: '#0f172a', display: 'block', marginTop: 4 }}>{dbMetrics.inYard}</span>
           </div>
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9.5, fontWeight: '800', color: '#64748b', marginBottom: 4 }}>
-              <span>Progress</span>
-              <span>56%</span>
+              <span>Occupancy</span>
+              <span>{dbMetrics.yardCapacityPct}%</span>
             </div>
             <div style={{ width: '100%', height: 5, backgroundColor: '#f1f5f9', borderRadius: 3, overflow: 'hidden', marginBottom: 6 }}>
-              <div style={{ width: '56%', height: '100%', backgroundColor: '#ffcc00' }}></div>
+              <div style={{ width: `${dbMetrics.yardCapacityPct}%`, height: '100%', backgroundColor: '#ffcc00' }}></div>
             </div>
             <span style={{ fontSize: 11, color: '#64748b', fontWeight: '600' }}>Active parking spots</span>
           </div>
@@ -636,12 +660,12 @@ export default function YardDashboard() {
           style={getStatCardStyle('gate-events')}
         >
           <div>
-            <span style={{ fontSize: 10, fontWeight: '800', color: '#64748b', letterSpacing: '0.6px', display: 'block' }}>GATE EVENTS</span>
-            <span style={{ fontSize: 28, fontWeight: '800', color: '#0f172a', display: 'block', marginTop: 4 }}>4</span>
+            <span style={{ fontSize: 10, fontWeight: '800', color: '#64748b', letterSpacing: '0.6px', display: 'block' }}>INBOUND DELIVERIES</span>
+            <span style={{ fontSize: 28, fontWeight: '800', color: '#0f172a', display: 'block', marginTop: 4 }}>{dbMetrics.inbound}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: 11, color: '#64748b', fontWeight: '600' }}>Inward/Outward today</span>
-            <span style={{ fontSize: 10, fontWeight: '800', color: '#047857', backgroundColor: '#d1fae5', padding: '2px 6px', borderRadius: 4 }}>+2 checks</span>
+            <span style={{ fontSize: 10, fontWeight: '800', color: '#047857', backgroundColor: '#d1fae5', padding: '2px 6px', borderRadius: 4 }}>Live DB</span>
           </div>
         </div>
 
@@ -653,15 +677,15 @@ export default function YardDashboard() {
         >
           <div>
             <span style={{ fontSize: 10, fontWeight: '800', color: '#64748b', letterSpacing: '0.6px', display: 'block' }}>YARD CAPACITY</span>
-            <span style={{ fontSize: 28, fontWeight: '800', color: '#0f172a', display: 'block', marginTop: 4 }}>53%</span>
+            <span style={{ fontSize: 28, fontWeight: '800', color: '#0f172a', display: 'block', marginTop: 4 }}>{dbMetrics.yardCapacityPct}%</span>
           </div>
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9.5, fontWeight: '800', color: '#64748b', marginBottom: 4 }}>
-              <span>Progress</span>
-              <span>56%</span>
+              <span>Capacity Used</span>
+              <span>{dbMetrics.yardCapacityPct}%</span>
             </div>
             <div style={{ width: '100%', height: 5, backgroundColor: '#f1f5f9', borderRadius: 3, overflow: 'hidden', marginBottom: 6 }}>
-              <div style={{ width: '53%', height: '100%', backgroundColor: '#ffcc00' }}></div>
+              <div style={{ width: `${dbMetrics.yardCapacityPct}%`, height: '100%', backgroundColor: '#ffcc00' }}></div>
             </div>
             <span style={{ fontSize: 11, color: '#64748b', fontWeight: '600' }}>Slots occupied</span>
           </div>

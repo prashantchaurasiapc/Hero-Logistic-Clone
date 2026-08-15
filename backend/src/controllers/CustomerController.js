@@ -9,6 +9,9 @@ exports.getAll = async (req, res, next) => {
     const { where, skip, take, orderBy, currentPage, pageSize } = buildPrismaQuery(req.query);
     
     if (req.tenantId) where.companyId = req.tenantId;
+    if (req.user && req.user.role === 'DISPATCHER' && req.user.branchId && !req.user.permissions?.includes('dispatch.cross_branch.view')) {
+      where.branchId = req.user.branchId;
+    }
 
     const [data, total] = await Promise.all([
       prisma.customer.findMany({
@@ -34,6 +37,9 @@ exports.getById = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
     if (req.tenantId) where.companyId = req.tenantId;
+    if (req.user && req.user.role === 'DISPATCHER' && req.user.branchId && !req.user.permissions?.includes('dispatch.cross_branch.view')) {
+      where.branchId = req.user.branchId;
+    }
 
     const data = await prisma.customer.findFirst({
       where,
@@ -62,6 +68,9 @@ exports.create = async (req, res, next) => {
   try {
     const payload = { ...req.body };
     if (req.tenantId && !payload.companyId) payload.companyId = req.tenantId;
+    if (req.user && req.user.role === 'DISPATCHER' && req.user.branchId && !req.user.permissions?.includes('dispatch.cross_branch.view')) {
+      payload.branchId = req.user.branchId;
+    }
 
     if (!payload.companyId) {
       const firstCompany = await prisma.company.findFirst();
@@ -89,7 +98,10 @@ exports.update = async (req, res, next) => {
     const updateData = { ...req.body };
     
     const where = { id };
-    // if (req.tenantId) where.tenantId = req.tenantId;
+    if (req.tenantId) where.companyId = req.tenantId;
+    if (req.user && req.user.role === 'DISPATCHER' && req.user.branchId && !req.user.permissions?.includes('dispatch.cross_branch.view')) {
+      where.branchId = req.user.branchId;
+    }
 
     // Check version if optimistic concurrency is required
     const ifMatch = req.headers['if-match'];
@@ -127,7 +139,10 @@ exports.update = async (req, res, next) => {
 exports.delete = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
-    // if (req.tenantId) where.tenantId = req.tenantId;
+    if (req.tenantId) where.companyId = req.tenantId;
+    if (req.user && req.user.role === 'DISPATCHER' && req.user.branchId && !req.user.permissions?.includes('dispatch.cross_branch.view')) {
+      where.branchId = req.user.branchId;
+    }
 
     await prisma.customer.delete({ where });
     

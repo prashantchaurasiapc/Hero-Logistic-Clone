@@ -8,8 +8,10 @@ exports.getAll = async (req, res, next) => {
   try {
     const { where, skip, take, orderBy, currentPage, pageSize } = buildPrismaQuery(req.query);
     
-    // Optional: Inject tenant scope here if applicable
-    // if (req.tenantId) where.tenantId = req.tenantId;
+    if (req.tenantId) where.load = { companyId: req.tenantId };
+    if (req.user && req.user.role === 'DRIVER') {
+      where.load = { driver: { userId: req.user.id } };
+    }
 
     const [data, total] = await Promise.all([
       prisma.loadExpense.findMany({
@@ -29,7 +31,10 @@ exports.getAll = async (req, res, next) => {
 exports.getById = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
-    // if (req.tenantId) where.tenantId = req.tenantId;
+    if (req.tenantId) where.load = { companyId: req.tenantId };
+    if (req.user && req.user.role === 'DRIVER') {
+      where.load = { driver: { userId: req.user.id } };
+    }
 
     const data = await prisma.loadExpense.findFirst({ where });
     
@@ -50,7 +55,21 @@ exports.getById = async (req, res, next) => {
 exports.create = async (req, res, next) => {
   try {
     const payload = { ...req.body };
-    // if (req.tenantId) payload.tenantId = req.tenantId;
+    if (req.tenantId) {
+      payload.load = { connect: { id: payload.loadId } };
+    }
+    if (req.user && req.user.role === 'DRIVER') {
+      const assignedLoad = await prisma.load.findFirst({
+        where: { id: payload.loadId, driver: { userId: req.user.id } }
+      });
+      if (!assignedLoad) {
+        return sendError(res, {
+          code: ERROR_CODES.UNAUTHORIZED_ACCESS,
+          message: 'You are not assigned to this load.'
+        }, HTTP_STATUS.FORBIDDEN);
+      }
+      payload.status = 'PENDING';
+    }
 
     const data = await prisma.loadExpense.create({
       data: payload
@@ -68,7 +87,26 @@ exports.update = async (req, res, next) => {
     const updateData = { ...req.body };
     
     const where = { id };
-    // if (req.tenantId) where.tenantId = req.tenantId;
+    if (req.tenantId) where.load = { companyId: req.tenantId };
+    if (req.user && req.user.role === 'DRIVER') {
+      const existing = await prisma.loadExpense.findFirst({
+        where: { id, load: { driver: { userId: req.user.id } } }
+      });
+      if (!existing) {
+        return sendError(res, {
+          code: ERROR_CODES.NOT_FOUND,
+          message: 'LoadExpense not found'
+        }, HTTP_STATUS.NOT_FOUND);
+      }
+      if (existing.status !== 'PENDING') {
+        return sendError(res, {
+          code: ERROR_CODES.UNAUTHORIZED_ACCESS,
+          message: 'Approved or rejected expenses cannot be modified.'
+        }, HTTP_STATUS.FORBIDDEN);
+      }
+      where.load = { driver: { userId: req.user.id } };
+      delete updateData.status; // Prevent modifying status
+    }
 
     // Check version if optimistic concurrency is required
     const ifMatch = req.headers['if-match'];
@@ -106,7 +144,25 @@ exports.update = async (req, res, next) => {
 exports.delete = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
-    // if (req.tenantId) where.tenantId = req.tenantId;
+    if (req.tenantId) where.load = { companyId: req.tenantId };
+    if (req.user && req.user.role === 'DRIVER') {
+      const existing = await prisma.loadExpense.findFirst({
+        where: { id: req.params.id, load: { driver: { userId: req.user.id } } }
+      });
+      if (!existing) {
+        return sendError(res, {
+          code: ERROR_CODES.NOT_FOUND,
+          message: 'LoadExpense not found'
+        }, HTTP_STATUS.NOT_FOUND);
+      }
+      if (existing.status !== 'PENDING') {
+        return sendError(res, {
+          code: ERROR_CODES.UNAUTHORIZED_ACCESS,
+          message: 'Approved or rejected expenses cannot be deleted.'
+        }, HTTP_STATUS.FORBIDDEN);
+      }
+      where.load = { driver: { userId: req.user.id } };
+    }
 
     await prisma.loadExpense.delete({ where });
     

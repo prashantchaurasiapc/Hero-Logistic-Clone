@@ -59,4 +59,10 @@ router.post('/safety-checklists', ctrl.submitSafetyChecklist);
 // 12. Staff Profile
 router.get('/profile', ctrl.getStaffProfile);
 
+// 13. Issue Reporting
+router.get('/issues', ctrl.getReportedIssues);
+router.post('/issues', ctrl.reportIssue);
+router.post('/report-issue', ctrl.reportIssue);
+router.delete('/issues/:id', ctrl.resolveReportedIssue);
+
 module.exports = router;
