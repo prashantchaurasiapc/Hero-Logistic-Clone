@@ -54,6 +54,7 @@ export default function YardWorkStatus() {
   const [startTime, setStartTime] = useState(null);
   const [endTime, setEndTime] = useState(null);
   const [timerString, setTimerString] = useState('00:00:00');
+  const [activeTimesheetId, setActiveTimesheetId] = useState(null);
 
   // Modals state
   const [showSummaryModal, setShowSummaryModal] = useState(false);
@@ -107,63 +108,36 @@ export default function YardWorkStatus() {
           }));
           setTasks(fetchedTasks);
         } else {
-          // Fallback data if empty
-          setTasks([
-            {
-              id: 1,
-              title: 'Spot Trailer TR-9410 to Gate 4',
-              priority: 'High',
-              status: 'PENDING',
-              desc: 'Dock unloading request from warehouse team',
-              time: '14:00',
-              gate: 'Gate 4',
-              unit: 'TR-9410',
-              notes: ''
-            }
-          ]);
+          setTasks([]); // Removed hardcoded fallback data
         }
       } catch (err) {
         console.error('Error fetching yard tasks', err);
+        setTasks([]);
       }
     };
+
+    const fetchActiveTimesheet = async () => {
+      try {
+        const res = await api.get('/timesheets?status=DRAFT');
+        if (res.data && res.data.success && res.data.data.length > 0) {
+          const timesheet = res.data.data[0];
+          setActiveTimesheetId(timesheet.id);
+          setShiftActive(true);
+          const start = new Date(timesheet.clockInAt);
+          setStartTime(start);
+          setSecondsElapsed(Math.floor((Date.now() - start.getTime()) / 1000));
+        }
+      } catch (err) {
+        console.error('Error fetching active timesheet', err);
+      }
+    };
+
     fetchTasks();
+    fetchActiveTimesheet();
   }, []);
 
-  // Notification states
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      title: 'New Task Assigned',
-      desc: 'Spot Trailer TR-5540 to Gate 1 by 15:00',
-      time: '2 min ago',
-      unread: true,
-      type: 'task'
-    },
-    {
-      id: 2,
-      title: 'Supervisor Message',
-      desc: 'Keep Gate 3 clear — heavy inbound scheduled at 14:30.',
-      time: '10 min ago',
-      unread: true,
-      type: 'message'
-    },
-    {
-      id: 3,
-      title: 'Emergency Alert',
-      desc: 'Fuel spill near Dock B2. Avoid area. Safety team dispatched.',
-      time: '22 min ago',
-      unread: true,
-      type: 'emergency'
-    },
-    {
-      id: 4,
-      title: 'Task Completed',
-      desc: 'Audit for TR-1102 marked complete by supervisor.',
-      time: '1 hr ago',
-      unread: false,
-      type: 'info'
-    }
-  ]);
+  // Notification states (Dynamic empty until API is added)
+  const [notifications, setNotifications] = useState([]);
 
   // Toast notifications state
   const [toast, setToast] = useState(null);
@@ -199,19 +173,47 @@ export default function YardWorkStatus() {
     setTimerString(`${hrs}:${mins}:${secs}`);
   }, [secondsElapsed]);
 
-  const handleStartWork = () => {
+  const handleStartWork = async () => {
     const now = new Date();
     setStartTime(now);
     setSecondsElapsed(0);
     setShiftActive(true);
     triggerToast('Work shift started successfully. Logging GPS telemetry.');
+
+    try {
+      const res = await api.post('/timesheets', {
+        driverId: 'temp-driver-id', // Placeholder, should be replaced with actual user's driver ID
+        companyId: 'temp-company-id',
+        date: now.toISOString(),
+        clockInAt: now.toISOString(),
+        status: 'DRAFT'
+      });
+      if (res.data && res.data.success) {
+        setActiveTimesheetId(res.data.data.id);
+      }
+    } catch (err) {
+      console.error('Error creating timesheet', err);
+    }
   };
 
-  const handleFinishWork = () => {
+  const handleFinishWork = async () => {
     const now = new Date();
     setEndTime(now);
     setShiftActive(false);
     setShowSummaryModal(true);
+
+    if (activeTimesheetId) {
+      try {
+        await api.put(`/timesheets/${activeTimesheetId}`, {
+          clockOutAt: now.toISOString(),
+          status: 'SUBMITTED',
+          totalMinutes: Math.max(1, Math.ceil(secondsElapsed / 60))
+        });
+        setActiveTimesheetId(null);
+      } catch (err) {
+        console.error('Error updating timesheet', err);
+      }
+    }
   };
 
   const handleMarkAllRead = () => {
@@ -247,23 +249,7 @@ export default function YardWorkStatus() {
   };
 
   // Yard Map parking slots
-  const yardSlots = [
-    { id: 'A1', type: 'Trailer', val: 'TR-9410', bg: '#FEF3C7', border: '#FDE68A', color: '#B45309' },
-    { id: 'A2', type: 'Trailer (busy)', val: 'TR-1102', bg: '#DBEAFE', border: '#BFDBFE', color: '#1D4ED8' },
-    { id: 'A3', type: 'Available', val: 'Free', bg: '#FFFFFF', border: '#E2E8F0', color: '#64748B' },
-    { id: 'A4', type: 'Purple', val: 'TR-7712', bg: '#F3E8FF', border: '#E9D5FF', color: '#7E22CE' },
-    { id: 'A5', type: 'Available', val: 'Free', bg: '#FFFFFF', border: '#E2E8F0', color: '#64748B' },
-    { id: 'B1', type: 'Container', val: 'CTR-009', bg: '#D1FAE5', border: '#A7F3D0', color: '#047857' },
-    { id: 'B2', type: 'Available', val: 'Free', bg: '#FFFFFF', border: '#E2E8F0', color: '#64748B' },
-    { id: 'B3', type: 'Vehicle', val: 'VEH-4820', bg: '#FEF3C7', border: '#FDE68A', color: '#B45309' },
-    { id: 'B4', type: 'Available', val: 'Free', bg: '#FFFFFF', border: '#E2E8F0', color: '#64748B' },
-    { id: 'B5', type: 'Red', val: 'CTR-018', bg: '#FEE2E2', border: '#FCA5A5', color: '#B91C1C' },
-    { id: 'C1', type: 'Available', val: 'Free', bg: '#FFFFFF', border: '#E2E8F0', color: '#64748B' },
-    { id: 'C2', type: 'Trailer', val: 'TR-4809', bg: '#FEF3C7', border: '#FDE68A', color: '#B45309' },
-    { id: 'C3', type: 'Available', val: 'Free', bg: '#FFFFFF', border: '#E2E8F0', color: '#64748B' },
-    { id: 'C4', type: 'Vehicle', val: 'VEH-1144', bg: '#FFEDD5', border: '#FED7AA', color: '#C2410C' },
-    { id: 'C5', type: 'Available', val: 'Free', bg: '#FFFFFF', border: '#E2E8F0', color: '#64748B' }
-  ];
+  const [yardSlots, setYardSlots] = useState([]);
 
   const handleSlotClick = (slot) => {
     if (slot.val === 'Free') {
