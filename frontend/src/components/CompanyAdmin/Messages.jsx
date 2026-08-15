@@ -238,7 +238,7 @@ export default function Messages() {
       const res = await api.get('/company-admin/messages');
       const data = res.data?.data || res.data || {};
 
-      let users = defaultContactsList;
+      let users = [];
       if (Array.isArray(data.users) && data.users.length > 0) {
         const mappedUsers = data.users.map((u, idx) => ({
           id: u.id,
@@ -258,9 +258,7 @@ export default function Messages() {
       if (user?.role === 'SALES' || user?.role === 'SALES_REP') {
         users = users.filter(u => {
           const r = (u.role || '').toUpperCase();
-          // Filter logic: if it's a default static user, check the role string
           if (r.includes('DRIVER') || r.includes('DISPATCH') || r.includes('WAREHOUSE') || r.includes('DEPOT')) return false;
-          // Only show Sales, Admins or Customers
           return r.includes('SALES') || r.includes('ADMIN') || r.includes('CUSTOMER');
         });
       }
@@ -270,42 +268,48 @@ export default function Messages() {
         setActiveContactId(prev => prev || users[0].id);
       }
 
-      let customers = defaultCustomerList;
+      let customers = [];
       if (Array.isArray(data.customers) && data.customers.length > 0) {
         const mappedCust = data.customers.map((c, idx) => ({
           id: c.id,
           name: c.name,
-          preview: `Last message: Active customer contact`,
-          time: 'Today',
+          preview: `Active customer contact: ${c.email || c.phone || 'Customer'}`,
+          time: 'Active',
           badge: null,
-          initials: c.name.slice(0, 2).toUpperCase(),
+          initials: (c.name || 'C').slice(0, 2).toUpperCase(),
           avatarBg: 'bg-[#EEF2FF] text-[#4338CA] border border-[#C7D2FE]',
           email: c.email || 'customer@logistics.com',
           phone: c.phone || '+61 2 9000 0000',
-          address: 'Sydney, NSW',
+          address: 'Main Logistics Terminal',
           type: 'Emails',
           status: c.status || 'Active'
         }));
         customers = mappedCust;
       }
       setCustomerList(customers);
+
+      // Load live conversations and messages
+      if (Array.isArray(data.conversations) && data.conversations.length > 0) {
+        const loadedChats = {};
+        data.conversations.forEach(conv => {
+          if (Array.isArray(conv.messages) && conv.messages.length > 0) {
+            loadedChats[conv.id] = conv.messages.map(m => ({
+              id: m.id,
+              text: m.content,
+              time: m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently',
+              sender: m.sender?.name || (m.senderId === user?.id ? 'ME' : 'Contact'),
+              isMe: m.senderId === user?.id
+            }));
+          }
+        });
+        setChatMessages(prev => ({ ...loadedChats, ...prev }));
+      }
     } catch (err) {
       console.error('Error loading messages data:', err);
-      let defaultList = defaultContactsList;
-      if (user?.role === 'SALES' || user?.role === 'SALES_REP') {
-        defaultList = defaultList.filter(u => {
-          const r = (u.role || '').toUpperCase();
-          if (r.includes('DRIVER') || r.includes('DISPATCH') || r.includes('WAREHOUSE') || r.includes('DEPOT')) return false;
-          return r.includes('SALES') || r.includes('ADMIN') || r.includes('CUSTOMER');
-        });
-      }
-      setContactsList(defaultList);
-      setCustomerList(defaultCustomerList);
-      setActiveContactId(defaultList[0]?.id || 1);
     } finally {
       setLoadingComms(false);
     }
-  }, [user?.role]);
+  }, [user?.role, user?.id]);
 
   useEffect(() => {
     fetchMessagesData();
@@ -622,11 +626,15 @@ export default function Messages() {
           <div className="flex items-center gap-1 sm:gap-1.5 font-bold text-[#4338CA] truncate shrink min-w-0 flex-1">
             <span onClick={() => setSelectedCategory('All Categories')} className="hover:underline cursor-pointer shrink-0">Home</span>
             <ChevronRight size={13} className="text-[#6366F1] shrink-0" />
-            <span onClick={() => setSelectedCategory('All Categories')} className="hover:underline cursor-pointer shrink-0">Messages</span>
-            <ChevronRight size={13} className="text-[#6366F1] shrink-0" />
-            <span className="text-[#3730A3] truncate min-w-0">
-              {selectedCategory === 'All Categories' ? 'Messages Dashboard' : selectedCategory}
-            </span>
+            <span onClick={() => setSelectedCategory('All Categories')} className={`hover:underline cursor-pointer shrink-0 ${selectedCategory === 'All Categories' ? 'text-[#3730A3]' : ''}`}>Messages</span>
+            {selectedCategory !== 'All Categories' && (
+              <>
+                <ChevronRight size={13} className="text-[#6366F1] shrink-0" />
+                <span className="text-[#3730A3] truncate min-w-0">
+                  {selectedCategory}
+                </span>
+              </>
+            )}
           </div>
 
           {/* Top Right Utilities */}
@@ -685,7 +693,7 @@ export default function Messages() {
           <div>
             <div className="flex items-start gap-2">
               <h1 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight leading-snug">
-                {selectedCategory === 'All Categories' ? 'Messages Dashboard' : selectedCategory === 'Conversations' ? 'Conversations' : selectedCategory === 'Customer Communications' ? 'Customer Communications' : selectedCategory === 'Broadcast & Notifications' ? 'Broadcasts & Notifications' : selectedCategory === 'Templates & Automation' ? 'Templates & Automation' : selectedCategory}
+                {selectedCategory === 'All Categories' ? 'Messages' : selectedCategory === 'Conversations' ? 'Conversations' : selectedCategory === 'Customer Communications' ? 'Customer Communications' : selectedCategory === 'Broadcast & Notifications' ? 'Broadcasts & Notifications' : selectedCategory === 'Templates & Automation' ? 'Templates & Automation' : selectedCategory}
               </h1>
               <div className="w-5.5 h-5.5 rounded-lg bg-[#EEF2FF] border-2 border-[#6366F1] text-[#6366F1] flex items-center justify-center shrink-0 shadow-2xs mt-0.5 sm:mt-1">
                 <Shield size={12} strokeWidth={2.5} />

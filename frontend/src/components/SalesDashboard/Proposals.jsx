@@ -7,6 +7,7 @@ import { crmRepository } from '../../services/crmRepository';
 import { crmStore } from '../../services/crmStore';
 import { useAuth } from '../../context/AuthContext';
 import api, { getSalesReps } from '../../services/api';
+import { jsPDF } from 'jspdf';
 
 export default function Proposals() {
   const { user } = useAuth();
@@ -164,39 +165,170 @@ export default function Proposals() {
   };
 
   const handleDownloadProposal = (p) => {
-    const content = `=====================================================
-HERO LOGISTICS - SAAS LICENSE CORE AGREEMENT
-Proposal ID: ${p.id}
-Company: ${p.company}
-Date Issued: ${p.createdDate}
-Version: ${p.version || 'V1'}
-Status: ${p.status}
-=====================================================
+    try {
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
 
-PRICING SUMMARY:
-Base Platform License: $${Number(p.value).toLocaleString()} / mo
-Negotiated Discount: ${p.discount}% (-$${(p.value * (p.discount / 100)).toFixed(2)} / mo)
-Total Proposed MRR: $${Number(p.total).toLocaleString()} / mo
+      // Background Header Bar
+      doc.setFillColor(15, 23, 42);
+      doc.rect(0, 0, 210, 32, 'F');
 
-INCLUDED SERVICE MODULES:
-${(p.features || []).map(f => ` - [x] ${f}`).join('\n')}
+      // Accent Gold Stripe
+      doc.setFillColor(255, 204, 0);
+      doc.rect(0, 32, 210, 3, 'F');
 
-TERMS & CONDITIONS:
-Proposal Validity: ${p.validity}
-Payment Terms: Net-30 Auto-Debit Billing
+      // Logo / Title in Header
+      doc.setTextColor(255, 204, 0);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(18);
+      doc.text('HERO LOGISTICS', 15, 16);
 
-Authorized Signature: _______________________
-`;
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `SaaS_Proposal_${p.company.replace(/\s+/g, '_')}_${p.id}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    setToast({ text: `SaaS Licensing Agreement for ${p.company} downloaded!` });
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.text('Enterprise SaaS Platform Licensing Agreement', 15, 24);
+
+      // Proposal Badge / Status
+      doc.setTextColor(148, 163, 184);
+      doc.setFontSize(9);
+      doc.text(`STATUS: ${(p.status || 'DRAFT').toUpperCase()}`, 155, 20);
+
+      // Document Info Section
+      let y = 45;
+      doc.setTextColor(15, 23, 42);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(14);
+      doc.text(`Proposal Agreement: ${p.company || 'Client'}`, 15, y);
+
+      y += 6;
+      doc.setTextColor(100, 116, 139);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.text(`Proposal ID: ${p.id || 'N/A'}    |    Version: ${p.version || 'V1'}    |    Date Issued: ${p.createdDate || new Date().toISOString().split('T')[0]}`, 15, y);
+
+      y += 8;
+      doc.setDrawColor(226, 232, 240);
+      doc.line(15, y, 195, y);
+
+      // Summary Description
+      y += 7;
+      doc.setTextColor(51, 65, 85);
+      doc.setFontSize(9.5);
+      const introText = `This SaaS Core Platform License Agreement is officially issued to ${p.company || 'Client'} by Hero Logistics Systems. It establishes the terms, modules, and negotiated pricing structure for the dedicated cloud-native logistics suite.`;
+      const splitIntro = doc.splitTextToSize(introText, 180);
+      doc.text(splitIntro, 15, y);
+      y += splitIntro.length * 4.5 + 4;
+
+      // Pricing Card Box
+      doc.setFillColor(248, 250, 252);
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(15, y, 180, 38, 3, 3, 'FD');
+
+      y += 7;
+      doc.setTextColor(15, 23, 42);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10.5);
+      doc.text('PRICING BREAKDOWN', 22, y);
+
+      y += 6;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(71, 85, 105);
+      doc.text('Base Platform Core:', 22, y);
+      doc.text(`$${Number(p.value || 0).toLocaleString()} / mo`, 185, y, { align: 'right' });
+
+      y += 5.5;
+      doc.setTextColor(16, 185, 129);
+      doc.text(`Negotiated Discount (${p.discount || 0}%):`, 22, y);
+      const discountAmt = ((Number(p.value || 0) * (Number(p.discount || 0) / 100)) || 0).toFixed(2);
+      doc.text(`-$${discountAmt} / mo`, 185, y, { align: 'right' });
+
+      y += 6;
+      doc.setDrawColor(203, 213, 225);
+      doc.line(22, y, 185, y);
+
+      y += 6;
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(217, 119, 6);
+      doc.setFontSize(10.5);
+      doc.text('Total Proposed MRR:', 22, y);
+      doc.text(`$${Number(p.total || 0).toLocaleString()} / mo`, 185, y, { align: 'right' });
+
+      y += 14;
+
+      // Included Modules Section
+      doc.setTextColor(15, 23, 42);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10.5);
+      doc.text('INCLUDED SERVICE MODULES', 15, y);
+
+      y += 6;
+      const modules = Array.isArray(p.features) && p.features.length > 0 
+        ? p.features 
+        : ['Real-Time GPS Telematics', 'AI Route Optimizer', 'Driver Mobile App', 'Dispatch Board Pro', 'Factoring & Billing API', 'Live Customer Portal'];
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(51, 65, 85);
+
+      modules.forEach((mod, idx) => {
+        const col = idx % 2 === 0 ? 18 : 108;
+        const rowY = y + Math.floor(idx / 2) * 6.5;
+        doc.setTextColor(16, 185, 129);
+        doc.text('[x]', col, rowY);
+        doc.setTextColor(51, 65, 85);
+        doc.text(mod, col + 7, rowY);
+      });
+
+      y += Math.ceil(modules.length / 2) * 6.5 + 8;
+
+      // Terms Box
+      doc.setFillColor(254, 252, 232);
+      doc.setDrawColor(254, 240, 138);
+      doc.roundedRect(15, y, 180, 22, 2, 2, 'FD');
+
+      y += 5.5;
+      doc.setTextColor(133, 77, 14);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.text('TERMS & CONDITIONS', 22, y);
+
+      y += 5.5;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(113, 63, 18);
+      doc.text(`• Proposal Validity: ${p.validity || '30 Days'}`, 22, y);
+      y += 4.5;
+      doc.text('• Payment Terms: Net-30 Auto-Debit Billing via Verified Gateway', 22, y);
+
+      // Signatures
+      y += 18;
+      doc.setDrawColor(148, 163, 184);
+      doc.line(15, y, 90, y);
+      doc.line(120, y, 195, y);
+
+      y += 4.5;
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      doc.text(`Authorized Signatory: ${user?.name || 'Authorized'} (${user?.role?.replace('_', ' ') || 'Sales Director'})`, 15, y);
+      doc.text(`Client Acceptance: ${p.company || 'Client Representative'}`, 120, y);
+
+      // Footer
+      doc.setFontSize(7.5);
+      doc.setTextColor(148, 163, 184);
+      doc.text('Hero Logistics Cloud TMS Platform • Confidential & Proprietary Document', 105, 285, { align: 'center' });
+
+      // Save PDF
+      const sanitizedName = (p.company || 'Client').replace(/[^a-zA-Z0-9]/g, '_');
+      doc.save(`SaaS_Proposal_${sanitizedName}_${p.id || 'Agreement'}.pdf`);
+      setToast({ text: `SaaS Licensing Agreement PDF for ${p.company} downloaded successfully!` });
+    } catch (err) {
+      console.error('PDF Generation failed:', err);
+      setToast({ text: 'Failed to generate PDF. Please try again.' });
+    }
   };
 
   const handleSaveRevision = async (e) => {
@@ -480,18 +612,22 @@ Authorized Signature: _______________________
 
               {/* Bottom Actions */}
               <div className="px-7 py-5 flex items-center gap-2 shrink-0 border-t border-slate-100">
-                <button 
-                  onClick={() => handleAcceptContract(selectedProposal)}
-                  className="bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-[11px] px-4.5 py-2.5 rounded-xl cursor-pointer transition-all shadow-xs whitespace-nowrap active:scale-95 flex items-center gap-1.5"
-                >
-                  <Check className="w-3.5 h-3.5 stroke-[3px]" /> Accept Contract & Convert
-                </button>
-                <button 
-                  onClick={() => handleRejectContract(selectedProposal)}
-                  className="bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-600 border border-slate-200 hover:border-rose-200 font-extrabold text-[11px] px-4 py-2.5 rounded-xl cursor-pointer transition-colors whitespace-nowrap"
-                >
-                  Reject Contract
-                </button>
+                {selectedProposal.status?.toLowerCase() !== 'accepted' && selectedProposal.status?.toLowerCase() !== 'rejected' && (
+                  <>
+                    <button 
+                      onClick={() => handleAcceptContract(selectedProposal)}
+                      className="bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-[11px] px-4.5 py-2.5 rounded-xl cursor-pointer transition-all shadow-xs whitespace-nowrap active:scale-95 flex items-center gap-1.5"
+                    >
+                      <Check className="w-3.5 h-3.5 stroke-[3px]" /> Accept Contract & Convert
+                    </button>
+                    <button 
+                      onClick={() => handleRejectContract(selectedProposal)}
+                      className="bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-600 border border-slate-200 hover:border-rose-200 font-extrabold text-[11px] px-4 py-2.5 rounded-xl cursor-pointer transition-colors whitespace-nowrap"
+                    >
+                      Reject Contract
+                    </button>
+                  </>
+                )}
                 <button 
                   onClick={() => {
                     setRevisionForm({
@@ -501,7 +637,9 @@ Authorized Signature: _______________________
                     });
                     setShowRevisionModal(true);
                   }}
-                  className="bg-[#FEF3C7] hover:bg-[#FDE68A] text-[#B45309] border border-[#FDE68A] font-extrabold text-[11px] px-4 py-2.5 rounded-xl cursor-pointer transition-all flex items-center gap-1.5 ml-auto shadow-xs whitespace-nowrap active:scale-95"
+                  className={`bg-[#FEF3C7] hover:bg-[#FDE68A] text-[#B45309] border border-[#FDE68A] font-extrabold text-[11px] px-4 py-2.5 rounded-xl cursor-pointer transition-all flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap active:scale-95 ${
+                    selectedProposal.status?.toLowerCase() === 'accepted' || selectedProposal.status?.toLowerCase() === 'rejected' ? 'w-full' : 'ml-auto'
+                  }`}
                 >
                   <RefreshCw className="w-3.5 h-3.5 shrink-0" />
                   Revise Proposal [{selectedProposal.version === 'V1' ? 'Draft V2' : 'Draft Next'}]
