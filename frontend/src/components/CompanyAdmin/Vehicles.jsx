@@ -14,6 +14,62 @@ import {
 } from 'lucide-react';
 
 // Helper upload components moved outside to prevent unmounting on re-renders
+const VehiclePhotoUploadSection = () => {
+  const [photoUrl, setPhotoUrl] = React.useState("https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?q=80&w=256&auto=format&fit=crop");
+  const fileInputRef = React.useRef(null);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoUrl(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center gap-2 w-32 shrink-0">
+      <div className="text-[9px] font-black text-gray-500 tracking-widest uppercase mb-1">VEHICLE PHOTO</div>
+      <div 
+        onClick={() => fileInputRef.current?.click()} 
+        className="relative w-24 h-24 rounded-full overflow-hidden border border-gray-200 hover:border-purple-400 cursor-pointer group bg-gray-50 flex items-center justify-center shadow-xs"
+        title="Click to upload vehicle photo"
+      >
+        <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
+          <Camera className="w-5 h-5 text-white mb-1" />
+          <span className="text-[9px] font-bold text-white uppercase tracking-wider">Upload</span>
+        </div>
+        <img 
+          src={photoUrl} 
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?q=80&w=256&auto=format&fit=crop";
+          }}
+          className="w-full h-full object-cover" 
+          alt="Vehicle Photo" 
+        />
+      </div>
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        accept="image/*" 
+        className="hidden" 
+        onChange={handleFileChange} 
+      />
+      <input 
+        type="text" 
+        name="photoUrl"
+        placeholder="https://images.unsplash.com..." 
+        value={photoUrl} 
+        onChange={(e) => setPhotoUrl(e.target.value)} 
+        className="w-full text-center text-[9px] px-2 py-1.5 bg-gray-50 border border-gray-200 rounded mt-2 focus:outline-none focus:border-purple-400 text-gray-500 overflow-hidden text-ellipsis" 
+      />
+    </div>
+  );
+};
+
 const VehicleLicenceFileUploadBox = () => {
   const [file, setFile] = React.useState(null);
   const [isDragging, setIsDragging] = React.useState(false);
@@ -864,7 +920,9 @@ const Vehicles = () => {
               {/* Vehicle Data Grid */}
               <div className="flex-grow flex flex-col min-w-0">
                  <div className="flex items-center gap-3 mb-6">
-                    <h2 className="text-2xl font-black text-gray-900 tracking-tight truncate">{managingVehicle.id} – {managingVehicle.make?.toUpperCase() || 'VOLVO FH540'}</h2>
+                    <h2 className="text-2xl font-black text-gray-900 tracking-tight truncate">
+                       {(managingVehicle.reg || managingVehicle.rego || (managingVehicle.id && managingVehicle.id.length > 15 ? 'VEHICLE PROFILE' : managingVehicle.id))} – {managingVehicle.make?.toUpperCase() || 'VOLVO FH540'}
+                    </h2>
                     <span className="px-2.5 py-0.5 bg-green-50 text-green-600 border border-green-200 rounded-md text-[11px] font-bold uppercase tracking-wider shrink-0">Active</span>
                  </div>
                  
@@ -3474,7 +3532,7 @@ const Vehicles = () => {
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-150" onClick={e => e.stopPropagation()}>
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
               <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-2">
-                <Edit size={16} className="text-purple-600" /> Edit Vehicle ({editVehicleModal.id})
+                <Edit size={16} className="text-purple-600" /> Edit Vehicle – {editVehicleModal.make || 'Vehicle'} ({editVehicleModal.reg || editVehicleModal.rego || editVehicleModal.id?.slice(0, 8)})
               </h3>
               <button onClick={closeEditModal} className="text-slate-400 hover:text-slate-600 text-lg font-bold cursor-pointer">&times;</button>
             </div>
@@ -3523,11 +3581,47 @@ const Vehicles = () => {
                   <input type="text" value={editVehicleModal.odometer || ''} onChange={e => setEditVehicleModal({...editVehicleModal, odometer: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
                 </div>
               </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 mb-1">Vehicle Photo / Image URL</label>
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="text" 
+                    placeholder="https://..." 
+                    value={editVehicleModal.img || editVehicleModal.photoUrl || ''} 
+                    onChange={e => setEditVehicleModal({...editVehicleModal, img: e.target.value, photoUrl: e.target.value})} 
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" 
+                  />
+                  <label className="px-3 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-lg font-bold text-xs cursor-pointer shrink-0">
+                    Browse
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setEditVehicleModal(prev => ({ ...prev, img: reader.result, photoUrl: reader.result }));
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }} 
+                    />
+                  </label>
+                </div>
+              </div>
             </div>
             <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-2">
               <button onClick={closeEditModal} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 font-bold hover:bg-white text-xs cursor-pointer">Cancel</button>
               <button onClick={async (e) => {
                 try {
+                  const photoStr = editVehicleModal.img || editVehicleModal.photoUrl;
+                  const cleanNotes = editVehicleModal.notes ? editVehicleModal.notes.split('Photo:')[0].trim() : '';
+                  const combinedNotes = photoStr 
+                    ? (cleanNotes ? `${cleanNotes} | Photo:${photoStr}` : `Photo:${photoStr}`)
+                    : cleanNotes;
+
                   const payload = {
                     rego: editVehicleModal.reg || editVehicleModal.rego,
                     make: editVehicleModal.make,
@@ -3536,7 +3630,7 @@ const Vehicles = () => {
                     status: editVehicleModal.status,
                     category: editVehicleModal.type,
                     odometerKm: editVehicleModal.odometer ? parseInt(String(editVehicleModal.odometer).replace(/[^0-9]/g,'')) : undefined,
-                    notes: editVehicleModal.notes
+                    notes: combinedNotes
                   };
                   await api.put(`/vehicles/${editVehicleModal.id}`, payload);
                   fetchVehicles();
@@ -3546,6 +3640,8 @@ const Vehicles = () => {
                     rego: payload.rego,
                     make: editVehicleModal.make,
                     model: editVehicleModal.model || '',
+                    img: editVehicleModal.img || editVehicleModal.photoUrl,
+                    photoUrl: editVehicleModal.img || editVehicleModal.photoUrl,
                     name: editVehicleModal.make ? editVehicleModal.make : editVehicleModal.name,
                     status: editVehicleModal.status || 'ACTIVE'
                   };
@@ -3610,17 +3706,7 @@ const Vehicles = () => {
             </div>
             <div className="p-6 flex flex-col md:flex-row gap-8">
               {/* Photo Upload */}
-              <div className="flex flex-col items-center gap-2 w-32 shrink-0">
-                <div className="text-[9px] font-black text-gray-500 tracking-widest uppercase mb-1">VEHICLE PHOTO</div>
-                <div className="relative w-24 h-24 rounded-full overflow-hidden border border-gray-200 hover:border-purple-400 cursor-pointer group bg-gray-50 flex items-center justify-center">
-                  <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                    <Camera className="w-5 h-5 text-white mb-1" />
-                    <span className="text-[9px] font-bold text-white uppercase tracking-wider">Upload</span>
-                  </div>
-                  <img src="https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?q=80&w=256&auto=format&fit=crop" className="w-full h-full object-cover" alt="Truck" />
-                </div>
-                <input type="text" placeholder="https://images.unsplash.com..." defaultValue="https://images.unsplash.co..." className="w-full text-center text-[9px] px-2 py-1.5 bg-gray-50 border border-gray-200 rounded mt-2 focus:outline-none focus:border-purple-400 text-gray-500" />
-              </div>
+              <VehiclePhotoUploadSection />
 
               {/* Vehicle Fields */}
               <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
