@@ -273,10 +273,10 @@ function App() {
             <Route path="dashboard" element={<CommandCenter />} />
             <Route path="dispatch-dashboard" element={<CommandCenter />} />
             <Route path="command-center" element={<CommandCenter />} />
-            <Route path="create-load" element={<DispatcherLoads />} />
+            <Route path="create-load" element={<Loads />} />
             <Route path="load-inbox" element={<LoadInbox />} />
             <Route path="active-loads" element={<DispatcherLoads />} />
-            <Route path="loads" element={<DispatcherLoads />} />
+            <Route path="loads" element={<Loads />} />
             <Route path="planning-board" element={<TerminalWorkspace />} />
             <Route path="terminal-workspace" element={<TerminalWorkspace />} />
             <Route path="live-gps-map" element={<FleetMonitor />} />
