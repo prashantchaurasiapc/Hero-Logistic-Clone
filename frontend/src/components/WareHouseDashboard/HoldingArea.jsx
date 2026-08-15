@@ -55,11 +55,12 @@ export default function Holding({
         const apiMod = await import('../../services/api');
         const api = apiMod.default || apiMod;
         const res = await api.get('/warehouse-portal/holding-areas');
-        if (res.data && res.data.success && res.data.data.length > 0) {
-          const formatted = res.data.data.map((h, idx) => ({
+        const rawAreas = res.data?.data?.holdingAreas || res.data?.data?.areas || (Array.isArray(res.data?.data) ? res.data.data : []);
+        if (Array.isArray(rawAreas) && rawAreas.length > 0) {
+          const formatted = rawAreas.map((h, idx) => ({
             id: h.id || `SA-0${idx + 1}`,
             name: h.name || `Stage Area ${idx + 1}`,
-            units: h.occupancyCount || 10,
+            units: h.stagedItems || h.occupancyCount || 10,
             maxCapacity: h.capacity || 20,
             status: h.status === 'ACTIVE' ? 'AVAILABLE' : (h.status || 'AVAILABLE')
           }));

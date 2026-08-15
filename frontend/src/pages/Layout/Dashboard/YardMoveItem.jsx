@@ -49,15 +49,18 @@ export default function YardMoveItem() {
       ]);
 
       if (stockRes.data?.success) {
-        const items = stockRes.data.data?.items || stockRes.data.data || [];
+        const rawStock = stockRes.data.data?.items || (Array.isArray(stockRes.data.data) ? stockRes.data.data : []);
+        const items = Array.isArray(rawStock) ? rawStock : [];
         setStockList(items);
         setFilteredStock(items);
       }
       if (lanesRes.data?.success) {
-        setLoadLanes(lanesRes.data.data || []);
+        const rawLanes = lanesRes.data.data?.lanes || (Array.isArray(lanesRes.data.data) ? lanesRes.data.data : []);
+        setLoadLanes(Array.isArray(rawLanes) ? rawLanes : []);
       }
       if (holdingRes.data?.success) {
-        setHoldingAreas(holdingRes.data.data?.areas || holdingRes.data.data || []);
+        const rawAreas = holdingRes.data.data?.holdingAreas || holdingRes.data.data?.areas || (Array.isArray(holdingRes.data.data) ? holdingRes.data.data : []);
+        setHoldingAreas(Array.isArray(rawAreas) ? rawAreas : []);
       }
     } catch (err) {
       setErrorMsg('Failed to load yard inventory.');

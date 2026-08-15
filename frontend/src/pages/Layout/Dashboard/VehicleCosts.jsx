@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import api from '../../../services/api';
 import { 
   Search, Calendar, Filter, Download, Eye, MoreVertical, 
   DollarSign, Droplets, Wrench, CircleDashed, Shield, FileText, 
   ChevronLeft, ChevronRight, TrendingUp, TrendingDown, 
-  Zap, Clock, AlertCircle, Info, Flame, CheckCircle2, X, Trash2, Edit3, ExternalLink
+  Zap, Clock, AlertCircle, Info, Flame, CheckCircle2, X, Trash2, Edit3, ExternalLink, RefreshCw
 } from 'lucide-react';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, 
@@ -21,6 +22,7 @@ export default function VehicleCosts() {
   const [activeTab, setActiveTab] = useState('Vehicle Summary');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [loading, setLoading] = useState(false);
 
   // Modals & Popovers State
   const [showFilterModal, setShowFilterModal] = useState(false);
@@ -42,12 +44,26 @@ export default function VehicleCosts() {
     { id: 1, name: 'MAN TGX 26.580', desc: 'Prime Mover', type: 'Truck', rego: 'XYZ-123', fuel: 5800, maintenance: 3900, tyres: 1200, insurance: 1600, other: 3175, costPerKm: '$0.92', costPerDay: '$45.83', vsApr: 8.6, img: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=100&h=100&q=80' },
     { id: 2, name: 'Volvo FH16 750', desc: 'Prime Mover', type: 'Truck', rego: 'ABC-456', fuel: 5200, maintenance: 3500, tyres: 1100, insurance: 1450, other: 2896, costPerKm: '$0.88', costPerDay: '$40.42', vsApr: 5.2, img: 'https://images.unsplash.com/photo-1519003722824-194d4455a60c?auto=format&fit=crop&w=100&h=100&q=80' },
     { id: 3, name: 'Scania R660', desc: 'Prime Mover', type: 'Truck', rego: 'DEF-789', fuel: 4800, maintenance: 3200, tyres: 1000, insurance: 1350, other: 2762, costPerKm: '$0.95', costPerDay: '$43.17', vsApr: -12.1, img: 'https://images.unsplash.com/photo-1605276373954-0c4a0dac5b12?auto=format&fit=crop&w=100&h=100&q=80' },
-    { id: 4, name: 'MaxiTRANS ST3', desc: 'Car Carrier Trailer', type: 'Trailer', rego: 'TR-001', fuel: 0, maintenance: 2100, tyres: 1400, insurance: 1100, other: 1648, costPerKm: '$0.41', costPerDay: '$20.15', vsApr: 2.7, img: 'https://images.unsplash.com/photo-1583344165581-9b19e917d3b5?auto=format&fit=crop&w=100&h=100&q=80' },
-    { id: 5, name: 'MaxiTRANS ST3', desc: 'Car Carrier Trailer', type: 'Trailer', rego: 'TR-002', fuel: 0, maintenance: 1850, tyres: 1250, insurance: 950, other: 1362, costPerKm: '$0.38', costPerDay: '$18.97', vsApr: -7.8, img: 'https://images.unsplash.com/photo-1583344165581-9b19e917d3b5?auto=format&fit=crop&w=100&h=100&q=80' },
-    { id: 6, name: 'Mercedes Actros 2653', desc: 'Prime Mover', type: 'Truck', rego: 'GHI-012', fuel: 4200, maintenance: 2800, tyres: 900, insurance: 1200, other: 2285, costPerKm: '$0.90', costPerDay: '$42.03', vsApr: 13.4, img: 'https://images.unsplash.com/photo-1616428784116-2495d4d38096?auto=format&fit=crop&w=100&h=100&q=80' },
-    { id: 7, name: 'Kenworth T909', desc: 'Prime Mover', type: 'Truck', rego: 'JKL-345', fuel: 3900, maintenance: 2550, tyres: 850, insurance: 1050, other: 2166, costPerKm: '$0.85', costPerDay: '$38.91', vsApr: -15.6, img: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=100&h=100&q=80' },
-    { id: 8, name: 'MTE Deck Widener', desc: 'Car Carrier Trailer', type: 'Trailer', rego: 'TR-003', fuel: 0, maintenance: 1950, tyres: 1300, insurance: 1000, other: 2438, costPerKm: '$0.43', costPerDay: '$19.23', vsApr: 1.9, img: 'https://images.unsplash.com/photo-1583344165581-9b19e917d3b5?auto=format&fit=crop&w=100&h=100&q=80' },
+    { id: 4, name: 'MaxiTRANS ST3', desc: 'Car Carrier Trailer', type: 'Trailer', rego: 'TR-001', fuel: 0, maintenance: 2100, tyres: 1400, insurance: 1100, other: 1648, costPerKm: '$0.41', costPerDay: '$20.15', vsApr: 2.7, img: 'https://images.unsplash.com/photo-1583344165581-9b19e917d3b5?auto=format&fit=crop&w=100&h=100&q=80' }
   ]);
+
+  const fetchVehicleCosts = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/accounts/vehicle-costs');
+      if (res.data?.success && Array.isArray(res.data.data?.vehicles) && res.data.data.vehicles.length > 0) {
+        setRawVehicleData(res.data.data.vehicles);
+      }
+    } catch (err) {
+      console.warn('Using live fallback vehicle costs data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchVehicleCosts();
+  }, []);
 
   // Data for Tab 2: Transactions
   const [rawTransactions, setRawTransactions] = useState([
