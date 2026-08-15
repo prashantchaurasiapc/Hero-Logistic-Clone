@@ -2942,7 +2942,12 @@ exports.createWarehouse = async (req, res, next) => {
 
     let branch = null;
     if (payload.branchId) {
-      branch = await prisma.branch.findUnique({ where: { id: payload.branchId } });
+      branch = await prisma.branch.findFirst({
+        where: { id: payload.branchId, ...(companyId ? { companyId } : {}) }
+      });
+      if (!branch) {
+        return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'Branch not found in this company context' }, HTTP_STATUS.NOT_FOUND);
+      }
     }
     if (!branch && payload.branch) {
       branch = await prisma.branch.findFirst({

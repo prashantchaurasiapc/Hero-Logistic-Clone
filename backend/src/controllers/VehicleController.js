@@ -9,6 +9,9 @@ exports.getAll = async (req, res, next) => {
     const { where, skip, take, orderBy, currentPage, pageSize } = buildPrismaQuery(req.query);
     
     if (req.tenantId) where.companyId = req.tenantId;
+    if (req.user && req.user.role === 'DISPATCHER' && req.user.branchId && !req.user.permissions?.includes('dispatch.cross_branch.view')) {
+      where.branchId = req.user.branchId;
+    }
 
     const [data, total] = await Promise.all([
       prisma.vehicle.findMany({
@@ -34,6 +37,9 @@ exports.getById = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
     if (req.tenantId) where.companyId = req.tenantId;
+    if (req.user && req.user.role === 'DISPATCHER' && req.user.branchId && !req.user.permissions?.includes('dispatch.cross_branch.view')) {
+      where.branchId = req.user.branchId;
+    }
 
     const data = await prisma.vehicle.findFirst({
       where,
@@ -64,7 +70,7 @@ const ALLOWED_VEHICLE_FIELDS = new Set([
   'regState', 'regIssueDate', 'regExpiryDate', 'maxDistPerTripKm', 
   'primaryMechanic', 'preferredRoutes', 'preferredRegions', 'dgCertified', 
   'hvCertified', 'notes', 'status', 'companyId', 'currentLocation', 
-  'currentSpeed', 'fuelLevel', 'engineTemp', 'lastPing', 'currentDriverId'
+  'currentSpeed', 'fuelLevel', 'engineTemp', 'lastPing', 'currentDriverId', 'branchId'
 ]);
 
 const sanitizePayload = (rawPayload) => {
@@ -117,6 +123,9 @@ const sanitizePayload = (rawPayload) => {
   if (rawPayload.notes !== undefined) {
     clean.notes = rawPayload.notes;
   }
+  if (rawPayload.branchId !== undefined) {
+    clean.branchId = rawPayload.branchId;
+  }
   if (rawPayload.year) {
     clean.notes = clean.notes ? `${clean.notes} | Year: ${rawPayload.year}` : `Year: ${rawPayload.year}`;
   }
@@ -133,22 +142,10 @@ exports.create = async (req, res, next) => {
     }
 
     const effectiveCompanyId = rawPayload.companyId || (await prisma.company.findFirst())?.id;
-
-    let validCategory = 'TRUCK';
-    if (rawPayload.category) {
-      const c = String(rawPayload.category).toUpperCase();
-      if (['TRUCK', 'TRAILER'].includes(c)) validCategory = c;
+    let branchIdVal = rawPayload.branchId || null;
+    if (req.user && req.user.role === 'DISPATCHER' && req.user.branchId && !req.user.permissions?.includes('dispatch.cross_branch.view')) {
+      branchIdVal = req.user.branchId;
     }
-
-    let validStatus = 'IDLE';
-    if (rawPayload.status) {
-      const s = String(rawPayload.status).toUpperCase().replace(/\s+/g, '_');
-      if (['IN_TRANSIT', 'IDLE', 'MAINTENANCE', 'ALERT'].includes(s)) validStatus = s;
-      else if (s === 'ACTIVE' || s === 'AVAILABLE') validStatus = 'IDLE';
-    }
-
-    const regoVal = rawPayload.rego && String(rawPayload.rego).trim() ? String(rawPayload.rego).trim() : `REG-${Math.floor(10000 + Math.random() * 90000)}`;
-    const vinVal = rawPayload.vin && String(rawPayload.vin).trim() ? String(rawPayload.vin).trim() : `VIN-${Math.floor(100000 + Math.random() * 900000)}`;
 
     const vehicleData = {
       rego: regoVal,
@@ -162,7 +159,8 @@ exports.create = async (req, res, next) => {
       fuelType: rawPayload.fuelType || 'Diesel',
       odometerKm: rawPayload.odometerKm && !isNaN(rawPayload.odometerKm) ? parseInt(rawPayload.odometerKm) : 0,
       maintenanceDueKm: rawPayload.maintenanceDueKm && !isNaN(rawPayload.maintenanceDueKm) ? parseInt(rawPayload.maintenanceDueKm) : null,
-      companyId: effectiveCompanyId
+      companyId: effectiveCompanyId,
+      branchId: branchIdVal
     };
 
     const data = await prisma.vehicle.create({
@@ -185,8 +183,12 @@ exports.update = async (req, res, next) => {
     const updateData = sanitizePayload(req.body);
 
     if (req.tenantId) {
+      const findWhere = { id, companyId: req.tenantId };
+      if (req.user && req.user.role === 'DISPATCHER' && req.user.branchId && !req.user.permissions?.includes('dispatch.cross_branch.view')) {
+        findWhere.branchId = req.user.branchId;
+      }
       const existing = await prisma.vehicle.findFirst({
-        where: { id, companyId: req.tenantId }
+        where: findWhere
       });
       if (!existing) {
         return sendError(res, {
@@ -236,8 +238,12 @@ exports.delete = async (req, res, next) => {
     const { id } = req.params;
 
     if (req.tenantId) {
+      const findWhere = { id, companyId: req.tenantId };
+      if (req.user && req.user.role === 'DISPATCHER' && req.user.branchId && !req.user.permissions?.includes('dispatch.cross_branch.view')) {
+        findWhere.branchId = req.user.branchId;
+      }
       const existing = await prisma.vehicle.findFirst({
-        where: { id, companyId: req.tenantId }
+        where: findWhere
       });
       if (!existing) {
         return sendError(res, {

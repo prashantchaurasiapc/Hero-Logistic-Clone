@@ -3708,7 +3708,7 @@ export default function CompanySettings() {
                           <tr
                             key={user.id}
                             onClick={() => setSelectedUser(user)}
-                            className={`hover:bg-blue-50/40 transition-colors cursor-pointer ${selectedUser.id === user.id ? 'bg-blue-50/60' : ''}`}
+                            className={`hover:bg-blue-50/40 transition-colors cursor-pointer ${selectedUser?.id === user.id ? 'bg-blue-50/60' : ''}`}
                           >
                             <td className="py-2.5 px-3 whitespace-nowrap">
                               <div className="flex items-center gap-2.5">
@@ -3806,101 +3806,109 @@ export default function CompanySettings() {
 
                 {/* RIGHT COLUMN: USER DETAILS & ROLE SUMMARY CARDS */}
                 <div className="lg:col-span-4 space-y-4">
-
-                  {/* CARD 1: USER DETAILS */}
-                  <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-2xs space-y-3.5 text-left">
-                    <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                      <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">USER DETAILS</h3>
-                      <button onClick={() => handleOpenEditModal(selectedUser)} className="flex items-center gap-1 text-[10px] font-bold text-[#2563EB] hover:underline cursor-pointer">
-                        <Edit size={11} /> Edit User
-                      </button>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <div className={`w-12 h-12 rounded-full ${selectedUser.avatarBg || 'bg-purple-600'} text-white font-black text-base flex items-center justify-center shrink-0 shadow-xs`}>
-                        {selectedUser.avatar}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-sm font-black text-slate-900 leading-tight">{selectedUser.name}</h3>
-                          <span className="px-2 py-0.2 rounded-md text-[9px] font-extrabold bg-[#DCFCE7] text-[#166534]">
-                            {selectedUser.status}
-                          </span>
+                  {selectedUser ? (
+                    <>
+                      {/* CARD 1: USER DETAILS */}
+                      <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-2xs space-y-3.5 text-left">
+                        <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                          <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">USER DETAILS</h3>
+                          <button onClick={() => handleOpenEditModal(selectedUser)} className="flex items-center gap-1 text-[10px] font-bold text-[#2563EB] hover:underline cursor-pointer">
+                            <Edit size={11} /> Edit User
+                          </button>
                         </div>
-                        <p className="text-[11px] text-blue-600 font-medium leading-tight mt-0.5">{selectedUser.email}</p>
-                        <p className="text-[10px] text-purple-700 font-bold leading-tight mt-0.5">{selectedUser.role}</p>
+
+                        <div className="flex items-center gap-3">
+                          <div className={`w-12 h-12 rounded-full ${selectedUser.avatarBg || 'bg-purple-600'} text-white font-black text-base flex items-center justify-center shrink-0 shadow-xs`}>
+                            {selectedUser.avatar}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-sm font-black text-slate-900 leading-tight">{selectedUser.name}</h3>
+                              <span className="px-2 py-0.2 rounded-md text-[9px] font-extrabold bg-[#DCFCE7] text-[#166534]">
+                                {selectedUser.status}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-blue-600 font-medium leading-tight mt-0.5">{selectedUser.email}</p>
+                            <p className="text-[10px] text-purple-700 font-bold leading-tight mt-0.5">{selectedUser.role}</p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2 text-xs pt-1 border-t border-slate-100">
+                          <div className="flex justify-between items-center text-[11px]">
+                            <span className="font-bold text-slate-500">Phone:</span>
+                            <span className="font-bold text-slate-900">{selectedUser.phone}</span>
+                          </div>
+                          <div className="flex justify-between items-center text-[11px]">
+                            <span className="font-bold text-slate-500">Branch Access:</span>
+                            <span className="font-bold text-slate-900">{selectedUser.branch}</span>
+                          </div>
+                          <div className="flex justify-between items-center text-[11px]">
+                            <span className="font-bold text-slate-500">Joined Date:</span>
+                            <span className="font-bold text-slate-900">{selectedUser.joined}</span>
+                          </div>
+                          <div className="flex justify-between items-center text-[11px]">
+                            <span className="font-bold text-slate-500">Last Login:</span>
+                            <span className="font-bold text-slate-900">{selectedUser.lastLogin}</span>
+                          </div>
+                          <div className="flex justify-between items-center text-[11px]">
+                            <span className="font-bold text-slate-500">Status:</span>
+                            <span className="font-bold text-emerald-600">{selectedUser.status}</span>
+                          </div>
+                        </div>
                       </div>
+
+                      {/* CARD 2: ROLE & PERMISSIONS SUMMARY */}
+                      <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-2xs space-y-3 text-left">
+                        <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2">
+                          ROLE & PERMISSIONS SUMMARY
+                        </h3>
+
+                        <div className="space-y-1.5 text-xs">
+                          <div className="flex justify-between items-center text-[11px]">
+                            <span className="font-bold text-slate-500">Role:</span>
+                            <span className="font-bold text-slate-900">{selectedUser.role}</span>
+                          </div>
+                          <div className="flex justify-between items-center text-[11px]">
+                            <span className="font-bold text-slate-500">Permission Set:</span>
+                            <span className="font-bold text-slate-900">Full Access</span>
+                          </div>
+                        </div>
+
+                        <div className="pt-2 border-t border-slate-100 space-y-1.5 text-[11px]">
+                          <span className="font-bold text-slate-700 block mb-1">Key Permissions:</span>
+                          <ul className="space-y-1 font-semibold text-slate-700">
+                            <li className="flex items-center gap-1.5 text-emerald-700">
+                              <Check size={13} className="text-emerald-600 shrink-0" /> Full system access
+                            </li>
+                            <li className="flex items-center gap-1.5 text-emerald-700">
+                              <Check size={13} className="text-emerald-600 shrink-0" /> Manage settings & configuration
+                            </li>
+                            <li className="flex items-center gap-1.5 text-emerald-700">
+                              <Check size={13} className="text-emerald-600 shrink-0" /> Manage users, roles & permissions
+                            </li>
+                            <li className="flex items-center gap-1.5 text-emerald-700">
+                              <Check size={13} className="text-emerald-600 shrink-0" /> Access all reports and data
+                            </li>
+                            <li className="flex items-center gap-1.5 text-emerald-700">
+                              <Check size={13} className="text-emerald-600 shrink-0" /> Financial and invoicing access
+                            </li>
+                          </ul>
+                        </div>
+
+                        <div className="pt-2.5 border-t border-slate-100">
+                          <button onClick={() => triggerToast('Viewing full permission matrix...')} className="text-[10.5px] font-extrabold text-[#2563EB] hover:underline flex items-center gap-1 cursor-pointer">
+                            View full permission set →
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="bg-white rounded-xl border border-slate-200/80 p-8 shadow-2xs text-center space-y-2">
+                      <Users className="mx-auto text-slate-300 animate-pulse" size={32} />
+                      <p className="text-slate-500 font-black text-xs">Loading User Details...</p>
+                      <p className="text-slate-400 font-bold text-[10px]">Select a user from the list or wait for data synchronization.</p>
                     </div>
-
-                    <div className="space-y-2 text-xs pt-1 border-t border-slate-100">
-                      <div className="flex justify-between items-center text-[11px]">
-                        <span className="font-bold text-slate-500">Phone:</span>
-                        <span className="font-bold text-slate-900">{selectedUser.phone}</span>
-                      </div>
-                      <div className="flex justify-between items-center text-[11px]">
-                        <span className="font-bold text-slate-500">Branch Access:</span>
-                        <span className="font-bold text-slate-900">{selectedUser.branch}</span>
-                      </div>
-                      <div className="flex justify-between items-center text-[11px]">
-                        <span className="font-bold text-slate-500">Joined Date:</span>
-                        <span className="font-bold text-slate-900">{selectedUser.joined}</span>
-                      </div>
-                      <div className="flex justify-between items-center text-[11px]">
-                        <span className="font-bold text-slate-500">Last Login:</span>
-                        <span className="font-bold text-slate-900">{selectedUser.lastLogin}</span>
-                      </div>
-                      <div className="flex justify-between items-center text-[11px]">
-                        <span className="font-bold text-slate-500">Status:</span>
-                        <span className="font-bold text-emerald-600">{selectedUser.status}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* CARD 2: ROLE & PERMISSIONS SUMMARY */}
-                  <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-2xs space-y-3 text-left">
-                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2">
-                      ROLE & PERMISSIONS SUMMARY
-                    </h3>
-
-                    <div className="space-y-1.5 text-xs">
-                      <div className="flex justify-between items-center text-[11px]">
-                        <span className="font-bold text-slate-500">Role:</span>
-                        <span className="font-bold text-slate-900">{selectedUser.role}</span>
-                      </div>
-                      <div className="flex justify-between items-center text-[11px]">
-                        <span className="font-bold text-slate-500">Permission Set:</span>
-                        <span className="font-bold text-slate-900">Full Access</span>
-                      </div>
-                    </div>
-
-                    <div className="pt-2 border-t border-slate-100 space-y-1.5 text-[11px]">
-                      <span className="font-bold text-slate-700 block mb-1">Key Permissions:</span>
-                      <ul className="space-y-1 font-semibold text-slate-700">
-                        <li className="flex items-center gap-1.5 text-emerald-700">
-                          <Check size={13} className="text-emerald-600 shrink-0" /> Full system access
-                        </li>
-                        <li className="flex items-center gap-1.5 text-emerald-700">
-                          <Check size={13} className="text-emerald-600 shrink-0" /> Manage settings & configuration
-                        </li>
-                        <li className="flex items-center gap-1.5 text-emerald-700">
-                          <Check size={13} className="text-emerald-600 shrink-0" /> Manage users, roles & permissions
-                        </li>
-                        <li className="flex items-center gap-1.5 text-emerald-700">
-                          <Check size={13} className="text-emerald-600 shrink-0" /> Access all reports and data
-                        </li>
-                        <li className="flex items-center gap-1.5 text-emerald-700">
-                          <Check size={13} className="text-emerald-600 shrink-0" /> Financial and invoicing access
-                        </li>
-                      </ul>
-                    </div>
-
-                    <div className="pt-2.5 border-t border-slate-100">
-                      <button onClick={() => triggerToast('Viewing full permission matrix...')} className="text-[10.5px] font-extrabold text-[#2563EB] hover:underline flex items-center gap-1 cursor-pointer">
-                        View full permission set →
-                      </button>
-                    </div>
-                  </div>
-
+                  )}
                 </div>
 
               </div>

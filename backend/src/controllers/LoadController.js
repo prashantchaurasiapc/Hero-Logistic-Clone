@@ -10,6 +10,9 @@ exports.getAll = async (req, res, next) => {
     const { where, skip, take, orderBy, currentPage, pageSize } = buildPrismaQuery(req.query);
     
     if (req.tenantId) where.companyId = req.tenantId;
+    if (req.user && req.user.role === 'DISPATCHER' && req.user.branchId && !req.user.permissions?.includes('dispatch.cross_branch.view')) {
+      where.branchId = req.user.branchId;
+    }
 
     const [data, total] = await Promise.all([
       prisma.load.findMany({
@@ -39,6 +42,9 @@ exports.getById = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
     if (req.tenantId) where.companyId = req.tenantId;
+    if (req.user && req.user.role === 'DISPATCHER' && req.user.branchId && !req.user.permissions?.includes('dispatch.cross_branch.view')) {
+      where.branchId = req.user.branchId;
+    }
 
     const data = await prisma.load.findFirst({
       where,
@@ -73,6 +79,9 @@ exports.create = async (req, res, next) => {
     const payload = { ...req.body };
     if (req.tenantId) {
       payload.companyId = req.tenantId;
+    }
+    if (req.user && req.user.role === 'DISPATCHER' && req.user.branchId && !req.user.permissions?.includes('dispatch.cross_branch.view')) {
+      payload.branchId = req.user.branchId;
     }
 
     if (!payload.companyId) {
@@ -155,6 +164,9 @@ exports.update = async (req, res, next) => {
     if (req.tenantId) {
       findWhere.companyId = req.tenantId;
     }
+    if (req.user && req.user.role === 'DISPATCHER' && req.user.branchId && !req.user.permissions?.includes('dispatch.cross_branch.view')) {
+      findWhere.branchId = req.user.branchId;
+    }
 
     let targetLoad = await prisma.load.findFirst({
       where: findWhere
@@ -195,6 +207,9 @@ exports.delete = async (req, res, next) => {
     const findWhere = { id };
     if (req.tenantId) {
       findWhere.companyId = req.tenantId;
+    }
+    if (req.user && req.user.role === 'DISPATCHER' && req.user.branchId && !req.user.permissions?.includes('dispatch.cross_branch.view')) {
+      findWhere.branchId = req.user.branchId;
     }
 
     const targetLoad = await prisma.load.findFirst({
