@@ -50,9 +50,7 @@ export default function IncidentReporting() {
     setPhotoAttached(false);
   };
 
-  const mockData = [
-    { id: 1, category: 'Cargo\nDamage', loggedDate: '06/12/2026', status: 'UNDER\nREVIEW', statusColor: 'bg-gray-100 text-[#64748B] border border-gray-200 text-center leading-tight' }
-  ];
+  const mockData = [];
 
   const toggleRow = (id) => {
     setSelectedRows(prev => 

@@ -1027,58 +1027,7 @@ exports.createPayrollRun = async (req, res, next) => {
     // Tier 3: NO drivers anywhere in DB â†’ auto-seed 6 demo drivers for this company
     // so the payroll run always succeeds (handles fresh installs / empty DBs)
     if (drivers.length === 0) {
-      const crypto = require('crypto');
-
-      // Ensure a branch exists for the company first
-      let branch = await prisma.branch.findFirst({ where: { companyId } });
-      if (!branch) {
-        branch = await prisma.branch.create({
-          data: {
-            id: crypto.randomUUID(),
-            name: 'Head Office',
-            location: 'Sydney, NSW',
-            companyId,
-          }
-        });
-      }
-
-      // Seed 6 realistic demo drivers
-      const demoDefs = [
-        { first: 'Noah',   last: 'Williams', payRate: 35.00 },
-        { first: 'Liam',   last: 'Smith',    payRate: 30.00 },
-        { first: 'Ethan',  last: 'Jones',    payRate: 38.50 },
-        { first: 'Mason',  last: 'Brown',    payRate: 28.00 },
-        { first: 'Oliver', last: 'Taylor',   payRate: 36.00 },
-        { first: 'Sophie', last: 'Mitchell', payRate: 32.00 },
-      ];
-      const seeded = [];
-      for (let idx = 0; idx < demoDefs.length; idx++) {
-        const d = demoDefs[idx];
-        const email = `${d.first.toLowerCase()}.${d.last.toLowerCase()}.${companyId.slice(0, 6)}@demo.internal`;
-        const existing = await prisma.driver.findFirst({ where: { email } });
-        if (existing) { seeded.push(existing); continue; }
-        const code = `DRV-${String(idx + 1).padStart(3, '0')}-${companyId.slice(0, 4)}`;
-        const codeConflict = await prisma.driver.findFirst({ where: { driverCode: code } });
-        const driver = await prisma.driver.create({
-          data: {
-            id: crypto.randomUUID(),
-            driverCode: codeConflict ? `DRV-AUTO-${Date.now().toString().slice(-5)}` : code,
-            firstName: d.first,
-            lastName: d.last,
-            email,
-            status: 'AVAILABLE',
-            employmentType: 'FULL_TIME',
-            role: 'Driver',
-            licenseClass: 'HC',
-            payType: 'Hourly',
-            payRate: d.payRate,
-            branchId: branch.id,
-            companyId,
-          }
-        });
-        seeded.push(driver);
-      }
-      drivers = seeded.map(d => ({ id: d.id }));
+      return sendError(res, { code: ERROR_CODES.VALIDATION_ERROR, message: 'No drivers found to process payroll run.' }, HTTP_STATUS.BAD_REQUEST);
     }
 
     const basePayAmount = parseFloat(basePay) || 1000;

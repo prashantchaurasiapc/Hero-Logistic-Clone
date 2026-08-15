@@ -58,10 +58,7 @@ export default function LeaveManagement() {
     setReason('');
   };
 
-  const mockData = [
-    { id: 1, type: 'Annual Leave', dates: '07/04/2026 -\n07/06/2026', status: 'APPROVED', statusColor: 'bg-gray-100 text-[#64748B] border border-gray-200' },
-    { id: 2, type: 'Sick Leave', dates: '06/05/2026 -\n06/06/2026', status: 'APPROVED', statusColor: 'bg-gray-100 text-[#64748B] border border-gray-200' }
-  ];
+  const mockData = [];
 
   const toggleRow = (id) => {
     setSelectedRows(prev => 

@@ -158,3 +158,78 @@ exports.delete = async (req, res, next) => {
     next(error);
   }
 };
+
+// Add contact to Customer (POST /api/v1/customers/:id/contacts)
+exports.addContact = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { firstName, lastName, role, email, phone, isPrimary } = req.body;
+
+    if (!firstName) {
+      return sendError(res, { code: ERROR_CODES.VALIDATION_ERROR, message: 'First name is required' }, HTTP_STATUS.BAD_REQUEST);
+    }
+
+    const customer = await prisma.customer.findUnique({ where: { id } });
+    if (!customer) {
+      return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'Customer not found' }, HTTP_STATUS.NOT_FOUND);
+    }
+
+    const newContact = {
+      id: Date.now().toString(),
+      firstName,
+      lastName: lastName || '',
+      role: role || 'Contact',
+      email: email || 'N/A',
+      phone: phone || 'N/A',
+      isPrimary: !!isPrimary,
+      createdAt: new Date().toISOString()
+    };
+
+    const updateData = {
+      contactName: `${firstName} ${lastName || ''}`.trim(),
+      email: email || customer.email,
+      phone: phone || customer.phone
+    };
+
+    const updatedCustomer = await prisma.customer.update({
+      where: { id },
+      data: updateData
+    });
+
+    return sendSuccess(res, {
+      contact: newContact,
+      customer: updatedCustomer
+    }, HTTP_STATUS.CREATED);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get contacts for Customer (GET /api/v1/customers/:id/contacts)
+exports.getContacts = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const customer = await prisma.customer.findUnique({ where: { id } });
+    if (!customer) {
+      return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'Customer not found' }, HTTP_STATUS.NOT_FOUND);
+    }
+
+    const contacts = [];
+    if (customer.contactName || customer.email || customer.phone) {
+      const parts = (customer.contactName || '').trim().split(' ');
+      contacts.push({
+        id: '1',
+        firstName: parts[0] || 'Primary',
+        lastName: parts.slice(1).join(' ') || 'Contact',
+        role: 'Primary Contact',
+        email: customer.email || 'N/A',
+        phone: customer.phone || 'N/A',
+        isPrimary: true
+      });
+    }
+
+    return sendSuccess(res, contacts);
+  } catch (error) {
+    next(error);
+  }
+};

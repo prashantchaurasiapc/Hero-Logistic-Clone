@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import api from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import {
   Search,
   ChevronRight,
@@ -77,6 +78,7 @@ import {
 } from 'lucide-react';
 
 export default function Messages() {
+  const { user } = useAuth();
   // Navigation & Category Routing State
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [selectedParticipant, setSelectedParticipant] = useState('All Participants');
@@ -252,6 +254,17 @@ export default function Messages() {
         }));
         users = mappedUsers;
       }
+      // Apply RBAC for Sales
+      if (user?.role === 'SALES' || user?.role === 'SALES_REP') {
+        users = users.filter(u => {
+          const r = (u.role || '').toUpperCase();
+          // Filter logic: if it's a default static user, check the role string
+          if (r.includes('DRIVER') || r.includes('DISPATCH') || r.includes('WAREHOUSE') || r.includes('DEPOT')) return false;
+          // Only show Sales, Admins or Customers
+          return r.includes('SALES') || r.includes('ADMIN') || r.includes('CUSTOMER');
+        });
+      }
+
       setContactsList(users);
       if (users.length > 0) {
         setActiveContactId(prev => prev || users[0].id);
@@ -278,13 +291,21 @@ export default function Messages() {
       setCustomerList(customers);
     } catch (err) {
       console.error('Error loading messages data:', err);
-      setContactsList(defaultContactsList);
+      let defaultList = defaultContactsList;
+      if (user?.role === 'SALES' || user?.role === 'SALES_REP') {
+        defaultList = defaultList.filter(u => {
+          const r = (u.role || '').toUpperCase();
+          if (r.includes('DRIVER') || r.includes('DISPATCH') || r.includes('WAREHOUSE') || r.includes('DEPOT')) return false;
+          return r.includes('SALES') || r.includes('ADMIN') || r.includes('CUSTOMER');
+        });
+      }
+      setContactsList(defaultList);
       setCustomerList(defaultCustomerList);
-      setActiveContactId(1);
+      setActiveContactId(defaultList[0]?.id || 1);
     } finally {
       setLoadingComms(false);
     }
-  }, []);
+  }, [user?.role]);
 
   useEffect(() => {
     fetchMessagesData();
@@ -300,9 +321,17 @@ export default function Messages() {
     let targetId = activeContactId;
 
     if (currentList.length === 0) {
-      currentList = defaultContactsList;
-      setContactsList(defaultContactsList);
-      targetId = defaultContactsList[0].id;
+      let fallbackList = defaultContactsList;
+      if (user?.role === 'SALES' || user?.role === 'SALES_REP') {
+        fallbackList = fallbackList.filter(u => {
+          const r = (u.role || '').toUpperCase();
+          if (r.includes('DRIVER') || r.includes('DISPATCH') || r.includes('WAREHOUSE') || r.includes('DEPOT')) return false;
+          return r.includes('SALES') || r.includes('ADMIN') || r.includes('CUSTOMER');
+        });
+      }
+      currentList = fallbackList;
+      setContactsList(fallbackList);
+      targetId = fallbackList[0]?.id;
       setActiveContactId(targetId);
     } else if (!targetId) {
       targetId = currentList[0].id;

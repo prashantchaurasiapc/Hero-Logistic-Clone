@@ -127,6 +127,16 @@ exports.create = async (req, res, next) => {
       }
     }
 
+    // Map priority string to valid db enum
+    if (payload.priority) {
+      const pUpper = payload.priority.toUpperCase();
+      if (['LOW', 'MEDIUM', 'HIGH', 'URGENT'].includes(pUpper)) {
+        payload.priority = pUpper;
+      } else {
+        payload.priority = 'LOW';
+      }
+    }
+
     // Map scheduledDate or reqDate to loadDate
     if (payload.scheduledDate && !payload.loadDate) {
       const parsedDate = new Date(payload.scheduledDate);

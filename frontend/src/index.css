@@ -754,9 +754,13 @@ table {
     display: none !important;
   }
 
-  /* Hide background content behind fixed modals */
-  #root > div > *:not(.fixed) {
-    display: none !important;
+  /* Make sure root and main containers can expand fully for printing */
+  html, body, #root, #root > div, main {
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    position: static !important;
   }
 
   /* Transform fixed modal container to normal printable page */

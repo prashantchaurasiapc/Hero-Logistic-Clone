@@ -17,12 +17,16 @@ import {
   createFollowUpTask, 
   updateFollowUpTask, 
   createSalesActivity, 
-  convertLeadToCompany 
+  convertLeadToCompany,
+  assignLeadRep
 } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 export default function SalesDashboard() {
   const navigate = useNavigate();
-  const [salesRep, setSalesRep] = useState('Alex Wright');
+  const { user } = useAuth();
+  const [salesReps, setSalesReps] = useState([]);
+  const [selectedRepFilter, setSelectedRepFilter] = useState('ALL');
   const [selectedLeadId, setSelectedLeadId] = useState('');
   const [leads, setLeads] = useState([]);
   const [kpis, setKpis] = useState({
@@ -103,11 +107,13 @@ export default function SalesDashboard() {
     setTimeout(() => setToastMessage(''), 3000);
   };
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (repIdToFilter) => {
     try {
-      const response = await getSalesDashboardSummary();
+      const activeFilter = repIdToFilter !== undefined ? repIdToFilter : selectedRepFilter;
+      const params = activeFilter && activeFilter !== 'ALL' ? { repId: activeFilter } : {};
+      const response = await getSalesDashboardSummary(params);
       if (response.data?.success) {
-        const { kpis, stages, monthlyData, conversionData, recentActivities, tasks, leadsList } = response.data.data;
+        const { kpis, stages, monthlyData, conversionData, salesReps: repsList, recentActivities, tasks, leadsList } = response.data.data;
         setKpis(kpis);
         setStages(stages);
         setMonthlyData(monthlyData);
@@ -115,6 +121,9 @@ export default function SalesDashboard() {
         setActivities(recentActivities);
         setTasks(tasks);
         setLeads(leadsList);
+        if (repsList && repsList.length > 0) {
+          setSalesReps(repsList);
+        }
         
         if (leadsList && leadsList.length > 0 && !selectedLeadId) {
           setSelectedLeadId(leadsList[0].id);
@@ -126,8 +135,8 @@ export default function SalesDashboard() {
   };
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    fetchDashboardData(selectedRepFilter);
+  }, [selectedRepFilter]);
 
   const selectedLeadObj = leads.find(l => l.id === selectedLeadId) || null;
 
@@ -153,6 +162,20 @@ export default function SalesDashboard() {
     } catch (error) {
       console.error('Error updating stage:', error);
       triggerToast('Failed to update stage.');
+    }
+  };
+
+  const handleAssignRepToLead = async (repId) => {
+    if (!selectedLeadObj) return;
+    try {
+      const res = await assignLeadRep(selectedLeadObj.id, { repId: repId || null });
+      if (res.data?.success) {
+        triggerToast(`Assigned rep updated for ${selectedLeadObj.companyName}!`);
+        fetchDashboardData();
+      }
+    } catch (error) {
+      console.error('Error assigning rep:', error);
+      triggerToast('Failed to assign rep.');
     }
   };
 
@@ -290,14 +313,44 @@ export default function SalesDashboard() {
       )}
 
       {/* Header */}
-      <div className="flex justify-between items-center mb-2">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2">
         <div>
           <h1 className="text-2xl font-black text-slate-900 mb-1">
             Sales Dashboard
           </h1>
-          <p className="text-sm font-medium text-slate-500">
-            Manage leads, pipeline, and sales reports.
+          <p className="text-xs font-medium text-slate-500">
+            Real-time pipeline intelligence, stage transitions, and CRM execution console.
           </p>
+        </div>
+
+        <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+          {/* Authenticated Identity Indicator */}
+          <div className="flex items-center gap-2 bg-slate-100 border border-slate-200 px-3.5 py-2 rounded-xl text-xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <div>
+              <span className="text-[9px] text-slate-400 font-bold block uppercase tracking-wider leading-none">Logged In</span>
+              <strong className="text-slate-900 font-extrabold text-[11px] leading-tight block">{user?.name || 'Sales Officer'}</strong>
+            </div>
+            <span className="ml-1.5 px-2 py-0.5 bg-amber-100 text-amber-900 font-black text-[9px] rounded-md uppercase">
+              {user?.role === 'SUPER_ADMIN' ? 'SUPER_ADMIN' : user?.accessProfile || 'SALES_FULL_ACCESS'}
+            </span>
+          </div>
+
+          {/* Filter by Sales Rep (Full Access only) */}
+          {(user?.role === 'SUPER_ADMIN' || user?.accessProfile !== 'SALES_REP') && (
+            <div className="relative">
+              <select
+                value={selectedRepFilter}
+                onChange={(e) => setSelectedRepFilter(e.target.value)}
+                className="bg-white border border-slate-300 text-slate-700 text-xs font-bold px-3 py-2.5 rounded-xl focus:outline-none cursor-pointer shadow-xs hover:border-amber-400 transition-colors"
+              >
+                <option value="ALL">All Sales Reps</option>
+                {salesReps.map(rep => (
+                  <option key={rep.id} value={rep.id}>{rep.name || rep.email}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
       </div>
 
@@ -417,12 +470,14 @@ export default function SalesDashboard() {
                       <User className="w-3.5 h-3.5 text-amber-500" />
                       <span className="text-[11px] font-bold text-slate-500">Rep:</span>
                       <select 
-                        value={salesRep}
-                        onChange={(e) => setSalesRep(e.target.value)}
+                        value={selectedLeadObj.repId || (selectedLeadObj.rep?.id || '')}
+                        onChange={(e) => handleAssignRepToLead(e.target.value)}
                         className="text-[11px] font-extrabold text-slate-900 outline-none bg-transparent cursor-pointer pl-1 pr-4 appearance-none relative"
                       >
-                        <option>Alex Wright</option>
-                        <option>Sarah Connor</option>
+                        <option value="">Unassigned</option>
+                        {salesReps.map(rep => (
+                          <option key={rep.id} value={rep.id}>{rep.name || rep.email}</option>
+                        ))}
                       </select>
                     </div>
                     <button onClick={() => setShowRecommendModal(true)} className="bg-[#4B0082] text-white text-[10px] font-bold px-4 py-2.5 rounded-xl shadow-sm flex items-center gap-1.5 hover:bg-purple-900 transition-all cursor-pointer active:scale-95">

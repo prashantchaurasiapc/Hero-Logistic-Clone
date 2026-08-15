@@ -7,18 +7,21 @@ import {
 import { crmRepository } from '../../services/crmRepository';
 import { crmStore } from '../../services/crmStore';
 import { crmWorkflowEngine } from '../../services/crmEngines';
+import { useAuth } from '../../context/AuthContext';
+import { getSalesReps } from '../../services/api';
 
 export default function Leads() {
-  // Database States loaded from localStorage crmStore
+  const { user } = useAuth();
+  // Database States loaded from crmStore
   const [leads, setLeads] = useState([]);
+  const [salesReps, setSalesReps] = useState([]);
   
   // UI states
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTab, setSelectedTab] = useState('ALL');
   const [nicheFilter, setNicheFilter] = useState('All Transport Niches');
   const [fleetFilter, setFleetFilter] = useState('All Fleet Sizes');
-  const [activeRole, setActiveRole] = useState('Sales Director');
-  const [showRoleDropdown, setShowRoleDropdown] = useState(false);
+  const [selectedRepFilter, setSelectedRepFilter] = useState('ALL');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedLead, setSelectedLead] = useState(null);
   
@@ -49,10 +52,19 @@ export default function Leads() {
     // Initial fetch
     setLeads(crmRepository.getLeads());
     
+    // Fetch sales reps
+    getSalesReps().then(res => {
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        setSalesReps(res.data.data);
+      }
+    }).catch(err => console.error('Error fetching sales reps:', err));
+    
     // Subscribe to store mutations
     const unsubscribe = crmStore.subscribe(() => {
       const freshLeads = crmRepository.getLeads();
       setLeads(freshLeads);
+      const freshReps = crmRepository.getSalesReps();
+      if (freshReps?.length) setSalesReps(freshReps);
     });
     
     return () => unsubscribe();
@@ -88,9 +100,6 @@ export default function Leads() {
     'Container'
   ];
 
-  // List of available reps
-  const repsList = ['Alex Wright', 'Sarah K.', 'Michael Scott', 'Jan Levinson', 'Ryan Howard'];
-
   // Handle stage update via sidebar dropdown
   const handleUpdateStage = (id, newStage) => {
     crmWorkflowEngine.handleStageChange(id, newStage, 'Manual lifecycle update via Inspector');
@@ -108,26 +117,37 @@ export default function Leads() {
     }
   };
 
+  const [editingLeadId, setEditingLeadId] = useState(null);
+
   // Open Edit Modal prefilled
   const openEditModal = (lead) => {
+    setEditingLeadId(lead.id);
+    setSelectedLead(lead);
     setModalForm({
-      company: lead.company,
-      name: lead.name,
-      email: lead.email,
-      phone: lead.phone || '555-0100',
+      company: lead.company || '',
+      name: lead.name || '',
+      email: lead.email || '',
+      phone: lead.phone || '',
       fleetSize: lead.fleetSize || 10,
       niche: lead.niche || 'General Freight',
       revenue: lead.revenue || 1500,
       stage: lead.stage || 'New Lead',
-      score: lead.score || 60,
-      rep: lead.rep || 'Alex Wright',
-      notes: lead.notes || ''
+      score: lead.score !== undefined && lead.score !== null ? lead.score : 60,
+      repId: lead.repId || (salesReps[0]?.id || ''),
+      rep: lead.rep || '',
+      notes: lead.notes || lead.painPoints || '',
+      currentSoftware: lead.currentSoftware || '',
+      painPoints: lead.painPoints || lead.notes || '',
+      priority: lead.priority || 'Medium',
+      tags: lead.tags || lead.source || '',
+      followUpDate: lead.followUpDate || ''
     });
     setShowModal('edit');
   };
 
   // Open Add Modal empty
   const openAddModal = () => {
+    setEditingLeadId(null);
     setModalForm({
       company: '',
       name: '',
@@ -138,39 +158,63 @@ export default function Leads() {
       revenue: 1999,
       stage: 'New Lead',
       score: 60,
-      rep: repsList[Math.floor(Math.random() * repsList.length)],
-      notes: ''
+      repId: salesReps[0]?.id || '',
+      rep: salesReps[0]?.name || '',
+      notes: '',
+      currentSoftware: '',
+      painPoints: '',
+      priority: 'Medium',
+      tags: '',
+      followUpDate: ''
     });
     setShowModal('add');
   };
 
   // Form submit handler
-  const handleFormSubmit = async (e) => {
-    e.preventDefault();
+  const handleFormSubmit = async (e, bookDemo = false) => {
+    if (e && e.preventDefault) e.preventDefault();
     if (!modalForm.company || !modalForm.name || !modalForm.email) {
       alert('Please fill out all required fields.');
       return;
     }
 
     if (showModal === 'add') {
-      const newLead = await crmRepository.createLead(modalForm);
-      setToast({ type: 'success', text: `Intake success for ${modalForm.company}.` });
-      // If stage wasn't default, trigger workflow engine stage update
-      if (newLead && modalForm.stage !== 'New Lead') {
-        crmWorkflowEngine.handleStageChange(newLead.id, modalForm.stage, 'Initial custom intake stage');
+      const payload = {
+        ...modalForm,
+        stage: bookDemo ? 'Demo Booked' : modalForm.stage
+      };
+      const newLead = await crmRepository.createLead(payload);
+      if (bookDemo && newLead) {
+        await crmRepository.scheduleDemo(newLead.id, {
+          date: modalForm.followUpDate || new Date().toISOString().split('T')[0],
+          notes: modalForm.notes || 'Demo booked from lead registration'
+        });
+        setToast({ type: 'success', text: `Lead created and Demo booked for ${modalForm.company}!` });
+      } else {
+        setToast({ type: 'success', text: `Intake success for ${modalForm.company}.` });
       }
     } else if (showModal === 'edit') {
-      if (selectedLead) {
-        await crmRepository.updateLead(selectedLead.id, modalForm);
-        // Stage trigger workflow if edited stage is different
-        if (selectedLead.stage !== modalForm.stage) {
-          crmWorkflowEngine.handleStageChange(selectedLead.id, modalForm.stage, 'Lifecycle stage updated via lead editor form');
+      const targetId = editingLeadId || selectedLead?.id;
+      if (targetId) {
+        const payload = {
+          ...modalForm,
+          stage: bookDemo ? 'Demo Booked' : modalForm.stage
+        };
+        await crmRepository.updateLead(targetId, payload);
+        if (bookDemo) {
+          await crmRepository.scheduleDemo(targetId, {
+            date: modalForm.followUpDate || new Date().toISOString().split('T')[0],
+            notes: modalForm.notes || 'Demo booked from lead update'
+          });
+          setToast({ type: 'success', text: `Lead updated and Demo booked for ${modalForm.company}!` });
+        } else {
+          setToast({ type: 'success', text: `Lead profile for ${modalForm.company} updated.` });
         }
-        setToast({ type: 'success', text: `Lead profile for ${modalForm.company} updated.` });
       }
     }
 
     setShowModal(null);
+    setEditingLeadId(null);
   };
 
   // Provision Trial Sandbox handler
@@ -188,11 +232,10 @@ export default function Leads() {
     // 2. Tab Filter
     let matchesTab = true;
     if (selectedTab === 'MY LEADS') {
-      if (activeRole === 'Sales Director') {
-        // Sales director owns Alex Wright leads by default in mock
-        matchesTab = lead.rep === 'Alex Wright';
+      if (user?.role === 'SUPER_ADMIN' || user?.accessProfile === 'SALES_FULL_ACCESS' || !user) {
+        matchesTab = selectedRepFilter === 'ALL' ? true : (lead.repId === selectedRepFilter || lead.rep === selectedRepFilter);
       } else {
-        matchesTab = lead.rep === activeRole;
+        matchesTab = (lead.repId === user?.id) || (lead.rep === user?.name);
       }
     } else if (selectedTab === 'HIGH VALUE') {
       matchesTab = lead.revenue >= 5000;
@@ -206,6 +249,12 @@ export default function Leads() {
       matchesTab = lead.stage === 'Won';
     } else if (selectedTab === 'LOST') {
       matchesTab = lead.stage === 'Lost';
+    }
+
+    // Filter by selected Sales Rep
+    let matchesRep = true;
+    if (selectedRepFilter !== 'ALL') {
+      matchesRep = lead.repId === selectedRepFilter || lead.rep === selectedRepFilter;
     }
 
     // 3. Niche dropdown filter
@@ -226,7 +275,7 @@ export default function Leads() {
       }
     }
 
-    return matchesSearch && matchesTab && matchesNiche && matchesFleet;
+    return matchesSearch && matchesTab && matchesRep && matchesNiche && matchesFleet;
   });
 
   // Pagination constants
@@ -250,7 +299,6 @@ export default function Leads() {
     } else if (stage === 'Lost') {
       return 'bg-rose-50 border border-rose-250 text-rose-750';
     } else {
-      // Vance Refrigeration has yellow/orange-ish colors for "New Lead", "Contacted", "Demo Booked", etc.
       return 'bg-[#FEF3C7] border border-[#FDE68A] text-[#92400E]';
     }
   };
@@ -290,39 +338,33 @@ export default function Leads() {
 
         {/* Header Right Actions */}
         <div className="flex items-center gap-3 w-full md:w-auto flex-wrap sm:flex-nowrap">
-          {/* Role selector dropdown */}
-          <div className="relative">
-            <button 
-              onClick={() => setShowRoleDropdown(!showRoleDropdown)}
-              className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-800 text-[10px] px-3.5 py-2 rounded-xl font-black transition-all hover:bg-amber-100 cursor-pointer shadow-xs whitespace-nowrap"
-            >
-              Role: {activeRole === 'Sales Director' ? 'Sales Director (Full Access)' : `${activeRole} (Sales Rep)`}
-              <ChevronDown className="w-3.5 h-3.5 text-amber-700 shrink-0" />
-            </button>
-            
-            {showRoleDropdown && (
-              <div className="absolute left-0 md:right-0 md:left-auto mt-1.5 w-64 bg-white border border-slate-200 rounded-xl shadow-xl z-50 py-1.5 text-xs text-slate-700">
-                <div className="px-3 py-1 text-[9px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100 mb-1">Select Session Identity</div>
-                <button 
-                  onClick={() => { setActiveRole('Sales Director'); setShowRoleDropdown(false); }}
-                  className={`w-full px-3 py-2 text-left font-bold hover:bg-slate-50 flex items-center justify-between ${activeRole === 'Sales Director' ? 'text-amber-700 bg-amber-50/50' : ''}`}
-                >
-                  Sales Director (Full Access)
-                  {activeRole === 'Sales Director' && <Check className="w-3.5 h-3.5" />}
-                </button>
-                {repsList.map(rep => (
-                  <button 
-                    key={rep}
-                    onClick={() => { setActiveRole(rep); setShowRoleDropdown(false); }}
-                    className={`w-full px-3 py-2 text-left font-bold hover:bg-slate-50 flex items-center justify-between ${activeRole === rep ? 'text-amber-700 bg-amber-50/50' : ''}`}
-                  >
-                    {rep} (Sales Rep)
-                    {activeRole === rep && <Check className="w-3.5 h-3.5" />}
-                  </button>
-                ))}
-              </div>
-            )}
+          {/* Authenticated Identity Indicator */}
+          <div className="flex items-center gap-2 bg-slate-100 border border-slate-200 px-3.5 py-2 rounded-xl text-xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <div>
+              <span className="text-[9px] text-slate-400 font-bold block uppercase tracking-wider leading-none">Logged In</span>
+              <strong className="text-slate-900 font-extrabold text-[11px] leading-tight block">{user?.name || 'Sales Officer'}</strong>
+            </div>
+            <span className="ml-1.5 px-2 py-0.5 bg-amber-100 text-amber-900 font-black text-[9px] rounded-md uppercase">
+              {user?.role === 'SUPER_ADMIN' ? 'SUPER_ADMIN' : user?.accessProfile || 'SALES_FULL_ACCESS'}
+            </span>
           </div>
+
+          {/* Filter by Sales Rep (Full Access only) */}
+          {(user?.role === 'SUPER_ADMIN' || user?.accessProfile !== 'SALES_REP') && (
+            <div className="relative">
+              <select
+                value={selectedRepFilter}
+                onChange={(e) => setSelectedRepFilter(e.target.value)}
+                className="bg-white border border-slate-300 text-slate-700 text-xs font-bold px-3 py-2.5 rounded-xl focus:outline-none cursor-pointer shadow-xs hover:border-amber-400 transition-colors"
+              >
+                <option value="ALL">All Sales Reps</option>
+                {salesReps.map(rep => (
+                  <option key={rep.id} value={rep.id}>{rep.name || rep.email}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Add New Lead button */}
           <button 
@@ -836,19 +878,43 @@ export default function Leads() {
                   />
                 </div>
 
+                {/* Health / Lead Score */}
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    HEALTH / SCORE (0-100)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={modalForm.score !== undefined ? modalForm.score : 60}
+                    onChange={(e) => setModalForm({ ...modalForm, score: parseInt(e.target.value) || 0 })}
+                    placeholder="60"
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-300 focus:border-slate-400 rounded-[10px] focus:outline-none text-slate-800 font-medium text-[13px]"
+                  />
+                </div>
+
                 {/* Assigned Agent Rep */}
                 <div>
                   <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
                     ASSIGNED AGENT REP
                   </label>
                   <select
-                    value={modalForm.rep || 'Alex Wright'}
-                    onChange={(e) => setModalForm({ ...modalForm, rep: e.target.value })}
+                    value={modalForm.repId || ''}
+                    onChange={(e) => {
+                      const selected = salesReps.find(r => r.id === e.target.value);
+                      setModalForm({ 
+                        ...modalForm, 
+                        repId: e.target.value,
+                        rep: selected?.name || selected?.email || ''
+                      });
+                    }}
                     className="w-full px-3.5 py-2.5 bg-white border border-slate-300 focus:border-slate-400 rounded-[10px] focus:outline-none text-slate-800 cursor-pointer font-medium text-[13px] appearance-none"
                     style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%23000\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', backgroundSize: '16px' }}
                   >
-                    {repsList.map(rep => (
-                      <option key={rep} value={rep}>{rep}</option>
+                    <option value="">Unassigned</option>
+                    {salesReps.map(rep => (
+                      <option key={rep.id} value={rep.id}>{rep.name || rep.email}</option>
                     ))}
                   </select>
                 </div>
@@ -950,6 +1016,7 @@ export default function Leads() {
                 </button>
                 <button
                   type="button"
+                  onClick={(e) => handleFormSubmit(e, true)}
                   className="w-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-[14px] py-3 rounded-[10px] transition-colors cursor-pointer text-center"
                 >
                   Save & Book Demo

@@ -228,6 +228,7 @@ function App() {
             <Route path="follow-ups" element={<FollowUps />} />
             <Route path="onboarding-handover" element={<OnboardingHandover />} />
             <Route path="sales-reports" element={<SalesReports />} />
+            <Route path="messages" element={<Messages />} />
             <Route path="settings" element={<SalesSettings />} />
           </Route>
 

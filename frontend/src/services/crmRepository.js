@@ -1,35 +1,49 @@
 import { crmStore } from './crmStore';
-import api from './api';
+import api, { updateLeadStage, assignLeadRep, getSalesReps } from './api';
 
 const STORAGE_KEY = 'hero_crm_leads';
 const DEMOS_KEY = 'hero_crm_demos';
-const TRIALS_KEY = 'hero_crm_trials';
 const PROPOSALS_KEY = 'hero_crm_proposals';
 const FOLLOWUPS_KEY = 'hero_crm_followups';
-const HANDOVERS_KEY = 'hero_crm_handovers';
+const REPS_KEY = 'hero_crm_reps';
 const STAGES_KEY = 'hero_crm_stages';
 const SOURCES_KEY = 'hero_crm_sources';
 
 // Mappings
-function mapLeadToFrontend(l) {
+export function mapLeadToFrontend(l) {
+  const createdDate = l.createdAt ? new Date(l.createdAt) : new Date();
+  const diffTime = Math.max(0, new Date() - createdDate);
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
   return {
     id: l.id,
     company: l.companyName,
     name: l.contactName,
     email: l.email,
     phone: l.phone || '',
-    fleetSize: parseInt(l.fleetSize) || 12,
+    fleetSize: parseInt(l.fleetSize) || 0,
     niche: l.transportNiche || 'General Freight',
-    revenue: l.estimatedValue || 2004,
+    revenue: l.estimatedValue !== undefined && l.estimatedValue !== null ? l.estimatedValue : 0,
     stage: mapStageToFrontend(l.stage),
-    score: l.score || 60,
-    rep: 'Alex Wright', // default display rep
+    score: l.score !== undefined && l.score !== null ? l.score : 0,
+    repId: l.repId || null,
+    rep: l.rep?.name || 'Unassigned',
     notes: l.painPoints || '',
-    stageDays: 2
+    currentSoftware: l.currentSoftware || '',
+    painPoints: l.painPoints || '',
+    source: l.source || '',
+    tags: l.source || '',
+    priority: l.score >= 80 ? 'High' : l.score >= 50 ? 'Medium' : 'Low',
+    stageDays: diffDays,
+    createdAt: l.createdAt,
+    demos: l.demos || [],
+    proposals: l.proposals || [],
+    tasks: l.tasks || [],
+    activities: l.activities || []
   };
 }
 
-function mapStageToFrontend(stg) {
+export function mapStageToFrontend(stg) {
   const map = {
     'NEW_LEAD': 'New Lead',
     'CONTACTED': 'Contacted',
@@ -44,7 +58,7 @@ function mapStageToFrontend(stg) {
   return map[stg] || 'New Lead';
 }
 
-function mapStageToBackend(stg) {
+export function mapStageToBackend(stg) {
   const map = {
     'New Lead': 'NEW_LEAD',
     'Contacted': 'CONTACTED',
@@ -61,7 +75,6 @@ function mapStageToBackend(stg) {
 
 class CRMRepository {
   constructor() {
-    // Start background synchronization with database
     this.syncWithBackend();
   }
 
@@ -84,8 +97,9 @@ class CRMRepository {
           contact: d.lead?.contactName || 'Contact',
           date: d.scheduledAt ? d.scheduledAt.split('T')[0] : '',
           time: '12:00 PM',
-          presenter: 'Alex Wright',
-          status: d.status === 'UPCOMING' ? 'Upcoming' : 'Completed',
+          presenter: d.presenter?.name || 'Sales Rep',
+          presenterId: d.presenterId,
+          status: d.status === 'COMPLETED' ? 'Completed' : 'Upcoming',
           notes: d.feedback || ''
         }));
         localStorage.setItem(DEMOS_KEY, JSON.stringify(mappedDemos));
@@ -97,6 +111,7 @@ class CRMRepository {
         const mappedProposals = proposalsRes.data.data.map(p => ({
           id: p.id,
           leadId: p.leadId,
+          proposalRef: p.proposalRef,
           title: `Proposal - ${p.lead?.companyName || 'Client'}`,
           company: p.lead?.companyName || 'Client',
           value: p.baseValue,
@@ -111,7 +126,7 @@ class CRMRepository {
         localStorage.setItem(PROPOSALS_KEY, JSON.stringify(mappedProposals));
       }
 
-      // 4. Fetch followups (tasks)
+      // 4. Fetch followups
       const tasksRes = await api.get('/follow-up-tasks');
       if (tasksRes.data && Array.isArray(tasksRes.data.data)) {
         const mappedTasks = tasksRes.data.data.map(t => ({
@@ -128,7 +143,13 @@ class CRMRepository {
         localStorage.setItem(FOLLOWUPS_KEY, JSON.stringify(mappedTasks));
       }
 
-      // Notify UI components
+      // 5. Fetch sales reps
+      const repsRes = await getSalesReps().catch(() => null);
+      if (repsRes?.data && Array.isArray(repsRes.data.data)) {
+        localStorage.setItem(REPS_KEY, JSON.stringify(repsRes.data.data));
+      }
+
+      // Notify UI
       crmStore.notify();
     } catch (error) {
       console.error('Error synchronizing CRM with backend database:', error);
@@ -139,22 +160,23 @@ class CRMRepository {
     return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
   }
 
-  saveLeads(leads) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(leads));
-    crmStore.notify();
-  }
-
   getDemos() {
     return JSON.parse(localStorage.getItem(DEMOS_KEY)) || [];
   }
 
-  saveDemos(demos) {
-    localStorage.setItem(DEMOS_KEY, JSON.stringify(demos));
-    crmStore.notify();
+  getProposals() {
+    return JSON.parse(localStorage.getItem(PROPOSALS_KEY)) || [];
+  }
+
+  getFollowups() {
+    return JSON.parse(localStorage.getItem(FOLLOWUPS_KEY)) || [];
+  }
+
+  getSalesReps() {
+    return JSON.parse(localStorage.getItem(REPS_KEY)) || [];
   }
 
   getTrials() {
-    // Map leads in TRIAL_STARTED to mock trials array
     const leads = this.getLeads();
     return leads.filter(l => l.stage === 'Trial Started').map(l => ({
       id: `T-${l.id}`,
@@ -168,14 +190,6 @@ class CRMRepository {
       activeUsers: 3,
       storage: '0.2 GB'
     }));
-  }
-
-  getProposals() {
-    return JSON.parse(localStorage.getItem(PROPOSALS_KEY)) || [];
-  }
-
-  getFollowups() {
-    return JSON.parse(localStorage.getItem(FOLLOWUPS_KEY)) || [];
   }
 
   getHandovers() {
@@ -192,7 +206,10 @@ class CRMRepository {
   }
 
   getStages() {
-    return JSON.parse(localStorage.getItem(STAGES_KEY)) || ['New Lead', 'Contacted', 'Demo Booked', 'Demo Completed', 'Trial Started', 'Proposal Sent', 'Negotiation', 'Won', 'Lost'];
+    return JSON.parse(localStorage.getItem(STAGES_KEY)) || [
+      'New Lead', 'Contacted', 'Demo Booked', 'Demo Completed', 
+      'Trial Started', 'Proposal Sent', 'Negotiation', 'Won', 'Lost'
+    ];
   }
 
   saveStages(stages) {
@@ -211,12 +228,13 @@ class CRMRepository {
 
   getCrmDatabase() {
     return {
-      leads: this.getLeads(),
-      demos: this.getDemos(),
-      trials: this.getTrials(),
+      crmLeads: this.getLeads(),
+      crmDemos: this.getDemos(),
       crmProposals: this.getProposals(),
       crmFollowups: this.getFollowups(),
+      crmTrials: this.getTrials(),
       crmHandovers: this.getHandovers(),
+      crmReps: this.getSalesReps(),
       crmPipelineStages: this.getStages(),
       crmAcquisitionSources: this.getSources()
     };
@@ -231,10 +249,13 @@ class CRMRepository {
         phone: data.phone,
         fleetSize: String(data.fleetSize),
         transportNiche: data.niche,
-        estimatedValue: Number(data.revenue),
-        score: Number(data.score),
+        estimatedValue: Number(data.revenue) || 0,
+        score: Number(data.score) || 60,
         stage: mapStageToBackend(data.stage),
-        painPoints: data.notes
+        painPoints: data.painPoints || data.notes || '',
+        currentSoftware: data.currentSoftware || '',
+        source: data.tags || data.source || 'Direct',
+        repId: data.repId || undefined
       });
       if (response.data?.success) {
         await this.syncWithBackend();
@@ -252,12 +273,17 @@ class CRMRepository {
       if (data.name) payload.contactName = data.name;
       if (data.email) payload.email = data.email;
       if (data.phone) payload.phone = data.phone;
-      if (data.fleetSize) payload.fleetSize = String(data.fleetSize);
+      if (data.fleetSize !== undefined) payload.fleetSize = String(data.fleetSize);
       if (data.niche) payload.transportNiche = data.niche;
-      if (data.revenue) payload.estimatedValue = Number(data.revenue);
-      if (data.score) payload.score = Number(data.score);
+      if (data.revenue !== undefined) payload.estimatedValue = Number(data.revenue);
+      if (data.score !== undefined) payload.score = Number(data.score);
       if (data.stage) payload.stage = mapStageToBackend(data.stage);
-      if (data.notes) payload.painPoints = data.notes;
+      if (data.painPoints !== undefined || data.notes !== undefined) {
+        payload.painPoints = data.painPoints || data.notes || '';
+      }
+      if (data.currentSoftware !== undefined) payload.currentSoftware = data.currentSoftware;
+      if (data.tags || data.source) payload.source = data.tags || data.source;
+      if (data.repId !== undefined) payload.repId = data.repId;
 
       const response = await api.put(`/leads/${id}`, payload);
       if (response.data?.success) {
@@ -265,6 +291,32 @@ class CRMRepository {
       }
     } catch (e) {
       console.error('Error updating lead in db:', e);
+    }
+  }
+
+  async updateStage(id, newStage, reason, notes) {
+    try {
+      const response = await updateLeadStage(id, {
+        stage: mapStageToBackend(newStage),
+        reason,
+        notes
+      });
+      if (response.data?.success) {
+        await this.syncWithBackend();
+      }
+    } catch (e) {
+      console.error('Error updating lead stage in db:', e);
+    }
+  }
+
+  async assignLead(id, repId) {
+    try {
+      const response = await assignLeadRep(id, { repId });
+      if (response.data?.success) {
+        await this.syncWithBackend();
+      }
+    } catch (e) {
+      console.error('Error assigning lead rep in db:', e);
     }
   }
 
@@ -281,15 +333,14 @@ class CRMRepository {
     try {
       const response = await api.post('/demo-bookings', {
         leadId,
-        presenterId: 'sales-rep', // Generic or dynamic representation
-        scheduledAt: new Date(demoData.date + 'T' + '12:00:00'),
+        presenterId: demoData.presenterId || undefined,
+        scheduledAt: new Date(demoData.date + 'T' + (demoData.time || '12:00:00')),
         status: 'UPCOMING',
-        meetingLink: 'https://zoom.us/j/123456',
+        meetingLink: demoData.meetingLink || 'https://zoom.us/j/hero-demo',
         feedback: demoData.notes
       });
       if (response.data?.success) {
-        await api.put(`/leads/${leadId}`, { stage: 'DEMO_BOOKED' });
-        this.syncWithBackend();
+        await this.syncWithBackend();
       }
     } catch (e) {
       console.error('Error scheduling demo:', e);
@@ -298,22 +349,29 @@ class CRMRepository {
 
   async updateDemo(id, data) {
     try {
-      await api.put(`/demo-bookings/${id}`, {
+      const response = await api.put(`/demo-bookings/${id}`, {
         status: data.status === 'Completed' ? 'COMPLETED' : 'UPCOMING',
-        feedback: data.feedbackNotes
+        feedback: data.feedbackNotes || data.notes
       });
-      this.syncWithBackend();
+      if (response.data?.success) {
+        await this.syncWithBackend();
+      }
     } catch (e) {
       console.error('Error updating demo:', e);
     }
   }
 
-  completeDemo(id) {
-    this.updateDemo(id, { status: 'Completed' });
-  }
-
-  logDemoFeedback(id, notes, rating) {
-    this.updateDemo(id, { feedbackNotes: notes });
+  async logDemoFeedback(id, feedback, rating) {
+    try {
+      const response = await api.put(`/demo-bookings/${id}`, {
+        feedback: `Rating: ${rating}/5 - ${feedback}`
+      });
+      if (response.data?.success) {
+        await this.syncWithBackend();
+      }
+    } catch (e) {
+      console.error('Error logging demo feedback:', e);
+    }
   }
 
   async createProposal(data) {
@@ -321,12 +379,12 @@ class CRMRepository {
       const response = await api.post('/proposals', {
         proposalRef: `PROP-${Math.floor(100 + Math.random() * 900)}`,
         leadId: data.leadId,
-        baseValue: Number(data.value),
-        discountAmount: Number(data.discount),
-        finalValue: Number(data.value) - Number(data.discount),
-        validityDays: 30,
-        status: 'DRAFT',
-        includedModules: JSON.stringify(['Real-Time GPS', 'Driver Portal'])
+        baseValue: Number(data.value) || 0,
+        discountAmount: Number(data.discount) || 0,
+        finalValue: (Number(data.value) || 0) - (Number(data.discount) || 0),
+        validityDays: Number(data.validityDays) || 30,
+        status: data.status ? data.status.toUpperCase() : 'DRAFT',
+        includedModules: JSON.stringify(data.modules || ['Real-Time GPS', 'Driver Portal'])
       });
       if (response.data?.success) {
         await this.syncWithBackend();
@@ -341,10 +399,9 @@ class CRMRepository {
     try {
       const payload = {};
       if (data.status) payload.status = data.status.toUpperCase();
-      if (data.value) payload.baseValue = Number(data.value);
-      if (data.discount) payload.discountAmount = Number(data.discount);
-      if (data.total) payload.finalValue = Number(data.total);
-      if (data.version) payload.version = data.version;
+      if (data.value !== undefined) payload.baseValue = Number(data.value);
+      if (data.discount !== undefined) payload.discountAmount = Number(data.discount);
+      if (data.total !== undefined) payload.finalValue = Number(data.total);
 
       const response = await api.put(`/proposals/${id}`, payload);
       if (response.data?.success) {
@@ -359,10 +416,11 @@ class CRMRepository {
     try {
       const response = await api.post('/follow-up-tasks', {
         leadId: data.leadId,
-        type: data.type.toUpperCase(),
-        description: data.notes,
+        type: data.type ? data.type.toUpperCase() : 'CALL',
+        description: data.notes || data.description,
         dueDate: data.dueDate ? new Date(data.dueDate) : new Date(),
-        status: 'PENDING'
+        status: 'PENDING',
+        repId: data.repId || undefined
       });
       if (response.data?.success) {
         await this.syncWithBackend();

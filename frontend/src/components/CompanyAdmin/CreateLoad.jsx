@@ -196,16 +196,7 @@ export default function CreateLoad({ onBack }) {
   const [photoModal, setPhotoModal] = useState(null); // { itemId, category, label }
   const [uploadedPhotos, setUploadedPhotos] = useState({}); // { 'itemId-category': [url1, url2] }
 
-  const DUMMY_PHOTOS = [
-    'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=400&q=80',
-    'https://images.unsplash.com/photo-1542362567-b07e54358753?auto=format&fit=crop&w=400&q=80',
-    'https://images.unsplash.com/photo-1553440569-bcc63803a83d?auto=format&fit=crop&w=400&q=80',
-    'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=400&q=80',
-    'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=400&q=80',
-    'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?auto=format&fit=crop&w=400&q=80',
-    'https://images.unsplash.com/photo-1493238792000-8113da705763?auto=format&fit=crop&w=400&q=80',
-    'https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&w=400&q=80',
-  ];
+  const DUMMY_PHOTOS = [];
 
   const getPhotoKey = (itemId, category) => `${itemId}-${category}`;
 
