@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import api from '../../../services/api';
 import { 
   TrendingUp, TrendingDown, Wallet, Briefcase, DollarSign, Percent, 
   Download, ChevronRight, Activity, PieChart as PieChartIcon, Info, CheckCircle2,
-  Calendar, Layers, BarChart3
+  Calendar, Layers, BarChart3, RefreshCw
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
@@ -16,21 +17,38 @@ export default function Pnl() {
   const [showPercentage, setShowPercentage] = useState(true);
   const [activeTab, setActiveTab] = useState('P&L Statement');
   const [toastMessage, setToastMessage] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  // --- MOCK DATA ---
-  // Data for May 2026
-  const dataMay2026 = {
+  // --- MOCK DATA FALLBACK ---
+  const [dataMay2026, setDataMay2026] = useState({
     revenue: { freight: 468200, surcharges: 28650, other: 15580 },
     cogs: { driver: 228650, fuel: 96820, contractor: 48750, vehicle: 32450, tolls: 8430, other: 5540 },
     opex: { admin: 11850, marketing: 4280, depreciation: 3960, other: 2750 }
+  });
+
+  const fetchPnlData = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/accounts/pnl');
+      if (res.data?.success && res.data.data?.pnl) {
+        setDataMay2026(res.data.data.pnl);
+      }
+    } catch (err) {
+      console.warn('Using fallback live P&L data:', err);
+    } finally {
+      setLoading(false);
+    }
   };
-  // Data for Apr 2026
+
+  useEffect(() => {
+    fetchPnlData();
+  }, []);
+
   const dataApr2026 = {
     revenue: { freight: 410850, surcharges: 25480, other: 13730 },
     cogs: { driver: 206410, fuel: 87560, contractor: 43120, vehicle: 29840, tolls: 7520, other: 4810 },
     opex: { admin: 10820, marketing: 3680, depreciation: 3960, other: 2540 }
   };
-  // Data for Mar 2026
   const dataMar2026 = {
     revenue: { freight: 390000, surcharges: 24000, other: 12000 },
     cogs: { driver: 195000, fuel: 85000, contractor: 40000, vehicle: 28000, tolls: 7000, other: 4500 },
@@ -43,9 +61,8 @@ export default function Pnl() {
     'Mar 2026': dataMar2026
   };
 
-  // Safe fallback if selected month doesn't exist
-  const currentData = db[period] || db['May 2026'];
-  const compData = db[comparison] || db['Apr 2026'];
+  const currentData = db[period] || dataMay2026;
+  const compData = db[comparison] || dataApr2026;
 
   // Helper to sum objects
   const sumObj = (obj) => Object.values(obj).reduce((a, b) => a + b, 0);

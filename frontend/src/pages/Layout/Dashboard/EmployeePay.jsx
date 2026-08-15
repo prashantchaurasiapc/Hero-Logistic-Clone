@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../../services/api';
 import {
   Building2,
   Bell,
@@ -27,7 +28,8 @@ import {
   PieChart,
   AlertCircle,
   ShieldCheck,
-  Printer
+  Printer,
+  RefreshCw
 } from 'lucide-react';
 
 const initialPayRuns = [
@@ -65,10 +67,10 @@ const initialPayRuns = [
     createdBy: 'John Smith',
     createdOn: '15 May 2026 09:22 AM',
     department: 'All Departments',
-    notes: 'Standard weekly pay run completed.',
+    notes: 'Approved & Paid.',
     items: [
-      { description: 'Wages', amountExGst: 21000.00, gst: 0.00, totalIncGst: 21000.00 },
-      { description: 'Allowances', amountExGst: 950.00, gst: 0.00, totalIncGst: 950.00 }
+      { description: 'Wages', amountExGst: 20100.00, gst: 0.00, totalIncGst: 20100.00 },
+      { description: 'Allowances', amountExGst: 1850.00, gst: 0.00, totalIncGst: 1850.00 }
     ]
   },
   {
@@ -194,6 +196,8 @@ const initialPayRuns = [
 ];
 
 const EmployeePay = () => {
+  const fmt = (val) => Number(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
   const [payRuns, setPayRuns] = useState(initialPayRuns);
   const [selectedPayRun, setSelectedPayRun] = useState(initialPayRuns[0]);
   const [activeTab, setActiveTab] = useState('All Pay Runs');
@@ -867,9 +871,9 @@ const EmployeePay = () => {
                         <td className="py-3 px-3 font-semibold text-slate-700">{p.period}</td>
                         <td className="py-3 px-3 text-slate-600 font-medium">{p.frequency}</td>
                         <td className="py-3 px-3 text-center font-bold text-slate-800">{p.employees}</td>
-                        <td className="py-3 px-3 text-right font-bold text-slate-900">${p.grossPay.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                        <td className="py-3 px-3 text-right font-bold text-slate-600">${p.deductions.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                        <td className="py-3 px-3 text-right font-black text-slate-900">${p.netPay.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                        <td className="py-3 px-3 text-right font-bold text-slate-900">${fmt(p.grossPay)}</td>
+                        <td className="py-3 px-3 text-right font-bold text-slate-600">${fmt(p.deductions)}</td>
+                        <td className="py-3 px-3 text-right font-black text-slate-900">${fmt(p.netPay)}</td>
                         <td className="py-3 px-3 text-center">
                           <span className={getStatusBadge(p.status)}>
                             {p.status}
@@ -1184,22 +1188,22 @@ const EmployeePay = () => {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                     <div className="bg-slate-50 p-2 rounded-xl border border-slate-200/80">
                       <span className="text-[9.5px] font-bold text-slate-400 uppercase block">Gross Pay</span>
-                      <span className="font-black text-slate-900 text-xs sm:text-sm mt-0.5 block truncate">${selectedPayRun.grossPay.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                      <span className="font-black text-slate-900 text-xs sm:text-sm mt-0.5 block truncate">${fmt(selectedPayRun?.grossPay)}</span>
                     </div>
 
                     <div className="bg-slate-50 p-2 rounded-xl border border-slate-200/80">
                       <span className="text-[9.5px] font-bold text-slate-400 uppercase block">Deductions</span>
-                      <span className="font-black text-slate-900 text-xs sm:text-sm mt-0.5 block truncate">${selectedPayRun.deductions.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                      <span className="font-black text-slate-900 text-xs sm:text-sm mt-0.5 block truncate">${fmt(selectedPayRun?.deductions)}</span>
                     </div>
 
                     <div className="bg-slate-50 p-2 rounded-xl border border-slate-200/80">
                       <span className="text-[9.5px] font-bold text-slate-400 uppercase block">Net Pay</span>
-                      <span className="font-black text-slate-900 text-xs sm:text-sm mt-0.5 block truncate">${selectedPayRun.netPay.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                      <span className="font-black text-slate-900 text-xs sm:text-sm mt-0.5 block truncate">${fmt(selectedPayRun?.netPay)}</span>
                     </div>
 
                     <div className="bg-slate-50 p-2 rounded-xl border border-slate-200/80">
                       <span className="text-[9.5px] font-bold text-slate-400 uppercase block">Super</span>
-                      <span className="font-black text-slate-900 text-xs sm:text-sm mt-0.5 block truncate">${selectedPayRun.superannuation.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                      <span className="font-black text-slate-900 text-xs sm:text-sm mt-0.5 block truncate">${fmt(selectedPayRun?.superannuation)}</span>
                     </div>
                   </div>
 
@@ -1214,12 +1218,12 @@ const EmployeePay = () => {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 font-medium">
-                        {(selectedPayRun.items || []).map((item, idx) => (
+                        {(selectedPayRun?.items || []).map((item, idx) => (
                           <tr key={idx} className="hover:bg-slate-50/50">
                             <td className="py-2.5 px-3 font-semibold text-slate-800">{item.description}</td>
-                            <td className="py-2.5 px-3 text-right text-slate-700">${item.amountExGst.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                            <td className="py-2.5 px-3 text-right text-slate-500">${item.gst.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                            <td className="py-2.5 px-3 text-right font-black text-slate-900">${item.totalIncGst.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                            <td className="py-2.5 px-3 text-right text-slate-700">${fmt(item.amountExGst)}</td>
+                            <td className="py-2.5 px-3 text-right text-slate-500">${fmt(item.gst)}</td>
+                            <td className="py-2.5 px-3 text-right font-black text-slate-900">${fmt(item.totalIncGst)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -1384,15 +1388,15 @@ const EmployeePay = () => {
               <div className="grid grid-cols-3 gap-2">
                 <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
                   <span className="text-[9.5px] font-bold text-slate-400 uppercase block">Gross Pay</span>
-                  <span className="font-black text-slate-900 text-xs sm:text-sm mt-0.5 block truncate">${viewingPayRun.grossPay.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                  <span className="font-black text-slate-900 text-xs sm:text-sm mt-0.5 block truncate">${fmt(viewingPayRun?.grossPay)}</span>
                 </div>
                 <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
                   <span className="text-[9.5px] font-bold text-slate-400 uppercase block">Deductions</span>
-                  <span className="font-black text-slate-900 text-xs sm:text-sm mt-0.5 block truncate">${viewingPayRun.deductions.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                  <span className="font-black text-slate-900 text-xs sm:text-sm mt-0.5 block truncate">${fmt(viewingPayRun?.deductions)}</span>
                 </div>
                 <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
                   <span className="text-[9.5px] font-bold text-slate-400 uppercase block">Net Pay</span>
-                  <span className="font-black text-emerald-600 text-xs sm:text-sm mt-0.5 block truncate">${viewingPayRun.netPay.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                  <span className="font-black text-emerald-600 text-xs sm:text-sm mt-0.5 block truncate">${fmt(viewingPayRun?.netPay)}</span>
                 </div>
               </div>
 

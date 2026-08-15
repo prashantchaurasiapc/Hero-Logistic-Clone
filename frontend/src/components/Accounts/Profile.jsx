@@ -1,20 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../services/api';
 import { 
   User, Mail, Phone, Building2, ShieldCheck, Key, Bell, CheckCircle2, 
   DollarSign, CreditCard, Lock, Edit, Camera, Save, Clock, MapPin, 
   Award, FileText, AlertCircle, Globe, Calendar, ExternalLink, Eye, EyeOff,
-  Smartphone, Shield, Check, ChevronRight, Building
+  Smartphone, Shield, Check, ChevronRight, Building, RefreshCw
 } from 'lucide-react';
 
 export default function AccountsProfile() {
   // Active Tab State
-  const [activeTab, setActiveTab] = useState('personal'); // 'personal' | 'security' | 'preferences' | 'notifications'
+  const [activeTab, setActiveTab] = useState('personal');
 
   // Personal Information Form State
-  const [fullName, setFullName] = useState('John Smith');
+  const [fullName, setFullName] = useState('Accounts Manager');
   const [jobTitle, setJobTitle] = useState('Accounts Manager');
-  const [emailAddress, setEmailAddress] = useState('john.smith@gml.com.au');
+  const [emailAddress, setEmailAddress] = useState('accounts@hero.com');
   const [phoneNumber, setPhoneNumber] = useState('+61 412 345 678');
+  const [companyName, setCompanyName] = useState('HERO Logistics Pty Ltd');
   const [mobileNumber, setMobileNumber] = useState('+61 412 345 678');
   const [dob, setDob] = useState('15/06/1985');
   const [language, setLanguage] = useState('English');
@@ -25,6 +27,29 @@ export default function AccountsProfile() {
   const [stateTerritory, setStateTerritory] = useState('NSW');
   const [postcode, setPostcode] = useState('2000');
   const [country, setCountry] = useState('Australia');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      setLoading(true);
+      try {
+        const res = await api.get('/accounts/profile');
+        if (res.data?.success && res.data.data?.profile) {
+          const p = res.data.data.profile;
+          if (p.fullName) setFullName(p.fullName);
+          if (p.jobTitle) setJobTitle(p.jobTitle);
+          if (p.emailAddress) setEmailAddress(p.emailAddress);
+          if (p.phoneNumber) setPhoneNumber(p.phoneNumber);
+          if (p.company) setCompanyName(p.company);
+        }
+      } catch (err) {
+        console.warn('Using default authenticated profile:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   // Change Password Form State
   const [currentPassword, setCurrentPassword] = useState('');

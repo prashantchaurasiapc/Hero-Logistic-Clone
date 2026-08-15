@@ -250,9 +250,9 @@ const roleConfigs = {
   },
 
   'accounts': {
-    portalName: 'ACCOUNT PORTAL',
+    portalName: 'ACCOUNTS PORTAL',
     basePath: '/accounts',
-    userName: 'Admin',
+    userName: 'Accounts Manager',
     userRole: 'ACCOUNTS',
     menuItems: [
       { icon: <FiGrid />, label: 'Accounts Dashboard', path: '/accounts/dashboard' },

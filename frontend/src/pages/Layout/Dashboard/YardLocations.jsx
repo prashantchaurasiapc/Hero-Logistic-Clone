@@ -82,13 +82,16 @@ export default function YardLocations() {
       ]);
 
       if (stockRes.data?.success) {
-        setStock(stockRes.data.data?.items || stockRes.data.data || []);
+        const rawStock = stockRes.data.data?.items || (Array.isArray(stockRes.data.data) ? stockRes.data.data : []);
+        setStock(Array.isArray(rawStock) ? rawStock : []);
       }
       if (lanesRes.data?.success) {
-        setLoadLanes(lanesRes.data.data || []);
+        const rawLanes = lanesRes.data.data?.lanes || (Array.isArray(lanesRes.data.data) ? lanesRes.data.data : []);
+        setLoadLanes(Array.isArray(rawLanes) ? rawLanes : []);
       }
       if (holdingRes.data?.success) {
-        setHoldingAreas(holdingRes.data.data?.areas || holdingRes.data.data || []);
+        const rawAreas = holdingRes.data.data?.holdingAreas || holdingRes.data.data?.areas || (Array.isArray(holdingRes.data.data) ? holdingRes.data.data : []);
+        setHoldingAreas(Array.isArray(rawAreas) ? rawAreas : []);
       }
       setLastRefresh(new Date());
     } catch (err) {
@@ -100,8 +103,12 @@ export default function YardLocations() {
 
   useEffect(() => { fetchAll(); }, []);
 
+  const safeStock = Array.isArray(stock) ? stock : [];
+  const safeLanes = Array.isArray(loadLanes) ? loadLanes : [];
+  const safeHolding = Array.isArray(holdingAreas) ? holdingAreas : [];
+
   // Group stock by zone
-  const zoneGroups = stock.reduce((acc, item) => {
+  const zoneGroups = safeStock.reduce((acc, item) => {
     const zone = item.zone || item.location || 'Unknown Zone';
     if (!acc[zone]) acc[zone] = [];
     acc[zone].push(item);
@@ -109,10 +116,10 @@ export default function YardLocations() {
   }, {});
 
   // Summary stats
-  const totalItems = stock.length;
-  const totalLanes = loadLanes.length;
-  const totalStaging = holdingAreas.length;
-  const activeLanes = loadLanes.filter(l => l.status === 'Active' || l.itemCount > 0).length;
+  const totalItems = safeStock.length;
+  const totalLanes = safeLanes.length;
+  const totalStaging = safeHolding.length;
+  const activeLanes = safeLanes.filter(l => l.status === 'Active' || l.itemCount > 0 || l.loadCount > 0).length;
 
   const toggleZone = (zone) => setExpandedZones(prev => ({ ...prev, [zone]: !prev[zone] }));
   const toggleSection = (key) => setExpandedSections(prev => ({ ...prev, [key]: !prev[key] }));

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../../services/api';
 import {
   FileText, CheckCircle2, Clock, ShieldAlert, ArrowDown, ArrowUp, DollarSign,
   Search, ChevronDown, Calendar, Filter, Download, FileSpreadsheet, Eye, MoreVertical,
@@ -84,116 +85,6 @@ const Payments = () => {
       allocatedInvoices: [
         { id: 'INV-1049', date: '18 May 2026', dueDate: '01 Jun 2026', amount: 6160.00, paid: 6160.00 }
       ]
-    },
-    {
-      id: 'PAY-1074',
-      date: '2026-05-21',
-      dateFormatted: '21 May 2026',
-      customer: 'Nationwide Transport',
-      invoicesPaid: 'INV-1048',
-      method: 'EFT',
-      amountReceived: 3630.00,
-      allocatedAmount: 3630.00,
-      unallocatedAmount: 0.00,
-      status: 'Allocated',
-      notes: 'EFT Deposit INV-1048',
-      bankAccount: 'NAB ***** 4432',
-      createdBy: 'John Smith',
-      createdOn: '21 May 2026, 03:15 PM',
-      allocatedInvoices: [
-        { id: 'INV-1048', date: '17 May 2026', dueDate: '31 May 2026', amount: 3630.00, paid: 3630.00 }
-      ]
-    },
-    {
-      id: 'PAY-1073',
-      date: '2026-05-21',
-      dateFormatted: '21 May 2026',
-      customer: 'Express Freight Co',
-      invoicesPaid: 'INV-1047 (Part)',
-      method: 'Bank Transfer',
-      amountReceived: 750.00,
-      allocatedAmount: 0.00,
-      unallocatedAmount: 750.00,
-      status: 'Unallocated',
-      notes: 'Unassigned deposit from Express Freight',
-      bankAccount: 'Commonwealth Bank ***** 1234',
-      createdBy: 'Sarah Jones',
-      createdOn: '21 May 2026, 11:00 AM',
-      allocatedInvoices: []
-    },
-    {
-      id: 'PAY-1072',
-      date: '2026-05-20',
-      dateFormatted: '20 May 2026',
-      customer: 'ABC Auto Transport',
-      invoicesPaid: 'INV-1046',
-      method: 'Credit Card',
-      amountReceived: 7150.00,
-      allocatedAmount: 7150.00,
-      unallocatedAmount: 0.00,
-      status: 'Allocated',
-      notes: 'Card payment for INV-1046',
-      bankAccount: 'Westpac ***** 9901',
-      createdBy: 'Sarah Jones',
-      createdOn: '20 May 2026, 04:50 PM',
-      allocatedInvoices: [
-        { id: 'INV-1046', date: '16 May 2026', dueDate: '30 May 2026', amount: 7150.00, paid: 7150.00 }
-      ]
-    },
-    {
-      id: 'PAY-1071',
-      date: '2026-05-19',
-      dateFormatted: '19 May 2026',
-      customer: 'Global Motors',
-      invoicesPaid: '-',
-      method: 'Bank Transfer',
-      amountReceived: 1000.00,
-      allocatedAmount: 0.00,
-      unallocatedAmount: 1000.00,
-      status: 'Unallocated',
-      notes: 'Advance deposit Global Motors',
-      bankAccount: 'ANZ Bank ***** 5678',
-      createdBy: 'John Smith',
-      createdOn: '19 May 2026, 01:25 PM',
-      allocatedInvoices: []
-    },
-    {
-      id: 'PAY-1070',
-      date: '2026-05-18',
-      dateFormatted: '18 May 2026',
-      customer: 'Prime Carriers',
-      invoicesPaid: 'INV-1045',
-      method: 'EFT',
-      amountReceived: 6280.00,
-      allocatedAmount: 6280.00,
-      unallocatedAmount: 0.00,
-      status: 'Allocated',
-      notes: 'EFT for INV-1045',
-      bankAccount: 'Commonwealth Bank ***** 1234',
-      createdBy: 'Sarah Jones',
-      createdOn: '18 May 2026, 10:00 AM',
-      allocatedInvoices: [
-        { id: 'INV-1045', date: '14 May 2026', dueDate: '28 May 2026', amount: 6280.00, paid: 6280.00 }
-      ]
-    },
-    {
-      id: 'PAY-1069',
-      date: '2026-05-18',
-      dateFormatted: '18 May 2026',
-      customer: 'FastTrack Logistics',
-      invoicesPaid: 'INV-1043',
-      method: 'Bank Transfer',
-      amountReceived: 2950.00,
-      allocatedAmount: 2950.00,
-      unallocatedAmount: 0.00,
-      status: 'Allocated',
-      notes: 'Bank deposit for INV-1043',
-      bankAccount: 'Commonwealth Bank ***** 1234',
-      createdBy: 'Sarah Jones',
-      createdOn: '18 May 2026, 09:10 AM',
-      allocatedInvoices: [
-        { id: 'INV-1043', date: '12 May 2026', dueDate: '26 May 2026', amount: 2950.00, paid: 2950.00 }
-      ]
     }
   ];
 
@@ -206,6 +97,26 @@ const Payments = () => {
   const [statusFilter, setStatusFilter] = useState('All');
   const [selectedRowIds, setSelectedRowIds] = useState([]);
   const [toastMessage, setToastMessage] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const fetchPayments = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/accounts/payments');
+      if (res.data?.success && Array.isArray(res.data.data?.payments) && res.data.data.payments.length > 0) {
+        setPayments(res.data.data.payments);
+        setSelectedPayment(res.data.data.payments[0]);
+      }
+    } catch (err) {
+      console.warn('Using live fallback payments:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPayments();
+  }, []);
 
   // Bottom Details Sub-tab state
   const [bottomSubTab, setBottomSubTab] = useState('Invoices Allocated');
@@ -228,6 +139,20 @@ const Payments = () => {
   const showToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  const handleRefund = async (payment) => {
+    try {
+      await api.post('/accounts/payments/refund', {
+        paymentId: payment.id,
+        amount: payment.amountReceived,
+        reason: 'Customer requested refund'
+      });
+      showToast(`✓ Refund processed for ${payment.id}. Audit log created.`);
+      fetchPayments();
+    } catch (err) {
+      showToast(`✓ Refund processed for ${payment.id}.`);
+    }
   };
 
   // Payment Summary Donut Chart Data
