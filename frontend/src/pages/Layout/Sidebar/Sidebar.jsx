@@ -395,21 +395,19 @@ const Sidebar = ({ role, isOpen, onClose }) => {
   let portalName = config.portalName;
   let avatarLetter = config.avatarLetter || config.userName?.charAt(0) || 'A';
 
-  if (role === 'company-admin') {
-    const sessionStr = localStorage.getItem('hero_session');
-    if (sessionStr) {
-      try {
-        const session = JSON.parse(sessionStr);
-        if (session.name) {
-          userName = session.name;
-          avatarLetter = session.name.charAt(0).toUpperCase();
-        }
-        if (session.company) {
-          portalName = session.company.toUpperCase() + ' PORTAL';
-        }
-      } catch (e) {
-        console.error(e);
+  const sessionStr = localStorage.getItem('hero_session');
+  if (sessionStr) {
+    try {
+      const session = JSON.parse(sessionStr);
+      if (session.name) {
+        userName = session.name;
+        avatarLetter = session.name.charAt(0).toUpperCase();
       }
+      if (session.company) {
+        portalName = session.company.toUpperCase() + ' PORTAL';
+      }
+    } catch (e) {
+      console.error(e);
     }
   }
 

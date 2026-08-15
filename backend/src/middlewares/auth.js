@@ -5,7 +5,7 @@ const { sendError } = require('../utils/apiResponse');
 /**
  * Verifies JWT from HttpOnly cookie or Authorization Bearer header
  */
-exports.verifyToken = (req, res, next) => {
+exports.verifyToken = async (req, res, next) => {
   let token = req.cookies?.accessToken;
   
   if (!token && req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
@@ -14,7 +14,7 @@ exports.verifyToken = (req, res, next) => {
 
   if (!token) {
     if (process.env.NODE_ENV !== 'production') {
-      req.user = { id: 'dev-user-id', role: 'COMPANY_ADMIN' };
+      req.user = { id: 'dev-user-id', role: 'COMPANY_ADMIN', permissions: [] };
       return next();
     }
     return sendError(res, {
@@ -26,16 +26,55 @@ exports.verifyToken = (req, res, next) => {
   try {
     const secret = process.env.JWT_SECRET || 'fallback-secret-for-dev-only';
     const decoded = jwt.verify(token, secret);
-    req.user = { ...decoded, id: decoded.userId || decoded.id, userId: decoded.userId || decoded.id };
+    const userId = decoded.userId || decoded.id;
+    req.user = { ...decoded, id: userId, userId };
+
+    const prisma = require('../utils/prismaClient');
+    const dbUser = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        customRole: {
+          include: {
+            permissions: true
+          }
+        }
+      }
+    });
+    if (dbUser) {
+      req.user.branchId = dbUser.branchId;
+      req.user.role = dbUser.role;
+      req.user.permissions = dbUser.customRole?.permissions.map(p => p.actionString) || [];
+    } else {
+      req.user.permissions = [];
+    }
+
     next();
   } catch (error) {
     if (process.env.NODE_ENV !== 'production') {
       const decoded = jwt.decode(token);
       if (decoded) {
         req.user = decoded;
+        const prisma = require('../utils/prismaClient');
+        const dbUser = await prisma.user.findUnique({
+          where: { id: decoded.userId || decoded.id },
+          include: {
+            customRole: {
+              include: {
+                permissions: true
+              }
+            }
+          }
+        });
+        if (dbUser) {
+          req.user.branchId = dbUser.branchId;
+          req.user.role = dbUser.role;
+          req.user.permissions = dbUser.customRole?.permissions.map(p => p.actionString) || [];
+        } else {
+          req.user.permissions = [];
+        }
         return next();
       } else {
-        req.user = { id: 'dev-user-id', role: 'COMPANY_ADMIN' };
+        req.user = { id: 'dev-user-id', role: 'COMPANY_ADMIN', permissions: [] };
         return next();
       }
     }

@@ -9,6 +9,9 @@ exports.getAll = async (req, res, next) => {
     const { where, skip, take, orderBy, currentPage, pageSize } = buildPrismaQuery(req.query);
     
     if (req.tenantId) where.companyId = req.tenantId;
+    if (req.user && req.user.role === 'DISPATCHER' && req.user.branchId && !req.user.permissions?.includes('dispatch.cross_branch.view')) {
+      where.branchId = req.user.branchId;
+    }
 
     const [data, total] = await Promise.all([
       prisma.driver.findMany({
@@ -35,6 +38,9 @@ exports.getById = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
     if (req.tenantId) where.companyId = req.tenantId;
+    if (req.user && req.user.role === 'DISPATCHER' && req.user.branchId && !req.user.permissions?.includes('dispatch.cross_branch.view')) {
+      where.branchId = req.user.branchId;
+    }
 
     const data = await prisma.driver.findFirst({
       where,
@@ -70,6 +76,10 @@ exports.create = async (req, res, next) => {
     }
 
     const effectiveCompanyId = payload.companyId || (await prisma.company.findFirst())?.id;
+    let branchIdVal = payload.branchId || null;
+    if (req.user && req.user.role === 'DISPATCHER' && req.user.branchId && !req.user.permissions?.includes('dispatch.cross_branch.view')) {
+      branchIdVal = req.user.branchId;
+    }
 
     let validStatus = 'AVAILABLE';
     if (payload.status) {
@@ -93,7 +103,8 @@ exports.create = async (req, res, next) => {
       category: payload.category || payload.driverCategory || 'Heavy Rig',
       shift: payload.shift || 'Morning',
       notes: payload.notes || null,
-      companyId: effectiveCompanyId
+      companyId: effectiveCompanyId,
+      branchId: branchIdVal
     };
 
     if (payload.dob) {
@@ -161,6 +172,7 @@ const sanitizeDriverPayload = (rawPayload) => {
   if (rawPayload.category !== undefined) data.category = rawPayload.category;
   if (rawPayload.shift !== undefined) data.shift = rawPayload.shift;
   if (rawPayload.notes !== undefined) data.notes = rawPayload.notes;
+  if (rawPayload.branchId !== undefined) data.branchId = rawPayload.branchId;
 
   if (rawPayload.dob) {
     const d = new Date(rawPayload.dob);
@@ -177,8 +189,12 @@ exports.update = async (req, res, next) => {
     const updateData = sanitizeDriverPayload(req.body);
 
     if (req.tenantId) {
+      const findWhere = { id, companyId: req.tenantId };
+      if (req.user && req.user.role === 'DISPATCHER' && req.user.branchId && !req.user.permissions?.includes('dispatch.cross_branch.view')) {
+        findWhere.branchId = req.user.branchId;
+      }
       const existing = await prisma.driver.findFirst({
-        where: { id, companyId: req.tenantId }
+        where: findWhere
       });
       if (!existing) {
         return sendError(res, {
@@ -228,8 +244,12 @@ exports.delete = async (req, res, next) => {
     const { id } = req.params;
 
     if (req.tenantId) {
+      const findWhere = { id, companyId: req.tenantId };
+      if (req.user && req.user.role === 'DISPATCHER' && req.user.branchId && !req.user.permissions?.includes('dispatch.cross_branch.view')) {
+        findWhere.branchId = req.user.branchId;
+      }
       const existing = await prisma.driver.findFirst({
-        where: { id, companyId: req.tenantId }
+        where: findWhere
       });
       if (!existing) {
         return sendError(res, {

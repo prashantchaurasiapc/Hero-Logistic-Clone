@@ -135,8 +135,8 @@ export default function Profile() {
             <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full mt-1.5">Online</span>
             
             <div className="text-center mt-4">
-              <p className="text-[13px] font-semibold text-slate-800">Senior Dispatcher</p>
-              <p className="text-[10px] text-slate-500 bg-slate-50 px-2.5 py-1 rounded-md mt-1.5 border border-slate-100">Employee ID: DSP-0007</p>
+              <p className="text-[13px] font-semibold text-slate-800">{user?.role === 'DISPATCHER' ? 'Senior Dispatcher' : (user?.role || 'Dispatcher')}</p>
+              <p className="text-[10px] text-slate-500 bg-slate-50 px-2.5 py-1 rounded-md mt-1.5 border border-slate-100">Employee ID: {user?.userCode || 'DSP-0007'}</p>
             </div>
 
             <div className="w-full mt-6 space-y-3 pt-6 border-t border-slate-100">
@@ -265,22 +265,22 @@ export default function Profile() {
             <div className="grid grid-cols-3 gap-4 text-[11px] mb-5">
               <div>
                 <p className="text-slate-500 font-medium mb-1">Role</p>
-                <p className="font-semibold text-slate-900">Dispatcher</p>
+                <p className="font-semibold text-slate-900">{user?.role || 'Dispatcher'}</p>
               </div>
               <div>
                 <p className="text-slate-500 font-medium mb-1">Access Level</p>
-                <p className="font-semibold text-slate-900">Branch Level</p>
+                <p className="font-semibold text-slate-900">{user?.branchId ? 'Branch Level' : 'Platform Level'}</p>
               </div>
               <div>
                 <p className="text-slate-500 font-medium mb-1">Branch</p>
-                <p className="font-semibold text-slate-900">Sydney Branch</p>
+                <p className="font-semibold text-slate-900">{user?.branch?.name || 'Head Office'}</p>
               </div>
             </div>
 
             <div className="mb-4">
               <p className="text-slate-500 font-medium text-[11px] mb-2.5">Permissions Granted</p>
               <div className="flex flex-wrap gap-2">
-                {['Create Load', 'Assign Loads', 'View All Loads', 'Driver Management', 'Vehicle / Trailer Management', 'Yard / Warehouse', 'Reports', 'Messages'].map((perm, i) => (
+                {(user?.customRole?.permissions?.map(p => p.name) || ['Create Load', 'Assign Loads', 'View All Loads', 'Driver Management', 'Vehicle / Trailer Management', 'Yard / Warehouse', 'Reports', 'Messages']).map((perm, i) => (
                   <span key={i} className="px-2.5 py-1 bg-blue-50 text-blue-600 border border-blue-100 rounded-md text-[10px] font-semibold">
                     {perm}
                   </span>
@@ -339,7 +339,7 @@ export default function Profile() {
             <div className="space-y-4 text-[11px]">
               <div className="flex justify-between items-center pb-3 border-b border-slate-50">
                 <span className="text-slate-500 font-medium">Username</span>
-                <span className="font-semibold text-slate-900">john.smith</span>
+                <span className="font-semibold text-slate-900">{user?.email ? user.email.split('@')[0] : 'dispatcher'}</span>
               </div>
               <div className="flex justify-between items-center pb-3 border-b border-slate-50">
                 <span className="text-slate-500 font-medium">Password</span>
