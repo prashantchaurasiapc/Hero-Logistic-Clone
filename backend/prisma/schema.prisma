@@ -519,6 +519,8 @@ model Company {
   storageUsedGB  Float         @default(0)
 
   registrationNumber String?
+  dotNumber          String?
+  taxId              String?
   adminEmail         String?
   cardBrand          String? // e.g., "Visa"
   cardLast4          String? // e.g., "8812"
@@ -2759,3 +2761,17 @@ model ImpersonationSession {
 
   @@map("impersonation_session")
 }
+
+model RegionalTerminal {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  code      String?
+  city      String?
+  state     String?
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("regional_terminal")
+}
+

@@ -188,3 +188,133 @@ exports.delete = async (req, res, next) => {
     next(error);
   }
 };
+// Provision a Workspace from a Proposal
+exports.provision = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { tier, companyName, dotNumber, taxId, adminName, adminEmail, depotLocation } = req.body;
+
+    const proposal = await prisma.proposal.findUnique({
+      where: { id },
+      include: { lead: true }
+    });
+
+    if (!proposal) {
+      return sendError(res, { code: ERROR_CODES.NOT_FOUND, message: 'Proposal not found' }, HTTP_STATUS.NOT_FOUND);
+    }
+
+    const resolvedCompanyName = companyName || proposal.lead?.companyName || 'New Freight Logistics';
+    const resolvedAdminEmail = adminEmail || proposal.lead?.email || `admin@${resolvedCompanyName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'company'}.com`;
+    const resolvedAdminName = adminName || proposal.lead?.contactName || 'Company Administrator';
+
+    // 1. Update proposal status
+    const updatedProposal = await prisma.proposal.update({
+      where: { id },
+      data: { status: 'ACCEPTED' }
+    });
+
+    // 2. Update Lead if linked
+    if (proposal.leadId) {
+      await prisma.lead.update({
+        where: { id: proposal.leadId },
+        data: { stage: 'WON' }
+      }).catch(e => console.warn('Could not update lead stage:', e.message));
+
+      await prisma.salesActivity.create({
+        data: {
+          leadId: proposal.leadId,
+          title: 'Workspace Provisioned',
+          description: `Provisioned workspace for ${resolvedCompanyName} (${tier || 'Professional'} tier)`,
+          performedById: req.user?.id || null,
+          timestamp: new Date()
+        }
+      }).catch(e => console.warn('Could not log sales activity:', e.message));
+    }
+
+    // 3. Find or create company
+    let targetCompany = null;
+    if (proposal.leadId) {
+      targetCompany = await prisma.company.findUnique({ where: { leadId: proposal.leadId } });
+    }
+
+    if (targetCompany) {
+      targetCompany = await prisma.company.update({
+        where: { id: targetCompany.id },
+        data: {
+          name: resolvedCompanyName,
+          status: 'ACTIVE',
+          dotNumber: dotNumber || targetCompany.dotNumber,
+          taxId: taxId || targetCompany.taxId,
+          adminEmail: resolvedAdminEmail
+        }
+      });
+    } else {
+      const generatedTenantCode = `#TEN-${Math.floor(1000 + Math.random() * 9000)}`;
+      targetCompany = await prisma.company.create({
+        data: {
+          name: resolvedCompanyName,
+          tenantId: generatedTenantCode,
+          leadId: proposal.leadId || null,
+          status: 'ACTIVE',
+          dotNumber: dotNumber || null,
+          taxId: taxId || null,
+          adminEmail: resolvedAdminEmail,
+          nicheGeneralFreight: true
+        }
+      });
+    }
+
+    // 4. Create or update Admin User
+    const bcrypt = require('bcryptjs');
+    const defaultPasswordHash = await bcrypt.hash('Welcome123!', 10);
+
+    let adminUser = await prisma.user.findUnique({ where: { email: resolvedAdminEmail } });
+    if (adminUser) {
+      adminUser = await prisma.user.update({
+        where: { id: adminUser.id },
+        data: {
+          name: resolvedAdminName,
+          role: 'COMPANY_ADMIN',
+          status: 'ACTIVE',
+          companyId: targetCompany.id
+        }
+      });
+    } else {
+      adminUser = await prisma.user.create({
+        data: {
+          email: resolvedAdminEmail,
+          name: resolvedAdminName,
+          password: defaultPasswordHash,
+          role: 'COMPANY_ADMIN',
+          status: 'ACTIVE',
+          companyId: targetCompany.id
+        }
+      });
+    }
+
+    // 5. Create or update Branch (Depot)
+    const branchName = depotLocation || 'Chicago HQ Terminal';
+    let branch = await prisma.branch.findFirst({
+      where: { companyId: targetCompany.id, name: branchName }
+    });
+    if (!branch) {
+      branch = await prisma.branch.create({
+        data: {
+          companyId: targetCompany.id,
+          name: branchName,
+          location: branchName
+        }
+      });
+    }
+
+    return sendSuccess(res, {
+      proposal: updatedProposal,
+      company: targetCompany,
+      admin: { id: adminUser.id, name: adminUser.name, email: adminUser.email },
+      branch
+    }, HTTP_STATUS.CREATED);
+  } catch (error) {
+    console.error('Provision error:', error);
+    next(error);
+  }
+};

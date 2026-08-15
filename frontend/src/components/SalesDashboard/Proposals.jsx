@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Plus, X, Bell, ChevronDown, Check, FileText, Send,
   FileDown, DollarSign, Building, Sparkles, RefreshCw, Clock, Eye, Download
@@ -6,9 +7,11 @@ import {
 import { crmRepository } from '../../services/crmRepository';
 import { crmStore } from '../../services/crmStore';
 import { useAuth } from '../../context/AuthContext';
-import { getSalesReps } from '../../services/api';
+import api, { getSalesReps } from '../../services/api';
+import { jsPDF } from 'jspdf';
 
 export default function Proposals() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   // Database States
   const [proposals, setProposals] = useState([]);
@@ -39,6 +42,18 @@ export default function Proposals() {
     notes: 'Adjusted base license tier terms.'
   });
 
+  // Conversion Wizard States
+  const [showConversionWizard, setShowConversionWizard] = useState(false);
+  const [wizardStep, setWizardStep] = useState(1);
+  const [selectedPlan, setSelectedPlan] = useState('Professional');
+  const [isProvisioning, setIsProvisioning] = useState(false);
+  const [selectedLeadObj, setSelectedLeadObj] = useState(null);
+  const [dotNumber, setDotNumber] = useState('');
+  const [taxId, setTaxId] = useState('');
+  const [depotLocation, setDepotLocation] = useState('Chicago HQ Terminal');
+  const [subscriptionPlans, setSubscriptionPlans] = useState([]);
+  const [terminals, setTerminals] = useState([]);
+
   // Subscribe to crmStore
   useEffect(() => {
     // Sync with database
@@ -49,6 +64,21 @@ export default function Proposals() {
         setSalesReps(res.data.data);
       }
     }).catch(err => console.error('Error fetching reps in proposals:', err));
+
+    api.get('/subscription-plans').then(res => {
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        setSubscriptionPlans(res.data.data);
+      }
+    }).catch(err => console.error('Error fetching subscription plans:', err));
+
+    api.get('/terminals').then(res => {
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        setTerminals(res.data.data);
+        if (res.data.data.length > 0) {
+          setDepotLocation(res.data.data[0].name);
+        }
+      }
+    }).catch(err => console.error('Error fetching regional terminals:', err));
 
     const syncDb = () => {
       const db = crmRepository.getCrmDatabase();
@@ -85,9 +115,50 @@ export default function Proposals() {
   }, [toast]);
 
   // Actions
-  const handleAcceptContract = async (p) => {
-    await crmRepository.updateProposal(p.id, { status: 'Accepted' });
-    setToast({ text: `Contract ACCEPTED! Client ${p.company} converted to active account successfully.` });
+  const handleAcceptContract = (p) => {
+    const rawLead = leads.find(l => l.id === p.leadId) || {};
+    const lead = {
+      ...rawLead,
+      companyName: rawLead.company || rawLead.companyName || p.company || 'Client Company',
+      contactName: rawLead.name || rawLead.contactName || 'Admin User',
+      email: rawLead.email || 'admin@company.com'
+    };
+    setSelectedLeadObj(lead);
+    setShowConversionWizard(true);
+    setWizardStep(1);
+    setSelectedPlan('Professional');
+    setDotNumber('');
+    setTaxId('');
+    if (terminals.length > 0) {
+      setDepotLocation(terminals[0].name);
+    }
+  };
+
+  const handleProvisionWorkspace = async () => {
+    setIsProvisioning(true);
+    try {
+      await api.post(`/proposals/${selectedProposal.id}/provision`, {
+        tier: selectedPlan,
+        companyName: selectedLeadObj.companyName || selectedLeadObj.company,
+        dotNumber,
+        taxId,
+        adminName: selectedLeadObj.contactName || selectedLeadObj.name,
+        adminEmail: selectedLeadObj.email,
+        depotLocation
+      });
+      setIsProvisioning(false);
+      setWizardStep(6);
+      
+      // Update local state instead of doing full sync
+      const updatedProposals = proposals.map(p => p.id === selectedProposal.id ? { ...p, status: 'Accepted' } : p);
+      setProposals(updatedProposals);
+      setSelectedProposal({ ...selectedProposal, status: 'Accepted' });
+      setToast({ text: `Contract ACCEPTED! Client ${selectedProposal.company} converted to active account successfully.` });
+    } catch (err) {
+      console.error('Provisioning failed:', err);
+      setIsProvisioning(false);
+      setToast({ text: 'Provisioning failed. Please check the logs.' });
+    }
   };
 
   const handleRejectContract = async (p) => {
@@ -96,39 +167,170 @@ export default function Proposals() {
   };
 
   const handleDownloadProposal = (p) => {
-    const content = `=====================================================
-HERO LOGISTICS - SAAS LICENSE CORE AGREEMENT
-Proposal ID: ${p.id}
-Company: ${p.company}
-Date Issued: ${p.createdDate}
-Version: ${p.version || 'V1'}
-Status: ${p.status}
-=====================================================
+    try {
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
 
-PRICING SUMMARY:
-Base Platform License: $${Number(p.value).toLocaleString()} / mo
-Negotiated Discount: ${p.discount}% (-$${(p.value * (p.discount / 100)).toFixed(2)} / mo)
-Total Proposed MRR: $${Number(p.total).toLocaleString()} / mo
+      // Background Header Bar
+      doc.setFillColor(15, 23, 42);
+      doc.rect(0, 0, 210, 32, 'F');
 
-INCLUDED SERVICE MODULES:
-${(p.features || []).map(f => ` - [x] ${f}`).join('\n')}
+      // Accent Gold Stripe
+      doc.setFillColor(255, 204, 0);
+      doc.rect(0, 32, 210, 3, 'F');
 
-TERMS & CONDITIONS:
-Proposal Validity: ${p.validity}
-Payment Terms: Net-30 Auto-Debit Billing
+      // Logo / Title in Header
+      doc.setTextColor(255, 204, 0);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(18);
+      doc.text('HERO LOGISTICS', 15, 16);
 
-Authorized Signature: _______________________
-`;
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `SaaS_Proposal_${p.company.replace(/\s+/g, '_')}_${p.id}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    setToast({ text: `SaaS Licensing Agreement for ${p.company} downloaded!` });
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.text('Enterprise SaaS Platform Licensing Agreement', 15, 24);
+
+      // Proposal Badge / Status
+      doc.setTextColor(148, 163, 184);
+      doc.setFontSize(9);
+      doc.text(`STATUS: ${(p.status || 'DRAFT').toUpperCase()}`, 155, 20);
+
+      // Document Info Section
+      let y = 45;
+      doc.setTextColor(15, 23, 42);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(14);
+      doc.text(`Proposal Agreement: ${p.company || 'Client'}`, 15, y);
+
+      y += 6;
+      doc.setTextColor(100, 116, 139);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.text(`Proposal ID: ${p.id || 'N/A'}    |    Version: ${p.version || 'V1'}    |    Date Issued: ${p.createdDate || new Date().toISOString().split('T')[0]}`, 15, y);
+
+      y += 8;
+      doc.setDrawColor(226, 232, 240);
+      doc.line(15, y, 195, y);
+
+      // Summary Description
+      y += 7;
+      doc.setTextColor(51, 65, 85);
+      doc.setFontSize(9.5);
+      const introText = `This SaaS Core Platform License Agreement is officially issued to ${p.company || 'Client'} by Hero Logistics Systems. It establishes the terms, modules, and negotiated pricing structure for the dedicated cloud-native logistics suite.`;
+      const splitIntro = doc.splitTextToSize(introText, 180);
+      doc.text(splitIntro, 15, y);
+      y += splitIntro.length * 4.5 + 4;
+
+      // Pricing Card Box
+      doc.setFillColor(248, 250, 252);
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(15, y, 180, 38, 3, 3, 'FD');
+
+      y += 7;
+      doc.setTextColor(15, 23, 42);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10.5);
+      doc.text('PRICING BREAKDOWN', 22, y);
+
+      y += 6;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(71, 85, 105);
+      doc.text('Base Platform Core:', 22, y);
+      doc.text(`$${Number(p.value || 0).toLocaleString()} / mo`, 185, y, { align: 'right' });
+
+      y += 5.5;
+      doc.setTextColor(16, 185, 129);
+      doc.text(`Negotiated Discount (${p.discount || 0}%):`, 22, y);
+      const discountAmt = ((Number(p.value || 0) * (Number(p.discount || 0) / 100)) || 0).toFixed(2);
+      doc.text(`-$${discountAmt} / mo`, 185, y, { align: 'right' });
+
+      y += 6;
+      doc.setDrawColor(203, 213, 225);
+      doc.line(22, y, 185, y);
+
+      y += 6;
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(217, 119, 6);
+      doc.setFontSize(10.5);
+      doc.text('Total Proposed MRR:', 22, y);
+      doc.text(`$${Number(p.total || 0).toLocaleString()} / mo`, 185, y, { align: 'right' });
+
+      y += 14;
+
+      // Included Modules Section
+      doc.setTextColor(15, 23, 42);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10.5);
+      doc.text('INCLUDED SERVICE MODULES', 15, y);
+
+      y += 6;
+      const modules = Array.isArray(p.features) && p.features.length > 0 
+        ? p.features 
+        : ['Real-Time GPS Telematics', 'AI Route Optimizer', 'Driver Mobile App', 'Dispatch Board Pro', 'Factoring & Billing API', 'Live Customer Portal'];
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(51, 65, 85);
+
+      modules.forEach((mod, idx) => {
+        const col = idx % 2 === 0 ? 18 : 108;
+        const rowY = y + Math.floor(idx / 2) * 6.5;
+        doc.setTextColor(16, 185, 129);
+        doc.text('[x]', col, rowY);
+        doc.setTextColor(51, 65, 85);
+        doc.text(mod, col + 7, rowY);
+      });
+
+      y += Math.ceil(modules.length / 2) * 6.5 + 8;
+
+      // Terms Box
+      doc.setFillColor(254, 252, 232);
+      doc.setDrawColor(254, 240, 138);
+      doc.roundedRect(15, y, 180, 22, 2, 2, 'FD');
+
+      y += 5.5;
+      doc.setTextColor(133, 77, 14);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.text('TERMS & CONDITIONS', 22, y);
+
+      y += 5.5;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(113, 63, 18);
+      doc.text(`• Proposal Validity: ${p.validity || '30 Days'}`, 22, y);
+      y += 4.5;
+      doc.text('• Payment Terms: Net-30 Auto-Debit Billing via Verified Gateway', 22, y);
+
+      // Signatures
+      y += 18;
+      doc.setDrawColor(148, 163, 184);
+      doc.line(15, y, 90, y);
+      doc.line(120, y, 195, y);
+
+      y += 4.5;
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      doc.text(`Authorized Signatory: ${user?.name || 'Authorized'} (${user?.role?.replace('_', ' ') || 'Sales Director'})`, 15, y);
+      doc.text(`Client Acceptance: ${p.company || 'Client Representative'}`, 120, y);
+
+      // Footer
+      doc.setFontSize(7.5);
+      doc.setTextColor(148, 163, 184);
+      doc.text('Hero Logistics Cloud TMS Platform • Confidential & Proprietary Document', 105, 285, { align: 'center' });
+
+      // Save PDF
+      const sanitizedName = (p.company || 'Client').replace(/[^a-zA-Z0-9]/g, '_');
+      doc.save(`SaaS_Proposal_${sanitizedName}_${p.id || 'Agreement'}.pdf`);
+      setToast({ text: `SaaS Licensing Agreement PDF for ${p.company} downloaded successfully!` });
+    } catch (err) {
+      console.error('PDF Generation failed:', err);
+      setToast({ text: 'Failed to generate PDF. Please try again.' });
+    }
   };
 
   const handleSaveRevision = async (e) => {
@@ -299,7 +501,7 @@ Authorized Signature: _______________________
                     {p.company}
                   </div>
                   <div className={`text-[10px] font-bold ${selectedProposal?.id === p.id ? 'text-slate-600' : 'text-slate-500'}`}>
-                    Value: ${Number(p.total).toLocaleString()}/mo • Validity: {p.validity}
+                    Value: ${Number(p.total).toLocaleString()}/mo Ã¢â‚¬Â¢ Validity: {p.validity}
                   </div>
                 </div>
                 <span className={`px-2.5 py-1 rounded-md text-[9px] font-extrabold tracking-widest uppercase leading-none shrink-0 ${
@@ -356,7 +558,7 @@ Authorized Signature: _______________________
                     {selectedProposal.title || `SaaS License Core Agreement - ${selectedProposal.company}`}
                   </h3>
                   <div className="text-[11px] text-slate-800 font-bold mt-1.5">
-                    Proposal ID: {selectedProposal.id} • Issued: {selectedProposal.createdDate} • Version: {selectedProposal.version || 'V1'}
+                    Proposal ID: {selectedProposal.id} Ã¢â‚¬Â¢ Issued: {selectedProposal.createdDate} Ã¢â‚¬Â¢ Version: {selectedProposal.version || 'V1'}
                   </div>
                 </div>
               </div>
@@ -412,18 +614,22 @@ Authorized Signature: _______________________
 
               {/* Bottom Actions */}
               <div className="px-7 py-5 flex items-center gap-2 shrink-0 border-t border-slate-100">
-                <button 
-                  onClick={() => handleAcceptContract(selectedProposal)}
-                  className="bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-[11px] px-4.5 py-2.5 rounded-xl cursor-pointer transition-all shadow-xs whitespace-nowrap active:scale-95 flex items-center gap-1.5"
-                >
-                  <Check className="w-3.5 h-3.5 stroke-[3px]" /> Accept Contract & Convert
-                </button>
-                <button 
-                  onClick={() => handleRejectContract(selectedProposal)}
-                  className="bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-600 border border-slate-200 hover:border-rose-200 font-extrabold text-[11px] px-4 py-2.5 rounded-xl cursor-pointer transition-colors whitespace-nowrap"
-                >
-                  Reject Contract
-                </button>
+                {selectedProposal.status?.toLowerCase() !== 'accepted' && selectedProposal.status?.toLowerCase() !== 'rejected' && (
+                  <>
+                    <button 
+                      onClick={() => handleAcceptContract(selectedProposal)}
+                      className="bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-[11px] px-4.5 py-2.5 rounded-xl cursor-pointer transition-all shadow-xs whitespace-nowrap active:scale-95 flex items-center gap-1.5"
+                    >
+                      <Check className="w-3.5 h-3.5 stroke-[3px]" /> Accept Contract & Convert
+                    </button>
+                    <button 
+                      onClick={() => handleRejectContract(selectedProposal)}
+                      className="bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-600 border border-slate-200 hover:border-rose-200 font-extrabold text-[11px] px-4 py-2.5 rounded-xl cursor-pointer transition-colors whitespace-nowrap"
+                    >
+                      Reject Contract
+                    </button>
+                  </>
+                )}
                 <button 
                   onClick={() => {
                     setRevisionForm({
@@ -433,7 +639,9 @@ Authorized Signature: _______________________
                     });
                     setShowRevisionModal(true);
                   }}
-                  className="bg-[#FEF3C7] hover:bg-[#FDE68A] text-[#B45309] border border-[#FDE68A] font-extrabold text-[11px] px-4 py-2.5 rounded-xl cursor-pointer transition-all flex items-center gap-1.5 ml-auto shadow-xs whitespace-nowrap active:scale-95"
+                  className={`bg-[#FEF3C7] hover:bg-[#FDE68A] text-[#B45309] border border-[#FDE68A] font-extrabold text-[11px] px-4 py-2.5 rounded-xl cursor-pointer transition-all flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap active:scale-95 ${
+                    selectedProposal.status?.toLowerCase() === 'accepted' || selectedProposal.status?.toLowerCase() === 'rejected' ? 'w-full' : 'ml-auto'
+                  }`}
                 >
                   <RefreshCw className="w-3.5 h-3.5 shrink-0" />
                   Revise Proposal [{selectedProposal.version === 'V1' ? 'Draft V2' : 'Draft Next'}]
@@ -667,6 +875,289 @@ Authorized Signature: _______________________
           </div>
         </div>
       )}
+
+      {/* Company Conversion Wizard */}
+      {showConversionWizard && selectedLeadObj && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-[600px] shadow-2xl overflow-hidden">
+            <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
+              <h2 className="text-[18px] font-bold text-slate-900">Company Conversion Wizard</h2>
+              <button onClick={() => setShowConversionWizard(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="px-6 py-4 flex items-center justify-between border-b border-slate-100 text-[11px] font-bold">
+              {[
+                { num: 1, label: 'TIER' },
+                { num: 2, label: 'COMPANY' },
+                { num: 3, label: 'ADMIN' },
+                { num: 4, label: 'DEPOT' },
+                { num: 5, label: 'REVIEW' },
+                { num: 6, label: 'SYNC' }
+              ].map(step => (
+                <div key={step.num} className={`uppercase ${wizardStep === step.num ? 'text-[#ffcc00]' : 'text-slate-600'}`}>
+                  {step.num}. {step.label}
+                </div>
+              ))}
+            </div>
+
+            <div className="px-6 py-6 text-left">
+              {wizardStep === 1 && (
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">CHOOSE SUBSCRIPTION LICENSE</label>
+                    <div className="grid grid-cols-3 gap-4">
+                      {(subscriptionPlans.length > 0 ? subscriptionPlans : [
+                        { name: 'Starter', monthlyPrice: 199 },
+                        { name: 'Professional', monthlyPrice: 499 },
+                        { name: 'Enterprise', monthlyPrice: 1299 }
+                      ]).map(plan => (
+                        <div 
+                          key={plan.name}
+                          onClick={() => setSelectedPlan(plan.name)}
+                          className={`rounded-xl p-4 text-center cursor-pointer transition-colors ${selectedPlan === plan.name ? 'border-2 border-[#ffcc00] bg-yellow-50/50' : 'border border-slate-200 hover:border-[#ffcc00]'}`}
+                        >
+                          <div className="font-bold text-slate-900 text-[14px]">{plan.name}</div>
+                          <div className="text-[12px] text-slate-500 font-medium">${plan.monthlyPrice}/mo</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setWizardStep(2)}
+                    className="w-full bg-[#ffcc00] hover:bg-[#e6b800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all"
+                  >
+                    Continue
+                  </button>
+                </div>
+              )}
+
+              {wizardStep === 2 && (
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">COMPANY LEGAL INFORMATION</label>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">LEGAL COMPANY NAME</label>
+                          <input
+                            type="text"
+                            value={selectedLeadObj?.companyName || selectedLeadObj?.company || ''}
+                            onChange={(e) => setSelectedLeadObj({ ...selectedLeadObj, companyName: e.target.value })}
+                            className="w-full border border-slate-200 bg-white rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#ffcc00]"
+                          />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">DOT REGISTRY NUMBER</label>
+                          <input
+                            type="text"
+                            value={dotNumber}
+                            onChange={e => setDotNumber(e.target.value)}
+                            placeholder="DOT-XXXXXX"
+                            className="w-full border border-slate-200 bg-white rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#ffcc00]"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">CORPORATE TAX ID</label>
+                          <input
+                            type="text"
+                            value={taxId}
+                            onChange={e => setTaxId(e.target.value)}
+                            placeholder="TX-XX-XXXXXXX"
+                            className="w-full border border-slate-200 bg-white rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#ffcc00]"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setWizardStep(3)}
+                      className="flex-1 bg-[#ffcc00] hover:bg-[#e6b800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-sm"
+                    >
+                      Continue
+                    </button>
+                    <button
+                      onClick={() => setWizardStep(1)}
+                      className="px-6 py-3.5 bg-white border border-slate-200 text-slate-700 font-bold text-[14px] hover:bg-slate-50 rounded-xl transition-all"
+                    >
+                      Back
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {wizardStep === 3 && (
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">SYSTEM ADMINISTRATOR WORKSPACE PROFILE</label>
+                    
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">ADMIN FULL NAME</label>
+                        <input
+                          type="text"
+                          value={selectedLeadObj?.contactName || selectedLeadObj?.name || ''}
+                          onChange={(e) => setSelectedLeadObj({ ...selectedLeadObj, contactName: e.target.value })}
+                          className="w-full border border-slate-200 bg-white rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#ffcc00]"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">ADMIN LOGIN EMAIL</label>
+                        <input
+                          type="email"
+                          value={selectedLeadObj?.email || ''}
+                          onChange={(e) => setSelectedLeadObj({ ...selectedLeadObj, email: e.target.value })}
+                          className="w-full border border-slate-200 bg-white rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#ffcc00]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setWizardStep(4)}
+                      className="flex-1 bg-[#ffcc00] hover:bg-[#e6b800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-sm"
+                    >
+                      Continue
+                    </button>
+                    <button
+                      onClick={() => setWizardStep(2)}
+                      className="px-6 py-3.5 bg-white border border-slate-200 text-slate-700 font-bold text-[14px] hover:bg-slate-50 rounded-xl transition-all"
+                    >
+                      Back
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {wizardStep === 4 && (
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">ASSIGN REGIONAL BRANCH TERMINAL</label>
+                    
+                    <div className="space-y-2">
+                      <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">DEPOT LOCATION</label>
+                      <select 
+                        value={depotLocation}
+                        onChange={e => setDepotLocation(e.target.value)}
+                        className="w-full border border-slate-200 rounded-xl px-4 py-3 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#ffcc00] transition-colors bg-white appearance-auto"
+                      >
+                        {(terminals.length > 0 ? terminals : [
+                          { id: '1', name: 'Chicago HQ Terminal' },
+                          { id: '2', name: 'New York Terminal' },
+                          { id: '3', name: 'Dallas Hub' }
+                        ]).map(t => (
+                          <option key={t.id || t.name} value={t.name}>{t.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setWizardStep(5)}
+                      className="flex-1 bg-[#ffcc00] hover:bg-[#e6b800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-sm"
+                    >
+                      Continue
+                    </button>
+                    <button
+                      onClick={() => setWizardStep(3)}
+                      className="px-6 py-3.5 bg-white border border-slate-200 text-slate-700 font-bold text-[14px] hover:bg-slate-50 rounded-xl transition-all"
+                    >
+                      Back
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {wizardStep === 5 && (
+                <div className="space-y-6">
+                  {isProvisioning ? (
+                    <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                      <div className="w-12 h-12 border-4 border-slate-100 border-t-[#ffcc00] rounded-full animate-spin"></div>
+                      <p className="text-slate-600 font-bold text-[14px]">Provisioning Workspace...</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="space-y-3">
+                        <label className="block text-[11px] font-black text-slate-500 uppercase tracking-wider">REVIEW WORKSPACE SPECIFICATIONS</label>
+                        
+                        <div className="border border-slate-200 rounded-xl p-5 space-y-3">
+                          <div className="flex justify-between items-center text-[13px]">
+                            <span className="text-slate-500 font-medium">Subscription:</span>
+                            <span className="text-slate-700 font-bold">{selectedPlan} Plan (Monthly)</span>
+                          </div>
+                          <div className="flex justify-between items-center text-[13px]">
+                            <span className="text-slate-500 font-medium">Company:</span>
+                            <span className="text-slate-700 font-bold">{selectedLeadObj?.companyName || selectedLeadObj?.company || 'Client Company'}</span>
+                          </div>
+                          <div className="flex justify-between items-center text-[13px]">
+                            <span className="text-slate-500 font-medium">Admin User:</span>
+                            <span className="text-slate-700 font-bold">{selectedLeadObj?.contactName || selectedLeadObj?.name || 'Admin User'} ({selectedLeadObj?.email || ''})</span>
+                          </div>
+                          <div className="flex justify-between items-center text-[13px]">
+                            <span className="text-slate-500 font-medium">Depot Allocation:</span>
+                            <span className="text-slate-700 font-bold">{depotLocation}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={handleProvisionWorkspace}
+                          className="flex-1 bg-[#ffcc00] hover:bg-[#e6b800] text-slate-900 font-extrabold text-[14px] py-3.5 rounded-xl shadow-sm"
+                        >
+                          Provision Workspace
+                        </button>
+                        <button
+                          onClick={() => setWizardStep(4)}
+                          className="px-6 py-3.5 bg-white border border-slate-200 text-slate-700 font-bold text-[14px] hover:bg-slate-50 rounded-xl transition-all"
+                        >
+                          Back
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {wizardStep === 6 && (
+                <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-8 text-center space-y-6">
+                  <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
+                    <div className="w-12 h-12 border-[4px] border-emerald-400 rounded-full flex items-center justify-center">
+                      <Check className="w-6 h-6 text-emerald-500" strokeWidth={3} />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <h3 className="text-[18px] font-bold text-slate-900">Company Workspace Provision Complete!</h3>
+                    <p className="text-[13px] font-medium text-slate-500">Tenant profile successfully registered inside global administrative databases.</p>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setShowConversionWizard(false);
+                      setWizardStep(1);
+                      crmRepository.syncWithBackend();
+                      navigate('/sales/dashboard');
+                    }}
+                    className="bg-[#ffcc00] hover:bg-[#e6b800] text-slate-900 font-extrabold text-[14px] px-8 py-3.5 rounded-xl shadow-[0_4px_15px_rgba(255,176,32,0.4)] transition-all flex items-center justify-center gap-2 mx-auto cursor-pointer"
+                  >
+                    Go to Companies Workspace
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+

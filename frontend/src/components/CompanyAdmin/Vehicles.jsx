@@ -1172,23 +1172,22 @@ const Vehicles = () => {
                <a href="#" className="text-[11px] font-bold text-purple-700 flex items-center gap-0.5 hover:underline whitespace-nowrap mt-0.5">View All <ArrowRight size={12} /></a>
             </div>
             <div className="flex flex-col gap-4">
-               {[
-                  { name: 'Registration - T101', expiry: 'Expires on 15/07/2025', days: '21 days', color: 'text-green-600 border-green-200 bg-green-50' },
-                  { name: 'Insurance - C201', expiry: 'Expires on 18/07/2025', days: '24 days', color: 'text-green-600 border-green-200 bg-green-50' },
-                  { name: 'Roadworthy - T101', expiry: 'Expires on 22/07/2025', days: '28 days', color: 'text-orange-600 border-orange-200 bg-orange-50' },
-                  { name: 'Heavy Vehicle Inspection', expiry: 'Expires on 05/08/2025', days: '31 days', color: 'text-orange-600 border-orange-200 bg-orange-50' }
-               ].map((item, idx) => (
-                  <div key={idx} className="flex justify-between items-center gap-2">
-                     <div className="flex gap-2.5 items-start">
-                        <FileText size={16} className="text-green-600 mt-0.5 shrink-0" />
-                        <div>
-                           <div className="text-[12px] font-bold text-gray-900 leading-tight break-words">{item.name}</div>
-                           <div className="text-[10px] text-gray-500 mt-1 font-medium">{item.expiry}</div>
+               {vehicles.filter(v => v.regExpiryDate || v.compliance === 'Expiring Soon' || v.compliance === 'Overdue').length === 0 ? (
+                  <div className="text-[11px] text-gray-400 py-3 text-center">No upcoming compliance alerts</div>
+               ) : (
+                  vehicles.filter(v => v.regExpiryDate || v.compliance === 'Expiring Soon' || v.compliance === 'Overdue').slice(0, 4).map((item, idx) => (
+                     <div key={idx} className="flex justify-between items-center gap-2">
+                        <div className="flex gap-2.5 items-start">
+                           <FileText size={16} className="text-green-600 mt-0.5 shrink-0" />
+                           <div>
+                              <div className="text-[12px] font-bold text-gray-900 leading-tight break-words">Registration - {item.reg || item.displayId}</div>
+                              <div className="text-[10px] text-gray-500 mt-1 font-medium">{item.regExpiryDate ? `Expires on ${item.regExpiryDate}` : 'Compliance check active'}</div>
+                           </div>
                         </div>
+                        <span className={`px-2 py-0.5 text-[10px] font-bold border rounded whitespace-nowrap ${item.compliance === 'Overdue' ? 'text-red-600 border-red-200 bg-red-50' : 'text-orange-600 border-orange-200 bg-orange-50'}`}>{item.compliance || 'Active'}</span>
                      </div>
-                     <span className={`px-2 py-0.5 text-[10px] font-bold border rounded whitespace-nowrap ${item.color}`}>{item.days}</span>
-                  </div>
-               ))}
+                  ))
+               )}
             </div>
           </div>
         </div>
@@ -4204,18 +4203,17 @@ const Vehicles = () => {
 
             {/* Pagination */}
             <div className="px-5 py-3 border-t border-gray-100 flex justify-between items-center bg-gray-50/50 flex-wrap gap-4">
-               <span className="text-[12px] font-medium text-gray-500">Showing 1 to 8 of 32 vehicles</span>
+               <span className="text-[12px] font-medium text-gray-500">Showing {filteredVehicles.length > 0 ? 1 : 0} to {filteredVehicles.length} of {vehicles.length} vehicles</span>
                <div className="flex items-center gap-2">
                   <div className="flex bg-white border border-gray-200 rounded-md overflow-hidden shadow-sm">
                      <button className="px-3 py-1.5 text-gray-400 border-r border-gray-200 hover:bg-gray-50 cursor-pointer"><ChevronLeft size={14} /></button>
                      <button className="px-3 py-1.5 text-purple-700 font-bold border-r border-gray-200 bg-purple-50/50 cursor-pointer">1</button>
-                     <button className="px-3 py-1.5 text-gray-600 font-medium border-r border-gray-200 hover:bg-gray-50 cursor-pointer">2</button>
-                     <button className="px-3 py-1.5 text-gray-600 font-medium border-r border-gray-200 hover:bg-gray-50 cursor-pointer">3</button>
-                     <button className="px-3 py-1.5 text-gray-600 font-medium border-r border-gray-200 hover:bg-gray-50 cursor-pointer">4</button>
                      <button className="px-3 py-1.5 text-gray-600 hover:bg-gray-50 cursor-pointer"><ChevronRight size={14} /></button>
                   </div>
                   <select className="border border-gray-200 bg-white rounded-md px-2 py-1.5 text-[12px] font-medium text-gray-700 focus:outline-none cursor-pointer">
                      <option>10 / page</option>
+                     <option>25 / page</option>
+                     <option>50 / page</option>
                   </select>
                </div>
             </div>
@@ -4228,24 +4226,28 @@ const Vehicles = () => {
             <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5">
                <h3 className="text-[13px] font-bold text-gray-900 mb-4">Compliance Overview</h3>
                <div className="flex flex-col xl:flex-row items-center gap-5">
-                  <div className="relative w-24 h-24 rounded-full flex items-center justify-center shadow-inner shrink-0" style={{ background: 'conic-gradient(#10B981 0% 62.5%, #F59E0B 62.5% 81.3%, #EF4444 81.3% 93.8%, #D1D5DB 93.8% 100%)' }}>
+                  <div className="relative w-24 h-24 rounded-full flex items-center justify-center shadow-inner shrink-0" style={{ 
+                     background: vehicles.length > 0 
+                       ? `conic-gradient(#10B981 0% ${(vehicles.filter(v => v.compliance === 'Compliant' || !v.compliance).length / vehicles.length) * 100}%, #F59E0B ${(vehicles.filter(v => v.compliance === 'Compliant' || !v.compliance).length / vehicles.length) * 100}% ${((vehicles.filter(v => v.compliance === 'Compliant' || !v.compliance).length + vehicles.filter(v => v.compliance === 'Expiring Soon').length) / vehicles.length) * 100}%, #EF4444 ${((vehicles.filter(v => v.compliance === 'Compliant' || !v.compliance).length + vehicles.filter(v => v.compliance === 'Expiring Soon').length) / vehicles.length) * 100}% 100%)`
+                       : '#E2E8F0'
+                  }}>
                      <div className="absolute w-16 h-16 bg-white rounded-full flex flex-col items-center justify-center shadow-sm">
-                        <span className="text-xl font-black text-gray-900 leading-none">32</span>
+                        <span className="text-xl font-black text-gray-900 leading-none">{vehicles.length}</span>
                         <span className="text-[10px] font-medium text-gray-500 mt-0.5">Total</span>
                      </div>
                   </div>
                   <div className="flex flex-col gap-2 w-full">
                      <div className="flex items-center gap-2 text-[11px] font-medium text-gray-700">
-                        <div className="w-2 h-2 rounded-full bg-green-500 shrink-0"></div> 20 Compliant (62.5%)
+                        <div className="w-2 h-2 rounded-full bg-green-500 shrink-0"></div> {vehicles.filter(v => v.compliance === 'Compliant' || !v.compliance).length} Compliant ({vehicles.length ? Math.round((vehicles.filter(v => v.compliance === 'Compliant' || !v.compliance).length / vehicles.length) * 100) : 0}%)
                      </div>
                      <div className="flex items-center gap-2 text-[11px] font-medium text-gray-700">
-                        <div className="w-2 h-2 rounded-full bg-orange-500 shrink-0"></div> 6 Expiring Soon (18.8%)
+                        <div className="w-2 h-2 rounded-full bg-orange-500 shrink-0"></div> {vehicles.filter(v => v.compliance === 'Expiring Soon').length} Expiring Soon ({vehicles.length ? Math.round((vehicles.filter(v => v.compliance === 'Expiring Soon').length / vehicles.length) * 100) : 0}%)
                      </div>
                      <div className="flex items-center gap-2 text-[11px] font-medium text-gray-700">
-                        <div className="w-2 h-2 rounded-full bg-red-500 shrink-0"></div> 4 Overdue (12.5%)
+                        <div className="w-2 h-2 rounded-full bg-red-500 shrink-0"></div> {vehicles.filter(v => v.compliance === 'Overdue').length} Overdue ({vehicles.length ? Math.round((vehicles.filter(v => v.compliance === 'Overdue').length / vehicles.length) * 100) : 0}%)
                      </div>
                      <div className="flex items-center gap-2 text-[11px] font-medium text-gray-700">
-                        <div className="w-2 h-2 rounded-full bg-gray-300 shrink-0"></div> 2 Not Uploaded (6.3%)
+                        <div className="w-2 h-2 rounded-full bg-gray-300 shrink-0"></div> {vehicles.filter(v => v.compliance === 'Not Uploaded').length} Not Uploaded ({vehicles.length ? Math.round((vehicles.filter(v => v.compliance === 'Not Uploaded').length / vehicles.length) * 100) : 0}%)
                      </div>
                   </div>
                </div>
@@ -4258,23 +4260,22 @@ const Vehicles = () => {
                   <a href="#" className="text-[11px] font-semibold text-purple-700 flex items-center gap-0.5 hover:underline whitespace-nowrap">View All <ArrowRight size={12} /></a>
                </div>
                <div className="flex flex-col gap-4">
-                  {[
-                     { name: 'Registration - T101', expiry: 'Expires on 15/07/2025', days: '21 days', color: 'text-green-600 bg-green-50' },
-                     { name: 'Insurance - C201', expiry: 'Expires on 18/07/2025', days: '24 days', color: 'text-green-600 bg-green-50' },
-                     { name: 'Roadworthy - G305', expiry: 'Expires on 22/07/2025', days: '28 days', color: 'text-orange-600 bg-orange-50' },
-                     { name: 'Registration - U801', expiry: 'Expires on 25/07/2025', days: '31 days', color: 'text-orange-600 bg-orange-50' }
-                  ].map((item, idx) => (
-                     <div key={idx} className="flex justify-between items-center gap-2">
-                        <div className="flex gap-2 items-start overflow-hidden">
-                           <FileText size={14} className="text-green-600 mt-0.5 shrink-0" />
-                           <div className="min-w-0">
-                              <div className="text-[12px] font-semibold text-gray-900 leading-tight truncate">{item.name}</div>
-                              <div className="text-[10px] text-gray-500 mt-0.5 truncate">{item.expiry}</div>
+                  {vehicles.filter(v => v.regExpiryDate || v.compliance === 'Expiring Soon' || v.compliance === 'Overdue').length === 0 ? (
+                     <div className="text-[11px] text-gray-400 py-3 text-center">No upcoming compliance alerts</div>
+                  ) : (
+                     vehicles.filter(v => v.regExpiryDate || v.compliance === 'Expiring Soon' || v.compliance === 'Overdue').slice(0, 4).map((item, idx) => (
+                        <div key={idx} className="flex justify-between items-center gap-2">
+                           <div className="flex gap-2 items-start overflow-hidden">
+                              <FileText size={14} className="text-green-600 mt-0.5 shrink-0" />
+                              <div className="min-w-0">
+                                 <div className="text-[12px] font-semibold text-gray-900 leading-tight truncate">Registration - {item.reg || item.displayId}</div>
+                                 <div className="text-[10px] text-gray-500 mt-0.5 truncate">{item.regExpiryDate ? `Expires on ${item.regExpiryDate}` : 'Compliance check active'}</div>
+                              </div>
                            </div>
+                           <span className={`px-2 py-0.5 text-[10px] font-semibold rounded whitespace-nowrap ${item.compliance === 'Overdue' ? 'text-red-600 bg-red-50' : 'text-orange-600 bg-orange-50'}`}>{item.compliance || 'Active'}</span>
                         </div>
-                        <span className={`px-2 py-0.5 text-[10px] font-semibold rounded whitespace-nowrap ${item.color}`}>{item.days}</span>
-                     </div>
-                  ))}
+                     ))
+                  )}
                </div>
             </div>
 
@@ -4285,18 +4286,21 @@ const Vehicles = () => {
                   <span className="bg-purple-700 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">AI</span>
                </div>
                <ul className="space-y-2 mb-5">
-                  <li className="flex items-start gap-2 text-[12px] text-gray-800 font-medium">
-                     <Check size={14} className="text-purple-600 mt-0.5 shrink-0" /> 2 vehicles have overdue compliance.
-                  </li>
-                  <li className="flex items-start gap-2 text-[12px] text-gray-800 font-medium">
-                     <Check size={14} className="text-purple-600 mt-0.5 shrink-0" /> 6 compliance items expiring within 30 days.
-                  </li>
-                  <li className="flex items-start gap-2 text-[12px] text-gray-800 font-medium">
-                     <Check size={14} className="text-purple-600 mt-0.5 shrink-0" /> T405 - SCANIA R500 is due for service soon.
-                  </li>
-                  <li className="flex items-start gap-2 text-[12px] text-gray-800 font-medium">
-                     <Check size={14} className="text-purple-600 mt-0.5 shrink-0" /> C201 - HINO 700 tyre rotation recommended.
-                  </li>
+                  {vehicles.length === 0 ? (
+                     <li className="text-[12px] text-gray-500">No fleet vehicles recorded yet. Add vehicles to activate AI insights.</li>
+                  ) : (
+                     <>
+                        <li className="flex items-start gap-2 text-[12px] text-gray-800 font-medium">
+                           <Check size={14} className="text-purple-600 mt-0.5 shrink-0" /> {vehicles.filter(v => v.compliance === 'Overdue').length} vehicles have overdue compliance.
+                        </li>
+                        <li className="flex items-start gap-2 text-[12px] text-gray-800 font-medium">
+                           <Check size={14} className="text-purple-600 mt-0.5 shrink-0" /> {vehicles.filter(v => v.compliance === 'Expiring Soon').length} compliance items expiring within 30 days.
+                        </li>
+                        <li className="flex items-start gap-2 text-[12px] text-gray-800 font-medium">
+                           <Check size={14} className="text-purple-600 mt-0.5 shrink-0" /> {vehicles.filter(v => v.status === 'ACTIVE').length} of {vehicles.length} fleet units are in active operation.
+                        </li>
+                     </>
+                  )}
                </ul>
                <button className="w-full py-2 bg-white border border-purple-200 text-purple-700 rounded-xl text-[12px] font-semibold hover:bg-purple-50 transition-colors flex items-center justify-center gap-1.5 shadow-sm cursor-pointer">
                   <Star size={14} className="fill-purple-700" /> View AI Insights

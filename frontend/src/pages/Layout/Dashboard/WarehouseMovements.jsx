@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   MapPin, Calendar, ChevronDown, ChevronLeft, ChevronRight, Plus, ArrowRight,
@@ -7,6 +7,7 @@ import {
   CheckCircle2, X, FileSpreadsheet, Download, AlertTriangle, Search,
   Printer, Eye, Filter, ArrowUpRight, Clock, RefreshCw, FileText, CheckCircle, Truck
 } from 'lucide-react';
+import api from '../../../services/api';
 
 /* ============================================================
    MOCK DATA FOR MOVE / TRANSFER FORM
@@ -136,122 +137,9 @@ const recentMovements = [
 ];
 
 /* ============================================================
-   MOCK DATA FOR MOVEMENT HISTORY AUDIT LOG
+   MOCK DATA FOR MOVEMENT HISTORY AUDIT LOG (Removed)
    ============================================================ */
-const initialHistoryLogs = [
-  {
-    id: 'MH-1001',
-    dateTime: '21/07/2026 10:45 AM',
-    movementType: 'Move',
-    itemTitle: 'Toyota Camry',
-    vin: 'JTDBE32K203456789',
-    badge: 'ABC123',
-    fromLoc: 'Zone A / Row 4 / Bay 12 / Position 01',
-    toLoc: 'Lane 1 / Main Yard',
-    loadRef: 'LD-3985',
-    byName: 'John Smith',
-    byRole: 'Driver',
-    result: 'Completed'
-  },
-  {
-    id: 'MH-1002',
-    dateTime: '21/07/2026 10:20 AM',
-    movementType: 'Stage',
-    itemTitle: 'Pallet – Electrical Parts',
-    vin: 'SKU: EL-1001 | Barcode: 9345678901234',
-    badge: '',
-    fromLoc: 'Warehouse 1 / Aisle 12 / Bay 5',
-    toLoc: 'Lane 5 / DG Staging',
-    loadRef: 'LD-3990',
-    byName: 'Michael Lee',
-    byRole: 'Staff',
-    result: 'Completed'
-  },
-  {
-    id: 'MH-1003',
-    dateTime: '21/07/2026 09:42 AM',
-    movementType: 'Transfer',
-    itemTitle: '20ft Container',
-    vin: 'CONT-MSCU1234567',
-    badge: '',
-    fromLoc: 'Container Yard / Stack 2 / Slot 4',
-    toLoc: 'Lane 6 / Container Bay',
-    loadRef: 'LD-3991',
-    byName: 'Tom Wilson',
-    byRole: 'Forklift',
-    result: 'Completed'
-  },
-  {
-    id: 'MH-1004',
-    dateTime: '21/07/2026 09:15 AM',
-    movementType: 'Receive',
-    itemTitle: 'UN1203 – Petrol Drum',
-    vin: 'Barcode: 9345678909999',
-    badge: '',
-    fromLoc: '-',
-    toLoc: 'Zone A / Row 4 / Bay 12 / Position 02',
-    loadRef: 'GR-1038',
-    byName: 'Ravi Patel',
-    byRole: 'Staff',
-    result: 'Completed'
-  },
-  {
-    id: 'MH-1005',
-    dateTime: '21/07/2026 08:55 AM',
-    movementType: 'Move',
-    itemTitle: 'Mazda 3',
-    vin: 'JM0BL10F200123456',
-    badge: 'DEF456',
-    fromLoc: 'Lane 2 / Main Yard',
-    toLoc: 'Lane 2 / Main Yard',
-    loadRef: 'LD-3986',
-    byName: 'Mark Davis',
-    byRole: 'Driver',
-    result: 'Completed'
-  },
-  {
-    id: 'MH-1006',
-    dateTime: '21/07/2026 04:30 PM',
-    movementType: 'Transfer',
-    itemTitle: 'Steel Coils',
-    vin: 'SKU: STC-500 | Barcode: 8899001122334',
-    badge: '',
-    fromLoc: 'Warehouse 2 / Bay 03',
-    toLoc: 'Warehouse 1 / Bay 08',
-    loadRef: 'LD-3975',
-    byName: 'Peter Brown',
-    byRole: 'Forklift',
-    result: 'Completed'
-  },
-  {
-    id: 'MH-1007',
-    dateTime: '20/07/2026 03:05 PM',
-    movementType: 'Return',
-    itemTitle: 'Damaged Pallet',
-    vin: 'REF: RTN-10077',
-    badge: '',
-    fromLoc: 'Lane 3 / Main Yard',
-    toLoc: '-',
-    loadRef: 'RTN-10077',
-    byName: 'Sarah Johnson',
-    byRole: 'Staff',
-    result: 'Completed'
-  },
-  {
-    id: 'MH-1008',
-    dateTime: '20/07/2026 11:10 AM',
-    movementType: 'Stage',
-    itemTitle: 'Honda Accord',
-    vin: '1HGCM82633A123456',
-    badge: 'GHI789',
-    fromLoc: 'Zone B / Row 2 / Bay 06',
-    toLoc: 'Lane 1 / Main Yard',
-    loadRef: 'LD-3972',
-    byName: 'James Wright',
-    byRole: 'Staff',
-    result: 'Failed'
-  }
-];
+const initialHistoryLogs = [];
 
 export default function WarehouseMovements() {
   const location = useLocation();
@@ -290,6 +178,40 @@ export default function WarehouseMovements() {
   const [historyLogs, setHistoryLogs] = useState(initialHistoryLogs);
   const [detailsModalLog, setDetailsModalLog] = useState(null);
   const [showHistoryFilters, setShowHistoryFilters] = useState(true);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
+  useEffect(() => {
+    if (isHistoryView) {
+      const fetchHistory = async () => {
+        setLoadingHistory(true);
+        try {
+          const res = await api.get('/warehouse-portal/movements');
+          if (res.data && res.data.success && res.data.data) {
+            const formatted = res.data.data.map((log) => ({
+              id: log.id || `MH-${Math.floor(Math.random() * 10000)}`,
+              dateTime: log.movementTime ? new Date(log.movementTime).toLocaleString() : 'N/A',
+              movementType: log.movementType || 'Move',
+              itemTitle: log.item?.make ? `${log.item.make} ${log.item.model || ''}` : (log.item?.vehicleType || 'Item'),
+              vin: log.item?.vin || log.item?.stockRef || 'N/A',
+              badge: log.item?.rego || '',
+              fromLoc: log.fromLocation || '-',
+              toLoc: log.toLocation || '-',
+              loadRef: log.loadJob?.loadNumber || '-',
+              byName: log.user?.name || 'System',
+              byRole: log.user?.role || 'Admin',
+              result: log.status || 'Completed'
+            }));
+            setHistoryLogs(formatted);
+          }
+        } catch (err) {
+          console.error('Failed to load movement history:', err);
+        } finally {
+          setLoadingHistory(false);
+        }
+      };
+      fetchHistory();
+    }
+  }, [isHistoryView]);
 
   // ── TOAST NOTIFICATION ──
   const [toast, setToast] = useState(null);

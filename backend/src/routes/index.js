@@ -193,11 +193,14 @@ const NotificationRuleRoutes = require('./NotificationRuleRoutes');
 const RecipientGroupRoutes = require('./RecipientGroupRoutes');
 
 const WarehousePortalRoutes = require('./WarehousePortalRoutes');
+const RegionalTerminalRoutes = require('./RegionalTerminalRoutes');
 
 router.use('/ai-models', AiModelRoutes);
 router.use('/notification-templates', NotificationTemplateRoutes);
 router.use('/notification-rules', NotificationRuleRoutes);
 router.use('/recipient-groups', RecipientGroupRoutes);
+router.use('/terminals', RegionalTerminalRoutes);
+router.use('/regional-terminals', RegionalTerminalRoutes);
 
 router.use('/company-admin', CompanyAdminPortalRoutes);
 router.use('/company-admin/dashboard', CompanyAdminDashboardRoutes);
