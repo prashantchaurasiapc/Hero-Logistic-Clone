@@ -50,9 +50,7 @@ export default function MaintenanceRequest() {
     setPhotoAttached(false);
   };
 
-  const mockData = [
-    { id: 1, reportedIssue: 'Slight brake squeal on front axles.', severity: 'Minor', severityColor: 'bg-gray-100 text-[#64748B] border border-gray-200', status: 'SCHEDULED', statusColor: 'bg-[#FFFBEB] text-[#D97706] border border-[#FDE047]' }
-  ];
+  const mockData = [];
 
   const toggleRow = (id) => {
     setSelectedRows(prev =>

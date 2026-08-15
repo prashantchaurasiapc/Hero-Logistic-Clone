@@ -44,6 +44,11 @@ export default function DemoBookings() {
   // Toast feedback state
   const [toast, setToast] = useState(null);
 
+  const showToast = (msg, type = 'success') => {
+    setToast({ type, text: msg });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   // Subscribe to crmStore changes to ensure reactive binding
   useEffect(() => {
     // Sync with database
@@ -90,19 +95,20 @@ export default function DemoBookings() {
   const repsList = ['Alex Wright', 'Sarah K.', 'Michael Scott', 'Jan Levinson', 'Ryan Howard'];
 
   // Handle demo status select change
-  const handleStatusChange = (demoId, newStatus) => {
-    crmRepository.updateDemo(demoId, { status: newStatus });
-    
-    // Workflow hooks
-    if (newStatus === 'Completed') {
-      crmRepository.completeDemo(demoId);
-    }
-    
+  const handleStatusChange = async (demoId, newStatus) => {
+    await crmRepository.updateDemo(demoId, { status: newStatus });
     setToast({ type: 'success', text: `Demo status updated to ${newStatus}.` });
   };
 
   // Handle Send Reminder email
-  const handleSendReminder = (demo) => {
+  const handleSendReminder = async (demo) => {
+    await crmRepository.createFollowUpTask({
+      leadId: demo.leadId,
+      type: 'EMAIL',
+      notes: `Sent demo reminder email to ${demo.contact} for walkthrough on ${demo.date}`,
+      dueDate: new Date(),
+      repId: demo.presenterId
+    });
     setToast({ type: 'success', text: `Reminder email successfully sent to ${demo.contact} (${demo.company}).` });
   };
 
@@ -116,14 +122,14 @@ export default function DemoBookings() {
   };
 
   // Handle Feedback Submit
-  const handleFeedbackSubmit = (e) => {
+  const handleFeedbackSubmit = async (e) => {
     e.preventDefault();
     if (!showFeedbackModal) return;
 
     // Log feedback
-    crmRepository.logDemoFeedback(showFeedbackModal.id, feedbackForm.notes, feedbackForm.rating);
+    await crmRepository.logDemoFeedback(showFeedbackModal.id, feedbackForm.notes, feedbackForm.rating);
     // Mark as completed
-    crmRepository.completeDemo(showFeedbackModal.id);
+    await crmRepository.updateDemo(showFeedbackModal.id, { status: 'Completed' });
 
     setToast({ type: 'success', text: `Feedback logged for ${showFeedbackModal.company} walkthrough.` });
     setShowFeedbackModal(null);
@@ -206,7 +212,7 @@ export default function DemoBookings() {
       
       {/* Toast Notification */}
       {toast && (
-        <div className="fixed top-4 right-4 z-50 flex items-center gap-2.5 px-4 py-3 bg-slate-900 text-white rounded-xl shadow-xl text-xs font-semibold animate-slide-in">
+        <div className="fixed bottom-6 right-6 z-[999] flex items-center gap-2.5 px-5 py-3.5 bg-slate-900 text-white rounded-xl shadow-2xl text-xs font-semibold animate-slide-in">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]"></span>
           {toast.text}
         </div>
@@ -408,28 +414,39 @@ export default function DemoBookings() {
 
                 {/* Row 2: Action Bar */}
                 <div className="flex items-center gap-3">
-                  <button className="flex items-center gap-1.5 bg-[#FFD500] hover:bg-brand-600 text-slate-900 px-3 py-1.5 rounded-md text-[10px] font-bold transition-all shadow-xs">
+                  <button onClick={() => window.open(d.meetingLink || 'https://zoom.us/j/hero-demo', '_blank')} className="flex items-center gap-1.5 bg-[#FFD500] hover:bg-brand-600 text-slate-900 px-3 py-1.5 rounded-md text-[10px] font-bold transition-all shadow-xs cursor-pointer">
                     <Play className="w-3.5 h-3.5" /> Join Zoom
                   </button>
-                  <button 
-                    onClick={() => handleStatusChange(d.id, 'Completed')}
-                    className="text-[10px] font-bold text-slate-600 hover:text-emerald-600 transition-colors"
-                  >
-                    Mark Complete
-                  </button>
-                  
-                  <div className="flex-grow"></div>
-                  
-                  <button 
-                    onClick={() => handleSendReminder(d)}
-                    className="text-[9px] font-black text-[#D97706] hover:text-[#92400E] uppercase tracking-wider transition-colors"
-                  >
-                    SEND REMINDER
-                  </button>
-                  <div className="w-px h-3 bg-slate-200"></div>
+                  {d.status !== 'Completed' ? (
+                    <>
+                      <button 
+                        onClick={() => handleStatusChange(d.id, 'Completed')}
+                        className="text-[10px] font-bold text-slate-600 hover:text-emerald-600 transition-colors cursor-pointer"
+                      >
+                        Mark Complete
+                      </button>
+                      
+                      <div className="flex-grow"></div>
+                      
+                      <button 
+                        onClick={() => handleSendReminder(d)}
+                        className="text-[9px] font-black text-[#D97706] hover:text-[#92400E] uppercase tracking-wider transition-colors cursor-pointer"
+                      >
+                        SEND REMINDER
+                      </button>
+                      <div className="w-px h-3 bg-slate-200"></div>
+                    </>
+                  ) : (
+                    <div className="flex-grow flex justify-end">
+                      <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-1 mr-3">
+                        <Check className="w-3.5 h-3.5" /> Completed
+                      </span>
+                      <div className="w-px h-3 bg-slate-200 my-auto mx-2"></div>
+                    </div>
+                  )}
                   <button 
                     onClick={() => openFeedbackModal(d)}
-                    className="text-[9px] font-black text-slate-500 hover:text-slate-700 uppercase tracking-wider transition-colors"
+                    className="text-[9px] font-black text-slate-500 hover:text-slate-700 uppercase tracking-wider transition-colors cursor-pointer"
                   >
                     FEEDBACK
                   </button>

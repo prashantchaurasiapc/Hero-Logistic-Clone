@@ -152,7 +152,7 @@ Authorized Signature: _______________________
     setShowRevisionModal(false);
   };
 
-  const repsList = ['Alex Wright', 'Sarah K.', 'Michael Scott', 'Jan Levinson', 'Ryan Howard'];
+
 
   const getStatusStyle = (status) => {
     if (status === 'Accepted' || status === 'ACCEPTED') return 'bg-emerald-50 border border-emerald-200 text-emerald-700';
@@ -489,7 +489,7 @@ Authorized Signature: _______________________
               </div>
 
               <div className="border-t border-slate-200 pt-6 font-sans flex justify-between items-center text-[10px] font-bold text-slate-400">
-                <span>Authorized Signatory: Alex Wright (Sales Director)</span>
+                <span>Authorized Signatory: {user?.name || 'Authorized'} ({user?.role?.replace('_', ' ') || 'Sales'})</span>
                 <button 
                   onClick={() => handleDownloadProposal(selectedProposal)}
                   className="bg-amber-400 hover:bg-amber-500 text-slate-900 font-black px-4 py-2 rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs"

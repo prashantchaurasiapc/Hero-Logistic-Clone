@@ -23,15 +23,7 @@ const assetDocuments = [
 ];
 
 
-const mockMaintenanceTasks = [
-  { id: 1, task: 'Service & Maintenance', desc: 'Routine full service', type: 'Service', priority: 'High', freq: '250 Hours', lastDate: '24 May 2025', lastHrs: '1,000 Hrs', nextDate: '24 Jun 2025', nextHrs: '1,250 Hrs', status: 'Due Soon', daysRemaining: '18 days', assigned: 'James Patel', role: 'Workshop' },
-  { id: 2, task: 'Oil & Filter Change', desc: 'Engine oil and filter', type: 'Service', priority: 'Medium', freq: '250 Hours', lastDate: '24 May 2025', lastHrs: '1,000 Hrs', nextDate: '24 Jun 2025', nextHrs: '1,250 Hrs', status: 'Due Soon', daysRemaining: '18 days', assigned: 'James Patel', role: 'Workshop' },
-  { id: 3, task: 'Full Inspection', desc: 'Complete safety inspection', type: 'Inspection', priority: 'High', freq: 'Monthly', lastDate: '24 May 2025', lastHrs: null, nextDate: '24 Jun 2025', nextHrs: null, status: 'Due Soon', daysRemaining: '18 days', assigned: 'Robert Taylor', role: 'Safety Officer' },
-  { id: 4, task: 'Hydraulic System Check', desc: 'Check hoses, leaks & pressure', type: 'Inspection', priority: 'Medium', freq: '500 Hours', lastDate: '10 May 2025', lastHrs: '950 Hrs', nextDate: '10 Jul 2025', nextHrs: '1,450 Hrs', status: 'Scheduled', daysRemaining: '34 days', assigned: 'James Patel', role: 'Workshop' },
-  { id: 5, task: 'Fork & Mast Inspection', desc: 'Inspect forks, chains & mast', type: 'Inspection', priority: 'Medium', freq: 'Monthly', lastDate: '24 May 2025', lastHrs: null, nextDate: '24 Jun 2025', nextHrs: null, status: 'Scheduled', daysRemaining: '18 days', assigned: 'Robert Taylor', role: 'Safety Officer' },
-  { id: 6, task: 'Tyre Check & Pressure', desc: 'Check tyre condition & pressure', type: 'Service', priority: 'Low', freq: 'Monthly', lastDate: '24 May 2025', lastHrs: null, nextDate: '24 Jun 2025', nextHrs: null, status: 'Scheduled', daysRemaining: '18 days', assigned: 'Workshop Team', role: null },
-  { id: 7, task: 'Battery Check', desc: 'Check battery, terminals & charge', type: 'Service', priority: 'Low', freq: 'Monthly', lastDate: '10 May 2025', lastHrs: null, nextDate: '10 Jun 2025', nextHrs: null, status: 'Completed', daysRemaining: 'Completed', assigned: 'James Patel', role: 'Workshop' }
-];
+const mockMaintenanceTasks = [];
 
 export default function AssetDetails({ assetData, onBack }) {
   const navigate = useNavigate();

@@ -58,7 +58,7 @@ const Header = ({ onMenuClick }) => {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const res = await api.get('/audit-logs?take=4&orderBy={"createdAt":"desc"}');
+        const res = await api.get('/audit-logs?pageSize=4&sort=-createdAt');
         if (res.data?.success) {
           const mappedNotifications = res.data.data.map(log => {
             const parts = log.action.split('_');
@@ -165,7 +165,11 @@ const Header = ({ onMenuClick }) => {
   };
 
   const handleMessageClick = () => {
-    navigate('/company-admin/messages');
+    if (location.pathname.startsWith('/sales')) {
+      navigate('/sales/messages');
+    } else {
+      navigate('/company-admin/messages');
+    }
   };
 
   const handleProfileSettingsClick = () => {

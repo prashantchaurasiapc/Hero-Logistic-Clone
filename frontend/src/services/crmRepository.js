@@ -361,6 +361,19 @@ class CRMRepository {
     }
   }
 
+  async logDemoFeedback(id, feedback, rating) {
+    try {
+      const response = await api.put(`/demo-bookings/${id}`, {
+        feedback: `Rating: ${rating}/5 - ${feedback}`
+      });
+      if (response.data?.success) {
+        await this.syncWithBackend();
+      }
+    } catch (e) {
+      console.error('Error logging demo feedback:', e);
+    }
+  }
+
   async createProposal(data) {
     try {
       const response = await api.post('/proposals', {

@@ -2,21 +2,9 @@ import React, { useState } from 'react';
 import { Search, DollarSign, Edit3, Check, Save, Download, Settings, RefreshCw, X, Shield, Building2, UserCheck, Plus, Sliders } from 'lucide-react';
 import './WarehouseDashboard.css';
 
-const MOCK_COMPANIES = [
-  { id: 'COMP-01', name: 'Hero Logistics HQ' },
-  { id: 'COMP-02', name: 'Hero Logistics Victoria' },
-  { id: 'COMP-03', name: 'Hero Logistics NSW' },
-  { id: 'COMP-04', name: 'Hero Logistics Queensland' }
-];
+const MOCK_COMPANIES = [];
 
-const MOCK_CUSTOMERS = [
-  { id: 'CUST-101', name: 'Toyota Australia', code: 'ACC-TYT-01' },
-  { id: 'CUST-102', name: 'Global Retail Corp', code: 'ACC-GRC-02' },
-  { id: 'CUST-103', name: 'Linfox Logistics', code: 'ACC-LFX-03' },
-  { id: 'CUST-104', name: 'FastGoods LLC', code: 'ACC-FGL-04' },
-  { id: 'CUST-105', name: 'DHL Supply Chain', code: 'ACC-DHL-05' },
-  { id: 'CUST-106', name: 'Coca-Cola Amatil', code: 'ACC-CCA-06' }
-];
+const MOCK_CUSTOMERS = [];
 
 const INITIAL_CUSTOMER_PRICING = [
   {

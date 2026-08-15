@@ -747,17 +747,7 @@ export default function PipelineBoard() {
               ) : (
                 <button 
                   onClick={() => {
-                    const mockSession = {
-                      token: `mock-jwt-token-${Date.now()}`,
-                      email: convertForm.adminEmail || 'admin@company.com',
-                      role: 'Company Admin',
-                      name: convertForm.adminName || 'Admin',
-                      company: convertForm.companyName || selectedLead.company,
-                      plan: convertForm.planTier || 'Professional',
-                      joinedAt: new Date().toLocaleDateString('en-US')
-                    };
-                    localStorage.setItem('hero_session', JSON.stringify(mockSession));
-                    window.dispatchEvent(new Event('storage'));
+                    
                     crmWorkflowEngine.handleStageChange(selectedLead.id, 'Won', 'Converted to Company Tenant');
                     setShowConvertModal(false);
                     setSelectedLead(null);
