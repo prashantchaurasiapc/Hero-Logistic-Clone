@@ -593,9 +593,12 @@ exports.createVehicle = async (req, res, next) => {
       fuelType: rawPayload.fuelType || 'Diesel',
       odometerKm: rawPayload.odometerKm && !isNaN(rawPayload.odometerKm) ? parseInt(rawPayload.odometerKm) : 0,
       maintenanceDueKm: rawPayload.maintenanceDueKm && !isNaN(rawPayload.maintenanceDueKm) ? parseInt(rawPayload.maintenanceDueKm) : null,
-      photoUrl: photoUrlVal,
-      companyId: effectiveCompanyId
+      photoUrl: photoUrlVal
     };
+
+    if (effectiveCompanyId) {
+      vehicleData.company = { connect: { id: effectiveCompanyId } };
+    }
 
     const data = await prisma.vehicle.create({ data: vehicleData, include: { currentDriver: true } });
     return sendSuccess(res, data, HTTP_STATUS.CREATED);

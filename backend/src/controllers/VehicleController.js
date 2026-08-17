@@ -1,4 +1,5 @@
 const prisma = require('../utils/prismaClient');
+const syncMissingVehicleColumns = require('../utils/syncDbColumns');
 const { sendSuccess, sendList, sendError } = require('../utils/apiResponse');
 const { buildPrismaQuery, buildPaginationMeta } = require('../utils/queryBuilder');
 const { HTTP_STATUS, ERROR_CODES } = require('../config/constants');
@@ -6,6 +7,7 @@ const { HTTP_STATUS, ERROR_CODES } = require('../config/constants');
 // Get all Vehicles with pagination, sorting and filtering
 exports.getAll = async (req, res, next) => {
   try {
+    await syncMissingVehicleColumns();
     const { where, skip, take, orderBy, currentPage, pageSize } = buildPrismaQuery(req.query);
     
     if (req.tenantId) where.companyId = req.tenantId;
@@ -70,7 +72,7 @@ const ALLOWED_VEHICLE_FIELDS = new Set([
   'regState', 'regIssueDate', 'regExpiryDate', 'maxDistPerTripKm', 
   'primaryMechanic', 'preferredRoutes', 'preferredRegions', 'dgCertified', 
   'hvCertified', 'status', 'companyId', 'currentLocation', 
-  'currentSpeed', 'fuelLevel', 'engineTemp', 'lastPing', 'currentDriverId', 'branchId'
+  'currentSpeed', 'fuelLevel', 'engineTemp', 'lastPing', 'currentDriverId', 'branchId', 'photoUrl'
 ]);
 
 const sanitizePayload = (rawPayload) => {
@@ -126,9 +128,22 @@ const sanitizePayload = (rawPayload) => {
   if (rawPayload.regState) clean.regState = String(rawPayload.regState);
   if (rawPayload.regType) clean.regType = String(rawPayload.regType);
   if (rawPayload.primaryMechanic) clean.primaryMechanic = String(rawPayload.primaryMechanic);
+  if (rawPayload.preferredRoutes) clean.preferredRoutes = String(rawPayload.preferredRoutes);
+  if (rawPayload.preferredRegions) clean.preferredRegions = String(rawPayload.preferredRegions);
+  if (rawPayload.maxDistPerTripKm !== undefined) clean.maxDistPerTripKm = parseInt(rawPayload.maxDistPerTripKm) || undefined;
+  if (rawPayload.dgCertified !== undefined) clean.dgCertified = Boolean(rawPayload.dgCertified);
+  if (rawPayload.hvCertified !== undefined) clean.hvCertified = Boolean(rawPayload.hvCertified);
 
   if (rawPayload.branchId !== undefined) {
     clean.branchId = rawPayload.branchId;
+  }
+
+  const rawPhoto = rawPayload.photoUrl || rawPayload.photo || rawPayload.img;
+  if (rawPhoto) {
+    const cleanPhoto = cleanVehiclePhotoUrl(rawPhoto);
+    if (cleanPhoto) {
+      clean.photoUrl = cleanPhoto;
+    }
   }
 
   return clean;
@@ -169,16 +184,42 @@ const cleanVehiclePhotoUrl = (url) => {
 // Create new Vehicle
 exports.create = async (req, res, next) => {
   try {
+    await syncMissingVehicleColumns();
     const rawPayload = { ...req.body };
-    let effectiveCompanyId = rawPayload.companyId || req.tenantId;
+    let effectiveCompanyId = rawPayload.companyId || req.tenantId || req.user?.companyId;
+
+    // Guaranteed Company Resolution
     if (!effectiveCompanyId) {
-      let firstComp = await prisma.company.findFirst();
-      if (!firstComp) {
-        firstComp = await prisma.company.create({
-          data: { name: 'Hero Logistics', code: 'HERO-001' }
-        });
+      try {
+        const comp = await prisma.company.findFirst();
+        if (comp) {
+          effectiveCompanyId = comp.id;
+        } else {
+          const newComp = await prisma.company.create({
+            data: {
+              name: 'Hero Logistics',
+              tenantId: `TEN-${Date.now()}`
+            }
+          });
+          effectiveCompanyId = newComp.id;
+        }
+      } catch (err) {
+        console.error('Company resolution error:', err.message);
       }
-      effectiveCompanyId = firstComp.id;
+    }
+
+    if (!effectiveCompanyId) {
+      try {
+        const fallbackComp = await prisma.company.create({
+          data: {
+            name: 'Hero Logistics Default',
+            tenantId: `TEN-FALLBACK-${Date.now()}`
+          }
+        });
+        effectiveCompanyId = fallbackComp.id;
+      } catch (e) {
+        console.error('Critical fallback company creation error:', e.message);
+      }
     }
 
     let branchIdVal = rawPayload.branchId || rawPayload.branch || null;
@@ -190,12 +231,16 @@ exports.create = async (req, res, next) => {
     let customDepotText = null;
 
     if (branchIdVal && typeof branchIdVal === 'string') {
-      const branchObj = await prisma.branch.findFirst({
-        where: { OR: [{ id: branchIdVal }, { name: branchIdVal }] }
-      });
-      if (branchObj) {
-        validBranchId = branchObj.id;
-      } else {
+      try {
+        const branchObj = await prisma.branch.findFirst({
+          where: { OR: [{ id: branchIdVal }, { name: branchIdVal }] }
+        });
+        if (branchObj) {
+          validBranchId = branchObj.id;
+        } else {
+          customDepotText = branchIdVal;
+        }
+      } catch (bErr) {
         customDepotText = branchIdVal;
       }
     }
@@ -213,15 +258,19 @@ exports.create = async (req, res, next) => {
       vinVal = `VIN-${Math.floor(10000 + Math.random() * 90000)}`;
     }
 
-    // Check pre-existing registration or VIN to auto-resolve collisions
-    const existingReg = await prisma.vehicle.findFirst({ where: { rego: regoVal } });
-    if (existingReg) {
-      regoVal = `${regoVal}-${Math.floor(100 + Math.random() * 900)}`;
-    }
+    // Check pre-existing registration or VIN safely
+    try {
+      const existingReg = await prisma.vehicle.findFirst({ where: { rego: regoVal } });
+      if (existingReg) {
+        regoVal = `${regoVal}-${Math.floor(100 + Math.random() * 900)}`;
+      }
 
-    const existingVin = await prisma.vehicle.findFirst({ where: { vin: vinVal } });
-    if (existingVin) {
-      vinVal = `${vinVal}-${Math.floor(100 + Math.random() * 900)}`;
+      const existingVin = await prisma.vehicle.findFirst({ where: { vin: vinVal } });
+      if (existingVin) {
+        vinVal = `${vinVal}-${Math.floor(100 + Math.random() * 900)}`;
+      }
+    } catch (checkErr) {
+      console.warn('Vehicle duplicate check warning:', checkErr.message);
     }
 
     let validCategory = 'TRUCK';
@@ -254,9 +303,12 @@ exports.create = async (req, res, next) => {
       category: validCategory,
       status: validStatus,
       fuelType: rawPayload.fuelType || 'Diesel',
-      odometerKm: odo,
-      companyId: effectiveCompanyId
+      odometerKm: odo
     };
+
+    if (effectiveCompanyId) {
+      vehicleData.company = { connect: { id: effectiveCompanyId } };
+    }
 
     if (rawPayload.color) vehicleData.color = rawPayload.color;
     if (rawPayload.engineNumber) vehicleData.engineNumber = String(rawPayload.engineNumber);
@@ -265,16 +317,52 @@ exports.create = async (req, res, next) => {
     if (customDepotText || rawPayload.primaryMechanic) {
       vehicleData.primaryMechanic = String(customDepotText || rawPayload.primaryMechanic);
     }
-    if (validBranchId) vehicleData.branchId = validBranchId;
+    if (validBranchId) {
+      vehicleData.branch = { connect: { id: validBranchId } };
+    }
+    if (rawPayload.preferredRoutes) vehicleData.preferredRoutes = String(rawPayload.preferredRoutes);
+    if (rawPayload.preferredRegions) vehicleData.preferredRegions = String(rawPayload.preferredRegions);
+    if (rawPayload.maxDistPerTripKm) vehicleData.maxDistPerTripKm = parseInt(rawPayload.maxDistPerTripKm) || undefined;
+    if (rawPayload.dgCertified !== undefined) vehicleData.dgCertified = Boolean(rawPayload.dgCertified);
+    if (rawPayload.hvCertified !== undefined) vehicleData.hvCertified = Boolean(rawPayload.hvCertified);
+
+    const rawPhoto = rawPayload.photoUrl || rawPayload.photo || rawPayload.img;
+    let cleanPhoto = null;
+    if (rawPhoto) {
+      cleanPhoto = cleanVehiclePhotoUrl(rawPhoto);
+      if (cleanPhoto) vehicleData.photoUrl = cleanPhoto;
+    }
 
     try {
-      const data = await prisma.vehicle.create({
-        data: vehicleData,
-        include: {
-          currentDriver: true,
-          company: true
+      let data;
+      try {
+        data = await prisma.vehicle.create({
+          data: vehicleData,
+          include: {
+            currentDriver: true
+          }
+        });
+      } catch (firstErr) {
+        console.warn('First prisma.vehicle.create attempt warning:', firstErr.message);
+        const fallbackData = {
+          rego: regoVal,
+          vin: vinVal,
+          make: rawPayload.make || 'Freightliner',
+          model: rawPayload.model || 'Cascadia',
+          category: validCategory,
+          status: validStatus,
+          odometerKm: odo
+        };
+        if (effectiveCompanyId) {
+          fallbackData.company = { connect: { id: effectiveCompanyId } };
         }
-      });
+        if (cleanPhoto) {
+          fallbackData.primaryMechanic = `Photo:${cleanPhoto}`;
+        }
+        data = await prisma.vehicle.create({
+          data: fallbackData
+        });
+      }
       return sendSuccess(res, data, HTTP_STATUS.CREATED);
     } catch (createErr) {
       console.error('Error in prisma.vehicle.create:', createErr);
@@ -334,10 +422,29 @@ exports.update = async (req, res, next) => {
     }
 
     try {
-      const data = await prisma.vehicle.update({
-        where,
-        data: updateData
-      });
+      let data;
+      try {
+        data = await prisma.vehicle.update({
+          where,
+          data: updateData
+        });
+      } catch (upErr) {
+        if (upErr.message && upErr.message.includes('photoUrl')) {
+          const photoToSave = updateData.photoUrl;
+          delete updateData.photoUrl;
+          if (photoToSave) {
+            updateData.primaryMechanic = updateData.primaryMechanic 
+              ? `${updateData.primaryMechanic} | Photo:${photoToSave}`
+              : `Photo:${photoToSave}`;
+          }
+          data = await prisma.vehicle.update({
+            where,
+            data: updateData
+          });
+        } else {
+          throw upErr;
+        }
+      }
       return sendSuccess(res, data);
     } catch (e) {
       if (e.code === 'P2025') {

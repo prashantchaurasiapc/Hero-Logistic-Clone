@@ -27,10 +27,21 @@ export default function Branches() {
   const [branchList, setBranchList] = useState([]);
   const [editBranchModal, setEditBranchModal] = useState(null);
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [countryFilter, setCountryFilter] = useState('All');
+  const [statusFilter, setStatusFilter] = useState('All');
   const [selectedBranch, setSelectedBranch] = useState(null);
   const [activeTab, setActiveTab] = useState('Overview');
   const [activeTimeSubTab, setActiveTimeSubTab] = useState('Timesheet');
   const [isAddingBranch, setIsAddingBranch] = useState(false);
+
+  const padZero = (n) => {
+    if (n === undefined || n === null) return '00';
+    const num = Number(n);
+    if (isNaN(num)) return String(n);
+    return num < 10 ? `0${num}` : String(num);
+  };
 
   const [showImportBulkModal, setShowImportBulkModal] = useState(false);
   const [showSetupChecklistModal, setShowSetupChecklistModal] = useState(false);
@@ -48,18 +59,22 @@ export default function Branches() {
       const res = await api.get('/branches');
       const data = res.data?.data || res.data || [];
       if (Array.isArray(data)) {
-        const formatted = data.map(b => ({
-          id: b.id,
-          branchName: b.name || b.branchName || 'Branch',
-          branchCode: b.code || b.branchCode || b.id.substring(0, 7).toUpperCase(),
-          company: b.company?.name || 'Hero Logistics Pty Ltd',
-          country: 'Australia',
-          flag: '🇦🇺',
-          state: b.location || 'NSW',
-          manager: b.managerName || 'Unassigned',
-          status: b.status || 'Active',
-          loads: b._count?.warehouses || 0
-        }));
+        const formatted = data.map(b => {
+          const rawName = b.name || b.branchName || 'Branch';
+          const cleanName = rawName.replace(/[,.\s]+$/, '').trim();
+          return {
+            id: b.id,
+            branchName: cleanName || 'Sydney Main',
+            branchCode: b.code || b.branchCode || (b.id ? String(b.id).substring(0, 7).toUpperCase() : 'BR-001'),
+            company: b.company?.name || 'Hero Logistics Pty Ltd',
+            country: 'Australia',
+            flag: '🇦🇺',
+            state: b.location || 'NSW',
+            manager: b.managerName || 'Unassigned',
+            status: b.status || 'Active',
+            loads: b._count?.warehouses || 0
+          };
+        });
         setBranchList(formatted);
       }
     } catch (err) {
@@ -2225,7 +2240,7 @@ export default function Branches() {
                <Building size={18} />
             </div>
             <div>
-               <div className="text-xl font-black text-gray-900">{branchList.length}</div>
+               <div className="text-xl font-black text-gray-900">{padZero(branchList.length)}</div>
                <div className="text-[11px] font-bold text-gray-700">Total Branches</div>
                <div className="text-[10px] text-gray-500">Across {branchList.length > 0 ? '1 country' : '0 countries'}</div>
             </div>
@@ -2235,7 +2250,7 @@ export default function Branches() {
                <CheckCircle2 size={18} />
             </div>
             <div>
-               <div className="text-xl font-black text-gray-900">{branchList.filter(b => b.status === 'Active').length}</div>
+               <div className="text-xl font-black text-gray-900">{padZero(branchList.filter(b => b.status === 'Active').length)}</div>
                <div className="text-[11px] font-bold text-gray-700">Active</div>
             </div>
          </div>
@@ -2244,7 +2259,7 @@ export default function Branches() {
                <Clock size={18} />
             </div>
             <div>
-               <div className="text-xl font-black text-gray-900">{branchList.filter(b => b.status === 'Inactive').length}</div>
+               <div className="text-xl font-black text-gray-900">{padZero(branchList.filter(b => b.status === 'Inactive').length)}</div>
                <div className="text-[11px] font-bold text-gray-700">Inactive</div>
             </div>
          </div>
@@ -2253,7 +2268,7 @@ export default function Branches() {
                <AlertTriangle size={18} />
             </div>
             <div>
-               <div className="text-xl font-black text-gray-900">{branchList.filter(b => b.status === 'Pending Setup').length}</div>
+               <div className="text-xl font-black text-gray-900">{padZero(branchList.filter(b => b.status === 'Pending Setup').length)}</div>
                <div className="text-[11px] font-bold text-gray-700">Pending Setup</div>
             </div>
          </div>
@@ -2262,7 +2277,7 @@ export default function Branches() {
                <Shield size={18} />
             </div>
             <div>
-               <div className="text-xl font-black text-gray-900">{branchList.filter(b => b.status === 'Closed').length}</div>
+               <div className="text-xl font-black text-gray-900">{padZero(branchList.filter(b => b.status === 'Closed').length)}</div>
                <div className="text-[11px] font-bold text-gray-700">Closed</div>
             </div>
          </div>
@@ -2282,16 +2297,31 @@ export default function Branches() {
                      type="text" 
                      placeholder="Search branches..." 
                      value={search}
-                     onChange={(e) => setSearch(e.target.value)}
+                     onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                      className="w-full pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-purple-300 shadow-sm"
                   />
                </div>
                <div className="flex items-center gap-3 w-full sm:w-auto overflow-x-auto min-w-0">
-                  <select className="border border-gray-200 bg-white rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 focus:outline-none cursor-pointer shadow-sm">
-                     <option>All Countries</option>
+                  <select 
+                     value={countryFilter}
+                     onChange={(e) => { setCountryFilter(e.target.value); setPage(1); }}
+                     className="border border-gray-200 bg-white rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 focus:outline-none cursor-pointer shadow-sm"
+                  >
+                     <option value="All">All Countries</option>
+                     <option value="Australia">Australia</option>
+                     <option value="United States">United States</option>
+                     <option value="India">India</option>
                   </select>
-                  <select className="border border-gray-200 bg-white rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 focus:outline-none cursor-pointer shadow-sm">
-                     <option>All Status</option>
+                  <select 
+                     value={statusFilter}
+                     onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+                     className="border border-gray-200 bg-white rounded-lg px-3 py-2 text-sm font-semibold text-gray-700 focus:outline-none cursor-pointer shadow-sm"
+                  >
+                     <option value="All">All Status</option>
+                     <option value="Active">Active</option>
+                     <option value="Inactive">Inactive</option>
+                     <option value="Pending Setup">Pending Setup</option>
+                     <option value="Closed">Closed</option>
                   </select>
                   <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-semibold shadow-sm hover:bg-gray-50 cursor-pointer shrink-0">
                      <Filter size={14} /> Filters
@@ -2303,105 +2333,157 @@ export default function Branches() {
             </div>
 
             {/* Table Container */}
-            <div className="bg-white border border-gray-100 rounded-2xl shadow-sm flex flex-col flex-grow">
-               <div className="p-4 border-b border-gray-100">
-                  <h3 className="text-[11px] font-black text-purple-700 uppercase tracking-widest">BRANCHES ({branchList.length})</h3>
-               </div>
-               <div className="overflow-x-auto min-w-0">
-                  <table className="w-full text-left text-[12px]">
-                     <thead>
-                        <tr className="border-b border-gray-100 text-[11px] font-bold text-gray-800 bg-gray-50/50">
-                           <th className="py-3.5 px-6 whitespace-nowrap">Branch Name</th>
-                           <th className="py-3.5 px-4 whitespace-nowrap">Branch Code</th>
-                           <th className="py-3.5 px-4 whitespace-nowrap">Company</th>
-                           <th className="py-3.5 px-4 whitespace-nowrap">Country</th>
-                           <th className="py-3.5 px-4 whitespace-nowrap">State / Region</th>
-                           <th className="py-3.5 px-4 whitespace-nowrap">Manager</th>
-                           <th className="py-3.5 px-4 whitespace-nowrap">Status</th>
-                           <th className="py-3.5 px-4 whitespace-nowrap text-center">Loads (30 Days)</th>
-                           <th className="py-3.5 px-6 text-center">Actions</th>
-                        </tr>
-                     </thead>
-                     <tbody className="divide-y divide-gray-50 text-gray-700 font-medium">
-                        {branchList.length === 0 ? (
-                          <tr>
-                            <td colSpan="9" className="py-12 px-6 text-center text-xs font-bold text-gray-400">
-                              No branches found in database. Click <span onClick={() => setIsAddingBranch(true)} className="text-purple-600 cursor-pointer underline">+ Add Branch</span> to create one.
-                            </td>
-                          </tr>
-                        ) : (
-                          branchList.filter(b => !search || b.branchName.toLowerCase().includes(search.toLowerCase()) || b.branchCode.toLowerCase().includes(search.toLowerCase()) || b.manager.toLowerCase().includes(search.toLowerCase())).map(branch => (
-                            <tr key={branch.id} className="hover:bg-gray-50/50 transition-colors">
-                              <td className="py-3.5 px-6 font-bold text-gray-900 whitespace-nowrap">
-                                <span onClick={() => setSelectedBranch(branch)} className="hover:text-purple-700 cursor-pointer">{branch.branchName}</span>
-                              </td>
-                              <td className="py-3.5 px-4 text-gray-500 whitespace-nowrap">{branch.branchCode}</td>
-                              <td className="py-3.5 px-4 font-bold text-gray-600 whitespace-nowrap">{branch.company}</td>
-                              <td className="py-3.5 px-4 whitespace-nowrap flex items-center gap-2">
-                                 <span className="text-sm">{branch.flag}</span> {branch.country}
-                              </td>
-                              <td className="py-3.5 px-4 whitespace-nowrap font-bold text-gray-900">{branch.state}</td>
-                              <td className="py-3.5 px-4 whitespace-nowrap font-bold text-gray-900">{branch.manager}</td>
-                              <td className="py-3.5 px-4 whitespace-nowrap">{getStatusBadge(branch.status)}</td>
-                              <td className="py-3.5 px-4 font-black text-gray-900 text-center">{branch.loads}</td>
-                              <td className="py-3.5 px-6 text-center">
-                                 <div className="flex justify-center items-center gap-1.5">
-                                    <button 
-                                      onClick={() => setSelectedBranch(branch)} 
-                                      title="View Branch Details"
-                                      className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"
-                                    >
-                                      <Eye size={13} />
-                                    </button>
-                                    <button 
-                                      onClick={() => setEditBranchModal(branch)} 
-                                      title="Edit Branch"
-                                      className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"
-                                    >
-                                      <Edit size={13} />
-                                    </button>
-                                    <button 
-                                      onClick={async () => {
-                                         if (window.confirm(`Are you sure you want to delete branch ${branch.branchName} (${branch.branchCode})?`)) {
-                                           try {
-                                             await api.delete(`/branches/${branch.id}`);
-                                             setBranchList(prev => prev.filter(b => b.id !== branch.id));
-                                           } catch (e) {
-                                             console.error('API delete branch error:', e);
-                                             alert('Failed to delete branch from server. Please try again.');
-                                           }
-                                         }
-                                       }} 
-                                      title="Delete Branch"
-                                      className="w-7 h-7 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"
-                                    >
-                                      <Trash2 size={13} />
-                                    </button>
-                                 </div>
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                     </tbody>
-                  </table>
-               </div>
-               
-               {/* Pagination */}
-               <div className="px-6 py-4 border-t border-gray-100 flex flex-wrap justify-between items-center bg-gray-50/50 mt-auto rounded-b-2xl gap-4">
-                  <span className="text-[12px] font-medium text-gray-500">Showing 1 to 10 of {branchList.length} branches</span>
-                  <div className="flex items-center gap-3">
-                     <div className="flex bg-white border border-gray-200 rounded-md overflow-hidden shadow-sm">
-                        <button className="px-2.5 py-1 text-gray-400 border-r border-gray-200 cursor-not-allowed bg-gray-50"><ChevronLeft size={14} /></button>
-                        <button className="px-3 py-1 text-purple-700 font-bold border-r border-gray-200 bg-purple-50/50 cursor-pointer">1</button>
-                        <button className="px-3 py-1 text-gray-600 font-bold border-r border-gray-200 hover:bg-gray-50 cursor-pointer">2</button>
-                        <button className="px-2.5 py-1 text-gray-600 cursor-pointer hover:bg-gray-50"><ChevronRight size={14} /></button>
+            {(() => {
+               const filteredBranches = branchList.filter(b => {
+                  const matchesSearch = !search || 
+                     b.branchName.toLowerCase().includes(search.toLowerCase()) || 
+                     b.branchCode.toLowerCase().includes(search.toLowerCase()) || 
+                     b.manager.toLowerCase().includes(search.toLowerCase()) ||
+                     (b.state && b.state.toLowerCase().includes(search.toLowerCase()));
+                  const matchesCountry = countryFilter === 'All' || b.country === countryFilter;
+                  const matchesStatus = statusFilter === 'All' || b.status === statusFilter;
+                  return matchesSearch && matchesCountry && matchesStatus;
+               });
+
+               const totalPages = Math.max(1, Math.ceil(filteredBranches.length / rowsPerPage));
+               const currentPage = Math.min(page, totalPages);
+               const paginatedBranches = filteredBranches.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+               const startRange = filteredBranches.length === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1;
+               const endRange = Math.min(currentPage * rowsPerPage, filteredBranches.length);
+
+               return (
+                  <div className="bg-white border border-gray-100 rounded-2xl shadow-sm flex flex-col flex-grow">
+                     <div className="p-4 border-b border-gray-100">
+                        <h3 className="text-[11px] font-black text-purple-700 uppercase tracking-widest">BRANCHES ({padZero(filteredBranches.length)})</h3>
                      </div>
-                     <select className="border border-gray-200 bg-white rounded-md px-2.5 py-1 text-[12px] font-medium text-gray-700 focus:outline-none cursor-pointer shadow-sm">
-                        <option>10 / page</option>
-                     </select>
+                     <div className="overflow-x-auto min-w-0">
+                        <table className="w-full text-left text-[12px]">
+                           <thead>
+                              <tr className="border-b border-gray-100 text-[11px] font-bold text-gray-800 bg-gray-50/50">
+                                 <th className="py-3.5 px-6 whitespace-nowrap">Branch Name</th>
+                                 <th className="py-3.5 px-4 whitespace-nowrap">Branch Code</th>
+                                 <th className="py-3.5 px-4 whitespace-nowrap">Company</th>
+                                 <th className="py-3.5 px-4 whitespace-nowrap">Country</th>
+                                 <th className="py-3.5 px-4 whitespace-nowrap">State / Region</th>
+                                 <th className="py-3.5 px-4 whitespace-nowrap">Manager</th>
+                                 <th className="py-3.5 px-4 whitespace-nowrap">Status</th>
+                                 <th className="py-3.5 px-4 whitespace-nowrap text-center">Loads (30 Days)</th>
+                                 <th className="py-3.5 px-6 text-center">Actions</th>
+                              </tr>
+                           </thead>
+                           <tbody className="divide-y divide-gray-50 text-gray-700 font-medium">
+                              {filteredBranches.length === 0 ? (
+                                <tr>
+                                  <td colSpan="9" className="py-12 px-6 text-center text-xs font-bold text-gray-400">
+                                    No branches found in database. Click <span onClick={() => setIsAddingBranch(true)} className="text-purple-600 cursor-pointer underline">+ Add Branch</span> to create one.
+                                  </td>
+                                </tr>
+                              ) : (
+                                paginatedBranches.map(branch => (
+                                  <tr key={branch.id} className="hover:bg-gray-50/50 transition-colors">
+                                    <td className="py-3.5 px-6 font-bold text-gray-900 whitespace-nowrap">
+                                      <span onClick={() => setSelectedBranch(branch)} className="hover:text-purple-700 cursor-pointer">{branch.branchName}</span>
+                                    </td>
+                                    <td className="py-3.5 px-4 text-gray-500 whitespace-nowrap">{branch.branchCode}</td>
+                                    <td className="py-3.5 px-4 font-bold text-gray-600 whitespace-nowrap">{branch.company}</td>
+                                    <td className="py-3.5 px-4 whitespace-nowrap flex items-center gap-2">
+                                       <span className="text-sm">{branch.flag}</span> {branch.country}
+                                    </td>
+                                    <td className="py-3.5 px-4 whitespace-nowrap font-bold text-gray-900">{branch.state}</td>
+                                    <td className="py-3.5 px-4 whitespace-nowrap font-bold text-gray-900">{branch.manager}</td>
+                                    <td className="py-3.5 px-4 whitespace-nowrap">{getStatusBadge(branch.status)}</td>
+                                    <td className="py-3.5 px-4 font-black text-gray-900 text-center">{padZero(branch.loads)}</td>
+                                    <td className="py-3.5 px-6 text-center">
+                                       <div className="flex justify-center items-center gap-1.5">
+                                          <button 
+                                            onClick={() => setSelectedBranch(branch)} 
+                                            title="View Branch Details"
+                                            className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"
+                                          >
+                                            <Eye size={13} />
+                                          </button>
+                                          <button 
+                                            onClick={() => setEditBranchModal(branch)} 
+                                            title="Edit Branch"
+                                            className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"
+                                          >
+                                            <Edit size={13} />
+                                          </button>
+                                          <button 
+                                            onClick={async () => {
+                                               if (window.confirm(`Are you sure you want to delete branch ${branch.branchName} (${branch.branchCode})?`)) {
+                                                 try {
+                                                   await api.delete(`/branches/${branch.id}`);
+                                                   setBranchList(prev => prev.filter(b => b.id !== branch.id));
+                                                 } catch (e) {
+                                                   console.error('API delete branch error:', e);
+                                                   alert('Failed to delete branch from server. Please try again.');
+                                                 }
+                                               }
+                                             }} 
+                                            title="Delete Branch"
+                                            className="w-7 h-7 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors flex items-center justify-center cursor-pointer shadow-xs"
+                                          >
+                                            <Trash2 size={13} />
+                                          </button>
+                                       </div>
+                                    </td>
+                                  </tr>
+                                ))
+                              )}
+                           </tbody>
+                        </table>
+                     </div>
+                     
+                     {/* Dynamic Pagination */}
+                     <div className="px-6 py-4 border-t border-gray-100 flex flex-wrap justify-between items-center bg-gray-50/50 mt-auto rounded-b-2xl gap-4">
+                        <span className="text-[12px] font-medium text-gray-500">Showing {startRange} to {endRange} of {filteredBranches.length} branches</span>
+                        <div className="flex items-center gap-3">
+                           <div className="flex bg-white border border-gray-200 rounded-md overflow-hidden shadow-sm">
+                              <button 
+                                disabled={currentPage <= 1}
+                                onClick={() => setPage(p => Math.max(1, p - 1))}
+                                className={`px-2.5 py-1 border-r border-gray-200 ${currentPage <= 1 ? 'text-gray-300 cursor-not-allowed bg-gray-50' : 'text-gray-600 hover:bg-gray-50 cursor-pointer'}`}
+                              >
+                                <ChevronLeft size={14} />
+                              </button>
+                              {Array.from({ length: totalPages }, (_, i) => i + 1).map(pNum => (
+                                <button 
+                                  key={pNum}
+                                  onClick={() => setPage(pNum)}
+                                  className={`px-3 py-1 font-bold border-r border-gray-200 cursor-pointer transition-colors ${pNum === currentPage ? 'text-purple-700 bg-purple-50/50' : 'text-gray-600 hover:bg-gray-50'}`}
+                                >
+                                  {pNum}
+                                </button>
+                              ))}
+                              <button 
+                                disabled={currentPage >= totalPages}
+                                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                                className={`px-2.5 py-1 ${currentPage >= totalPages ? 'text-gray-300 cursor-not-allowed bg-gray-50' : 'text-gray-600 hover:bg-gray-50 cursor-pointer'}`}
+                              >
+                                <ChevronRight size={14} />
+                              </button>
+                           </div>
+                           <select 
+                              value={`${rowsPerPage} / page`}
+                              onChange={(e) => {
+                                const val = parseInt(e.target.value);
+                                if (!isNaN(val)) {
+                                  setRowsPerPage(val);
+                                  setPage(1);
+                                }
+                              }}
+                              className="border border-gray-200 bg-white rounded-md px-2.5 py-1 text-[12px] font-medium text-gray-700 focus:outline-none cursor-pointer shadow-sm"
+                           >
+                              <option value="10 / page">10 / page</option>
+                              <option value="25 / page">25 / page</option>
+                              <option value="50 / page">50 / page</option>
+                           </select>
+                        </div>
+                     </div>
                   </div>
-               </div>
-            </div>
+               );
+            })()}
          </div>
 
          {/* Right Column (Sidebar) */}
@@ -2425,9 +2507,9 @@ export default function Branches() {
                   })}
                </div>
                <div className="flex justify-between items-center text-[9px] font-bold text-gray-500 px-2">
-                  <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-green-500"></div> Active ({branchList.filter(b => b.status === 'Active').length})</div>
-                  <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-orange-500"></div> Pending Setup ({branchList.filter(b => b.status === 'Pending Setup').length})</div>
-                  <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-gray-400"></div> Inactive / Closed ({branchList.filter(b => b.status === 'Inactive' || b.status === 'Closed').length})</div>
+                  <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-green-500"></div> Active ({padZero(branchList.filter(b => b.status === 'Active').length)})</div>
+                  <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-orange-500"></div> Pending Setup ({padZero(branchList.filter(b => b.status === 'Pending Setup').length)})</div>
+                  <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-gray-400"></div> Inactive / Closed ({padZero(branchList.filter(b => b.status === 'Inactive' || b.status === 'Closed').length)})</div>
                </div>
             </div>
 
@@ -2440,23 +2522,23 @@ export default function Branches() {
                <div className="flex flex-col gap-3 text-[12px] font-medium text-gray-600">
                   <div className="flex justify-between items-center">
                      <span>Active Branches</span>
-                     <span className="font-bold text-gray-900">{branchList.filter(b => b.status === 'Active').length}</span>
+                     <span className="font-bold text-gray-900">{padZero(branchList.filter(b => b.status === 'Active').length)}</span>
                   </div>
                   <div className="flex justify-between items-center">
                      <span>Inactive Branches</span>
-                     <span className="font-bold text-gray-900">{branchList.filter(b => b.status === 'Inactive').length}</span>
+                     <span className="font-bold text-gray-900">{padZero(branchList.filter(b => b.status === 'Inactive').length)}</span>
                   </div>
                   <div className="flex justify-between items-center">
                      <span>Pending Setup</span>
-                     <span className="font-bold text-gray-900">{branchList.filter(b => b.status === 'Pending Setup').length}</span>
+                     <span className="font-bold text-gray-900">{padZero(branchList.filter(b => b.status === 'Pending Setup').length)}</span>
                   </div>
                   <div className="flex justify-between items-center">
                      <span>Closed Branches</span>
-                     <span className="font-bold text-gray-900">{branchList.filter(b => b.status === 'Closed').length}</span>
+                     <span className="font-bold text-gray-900">{padZero(branchList.filter(b => b.status === 'Closed').length)}</span>
                   </div>
                   <div className="flex justify-between items-center pt-2 mt-1 border-t border-gray-50">
                      <span className="font-bold text-blue-600">Total Branches</span>
-                     <span className="font-bold text-blue-600">{branchList.length}</span>
+                     <span className="font-bold text-blue-600">{padZero(branchList.length)}</span>
                   </div>
                </div>
             </div>

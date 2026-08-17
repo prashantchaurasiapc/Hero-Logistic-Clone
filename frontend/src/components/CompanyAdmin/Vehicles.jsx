@@ -16,28 +16,28 @@ import {
 const DEFAULT_VEHICLE_IMG = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&auto=format&fit=crop&q=60";
 
 const getVehicleImgUrl = (src) => {
-  if (!src || typeof src !== 'string') return DEFAULT_VEHICLE_IMG;
+  if (!src || typeof src !== 'string') return '';
   const trimmed = src.trim();
+  if (!trimmed) return '';
   if (trimmed.startsWith('/uploads/')) {
     const rawBase = api.defaults?.baseURL || 'http://localhost:5000';
     const baseUrl = rawBase.replace(/\/api\/v1\/?$/, '').replace(/\/api\/?$/, '').replace(/\/+$/, '');
     return `${baseUrl}${trimmed}`;
   }
   if (trimmed.includes('...') || trimmed.endsWith('..') || trimmed === 'https://pravatar.cc/150?u...') {
-    return DEFAULT_VEHICLE_IMG;
+    return '';
   }
   return trimmed;
 };
 
 // Helper upload components moved outside to prevent unmounting on re-renders
 const VehiclePhotoUploadSection = ({ value, onChange, name = "photoUrl" }) => {
-  const defaultPhoto = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?q=80&w=256&auto=format&fit=crop";
-  const [photoUrl, setPhotoUrl] = React.useState(value || defaultPhoto);
+  const [photoUrl, setPhotoUrl] = React.useState(value || "");
   const fileInputRef = React.useRef(null);
 
   React.useEffect(() => {
     if (value !== undefined && value !== null) {
-      setPhotoUrl(value || defaultPhoto);
+      setPhotoUrl(value);
     }
   }, [value]);
 
@@ -74,26 +74,33 @@ const VehiclePhotoUploadSection = ({ value, onChange, name = "photoUrl" }) => {
   }
 
   return (
-    <div className="flex flex-col items-center gap-2 w-32 shrink-0">
-      <div className="text-[9px] font-black text-gray-500 tracking-widest uppercase mb-1">VEHICLE PHOTO</div>
+    <div className="flex flex-col items-center gap-2 w-36 shrink-0">
+      <div className="text-[9px] font-black text-gray-500 tracking-widest uppercase mb-1">VEHICLE PHOTO / LOGO</div>
       <div 
         onClick={() => fileInputRef.current?.click()} 
-        className="relative w-24 h-24 rounded-full overflow-hidden border border-gray-200 hover:border-purple-400 cursor-pointer group bg-gray-50 flex items-center justify-center shadow-xs"
-        title="Click to upload vehicle photo"
+        className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-dashed border-purple-200 hover:border-purple-500 cursor-pointer group bg-purple-50/50 flex items-center justify-center shadow-xs transition-colors"
+        title="Click to upload custom vehicle photo or logo"
       >
-        <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
+        <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
           <Camera className="w-5 h-5 text-white mb-1" />
           <span className="text-[9px] font-bold text-white uppercase tracking-wider">Upload</span>
         </div>
-        <img 
-          src={resolvedPhotoUrl} 
-          onError={(e) => {
-            e.target.onerror = null;
-            e.target.src = defaultPhoto;
-          }}
-          className="w-full h-full object-cover" 
-          alt="Vehicle Photo" 
-        />
+        {resolvedPhotoUrl ? (
+          <img 
+            src={resolvedPhotoUrl} 
+            onError={(e) => {
+              e.target.onerror = null;
+              setPhotoUrl("");
+            }}
+            className="w-full h-full object-cover" 
+            alt="Vehicle Photo" 
+          />
+        ) : (
+          <div className="flex flex-col items-center justify-center text-purple-600">
+            <Truck className="w-8 h-8 mb-1 opacity-80" />
+            <span className="text-[8px] font-bold uppercase tracking-wider text-purple-700">Add Logo</span>
+          </div>
+        )}
       </div>
       <input 
         type="file" 
@@ -105,7 +112,7 @@ const VehiclePhotoUploadSection = ({ value, onChange, name = "photoUrl" }) => {
       <input 
         type="text" 
         name={name}
-        placeholder="https://images.unsplash.com..." 
+        placeholder="https://... image or logo URL" 
         value={photoUrl} 
         onChange={(e) => updatePhoto(e.target.value)} 
         className="w-full text-center text-[9px] px-2 py-1.5 bg-gray-50 border border-gray-200 rounded mt-2 focus:outline-none focus:border-purple-400 text-gray-500 overflow-hidden text-ellipsis whitespace-nowrap" 
@@ -316,8 +323,8 @@ const Vehicles = () => {
           compliance: v.compliance || 'Compliant',
           nextServiceDate: v.maintenanceDueKm ? `${v.maintenanceDueKm.toLocaleString()} km` : '—',
           nextServiceDays: '',
-          img: getVehicleImgUrl(v.photoUrl || v.photo || (v.notes && v.notes.includes('Photo:') ? v.notes.split('Photo:')[1].split('|')[0].trim() : '')),
-          photoUrl: getVehicleImgUrl(v.photoUrl || v.photo || (v.notes && v.notes.includes('Photo:') ? v.notes.split('Photo:')[1].split('|')[0].trim() : '')),
+          img: getVehicleImgUrl(v.photoUrl || v.photo || (v.primaryMechanic && v.primaryMechanic.includes('Photo:') ? v.primaryMechanic.split('Photo:')[1].split('|')[0].trim() : '') || (v.notes && v.notes.includes('Photo:') ? v.notes.split('Photo:')[1].split('|')[0].trim() : '')),
+          photoUrl: getVehicleImgUrl(v.photoUrl || v.photo || (v.primaryMechanic && v.primaryMechanic.includes('Photo:') ? v.primaryMechanic.split('Photo:')[1].split('|')[0].trim() : '') || (v.notes && v.notes.includes('Photo:') ? v.notes.split('Photo:')[1].split('|')[0].trim() : '')),
           color: v.color || '',
           vin: v.vin || '',
           engineNumber: v.engineNumber || '',
@@ -397,6 +404,7 @@ const Vehicles = () => {
   const [activeExpenseMenuId, setActiveExpenseMenuId] = React.useState(null);
 
   const [expensesList, setExpensesList] = React.useState([]);
+  const [vehicleMaintenanceRecords, setVehicleMaintenanceRecords] = React.useState([]);
 
   const filteredExpenses = React.useMemo(() => {
     return expensesList.filter(item => {
@@ -754,7 +762,29 @@ const Vehicles = () => {
         photoUrl: finalPhotoUrl,
         notes: fd.get('notes') || ''
       };
-      await api.post('/vehicles', payload);
+      const createdRes = await api.post('/vehicles', payload);
+      if (createdRes.data && createdRes.data.data) {
+        const createdV = createdRes.data.data;
+        const newMappedObj = {
+          id: createdV.id,
+          displayId: createdV.rego || payload.rego,
+          reg: createdV.rego || payload.rego,
+          branch: createdV.branch || 'N/A',
+          driver: '—',
+          type: createdV.category || payload.category || 'TRUCK',
+          make: createdV.make ? `${createdV.make} ${createdV.model || ''}`.trim() : createdV.model || 'Unknown',
+          year: createdV.year ? String(createdV.year) : '—',
+          status: createdV.status || 'ACTIVE',
+          odometer: createdV.odometerKm ? `${createdV.odometerKm.toLocaleString()} km` : '0 km',
+          compliance: 'Compliant',
+          img: getVehicleImgUrl(createdV.photoUrl || finalPhotoUrl),
+          photoUrl: getVehicleImgUrl(createdV.photoUrl || finalPhotoUrl),
+          color: createdV.color || '',
+          vin: createdV.vin || '',
+          _raw: createdV
+        };
+        setVehicles(prev => [newMappedObj, ...prev]);
+      }
       fetchVehicles();
       setShowAddModal(false);
       showToast('Vehicle added successfully!');
@@ -957,34 +987,49 @@ const Vehicles = () => {
             <div className="p-6 flex flex-col sm:flex-row gap-8">
               {/* Vehicle Photos */}
               <div className="flex flex-col gap-2 shrink-0">
-                <div className="w-full sm:w-[300px] h-[200px] rounded-xl overflow-hidden shadow-sm relative border border-gray-100">
-                   <img 
-                     src={getVehicleImgUrl(managingVehicle.img || managingVehicle.photoUrl || (managingVehicle.notes && managingVehicle.notes.includes('Photo:') ? managingVehicle.notes.split('Photo:')[1].split('|')[0].trim() : null))} 
-                     alt="Vehicle Main"
-                     onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = DEFAULT_VEHICLE_IMG;
-                     }}
-                     className="w-full h-full object-cover" 
-                   />
+                <div className="w-full sm:w-[300px] h-[200px] rounded-xl overflow-hidden shadow-sm relative border border-gray-100 bg-gray-50 flex items-center justify-center">
+                   {(() => {
+                     const mainImgUrl = getVehicleImgUrl(managingVehicle.img || managingVehicle.photoUrl);
+                     if (mainImgUrl) {
+                       return (
+                         <img 
+                           src={mainImgUrl} 
+                           alt="Vehicle Profile"
+                           onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.style.display = 'none';
+                           }}
+                           className="w-full h-full object-cover" 
+                         />
+                       );
+                     }
+                     return (
+                       <div className="w-full h-full bg-gradient-to-br from-purple-50 via-slate-50 to-purple-100 flex flex-col items-center justify-center text-purple-700 font-extrabold gap-2 p-4 text-center">
+                          <Truck size={48} className="text-purple-600 mb-1" />
+                          <span className="text-xs uppercase tracking-widest text-purple-900 font-black">{managingVehicle.reg || managingVehicle.displayId}</span>
+                          <span className="text-[10px] text-purple-600 font-bold">{managingVehicle.make || 'Hero Logistics Vehicle'}</span>
+                       </div>
+                     );
+                   })()}
                 </div>
                 <div className="grid grid-cols-4 gap-2 w-full sm:w-[300px]">
-                   {[1, 2, 3].map((num) => (
-                     <div key={num} className="h-16 rounded-lg overflow-hidden cursor-pointer opacity-70 hover:opacity-100 transition-opacity border border-gray-100">
-                        <img 
-                          src={getVehicleImgUrl(managingVehicle.img || managingVehicle.photoUrl || (managingVehicle.notes && managingVehicle.notes.includes('Photo:') ? managingVehicle.notes.split('Photo:')[1].split('|')[0].trim() : null))} 
-                          alt="Thumb"
-                          onError={(e) => {
-                             e.target.onerror = null;
-                             e.target.src = DEFAULT_VEHICLE_IMG;
-                          }}
-                          className="w-full h-full object-cover" 
-                        />
+                   {[1, 2, 3, 4].map((num) => (
+                     <div key={num} className="h-16 rounded-lg overflow-hidden border border-gray-100 bg-purple-50/50 flex items-center justify-center text-purple-600 shadow-2xs">
+                        {getVehicleImgUrl(managingVehicle.img || managingVehicle.photoUrl) ? (
+                           <img 
+                             src={getVehicleImgUrl(managingVehicle.img || managingVehicle.photoUrl)} 
+                             alt="Thumb"
+                             onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.style.display = 'none';
+                             }}
+                             className="w-full h-full object-cover" 
+                           />
+                        ) : (
+                           <Truck size={20} className="text-purple-500 opacity-60" />
+                        )}
                      </div>
                    ))}
-                   <div className="h-16 rounded-lg bg-[#1a202c] text-white flex items-center justify-center font-bold text-sm cursor-pointer shadow-sm hover:bg-black transition-colors">
-                      +5
-                   </div>
                 </div>
               </div>
 
@@ -2047,8 +2092,21 @@ const Vehicles = () => {
                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                             <div className="flex flex-col gap-1">
                                <div className="flex items-center gap-1.5 text-purple-700 font-bold text-[11px]"><Wrench size={12} /> Next Service (Km)</div>
-                               <div className="text-[15px] font-black text-gray-900">270,000 km</div>
-                               <div className="text-[10px] font-bold text-green-600">In 13,211 km</div>
+                               <div className="text-[15px] font-black text-gray-900">
+                                 {(() => {
+                                   const curOdo = parseInt(String(managingVehicle.odometer || '0').replace(/[^0-9]/g, ''), 10) || 0;
+                                   const nextKm = curOdo > 0 ? (Math.ceil((curOdo + 1) / 15000) * 15000) : 15000;
+                                   return `${nextKm.toLocaleString()} km`;
+                                 })()}
+                               </div>
+                               <div className="text-[10px] font-bold text-green-600">
+                                 {(() => {
+                                   const curOdo = parseInt(String(managingVehicle.odometer || '0').replace(/[^0-9]/g, ''), 10) || 0;
+                                   const nextKm = curOdo > 0 ? (Math.ceil((curOdo + 1) / 15000) * 15000) : 15000;
+                                   const remaining = Math.max(0, nextKm - curOdo);
+                                   return `In ${remaining.toLocaleString()} km`;
+                                 })()}
+                               </div>
                             </div>
                             <div className="flex flex-col gap-1 sm:pl-3 border-none sm:border-solid border-l border-gray-100">
                                <div className="flex items-center gap-1.5 text-purple-700 font-bold text-[11px]"><Calendar size={12} /> Next Service (Date)</div>
@@ -2074,7 +2132,7 @@ const Vehicles = () => {
                                <Gauge size={18} />
                             </div>
                             <div className="flex flex-col min-w-0">
-                               <div className="text-[17px] font-black text-gray-900 tracking-tight truncate">256,789 km</div>
+                               <div className="text-[17px] font-black text-gray-900 tracking-tight truncate">{managingVehicle.odometer || '0 km'}</div>
                                <div className="text-[10px] font-medium text-gray-500 truncate">Last Updated: Today, 07:35 AM</div>
                             </div>
                          </div>
@@ -2086,15 +2144,11 @@ const Vehicles = () => {
                      <div className="p-6 pb-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <h3 className="text-[13px] font-black text-gray-900 uppercase tracking-widest">MAINTENANCE HISTORY</h3>
                         <div className="flex items-center gap-3">
+                           <button onClick={() => setShowAddMaintenanceModal(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 text-white rounded-lg text-[12px] font-bold shadow-sm hover:bg-purple-700 cursor-pointer">
+                              <Plus size={14} /> Log Maintenance
+                           </button>
                            <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-[12px] font-bold shadow-sm hover:bg-gray-50 cursor-pointer">
                               <Filter size={14} /> Filters
-                           </button>
-                           <div className="relative hidden sm:block">
-                              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                              <input type="text" placeholder="Search maintenance..." className="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-[12px] focus:outline-none focus:border-purple-300 shadow-sm w-48" />
-                           </div>
-                           <button className="flex items-center justify-center w-9 h-9 bg-white border border-gray-200 text-gray-600 rounded-lg shadow-sm hover:bg-gray-50 cursor-pointer">
-                              <Download size={14} />
                            </button>
                         </div>
                      </div>
@@ -2114,249 +2168,53 @@ const Vehicles = () => {
                               </tr>
                            </thead>
                            <tbody className="divide-y divide-gray-50 text-gray-700 font-medium">
-                              <tr className="hover:bg-gray-50/50">
-                                 <td className="py-3 px-6 whitespace-nowrap">15 May 2025</td>
-                                 <td className="py-3 px-4 whitespace-nowrap"><div className="flex items-center gap-1.5 text-blue-600 font-bold"><div className="w-5 h-5 rounded bg-blue-50 flex items-center justify-center border border-blue-100 shrink-0"><Settings size={12} /></div> Major Service</div></td>
-                                 <td className="py-3 px-4 whitespace-nowrap text-gray-900 font-bold">250,000 km Service</td>
-                                 <td className="py-3 px-4 whitespace-nowrap">Volvo Truck Centre Sydney</td>
-                                 <td className="py-3 px-4 whitespace-nowrap">250,100 km</td>
-                                 <td className="py-3 px-4 whitespace-nowrap font-bold text-gray-900">$1,850.00</td>
-                                 <td className="py-3 px-4 whitespace-nowrap">270,000 km</td>
-                                 <td className="py-3 px-4 whitespace-nowrap"><span className="px-2 py-0.5 rounded text-[10px] font-bold text-green-600 bg-green-50 border border-green-200">Completed</span></td>
-                                 <td className="py-3 px-6">
-                                     <div className="flex justify-center items-center gap-2">
+                              {vehicleMaintenanceRecords.length === 0 ? (
+                                <tr>
+                                  <td colSpan="9" className="py-12 text-center text-gray-400">
+                                     <div className="flex flex-col items-center justify-center gap-2">
+                                        <Wrench size={24} className="text-gray-300" />
+                                        <p className="text-xs font-semibold text-gray-500">No maintenance records logged for this vehicle.</p>
                                         <button 
-                                           onClick={() => setViewingMaintenanceModal({ date: '15 May 2025', type: 'Major Service', description: '250,000 km Service', workshop: 'Volvo Truck Centre Sydney', odometer: '250,100 km', cost: '$1,850.00', nextDue: '270,000 km', status: 'Completed' })} 
-                                           className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
-                                           title="View Details"
+                                           onClick={() => setShowAddMaintenanceModal(true)} 
+                                           className="mt-1 px-3 py-1.5 bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 rounded-lg text-xs font-bold transition-colors cursor-pointer"
                                         >
-                                           <Eye size={13} />
-                                           <span>View</span>
-                                        </button>
-                                        <button className="p-1 text-gray-400 hover:text-gray-700 rounded hover:bg-gray-100 transition-colors cursor-pointer">
-                                           <MoreVertical size={14} />
+                                           + Add First Maintenance Record
                                         </button>
                                      </div>
                                   </td>
-                              </tr>
-                              <tr className="hover:bg-gray-50/50">
-                                 <td className="py-3 px-6 whitespace-nowrap">10 Apr 2025</td>
-                                 <td className="py-3 px-4"><div className="flex items-center gap-1.5 text-green-600 font-bold"><div className="w-5 h-5 rounded bg-green-50 flex items-center justify-center border border-green-100 shrink-0"><Droplet size={12} /></div> Oil Change</div></td>
-                                 <td className="py-3 px-4 text-gray-900 font-bold truncate max-w-[200px]">Engine Oil & Filter Change</td>
-                                 <td className="py-3 px-4 truncate max-w-[180px]">Volvo Truck Centre Sydney</td>
-                                 <td className="py-3 px-4 whitespace-nowrap">246,800 km</td>
-                                 <td className="py-3 px-4 font-bold text-gray-900">$320.00</td>
-                                 <td className="py-3 px-4 whitespace-nowrap">256,800 km</td>
-                                 <td className="py-3 px-4"><span className="px-2 py-0.5 rounded text-[10px] font-bold text-green-600 bg-green-50 border border-green-200">Completed</span></td>
-                                 <td className="py-3 px-6">
-                                     <div className="flex justify-center items-center gap-2">
-                                        <button 
-                                           onClick={() => setViewingMaintenanceModal({ date: '10 Apr 2025', type: 'Oil Change', description: 'Engine Oil & Filter Change', workshop: 'Volvo Truck Centre Sydney', odometer: '246,800 km', cost: '$320.00', nextDue: '256,800 km', status: 'Completed' })} 
-                                           className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
-                                           title="View Details"
-                                        >
-                                           <Eye size={13} />
-                                           <span>View</span>
-                                        </button>
-                                        <button className="p-1 text-gray-400 hover:text-gray-700 rounded hover:bg-gray-100 transition-colors cursor-pointer">
-                                           <MoreVertical size={14} />
-                                        </button>
-                                     </div>
-                                  </td>
-                              </tr>
-                              <tr className="hover:bg-gray-50/50">
-                                 <td className="py-3 px-6 whitespace-nowrap">25 Mar 2025</td>
-                                 <td className="py-3 px-4"><div className="flex items-center gap-1.5 text-gray-600 font-bold"><div className="w-5 h-5 rounded bg-gray-50 flex items-center justify-center border border-gray-200 shrink-0"><AlertCircle size={12} /></div> Brake Inspection</div></td>
-                                 <td className="py-3 px-4 text-gray-900 font-bold truncate max-w-[200px]">Brake System Inspection</td>
-                                 <td className="py-3 px-4 truncate max-w-[180px]">Volvo Truck Centre Sydney</td>
-                                 <td className="py-3 px-4 whitespace-nowrap">242,900 km</td>
-                                 <td className="py-3 px-4 font-bold text-gray-900">$210.00</td>
-                                 <td className="py-3 px-4 whitespace-nowrap">260,000 km</td>
-                                 <td className="py-3 px-4"><span className="px-2 py-0.5 rounded text-[10px] font-bold text-green-600 bg-green-50 border border-green-200">Completed</span></td>
-                                 <td className="py-3 px-6">
-                                     <div className="flex justify-center items-center gap-2">
-                                        <button 
-                                           onClick={() => setViewingMaintenanceModal({ date: '25 Mar 2025', type: 'Brake Inspection', description: 'Brake System Inspection', workshop: 'Volvo Truck Centre Sydney', odometer: '242,900 km', cost: '$210.00', nextDue: '260,000 km', status: 'Completed' })} 
-                                           className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
-                                           title="View Details"
-                                        >
-                                           <Eye size={13} />
-                                           <span>View</span>
-                                        </button>
-                                        <button className="p-1 text-gray-400 hover:text-gray-700 rounded hover:bg-gray-100 transition-colors cursor-pointer">
-                                           <MoreVertical size={14} />
-                                        </button>
-                                     </div>
-                                  </td>
-                              </tr>
-                              <tr className="hover:bg-gray-50/50">
-                                 <td className="py-3 px-6 whitespace-nowrap">20 Feb 2025</td>
-                                 <td className="py-3 px-4"><div className="flex items-center gap-1.5 text-gray-600 font-bold"><div className="w-5 h-5 rounded bg-gray-50 flex items-center justify-center border border-gray-200 shrink-0"><RefreshCw size={12} /></div> Tyre Rotation</div></td>
-                                 <td className="py-3 px-4 text-gray-900 font-bold truncate max-w-[200px]">Rotate Tyres</td>
-                                 <td className="py-3 px-4 truncate max-w-[180px]">Tyre Right Campbelltown</td>
-                                 <td className="py-3 px-4 whitespace-nowrap">239,450 km</td>
-                                 <td className="py-3 px-4 font-bold text-gray-900">$180.00</td>
-                                 <td className="py-3 px-4 whitespace-nowrap">260,000 km</td>
-                                 <td className="py-3 px-4"><span className="px-2 py-0.5 rounded text-[10px] font-bold text-green-600 bg-green-50 border border-green-200">Completed</span></td>
-                                 <td className="py-3 px-6">
-                                     <div className="flex justify-center items-center gap-2">
-                                        <button 
-                                           onClick={() => setViewingMaintenanceModal({ date: '20 Feb 2025', type: 'Tyre Rotation', description: 'Rotate Tyres', workshop: 'Tyre Right Campbelltown', odometer: '239,450 km', cost: '$180.00', nextDue: '260,000 km', status: 'Completed' })} 
-                                           className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
-                                           title="View Details"
-                                        >
-                                           <Eye size={13} />
-                                           <span>View</span>
-                                        </button>
-                                        <button className="p-1 text-gray-400 hover:text-gray-700 rounded hover:bg-gray-100 transition-colors cursor-pointer">
-                                           <MoreVertical size={14} />
-                                        </button>
-                                     </div>
-                                  </td>
-                              </tr>
-                              <tr className="hover:bg-gray-50/50">
-                                 <td className="py-3 px-6 whitespace-nowrap">05 Jan 2025</td>
-                                 <td className="py-3 px-4"><div className="flex items-center gap-1.5 text-orange-500 font-bold"><div className="w-5 h-5 rounded bg-orange-50 flex items-center justify-center border border-orange-100 shrink-0"><Droplet size={12} /></div> Coolant Flush</div></td>
-                                 <td className="py-3 px-4 text-gray-900 font-bold truncate max-w-[200px]">Cooling System Flush</td>
-                                 <td className="py-3 px-4 truncate max-w-[180px]">Volvo Truck Centre Sydney</td>
-                                 <td className="py-3 px-4 whitespace-nowrap">233,000 km</td>
-                                 <td className="py-3 px-4 font-bold text-gray-900">$540.00</td>
-                                 <td className="py-3 px-4 whitespace-nowrap">260,000 km</td>
-                                 <td className="py-3 px-4"><span className="px-2 py-0.5 rounded text-[10px] font-bold text-orange-600 bg-orange-50 border border-orange-200">Attention</span></td>
-                                 <td className="py-3 px-6">
-                                     <div className="flex justify-center items-center gap-2">
-                                        <button 
-                                           onClick={() => setViewingMaintenanceModal({ date: '05 Jan 2025', type: 'Coolant Flush', description: 'Cooling System Flush', workshop: 'Volvo Truck Centre Sydney', odometer: '233,000 km', cost: '$540.00', nextDue: '260,000 km', status: 'Attention' })} 
-                                           className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
-                                           title="View Details"
-                                        >
-                                           <Eye size={13} />
-                                           <span>View</span>
-                                        </button>
-                                        <button className="p-1 text-gray-400 hover:text-gray-700 rounded hover:bg-gray-100 transition-colors cursor-pointer">
-                                           <MoreVertical size={14} />
-                                        </button>
-                                     </div>
-                                  </td>
-                              </tr>
-                              <tr className="hover:bg-gray-50/50">
-                                 <td className="py-3 px-6 whitespace-nowrap">12 Dec 2024</td>
-                                 <td className="py-3 px-4"><div className="flex items-center gap-1.5 text-green-600 font-bold"><div className="w-5 h-5 rounded bg-green-50 flex items-center justify-center border border-green-100 shrink-0"><Zap size={12} /></div> Battery Check</div></td>
-                                 <td className="py-3 px-4 text-gray-900 font-bold truncate max-w-[200px]">Battery Load Test</td>
-                                 <td className="py-3 px-4 truncate max-w-[180px]">Volvo Truck Centre Sydney</td>
-                                 <td className="py-3 px-4 whitespace-nowrap">228,500 km</td>
-                                 <td className="py-3 px-4 font-bold text-gray-900">$95.00</td>
-                                 <td className="py-3 px-4 whitespace-nowrap">240,000 km</td>
-                                 <td className="py-3 px-4"><span className="px-2 py-0.5 rounded text-[10px] font-bold text-green-600 bg-green-50 border border-green-200">Completed</span></td>
-                                 <td className="py-3 px-6">
-                                     <div className="flex justify-center items-center gap-2">
-                                        <button 
-                                           onClick={() => setViewingMaintenanceModal({ date: '12 Dec 2024', type: 'Battery Check', description: 'Battery Load Test', workshop: 'Volvo Truck Centre Sydney', odometer: '228,500 km', cost: '$95.00', nextDue: '240,000 km', status: 'Completed' })} 
-                                           className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
-                                           title="View Details"
-                                        >
-                                           <Eye size={13} />
-                                           <span>View</span>
-                                        </button>
-                                        <button className="p-1 text-gray-400 hover:text-gray-700 rounded hover:bg-gray-100 transition-colors cursor-pointer">
-                                           <MoreVertical size={14} />
-                                        </button>
-                                     </div>
-                                  </td>
-                              </tr>
-                              <tr className="hover:bg-gray-50/50">
-                                 <td className="py-3 px-6 whitespace-nowrap">18 Nov 2024</td>
-                                 <td className="py-3 px-4"><div className="flex items-center gap-1.5 text-blue-600 font-bold"><div className="w-5 h-5 rounded bg-blue-50 flex items-center justify-center border border-blue-100 shrink-0"><Wind size={12} /></div> Air Filter</div></td>
-                                 <td className="py-3 px-4 text-gray-900 font-bold truncate max-w-[200px]">Air Filter Replacement</td>
-                                 <td className="py-3 px-4 truncate max-w-[180px]">Volvo Truck Centre Sydney</td>
-                                 <td className="py-3 px-4 whitespace-nowrap">223,200 km</td>
-                                 <td className="py-3 px-4 font-bold text-gray-900">$140.00</td>
-                                 <td className="py-3 px-4 whitespace-nowrap">243,200 km</td>
-                                 <td className="py-3 px-4"><span className="px-2 py-0.5 rounded text-[10px] font-bold text-green-600 bg-green-50 border border-green-200">Completed</span></td>
-                                 <td className="py-3 px-6">
-                                     <div className="flex justify-center items-center gap-2">
-                                        <button 
-                                           onClick={() => setViewingMaintenanceModal({ date: '18 Nov 2024', type: 'Air Filter', description: 'Air Filter Replacement', workshop: 'Volvo Truck Centre Sydney', odometer: '223,200 km', cost: '$140.00', nextDue: '243,200 km', status: 'Completed' })} 
-                                           className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
-                                           title="View Details"
-                                        >
-                                           <Eye size={13} />
-                                           <span>View</span>
-                                        </button>
-                                        <button className="p-1 text-gray-400 hover:text-gray-700 rounded hover:bg-gray-100 transition-colors cursor-pointer">
-                                           <MoreVertical size={14} />
-                                        </button>
-                                     </div>
-                                  </td>
-                              </tr>
+                                </tr>
+                              ) : (
+                                vehicleMaintenanceRecords.map((m, idx) => (
+                                  <tr key={m.id || idx} className="hover:bg-gray-50/50">
+                                     <td className="py-3 px-6 whitespace-nowrap">{m.date}</td>
+                                     <td className="py-3 px-4 whitespace-nowrap">
+                                       <div className="flex items-center gap-1.5 text-purple-700 font-bold">
+                                         <div className="w-5 h-5 rounded bg-purple-50 flex items-center justify-center border border-purple-100 shrink-0"><Settings size={12} /></div> {m.type}
+                                       </div>
+                                     </td>
+                                     <td className="py-3 px-4 whitespace-nowrap text-gray-900 font-bold">{m.description}</td>
+                                     <td className="py-3 px-4 whitespace-nowrap">{m.workshop}</td>
+                                     <td className="py-3 px-4 whitespace-nowrap">{m.odometer}</td>
+                                     <td className="py-3 px-4 whitespace-nowrap font-bold text-gray-900">{m.cost}</td>
+                                     <td className="py-3 px-4 whitespace-nowrap">{m.nextDue}</td>
+                                     <td className="py-3 px-4 whitespace-nowrap"><span className="px-2 py-0.5 rounded text-[10px] font-bold text-green-600 bg-green-50 border border-green-200">{m.status || 'Completed'}</span></td>
+                                     <td className="py-3 px-6">
+                                         <div className="flex justify-center items-center gap-2">
+                                            <button 
+                                               onClick={() => setViewingMaintenanceModal(m)} 
+                                               className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-2xs"
+                                               title="View Details"
+                                            >
+                                               <Eye size={13} />
+                                               <span>View</span>
+                                            </button>
+                                         </div>
+                                      </td>
+                                  </tr>
+                                ))
+                              )}
                            </tbody>
                         </table>
-                     </div>
-                     <div className="px-6 py-4 border-t border-gray-100 flex flex-wrap justify-between items-center bg-gray-50/50 mt-auto gap-4 rounded-b-2xl">
-                        <span className="text-[12px] font-medium text-gray-500">Showing 1 to 7 of 27 records</span>
-                        <div className="flex items-center gap-3">
-                           <div className="flex bg-white border border-gray-200 rounded-md overflow-hidden shadow-sm">
-                              <button className="px-2.5 py-1 text-gray-400 border-r border-gray-200 cursor-not-allowed bg-gray-50"><ChevronLeft size={14} /></button>
-                              <button className="px-3 py-1 text-purple-700 font-bold border-r border-gray-200 bg-purple-50/50 cursor-pointer">1</button>
-                              <button className="px-3 py-1 text-gray-600 font-bold border-r border-gray-200 hover:bg-gray-50 cursor-pointer">2</button>
-                              <button className="px-3 py-1 text-gray-600 font-bold border-r border-gray-200 hover:bg-gray-50 cursor-pointer">3</button>
-                              <button className="px-3 py-1 text-gray-600 font-bold border-r border-gray-200 hover:bg-gray-50 cursor-pointer">4</button>
-                              <button className="px-2.5 py-1 text-gray-600 cursor-pointer hover:bg-gray-50"><ChevronRight size={14} /></button>
-                           </div>
-                           <select className="border border-gray-200 bg-white rounded-md px-2.5 py-1 text-[12px] font-medium text-gray-700 focus:outline-none cursor-pointer shadow-sm">
-                              <option>10 / page</option>
-                           </select>
-                        </div>
-                     </div>
-                  </div>
-
-                  {/* Developer Notes */}
-                  <div className="bg-[#f8f9fc] border border-purple-100 rounded-2xl p-6">
-                     <h3 className="text-[12px] font-black text-purple-900 uppercase tracking-widest flex items-center gap-2 mb-4">
-                        <div className="w-6 h-6 rounded bg-purple-100 flex items-center justify-center shrink-0"><Terminal size={14} className="text-purple-700" /></div>
-                        DEVELOPER NOTES – VEHICLE MAINTENANCE & SERVICE
-                     </h3>
-                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 text-[11px] text-gray-700">
-                        <div>
-                           <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Info size={12}/> 1. PURPOSE</div>
-                           <ul className="list-disc pl-4 space-y-1">
-                              <li>Centralised maintenance tracking for trucks and linked trailers.</li>
-                              <li>Ensure preventive maintenance is scheduled and completed.</li>
-                           </ul>
-                        </div>
-                        <div>
-                           <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Settings size={12}/> 2. KEY FEATURES</div>
-                           <ul className="list-disc pl-4 space-y-1">
-                              <li>Schedule by date or odometer.</li>
-                              <li>Track service history and costs.</li>
-                              <li>Upload invoices / receipts.</li>
-                              <li>AI predicts next service intervals.</li>
-                           </ul>
-                        </div>
-                        <div>
-                           <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Cpu size={12}/> 3. AUTOMATION & AI (ADD-ON)</div>
-                           <ul className="list-disc pl-4 space-y-1">
-                              <li>AI reads invoices to auto-capture data.</li>
-                              <li>Predicts wear & tear based on usage.</li>
-                              <li>Alerts for overdue / upcoming services.</li>
-                           </ul>
-                        </div>
-                        <div>
-                           <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Shield size={12}/> 4. PERMISSIONS</div>
-                           <ul className="list-disc pl-4 space-y-1">
-                              <li><strong>Admin:</strong> Full access.</li>
-                              <li><strong>Dispatcher:</strong> View, add, edit.</li>
-                              <li><strong>Driver:</strong> View (in app), add service request.</li>
-                           </ul>
-                        </div>
-                        <div>
-                           <div className="font-bold text-purple-800 mb-2 flex items-center gap-1.5"><Database size={12}/> 5. DATA SOURCES</div>
-                           <ul className="list-disc pl-4 space-y-1">
-                              <li>Workshop invoices (upload OCR).</li>
-                              <li>Odometer (manual / telematics).</li>
-                              <li>Manufacturer service intervals.</li>
-                           </ul>
-                        </div>
                      </div>
                   </div>
                </div>
@@ -2369,19 +2227,25 @@ const Vehicles = () => {
                      <div className="flex flex-col gap-4 text-[13px] font-medium">
                         <div className="flex justify-between items-center pb-3 border-b border-gray-50">
                            <span className="text-gray-600">Total Maintenance Cost</span>
-                           <span className="font-bold text-gray-900">$12,450.00</span>
+                           <span className="font-bold text-gray-900">
+                              ${vehicleMaintenanceRecords.reduce((acc, curr) => acc + (curr.rawCost || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                           </span>
                         </div>
                         <div className="flex justify-between items-center pb-3 border-b border-gray-50">
                            <span className="text-gray-600">Total Labour Cost</span>
-                           <span className="font-bold text-gray-900">$4,230.00</span>
+                           <span className="font-bold text-gray-900">
+                              ${vehicleMaintenanceRecords.reduce((acc, curr) => acc + (curr.labourCost || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                           </span>
                         </div>
                         <div className="flex justify-between items-center pb-3 border-b border-gray-50">
                            <span className="text-gray-600">Total Parts Cost</span>
-                           <span className="font-bold text-gray-900">$8,220.00</span>
+                           <span className="font-bold text-gray-900">
+                              ${vehicleMaintenanceRecords.reduce((acc, curr) => acc + (curr.partsCost || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                           </span>
                         </div>
                         <div className="flex justify-between items-center pt-1">
                            <span className="text-purple-700 font-bold">Next 12 Months (Est.)</span>
-                           <span className="font-bold text-purple-700">$6,750.00</span>
+                           <span className="font-bold text-purple-700">$5,000.00</span>
                         </div>
                      </div>
                   </div>
@@ -3651,35 +3515,11 @@ const Vehicles = () => {
                   <input type="text" value={editVehicleModal.odometer || ''} onChange={e => setEditVehicleModal({...editVehicleModal, odometer: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
                 </div>
               </div>
-              <div>
-                <label className="block text-[11px] font-bold text-slate-600 mb-1">Vehicle Photo / Image URL</label>
-                <div className="flex items-center gap-2">
-                  <input 
-                    type="text" 
-                    placeholder="https://..." 
-                    value={editVehicleModal.img || editVehicleModal.photoUrl || ''} 
-                    onChange={e => setEditVehicleModal({...editVehicleModal, img: e.target.value, photoUrl: e.target.value})} 
-                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" 
-                  />
-                  <label className="px-3 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-lg font-bold text-xs cursor-pointer shrink-0">
-                    Browse
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      className="hidden" 
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onloadend = () => {
-                            setEditVehicleModal(prev => ({ ...prev, img: reader.result, photoUrl: reader.result }));
-                          };
-                          reader.readAsDataURL(file);
-                        }
-                      }} 
-                    />
-                  </label>
-                </div>
+              <div className="flex justify-center pt-2 pb-1">
+                <VehiclePhotoUploadSection 
+                  value={editVehicleModal.img || editVehicleModal.photoUrl || ''} 
+                  onChange={(url) => setEditVehicleModal(prev => ({ ...prev, img: url, photoUrl: url }))} 
+                />
               </div>
             </div>
             <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-2">
@@ -3725,6 +3565,7 @@ const Vehicles = () => {
                   if (managingVehicle && managingVehicle.id === editVehicleModal.id) {
                     setManagingVehicle(updatedVehicleObj);
                   }
+                  setVehicles(prev => prev.map(v => v.id === editVehicleModal.id ? updatedVehicleObj : v));
                   closeEditModal(e);
                   showToast('Vehicle updated successfully!');
                 } catch (err) {
@@ -3845,21 +3686,21 @@ const Vehicles = () => {
                 </div>
                 <div>
                   <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">PRIMARY DEPOT *</label>
-                  <input type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+                  <input name="primaryDepot" type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
                 </div>
                 <div></div>
 
                 <div>
                   <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">CITY *</label>
-                  <input type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+                  <input name="city" type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
                 </div>
                 <div>
                   <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">STATE *</label>
-                  <input type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+                  <input name="state" type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
                 </div>
                 <div>
                   <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">POSTAL CODE *</label>
-                  <input type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+                  <input name="postalCode" type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
                 </div>
               </div>
             </div>
@@ -3874,7 +3715,7 @@ const Vehicles = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div>
                   <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">REGISTRATION TYPE *</label>
-                  <select className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
+                  <select name="regType" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
                     <option>Heavy Vehicle Registration</option>
                     <option>Light Vehicle Registration</option>
                     <option>Commercial Registration</option>
@@ -3884,11 +3725,11 @@ const Vehicles = () => {
                 </div>
                 <div>
                   <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">REGISTRATION NUMBER *</label>
-                  <input type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+                  <input name="rego" type="text" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
                 </div>
                 <div>
                   <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">REGISTRATION STATE *</label>
-                  <select className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
+                  <select name="regState" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
                     <option>NSW</option>
                     <option>VIC</option>
                     <option>QLD</option>
@@ -3903,18 +3744,18 @@ const Vehicles = () => {
                 <div>
                   <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">ISSUE DATE *</label>
                   <div className="relative">
-                    <input name="issueDate" type="date" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+                    <input name="regIssueDate" type="date" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">EXPIRY DATE *</label>
                   <div className="relative">
-                    <input name="expiryDate" type="date" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+                    <input name="regExpiryDate" type="date" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
                   </div>
                 </div>
                 <div>
                   <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">FUEL TYPE</label>
-                  <select className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
+                  <select name="fuelType" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
                     <option>Diesel</option>
                     <option>Petrol</option>
                     <option>Electric</option>
@@ -3961,31 +3802,31 @@ const Vehicles = () => {
             <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">PRIMARY MECHANIC</label>
-                <input type="text" defaultValue="Volvo FH16" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+                <input name="primaryMechanic" type="text" defaultValue="Volvo FH16" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
               </div>
               <div>
                 <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">PREFERRED ROUTES</label>
-                <input type="text" defaultValue="Sydney - Melbourne" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+                <input name="preferredRoutes" type="text" defaultValue="Sydney - Melbourne" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
               </div>
               <div>
                 <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">PREFERRED REGIONS</label>
-                <input type="text" defaultValue="East Coast" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+                <input name="preferredRegions" type="text" defaultValue="East Coast" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
               </div>
               
               <div>
                 <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">MAXIMUM DISTANCE PER TRIP (KM)</label>
-                <input type="text" defaultValue="1000" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
+                <input name="maxDist" type="text" defaultValue="1000" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400" />
               </div>
               <div>
                 <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">DANGEROUS GOODS CERTIFIED</label>
-                <select className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
+                <select name="dgCertified" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
                   <option>No</option>
                   <option>Yes</option>
                 </select>
               </div>
               <div>
                 <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">HEAVY VEHICLE CERTIFIED</label>
-                <select className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
+                <select name="hvCertified" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 bg-white">
                   <option>Yes</option>
                   <option>No</option>
                 </select>
@@ -4001,11 +3842,11 @@ const Vehicles = () => {
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">VEHICLE NOTES</label>
-                <textarea rows="4" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 resize-none"></textarea>
+                <textarea name="notes" rows="4" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 resize-none"></textarea>
               </div>
               <div>
                 <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1.5">INTERNAL COMMENTS</label>
-                <textarea rows="4" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 resize-none"></textarea>
+                <textarea name="internalComments" rows="4" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-[13px] font-semibold focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 resize-none"></textarea>
               </div>
             </div>
           </div>
@@ -4185,18 +4026,30 @@ const Vehicles = () => {
                         >
                            <td className="py-3 px-4">
                               <div className="flex items-center gap-3">
-                                 <img 
-                                     src={getVehicleImgUrl(v.img || v.photoUrl)} 
-                                     alt="Vehicle" 
-                                     onError={(e) => {
-                                        e.target.onerror = null; 
-                                        e.target.src = DEFAULT_VEHICLE_IMG;
-                                     }}
-                                     className="w-10 h-8 rounded object-cover border border-gray-200 shadow-sm" 
-                                  />
-                                 <div>
-                                    <div className="text-[12px] font-bold text-gray-900 whitespace-nowrap">{v.displayId || v.reg || v.id} - {v.make}</div>
-                                    <div className="text-[10px] text-gray-500 font-medium whitespace-nowrap">{v.reg}</div>
+                                 {(() => {
+                                     const imgUrl = getVehicleImgUrl(v.img || v.photoUrl);
+                                     if (imgUrl) {
+                                        return (
+                                           <img 
+                                              src={imgUrl} 
+                                              alt="Vehicle Logo" 
+                                              onError={(e) => {
+                                                 e.target.onerror = null; 
+                                                 e.target.src = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=300&auto=format&fit=crop&q=60";
+                                              }}
+                                              className="w-12 h-10 rounded-lg object-cover border border-purple-200 shadow-2xs bg-purple-50 shrink-0 hover:scale-105 transition-transform" 
+                                           />
+                                        );
+                                     }
+                                     return (
+                                        <div className="w-12 h-10 rounded-lg bg-purple-50 border border-purple-200/70 flex items-center justify-center text-purple-700 shadow-2xs shrink-0 hover:bg-purple-100 transition-colors">
+                                           <Truck size={20} />
+                                        </div>
+                                     );
+                                  })()}
+                                 <div className="flex flex-col min-w-0">
+                                    <div className="text-[12px] font-extrabold text-gray-900 whitespace-nowrap tracking-tight">{v.reg && v.reg !== '—' ? v.reg : v.displayId}</div>
+                                    <div className="text-[10px] text-gray-500 font-semibold whitespace-nowrap truncate max-w-[180px]">{v.make || 'Logistics Vehicle'}</div>
                                  </div>
                               </div>
                            </td>
@@ -4391,85 +4244,7 @@ const Vehicles = () => {
 
 
 
-      {/* EDIT VEHICLE MODAL */}
-      {editVehicleModal && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4" onClick={closeEditModal}>
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-150" onClick={e => e.stopPropagation()}>
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-              <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-2">
-                <Edit size={16} className="text-purple-600" /> Edit Vehicle ({editVehicleModal.id})
-              </h3>
-              <button onClick={closeEditModal} className="text-slate-400 hover:text-slate-600 text-lg font-bold cursor-pointer">&times;</button>
-            </div>
-            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto text-xs">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Make / Model *</label>
-                  <input type="text" value={editVehicleModal.make || ''} onChange={e => setEditVehicleModal({...editVehicleModal, make: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Registration *</label>
-                  <input type="text" value={editVehicleModal.reg || ''} onChange={e => setEditVehicleModal({...editVehicleModal, reg: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Vehicle Type</label>
-                  <input type="text" value={editVehicleModal.type || ''} onChange={e => setEditVehicleModal({...editVehicleModal, type: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Year</label>
-                  <input type="text" value={editVehicleModal.year || ''} onChange={e => setEditVehicleModal({...editVehicleModal, year: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Status</label>
-                  <select value={editVehicleModal.status || 'ACTIVE'} onChange={e => setEditVehicleModal({...editVehicleModal, status: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold bg-white cursor-pointer">
-                    <option value="ACTIVE">ACTIVE</option>
-                    <option value="MAINTENANCE">MAINTENANCE</option>
-                    <option value="OUT OF SERVICE">OUT OF SERVICE</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Branch / Depot</label>
-                  <input type="text" value={editVehicleModal.branch || ''} onChange={e => setEditVehicleModal({...editVehicleModal, branch: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Current Driver</label>
-                  <input type="text" value={editVehicleModal.driver || ''} onChange={e => setEditVehicleModal({...editVehicleModal, driver: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Odometer</label>
-                  <input type="text" value={editVehicleModal.odometer || ''} onChange={e => setEditVehicleModal({...editVehicleModal, odometer: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
-                </div>
-              </div>
-            </div>
-            <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-2">
-              <button onClick={closeEditModal} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 font-bold hover:bg-white text-xs cursor-pointer">Cancel</button>
-              <button onClick={async (e) => {
-                try {
-                  await api.put(`/vehicles/${editVehicleModal.id}`, {
-                    rego: editVehicleModal.reg,
-                    make: editVehicleModal.make,
-                    model: editVehicleModal.model,
-                    year: editVehicleModal.year ? parseInt(editVehicleModal.year) : undefined,
-                    status: editVehicleModal.status,
-                    odometerKm: editVehicleModal.odometer ? parseInt(String(editVehicleModal.odometer).replace(/[^0-9]/g,'')) : undefined,
-                    notes: editVehicleModal.notes
-                  });
-                  fetchVehicles();
-                  if (managingVehicle && managingVehicle.id === editVehicleModal.id) setManagingVehicle(editVehicleModal);
-                  closeEditModal(e);
-                  showToast('Vehicle updated successfully!');
-                } catch (err) { showToast('Failed to update vehicle.', 'error'); }
-              }} className="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 text-xs shadow-sm cursor-pointer">Save Changes</button>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* ADD MAINTENANCE MODAL */}
       {showAddMaintenanceModal && (
@@ -4544,7 +4319,23 @@ const Vehicles = () => {
               <div className="flex items-center gap-2">
                 <button onClick={() => setShowAddMaintenanceModal(false)} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 font-bold hover:bg-white text-xs cursor-pointer">Cancel</button>
                 <button onClick={() => {
+                  const newRecord = {
+                    id: Date.now(),
+                    date: maintenanceForm.date ? new Date(maintenanceForm.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+                    type: maintenanceForm.type || 'Scheduled Service',
+                    description: maintenanceForm.description || `${maintenanceForm.type || 'Scheduled Service'} performed`,
+                    workshop: maintenanceForm.provider || 'Authorised Service Centre',
+                    odometer: maintenanceForm.odometer ? `${maintenanceForm.odometer} km` : (managingVehicle?.odometer || '0 km'),
+                    cost: maintenanceForm.cost ? (maintenanceForm.cost.startsWith('$') ? maintenanceForm.cost : `$${maintenanceForm.cost}`) : '$0.00',
+                    rawCost: parseFloat(String(maintenanceForm.cost || 0).replace(/[^0-9.]/g, '')) || 0,
+                    partsCost: parseFloat(String(maintenanceForm.parts || 0).replace(/[^0-9.]/g, '')) || 0,
+                    labourCost: parseFloat(String(maintenanceForm.labour || 0).replace(/[^0-9.]/g, '')) || 0,
+                    nextDue: maintenanceForm.nextDue ? `${maintenanceForm.nextDue} km` : '—',
+                    status: 'Completed'
+                  };
+                  setVehicleMaintenanceRecords(prev => [newRecord, ...prev]);
                   setShowAddMaintenanceModal(false);
+                  showToast('Maintenance record saved successfully!');
                   setMaintenanceForm({ type: 'Scheduled Service', date: '', odometer: '', provider: '', cost: '', description: '', nextDue: '', parts: '', labour: '', notes: '' });
                 }} className="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 text-xs shadow-sm cursor-pointer">Save Record</button>
               </div>

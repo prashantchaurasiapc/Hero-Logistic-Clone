@@ -36,7 +36,13 @@ app.get('/', (req, res) => {
 app.use(errorHandler);
 
 // Start Server
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🚀 Backend server running on http://localhost:${PORT}`);
+  try {
+    const syncMissingVehicleColumns = require('./src/utils/syncDbColumns');
+    await syncMissingVehicleColumns();
+  } catch (err) {
+    console.warn('Startup DB column sync notice:', err.message);
+  }
 });
 
