@@ -31,10 +31,19 @@ exports.buildPrismaQuery = (query) => {
 
   // 3. Filtering
   const where = {};
+  const reservedKeys = ['page', 'pageSize', 'sort', 'filter'];
+
+  // Handle direct query keys like ?role=SALES
+  for (const [key, value] of Object.entries(query)) {
+    if (!reservedKeys.includes(key) && value !== undefined && value !== '') {
+      where[key] = value;
+    }
+  }
+
+  // Handle nested filter object like ?filter[role]=SALES
   if (filter && typeof filter === 'object') {
     for (const [key, value] of Object.entries(filter)) {
       if (value) {
-        // Simple equal match, can be expanded to support gt, lt, contains via custom formats
         where[key] = value;
       }
     }

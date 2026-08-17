@@ -26,6 +26,7 @@ export default function StartWork() {
 
   // Active tab inside Safety Procedures modal
   const [activeSafetyTab, setActiveSafetyTab] = useState('prestart');
+  const [notes, setNotes] = useState('');
 
   // 20 Inspection Checklist Items state
   const [items, setItems] = useState([
@@ -51,7 +52,23 @@ export default function StartWork() {
     { id: 20, label: 'Other (notes or additional checks)', status: 'unchecked' },
   ]);
 
-  const [notes, setNotes] = useState('');
+  useEffect(() => {
+    const isWarehouse = user?.role === 'WAREHOUSE_MANAGER' || user?.role === 'WAREHOUSE_STAFF' || user?.role === 'YARD_ATTENDANT';
+    if (isWarehouse) {
+      setItems([
+        { id: 1, label: 'Forklift - Brakes & Controls', status: 'pass' },
+        { id: 2, label: 'Forklift - Hydraulics & Lift Mast', status: 'pass' },
+        { id: 3, label: 'Forklift - Tyres & Steering', status: 'pass' },
+        { id: 4, label: 'Pallet Jack - General Condition', status: 'pass' },
+        { id: 5, label: 'RF Scanner - Battery & Connection', status: 'pass' },
+        { id: 6, label: 'Printer / Label Station - Loaded & Online', status: 'pass' },
+        { id: 7, label: 'Dock Doors & Levellers - Operational', status: 'pass' },
+        { id: 8, label: 'PPE - High-Vis Vest & Safety Boots', status: 'pass' },
+        { id: 9, label: 'Emergency Exits - Clear & Accessible', status: 'pass' },
+        { id: 10, label: 'First Aid & Fire Extinguisher - Checked', status: 'pass' }
+      ]);
+    }
+  }, [user]);
 
   // Sample checklist history for modal
   const historyLogs = [

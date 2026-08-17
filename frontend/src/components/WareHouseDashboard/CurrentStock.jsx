@@ -7,177 +7,8 @@ import {
   Calendar, Package, History, ExternalLink, CheckCircle2, Clock, Grid, List, Box
 } from 'lucide-react';
 
-/* Mock stock data matching Screenshot 2 exactly */
-const initialStockItems = [
-  {
-    id: '1',
-    itemNo: 'ABC123',
-    title: 'Toyota Camry',
-    rego: 'ABC123',
-    vin: 'JTDBE32K203456789',
-    type: 'Vehicle',
-    typeBadge: 'Car Carrying',
-    typeColor: 'blue',
-    location: 'Yard A',
-    locationDetail: 'Yard A / R4 / B12 / P01',
-    rowBayPos: 'Row 4 / Bay 12 / Position 01',
-    status: 'In Storage',
-    statusColor: 'green',
-    loadJob: 'LD-3987',
-    loadDetail: 'Load Lane 4',
-    customer: 'ABC Motors',
-    updated: '10:15 AM 21/07/2026',
-    receivedDate: '19/07/2026 09:15 AM',
-    condition: 'Good',
-    notes: '-',
-    image: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?auto=format&fit=crop&w=400&q=80',
-    iconType: 'car'
-  },
-  {
-    id: '2',
-    itemNo: 'DEF456',
-    title: 'Mazda 3',
-    rego: 'DEF456',
-    vin: 'JM0BL10F200123456',
-    type: 'Vehicle',
-    typeBadge: 'Car Carrying',
-    typeColor: 'blue',
-    location: 'Yard A',
-    locationDetail: 'Yard A / Load Lane 4',
-    rowBayPos: 'Load Lane 4 / Position 02',
-    status: 'Staged',
-    statusColor: 'blue',
-    loadJob: 'LD-3987',
-    loadDetail: 'Load Lane 4',
-    customer: 'ABC Motors',
-    updated: '09:42 AM 21/07/2026',
-    receivedDate: '18/07/2026 02:30 PM',
-    condition: 'Good',
-    notes: 'Prioritized for load LD-3987',
-    image: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=400&q=80',
-    iconType: 'car'
-  },
-  {
-    id: '3',
-    itemNo: 'GHI789',
-    title: 'Honda Accord',
-    rego: 'GHI789',
-    vin: '1HGCM82633A123456',
-    type: 'Vehicle',
-    typeBadge: 'Car Carrying',
-    typeColor: 'blue',
-    location: 'Yard B',
-    locationDetail: 'Yard B / R1 / B03 / P02',
-    rowBayPos: 'Row 1 / Bay 03 / Position 02',
-    status: 'Ready',
-    statusColor: 'green-outline',
-    loadJob: 'LD-3986',
-    loadDetail: 'Load Lane 3',
-    customer: 'XYZ Imports',
-    updated: '08:55 AM 21/07/2026',
-    receivedDate: '17/07/2026 11:00 AM',
-    condition: 'Good',
-    notes: 'Inspection cleared',
-    image: 'https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?auto=format&fit=crop&w=400&q=80',
-    iconType: 'car'
-  },
-  {
-    id: '4',
-    itemNo: 'EL-1001',
-    title: 'Pallet - Electrical Parts',
-    sku: 'SKU: EL-1001',
-    barcode: 'Barcode: 9345678901234',
-    type: 'Pallet',
-    typeBadge: 'General Freight',
-    typeColor: 'green',
-    location: 'Warehouse 1',
-    locationDetail: 'Warehouse 1 / Aisle 12 / Bay 5',
-    rowBayPos: 'Aisle 12 / Bay 5',
-    status: 'In Storage',
-    statusColor: 'green',
-    loadJob: 'LD-3921',
-    loadDetail: 'Warehouse Rack 4',
-    customer: 'Tech Supplies',
-    updated: '10:05 AM 21/07/2026',
-    receivedDate: '20/07/2026 08:00 AM',
-    condition: 'Intact',
-    notes: 'Fragile electronics',
-    image: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=400&q=80',
-    iconType: 'pallet'
-  },
-  {
-    id: '5',
-    itemNo: 'MG-2044',
-    title: 'Carton - Mixed Goods',
-    sku: 'SKU: MG-2044',
-    barcode: 'Barcode: 9345578905678',
-    type: 'Carton',
-    typeBadge: 'General Freight',
-    typeColor: 'green',
-    location: 'Warehouse 1',
-    locationDetail: 'Warehouse 1 / Aisle 05 / Bay 2',
-    rowBayPos: 'Aisle 05 / Bay 2',
-    status: 'To Move',
-    statusColor: 'orange',
-    loadJob: '-',
-    loadDetail: 'Unassigned',
-    customer: 'Retail Hub',
-    updated: 'Yesterday 3:20 PM',
-    receivedDate: '19/07/2026 04:45 PM',
-    condition: 'Good',
-    notes: 'Pending aisle reorganization',
-    image: 'https://images.unsplash.com/photo-1580674684081-7617fbf3d745?auto=format&fit=crop&w=400&q=80',
-    iconType: 'carton'
-  },
-  {
-    id: '6',
-    itemNo: 'DG-200L',
-    title: 'UN1203 - Petrol 200L Drum',
-    sku: 'UN1203',
-    barcode: 'Barcode: 9345678909999',
-    type: 'DG Item',
-    typeBadge: 'Dangerous Goods',
-    typeColor: 'red',
-    location: 'DG Store',
-    locationDetail: 'DG Store / Zone A / Bay 03',
-    rowBayPos: 'Zone A / Bay 03',
-    status: 'In Storage',
-    statusColor: 'green',
-    loadJob: 'LD-3940',
-    loadDetail: 'DG Transport Unit',
-    customer: 'Fuel Co',
-    updated: '10:10 AM 21/07/2026',
-    receivedDate: '15/07/2026 10:30 AM',
-    condition: 'Sealed & Compliant',
-    notes: 'Flammable liquid class 3',
-    image: 'https://images.unsplash.com/photo-1618042164219-62c820f10723?auto=format&fit=crop&w=400&q=80',
-    iconType: 'dg'
-  },
-  {
-    id: '7',
-    itemNo: 'CONT-MSCU1234567',
-    title: '20ft Container',
-    sku: 'CONT-MSCU1234567',
-    barcode: 'MSCU1234567',
-    type: 'Container',
-    typeBadge: 'Container',
-    typeColor: 'purple',
-    location: 'Yard C',
-    locationDetail: 'Yard C / Stack 2 / Slot 4',
-    rowBayPos: 'Stack 2 / Slot 4',
-    status: 'Staged',
-    statusColor: 'blue',
-    loadJob: 'LD-3951',
-    loadDetail: 'Port Run',
-    customer: 'Oceanic Freight',
-    updated: '08:30 AM 21/07/2026',
-    receivedDate: '14/07/2026 01:15 PM',
-    condition: 'Locked & Sealed',
-    notes: 'Export container',
-    image: 'https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=400&q=80',
-    iconType: 'container'
-  }
-];
+/* Mock stock data (Removed to use only API data) */
+const initialStockItems = [];
 
 export default function CurrentStock() {
   const navigate = useNavigate();
@@ -188,97 +19,116 @@ export default function CurrentStock() {
   const [stockItems, setStockItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState(null);
+  const [loadLanes, setLoadLanes] = useState([]);
+  const [holdingAreas, setHoldingAreas] = useState([]);
+
+  const fetchStock = async () => {
+    setLoading(true);
+    setFetchError(null);
+    try {
+      const res = await api.get('/warehouse-portal/stock');
+      if (res.data && res.data.success) {
+        const items = res.data.data || [];
+        if (items.length === 0) {
+          setStockItems([]);
+          return;
+        }
+        const formatted = items.map((item, idx) => {
+          const hasVehicleInfo = item.make || item.model || item.rego || item.vin || item.vehicleType;
+          const title = (item.make || item.model)
+            ? `${item.make || ''} ${item.model || ''}`.trim()
+            : (item.stockRef || item.identifier || (item.vehicleType ? item.vehicleType : `Stock Item ${idx + 1}`));
+          
+          const itemCode = item.rego || item.stockRef || (item.vin ? `VIN: ${item.vin.slice(0, 10)}...` : `ITM-${item.id?.slice(0, 6)}`);
+          
+          let locMain = item.zone ? `${item.zone}` : (item.warehouse?.name || 'Main Yard');
+          let locSub = (item.row || item.bay || item.position) 
+            ? `${item.zone || 'Yard A'} / ${item.row || 'R1'} / ${item.bay || 'B01'}${item.position ? ' / ' + item.position : ''}`
+            : (item.locationDetail || 'Depot Bay 01');
+
+          const custName = item.customer?.name || item.load?.customer?.name || 'Unassigned';
+          const loadName = item.load?.loadNumber || (item.loadLane?.name ? item.loadLane.name : (item.loadId ? `LD-${item.loadId.slice(0, 6)}` : 'Unassigned'));
+          const loadSub = item.loadLane?.name || (item.stagingArea?.name || 'Unassigned');
+
+          let statusLabel = 'In Storage';
+          let statusColor = 'green';
+          if (item.stockStatus === 'STAGED') {
+            statusLabel = 'Staged';
+            statusColor = 'purple';
+          } else if (item.stockStatus === 'TO_MOVE') {
+            statusLabel = 'To Move';
+            statusColor = 'orange';
+          } else if (item.stockStatus === 'DISPATCHED') {
+            statusLabel = 'Ready';
+            statusColor = 'green-outline';
+          }
+
+          return {
+            id: item.id || String(idx),
+            itemNo: itemCode,
+            title: title,
+            rego: item.rego || '',
+            vin: item.vin || '',
+            barcode: item.stockRef || '',
+            type: hasVehicleInfo ? 'Vehicle' : (item.vehicleType || 'General Freight'),
+            typeBadge: hasVehicleInfo ? 'Car Carrying' : 'General',
+            typeColor: hasVehicleInfo ? 'blue' : 'green',
+            location: locMain,
+            locationDetail: locSub,
+            rowBayPos: locSub,
+            status: statusLabel,
+            statusColor: statusColor,
+            loadJob: loadName,
+            loadDetail: loadSub,
+            customer: custName,
+            updated: item.receivedDate ? new Date(item.receivedDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' ' + new Date(item.receivedDate).toLocaleDateString() : 'Today',
+            receivedDate: item.receivedDate ? new Date(item.receivedDate).toLocaleString() : '-',
+            condition: item.damageReportReq ? 'Damage Noted' : 'Good',
+            notes: item.notes || '-',
+            image: item.photos?.[0]?.photoUrl || null,
+            iconType: hasVehicleInfo ? 'car' : 'pallet'
+          };
+        });
+        setStockItems(formatted);
+        setSelectedItem(formatted[0] || null);
+      } else {
+        setFetchError('Unable to load stock data. Please try again.');
+        setStockItems([]);
+      }
+    } catch (err) {
+      console.error('Error fetching stock items:', err);
+      setFetchError(
+        err?.response?.data?.error?.message ||
+        err?.response?.data?.message ||
+        'Failed to load stock data. Check your connection and try again.'
+      );
+      setStockItems([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchStock = async () => {
-      setLoading(true);
-      setFetchError(null);
+    fetchStock();
+    const fetchLanesAndHolding = async () => {
       try {
-        // Phase A fix: was /load-items (wrong endpoint), now uses authenticated warehouse portal stock API
-        const res = await api.get('/warehouse-portal/stock');
-        if (res.data && res.data.success) {
-          const items = res.data.data || [];
-          if (items.length === 0) {
-            setStockItems([]);
-            return;
-          }
-          const formatted = items.map((item, idx) => {
-            const hasVehicleInfo = item.make || item.model || item.rego || item.vin || item.vehicleType;
-            const title = (item.make || item.model)
-              ? `${item.make || ''} ${item.model || ''}`.trim()
-              : (item.stockRef || item.identifier || (item.vehicleType ? item.vehicleType : `Stock Item ${idx + 1}`));
-            
-            const itemCode = item.rego || item.stockRef || (item.vin ? `VIN: ${item.vin.slice(0, 10)}...` : `ITM-${item.id?.slice(0, 6)}`);
-            
-            let locMain = item.zone ? `${item.zone}` : (item.warehouse?.name || 'Main Yard');
-            let locSub = (item.row || item.bay || item.position) 
-              ? `${item.zone || 'Yard A'} / ${item.row || 'R1'} / ${item.bay || 'B01'}${item.position ? ' / ' + item.position : ''}`
-              : (item.locationDetail || 'Depot Bay 01');
-
-            const custName = item.customer?.name || item.load?.customer?.name || 'Unassigned';
-            const loadName = item.load?.loadNumber || (item.loadLane?.name ? item.loadLane.name : (item.loadId ? `LD-${item.loadId.slice(0, 6)}` : 'Unassigned'));
-            const loadSub = item.loadLane?.name || (item.stagingArea?.name || 'Unassigned');
-
-            let statusLabel = 'In Storage';
-            let statusColor = 'green';
-            if (item.stockStatus === 'STAGED') {
-              statusLabel = 'Staged';
-              statusColor = 'purple';
-            } else if (item.stockStatus === 'TO_MOVE') {
-              statusLabel = 'To Move';
-              statusColor = 'orange';
-            } else if (item.stockStatus === 'DISPATCHED') {
-              statusLabel = 'Ready';
-              statusColor = 'green-outline';
-            }
-
-            return {
-              id: item.id || String(idx),
-              itemNo: itemCode,
-              title: title,
-              rego: item.rego || '',
-              vin: item.vin || '',
-              barcode: item.stockRef || '',
-              type: hasVehicleInfo ? 'Vehicle' : (item.vehicleType || 'General Freight'),
-              typeBadge: hasVehicleInfo ? 'Car Carrying' : 'General',
-              typeColor: hasVehicleInfo ? 'blue' : 'green',
-              location: locMain,
-              locationDetail: locSub,
-              rowBayPos: locSub,
-              status: statusLabel,
-              statusColor: statusColor,
-              loadJob: loadName,
-              loadDetail: loadSub,
-              customer: custName,
-              updated: item.receivedDate ? new Date(item.receivedDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' ' + new Date(item.receivedDate).toLocaleDateString() : 'Today',
-              receivedDate: item.receivedDate ? new Date(item.receivedDate).toLocaleString() : '-',
-              condition: item.damageReportReq ? 'Damage Noted' : 'Good',
-              notes: item.notes || '-',
-              image: item.photos?.[0]?.photoUrl || null,
-              iconType: hasVehicleInfo ? 'car' : 'pallet'
-            };
-          });
-          setStockItems(formatted);
-          setSelectedItem(formatted[0] || null);
-        } else {
-          // API returned but with a non-success flag — surface this as an error
-          setFetchError('Unable to load stock data. Please try again.');
-          setStockItems([]);
+        const lanesRes = await api.get('/warehouse-portal/load-lanes');
+        if (lanesRes.data?.success && lanesRes.data.data?.lanes) {
+          setLoadLanes(lanesRes.data.data.lanes);
+        }
+        const holdingRes = await api.get('/warehouse-portal/holding-areas');
+        if (holdingRes.data?.success && holdingRes.data.data?.holdingAreas) {
+          setHoldingAreas(holdingRes.data.data.holdingAreas);
         }
       } catch (err) {
-        console.error('Error fetching stock items:', err);
-        // Do NOT fall back to mock data — show a real error so issues are visible
-        setFetchError(
-          err?.response?.data?.error?.message ||
-          err?.response?.data?.message ||
-          'Failed to load stock data. Check your connection and try again.'
-        );
-        setStockItems([]);
-      } finally {
-        setLoading(false);
+        console.error('Error fetching load lanes or holding areas:', err);
       }
     };
-    fetchStock();
+    fetchLanesAndHolding();
+  }, []);
+      }
+    };
+    fetchLanesAndHolding();
   }, []);
 
   // Filter states
@@ -304,6 +154,8 @@ export default function CurrentStock() {
   // Modals state
   const [moveModalOpen, setMoveModalOpen] = useState(false);
   const [targetLocation, setTargetLocation] = useState('Yard A / Row 2 / Bay 05');
+  const [moveReason, setMoveReason] = useState('');
+  const [moveSubmitting, setMoveSubmitting] = useState(false);
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [scannerModalOpen, setScannerModalOpen] = useState(false);
 
@@ -1794,11 +1646,11 @@ export default function CurrentStock() {
 
       {/* ── RELOCATE / MOVE MODAL ── */}
       {moveModalOpen && selectedItem && (
-        <div className="wh-modal-overlay" onClick={() => setMoveModalOpen(false)}>
+        <div className="wh-modal-overlay" onClick={() => !moveSubmitting && setMoveModalOpen(false)}>
           <div className="wh-modal-box" onClick={e => e.stopPropagation()}>
             <div className="wh-modal-header">
               <h3>Relocate Asset / Transfer Location</h3>
-              <button onClick={() => setMoveModalOpen(false)}><X size={18} /></button>
+              <button onClick={() => !moveSubmitting && setMoveModalOpen(false)}><X size={18} /></button>
             </div>
             
             <div className="wh-modal-body">
@@ -1810,27 +1662,67 @@ export default function CurrentStock() {
 
               <div className="modal-form-group">
                 <label>Select Target Yard / Warehouse Location Spot</label>
-                <select value={targetLocation} onChange={(e) => setTargetLocation(e.target.value)}>
+                <select value={targetLocation} onChange={(e) => setTargetLocation(e.target.value)} disabled={moveSubmitting}>
                   <option value="Yard A / Row 2 / Bay 05">Yard A / Row 2 / Bay 05</option>
                   <option value="Yard B / Row 1 / Bay 03">Yard B / Row 1 / Bay 03</option>
-                  <option value="Load Lane 3 (Staging)">Load Lane 3 (Staging)</option>
-                  <option value="Load Lane 4 (Staging)">Load Lane 4 (Staging)</option>
+                  {loadLanes.map(lane => (
+                    <option key={lane.id} value={`${lane.name} (Staging)`}>{lane.name} (Staging)</option>
+                  ))}
                   <option value="Warehouse 1 / Aisle 12 / Bay 5">Warehouse 1 / Aisle 12 / Bay 5</option>
                   <option value="DG Store / Zone A / Bay 03">DG Store / Zone A / Bay 03</option>
+                </select>
+              </div>
+
+              <div className="modal-form-group">
+                <label>Reason for Relocation (optional)</label>
+                <select value={moveReason} onChange={(e) => setMoveReason(e.target.value)} disabled={moveSubmitting}>
+                  <option value="">Select reason...</option>
+                  <option value="Internal Depot Move">Internal Depot Move</option>
+                  <option value="Staging for Dispatch">Staging for Dispatch</option>
+                  <option value="Aisle Reorganization">Aisle Reorganization</option>
+                  <option value="Customer Request">Customer Request</option>
+                  <option value="Damage Assessment">Damage Assessment</option>
                 </select>
               </div>
             </div>
 
             <div className="wh-modal-footer">
-              <button className="wh-modal-btn-cancel" onClick={() => setMoveModalOpen(false)}>Cancel</button>
+              <button className="wh-modal-btn-cancel" onClick={() => !moveSubmitting && setMoveModalOpen(false)} disabled={moveSubmitting}>Cancel</button>
               <button 
                 className="wh-modal-btn-submit"
-                onClick={() => {
-                  alert(`Successfully relocated ${selectedItem.title} to ${targetLocation}!`);
-                  setMoveModalOpen(false);
+                disabled={moveSubmitting}
+                onClick={async () => {
+                  if (!selectedItem.id) return;
+                  setMoveSubmitting(true);
+                  try {
+                    // Parse zone/row/bay/position from the target location string
+                    const parts = targetLocation.split(' / ');
+                    const payload = {
+                      itemId: selectedItem.id,
+                      toZone: parts[0] || targetLocation,
+                      toRow: parts[1] || null,
+                      toBay: parts[2] || null,
+                      toPosition: parts[3] || null,
+                      reason: moveReason || 'Internal Depot Move'
+                    };
+                    // Match load lane from dynamic lanes list
+                    const matchedLane = loadLanes.find(l => targetLocation.includes(l.name));
+                    if (matchedLane) payload.toLaneId = matchedLane.id;
+
+                    await api.post('/warehouse-portal/stock/move', payload);
+                    setMoveModalOpen(false);
+                    setMoveReason('');
+                    // Refresh stock list
+                    fetchStock();
+                  } catch (err) {
+                    const msg = err.response?.data?.error?.message || 'Relocation failed. Please try again.';
+                    alert(msg);
+                  } finally {
+                    setMoveSubmitting(false);
+                  }
                 }}
               >
-                Confirm Relocation
+                {moveSubmitting ? 'Relocating...' : 'Confirm Relocation'}
               </button>
             </div>
           </div>

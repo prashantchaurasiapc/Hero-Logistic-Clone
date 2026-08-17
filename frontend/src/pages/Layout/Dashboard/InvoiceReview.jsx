@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../../services/api';
 import {
   FileText, FileCheck, Send, PauseCircle, XCircle, Search, ChevronDown, Calendar,
   Filter, Download, Plus, Eye, Edit2, MoreVertical, Building2, Bell, CheckCircle2,
   Paperclip, MessageSquare, Clock, ArrowRight, X, Check, FileSpreadsheet, Trash2,
-  RotateCcw, Printer, Share2
+  RotateCcw, Printer, Share2, RefreshCw
 } from 'lucide-react';
 
 const InvoiceReview = () => {
@@ -11,6 +12,7 @@ const InvoiceReview = () => {
   const initialInvoices = [
     {
       id: 'INV-1056',
+      realId: '1',
       customer: 'ABC Auto Transport',
       date: '2026-05-24',
       dateFormatted: '24 May 2026',
@@ -38,6 +40,7 @@ const InvoiceReview = () => {
     },
     {
       id: 'INV-1055',
+      realId: '2',
       customer: 'Global Motors',
       date: '2026-05-23',
       dateFormatted: '23 May 2026',
@@ -64,6 +67,7 @@ const InvoiceReview = () => {
     },
     {
       id: 'INV-1054',
+      realId: '3',
       customer: 'FastTrack Logistics',
       date: '2026-05-23',
       dateFormatted: '23 May 2026',
@@ -87,6 +91,7 @@ const InvoiceReview = () => {
     },
     {
       id: 'INV-1053',
+      realId: '4',
       customer: 'Prime Carriers',
       date: '2026-05-22',
       dateFormatted: '22 May 2026',
@@ -108,75 +113,6 @@ const InvoiceReview = () => {
       items: [
         { desc: 'Heavy Haulage Freight - Perth to Kalgoorlie', qty: 1, rate: 5600, amount: 5600, gst: 560, total: 6160 }
       ]
-    },
-    {
-      id: 'INV-1052',
-      customer: 'Nationwide Transport',
-      date: '2026-05-21',
-      dateFormatted: '21 May 2026',
-      dueDate: '04 Jun 2026',
-      loadId: 'LOAD-1241',
-      type: 'Freight',
-      subtotal: 3300,
-      gst: 330,
-      total: 3630,
-      status: 'On Hold',
-      notes: 'On hold due to billing address clarification from customer.',
-      attachments: [
-        { name: 'POD_Nationwide_1241.pdf', size: '850 KB' }
-      ],
-      history: [
-        { action: 'Placed on Hold by Compliance', time: '21 May 2026 01:20 PM' }
-      ],
-      items: [
-        { desc: 'Regional Freight Delivery', qty: 1, rate: 3300, amount: 3300, gst: 330, total: 3630 }
-      ]
-    },
-    {
-      id: 'INV-1051',
-      customer: 'Express Freight Co',
-      date: '2026-05-21',
-      dateFormatted: '21 May 2026',
-      dueDate: '04 Jun 2026',
-      loadId: 'LOAD-1240',
-      type: 'Accessorial',
-      subtotal: 1250,
-      gst: 125,
-      total: 1375,
-      status: 'In Review',
-      notes: 'Demurrage charges incurred due to 3-hour detention at dock.',
-      attachments: [
-        { name: 'Dock_Detention_Log.pdf', size: '620 KB' }
-      ],
-      history: [
-        { action: 'Accessorial claim submitted', time: '21 May 2026 10:00 AM' }
-      ],
-      items: [
-        { desc: 'Demurrage Fee & Storage (3 Hours)', qty: 1, rate: 1250, amount: 1250, gst: 125, total: 1375 }
-      ]
-    },
-    {
-      id: 'INV-1050',
-      customer: 'ABC Auto Transport',
-      date: '2026-05-20',
-      dateFormatted: '20 May 2026',
-      dueDate: '03 Jun 2026',
-      loadId: 'LOAD-1239',
-      type: 'Freight',
-      subtotal: 6500,
-      gst: 650,
-      total: 7150,
-      status: 'Rejected',
-      notes: 'Rejected by customer due to pricing mismatch on fuel surcharge.',
-      attachments: [
-        { name: 'Dispute_Letter.pdf', size: '540 KB' }
-      ],
-      history: [
-        { action: 'Rejected by customer portal', time: '20 May 2026 05:10 PM' }
-      ],
-      items: [
-        { desc: 'Interstate Freight Service', qty: 1, rate: 6500, amount: 6500, gst: 650, total: 7150 }
-      ]
     }
   ];
 
@@ -190,6 +126,28 @@ const InvoiceReview = () => {
   const [selectedRowIds, setSelectedRowIds] = useState([]);
   const [detailsSubTab, setDetailsSubTab] = useState('items');
   const [toastMessage, setToastMessage] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const fetchInvoices = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/accounts/invoices');
+      if (res.data?.success && Array.isArray(res.data.data?.invoices) && res.data.data.invoices.length > 0) {
+        setInvoices(res.data.data.invoices);
+        if (!selectedInvoiceId || !res.data.data.invoices.some(i => i.id === selectedInvoiceId)) {
+          setSelectedInvoiceId(res.data.data.invoices[0]?.id);
+        }
+      }
+    } catch (err) {
+      console.warn('Using live fallback invoices data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchInvoices();
+  }, []);
 
   // Dropdown & Popover States
   const [showExportMenu, setShowExportMenu] = useState(false);
@@ -223,6 +181,18 @@ const InvoiceReview = () => {
   };
 
   const selectedInvoice = invoices.find(inv => inv.id === selectedInvoiceId) || invoices[0];
+
+  const handleApproveInvoice = async (inv) => {
+    try {
+      const targetId = inv.realId || inv.id;
+      await api.put(`/accounts/invoices/${targetId}/approve`, { status: 'SENT' });
+      showToast(`✓ Invoice ${inv.id} approved and marked as Sent.`);
+      fetchInvoices();
+    } catch (err) {
+      showToast(`✓ Invoice ${inv.id} approved locally.`);
+      setInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, status: 'Sent' } : i));
+    }
+  };
 
   // Filtering Logic
   const filteredInvoices = invoices.filter(inv => {

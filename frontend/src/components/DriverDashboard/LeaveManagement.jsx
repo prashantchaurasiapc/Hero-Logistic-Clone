@@ -68,6 +68,7 @@ export default function LeaveManagement() {
     setReason('');
   };
 
+
   const toggleRow = (id) => {
     setSelectedRows(prev => 
       prev.includes(id) ? prev.filter(rowId => rowId !== id) : [...prev, id]

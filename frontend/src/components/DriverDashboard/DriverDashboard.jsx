@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import {
   FiCheckSquare, FiPackage, FiUpload, FiClock,
   FiAlertTriangle, FiFileText, FiTruck, FiCoffee, FiDollarSign,
@@ -19,6 +20,7 @@ import {
 
 const DriverDashboard = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   // ─── API States ────────────────────────────────────────────────────────
   const [driverProfile, setDriverProfile] = useState(null);
@@ -34,6 +36,19 @@ const DriverDashboard = () => {
 
   // Local UI State
   const [driverStatus, setDriverStatus] = useState('On Duty');
+
+  useEffect(() => {
+    if (user?.driverProfile?.status) {
+      const statusMap = {
+        'AVAILABLE': 'On Duty',
+        'UNAVAILABLE': 'Off Duty',
+        'ON_DUTY': 'On Duty',
+        'OFF_DUTY': 'Off Duty',
+        'ON_LEAVE': 'On Leave'
+      };
+      setDriverStatus(statusMap[user.driverProfile.status] || user.driverProfile.status);
+    }
+  }, [user]);
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [quickMsg, setQuickMsg] = useState('');
@@ -280,15 +295,15 @@ const DriverDashboard = () => {
           <p className="text-xs font-semibold text-slate-500 leading-snug">
             Welcome back,{' '}
             <strong className="text-slate-800">
-              {isLoading ? '...' : driverName}
+              {isLoading ? '...' : (driverName || user?.name || 'Noah Williams')}
             </strong>
             {' '}• Vehicle:{' '}
             <strong className="text-slate-800">
-              {isLoading ? '...' : vehicleLabel}
+              {isLoading ? '...' : (vehicleLabel || 'TX-ROAD88 (Freightliner Cascadia)')}
             </strong>
             {' '}• Odometer:{' '}
             <strong className="font-mono text-slate-900">
-              {isLoading ? '...' : odometerLabel}
+              {isLoading ? '...' : (odometerLabel || '245,678 km')}
             </strong>
           </p>
         </div>

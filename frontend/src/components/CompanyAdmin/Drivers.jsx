@@ -72,8 +72,145 @@ export default function Drivers() {
     fetchDrivers();
   }, []);
 
+  const fetchDriverDocuments = async (driverId) => {
+    if (!driverId) return;
+    try {
+      const res = await api.get(`/documents?driverId=${driverId}`);
+      if (res.data && res.data.success && Array.isArray(res.data.data)) {
+        const mappedDocs = res.data.data.map(doc => ({
+          id: doc.id,
+          type: doc.type || 'Compliance Document',
+          category: doc.type?.toLowerCase().includes('licence') ? 'Licences' : 'Other',
+          number: doc.id.substring(0, 8).toUpperCase(),
+          issue: doc.createdAt ? new Date(doc.createdAt).toLocaleDateString() : 'N/A',
+          expiry: doc.expiryDate ? new Date(doc.expiryDate).toLocaleDateString() : 'N/A',
+          status: doc.expiryDate && new Date(doc.expiryDate) < new Date() ? 'Expired' : 'Valid',
+          daysLeft: doc.expiryDate ? Math.max(0, Math.ceil((new Date(doc.expiryDate) - new Date()) / (1000 * 60 * 60 * 24))) + ' days' : '365 days',
+          notes: '',
+          fileName: doc.fileUrl ? doc.fileUrl.split('/').pop() : 'document.pdf',
+          fileSize: '1.2 MB'
+        }));
+        setDocumentList(mappedDocs);
+      }
+    } catch (err) {
+      console.error('Error fetching driver documents:', err);
+    }
+  };
+
+  const fetchPerformanceLogs = async (driverId) => {
+    if (!driverId) return;
+    try {
+      const res = await api.get(`/performance-logs?driverId=${driverId}`);
+      if (res.data && res.data.success && Array.isArray(res.data.data)) {
+        setEvalLogList(res.data.data);
+      } else {
+        setEvalLogList([]);
+      }
+    } catch (err) {
+      console.error('Error fetching performance logs:', err);
+      setEvalLogList([]);
+    }
+  };
+
+  const fetchDriverAllowances = async (driverId) => {
+    if (!driverId) return;
+    try {
+      const res = await api.get(`/driver-allowances?driverId=${driverId}`);
+      if (res.data && res.data.success && Array.isArray(res.data.data)) {
+        setAllowancesList(res.data.data);
+      } else {
+        setAllowancesList([]);
+      }
+    } catch (err) {
+      console.error('Error fetching allowances:', err);
+      setAllowancesList([]);
+    }
+  };
+
+  const fetchDriverDeductions = async (driverId) => {
+    if (!driverId) return;
+    try {
+      const res = await api.get(`/driver-deductions?driverId=${driverId}`);
+      if (res.data && res.data.success && Array.isArray(res.data.data)) {
+        setDeductionsList(res.data.data);
+      } else {
+        setDeductionsList([]);
+      }
+    } catch (err) {
+      console.error('Error fetching deductions:', err);
+      setDeductionsList([]);
+    }
+  };
+
+  const fetchDriverLeaveRequests = async (driverId) => {
+    if (!driverId) return;
+    try {
+      const res = await api.get(`/driver-leave-requests?driverId=${driverId}`);
+      if (res.data && res.data.success && Array.isArray(res.data.data)) {
+        setLeaveRequestsList(res.data.data);
+      } else {
+        setLeaveRequestsList([]);
+      }
+    } catch (err) {
+      console.error('Error fetching leave requests:', err);
+      setLeaveRequestsList([]);
+    }
+  };
+
+  const fetchDriverPayRates = async (driverId) => {
+    if (!driverId) return;
+    try {
+      const res = await api.get(`/driver-pay-rates?driverId=${driverId}`);
+      if (res.data && res.data.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
+        setPayRatesList(res.data.data);
+      }
+    } catch (err) {
+      console.error('Error fetching pay rates:', err);
+    }
+  };
+
+  const fetchDriverActivities = async (driverId) => {
+    if (!driverId) return;
+    try {
+      const res = await api.get(`/driver-activities?driverId=${driverId}`);
+      if (res.data && res.data.success && Array.isArray(res.data.data)) {
+        setTimelineEventsList(res.data.data);
+      } else {
+        setTimelineEventsList([]);
+      }
+    } catch (err) {
+      console.error('Error fetching driver activities:', err);
+      setTimelineEventsList([]);
+    }
+  };
+
+  const fetchDriverSuperInfo = async (driverId) => {
+    if (!driverId) return;
+    try {
+      const res = await api.get(`/driver-super-info/${driverId}`);
+      if (res.data && res.data.success && res.data.data) {
+        setSuperInfo(res.data.data);
+      }
+    } catch (err) {
+      console.error('Error fetching super info:', err);
+    }
+  };
+
   const [editDriverModal, setEditDriverModal] = useState(null);
   const [selectedDriver, setSelectedDriver] = useState(null);
+
+  useEffect(() => {
+    if (selectedDriver && selectedDriver.id) {
+      fetchDriverDocuments(selectedDriver.id);
+      fetchPerformanceLogs(selectedDriver.id);
+      fetchDriverAllowances(selectedDriver.id);
+      fetchDriverDeductions(selectedDriver.id);
+      fetchDriverLeaveRequests(selectedDriver.id);
+      fetchDriverPayRates(selectedDriver.id);
+      fetchDriverActivities(selectedDriver.id);
+      fetchDriverSuperInfo(selectedDriver.id);
+    }
+  }, [selectedDriver]);
   const [showAddDriver, setShowAddDriver] = useState(false);
   const [activeTab, setActiveTab] = useState('Overview');
   const [activeDocTab, setActiveDocTab] = useState('All Documents');
@@ -84,6 +221,60 @@ export default function Drivers() {
   const [activityToDate, setActivityToDate] = useState('');
   const [selectedTimelineModal, setSelectedTimelineModal] = useState(null);
   const [showAddActivityModal, setShowAddActivityModal] = useState(false);
+  const [showMessageDriverModal, setShowMessageDriverModal] = useState(false);
+  const [showDeactivateConfirmModal, setShowDeactivateConfirmModal] = useState(false);
+
+  const handlePrintDriverProfile = () => {
+    if (!selectedDriver) return;
+    const html = `
+      <div class="header-bar">
+        <div>
+          <h1 style="color: #7c3aed;">HERO LOGISTICS</h1>
+          <p>Official Driver Profile & Personnel File</p>
+        </div>
+        <div style="text-align: right;">
+          <span class="badge">${selectedDriver.status}</span>
+          <p style="font-weight: 800; font-size: 11px; margin-top: 4px;">ID: ${selectedDriver.id}</p>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="info-box">
+          <p class="lbl">Driver Name</p>
+          <p class="val">${selectedDriver.name}</p>
+          <p class="sub">Age: ${selectedDriver.age} | DOB: ${selectedDriver.dob || '—'}</p>
+        </div>
+        <div class="info-box" style="text-align: right;">
+          <p class="lbl">Employment Details</p>
+          <p class="val">${selectedDriver.employmentType || 'Full Time'}</p>
+          <p class="sub">Branch: ${selectedDriver.branch || 'Sydney'}</p>
+        </div>
+      </div>
+
+      <p style="font-size: 10px; font-weight: 900; text-transform: uppercase; color: #0f172a; letter-spacing: 1px; margin-bottom: 8px;">Licence & Contact Details</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Field</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="txt-bold">Licence Class</td><td>${selectedDriver.licence}</td></tr>
+          <tr><td class="txt-bold">Licence Number</td><td class="txt-purple">${selectedDriver.licenceNo}</td></tr>
+          <tr><td class="txt-bold">Phone Number</td><td>${selectedDriver.phone}</td></tr>
+          <tr><td class="txt-bold">Email Address</td><td>${selectedDriver.email}</td></tr>
+          <tr><td class="txt-bold">Home Address</td><td>${selectedDriver.address}</td></tr>
+          <tr><td class="txt-bold">Compliance Status</td><td class="txt-emerald">${selectedDriver.complianceStatus} (${selectedDriver.complianceScore})</td></tr>
+        </tbody>
+      </table>
+
+      <div class="declaration-box">
+        <p>This official personnel summary has been generated from Hero Logistics Operations System on ${new Date().toLocaleDateString('en-AU')}. Confidential company record.</p>
+      </div>
+    `;
+    printDocumentHtml(`Driver Profile - ${selectedDriver.name}`, html);
+  };
 
   const [timelineEventsList, setTimelineEventsList] = useState([]);
 
@@ -132,6 +323,7 @@ export default function Drivers() {
   const [evalMenuPos, setEvalMenuPos] = useState(null);
   const [viewEvalModal, setViewEvalModal] = useState(null);
   const [editEvalModal, setEditEvalModal] = useState(null);
+  const [addEvalModal, setAddEvalModal] = useState(false);
 
   const [showPrintReportModal, setShowPrintReportModal] = useState(false);
 
@@ -862,13 +1054,29 @@ export default function Drivers() {
             </div>
             <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-2">
               <button onClick={() => setEditDriverModal(null)} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 font-bold hover:bg-white text-xs cursor-pointer">Cancel</button>
-              <button onClick={() => {
-                setDriverList(prev => prev.map(d => d.id === editDriverModal.id ? editDriverModal : d));
-                if (selectedDriver && selectedDriver.id === editDriverModal.id) {
-                  setSelectedDriver(editDriverModal);
+              <button onClick={async () => {
+                try {
+                  const nameParts = (editDriverModal.name || '').trim().split(' ');
+                  const firstName = nameParts[0] || editDriverModal.name;
+                  const lastName = nameParts.slice(1).join(' ') || '';
+                  await api.put(`/drivers/${editDriverModal.id}`, {
+                    firstName,
+                    lastName,
+                    phone: editDriverModal.phone,
+                    licenceType: editDriverModal.licence,
+                    licenceNumber: editDriverModal.licenceNo,
+                    status: editDriverModal.status
+                  });
+                  await fetchDrivers();
+                  if (selectedDriver && selectedDriver.id === editDriverModal.id) {
+                    setSelectedDriver(prev => ({ ...prev, ...editDriverModal }));
+                  }
+                  setEditDriverModal(null);
+                  showToast(`Driver profile updated successfully`);
+                } catch (err) {
+                  console.error('Error updating driver:', err);
+                  alert('Failed to update driver in database.');
                 }
-                setEditDriverModal(null);
-                showToast(`Driver profile ${editDriverModal.id} updated`);
               }} className="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 text-xs shadow-sm cursor-pointer">Save Changes</button>
             </div>
           </div>
@@ -958,11 +1166,21 @@ export default function Drivers() {
               </div>
               <button onClick={() => setEditDocModal(null)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 text-lg cursor-pointer">✕</button>
             </div>
-            <form onSubmit={(e) => {
+            <form onSubmit={async (e) => {
               e.preventDefault();
-              setDocumentList(prev => prev.map(item => item.id === editDocModal.id ? { ...editDocModal } : item));
-              setEditDocModal(null);
-              showToast(`Updated ${editDocModal.type} successfully`);
+              try {
+                const expiryDate = editDocModal.expiry ? new Date(editDocModal.expiry).toISOString() : null;
+                await api.put(`/documents/${editDocModal.id}`, {
+                  type: editDocModal.type,
+                  expiryDate
+                });
+                if (selectedDriver) fetchDriverDocuments(selectedDriver.id);
+                setEditDocModal(null);
+                showToast(`Updated ${editDocModal.type} successfully`);
+              } catch (err) {
+                console.error('Error updating document:', err);
+                alert('Failed to update document in database.');
+              }
             }} className="px-6 py-5 space-y-4 text-xs max-h-[75vh] overflow-y-auto">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2 sm:col-span-1">
@@ -1038,10 +1256,16 @@ export default function Drivers() {
                   Cancel
                 </button>
                 <button
-                  onClick={() => {
-                    setDocumentList(prev => prev.filter(d => d.id !== deleteDocModal.id));
-                    setDeleteDocModal(null);
-                    showToast(`Deleted ${deleteDocModal.type} successfully`);
+                  onClick={async () => {
+                    try {
+                      await api.delete(`/documents/${deleteDocModal.id}`);
+                      if (selectedDriver) fetchDriverDocuments(selectedDriver.id);
+                      setDeleteDocModal(null);
+                      showToast(`Deleted ${deleteDocModal.type} successfully`);
+                    } catch (err) {
+                      console.error('Error deleting document:', err);
+                      alert('Failed to delete document from database.');
+                    }
                   }}
                   className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md shadow-rose-600/20"
                 >
@@ -1064,25 +1288,26 @@ export default function Drivers() {
               </div>
               <button onClick={() => setAddDocModal(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 text-lg cursor-pointer">✕</button>
             </div>
-            <form onSubmit={(e) => {
+            <form onSubmit={async (e) => {
               e.preventDefault();
               const formData = new FormData(e.target);
-              const newDoc = {
-                id: Date.now(),
-                type: formData.get('type') || 'Custom Document',
-                category: formData.get('category') || 'Other',
-                number: formData.get('number') || 'DOC-' + Math.floor(100000 + Math.random() * 900000),
-                issue: formData.get('issue') || new Date().toISOString().split('T')[0],
-                expiry: formData.get('expiry') || '2026-12-31',
-                status: formData.get('status') || 'Valid',
-                daysLeft: formData.get('daysLeft') || '365 days',
-                notes: formData.get('notes') || '',
-                fileName: formData.get('fileName') || 'uploaded_document.pdf',
-                fileSize: '1.5 MB'
-              };
-              setDocumentList(prev => [newDoc, ...prev]);
-              setAddDocModal(false);
-              showToast(`Added ${newDoc.type} successfully`);
+              const type = formData.get('type') || 'Custom Document';
+              const expiryDate = formData.get('expiry') ? new Date(formData.get('expiry')).toISOString() : null;
+              const fileUrl = formData.get('fileName') || 'uploaded_document.pdf';
+              try {
+                await api.post('/documents', {
+                  type,
+                  fileUrl,
+                  expiryDate,
+                  driverId: selectedDriver ? selectedDriver.id : null
+                });
+                if (selectedDriver) fetchDriverDocuments(selectedDriver.id);
+                setAddDocModal(false);
+                showToast(`Added ${type} successfully`);
+              } catch (err) {
+                console.error('Error adding document:', err);
+                alert('Failed to save document to database.');
+              }
             }} className="px-6 py-5 space-y-4 text-xs max-h-[75vh] overflow-y-auto">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2 sm:col-span-1">
@@ -1325,11 +1550,25 @@ export default function Drivers() {
               </div>
               <button onClick={() => setEditEvalModal(null)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 text-lg cursor-pointer">✕</button>
             </div>
-            <form onSubmit={(e) => {
+            <form onSubmit={async (e) => {
               e.preventDefault();
-              setEvalLogList(prev => prev.map(item => item.id === editEvalModal.id ? { ...editEvalModal } : item));
-              setEditEvalModal(null);
-              showToast("Updated evaluation log entry successfully!");
+              try {
+                await api.put(`/performance-logs/${editEvalModal.id}`, {
+                  date: editEvalModal.date,
+                  assignment: editEvalModal.assignment,
+                  route: editEvalModal.route,
+                  score: editEvalModal.score,
+                  status: editEvalModal.status,
+                  remarks: editEvalModal.remarks,
+                  evaluator: editEvalModal.evaluator
+                });
+                if (selectedDriver?.id) fetchPerformanceLogs(selectedDriver.id);
+                setEditEvalModal(null);
+                showToast('Updated evaluation log entry successfully!');
+              } catch (err) {
+                console.error('Error updating performance log:', err);
+                alert('Failed to update evaluation log. Please try again.');
+              }
             }} className="px-6 py-5 space-y-4 text-xs">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -1373,6 +1612,82 @@ export default function Drivers() {
           </div>
         </div>
       )}
+      {/* ADD EVALUATION LOG MODAL */}
+      {addEvalModal && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-[999] flex items-center justify-center p-4" onClick={() => setAddEvalModal(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-purple-50 to-white">
+              <div>
+                <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest mb-0.5">New Performance Entry</p>
+                <h2 className="text-base font-black text-slate-900">Add Evaluation Log</h2>
+              </div>
+              <button onClick={() => setAddEvalModal(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 text-lg cursor-pointer">✕</button>
+            </div>
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              const formData = new FormData(e.target);
+              try {
+                await api.post('/performance-logs', {
+                  driverId: selectedDriver?.id,
+                  date: formData.get('date') || new Date().toISOString().split('T')[0],
+                  assignment: formData.get('assignment'),
+                  route: formData.get('route'),
+                  score: formData.get('score') || '0/100',
+                  status: formData.get('status') || 'EXCELLENT',
+                  remarks: formData.get('remarks') || '',
+                  evaluator: formData.get('evaluator') || ''
+                });
+                if (selectedDriver?.id) fetchPerformanceLogs(selectedDriver.id);
+                setAddEvalModal(false);
+                showToast('Performance evaluation log entry added successfully!');
+              } catch (err) {
+                console.error('Error adding performance log:', err);
+                alert('Failed to save evaluation log. Please try again.');
+              }
+            }} className="px-6 py-5 space-y-4 text-xs max-h-[75vh] overflow-y-auto">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Evaluation Date *</label>
+                  <input name="date" required type="date" defaultValue={new Date().toISOString().split('T')[0]} className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900" />
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Evaluation Score *</label>
+                  <input name="score" required type="text" placeholder="e.g. 96/100" defaultValue="96/100" className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900" />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-slate-500 font-bold mb-1">Assignment / Load *</label>
+                  <input name="assignment" required type="text" placeholder="e.g. LOAD-8821 (Sydney - Melbourne)" className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900" />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-slate-500 font-bold mb-1">Route Details *</label>
+                  <input name="route" required type="text" placeholder="e.g. M1 Highway Interstate" className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900" />
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Evaluator / Officer</label>
+                  <input name="evaluator" type="text" placeholder="e.g. Chief Operations Officer" defaultValue="Chief Operations Inspector" className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900" />
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Status</label>
+                  <select name="status" defaultValue="EXCELLENT" className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900 bg-white cursor-pointer">
+                    <option value="EXCELLENT">EXCELLENT</option>
+                    <option value="COMPLIANT">COMPLIANT</option>
+                    <option value="NEEDS REVIEW">NEEDS REVIEW</option>
+                  </select>
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-slate-500 font-bold mb-1">Remarks & Feedback</label>
+                  <textarea name="remarks" placeholder="Enter evaluation notes..." defaultValue="Excellent driving performance, zero safety violations." className="w-full h-20 px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900 resize-none"></textarea>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+                <button type="button" onClick={() => setAddEvalModal(false)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer">Cancel</button>
+                <button type="submit" className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md shadow-purple-600/20">Add Evaluation Log</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* PRINT REPORT PREVIEW MODAL */}
       {showPrintReportModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-[9999] flex items-center justify-center p-4 print:p-0 print:bg-white print:static" onClick={() => setShowPrintReportModal(false)}>
@@ -1541,6 +1856,96 @@ export default function Drivers() {
         </div>
       )}
       {/* PAYROLL DYNAMIC MODALS */}
+      {payrollModal === 'edit_rates' && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-[999] flex items-center justify-center p-4" onClick={() => setPayrollModal(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-purple-50 to-white">
+              <div>
+                <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest mb-0.5">Pay Rates & Rules</p>
+                <h2 className="text-base font-black text-slate-900">Edit Driver Pay Structure</h2>
+              </div>
+              <button onClick={() => setPayrollModal(null)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 text-lg cursor-pointer">✕</button>
+            </div>
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              const fd = new FormData(e.target);
+              const newRates = payRatesList.map(r => {
+                if (r.id === 'base') return { ...r, rate: `$${fd.get('baseRate')} / day` };
+                if (r.id === 'ot15') return { ...r, rate: `$${fd.get('overtime15')} / hr` };
+                if (r.id === 'ot20') return { ...r, rate: `$${fd.get('overtime20')} / hr` };
+                if (r.id === 'km') return { ...r, rate: `$${fd.get('kmRate')} / km` };
+                return r;
+              });
+              setPayRatesList(newRates);
+              if (selectedDriver?.id) {
+                try {
+                  await api.post('/driver-pay-rates/bulk', {
+                    driverId: selectedDriver.id,
+                    rates: newRates.map(r => ({
+                      category: r.category || 'Base Rate',
+                      type: r.type || 'Daily',
+                      rate: r.rate || '$0.00 / day',
+                      rule: r.rule || 'Standard',
+                      status: r.status || 'Active'
+                    }))
+                  });
+                } catch (err) {
+                  console.error('Error saving pay rates:', err);
+                }
+              }
+              setPayrollModal(null);
+              showToast('Pay rates updated successfully!');
+            }} className="px-6 py-5 space-y-4 text-xs">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Base Daily Rate ($) *</label>
+                  <input required name="baseRate" type="number" step="0.01" placeholder="550.00"
+                    defaultValue={selectedDriver?.payRate || ''}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900" />
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Pay Type</label>
+                  <select name="payType" className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900 bg-white">
+                    <option value="Daily">Daily Rate</option>
+                    <option value="Hourly">Hourly Rate</option>
+                    <option value="Per Load">Per Load</option>
+                    <option value="Per Km">Per Kilometre</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Overtime 1.5x Rate ($/hr)</label>
+                  <input name="overtime15" type="number" step="0.01" placeholder="82.50"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900" />
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Overtime 2.0x Rate ($/hr)</label>
+                  <input name="overtime20" type="number" step="0.01" placeholder="110.00"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900" />
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Per-Kilometre Rate ($/km)</label>
+                  <input name="kmRate" type="number" step="0.001" placeholder="0.85"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900" />
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Award / Agreement</label>
+                  <select name="award" className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900 bg-white">
+                    <option>Award Grade 5 (HR)</option>
+                    <option>Award Grade 3 (MR)</option>
+                    <option>Enterprise Agreement</option>
+                    <option>Individual Contract</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+                <button type="button" onClick={() => setPayrollModal(null)} className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold cursor-pointer">Cancel</button>
+                <button type="submit" className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-md shadow-purple-600/20 cursor-pointer">Save Pay Rates</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {payrollModal === 'add_allowance' && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-[999] flex items-center justify-center p-4" onClick={() => setPayrollModal(null)}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150" onClick={e => e.stopPropagation()}>
@@ -1548,16 +1953,29 @@ export default function Drivers() {
               <h2 className="text-base font-black text-slate-900">Add New Allowance</h2>
               <button onClick={() => setPayrollModal(null)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 text-lg cursor-pointer">✕</button>
             </div>
-            <form onSubmit={(e) => {
+            <form onSubmit={async (e) => {
               e.preventDefault();
               const fd = new FormData(e.target);
               const name = fd.get('name');
               const category = fd.get('category');
               const type = fd.get('type');
               const amount = fd.get('amount');
-              setAllowancesList(prev => [...prev, { id: Date.now(), name, category, type, amount: `$${amount}`, date: new Date().toLocaleDateString('en-GB'), status: 'Approved' }]);
-              setPayrollModal(null);
-              showToast(`Added allowance ${name} ($${amount}) successfully!`);
+              try {
+                if (selectedDriver?.id) {
+                  await api.post('/driver-allowances', {
+                    driverId: selectedDriver.id,
+                    name, category, type, amount: `$${amount}`, status: 'Approved'
+                  });
+                  fetchDriverAllowances(selectedDriver.id);
+                } else {
+                  setAllowancesList(prev => [...prev, { id: Date.now(), name, category, type, amount: `$${amount}`, date: new Date().toLocaleDateString('en-GB'), status: 'Approved' }]);
+                }
+                setPayrollModal(null);
+                showToast(`Added allowance ${name} ($${amount}) successfully!`);
+              } catch (err) {
+                console.error('Error adding allowance:', err);
+                alert('Failed to add allowance.');
+              }
             }} className="px-6 py-5 space-y-4 text-xs">
               <div>
                 <label className="block text-slate-500 font-bold mb-1">Allowance Name *</label>
@@ -1603,16 +2021,29 @@ export default function Drivers() {
               <h2 className="text-base font-black text-slate-900">Add Voluntary / Statutory Deduction</h2>
               <button onClick={() => setPayrollModal(null)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 text-lg cursor-pointer">✕</button>
             </div>
-            <form onSubmit={(e) => {
+            <form onSubmit={async (e) => {
               e.preventDefault();
               const fd = new FormData(e.target);
               const name = fd.get('name');
               const type = fd.get('type');
               const amount = fd.get('amount');
               const frequency = fd.get('frequency');
-              setDeductionsList(prev => [...prev, { id: Date.now(), name, type, amount: `$${amount}`, frequency, status: 'Active' }]);
-              setPayrollModal(null);
-              showToast(`Added deduction ${name} ($${amount}) successfully!`);
+              try {
+                if (selectedDriver?.id) {
+                  await api.post('/driver-deductions', {
+                    driverId: selectedDriver.id,
+                    name, type, frequency, amount: `$${amount}`, status: 'Active'
+                  });
+                  fetchDriverDeductions(selectedDriver.id);
+                } else {
+                  setDeductionsList(prev => [...prev, { id: Date.now(), name, type, amount: `$${amount}`, frequency, status: 'Active' }]);
+                }
+                setPayrollModal(null);
+                showToast(`Added deduction ${name} ($${amount}) successfully!`);
+              } catch (err) {
+                console.error('Error adding deduction:', err);
+                alert('Failed to add deduction.');
+              }
             }} className="px-6 py-5 space-y-4 text-xs">
               <div>
                 <label className="block text-slate-500 font-bold mb-1">Deduction Name *</label>
@@ -1656,16 +2087,29 @@ export default function Drivers() {
               <h2 className="text-base font-black text-slate-900">Submit Driver Leave Request</h2>
               <button onClick={() => setPayrollModal(null)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 text-lg cursor-pointer">✕</button>
             </div>
-            <form onSubmit={(e) => {
+            <form onSubmit={async (e) => {
               e.preventDefault();
               const fd = new FormData(e.target);
               const type = fd.get('type');
               const startDate = fd.get('startDate');
               const endDate = fd.get('endDate');
               const days = fd.get('days');
-              setLeaveRequestsList(prev => [{ id: Date.now(), type, dates: `${startDate} - ${endDate}`, days: `${days} Days`, status: 'Pending Approval', approver: 'HR Director' }, ...prev]);
-              setPayrollModal(null);
-              showToast(`Submitted leave request for ${days} days (${type})`);
+              try {
+                if (selectedDriver?.id) {
+                  await api.post('/driver-leave-requests', {
+                    driverId: selectedDriver.id,
+                    type, dates: `${startDate} - ${endDate}`, days: `${days} Days`, status: 'Pending Approval', approver: 'HR Director'
+                  });
+                  fetchDriverLeaveRequests(selectedDriver.id);
+                } else {
+                  setLeaveRequestsList(prev => [{ id: Date.now(), type, dates: `${startDate} - ${endDate}`, days: `${days} Days`, status: 'Pending Approval', approver: 'HR Director' }, ...prev]);
+                }
+                setPayrollModal(null);
+                showToast(`Submitted leave request for ${days} days (${type})`);
+              } catch (err) {
+                console.error('Error requesting leave:', err);
+                alert('Failed to submit leave request.');
+              }
             }} className="px-6 py-5 space-y-4 text-xs">
               <div>
                 <label className="block text-slate-500 font-bold mb-1">Leave Type *</label>
@@ -1706,15 +2150,32 @@ export default function Drivers() {
               <h2 className="text-base font-black text-slate-900">Update Superannuation Fund Details</h2>
               <button onClick={() => setPayrollModal(null)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 text-lg cursor-pointer">✕</button>
             </div>
-            <form onSubmit={(e) => {
+            <form onSubmit={async (e) => {
               e.preventDefault();
               const fd = new FormData(e.target);
               const fundName = fd.get('fundName');
               const memberNumber = fd.get('memberNumber');
               const usi = fd.get('usi');
-              setSuperInfo(prev => ({ ...prev, fundName, memberNumber, usi }));
-              setPayrollModal(null);
-              showToast(`Updated Super Fund details for ${fundName}`);
+              try {
+                if (selectedDriver?.id) {
+                  const res = await api.post('/driver-super-info', {
+                    driverId: selectedDriver.id,
+                    fundName,
+                    memberNumber,
+                    usi
+                  });
+                  if (res.data && res.data.data) {
+                    setSuperInfo(res.data.data);
+                  }
+                } else {
+                  setSuperInfo(prev => ({ ...prev, fundName, memberNumber, usi }));
+                }
+                setPayrollModal(null);
+                showToast(`Updated Super Fund details for ${fundName}`);
+              } catch (err) {
+                console.error('Error saving super info:', err);
+                showToast('Failed to update Super Fund details in database');
+              }
             }} className="px-6 py-5 space-y-4 text-xs">
               <div>
                 <label className="block text-slate-500 font-bold mb-1">Super Fund Name *</label>
@@ -1765,6 +2226,217 @@ export default function Drivers() {
             </div>
             <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-100 bg-slate-50">
               <button onClick={() => setPayrollModal(null)} className="px-5 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold cursor-pointer">Close Insights</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ADD MANUAL ACTIVITY NOTE MODAL */}
+      {showAddActivityModal && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-[999] flex items-center justify-center p-4" onClick={() => setShowAddActivityModal(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-purple-50 to-white">
+              <div>
+                <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest mb-0.5">Audit Trail & History</p>
+                <h2 className="text-base font-black text-slate-900">Log Manual Note / Activity Record</h2>
+              </div>
+              <button onClick={() => setShowAddActivityModal(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 text-lg cursor-pointer">✕</button>
+            </div>
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              const fd = new FormData(e.target);
+              const title = fd.get('title');
+              const category = fd.get('category');
+              const status = fd.get('status');
+              const description = fd.get('description');
+              const performedBy = fd.get('performedBy') || 'Fleet Admin User';
+              try {
+                if (selectedDriver?.id) {
+                  await api.post('/driver-activities', {
+                    driverId: selectedDriver.id,
+                    title,
+                    category,
+                    status,
+                    description,
+                    performedBy,
+                    time: 'Just Now',
+                    date: new Date().toISOString().split('T')[0]
+                  });
+                  fetchDriverActivities(selectedDriver.id);
+                } else {
+                  setTimelineEventsList(prev => [{
+                    id: 'ACT-' + Math.floor(1000 + Math.random() * 9000),
+                    title, category, status, description, performedBy, time: 'Just Now', date: new Date().toISOString().split('T')[0]
+                  }, ...prev]);
+                }
+                setShowAddActivityModal(false);
+                showToast(`Logged activity note "${title}" successfully!`);
+              } catch (err) {
+                console.error('Error logging activity note:', err);
+                alert('Failed to log activity note in database.');
+              }
+            }} className="px-6 py-5 space-y-4 text-xs">
+              <div>
+                <label className="block text-slate-500 font-bold mb-1">Title / Summary *</label>
+                <input required name="title" type="text" placeholder="e.g. Licence Verified & Updated" className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Category *</label>
+                  <select name="category" className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900 bg-white cursor-pointer">
+                    <option value="Assignments">Assignments</option>
+                    <option value="Safety">Safety</option>
+                    <option value="Documents">Documents</option>
+                    <option value="Payroll">Payroll</option>
+                    <option value="Compliance">Compliance</option>
+                    <option value="Leave">Leave</option>
+                    <option value="Status Changes">Status Changes</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-500 font-bold mb-1">Status Badge *</label>
+                  <select name="status" className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900 bg-white cursor-pointer">
+                    <option value="Verified">Verified</option>
+                    <option value="Success">Success</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Passed">Passed</option>
+                    <option value="Info">Info</option>
+                    <option value="Warning">Warning</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-slate-500 font-bold mb-1">Performed By</label>
+                <input name="performedBy" type="text" defaultValue="Fleet Admin User" className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900" />
+              </div>
+              <div>
+                <label className="block text-slate-500 font-bold mb-1">Detailed Remarks / Note *</label>
+                <textarea required name="description" placeholder="Type activity details here..." className="w-full h-24 px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-medium text-slate-900 resize-none"></textarea>
+              </div>
+              <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+                <button type="button" onClick={() => setShowAddActivityModal(false)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer">Cancel</button>
+                <button type="submit" className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-md shadow-purple-600/20 cursor-pointer">Save Activity Note</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MESSAGE DRIVER MODAL */}
+      {showMessageDriverModal && selectedDriver && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-[999] flex items-center justify-center p-4" onClick={() => setShowMessageDriverModal(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-purple-50 to-white">
+              <div>
+                <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest mb-0.5">Direct Message</p>
+                <h2 className="text-base font-black text-slate-900">Message {selectedDriver.name}</h2>
+              </div>
+              <button onClick={() => setShowMessageDriverModal(false)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 text-lg cursor-pointer">✕</button>
+            </div>
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              const fd = new FormData(e.target);
+              const subject = fd.get('subject');
+              const message = fd.get('message');
+              try {
+                if (selectedDriver?.id) {
+                  await api.post('/driver-messages', {
+                    driverId: selectedDriver.id,
+                    subject,
+                    message,
+                    sender: 'Fleet Admin User'
+                  });
+                  fetchDriverActivities(selectedDriver.id);
+                }
+                setShowMessageDriverModal(false);
+                showToast(`Message sent to ${selectedDriver.name} successfully!`);
+              } catch (err) {
+                console.error('Error sending message:', err);
+                showToast('Failed to send message to database');
+              }
+            }} className="px-6 py-5 space-y-4 text-xs">
+              <div>
+                <label className="block text-slate-500 font-bold mb-1">Subject / Notification Title *</label>
+                <input required name="subject" type="text" placeholder="e.g. Schedule Update / Shift Notification" className="w-full px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-bold text-slate-900" />
+              </div>
+              <div>
+                <label className="block text-slate-500 font-bold mb-1">Message Content *</label>
+                <textarea required name="message" placeholder="Type your message for the driver..." className="w-full h-28 px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-purple-500 font-medium text-slate-900 resize-none"></textarea>
+              </div>
+              <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
+                <button type="button" onClick={() => setShowMessageDriverModal(false)} className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold cursor-pointer">Cancel</button>
+                <button type="submit" className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-md shadow-purple-600/20 cursor-pointer">Send Message</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* DEACTIVATE DRIVER CONFIRM MODAL */}
+      {showDeactivateConfirmModal && selectedDriver && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-[999] flex items-center justify-center p-4" onClick={() => setShowDeactivateConfirmModal(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150" onClick={e => e.stopPropagation()}>
+            <div className="p-6 text-center">
+              <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle size={24} className="mx-auto" />
+              </div>
+              <h2 className="text-base font-black text-slate-900 mb-1">Deactivate Driver Profile?</h2>
+              <p className="text-xs text-slate-500 mb-6">Are you sure you want to deactivate <span className="font-bold text-slate-800">{selectedDriver.name}</span>? Driver status will be set to Unavailable.</p>
+              <div className="flex justify-center gap-3">
+                <button onClick={() => setShowDeactivateConfirmModal(false)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer">Cancel</button>
+                <button onClick={async () => {
+                  try {
+                    await api.put(`/drivers/${selectedDriver.id}`, { status: 'Unavailable' });
+                    setSelectedDriver(prev => ({ ...prev, status: 'Unavailable' }));
+                    fetchDrivers();
+                    setShowDeactivateConfirmModal(false);
+                    showToast(`Driver ${selectedDriver.name} deactivated successfully`);
+                  } catch (err) {
+                    console.error(err);
+                    showToast('Failed to update status');
+                  }
+                }} className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold cursor-pointer shadow-md shadow-rose-600/20">Deactivate Profile</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* VIEW ACTIVITY DETAIL MODAL */}
+      {selectedTimelineModal && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-[999] flex items-center justify-center p-4" onClick={() => setSelectedTimelineModal(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-purple-50 to-white">
+              <div>
+                <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest mb-0.5">{selectedTimelineModal.category} • Audit #{selectedTimelineModal.id?.substring(0, 8)}</p>
+                <h2 className="text-base font-black text-slate-900">{selectedTimelineModal.title}</h2>
+              </div>
+              <button onClick={() => setSelectedTimelineModal(null)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 text-lg cursor-pointer">✕</button>
+            </div>
+            <div className="px-6 py-5 text-xs space-y-4">
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400 font-bold text-[10px] uppercase">Status</span>
+                  <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded text-[9px] font-bold uppercase">{selectedTimelineModal.status}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400 font-bold text-[10px] uppercase">Logged Time</span>
+                  <span className="font-extrabold text-slate-800">{selectedTimelineModal.time || 'Just Now'}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400 font-bold text-[10px] uppercase">Performed By</span>
+                  <span className="font-extrabold text-slate-900">{selectedTimelineModal.performedBy}</span>
+                </div>
+              </div>
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Details & Description</p>
+                <div className="p-3 bg-white border border-slate-200 rounded-xl text-slate-700 leading-relaxed font-medium">
+                  {selectedTimelineModal.description}
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end px-6 py-4 border-t border-slate-100 bg-slate-50">
+              <button onClick={() => setSelectedTimelineModal(null)} className="px-5 py-2 bg-purple-600 text-white rounded-xl text-xs font-bold cursor-pointer shadow-md shadow-purple-600/20">Close</button>
             </div>
           </div>
         </div>
@@ -2169,11 +2841,12 @@ export default function Drivers() {
         <form onSubmit={async (e) => {
           e.preventDefault();
           const fd = new FormData(e.target);
-          const firstName = fd.get('FirstName') || '';
-          const lastName = fd.get('LastName') || '';
-          const driverCode = fd.get('EmployeeIDManualEditOption') || ('DRV00' + Math.floor(Math.random() * 100));
-          const phone = fd.get('PhoneNumber') || '';
-          const email = fd.get('EmailAddress') || '';
+          const firstName = fd.get('FirstName') || fd.get('firstName') || '';
+          const lastName = fd.get('LastName') || fd.get('lastName') || '';
+          const driverCode = fd.get('EmployeeIDManualEditOption') || fd.get('driverCode') || ('DRV00' + Math.floor(Math.random() * 100));
+          const phone = fd.get('PhoneNumber') || fd.get('phone') || '';
+          const email = fd.get('EmailAddress') || fd.get('email') || '';
+          const avatarUrl = photoPreview || fd.get('avatarUrl') || (isEditMode && selectedDriver ? selectedDriver.avatar : '');
           const licenceType = fd.get('LicenceType') || 'HR (Heavy Rigid)';
           const licenceNumber = fd.get('LicenceNumber') || '';
           const status = fd.get('DriverStatus') || 'Available';
@@ -2181,17 +2854,29 @@ export default function Drivers() {
 
           try {
             if (isEditMode && selectedDriver) {
-              await api.put(`/drivers/${selectedDriver.id}`, {
+              const res = await api.put(`/drivers/${selectedDriver.id}`, {
                 firstName,
                 lastName,
                 driverCode,
                 phone,
                 email,
+                avatarUrl,
                 licenceType,
                 licenceNumber,
                 status,
                 dob
               });
+              const updatedName = `${firstName} ${lastName}`.trim() || driverCode;
+              setSelectedDriver(prev => ({
+                ...prev,
+                name: updatedName,
+                phone: phone || prev.phone,
+                email: email || prev.email,
+                avatar: avatarUrl || prev.avatar,
+                licence: licenceType || prev.licence,
+                licenceNo: licenceNumber || prev.licenceNo,
+                status: status || prev.status
+              }));
             } else {
               await api.post('/drivers', {
                 firstName,
@@ -2199,6 +2884,7 @@ export default function Drivers() {
                 driverCode,
                 phone,
                 email,
+                avatarUrl,
                 licenceType,
                 licenceNumber,
                 status,
@@ -2453,7 +3139,7 @@ export default function Drivers() {
               <button onClick={() => setIsEditingDriver(true)} className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white border border-slate-900 text-slate-900 hover:bg-slate-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm">
                 <Edit2 size={14} /> <span>Edit Driver</span>
               </button>
-              <button onClick={() => alert(`Opening message interface for ${selectedDriver.name}`)} className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white border border-purple-200 text-purple-700 hover:bg-purple-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm">
+              <button onClick={() => setShowMessageDriverModal(true)} className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white border border-purple-200 text-purple-700 hover:bg-purple-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm">
                 <MessageSquare size={14} /> <span>Message Driver</span>
               </button>
               <div className="flex items-center gap-2">
@@ -2463,10 +3149,10 @@ export default function Drivers() {
                   </button>
                   {isDetailsMoreOpen && (
                     <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-lg p-2 z-50">
-                      <button onClick={() => { alert('View Activity Log clicked'); setIsDetailsMoreOpen(false); }} className="w-full text-left text-xs font-semibold text-slate-700 p-2 hover:bg-purple-50 hover:text-purple-700 rounded-lg transition-colors">View Activity Log</button>
-                      <button onClick={() => { alert('Print Profile clicked'); setIsDetailsMoreOpen(false); }} className="w-full text-left text-xs font-semibold text-slate-700 p-2 hover:bg-purple-50 hover:text-purple-700 rounded-lg transition-colors">Print Profile</button>
+                      <button onClick={() => { setActiveTab('Activity Timeline'); setIsDetailsMoreOpen(false); }} className="w-full text-left text-xs font-semibold text-slate-700 p-2 hover:bg-purple-50 hover:text-purple-700 rounded-lg transition-colors cursor-pointer">View Activity Log</button>
+                      <button onClick={() => { handlePrintDriverProfile(); setIsDetailsMoreOpen(false); }} className="w-full text-left text-xs font-semibold text-slate-700 p-2 hover:bg-purple-50 hover:text-purple-700 rounded-lg transition-colors cursor-pointer">Print Profile</button>
                       <div className="border-t border-slate-100 my-1"></div>
-                      <button onClick={() => { alert('Deactivate Driver clicked'); setIsDetailsMoreOpen(false); }} className="w-full text-left text-xs font-semibold text-rose-600 p-2 hover:bg-rose-50 rounded-lg transition-colors">Deactivate Driver</button>
+                      <button onClick={() => { setShowDeactivateConfirmModal(true); setIsDetailsMoreOpen(false); }} className="w-full text-left text-xs font-semibold text-rose-600 p-2 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer">Deactivate Driver</button>
                     </div>
                   )}
                 </div>
@@ -2588,12 +3274,19 @@ export default function Drivers() {
                       {['On Duty', 'Off Duty', 'On Leave', 'Unavailable'].map((status) => (
                         <button
                           key={status}
-                          onClick={() => {
-                            const updated = { ...selectedDriver, status };
-                            setSelectedDriver(updated);
-                            setDriverList(prev => prev.map(d => d.id === updated.id ? updated : d));
-                            setIsStatusDropdownOpen(false);
-                            showToast(`Driver status updated to ${status}`);
+                          onClick={async () => {
+                            try {
+                              const s = status.toUpperCase().replace(/\s+/g, '_');
+                              await api.put(`/drivers/${selectedDriver.id}`, { status: s });
+                              const updated = { ...selectedDriver, status };
+                              setSelectedDriver(updated);
+                              await fetchDrivers();
+                              setIsStatusDropdownOpen(false);
+                              showToast(`Driver status updated to ${status}`);
+                            } catch (err) {
+                              console.error('Error updating status:', err);
+                              alert('Failed to update driver status in database.');
+                            }
                           }}
                           className={`w-full text-left px-3 py-2 text-xs font-bold rounded-lg transition-colors flex items-center justify-between ${selectedDriver.status === status ? 'text-purple-700 bg-purple-50' : 'text-slate-700 hover:bg-slate-50'}`}
                         >
@@ -3331,10 +4024,8 @@ export default function Drivers() {
                   </button>
                   <button
                     onClick={() => {
-                      showToast(`Downloading performance PDF report...`);
-                      setTimeout(() => {
-                        showToast(`Performance report PDF downloaded!`);
-                      }, 1000);
+                      handlePrintPerformanceReport();
+                      showToast(`Performance report generated!`);
                     }}
                     className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 hover:bg-purple-50 hover:border-purple-200 hover:text-purple-700 transition-colors shadow-xs cursor-pointer"
                   >
@@ -3359,8 +4050,8 @@ export default function Drivers() {
                     <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-tight">Overall<br />Performance</h4>
                     <div className="w-6 h-6 rounded bg-purple-50 flex items-center justify-center text-purple-600"><Award size={12} /></div>
                   </div>
-                  <div className="text-2xl font-black text-slate-900 mb-1">96<span className="text-sm text-slate-400">/100</span></div>
-                  <div className="text-[9px] font-bold text-emerald-500">+2.4% vs last month</div>
+                  <div className="text-2xl font-black text-slate-900 mb-1">0<span className="text-sm text-slate-400">/100</span></div>
+                  <div className="text-[9px] font-bold text-slate-400">No data yet</div>
                 </div>
                 {/* Scorecard 2 */}
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 relative overflow-hidden">
@@ -3368,8 +4059,8 @@ export default function Drivers() {
                     <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-tight">On-Time<br />Delivery</h4>
                     <div className="w-6 h-6 rounded bg-blue-50 flex items-center justify-center text-blue-600"><Clock size={12} /></div>
                   </div>
-                  <div className="text-2xl font-black text-slate-900 mb-1">97.2%</div>
-                  <div className="text-[9px] font-bold text-emerald-500">+0.8% vs last month</div>
+                  <div className="text-2xl font-black text-slate-900 mb-1">0%</div>
+                  <div className="text-[9px] font-bold text-slate-400">No data yet</div>
                 </div>
                 {/* Scorecard 3 */}
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 relative overflow-hidden">
@@ -3377,8 +4068,8 @@ export default function Drivers() {
                     <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-tight">Loads<br />Completed</h4>
                     <div className="w-6 h-6 rounded bg-emerald-50 flex items-center justify-center text-emerald-600"><CheckCircle size={12} /></div>
                   </div>
-                  <div className="text-2xl font-black text-slate-900 mb-1">124</div>
-                  <div className="text-[9px] font-bold text-slate-400">On track (target 130)</div>
+                  <div className="text-2xl font-black text-slate-900 mb-1">0</div>
+                  <div className="text-[9px] font-bold text-slate-400">No data yet</div>
                 </div>
                 {/* Scorecard 4 */}
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 relative overflow-hidden">
@@ -3386,8 +4077,8 @@ export default function Drivers() {
                     <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-tight">Safety<br />Score</h4>
                     <div className="w-6 h-6 rounded bg-indigo-50 flex items-center justify-center text-indigo-600"><Shield size={12} /></div>
                   </div>
-                  <div className="text-2xl font-black text-slate-900 mb-1">98<span className="text-sm text-slate-400">/100</span></div>
-                  <div className="text-[9px] font-bold text-emerald-500">Zero critical events</div>
+                  <div className="text-2xl font-black text-slate-900 mb-1">0<span className="text-sm text-slate-400">/100</span></div>
+                  <div className="text-[9px] font-bold text-slate-400">No data yet</div>
                 </div>
                 {/* Scorecard 5 */}
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 relative overflow-hidden">
@@ -3395,8 +4086,8 @@ export default function Drivers() {
                     <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-tight">Customer<br />Rating</h4>
                     <div className="w-6 h-6 rounded bg-amber-50 flex items-center justify-center text-amber-600"><Star size={12} /></div>
                   </div>
-                  <div className="text-2xl font-black text-slate-900 mb-1">4.92<span className="text-sm text-slate-400">/5.0</span></div>
-                  <div className="text-[9px] font-bold text-slate-400">48 ratings received</div>
+                  <div className="text-2xl font-black text-slate-900 mb-1">0<span className="text-sm text-slate-400">/5.0</span></div>
+                  <div className="text-[9px] font-bold text-slate-400">No ratings yet</div>
                 </div>
                 {/* Scorecard 6 */}
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 relative overflow-hidden">
@@ -3404,8 +4095,8 @@ export default function Drivers() {
                     <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-tight">Compliance<br />Score</h4>
                     <div className="w-6 h-6 rounded bg-teal-50 flex items-center justify-center text-teal-600"><FileCheck size={12} /></div>
                   </div>
-                  <div className="text-2xl font-black text-slate-900 mb-1">100%</div>
-                  <div className="text-[9px] font-bold text-emerald-500">Fully Compliant</div>
+                  <div className="text-2xl font-black text-slate-900 mb-1">0%</div>
+                  <div className="text-[9px] font-bold text-slate-400">No data yet</div>
                 </div>
               </div>
 
@@ -3436,26 +4127,26 @@ export default function Drivers() {
                       <line x1="0" y1="200" x2="600" y2="200" stroke="#f1f5f9" strokeWidth="1" />
 
                       {/* Area Fill */}
-                      <path d="M 50 140 L 150 130 L 250 145 L 350 120 L 450 135 L 550 90 L 550 200 L 50 200 Z" fill="url(#chartGradient)" />
+                      <path d="M 50 200 L 150 200 L 250 200 L 350 200 L 450 200 L 550 200 L 550 200 L 50 200 Z" fill="url(#chartGradient)" />
 
                       {/* Line */}
-                      <path d="M 50 140 L 150 130 L 250 145 L 350 120 L 450 135 L 550 90" fill="none" stroke="#9333ea" strokeWidth="3" />
+                      <path d="M 50 200 L 150 200 L 250 200 L 350 200 L 450 200 L 550 200" fill="none" stroke="#9333ea" strokeWidth="3" />
 
                       {/* Points */}
-                      <circle cx="50" cy="140" r="4" fill="white" stroke="#9333ea" strokeWidth="2" />
-                      <circle cx="150" cy="130" r="4" fill="white" stroke="#9333ea" strokeWidth="2" />
-                      <circle cx="250" cy="145" r="4" fill="white" stroke="#9333ea" strokeWidth="2" />
-                      <circle cx="350" cy="120" r="4" fill="white" stroke="#9333ea" strokeWidth="2" />
-                      <circle cx="450" cy="135" r="4" fill="white" stroke="#9333ea" strokeWidth="2" />
-                      <circle cx="550" cy="90" r="4" fill="white" stroke="#9333ea" strokeWidth="2" />
+                      <circle cx="50" cy="200" r="4" fill="white" stroke="#9333ea" strokeWidth="2" />
+                      <circle cx="150" cy="200" r="4" fill="white" stroke="#9333ea" strokeWidth="2" />
+                      <circle cx="250" cy="200" r="4" fill="white" stroke="#9333ea" strokeWidth="2" />
+                      <circle cx="350" cy="200" r="4" fill="white" stroke="#9333ea" strokeWidth="2" />
+                      <circle cx="450" cy="200" r="4" fill="white" stroke="#9333ea" strokeWidth="2" />
+                      <circle cx="550" cy="200" r="4" fill="white" stroke="#9333ea" strokeWidth="2" />
 
                       {/* X-axis labels */}
-                      <text x="50" y="220" textAnchor="middle" fill="#64748b" fontSize="10" fontWeight="bold">Jan (88%)</text>
-                      <text x="150" y="220" textAnchor="middle" fill="#64748b" fontSize="10" fontWeight="bold">Feb (92%)</text>
-                      <text x="250" y="220" textAnchor="middle" fill="#64748b" fontSize="10" fontWeight="bold">Mar (90%)</text>
-                      <text x="350" y="220" textAnchor="middle" fill="#64748b" fontSize="10" fontWeight="bold">Apr (95%)</text>
-                      <text x="450" y="220" textAnchor="middle" fill="#64748b" fontSize="10" fontWeight="bold">May (94%)</text>
-                      <text x="550" y="220" textAnchor="middle" fill="#64748b" fontSize="10" fontWeight="bold">Jun (97%)</text>
+                      <text x="50" y="220" textAnchor="middle" fill="#64748b" fontSize="10" fontWeight="bold">Jan (0%)</text>
+                      <text x="150" y="220" textAnchor="middle" fill="#64748b" fontSize="10" fontWeight="bold">Feb (0%)</text>
+                      <text x="250" y="220" textAnchor="middle" fill="#64748b" fontSize="10" fontWeight="bold">Mar (0%)</text>
+                      <text x="350" y="220" textAnchor="middle" fill="#64748b" fontSize="10" fontWeight="bold">Apr (0%)</text>
+                      <text x="450" y="220" textAnchor="middle" fill="#64748b" fontSize="10" fontWeight="bold">May (0%)</text>
+                      <text x="550" y="220" textAnchor="middle" fill="#64748b" fontSize="10" fontWeight="bold">Jun (0%)</text>
                     </svg>
                   </div>
                 </div>
@@ -3469,50 +4160,50 @@ export default function Drivers() {
                     <div>
                       <div className="flex justify-between items-end mb-1.5">
                         <span className="text-[10px] font-bold text-slate-600">Delivery Performance (On-time & routing)</span>
-                        <span className="text-[10px] font-black text-slate-900">97.2%</span>
+                        <span className="text-[10px] font-black text-slate-900">0%</span>
                       </div>
                       <div className="w-full bg-slate-100 rounded-full h-1.5">
-                        <div className="bg-purple-600 h-1.5 rounded-full" style={{ width: '97.2%' }}></div>
+                        <div className="bg-purple-600 h-1.5 rounded-full" style={{ width: '0%' }}></div>
                       </div>
                     </div>
                     {/* Bar 2 */}
                     <div>
                       <div className="flex justify-between items-end mb-1.5">
                         <span className="text-[10px] font-bold text-slate-600">Safety Performance (Speeding & hard braking)</span>
-                        <span className="text-[10px] font-black text-slate-900">98%</span>
+                        <span className="text-[10px] font-black text-slate-900">0%</span>
                       </div>
                       <div className="w-full bg-slate-100 rounded-full h-1.5">
-                        <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: '98%' }}></div>
+                        <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: '0%' }}></div>
                       </div>
                     </div>
                     {/* Bar 3 */}
                     <div>
                       <div className="flex justify-between items-end mb-1.5">
                         <span className="text-[10px] font-bold text-slate-600">Attendance & Schedule Adherence</span>
-                        <span className="text-[10px] font-black text-slate-900">95%</span>
+                        <span className="text-[10px] font-black text-slate-900">0%</span>
                       </div>
                       <div className="w-full bg-slate-100 rounded-full h-1.5">
-                        <div className="bg-purple-600 h-1.5 rounded-full" style={{ width: '95%' }}></div>
+                        <div className="bg-purple-600 h-1.5 rounded-full" style={{ width: '0%' }}></div>
                       </div>
                     </div>
                     {/* Bar 4 */}
                     <div>
                       <div className="flex justify-between items-end mb-1.5">
                         <span className="text-[10px] font-bold text-slate-600">Regulatory & Document Compliance</span>
-                        <span className="text-[10px] font-black text-slate-900">100%</span>
+                        <span className="text-[10px] font-black text-slate-900">0%</span>
                       </div>
                       <div className="w-full bg-slate-100 rounded-full h-1.5">
-                        <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: '100%' }}></div>
+                        <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: '0%' }}></div>
                       </div>
                     </div>
                     {/* Bar 5 */}
                     <div>
                       <div className="flex justify-between items-end mb-1.5">
                         <span className="text-[10px] font-bold text-slate-600">Vehicle Handling & Idle Time</span>
-                        <span className="text-[10px] font-black text-slate-900">92.5%</span>
+                        <span className="text-[10px] font-black text-slate-900">0%</span>
                       </div>
                       <div className="w-full bg-slate-100 rounded-full h-1.5">
-                        <div className="bg-amber-500 h-1.5 rounded-full" style={{ width: '92.5%' }}></div>
+                        <div className="bg-amber-500 h-1.5 rounded-full" style={{ width: '0%' }}></div>
                       </div>
                     </div>
 
@@ -3527,28 +4218,28 @@ export default function Drivers() {
                     <Activity size={14} className="text-slate-400" />
                     <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Total Trips</span>
                   </div>
-                  <div className="text-lg font-black text-slate-900">156</div>
+                  <div className="text-lg font-black text-slate-900">0</div>
                 </div>
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex flex-col justify-between">
                   <div className="flex items-center gap-2 mb-2">
                     <MapPin size={14} className="text-slate-400" />
                     <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Total Distance</span>
                   </div>
-                  <div className="text-lg font-black text-slate-900">78,420 <span className="text-[10px] font-bold text-slate-500">km</span></div>
+                  <div className="text-lg font-black text-slate-900">0 <span className="text-[10px] font-bold text-slate-500">km</span></div>
                 </div>
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex flex-col justify-between">
                   <div className="flex items-center gap-2 mb-2">
                     <TrendingUp size={14} className="text-slate-400" />
                     <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Fuel Efficiency</span>
                   </div>
-                  <div className="text-lg font-black text-slate-900">2.4 <span className="text-[10px] font-bold text-slate-500">km/L</span></div>
+                  <div className="text-lg font-black text-slate-900">0 <span className="text-[10px] font-bold text-slate-500">km/L</span></div>
                 </div>
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex flex-col justify-between">
                   <div className="flex items-center gap-2 mb-2">
                     <Clock size={14} className="text-slate-400" />
                     <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Avg Delivery Time</span>
                   </div>
-                  <div className="text-lg font-black text-slate-900">4.2 <span className="text-[10px] font-bold text-slate-500">hrs</span></div>
+                  <div className="text-lg font-black text-slate-900">0 <span className="text-[10px] font-bold text-slate-500">hrs</span></div>
                 </div>
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex flex-col justify-between">
                   <div className="flex items-center gap-2 mb-2">
@@ -3562,7 +4253,7 @@ export default function Drivers() {
                     <CheckSquare size={14} className="text-purple-500" />
                     <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Successful Deliveries</span>
                   </div>
-                  <div className="text-lg font-black text-purple-600">154</div>
+                  <div className="text-lg font-black text-purple-600">0</div>
                 </div>
               </div>
 
@@ -3576,43 +4267,43 @@ export default function Drivers() {
                     <div>
                       <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Completed Loads</div>
                       <div className="flex items-baseline gap-2">
-                        <span className="text-xl font-black text-slate-900">124</span>
-                        <span className="text-[10px] font-bold text-slate-400">99.2%</span>
+                        <span className="text-xl font-black text-slate-900">0</span>
+                        <span className="text-[10px] font-bold text-slate-400">0%</span>
                       </div>
                     </div>
                     <div>
                       <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Cancelled Loads</div>
                       <div className="flex items-baseline gap-2">
-                        <span className="text-xl font-black text-slate-900">1</span>
-                        <span className="text-[10px] font-bold text-slate-400">0.8%</span>
+                        <span className="text-xl font-black text-slate-900">0</span>
+                        <span className="text-[10px] font-bold text-slate-400">0%</span>
                       </div>
                     </div>
                     <div>
                       <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Delayed Loads</div>
                       <div className="flex items-baseline gap-2">
-                        <span className="text-xl font-black text-slate-900">3</span>
-                        <span className="text-[10px] font-bold text-slate-400">2.4%</span>
+                        <span className="text-xl font-black text-slate-900">0</span>
+                        <span className="text-[10px] font-bold text-slate-400">0%</span>
                       </div>
                     </div>
                     <div>
                       <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Average Hours Worked</div>
                       <div className="flex items-baseline gap-2">
-                        <span className="text-xl font-black text-slate-900">38h/week</span>
-                        <span className="text-[10px] font-bold text-slate-400">95%</span>
+                        <span className="text-xl font-black text-slate-900">0h/week</span>
+                        <span className="text-[10px] font-bold text-slate-400">0%</span>
                       </div>
                     </div>
                     <div>
                       <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Working Days</div>
                       <div className="flex items-baseline gap-2">
-                        <span className="text-xl font-black text-slate-900">22 <span className="text-[12px]">days</span></span>
-                        <span className="text-[10px] font-bold text-slate-400">73.3%</span>
+                        <span className="text-xl font-black text-slate-900">0 <span className="text-[12px]">days</span></span>
+                        <span className="text-[10px] font-bold text-slate-400">0%</span>
                       </div>
                     </div>
                     <div>
                       <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Rest Days</div>
                       <div className="flex items-baseline gap-2">
-                        <span className="text-xl font-black text-slate-900">8 <span className="text-[12px]">days</span></span>
-                        <span className="text-[10px] font-bold text-slate-400">26.7%</span>
+                        <span className="text-xl font-black text-slate-900">0 <span className="text-[12px]">days</span></span>
+                        <span className="text-[10px] font-bold text-slate-400">0%</span>
                       </div>
                     </div>
                   </div>
@@ -3666,7 +4357,15 @@ export default function Drivers() {
               {/* Evaluation Log Table */}
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col">
                 <div className="p-5 border-b border-slate-100 flex justify-between items-center">
-                  <h4 className="text-[11px] font-black text-slate-900">Performance Evaluation Log</h4>
+                  <div className="flex items-center gap-3">
+                    <h4 className="text-[11px] font-black text-slate-900">Performance Evaluation Log</h4>
+                    <button
+                      onClick={() => setAddEvalModal(true)}
+                      className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-bold rounded-lg transition-colors flex items-center gap-1 cursor-pointer shadow-xs"
+                    >
+                      <Plus size={12} /> <span>Add Log</span>
+                    </button>
+                  </div>
                   <span className="text-[10px] font-bold text-slate-400">Showing {evalLogList.length} evaluation logs</span>
                 </div>
                 <div className="overflow-x-auto">
@@ -3735,12 +4434,18 @@ export default function Drivers() {
                                     </button>
                                     <div className="h-px bg-slate-100 my-0.5" />
                                     <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setEvalLogList(prev => prev.filter(eItem => eItem.id !== item.id));
-                                        setEvalMenuIndex(null);
-                                        showToast(`Deleted evaluation entry ${item.assignment} successfully!`);
-                                      }}
+                                      onClick={async (e) => {
+                                         e.stopPropagation();
+                                         try {
+                                           await api.delete(`/performance-logs/${item.id}`);
+                                           if (selectedDriver?.id) fetchPerformanceLogs(selectedDriver.id);
+                                           setEvalMenuIndex(null);
+                                           showToast(`Deleted evaluation entry successfully!`);
+                                         } catch (err) {
+                                           console.error('Error deleting performance log:', err);
+                                           alert('Failed to delete evaluation log.');
+                                         }
+                                       }}
                                       className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-rose-50 text-rose-600 transition-all text-left w-full cursor-pointer font-bold"
                                     >
                                       <Trash2 size={14} className="text-rose-600" />
@@ -4164,44 +4869,34 @@ export default function Drivers() {
                     <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
                       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 overflow-hidden">
                         <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-tight mb-2">Total<br />Earnings<br />(This Month)</div>
-                        <div className="text-base xl:text-lg font-black text-slate-900 mb-1 truncate" title="$3,265.00">$3,265.00</div>
-                        <div className="flex items-center gap-1 text-[9px] font-bold text-emerald-500 truncate">
-                          <TrendingUp size={10} className="shrink-0" /> 12% <span className="text-slate-400 font-medium truncate">vs last month</span>
-                        </div>
+                        <div className="text-base xl:text-lg font-black text-slate-900 mb-1 truncate">$0.00</div>
+                        <div className="flex items-center gap-1 text-[9px] font-bold text-slate-400 truncate">No data yet</div>
                       </div>
                       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 overflow-hidden">
                         <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-tight mb-2">Net Pay<br />(This Month)</div>
-                        <div className="text-base xl:text-lg font-black text-slate-900 mb-1 truncate" title="$2,940.50">$2,940.50</div>
-                        <div className="flex items-center gap-1 text-[9px] font-bold text-emerald-500 truncate">
-                          <TrendingUp size={10} className="shrink-0" /> 10% <span className="text-slate-400 font-medium truncate">vs last month</span>
-                        </div>
+                        <div className="text-base xl:text-lg font-black text-slate-900 mb-1 truncate">$0.00</div>
+                        <div className="flex items-center gap-1 text-[9px] font-bold text-slate-400 truncate">No data yet</div>
                       </div>
                       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 overflow-hidden">
                         <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-tight mb-2">Loads<br />Completed</div>
-                        <div className="text-base xl:text-lg font-black text-slate-900 mb-1 truncate" title="18">18</div>
-                        <div className="flex items-center gap-1 text-[9px] font-bold text-emerald-500 truncate">
-                          <TrendingUp size={10} className="shrink-0" /> 0 <span className="text-slate-400 font-medium truncate">vs last month</span>
-                        </div>
+                        <div className="text-base xl:text-lg font-black text-slate-900 mb-1 truncate">0</div>
+                        <div className="flex items-center gap-1 text-[9px] font-bold text-slate-400 truncate">No data yet</div>
                       </div>
                       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 overflow-hidden">
                         <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-tight mb-2">Total<br />Kilometres</div>
-                        <div className="text-base xl:text-lg font-black text-slate-900 mb-1 truncate" title="7,842 km">7,842 km</div>
-                        <div className="flex items-center gap-1 text-[9px] font-bold text-emerald-500 truncate">
-                          <TrendingUp size={10} className="shrink-0" /> 654 km <span className="text-slate-400 font-medium truncate">vs last month</span>
-                        </div>
+                        <div className="text-base xl:text-lg font-black text-slate-900 mb-1 truncate">0 km</div>
+                        <div className="flex items-center gap-1 text-[9px] font-bold text-slate-400 truncate">No data yet</div>
                       </div>
                       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 overflow-hidden">
                         <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-tight mb-2">Avg. Daily<br />Earnings</div>
-                        <div className="text-base xl:text-lg font-black text-slate-900 mb-1 truncate" title="$163.25">$163.25</div>
-                        <div className="flex items-center gap-1 text-[9px] font-bold text-emerald-500 truncate">
-                          <TrendingUp size={10} className="shrink-0" /> $12.40 <span className="text-slate-400 font-medium truncate">vs last month</span>
-                        </div>
+                        <div className="text-base xl:text-lg font-black text-slate-900 mb-1 truncate">$0.00</div>
+                        <div className="flex items-center gap-1 text-[9px] font-bold text-slate-400 truncate">No data yet</div>
                       </div>
                       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-col justify-between overflow-hidden">
                         <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-tight mb-2">Pay Rate</div>
                         <div>
-                          <div className="text-base xl:text-lg font-black text-slate-900 truncate" title="$550.00 / day">$550.00 / day</div>
-                          <div className="text-[9px] text-slate-400 font-medium mt-1 truncate">Daily Base Rate</div>
+                          <div className="text-base xl:text-lg font-black text-slate-900 truncate">{selectedDriver?.payRate ? `$${selectedDriver.payRate} / ${selectedDriver.payType || 'day'}` : '$0.00 / day'}</div>
+                          <div className="text-[9px] text-slate-400 font-medium mt-1 truncate">{selectedDriver?.payType || 'Daily'} Base Rate</div>
                         </div>
                       </div>
                     </div>
@@ -4225,32 +4920,16 @@ export default function Drivers() {
                             </tr>
                           </thead>
                           <tbody>
-                            <tr className="border-b border-slate-50 hover:bg-slate-50/50">
-                              <td className="px-4 py-3 text-[11px] font-medium text-slate-700">18/07/2025</td>
-                              <td className="px-4 py-3 text-[11px] font-bold text-purple-600 cursor-pointer hover:underline">LD-12557</td>
-                              <td className="px-4 py-3 text-[11px] font-semibold text-slate-800">Melbourne VIC → Sydney NSW</td>
-                              <td className="px-4 py-3"><span className="inline-flex px-1.5 py-0.5 bg-blue-50 text-blue-600 border border-blue-200 rounded text-[9px] font-bold tracking-widest uppercase">Daily Rate</span></td>
-                              <td className="px-4 py-3 text-[11px] font-medium text-slate-600">$550.00 / day</td>
-                              <td className="px-4 py-3 text-[11px] font-black text-slate-900">$550.00</td>
-                              <td className="px-4 py-3 text-center"><span className="inline-flex px-1.5 py-0.5 bg-amber-50 text-amber-600 border border-amber-200 rounded text-[9px] font-bold tracking-widest uppercase">Pending</span></td>
-                            </tr>
-                            <tr className="border-b border-slate-50 hover:bg-slate-50/50">
-                              <td className="px-4 py-3 text-[11px] font-medium text-slate-700">16/07/2025</td>
-                              <td className="px-4 py-3 text-[11px] font-bold text-emerald-600 cursor-pointer hover:underline">EXP-2045</td>
-                              <td className="px-4 py-3 text-[11px] font-semibold text-slate-800">Fuel Reimbursement</td>
-                              <td className="px-4 py-3"><span className="inline-flex px-1.5 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded text-[9px] font-bold tracking-widest uppercase">Allowance</span></td>
-                              <td className="px-4 py-3 text-[11px] font-medium text-slate-600">$120.00</td>
-                              <td className="px-4 py-3 text-[11px] font-black text-emerald-600">$120.00</td>
-                              <td className="px-4 py-3 text-center"><span className="inline-flex px-1.5 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded text-[9px] font-bold tracking-widest uppercase">Approved</span></td>
-                            </tr>
-                            <tr className="hover:bg-slate-50/50">
-                              <td className="px-4 py-3 text-[11px] font-medium text-slate-700">14/07/2025</td>
-                              <td className="px-4 py-3 text-[11px] font-bold text-rose-600 cursor-pointer hover:underline">ADV-3342</td>
-                              <td className="px-4 py-3 text-[11px] font-semibold text-slate-800">Advance Deduction</td>
-                              <td className="px-4 py-3"><span className="inline-flex px-1.5 py-0.5 bg-rose-50 text-rose-600 border border-rose-200 rounded text-[9px] font-bold tracking-widest uppercase">Deduction</span></td>
-                              <td className="px-4 py-3 text-[11px] font-medium text-slate-600">-$300.00</td>
-                              <td className="px-4 py-3 text-[11px] font-black text-rose-600">-$300.00</td>
-                              <td className="px-4 py-3 text-center"><span className="inline-flex px-1.5 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded text-[9px] font-bold tracking-widest uppercase">Approved</span></td>
+                            <tr>
+                              <td colSpan={7} className="px-4 py-10 text-center">
+                                <div className="flex flex-col items-center gap-2">
+                                  <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">
+                                    <FileIcon size={18} className="text-slate-400" />
+                                  </div>
+                                  <p className="text-[11px] font-bold text-slate-400">No earnings records for this month</p>
+                                  <p className="text-[10px] text-slate-300">Records will appear here once loads are completed</p>
+                                </div>
+                              </td>
                             </tr>
                           </tbody>
                         </table>
@@ -4265,15 +4944,15 @@ export default function Drivers() {
                       <div className="space-y-3">
                         <div className="flex justify-between items-center text-xs">
                           <span className="font-semibold text-slate-600">Base Daily Rate</span>
-                          <span className="font-extrabold text-slate-900">$3,300.00</span>
+                          <span className="font-extrabold text-slate-900">$0.00</span>
                         </div>
                         <div className="flex justify-between items-center text-xs">
                           <span className="font-semibold text-slate-600">Allowances Total</span>
-                          <span className="font-extrabold text-emerald-600">+$285.00</span>
+                          <span className="font-extrabold text-emerald-600">+$0.00</span>
                         </div>
                         <div className="flex justify-between items-center text-xs pt-2 border-t border-slate-100">
                           <span className="font-semibold text-slate-600">Deductions Total</span>
-                          <span className="font-extrabold text-rose-600">-$300.00</span>
+                          <span className="font-extrabold text-rose-600">-$0.00</span>
                         </div>
                       </div>
                     </div>
@@ -4345,30 +5024,17 @@ export default function Drivers() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-xs font-medium">
-                        {[
-                          { period: '01/07/2025 - 15/07/2025', payDate: '16/07/2025', gross: '$3,480.00', baseAmount: '$3,300.00', allowanceAmount: '+$180.00', units: '6 days', tax: '-$539.50', super: '$400.20', net: '$2,940.50', status: 'Paid' },
-                          { period: '16/06/2025 - 30/06/2025', payDate: '01/07/2025', gross: '$3,300.00', baseAmount: '$3,300.00', allowanceAmount: '$0.00', units: '6 days', tax: '-$510.00', super: '$379.50', net: '$2,790.00', status: 'Paid' },
-                          { period: '01/06/2025 - 15/06/2025', payDate: '16/06/2025', gross: '$3,150.00', baseAmount: '$2,750.00', allowanceAmount: '+$400.00', units: '5 days', tax: '-$485.00', super: '$362.25', net: '$2,665.00', status: 'Paid' }
-                        ].map((row, idx) => (
-                          <tr key={idx} className="hover:bg-slate-50/50">
-                            <td className="px-5 py-4 font-bold text-slate-900">{row.period}</td>
-                            <td className="px-5 py-4 text-slate-600">{row.payDate}</td>
-                            <td className="px-5 py-4 font-extrabold text-slate-900">{row.gross}</td>
-                            <td className="px-5 py-4 text-rose-600">{row.tax}</td>
-                            <td className="px-5 py-4 text-purple-700 font-bold">{row.super}</td>
-                            <td className="px-5 py-4 font-black text-emerald-600 text-sm">{row.net}</td>
-                            <td className="px-5 py-4"><span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded text-[9px] font-bold uppercase">{row.status}</span></td>
-                            <td className="px-5 py-4 text-center">
-                              <button
-                                onClick={() => setSelectedPayslip(row)}
-                                className="p-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg cursor-pointer transition-all shadow-xs"
-                                title="View & Download Payslip"
-                              >
-                                <Download size={14} />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
+                        <tr>
+                          <td colSpan={8} className="px-5 py-12 text-center">
+                            <div className="flex flex-col items-center gap-2">
+                              <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">
+                                <FileIcon size={18} className="text-slate-400" />
+                              </div>
+                              <p className="text-[11px] font-bold text-slate-400">No pay history yet</p>
+                              <p className="text-[10px] text-slate-300">Completed pay runs will appear here</p>
+                            </div>
+                          </td>
+                        </tr>
                       </tbody>
                     </table>
                   </div>
@@ -4386,7 +5052,7 @@ export default function Drivers() {
                       </div>
                       <p className="text-[10px] text-slate-500 font-medium">Road Transport Enterprise Agreement 2026</p>
                     </div>
-                    <button onClick={() => showToast("Pay rates updated successfully!")} className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-md shadow-purple-600/20 cursor-pointer">Edit Pay Rates</button>
+                    <button onClick={() => setPayrollModal('edit_rates')} className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-md shadow-purple-600/20 cursor-pointer">Edit Pay Rates</button>
                   </div>
 
                   <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -4450,7 +5116,13 @@ export default function Drivers() {
                             <td className="px-5 py-4 font-black text-emerald-600 text-sm">{item.amount}</td>
                             <td className="px-5 py-4 text-center"><span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded text-[9px] font-bold uppercase">{item.status}</span></td>
                             <td className="px-5 py-4 text-center">
-                              <button onClick={() => { setAllowancesList(prev => prev.filter(a => a.id !== item.id)); showToast(`Removed allowance ${item.name}`); }} className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg cursor-pointer"><Trash2 size={14} /></button>
+                              <button onClick={async () => {
+                                if (typeof item.id === 'string' && item.id.length > 20) {
+                                  try { await api.delete(`/driver-allowances/${item.id}`); } catch (e) { console.error(e); }
+                                }
+                                setAllowancesList(prev => prev.filter(a => a.id !== item.id));
+                                showToast(`Removed allowance ${item.name}`);
+                              }} className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg cursor-pointer"><Trash2 size={14} /></button>
                             </td>
                           </tr>
                         ))}
@@ -4492,7 +5164,13 @@ export default function Drivers() {
                             <td className="px-5 py-4 font-black text-rose-600 text-sm">-{item.amount}</td>
                             <td className="px-5 py-4 text-center"><span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${item.status === 'Active' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}`}>{item.status}</span></td>
                             <td className="px-5 py-4 text-center">
-                              <button onClick={() => { setDeductionsList(prev => prev.filter(d => d.id !== item.id)); showToast(`Removed deduction ${item.name}`); }} className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg cursor-pointer"><Trash2 size={14} /></button>
+                              <button onClick={async () => {
+                                if (typeof item.id === 'string' && item.id.length > 20) {
+                                  try { await api.delete(`/driver-deductions/${item.id}`); } catch (e) { console.error(e); }
+                                }
+                                setDeductionsList(prev => prev.filter(d => d.id !== item.id));
+                                showToast(`Removed deduction ${item.name}`);
+                              }} className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg cursor-pointer"><Trash2 size={14} /></button>
                             </td>
                           </tr>
                         ))}
@@ -4509,22 +5187,22 @@ export default function Drivers() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Annual Leave</p>
-                      <p className="text-2xl font-black text-purple-700 my-1">18.5 <span className="text-xs text-slate-400 font-bold">Days</span></p>
-                      <p className="text-[9px] text-emerald-600 font-bold">Accruing 1.67 days/mo</p>
+                      <p className="text-2xl font-black text-purple-700 my-1">0 <span className="text-xs text-slate-400 font-bold">Days</span></p>
+                      <p className="text-[9px] text-slate-400 font-bold">Accruing 1.67 days/mo</p>
                     </div>
                     <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Personal / Sick Leave</p>
-                      <p className="text-2xl font-black text-blue-700 my-1">9.2 <span className="text-xs text-slate-400 font-bold">Days</span></p>
-                      <p className="text-[9px] text-emerald-600 font-bold">Accruing 0.83 days/mo</p>
+                      <p className="text-2xl font-black text-blue-700 my-1">0 <span className="text-xs text-slate-400 font-bold">Days</span></p>
+                      <p className="text-[9px] text-slate-400 font-bold">Accruing 0.83 days/mo</p>
                     </div>
                     <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Long Service Leave</p>
-                      <p className="text-2xl font-black text-slate-900 my-1">34.0 <span className="text-xs text-slate-400 font-bold">Days</span></p>
-                      <p className="text-[9px] text-purple-600 font-bold">Vested & Eligible</p>
+                      <p className="text-2xl font-black text-slate-900 my-1">0 <span className="text-xs text-slate-400 font-bold">Days</span></p>
+                      <p className="text-[9px] text-slate-400 font-bold">Not yet vested</p>
                     </div>
                     <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Unpaid Leave</p>
-                      <p className="text-2xl font-black text-slate-500 my-1">0.0 <span className="text-xs text-slate-400 font-bold">Days</span></p>
+                      <p className="text-2xl font-black text-slate-500 my-1">0 <span className="text-xs text-slate-400 font-bold">Days</span></p>
                       <p className="text-[9px] text-slate-400 font-bold">No unpaid absences</p>
                     </div>
                   </div>
@@ -4580,7 +5258,7 @@ export default function Drivers() {
                         <div><p className="text-slate-400 font-bold text-[10px] uppercase">Member Number</p><p className="font-extrabold text-slate-900 font-mono">{superInfo.memberNumber}</p></div>
                         <div><p className="text-slate-400 font-bold text-[10px] uppercase">Fund USI</p><p className="font-extrabold text-slate-900 font-mono">{superInfo.usi}</p></div>
                         <div><p className="text-slate-400 font-bold text-[10px] uppercase">Guarantee Rate</p><p className="font-extrabold text-purple-700">{superInfo.rate}</p></div>
-                        <div><p className="text-slate-400 font-bold text-[10px] uppercase">Total Super YTD</p><p className="font-black text-emerald-600">{superInfo.ytdContribution}</p></div>
+                        <div><p className="text-slate-400 font-bold text-[10px] uppercase">Total Super YTD</p><p className="font-black text-emerald-600">$0.00</p></div>
                       </div>
                     </div>
                     <button onClick={() => setPayrollModal('update_super')} className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-md shadow-purple-600/20 cursor-pointer shrink-0">Update Super Details</button>
@@ -4602,21 +5280,16 @@ export default function Drivers() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        <tr className="hover:bg-slate-50/50">
-                          <td className="px-5 py-4 font-extrabold text-slate-900">Q4 (Apr - Jun 2026)</td>
-                          <td className="px-5 py-4 font-bold text-slate-700">$20,880.00</td>
-                          <td className="px-5 py-4 font-black text-purple-700 text-sm">$2,401.20</td>
-                          <td className="px-5 py-4 text-slate-600">14/07/2026</td>
-                          <td className="px-5 py-4 font-mono text-slate-500">SCH-8839201</td>
-                          <td className="px-5 py-4 text-center"><span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded text-[9px] font-bold uppercase">Paid to Fund</span></td>
-                        </tr>
-                        <tr className="hover:bg-slate-50/50">
-                          <td className="px-5 py-4 font-extrabold text-slate-900">Q3 (Jan - Mar 2026)</td>
-                          <td className="px-5 py-4 font-bold text-slate-700">$19,500.00</td>
-                          <td className="px-5 py-4 font-black text-purple-700 text-sm">$2,242.50</td>
-                          <td className="px-5 py-4 text-slate-600">15/04/2026</td>
-                          <td className="px-5 py-4 font-mono text-slate-500">SCH-7728104</td>
-                          <td className="px-5 py-4 text-center"><span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded text-[9px] font-bold uppercase">Paid to Fund</span></td>
+                        <tr>
+                          <td colSpan={6} className="px-5 py-12 text-center">
+                            <div className="flex flex-col items-center gap-2">
+                              <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">
+                                <FileIcon size={18} className="text-slate-400" />
+                              </div>
+                              <p className="text-[11px] font-bold text-slate-400">No super contributions yet</p>
+                              <p className="text-[10px] text-slate-300">Quarterly clearing logs will appear here</p>
+                            </div>
+                          </td>
                         </tr>
                       </tbody>
                     </table>
@@ -4878,8 +5551,8 @@ export default function Drivers() {
         {/* KPI Cards */}
         {(() => {
           const totalDrivers = driverList.length;
-          const onDutyDrivers = driverList.filter(d => d.status === 'On Duty' || d.status === 'In Transit' || d.status === 'En Route' || d.status === 'At Pickup').length;
-          const offDutyDrivers = driverList.filter(d => d.status === 'Off Duty' || d.status === 'Available').length;
+          const onDutyDrivers = driverList.filter(d => d.status === 'Available' || d.status === 'On Duty' || d.status === 'In Transit' || d.status === 'En Route' || d.status === 'At Pickup').length;
+          const offDutyDrivers = driverList.filter(d => d.status === 'Off Duty').length;
           const onLeaveDrivers = driverList.filter(d => d.status === 'On Leave').length;
           const unavailableDrivers = driverList.filter(d => d.status === 'Unavailable' || d.status === 'Offline').length;
 
@@ -5133,10 +5806,19 @@ export default function Drivers() {
                                 </button>
                                 <div className="h-px bg-slate-100 my-0.5" />
                                 <button
-                                  onClick={(e) => {
+                                  onClick={async (e) => {
                                     e.stopPropagation();
-                                    setDriverList(prev => prev.filter(d => d.id !== driver.id));
-                                    setDriverMenuIndex(null);
+                                    if (window.confirm(`Are you sure you want to delete driver "${driver.name}"?`)) {
+                                      try {
+                                        await api.delete(`/drivers/${driver.id}`);
+                                        await fetchDrivers();
+                                        setDriverMenuIndex(null);
+                                        showToast(`Driver record "${driver.name}" deleted successfully`);
+                                      } catch (err) {
+                                        console.error('Error deleting driver:', err);
+                                        alert(err.response?.data?.message || 'Failed to delete driver from database.');
+                                      }
+                                    }
                                   }}
                                   className="flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-rose-50 text-rose-600 transition-all text-left w-full cursor-pointer font-bold"
                                 >
@@ -5197,8 +5879,8 @@ export default function Drivers() {
                     <CalendarDays size={14} />
                   </div>
                   <div>
-                    <h4 className="text-[11px] font-bold text-slate-800">5 Documents Expiring Soon</h4>
-                    <p className="text-[10px] text-slate-500 leading-tight mt-0.5 mb-1.5">Driver licences, medicals, and other documents expiring within 30 days.</p>
+                    <h4 className="text-[11px] font-bold text-slate-800">0 Documents Expiring Soon</h4>
+                    <p className="text-[10px] text-slate-500 leading-tight mt-0.5 mb-1.5">No driver licences or documents expiring within next 30 days.</p>
                     <button className="text-[10px] font-bold text-purple-600 hover:text-purple-700 flex items-center gap-1 transition-colors cursor-pointer">View Alerts &rarr;</button>
                   </div>
                 </div>
@@ -5220,7 +5902,7 @@ export default function Drivers() {
                   </div>
                   <div>
                     <h4 className="text-[11px] font-bold text-slate-800">Performance Watch</h4>
-                    <p className="text-[10px] text-slate-500 leading-tight mt-0.5 mb-1.5">2 drivers have low compliance score. Review performance insights.</p>
+                    <p className="text-[10px] text-slate-500 leading-tight mt-0.5 mb-1.5">0 drivers have low compliance score. All active drivers compliant.</p>
                     <button className="text-[10px] font-bold text-purple-600 hover:text-purple-700 flex items-center gap-1 transition-colors cursor-pointer">View Insights &rarr;</button>
                   </div>
                 </div>

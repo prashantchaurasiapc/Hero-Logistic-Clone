@@ -9,6 +9,9 @@ exports.getAll = async (req, res, next) => {
     const { where, skip, take, orderBy, currentPage, pageSize } = buildPrismaQuery(req.query);
     
     if (req.tenantId) where.load = { companyId: req.tenantId };
+    if (req.user && req.user.role === 'DRIVER') {
+      where.driver = { userId: req.user.id };
+    }
 
     const [data, total] = await Promise.all([
       prisma.deliveryPOD.findMany({
@@ -35,6 +38,9 @@ exports.getById = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
     if (req.tenantId) where.load = { companyId: req.tenantId };
+    if (req.user && req.user.role === 'DRIVER') {
+      where.driver = { userId: req.user.id };
+    }
 
     const data = await prisma.deliveryPOD.findFirst({
       where,
@@ -63,6 +69,29 @@ exports.getById = async (req, res, next) => {
 exports.create = async (req, res, next) => {
   try {
     const payload = { ...req.body };
+    if (req.user && req.user.role === 'DRIVER') {
+      const driver = await prisma.driver.findFirst({
+        where: { userId: req.user.id }
+      });
+      if (!driver) {
+        return sendError(res, {
+          code: ERROR_CODES.UNAUTHORIZED_ACCESS,
+          message: 'Driver profile not found'
+        }, HTTP_STATUS.FORBIDDEN);
+      }
+      payload.driverId = driver.id;
+
+      // Check that they are assigned to the load
+      const assignedLoad = await prisma.load.findFirst({
+        where: { id: payload.loadId, driverId: driver.id }
+      });
+      if (!assignedLoad) {
+        return sendError(res, {
+          code: ERROR_CODES.UNAUTHORIZED_ACCESS,
+          message: 'You are not assigned to this load.'
+        }, HTTP_STATUS.FORBIDDEN);
+      }
+    }
 
     const data = await prisma.deliveryPOD.create({
       data: payload,
@@ -84,7 +113,10 @@ exports.update = async (req, res, next) => {
     const updateData = { ...req.body };
     
     const where = { id };
-    // if (req.tenantId) where.tenantId = req.tenantId;
+    if (req.tenantId) where.load = { companyId: req.tenantId };
+    if (req.user && req.user.role === 'DRIVER') {
+      where.driver = { userId: req.user.id };
+    }
 
     // Check version if optimistic concurrency is required
     const ifMatch = req.headers['if-match'];
@@ -122,7 +154,10 @@ exports.update = async (req, res, next) => {
 exports.delete = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
-    // if (req.tenantId) where.tenantId = req.tenantId;
+    if (req.tenantId) where.load = { companyId: req.tenantId };
+    if (req.user && req.user.role === 'DRIVER') {
+      where.driver = { userId: req.user.id };
+    }
 
     await prisma.deliveryPOD.delete({ where });
     

@@ -14,6 +14,62 @@ import {
 } from 'lucide-react';
 
 // Helper upload components moved outside to prevent unmounting on re-renders
+const VehiclePhotoUploadSection = () => {
+  const [photoUrl, setPhotoUrl] = React.useState("https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?q=80&w=256&auto=format&fit=crop");
+  const fileInputRef = React.useRef(null);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoUrl(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center gap-2 w-32 shrink-0">
+      <div className="text-[9px] font-black text-gray-500 tracking-widest uppercase mb-1">VEHICLE PHOTO</div>
+      <div 
+        onClick={() => fileInputRef.current?.click()} 
+        className="relative w-24 h-24 rounded-full overflow-hidden border border-gray-200 hover:border-purple-400 cursor-pointer group bg-gray-50 flex items-center justify-center shadow-xs"
+        title="Click to upload vehicle photo"
+      >
+        <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
+          <Camera className="w-5 h-5 text-white mb-1" />
+          <span className="text-[9px] font-bold text-white uppercase tracking-wider">Upload</span>
+        </div>
+        <img 
+          src={photoUrl} 
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?q=80&w=256&auto=format&fit=crop";
+          }}
+          className="w-full h-full object-cover" 
+          alt="Vehicle Photo" 
+        />
+      </div>
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        accept="image/*" 
+        className="hidden" 
+        onChange={handleFileChange} 
+      />
+      <input 
+        type="text" 
+        name="photoUrl"
+        placeholder="https://images.unsplash.com..." 
+        value={photoUrl} 
+        onChange={(e) => setPhotoUrl(e.target.value)} 
+        className="w-full text-center text-[9px] px-2 py-1.5 bg-gray-50 border border-gray-200 rounded mt-2 focus:outline-none focus:border-purple-400 text-gray-500 overflow-hidden text-ellipsis" 
+      />
+    </div>
+  );
+};
+
 const VehicleLicenceFileUploadBox = () => {
   const [file, setFile] = React.useState(null);
   const [isDragging, setIsDragging] = React.useState(false);
@@ -864,7 +920,9 @@ const Vehicles = () => {
               {/* Vehicle Data Grid */}
               <div className="flex-grow flex flex-col min-w-0">
                  <div className="flex items-center gap-3 mb-6">
-                    <h2 className="text-2xl font-black text-gray-900 tracking-tight truncate">{managingVehicle.id} – {managingVehicle.make?.toUpperCase() || 'VOLVO FH540'}</h2>
+                    <h2 className="text-2xl font-black text-gray-900 tracking-tight truncate">
+                       {(managingVehicle.reg || managingVehicle.rego || (managingVehicle.id && managingVehicle.id.length > 15 ? 'VEHICLE PROFILE' : managingVehicle.id))} – {managingVehicle.make?.toUpperCase() || 'VOLVO FH540'}
+                    </h2>
                     <span className="px-2.5 py-0.5 bg-green-50 text-green-600 border border-green-200 rounded-md text-[11px] font-bold uppercase tracking-wider shrink-0">Active</span>
                  </div>
                  
@@ -1114,23 +1172,22 @@ const Vehicles = () => {
                <a href="#" className="text-[11px] font-bold text-purple-700 flex items-center gap-0.5 hover:underline whitespace-nowrap mt-0.5">View All <ArrowRight size={12} /></a>
             </div>
             <div className="flex flex-col gap-4">
-               {[
-                  { name: 'Registration - T101', expiry: 'Expires on 15/07/2025', days: '21 days', color: 'text-green-600 border-green-200 bg-green-50' },
-                  { name: 'Insurance - C201', expiry: 'Expires on 18/07/2025', days: '24 days', color: 'text-green-600 border-green-200 bg-green-50' },
-                  { name: 'Roadworthy - T101', expiry: 'Expires on 22/07/2025', days: '28 days', color: 'text-orange-600 border-orange-200 bg-orange-50' },
-                  { name: 'Heavy Vehicle Inspection', expiry: 'Expires on 05/08/2025', days: '31 days', color: 'text-orange-600 border-orange-200 bg-orange-50' }
-               ].map((item, idx) => (
-                  <div key={idx} className="flex justify-between items-center gap-2">
-                     <div className="flex gap-2.5 items-start">
-                        <FileText size={16} className="text-green-600 mt-0.5 shrink-0" />
-                        <div>
-                           <div className="text-[12px] font-bold text-gray-900 leading-tight break-words">{item.name}</div>
-                           <div className="text-[10px] text-gray-500 mt-1 font-medium">{item.expiry}</div>
+               {vehicles.filter(v => v.regExpiryDate || v.compliance === 'Expiring Soon' || v.compliance === 'Overdue').length === 0 ? (
+                  <div className="text-[11px] text-gray-400 py-3 text-center">No upcoming compliance alerts</div>
+               ) : (
+                  vehicles.filter(v => v.regExpiryDate || v.compliance === 'Expiring Soon' || v.compliance === 'Overdue').slice(0, 4).map((item, idx) => (
+                     <div key={idx} className="flex justify-between items-center gap-2">
+                        <div className="flex gap-2.5 items-start">
+                           <FileText size={16} className="text-green-600 mt-0.5 shrink-0" />
+                           <div>
+                              <div className="text-[12px] font-bold text-gray-900 leading-tight break-words">Registration - {item.reg || item.displayId}</div>
+                              <div className="text-[10px] text-gray-500 mt-1 font-medium">{item.regExpiryDate ? `Expires on ${item.regExpiryDate}` : 'Compliance check active'}</div>
+                           </div>
                         </div>
+                        <span className={`px-2 py-0.5 text-[10px] font-bold border rounded whitespace-nowrap ${item.compliance === 'Overdue' ? 'text-red-600 border-red-200 bg-red-50' : 'text-orange-600 border-orange-200 bg-orange-50'}`}>{item.compliance || 'Active'}</span>
                      </div>
-                     <span className={`px-2 py-0.5 text-[10px] font-bold border rounded whitespace-nowrap ${item.color}`}>{item.days}</span>
-                  </div>
-               ))}
+                  ))
+               )}
             </div>
           </div>
         </div>
@@ -3474,7 +3531,7 @@ const Vehicles = () => {
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-150" onClick={e => e.stopPropagation()}>
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
               <h3 className="text-sm font-extrabold text-slate-800 flex items-center gap-2">
-                <Edit size={16} className="text-purple-600" /> Edit Vehicle ({editVehicleModal.id})
+                <Edit size={16} className="text-purple-600" /> Edit Vehicle – {editVehicleModal.make || 'Vehicle'} ({editVehicleModal.reg || editVehicleModal.rego || editVehicleModal.id?.slice(0, 8)})
               </h3>
               <button onClick={closeEditModal} className="text-slate-400 hover:text-slate-600 text-lg font-bold cursor-pointer">&times;</button>
             </div>
@@ -3523,25 +3580,79 @@ const Vehicles = () => {
                   <input type="text" value={editVehicleModal.odometer || ''} onChange={e => setEditVehicleModal({...editVehicleModal, odometer: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" />
                 </div>
               </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 mb-1">Vehicle Photo / Image URL</label>
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="text" 
+                    placeholder="https://..." 
+                    value={editVehicleModal.img || editVehicleModal.photoUrl || ''} 
+                    onChange={e => setEditVehicleModal({...editVehicleModal, img: e.target.value, photoUrl: e.target.value})} 
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-purple-500 font-semibold" 
+                  />
+                  <label className="px-3 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-lg font-bold text-xs cursor-pointer shrink-0">
+                    Browse
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setEditVehicleModal(prev => ({ ...prev, img: reader.result, photoUrl: reader.result }));
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }} 
+                    />
+                  </label>
+                </div>
+              </div>
             </div>
             <div className="px-6 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-2">
               <button onClick={closeEditModal} className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 font-bold hover:bg-white text-xs cursor-pointer">Cancel</button>
               <button onClick={async (e) => {
                 try {
-                  await api.put(`/vehicles/${editVehicleModal.id}`, {
-                    rego: editVehicleModal.reg,
+                  const photoStr = editVehicleModal.img || editVehicleModal.photoUrl;
+                  const cleanNotes = editVehicleModal.notes ? editVehicleModal.notes.split('Photo:')[0].trim() : '';
+                  const combinedNotes = photoStr 
+                    ? (cleanNotes ? `${cleanNotes} | Photo:${photoStr}` : `Photo:${photoStr}`)
+                    : cleanNotes;
+
+                  const payload = {
+                    rego: editVehicleModal.reg || editVehicleModal.rego,
                     make: editVehicleModal.make,
                     model: editVehicleModal.model,
                     year: editVehicleModal.year ? parseInt(editVehicleModal.year) : undefined,
                     status: editVehicleModal.status,
+                    category: editVehicleModal.type,
                     odometerKm: editVehicleModal.odometer ? parseInt(String(editVehicleModal.odometer).replace(/[^0-9]/g,'')) : undefined,
-                    notes: editVehicleModal.notes
-                  });
+                    notes: combinedNotes
+                  };
+                  await api.put(`/vehicles/${editVehicleModal.id}`, payload);
                   fetchVehicles();
-                  if (managingVehicle && managingVehicle.id === editVehicleModal.id) setManagingVehicle(editVehicleModal);
+                  const updatedVehicleObj = {
+                    ...editVehicleModal,
+                    reg: payload.rego,
+                    rego: payload.rego,
+                    make: editVehicleModal.make,
+                    model: editVehicleModal.model || '',
+                    img: editVehicleModal.img || editVehicleModal.photoUrl,
+                    photoUrl: editVehicleModal.img || editVehicleModal.photoUrl,
+                    name: editVehicleModal.make ? editVehicleModal.make : editVehicleModal.name,
+                    status: editVehicleModal.status || 'ACTIVE'
+                  };
+                  if (managingVehicle && managingVehicle.id === editVehicleModal.id) {
+                    setManagingVehicle(updatedVehicleObj);
+                  }
                   closeEditModal(e);
                   showToast('Vehicle updated successfully!');
-                } catch (err) { showToast('Failed to update vehicle.', 'error'); }
+                } catch (err) {
+                  console.error('Failed to update vehicle:', err);
+                  showToast('Failed to update vehicle.', 'error');
+                }
               }} className="px-4 py-2 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 text-xs shadow-sm cursor-pointer">Save Changes</button>
             </div>
           </div>
@@ -3594,17 +3705,7 @@ const Vehicles = () => {
             </div>
             <div className="p-6 flex flex-col md:flex-row gap-8">
               {/* Photo Upload */}
-              <div className="flex flex-col items-center gap-2 w-32 shrink-0">
-                <div className="text-[9px] font-black text-gray-500 tracking-widest uppercase mb-1">VEHICLE PHOTO</div>
-                <div className="relative w-24 h-24 rounded-full overflow-hidden border border-gray-200 hover:border-purple-400 cursor-pointer group bg-gray-50 flex items-center justify-center">
-                  <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                    <Camera className="w-5 h-5 text-white mb-1" />
-                    <span className="text-[9px] font-bold text-white uppercase tracking-wider">Upload</span>
-                  </div>
-                  <img src="https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?q=80&w=256&auto=format&fit=crop" className="w-full h-full object-cover" alt="Truck" />
-                </div>
-                <input type="text" placeholder="https://images.unsplash.com..." defaultValue="https://images.unsplash.co..." className="w-full text-center text-[9px] px-2 py-1.5 bg-gray-50 border border-gray-200 rounded mt-2 focus:outline-none focus:border-purple-400 text-gray-500" />
-              </div>
+              <VehiclePhotoUploadSection />
 
               {/* Vehicle Fields */}
               <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -4102,18 +4203,17 @@ const Vehicles = () => {
 
             {/* Pagination */}
             <div className="px-5 py-3 border-t border-gray-100 flex justify-between items-center bg-gray-50/50 flex-wrap gap-4">
-               <span className="text-[12px] font-medium text-gray-500">Showing 1 to 8 of 32 vehicles</span>
+               <span className="text-[12px] font-medium text-gray-500">Showing {filteredVehicles.length > 0 ? 1 : 0} to {filteredVehicles.length} of {vehicles.length} vehicles</span>
                <div className="flex items-center gap-2">
                   <div className="flex bg-white border border-gray-200 rounded-md overflow-hidden shadow-sm">
                      <button className="px-3 py-1.5 text-gray-400 border-r border-gray-200 hover:bg-gray-50 cursor-pointer"><ChevronLeft size={14} /></button>
                      <button className="px-3 py-1.5 text-purple-700 font-bold border-r border-gray-200 bg-purple-50/50 cursor-pointer">1</button>
-                     <button className="px-3 py-1.5 text-gray-600 font-medium border-r border-gray-200 hover:bg-gray-50 cursor-pointer">2</button>
-                     <button className="px-3 py-1.5 text-gray-600 font-medium border-r border-gray-200 hover:bg-gray-50 cursor-pointer">3</button>
-                     <button className="px-3 py-1.5 text-gray-600 font-medium border-r border-gray-200 hover:bg-gray-50 cursor-pointer">4</button>
                      <button className="px-3 py-1.5 text-gray-600 hover:bg-gray-50 cursor-pointer"><ChevronRight size={14} /></button>
                   </div>
                   <select className="border border-gray-200 bg-white rounded-md px-2 py-1.5 text-[12px] font-medium text-gray-700 focus:outline-none cursor-pointer">
                      <option>10 / page</option>
+                     <option>25 / page</option>
+                     <option>50 / page</option>
                   </select>
                </div>
             </div>
@@ -4126,24 +4226,28 @@ const Vehicles = () => {
             <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5">
                <h3 className="text-[13px] font-bold text-gray-900 mb-4">Compliance Overview</h3>
                <div className="flex flex-col xl:flex-row items-center gap-5">
-                  <div className="relative w-24 h-24 rounded-full flex items-center justify-center shadow-inner shrink-0" style={{ background: 'conic-gradient(#10B981 0% 62.5%, #F59E0B 62.5% 81.3%, #EF4444 81.3% 93.8%, #D1D5DB 93.8% 100%)' }}>
+                  <div className="relative w-24 h-24 rounded-full flex items-center justify-center shadow-inner shrink-0" style={{ 
+                     background: vehicles.length > 0 
+                       ? `conic-gradient(#10B981 0% ${(vehicles.filter(v => v.compliance === 'Compliant' || !v.compliance).length / vehicles.length) * 100}%, #F59E0B ${(vehicles.filter(v => v.compliance === 'Compliant' || !v.compliance).length / vehicles.length) * 100}% ${((vehicles.filter(v => v.compliance === 'Compliant' || !v.compliance).length + vehicles.filter(v => v.compliance === 'Expiring Soon').length) / vehicles.length) * 100}%, #EF4444 ${((vehicles.filter(v => v.compliance === 'Compliant' || !v.compliance).length + vehicles.filter(v => v.compliance === 'Expiring Soon').length) / vehicles.length) * 100}% 100%)`
+                       : '#E2E8F0'
+                  }}>
                      <div className="absolute w-16 h-16 bg-white rounded-full flex flex-col items-center justify-center shadow-sm">
-                        <span className="text-xl font-black text-gray-900 leading-none">32</span>
+                        <span className="text-xl font-black text-gray-900 leading-none">{vehicles.length}</span>
                         <span className="text-[10px] font-medium text-gray-500 mt-0.5">Total</span>
                      </div>
                   </div>
                   <div className="flex flex-col gap-2 w-full">
                      <div className="flex items-center gap-2 text-[11px] font-medium text-gray-700">
-                        <div className="w-2 h-2 rounded-full bg-green-500 shrink-0"></div> 20 Compliant (62.5%)
+                        <div className="w-2 h-2 rounded-full bg-green-500 shrink-0"></div> {vehicles.filter(v => v.compliance === 'Compliant' || !v.compliance).length} Compliant ({vehicles.length ? Math.round((vehicles.filter(v => v.compliance === 'Compliant' || !v.compliance).length / vehicles.length) * 100) : 0}%)
                      </div>
                      <div className="flex items-center gap-2 text-[11px] font-medium text-gray-700">
-                        <div className="w-2 h-2 rounded-full bg-orange-500 shrink-0"></div> 6 Expiring Soon (18.8%)
+                        <div className="w-2 h-2 rounded-full bg-orange-500 shrink-0"></div> {vehicles.filter(v => v.compliance === 'Expiring Soon').length} Expiring Soon ({vehicles.length ? Math.round((vehicles.filter(v => v.compliance === 'Expiring Soon').length / vehicles.length) * 100) : 0}%)
                      </div>
                      <div className="flex items-center gap-2 text-[11px] font-medium text-gray-700">
-                        <div className="w-2 h-2 rounded-full bg-red-500 shrink-0"></div> 4 Overdue (12.5%)
+                        <div className="w-2 h-2 rounded-full bg-red-500 shrink-0"></div> {vehicles.filter(v => v.compliance === 'Overdue').length} Overdue ({vehicles.length ? Math.round((vehicles.filter(v => v.compliance === 'Overdue').length / vehicles.length) * 100) : 0}%)
                      </div>
                      <div className="flex items-center gap-2 text-[11px] font-medium text-gray-700">
-                        <div className="w-2 h-2 rounded-full bg-gray-300 shrink-0"></div> 2 Not Uploaded (6.3%)
+                        <div className="w-2 h-2 rounded-full bg-gray-300 shrink-0"></div> {vehicles.filter(v => v.compliance === 'Not Uploaded').length} Not Uploaded ({vehicles.length ? Math.round((vehicles.filter(v => v.compliance === 'Not Uploaded').length / vehicles.length) * 100) : 0}%)
                      </div>
                   </div>
                </div>
@@ -4156,23 +4260,22 @@ const Vehicles = () => {
                   <a href="#" className="text-[11px] font-semibold text-purple-700 flex items-center gap-0.5 hover:underline whitespace-nowrap">View All <ArrowRight size={12} /></a>
                </div>
                <div className="flex flex-col gap-4">
-                  {[
-                     { name: 'Registration - T101', expiry: 'Expires on 15/07/2025', days: '21 days', color: 'text-green-600 bg-green-50' },
-                     { name: 'Insurance - C201', expiry: 'Expires on 18/07/2025', days: '24 days', color: 'text-green-600 bg-green-50' },
-                     { name: 'Roadworthy - G305', expiry: 'Expires on 22/07/2025', days: '28 days', color: 'text-orange-600 bg-orange-50' },
-                     { name: 'Registration - U801', expiry: 'Expires on 25/07/2025', days: '31 days', color: 'text-orange-600 bg-orange-50' }
-                  ].map((item, idx) => (
-                     <div key={idx} className="flex justify-between items-center gap-2">
-                        <div className="flex gap-2 items-start overflow-hidden">
-                           <FileText size={14} className="text-green-600 mt-0.5 shrink-0" />
-                           <div className="min-w-0">
-                              <div className="text-[12px] font-semibold text-gray-900 leading-tight truncate">{item.name}</div>
-                              <div className="text-[10px] text-gray-500 mt-0.5 truncate">{item.expiry}</div>
+                  {vehicles.filter(v => v.regExpiryDate || v.compliance === 'Expiring Soon' || v.compliance === 'Overdue').length === 0 ? (
+                     <div className="text-[11px] text-gray-400 py-3 text-center">No upcoming compliance alerts</div>
+                  ) : (
+                     vehicles.filter(v => v.regExpiryDate || v.compliance === 'Expiring Soon' || v.compliance === 'Overdue').slice(0, 4).map((item, idx) => (
+                        <div key={idx} className="flex justify-between items-center gap-2">
+                           <div className="flex gap-2 items-start overflow-hidden">
+                              <FileText size={14} className="text-green-600 mt-0.5 shrink-0" />
+                              <div className="min-w-0">
+                                 <div className="text-[12px] font-semibold text-gray-900 leading-tight truncate">Registration - {item.reg || item.displayId}</div>
+                                 <div className="text-[10px] text-gray-500 mt-0.5 truncate">{item.regExpiryDate ? `Expires on ${item.regExpiryDate}` : 'Compliance check active'}</div>
+                              </div>
                            </div>
+                           <span className={`px-2 py-0.5 text-[10px] font-semibold rounded whitespace-nowrap ${item.compliance === 'Overdue' ? 'text-red-600 bg-red-50' : 'text-orange-600 bg-orange-50'}`}>{item.compliance || 'Active'}</span>
                         </div>
-                        <span className={`px-2 py-0.5 text-[10px] font-semibold rounded whitespace-nowrap ${item.color}`}>{item.days}</span>
-                     </div>
-                  ))}
+                     ))
+                  )}
                </div>
             </div>
 
@@ -4183,18 +4286,21 @@ const Vehicles = () => {
                   <span className="bg-purple-700 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">AI</span>
                </div>
                <ul className="space-y-2 mb-5">
-                  <li className="flex items-start gap-2 text-[12px] text-gray-800 font-medium">
-                     <Check size={14} className="text-purple-600 mt-0.5 shrink-0" /> 2 vehicles have overdue compliance.
-                  </li>
-                  <li className="flex items-start gap-2 text-[12px] text-gray-800 font-medium">
-                     <Check size={14} className="text-purple-600 mt-0.5 shrink-0" /> 6 compliance items expiring within 30 days.
-                  </li>
-                  <li className="flex items-start gap-2 text-[12px] text-gray-800 font-medium">
-                     <Check size={14} className="text-purple-600 mt-0.5 shrink-0" /> T405 - SCANIA R500 is due for service soon.
-                  </li>
-                  <li className="flex items-start gap-2 text-[12px] text-gray-800 font-medium">
-                     <Check size={14} className="text-purple-600 mt-0.5 shrink-0" /> C201 - HINO 700 tyre rotation recommended.
-                  </li>
+                  {vehicles.length === 0 ? (
+                     <li className="text-[12px] text-gray-500">No fleet vehicles recorded yet. Add vehicles to activate AI insights.</li>
+                  ) : (
+                     <>
+                        <li className="flex items-start gap-2 text-[12px] text-gray-800 font-medium">
+                           <Check size={14} className="text-purple-600 mt-0.5 shrink-0" /> {vehicles.filter(v => v.compliance === 'Overdue').length} vehicles have overdue compliance.
+                        </li>
+                        <li className="flex items-start gap-2 text-[12px] text-gray-800 font-medium">
+                           <Check size={14} className="text-purple-600 mt-0.5 shrink-0" /> {vehicles.filter(v => v.compliance === 'Expiring Soon').length} compliance items expiring within 30 days.
+                        </li>
+                        <li className="flex items-start gap-2 text-[12px] text-gray-800 font-medium">
+                           <Check size={14} className="text-purple-600 mt-0.5 shrink-0" /> {vehicles.filter(v => v.status === 'ACTIVE').length} of {vehicles.length} fleet units are in active operation.
+                        </li>
+                     </>
+                  )}
                </ul>
                <button className="w-full py-2 bg-white border border-purple-200 text-purple-700 rounded-xl text-[12px] font-semibold hover:bg-purple-50 transition-colors flex items-center justify-center gap-1.5 shadow-sm cursor-pointer">
                   <Star size={14} className="fill-purple-700" /> View AI Insights

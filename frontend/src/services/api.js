@@ -15,17 +15,28 @@ export const getSuperAdminDashboard = () => {
 };
 
 // Sales / CRM APIs
-export const getSalesDashboardSummary = () => api.get('/sales-dashboard/summary');
-export const getLeads = () => api.get('/leads');
+export const getSalesDashboardSummary = (params) => api.get('/sales-dashboard/summary', { params });
+export const getLeads = (params) => api.get('/leads', { params });
 export const getLead = (id) => api.get(`/leads/${id}`);
 export const createLead = (data) => api.post('/leads', data);
 export const updateLead = (id, data) => api.put(`/leads/${id}`, data);
+export const updateLeadStage = (id, data) => api.put(`/leads/${id}/stage`, data);
+export const assignLeadRep = (id, data) => api.put(`/leads/${id}/assign-rep`, data);
 export const deleteLead = (id) => api.delete(`/leads/${id}`);
+export const getSalesReps = () => api.get('/users?role=SALES');
+export const getDemoBookings = (params) => api.get('/demo-bookings', { params });
+export const getDemos = (params) => api.get('/demo-bookings', { params });
 export const createDemoBooking = (data) => api.post('/demo-bookings', data);
+export const updateDemoBooking = (id, data) => api.put(`/demo-bookings/${id}`, data);
+export const getProposals = (params) => api.get('/proposals', { params });
 export const createProposal = (data) => api.post('/proposals', data);
 export const updateProposal = (id, data) => api.put(`/proposals/${id}`, data);
+export const getFollowUpTasks = (params) => api.get('/follow-up-tasks', { params });
 export const createFollowUpTask = (data) => api.post('/follow-up-tasks', data);
 export const updateFollowUpTask = (id, data) => api.put(`/follow-up-tasks/${id}`, data);
+export const getOnboardingHandovers = (params) => api.get('/onboarding-handovers', { params });
+export const createOnboardingHandover = (data) => api.post('/onboarding-handovers', data);
+export const submitHandoverToProvisioning = (id) => api.post(`/onboarding-handovers/${id}/provision`);
 export const createSalesActivity = (data) => api.post('/sales-activitys', data);
 export const convertLeadToCompany = (id, data) => api.post(`/leads/${id}/convert-to-company`, data);
 

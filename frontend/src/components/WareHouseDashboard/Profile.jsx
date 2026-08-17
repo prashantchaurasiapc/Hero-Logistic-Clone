@@ -77,6 +77,35 @@ export default function Profile() {
   // Edit Modal State
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [tempName, setTempName] = useState('');
+
+  useEffect(() => {
+    async function loadProfile() {
+      try {
+        const res = await api.get('/warehouse-portal/profile');
+        if (res.data?.success) {
+          const data = res.data.data.profile;
+          setName(data.name);
+          setRole(data.role);
+          setStatus(data.status);
+          setEmployeeId(data.employeeId);
+          setEmail(data.email);
+          setPhone(data.phone);
+          setDepartment(data.department);
+          setDepot(data.depot);
+          setReportsTo(data.reportsTo);
+          setJoinedOn(data.joinedOn);
+          setAddress(data.address);
+          setWorkPhone(data.phoneWork);
+          setEmergencyName(data.emergencyContact?.name || '');
+          setEmergencyRelation(data.emergencyContact?.relationship || '');
+          setEmergencyPhone(data.emergencyContact?.phone || '');
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    loadProfile();
+  }, []);
   const [tempPhone, setTempPhone] = useState('');
   const [tempEmail, setTempEmail] = useState('');
   const [tempAddress, setTempAddress] = useState('');

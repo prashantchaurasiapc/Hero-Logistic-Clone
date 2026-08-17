@@ -51,6 +51,7 @@ const ProposalRoutes = require('./ProposalRoutes');
 const FollowUpTaskRoutes = require('./FollowUpTaskRoutes');
 const SalesActivityRoutes = require('./SalesActivityRoutes');
 const SalesDashboardRoutes = require('./SalesDashboardRoutes');
+const OnboardingHandoverRoutes = require('./OnboardingHandoverRoutes');
 const EmailTemplateRoutes = require('./EmailTemplateRoutes');
 const RouteStopRoutes = require('./RouteStopRoutes');
 const LoadItemRoutes = require('./LoadItemRoutes');
@@ -80,6 +81,14 @@ const WarehouseLabelPrintRoutes = require('./WarehouseLabelPrintRoutes');
 const PrintSpoolerJobRoutes = require('./PrintSpoolerJobRoutes');
 const authRoutes = require('./AuthRoutes');
 const DocumentRoutes = require('./DocumentRoutes');
+const PerformanceLogRoutes = require('./PerformanceLogRoutes');
+const DriverAllowanceRoutes = require('./DriverAllowanceRoutes');
+const DriverDeductionRoutes = require('./DriverDeductionRoutes');
+const DriverLeaveRequestRoutes = require('./DriverLeaveRequestRoutes');
+const DriverPayRateRoutes = require('./DriverPayRateRoutes');
+const DriverActivityRoutes = require('./DriverActivityRoutes');
+const DriverMessageRoutes = require('./DriverMessageRoutes');
+const DriverSuperInfoRoutes = require('./DriverSuperInfoRoutes');
 const SuperAdminDashboardRoutes = require('./SuperAdminDashboardRoutes');
 const PaymentGatewayConfigRoutes = require('./PaymentGatewayConfigRoutes');
 const WorkflowRuleRoutes = require('./WorkflowRuleRoutes');
@@ -100,6 +109,7 @@ router.use('/white-label-configs', WhiteLabelConfigRoutes);
 router.use('/features', FeatureRoutes);
 router.use('/plan-features', PlanFeatureRoutes);
 router.use('/branchs', BranchRoutes);
+router.use('/branches', BranchRoutes);
 router.use('/drivers', DriverRoutes);
 router.use('/vehicles', VehicleRoutes);
 router.use('/loads', LoadRoutes);
@@ -140,6 +150,7 @@ router.use('/proposals', ProposalRoutes);
 router.use('/follow-up-tasks', FollowUpTaskRoutes);
 router.use('/sales-activitys', SalesActivityRoutes);
 router.use('/sales-dashboard', SalesDashboardRoutes);
+router.use('/onboarding-handovers', OnboardingHandoverRoutes);
 router.use('/email-templates', EmailTemplateRoutes);
 router.use('/route-stops', RouteStopRoutes);
 router.use('/load-items', LoadItemRoutes);
@@ -167,6 +178,15 @@ router.use('/staging-areas', StagingAreaRoutes);
 router.use('/networked-printers', NetworkedPrinterRoutes);
 router.use('/warehouse-label-prints', WarehouseLabelPrintRoutes);
 router.use('/print-spooler-jobs', PrintSpoolerJobRoutes);
+router.use('/documents', DocumentRoutes);
+router.use('/performance-logs', PerformanceLogRoutes);
+router.use('/driver-allowances', DriverAllowanceRoutes);
+router.use('/driver-deductions', DriverDeductionRoutes);
+router.use('/driver-leave-requests', DriverLeaveRequestRoutes);
+router.use('/driver-pay-rates', DriverPayRateRoutes);
+router.use('/driver-activities', DriverActivityRoutes);
+router.use('/driver-messages', DriverMessageRoutes);
+router.use('/driver-super-info', DriverSuperInfoRoutes);
 const CompanyAdminDashboardRoutes = require('./CompanyAdminDashboardRoutes');
 const CompanyAdminPortalRoutes = require('./CompanyAdminPortalRoutes');
 const AiModelRoutes = require('./AiModelRoutes');
@@ -175,11 +195,14 @@ const NotificationRuleRoutes = require('./NotificationRuleRoutes');
 const RecipientGroupRoutes = require('./RecipientGroupRoutes');
 
 const WarehousePortalRoutes = require('./WarehousePortalRoutes');
+const RegionalTerminalRoutes = require('./RegionalTerminalRoutes');
 
 router.use('/ai-models', AiModelRoutes);
 router.use('/notification-templates', NotificationTemplateRoutes);
 router.use('/notification-rules', NotificationRuleRoutes);
 router.use('/recipient-groups', RecipientGroupRoutes);
+router.use('/terminals', RegionalTerminalRoutes);
+router.use('/regional-terminals', RegionalTerminalRoutes);
 
 router.use('/company-admin', CompanyAdminPortalRoutes);
 router.use('/company-admin/dashboard', CompanyAdminDashboardRoutes);
@@ -189,6 +212,10 @@ router.use('/dashboard-metrics', SuperAdminDashboardRoutes);
 
 // Warehouse Portal routes & aliases
 router.use('/warehouse-portal', WarehousePortalRoutes);
+
+// Accounts Portal dedicated routes
+const AccountsPortalRoutes = require('./AccountsPortalRoutes');
+router.use('/accounts', AccountsPortalRoutes);
 
 // Direct menu aliases for top-level routes
 router.use('/live-tracking', CompanyAdminPortalRoutes);

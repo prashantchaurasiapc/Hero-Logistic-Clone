@@ -9,6 +9,9 @@ exports.getAll = async (req, res, next) => {
     const { where, skip, take, orderBy, currentPage, pageSize } = buildPrismaQuery(req.query);
     
     if (req.tenantId) where.companyId = req.tenantId;
+    if (req.user && req.user.role === 'DISPATCHER' && req.user.branchId && !req.user.permissions?.includes('dispatch.cross_branch.view')) {
+      where.branchId = req.user.branchId;
+    }
 
     const [data, total] = await Promise.all([
       prisma.driver.findMany({
@@ -35,6 +38,9 @@ exports.getById = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
     if (req.tenantId) where.companyId = req.tenantId;
+    if (req.user && req.user.role === 'DISPATCHER' && req.user.branchId && !req.user.permissions?.includes('dispatch.cross_branch.view')) {
+      where.branchId = req.user.branchId;
+    }
 
     const data = await prisma.driver.findFirst({
       where,
@@ -70,6 +76,10 @@ exports.create = async (req, res, next) => {
     }
 
     const effectiveCompanyId = payload.companyId || (await prisma.company.findFirst())?.id;
+    let branchIdVal = payload.branchId || null;
+    if (req.user && req.user.role === 'DISPATCHER' && req.user.branchId && !req.user.permissions?.includes('dispatch.cross_branch.view')) {
+      branchIdVal = req.user.branchId;
+    }
 
     let validStatus = 'AVAILABLE';
     if (payload.status) {
@@ -80,14 +90,21 @@ exports.create = async (req, res, next) => {
     }
 
     const driverData = {
+      firstName: payload.firstName || payload.FirstName || null,
+      lastName: payload.lastName || payload.LastName || null,
+      phone: payload.phone || payload.PhoneNumber || null,
+      email: payload.email || payload.EmailAddress || null,
+      avatarUrl: payload.avatarUrl || payload.photoPreview || payload.avatar || null,
+      driverCode: payload.driverCode || payload.EmployeeIDManualEditOption || `DRV-${Math.floor(10000 + Math.random() * 90000)}`,
       licenseType: payload.licenceType || payload.licenseType || 'HR (Heavy Rigid)',
-      licenseNumber: payload.licenceNumber || payload.licenseNumber || payload.driverCode || `LIC-${Math.floor(10000 + Math.random() * 90000)}`,
+      licenseNumber: payload.licenceNumber || payload.licenseNumber || `LIC-${Math.floor(10000 + Math.random() * 90000)}`,
       status: validStatus,
       role: payload.role || payload.driverRole || 'Driver',
       category: payload.category || payload.driverCategory || 'Heavy Rig',
       shift: payload.shift || 'Morning',
       notes: payload.notes || null,
-      companyId: effectiveCompanyId
+      companyId: effectiveCompanyId,
+      branchId: branchIdVal
     };
 
     if (payload.dob) {
@@ -108,15 +125,76 @@ exports.create = async (req, res, next) => {
   }
 };
 
+const sanitizeDriverPayload = (rawPayload) => {
+  const data = {};
+
+  if (rawPayload.firstName !== undefined || rawPayload.FirstName !== undefined) {
+    data.firstName = rawPayload.firstName || rawPayload.FirstName || null;
+  }
+  if (rawPayload.lastName !== undefined || rawPayload.LastName !== undefined) {
+    data.lastName = rawPayload.lastName || rawPayload.LastName || null;
+  }
+  if (rawPayload.driverCode !== undefined || rawPayload.EmployeeIDManualEditOption !== undefined) {
+    data.driverCode = rawPayload.driverCode || rawPayload.EmployeeIDManualEditOption || null;
+  }
+  if (rawPayload.avatarUrl !== undefined || rawPayload.avatar !== undefined || rawPayload.photoPreview !== undefined) {
+    data.avatarUrl = rawPayload.avatarUrl || rawPayload.avatar || rawPayload.photoPreview || null;
+  }
+  if (rawPayload.phone !== undefined || rawPayload.PhoneNumber !== undefined) {
+    data.phone = rawPayload.phone || rawPayload.PhoneNumber || null;
+  }
+  if (rawPayload.email !== undefined || rawPayload.EmailAddress !== undefined) {
+    const em = (rawPayload.email || rawPayload.EmailAddress || '').trim();
+    data.email = em ? em : null;
+  }
+
+  const lType = rawPayload.licenseType || rawPayload.licenceType || rawPayload.LicenceType;
+  if (lType !== undefined) data.licenseType = lType;
+
+  const lNum = rawPayload.licenseNumber || rawPayload.licenceNumber || rawPayload.LicenceNumber;
+  if (lNum !== undefined) data.licenseNumber = lNum;
+
+  if (rawPayload.status) {
+    const s = String(rawPayload.status).toUpperCase().replace(/\s+/g, '_');
+    if (['ON_DUTY', 'OFF_DUTY', 'ON_LEAVE', 'UNAVAILABLE', 'AVAILABLE'].includes(s)) {
+      data.status = s;
+    }
+  }
+
+  if (rawPayload.employmentType) {
+    const e = String(rawPayload.employmentType).toUpperCase().replace(/\s+/g, '_');
+    if (['FULL_TIME', 'PART_TIME', 'CASUAL', 'CONTRACTOR'].includes(e)) {
+      data.employmentType = e;
+    }
+  }
+
+  if (rawPayload.role !== undefined) data.role = rawPayload.role;
+  if (rawPayload.category !== undefined) data.category = rawPayload.category;
+  if (rawPayload.shift !== undefined) data.shift = rawPayload.shift;
+  if (rawPayload.notes !== undefined) data.notes = rawPayload.notes;
+  if (rawPayload.branchId !== undefined) data.branchId = rawPayload.branchId;
+
+  if (rawPayload.dob) {
+    const d = new Date(rawPayload.dob);
+    if (!isNaN(d.getTime())) data.dob = d;
+  }
+
+  return data;
+};
+
 // Update Driver with Optimistic Concurrency check
 exports.update = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const updateData = { ...req.body };
+    const updateData = sanitizeDriverPayload(req.body);
 
     if (req.tenantId) {
+      const findWhere = { id, companyId: req.tenantId };
+      if (req.user && req.user.role === 'DISPATCHER' && req.user.branchId && !req.user.permissions?.includes('dispatch.cross_branch.view')) {
+        findWhere.branchId = req.user.branchId;
+      }
       const existing = await prisma.driver.findFirst({
-        where: { id, companyId: req.tenantId }
+        where: findWhere
       });
       if (!existing) {
         return sendError(res, {
@@ -166,8 +244,12 @@ exports.delete = async (req, res, next) => {
     const { id } = req.params;
 
     if (req.tenantId) {
+      const findWhere = { id, companyId: req.tenantId };
+      if (req.user && req.user.role === 'DISPATCHER' && req.user.branchId && !req.user.permissions?.includes('dispatch.cross_branch.view')) {
+        findWhere.branchId = req.user.branchId;
+      }
       const existing = await prisma.driver.findFirst({
-        where: { id, companyId: req.tenantId }
+        where: findWhere
       });
       if (!existing) {
         return sendError(res, {
@@ -179,7 +261,12 @@ exports.delete = async (req, res, next) => {
 
     const where = { id };
 
-    await prisma.driver.delete({ where });
+    // Clean up or detach related records if any before deleting
+    await prisma.document.deleteMany({ where: { driverId: id } }).catch(() => {});
+    await prisma.load.updateMany({ where: { driverId: id }, data: { driverId: null } }).catch(() => {});
+    await prisma.vehicle.updateMany({ where: { assignedDriverId: id }, data: { assignedDriverId: null } }).catch(() => {});
+
+    await prisma.driver.delete({ where: { id } });
     
     // 204 No Content for successful delete
     return res.status(HTTP_STATUS.NO_CONTENT).send();
@@ -189,6 +276,12 @@ exports.delete = async (req, res, next) => {
         code: ERROR_CODES.NOT_FOUND,
         message: 'Driver not found'
       }, HTTP_STATUS.NOT_FOUND);
+    }
+    if (error.code === 'P2003') {
+      return sendError(res, {
+        code: ERROR_CODES.RESOURCE_CONFLICT,
+        message: 'Cannot delete driver because active operational records exist.'
+      }, HTTP_STATUS.CONFLICT);
     }
     next(error);
   }

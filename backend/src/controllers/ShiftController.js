@@ -8,8 +8,10 @@ exports.getAll = async (req, res, next) => {
   try {
     const { where, skip, take, orderBy, currentPage, pageSize } = buildPrismaQuery(req.query);
     
-    // Optional: Inject tenant scope here if applicable
-    // if (req.tenantId) where.tenantId = req.tenantId;
+    if (req.tenantId) where.companyId = req.tenantId;
+    if (req.user && req.user.role === 'DRIVER') {
+      where.userId = req.user.id;
+    }
 
     const [data, total] = await Promise.all([
       prisma.shift.findMany({
@@ -25,11 +27,13 @@ exports.getAll = async (req, res, next) => {
   }
 };
 
-// Get single Shift by ID
 exports.getById = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
-    // if (req.tenantId) where.tenantId = req.tenantId;
+    if (req.tenantId) where.companyId = req.tenantId;
+    if (req.user && req.user.role === 'DRIVER') {
+      where.userId = req.user.id;
+    }
 
     const data = await prisma.shift.findFirst({ where });
     
@@ -49,8 +53,10 @@ exports.getById = async (req, res, next) => {
 // Create new Shift
 exports.create = async (req, res, next) => {
   try {
-    const payload = { ...req.body };
-    // if (req.tenantId) payload.tenantId = req.tenantId;
+    if (req.tenantId) payload.companyId = req.tenantId;
+    if (req.user && req.user.role === 'DRIVER') {
+      payload.userId = req.user.id;
+    }
 
     const data = await prisma.shift.create({
       data: payload
@@ -68,7 +74,10 @@ exports.update = async (req, res, next) => {
     const updateData = { ...req.body };
     
     const where = { id };
-    // if (req.tenantId) where.tenantId = req.tenantId;
+    if (req.tenantId) where.companyId = req.tenantId;
+    if (req.user && req.user.role === 'DRIVER') {
+      where.userId = req.user.id;
+    }
 
     // Check version if optimistic concurrency is required
     const ifMatch = req.headers['if-match'];
@@ -106,7 +115,10 @@ exports.update = async (req, res, next) => {
 exports.delete = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
-    // if (req.tenantId) where.tenantId = req.tenantId;
+    if (req.tenantId) where.companyId = req.tenantId;
+    if (req.user && req.user.role === 'DRIVER') {
+      where.userId = req.user.id;
+    }
 
     await prisma.shift.delete({ where });
     

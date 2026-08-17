@@ -16,6 +16,7 @@ import WarehouseReports from './pages/Layout/Dashboard/WarehouseReports';
 import WarehouseScanning from './pages/Layout/Dashboard/WarehouseScanning';
 import WarehouseLabels from './pages/Layout/Dashboard/WarehouseLabels';
 import WarehouseMovements from './pages/Layout/Dashboard/WarehouseMovements';
+import WarehouseMyShift from './components/WareHouseDashboard/WarehouseMyShift';
 import YardDashboard from './pages/Layout/Dashboard/YardDashboard';
 import YardWorkStatus from './pages/Layout/Dashboard/YardWorkStatus';
 import YardScan from './pages/Layout/Dashboard/YardScan';
@@ -24,6 +25,7 @@ import YardScanIn from './pages/Layout/Dashboard/YardScanIn';
 import YardScanOut from './pages/Layout/Dashboard/YardScanOut';
 import YardLoadLane from './pages/Layout/Dashboard/YardLoadLane';
 import YardReportIssue from './pages/Layout/Dashboard/YardReportIssue';
+import YardLocations from './pages/Layout/Dashboard/YardLocations';
 import AccountsDashboard from './pages/Layout/Dashboard/AccountsDashboard';
 import InvoiceReview from './pages/Layout/Dashboard/InvoiceReview';
 import SentInvoices from './pages/Layout/Dashboard/SentInvoices';
@@ -226,6 +228,7 @@ function App() {
             <Route path="follow-ups" element={<FollowUps />} />
             <Route path="onboarding-handover" element={<OnboardingHandover />} />
             <Route path="sales-reports" element={<SalesReports />} />
+            <Route path="messages" element={<Messages />} />
             <Route path="settings" element={<SalesSettings />} />
           </Route>
 
@@ -255,6 +258,7 @@ function App() {
             <Route path="knowledge-base" element={<KnowledgeBase />} />
             <Route path="company-settings" element={<CompanySettings />} />
             <Route path="settings" element={<CompanySettings />} />
+            <Route path="users" element={<CompanySettings />} />
             <Route path="subscription-billing" element={<SubscriptionBilling />} />
             <Route path="my-profile" element={<MyProfile />} />
             <Route path="safety-checklists" element={<SafetyChecklists />} />
@@ -272,7 +276,7 @@ function App() {
             <Route path="create-load" element={<Loads />} />
             <Route path="load-inbox" element={<LoadInbox />} />
             <Route path="active-loads" element={<DispatcherLoads />} />
-            <Route path="loads" element={<DispatcherLoads />} />
+            <Route path="loads" element={<Loads />} />
             <Route path="planning-board" element={<TerminalWorkspace />} />
             <Route path="terminal-workspace" element={<TerminalWorkspace />} />
             <Route path="live-gps-map" element={<FleetMonitor />} />
@@ -353,7 +357,7 @@ function App() {
             <Route path="dispatch-ready" element={<WarehouseOutbound />} />
             <Route path="outbound" element={<WarehouseOutbound />} />
             <Route path="messages" element={<Messages />} />
-            <Route path="my-shift" element={<StartWorkFinish />} />
+            <Route path="my-shift" element={<WarehouseMyShift />} />
             <Route path="warehouse-yard-map" element={<WarehouseMap />} />
             <Route path="map" element={<WarehouseMap />} />
             <Route path="holding-areas" element={<WarehouseHoldingAreas />} />
@@ -370,9 +374,9 @@ function App() {
 
           {/* ===== YARD ATTENDANT PORTAL ===== */}
           <Route path="/yard" element={<ProtectedRoute><DashboardLayout role="yard" /></ProtectedRoute>}>
-            <Route index element={<WarehouseDashboard />} />
+            <Route index element={<YardDashboard />} />
             <Route path="work-status" element={<YardWorkStatus />} />
-            <Route path="dashboard" element={<WarehouseDashboard />} />
+            <Route path="dashboard" element={<YardDashboard />} />
             <Route path="attendant-overview" element={<YardDashboard />} />
             <Route path="inbound" element={<WarehouseInbound />} />
             <Route path="receive" element={<WarehouseInbound />} />
@@ -384,23 +388,23 @@ function App() {
             <Route path="stage" element={<WarehouseHoldingAreas />} />
             <Route path="load-lanes" element={<WarehouseLoadLanes />} />
             <Route path="vehicles" element={<Vehicles />} />
-            <Route path="locations" element={<Branches />} />
+            <Route path="locations" element={<YardLocations />} />
             <Route path="loads" element={<Loads />} />
             <Route path="activities" element={<WarehouseReports />} />
             <Route path="scanning" element={<WarehouseScanning />} />
             <Route path="qr-scan" element={<WarehouseScanning />} />
             <Route path="labels" element={<WarehouseLabels />} />
-            <Route path="movements" element={<WarehouseMovements />} />
-            <Route path="move" element={<WarehouseMovements />} />
+            <Route path="movements" element={<YardMoveItem />} />
+            <Route path="move" element={<YardMoveItem />} />
             <Route path="reports" element={<WarehouseReports />} />
             <Route path="report-issue" element={<YardReportIssue />} />
             {/* Backwards compatibility aliases */}
             <Route path="scan" element={<WarehouseScanning />} />
-            <Route path="move-item" element={<WarehouseMovements />} />
+            <Route path="move-item" element={<YardMoveItem />} />
             <Route path="scan-in" element={<WarehouseInbound />} />
             <Route path="scan-out" element={<WarehouseOutbound />} />
             <Route path="load-lane" element={<WarehouseLoadLanes />} />
-            <Route path="*" element={<WarehouseDashboard />} />
+            <Route path="*" element={<YardDashboard />} />
           </Route>
 
           {/* ===== ACCOUNTS ===== */}

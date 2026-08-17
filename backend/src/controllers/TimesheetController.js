@@ -8,8 +8,10 @@ exports.getAll = async (req, res, next) => {
   try {
     const { where, skip, take, orderBy, currentPage, pageSize } = buildPrismaQuery(req.query);
     
-    // Optional: Inject tenant scope here if applicable
-    // if (req.tenantId) where.tenantId = req.tenantId;
+    if (req.tenantId) where.companyId = req.tenantId;
+    if (req.user && req.user.role === 'DRIVER') {
+      where.driver = { userId: req.user.id };
+    }
 
     const [data, total] = await Promise.all([
       prisma.timesheet.findMany({
@@ -29,7 +31,10 @@ exports.getAll = async (req, res, next) => {
 exports.getById = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
-    // if (req.tenantId) where.tenantId = req.tenantId;
+    if (req.tenantId) where.companyId = req.tenantId;
+    if (req.user && req.user.role === 'DRIVER') {
+      where.driver = { userId: req.user.id };
+    }
 
     const data = await prisma.timesheet.findFirst({ where });
     
@@ -50,7 +55,19 @@ exports.getById = async (req, res, next) => {
 exports.create = async (req, res, next) => {
   try {
     const payload = { ...req.body };
-    // if (req.tenantId) payload.tenantId = req.tenantId;
+    if (req.tenantId && !payload.companyId) payload.companyId = req.tenantId;
+    if (req.user && req.user.role === 'DRIVER') {
+      const driver = await prisma.driver.findFirst({
+        where: { userId: req.user.id }
+      });
+      if (!driver) {
+        return sendError(res, {
+          code: ERROR_CODES.UNAUTHORIZED_ACCESS,
+          message: 'Driver profile not found'
+        }, HTTP_STATUS.FORBIDDEN);
+      }
+      payload.driverId = driver.id;
+    }
 
     const data = await prisma.timesheet.create({
       data: payload
@@ -68,7 +85,10 @@ exports.update = async (req, res, next) => {
     const updateData = { ...req.body };
     
     const where = { id };
-    // if (req.tenantId) where.tenantId = req.tenantId;
+    if (req.tenantId) where.companyId = req.tenantId;
+    if (req.user && req.user.role === 'DRIVER') {
+      where.driver = { userId: req.user.id };
+    }
 
     // Check version if optimistic concurrency is required
     const ifMatch = req.headers['if-match'];
@@ -106,7 +126,10 @@ exports.update = async (req, res, next) => {
 exports.delete = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
-    // if (req.tenantId) where.tenantId = req.tenantId;
+    if (req.tenantId) where.companyId = req.tenantId;
+    if (req.user && req.user.role === 'DRIVER') {
+      where.driver = { userId: req.user.id };
+    }
 
     await prisma.timesheet.delete({ where });
     

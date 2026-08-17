@@ -54,11 +54,12 @@ export default function LoadLane({
         const apiMod = await import('../../services/api');
         const api = apiMod.default || apiMod;
         const res = await api.get('/warehouse-portal/load-lanes');
-        if (res.data && res.data.success && res.data.data.length > 0) {
-          const formatted = res.data.data.map((l, idx) => ({
+        const rawLanes = res.data?.data?.lanes || (Array.isArray(res.data?.data) ? res.data.data : []);
+        if (Array.isArray(rawLanes) && rawLanes.length > 0) {
+          const formatted = rawLanes.map((l, idx) => ({
             id: l.id || `L-${idx + 1}`,
-            name: l.name || `Lane ${idx + 1}`,
-            units: l.currentItemsCount || (l.assignedItems?.length || 0),
+            name: l.laneName || l.name || `Lane ${idx + 1}`,
+            units: l.itemCount || (l.items?.length || 0),
             status: l.status === 'ACTIVE' ? 'LOADING' : (l.status || 'READY TO LOAD')
           }));
           setLanes(formatted);

@@ -111,6 +111,15 @@ const roleConfigs = {
 
     subMenus: [
       {
+        key: 'company-user-management',
+        icon: <FiUsers />,
+        label: 'User Management',
+        items: [
+          { label: 'User', path: '/company-admin/users' },
+          { label: 'Role & Permission', path: '/company-admin/roles-permissions' },
+        ],
+      },
+      {
         key: 'support',
         icon: <FiHelpCircle />,
         label: 'Support & Knowledge Base',
@@ -122,7 +131,6 @@ const roleConfigs = {
       },
     ],
     extraItems: [
-      { icon: <FiShield />, label: 'Roles & Permissions', path: '/company-admin/roles-permissions' },
       { icon: <FiSettings />, label: 'Settings', path: '/company-admin/company-settings' },
       { icon: <FiShield />, label: 'Safety Checklists', path: '/company-admin/safety-checklists' },
       { icon: <FiAlertTriangle />, label: 'Delivery Issues', path: '/company-admin/delivery-issues' },
@@ -218,7 +226,7 @@ const roleConfigs = {
   'yard': {
     portalName: 'YARD ATTENDANT PORTAL',
     basePath: '/yard',
-    userName: 'Alex Rivera',
+    userName: 'Yard Attendant',
     userRole: 'YARD ATTENDANT',
     menuItems: [
       { icon: <FiClock />, label: 'Start Work / Finish Work', path: '/yard/work-status' },
@@ -227,14 +235,14 @@ const roleConfigs = {
       { icon: <FiSearch />, label: 'Find & Search', path: '/yard/current-stock' },
       { icon: <FiActivity />, label: 'Move', path: '/yard/movements' },
       { icon: <FiBox />, label: 'Stage Inventory', path: '/yard/holding-areas' },
-      { icon: <FiLayers />, label: 'Load Lane Management', path: '/yard/load-lanes' },
+      { icon: <FiLayers />, label: 'Load Lanes', path: '/yard/load-lanes' },
       { icon: <FiTruck />, label: 'Vehicles', path: '/yard/vehicles' },
       { icon: <FiMapPin />, label: 'Locations', path: '/yard/locations' },
       { icon: <FiPackage />, label: 'Loads', path: '/yard/loads' },
       { icon: <FiActivity />, label: 'Activities', path: '/yard/activities' },
       { icon: <BsQrCodeScan />, label: 'QR/Barcode Scan', path: '/yard/scanning' },
       { icon: <FiMapPin />, label: 'Yard & Warehouse Map', path: '/yard/map' },
-      { icon: <FiLogOutIcon />, label: 'Outbound Dispatch', path: '/yard/outbound' },
+      { icon: <FiLogOutIcon />, label: 'Outbound Handover', path: '/yard/outbound' },
       { icon: <FiTag />, label: 'Labels & Barcodes', path: '/yard/labels' },
       { icon: <FiBarChart2 />, label: 'Reports & Analytics', path: '/yard/reports' },
       { icon: <FiAlertTriangle />, label: 'Report Issue', path: '/yard/report-issue' },
@@ -242,9 +250,9 @@ const roleConfigs = {
   },
 
   'accounts': {
-    portalName: 'ACCOUNT PORTAL',
+    portalName: 'ACCOUNTS PORTAL',
     basePath: '/accounts',
-    userName: 'Admin',
+    userName: 'Accounts Manager',
     userRole: 'ACCOUNTS',
     menuItems: [
       { icon: <FiGrid />, label: 'Accounts Dashboard', path: '/accounts/dashboard' },
@@ -385,23 +393,31 @@ const Sidebar = ({ role, isOpen, onClose }) => {
   // Get dynamic session values if they exist
   let userName = config.userName;
   let portalName = config.portalName;
+  let userRole = config.userRole;
   let avatarLetter = config.avatarLetter || config.userName?.charAt(0) || 'A';
 
-  if (role === 'company-admin') {
-    const sessionStr = localStorage.getItem('hero_session');
-    if (sessionStr) {
-      try {
-        const session = JSON.parse(sessionStr);
-        if (session.name) {
-          userName = session.name;
-          avatarLetter = session.name.charAt(0).toUpperCase();
-        }
-        if (session.company) {
-          portalName = session.company.toUpperCase() + ' PORTAL';
-        }
-      } catch (e) {
-        console.error(e);
+  const sessionStr = localStorage.getItem('hero_session');
+  if (sessionStr) {
+    try {
+      const session = JSON.parse(sessionStr);
+      if (session.name) {
+        userName = session.name;
+        avatarLetter = session.name.charAt(0).toUpperCase();
       }
+      if (session.company) {
+        portalName = session.company.toUpperCase() + ' PORTAL';
+      }
+      if (session.role) {
+        if (session.role === 'WAREHOUSE') {
+          userRole = session.email === 'warehouse@hero.com' ? 'WAREHOUSE MANAGER' : 'WAREHOUSE STAFF';
+        } else if (session.role === 'YARD') {
+          userRole = 'YARD ATTENDANT';
+        } else {
+          userRole = session.role.replace(/_/g, ' ');
+        }
+      }
+    } catch (e) {
+      console.error(e);
     }
   }
 
@@ -556,7 +572,7 @@ const Sidebar = ({ role, isOpen, onClose }) => {
           <div className="avatar-placeholder">{avatarLetter}</div>
           <div className="user-info">
             <span className="role-text">{userName}</span>
-            <span className="platform-owner">{config.userRole}</span>
+            <span className="platform-owner">{userRole}</span>
           </div>
           <button className="logout-btn" onClick={handleLogout}>
             <FiLogOut size={20} />

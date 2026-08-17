@@ -530,6 +530,9 @@ model User {
   assignedAssets    AssetAssignment[]
   itemMovements     ItemMovement[]
 
+  branchId          String?
+  branch            Branch?           @relation(fields: [branchId], references: [id])
+
   salesLeads      Lead[]          @relation("SalesRepresentative")
   presentedDemos  DemoBooking[]   @relation("DemoPresenter")
   salesTasks      FollowUpTask[]  @relation("TaskOwner")
@@ -560,6 +563,8 @@ model Company {
   storageUsedGB  Float         @default(0)
 
   registrationNumber String?
+  dotNumber          String?
+  taxId              String?
   adminEmail         String?
   cardBrand          String? // e.g., "Visa"
   cardLast4          String? // e.g., "8812"
@@ -615,6 +620,7 @@ model Company {
   aiModelRegistries     AiModelRegistry[]
   notificationTemplates NotificationTemplate[]
   notificationRules     NotificationRule[]
+  onboardingHandovers   OnboardingHandover[]
   recipientGroups       RecipientGroup[]
 
   securityRetentionDays  String?  @default("90 Days")
@@ -816,6 +822,10 @@ model Branch {
   drivers    Driver[]
   warehouses Warehouse[]
   assets     Asset[]
+  users      User[]
+  loads      Load[]
+  vehicles   Vehicle[]
+  customers  Customer[]
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
 
@@ -833,7 +843,7 @@ model Driver {
   // 1. Personal Information
   firstName        String?
   lastName         String?
-  avatarUrl        String?
+  avatarUrl        String?   @db.Text
   dob              DateTime?
   gender           String?
   nationality      String?
@@ -922,14 +932,177 @@ model Driver {
   vinScanEvents      VinScanEvent[]
   deliveryPods       DeliveryPOD[]
   offlineSyncItems   OfflineSyncItem[]
+  performanceLogs    PerformanceLog[]
+  allowances         DriverAllowance[]
+  deductions         DriverDeduction[]
+  leaveRequests      DriverLeaveRequest[]
+  payRates           DriverPayRate[]
+  activities         DriverActivity[]
   driverMessages     DriverMessage[]
   incidents          DriverIncident[]
   yardTasks          YardTask[]
+  superInfo          DriverSuperInfo?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("driver")
+}
+
+model PerformanceLog {
+  id         String   @id @default(uuid())
+  date       String
+  assignment String
+  route      String
+  score      String
+  status     String   @default("EXCELLENT")
+  remarks    String?  @db.Text
+  evaluator  String?
+
+  driverId   String
+  driver     Driver   @relation(fields: [driverId], references: [id])
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("performance_log")
+}
+
+model DriverAllowance {
+  id       String @id @default(uuid())
+  name     String
+  category String
+  type     String
+  amount   String
+  date     String
+  status   String @default("Approved")
+
+  driverId String
+  driver   Driver @relation(fields: [driverId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("driver_allowance")
+}
+
+model DriverDeduction {
+  id        String @id @default(uuid())
+  name      String
+  type      String
+  frequency String
+  amount    String
+  status    String @default("Active")
+
+  driverId String
+  driver   Driver @relation(fields: [driverId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("driver_deduction")
+}
+
+model DriverLeaveRequest {
+  id       String @id @default(uuid())
+  type     String
+  dates    String
+  days     String
+  approver String @default("HR Director")
+  status   String @default("Pending Approval")
+  notes    String? @db.Text
+
+  driverId String
+  driver   Driver @relation(fields: [driverId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("driver_leave_request")
+}
+
+model DriverPayRate {
+  id       String @id @default(uuid())
+  category String
+  type     String
+  rate     String
+  rule     String
+  status   String @default("Active")
+
+  driverId String
+  driver   Driver @relation(fields: [driverId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("driver_pay_rate")
+}
+
+model DriverActivity {
+  id          String   @id @default(uuid())
+  title       String
+  category    String   @default("Assignments")
+  status      String   @default("Verified")
+  description String   @db.Text
+  performedBy String   @default("Fleet Admin User")
+  time        String?
+  date        String?
+
+  driverId    String
+  driver      Driver   @relation(fields: [driverId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("driver_activity")
+}
+
+model DriverMessage {
+  id          String   @id @default(uuid())
+  subject     String?
+  message     String?  @db.Text
+  body        String?  @db.Text
+  sender      String?  @default("Fleet Admin")
+  senderName  String?
+  senderRole  String?
+  recipient   String?
+  category    String?  @default("General")
+  status      String   @default("Sent")
+  isFromDriver Boolean @default(false)
+  isRead      Boolean  @default(false)
+  important   Boolean  @default(false)
+  isGroup     Boolean  @default(false)
+  meta        String?
+  threadId    String?
+
+  driverId    String
+  driver      Driver   @relation(fields: [driverId], references: [id])
+
+  companyId   String?
+  company     Company? @relation(fields: [companyId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("driver_message")
+}
+
+model DriverSuperInfo {
+  id              String   @id @default(uuid())
+  fundName        String   @default("AustralianSuper")
+  memberNumber    String   @default("AS-102948")
+  usi             String   @default("STA0100AU")
+  rate            String   @default("11.5%")
+  ytdContribution String   @default("$0.00")
+  status          String   @default("Active & Compliant")
+
+  driverId        String   @unique
+  driver          Driver   @relation(fields: [driverId], references: [id])
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("driver_super_info")
 }
 
 model Vehicle {
@@ -981,6 +1154,9 @@ model Vehicle {
   telemetryHistory   TelemetryLog[]
   prevEquipmentSwaps EquipmentSwap[] @relation("PrevTrailerSwap")
   newEquipmentSwaps  EquipmentSwap[] @relation("NewTrailerSwap")
+
+  branchId          String?
+  branch            Branch?           @relation(fields: [branchId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1042,6 +1218,9 @@ model Load {
 
   companyId String
   company   Company @relation(fields: [companyId], references: [id])
+
+  branchId          String?
+  branch            Branch?           @relation(fields: [branchId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1414,6 +1593,9 @@ model Customer {
   loadItems        LoadItem[]
   invoices         CustomerInvoice[]
 
+  branchId          String?
+  branch            Branch?           @relation(fields: [branchId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -1597,6 +1779,7 @@ model Lead {
   proposals  Proposal[]
   tasks      FollowUpTask[]
   activities SalesActivity[]
+  handover   OnboardingHandover?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1677,6 +1860,29 @@ model SalesActivity {
   timestamp DateTime @default(now())
 
   @@map("sales_activity")
+}
+
+model OnboardingHandover {
+  id              String   @id @default(uuid())
+  leadId          String   @unique
+  lead            Lead     @relation(fields: [leadId], references: [id])
+  companyName     String
+  primaryContact  String
+  adminEmail      String
+  adminPhone      String?
+  transportNiche  String?
+  fleetSize       String?
+  selectedPlan    String?
+  billingFreq     String?  @default("Monthly")
+  agreedPrice     Float?
+  status          String   @default("READY_FOR_PROVISIONING")
+  notes           String?  @db.Text
+  companyId       String?
+  company         Company? @relation(fields: [companyId], references: [id])
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("onboarding_handover")
 }
 
 model EmailTemplate {
@@ -2623,41 +2829,6 @@ model ImpersonationSession {
 }
 
 // ----------------------------------------------------------------------
-// DRIVER PORTAL: MESSAGES & COMMUNICATIONS
-// ----------------------------------------------------------------------
-
-model DriverMessage {
-  id String @id @default(uuid())
-
-  driverId String
-  driver   Driver @relation(fields: [driverId], references: [id])
-
-  senderName  String // e.g., "Dispatch Support", "Noah (Me)"
-  senderRole  String? // e.g., "DISPATCH", "DRIVER", "YARD", "MAINTENANCE"
-  recipient   String // e.g., "Dispatch Support", "ABC Car Yard", "Safety Team"
-
-  subject  String?
-  body     String  @db.Text
-  category String  @default("General") // General, Dispatch, Yard, Maintenance, Safety
-
-  isFromDriver Boolean @default(false)
-  isRead       Boolean @default(false)
-  important    Boolean @default(false)
-  isGroup      Boolean @default(false)
-  meta         String? // e.g., "LD-3987 • Pickup"
-
-  threadId String? // Grouping for conversation threads
-
-  companyId String
-  company   Company @relation(fields: [companyId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("driver_message")
-}
-
-// ----------------------------------------------------------------------
 // DRIVER PORTAL: INCIDENT & EMERGENCY SOS REPORTING
 // ----------------------------------------------------------------------
 
@@ -2690,4 +2861,17 @@ model DriverIncident {
   updatedAt DateTime @updatedAt
 
   @@map("driver_incident")
+}
+
+model RegionalTerminal {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  code      String?
+  city      String?
+  state     String?
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("regional_terminal")
 }

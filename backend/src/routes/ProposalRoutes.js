@@ -1,14 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const ProposalController = require('../controllers/ProposalController');
-// const auth = require('../middlewares/auth');
+const { verifyToken, requireSalesAccess } = require('../middlewares/auth');
 
-// Default open for testing, uncomment auth to protect routes
-// router.use(auth.verifyToken);
+router.use(verifyToken);
+router.use(requireSalesAccess);
 
 router.route('/')
   .get(ProposalController.getAll)
   .post(ProposalController.create);
+
+router.route('/:id/provision')
+  .post(ProposalController.provision);
 
 router.route('/:id')
   .get(ProposalController.getById)

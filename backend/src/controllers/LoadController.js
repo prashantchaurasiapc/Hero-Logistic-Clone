@@ -10,6 +10,12 @@ exports.getAll = async (req, res, next) => {
     const { where, skip, take, orderBy, currentPage, pageSize } = buildPrismaQuery(req.query);
     
     if (req.tenantId) where.companyId = req.tenantId;
+    if (req.user && req.user.role === 'DISPATCHER' && req.user.branchId && !req.user.permissions?.includes('dispatch.cross_branch.view')) {
+      where.branchId = req.user.branchId;
+    }
+    if (req.user && req.user.role === 'DRIVER') {
+      where.driver = { userId: req.user.id };
+    }
 
     const [data, total] = await Promise.all([
       prisma.load.findMany({
@@ -39,6 +45,12 @@ exports.getById = async (req, res, next) => {
   try {
     const where = { id: req.params.id };
     if (req.tenantId) where.companyId = req.tenantId;
+    if (req.user && req.user.role === 'DISPATCHER' && req.user.branchId && !req.user.permissions?.includes('dispatch.cross_branch.view')) {
+      where.branchId = req.user.branchId;
+    }
+    if (req.user && req.user.role === 'DRIVER') {
+      where.driver = { userId: req.user.id };
+    }
 
     const data = await prisma.load.findFirst({
       where,
@@ -74,6 +86,17 @@ exports.create = async (req, res, next) => {
     if (req.tenantId) {
       payload.companyId = req.tenantId;
     }
+    if (req.user && req.user.role === 'DISPATCHER' && req.user.branchId && !req.user.permissions?.includes('dispatch.cross_branch.view')) {
+      payload.branchId = req.user.branchId;
+    }
+    if (req.user && req.user.role === 'DRIVER') {
+      if (!req.user.permissions?.includes('driver.owner_operator_load_create')) {
+        return sendError(res, {
+          code: ERROR_CODES.UNAUTHORIZED_ACCESS,
+          message: 'Drivers are not authorized to create loads.'
+        }, HTTP_STATUS.FORBIDDEN);
+      }
+    }
 
     if (!payload.companyId) {
       const firstCompany = await prisma.company.findFirst();
@@ -101,6 +124,16 @@ exports.create = async (req, res, next) => {
       else if (payload.status === 'On Hold') payload.status = 'ASSIGNED';
       else if (!['DRAFT', 'PLANNED', 'ASSIGNED', 'IN_TRANSIT', 'DELIVERED', 'CANCELLED'].includes(payload.status)) {
         payload.status = 'PLANNED';
+      }
+    }
+
+    // Map priority string to valid db enum
+    if (payload.priority) {
+      const pUpper = payload.priority.toUpperCase();
+      if (['LOW', 'MEDIUM', 'HIGH', 'URGENT'].includes(pUpper)) {
+        payload.priority = pUpper;
+      } else {
+        payload.priority = 'LOW';
       }
     }
 
@@ -155,6 +188,12 @@ exports.update = async (req, res, next) => {
     if (req.tenantId) {
       findWhere.companyId = req.tenantId;
     }
+    if (req.user && req.user.role === 'DISPATCHER' && req.user.branchId && !req.user.permissions?.includes('dispatch.cross_branch.view')) {
+      findWhere.branchId = req.user.branchId;
+    }
+    if (req.user && req.user.role === 'DRIVER') {
+      findWhere.driver = { userId: req.user.id };
+    }
 
     let targetLoad = await prisma.load.findFirst({
       where: findWhere
@@ -195,6 +234,12 @@ exports.delete = async (req, res, next) => {
     const findWhere = { id };
     if (req.tenantId) {
       findWhere.companyId = req.tenantId;
+    }
+    if (req.user && req.user.role === 'DISPATCHER' && req.user.branchId && !req.user.permissions?.includes('dispatch.cross_branch.view')) {
+      findWhere.branchId = req.user.branchId;
+    }
+    if (req.user && req.user.role === 'DRIVER') {
+      findWhere.driver = { userId: req.user.id };
     }
 
     const targetLoad = await prisma.load.findFirst({

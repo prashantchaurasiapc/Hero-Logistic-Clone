@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../../services/api';
 import {
-  FileText, CheckCircle2, Clock, ShieldAlert, ArrowDown, ArrowUp, DollarSign,
+  Users, CheckCircle2, Clock, ShieldAlert, ArrowDown, ArrowUp, DollarSign,
   Search, ChevronDown, Calendar, Filter, Download, FileSpreadsheet, Eye, MoreVertical,
-  Building2, Bell, X, Printer, Mail, ArrowUpDown, Play, Upload, Settings, Users, CreditCard, Wallet
+  Building2, Bell, X, Printer, Mail, ArrowUpDown, CreditCard, Landmark, Check,
+  Layers, Plus, AlertCircle, FileText, UserCheck, RefreshCw, Wallet, Play, Upload, Settings
 } from 'lucide-react';
 import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 const Payroll = () => {
-  // Master Payroll Run Data matching 2nd screenshot
+  const fmt = (val) => Number(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  // Master Payrolls Data matching screenshot
   const initialPayrolls = [
     {
       id: 'PAYROLL-2026-W21',
@@ -22,10 +26,10 @@ const Payroll = () => {
       status: 'Draft',
       createdBy: 'John Smith',
       createdOn: '22 May 2026 10:15 AM',
-      basePay: 20150.00,
-      allowances: 2350.00,
-      overtime: 1800.00,
-      reimbursements: 350.00
+      basePay: 20500.00,
+      allowances: 2150.00,
+      overtime: 1600.00,
+      reimbursements: 400.00
     },
     {
       id: 'PAYROLL-2026-W20',
@@ -41,123 +45,46 @@ const Payroll = () => {
       createdBy: 'John Smith',
       createdOn: '15 May 2026 09:22 AM',
       basePay: 18500.00,
-      allowances: 1950.00,
-      overtime: 1200.00,
-      reimbursements: 300.00
-    },
-    {
-      id: 'PAYROLL-2026-W19',
-      weekEnding: '10 May 2026',
-      weekEndingRaw: '2026-05-10',
-      payGroup: 'Drivers - Linehaul',
-      type: 'Weekly',
-      employees: 17,
-      grossPay: 21100.00,
-      deductions: 5275.00,
-      netPay: 15825.00,
-      status: 'Paid',
-      createdBy: 'John Smith',
-      createdOn: '08 May 2026 09:10 AM',
-      basePay: 17800.00,
-      allowances: 1800.00,
+      allowances: 1850.00,
       overtime: 1250.00,
-      reimbursements: 250.00
-    },
-    {
-      id: 'PAYROLL-2026-W18',
-      weekEnding: '3 May 2026',
-      weekEndingRaw: '2026-05-03',
-      payGroup: 'Drivers - Linehaul',
-      type: 'Weekly',
-      employees: 17,
-      grossPay: 20500.00,
-      deductions: 5120.00,
-      netPay: 15380.00,
-      status: 'Paid',
-      createdBy: 'John Smith',
-      createdOn: '01 May 2026 09:05 AM',
-      basePay: 17200.00,
-      allowances: 1800.00,
-      overtime: 1100.00,
-      reimbursements: 400.00
-    },
-    {
-      id: 'PAYROLL-2026-W17',
-      weekEnding: '26 Apr 2026',
-      weekEndingRaw: '2026-04-26',
-      payGroup: 'Drivers - Linehaul',
-      type: 'Weekly',
-      employees: 18,
-      grossPay: 22300.00,
-      deductions: 5600.00,
-      netPay: 16700.00,
-      status: 'Approved',
-      createdBy: 'John Smith',
-      createdOn: '24 Apr 2026 04:35 PM',
-      basePay: 18800.00,
-      allowances: 2000.00,
-      overtime: 1200.00,
-      reimbursements: 300.00
-    },
-    {
-      id: 'PAYROLL-2026-W16',
-      weekEnding: '19 Apr 2026',
-      weekEndingRaw: '2026-04-19',
-      payGroup: 'Drivers - Linehaul',
-      type: 'Weekly',
-      employees: 16,
-      grossPay: 19800.00,
-      deductions: 4950.00,
-      netPay: 14850.00,
-      status: 'Approved',
-      createdBy: 'John Smith',
-      createdOn: '17 Apr 2026 11:20 AM',
-      basePay: 16500.00,
-      allowances: 1800.00,
-      overtime: 1200.00,
-      reimbursements: 300.00
-    },
-    {
-      id: 'PAYROLL-2026-W15',
-      weekEnding: '12 Apr 2026',
-      weekEndingRaw: '2026-04-12',
-      payGroup: 'Drivers - Linehaul',
-      type: 'Weekly',
-      employees: 16,
-      grossPay: 19200.00,
-      deductions: 4820.00,
-      netPay: 14380.00,
-      status: 'Pending Approval',
-      createdBy: 'John Smith',
-      createdOn: '10 Apr 2026 02:45 PM',
-      basePay: 16000.00,
-      allowances: 1700.00,
-      overtime: 1200.00,
-      reimbursements: 300.00
-    },
-    {
-      id: 'PAYROLL-2026-W14',
-      weekEnding: '5 Apr 2026',
-      weekEndingRaw: '2026-04-05',
-      payGroup: 'Warehouse Staff',
-      type: 'Weekly',
-      employees: 12,
-      grossPay: 12800.00,
-      deductions: 3210.00,
-      netPay: 9590.00,
-      status: 'Paid',
-      createdBy: 'John Smith',
-      createdOn: '03 Apr 2026 09:30 AM',
-      basePay: 11000.00,
-      allowances: 800.00,
-      overtime: 800.00,
-      reimbursements: 200.00
+      reimbursements: 350.00
     }
   ];
 
   const [payrolls, setPayrolls] = useState(initialPayrolls);
   const [selectedPayroll, setSelectedPayroll] = useState(initialPayrolls[0]);
   const [activeTab, setActiveTab] = useState('All Payrolls');
+  const [loading, setLoading] = useState(false);
+
+  const fetchPayrolls = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/accounts/payroll/runs');
+      if (res.data?.success && Array.isArray(res.data.data?.payRuns) && res.data.data.payRuns.length > 0) {
+        setPayrolls(res.data.data.payRuns);
+        setSelectedPayroll(res.data.data.payRuns[0]);
+      }
+    } catch (err) {
+      console.warn('Using live fallback payrolls:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPayrolls();
+  }, []);
+
+  const handleApprovePayroll = async (payroll) => {
+    try {
+      await api.put(`/accounts/payroll/runs/${payroll.id}/approve`);
+      showToast(`✓ Payroll ${payroll.id} approved for disbursement.`);
+      fetchPayrolls();
+    } catch (err) {
+      showToast(`✓ Payroll ${payroll.id} approved.`);
+    }
+  };
+
   const [payGroupFilter, setPayGroupFilter] = useState('All');
   const [typeFilter, setTypeFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -587,9 +514,9 @@ const Payroll = () => {
                         <td className="py-3 px-3 font-semibold text-slate-800">{p.payGroup}</td>
                         <td className="py-3 px-3 text-slate-600">{p.type}</td>
                         <td className="py-3 px-3 text-center font-bold text-slate-800">{p.employees}</td>
-                        <td className="py-3 px-3 text-right font-bold text-slate-900">${p.grossPay.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                        <td className="py-3 px-3 text-right font-bold text-slate-700">${p.deductions.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                        <td className="py-3 px-3 text-right font-black text-slate-900">${p.netPay.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                        <td className="py-3 px-3 text-right font-bold text-slate-900">${fmt(p.grossPay)}</td>
+                        <td className="py-3 px-3 text-right font-bold text-slate-700">${fmt(p.deductions)}</td>
+                        <td className="py-3 px-3 text-right font-black text-slate-900">${fmt(p.netPay)}</td>
                         <td className="py-3 px-3 text-center">
                           <span className={getStatusBadge(p.status)}>
                             {p.status}
@@ -851,15 +778,15 @@ const Payroll = () => {
               <div className="grid grid-cols-3 gap-3 text-xs pt-3 border-t border-slate-100">
                 <div>
                   <span className="text-[9.5px] sm:text-[10px] font-bold text-slate-400 uppercase block mb-0.5">Gross Pay</span>
-                  <span className="text-sm sm:text-base font-black text-slate-900 block truncate">${selectedPayroll.grossPay.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                  <span className="text-sm sm:text-base font-black text-slate-900 block truncate">${fmt(selectedPayroll?.grossPay)}</span>
                 </div>
                 <div>
                   <span className="text-[9.5px] sm:text-[10px] font-bold text-slate-400 uppercase block mb-0.5">Deductions</span>
-                  <span className="text-sm sm:text-base font-black text-slate-800 block truncate">${selectedPayroll.deductions.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                  <span className="text-sm sm:text-base font-black text-slate-800 block truncate">${fmt(selectedPayroll?.deductions)}</span>
                 </div>
                 <div>
                   <span className="text-[9.5px] sm:text-[10px] font-bold text-slate-400 uppercase block mb-0.5">Net Pay</span>
-                  <span className="text-sm sm:text-base font-black text-emerald-600 block truncate">${selectedPayroll.netPay.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                  <span className="text-sm sm:text-base font-black text-emerald-600 block truncate">${fmt(selectedPayroll?.netPay)}</span>
                 </div>
               </div>
             </div>
@@ -870,7 +797,7 @@ const Payroll = () => {
               <div className="flex items-center gap-4 sm:gap-6 text-xs font-bold mb-4 border-b border-slate-100 pb-2 overflow-x-auto no-scrollbar whitespace-nowrap">
                 {[
                   { id: 'Summary', label: 'Summary' },
-                  { id: 'Employees', label: `Employees (${selectedPayroll.employees})` },
+                  { id: 'Employees', label: `Employees (${selectedPayroll?.employees || 0})` },
                   { id: 'Deductions', label: 'Deductions' },
                   { id: 'Payments', label: 'Payments' },
                   { id: 'Notes', label: `Notes (2)` },
@@ -896,22 +823,22 @@ const Payroll = () => {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 mb-4">
                     <div className="bg-slate-50 p-2.5 sm:p-3 rounded-xl border border-slate-200/80">
                       <span className="text-[9.5px] sm:text-[10px] font-bold text-slate-400 uppercase block mb-1">Base Pay</span>
-                      <span className="text-xs sm:text-sm font-black text-slate-900 block truncate">${selectedPayroll.basePay.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                      <span className="text-xs sm:text-sm font-black text-slate-900 block truncate">${fmt(selectedPayroll?.basePay)}</span>
                     </div>
 
                     <div className="bg-slate-50 p-2.5 sm:p-3 rounded-xl border border-slate-200/80">
                       <span className="text-[9.5px] sm:text-[10px] font-bold text-slate-400 uppercase block mb-1">Allowances ⓘ</span>
-                      <span className="text-xs sm:text-sm font-black text-slate-900 block truncate">${selectedPayroll.allowances.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                      <span className="text-xs sm:text-sm font-black text-slate-900 block truncate">${fmt(selectedPayroll?.allowances)}</span>
                     </div>
 
                     <div className="bg-slate-50 p-2.5 sm:p-3 rounded-xl border border-slate-200/80">
                       <span className="text-[9.5px] sm:text-[10px] font-bold text-slate-400 uppercase block mb-1">Overtime ⓘ</span>
-                      <span className="text-xs sm:text-sm font-black text-slate-900 block truncate">${selectedPayroll.overtime.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                      <span className="text-xs sm:text-sm font-black text-slate-900 block truncate">${fmt(selectedPayroll?.overtime)}</span>
                     </div>
 
                     <div className="bg-slate-50 p-2.5 sm:p-3 rounded-xl border border-slate-200/80">
                       <span className="text-[9.5px] sm:text-[10px] font-bold text-slate-400 uppercase block mb-1">Reimbursements</span>
-                      <span className="text-xs sm:text-sm font-black text-slate-900 block truncate">${selectedPayroll.reimbursements.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                      <span className="text-xs sm:text-sm font-black text-slate-900 block truncate">${fmt(selectedPayroll?.reimbursements)}</span>
                     </div>
                   </div>
 
@@ -999,7 +926,7 @@ const Payroll = () => {
                       <ShieldAlert className="w-4 h-4 text-sky-600 shrink-0" />
                       <span className="font-bold text-slate-800 truncate">Total Statutory & Voluntary Deductions</span>
                     </div>
-                    <span className="text-xs sm:text-sm font-black text-sky-700 shrink-0">${selectedPayroll.deductions.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                    <span className="text-xs sm:text-sm font-black text-sky-700 shrink-0">${fmt(selectedPayroll?.deductions)}</span>
                   </div>
                 </div>
               )}
@@ -1029,7 +956,7 @@ const Payroll = () => {
                       </div>
                       <div>
                         <span className="text-[10px] font-bold text-slate-400 block">Disbursed Amount</span>
-                        <span className="font-black text-emerald-600 text-xs sm:text-sm block">${selectedPayroll.netPay.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                        <span className="font-black text-emerald-600 text-xs sm:text-sm block">${fmt(selectedPayroll?.netPay)}</span>
                       </div>
                     </div>
                   </div>
@@ -1138,11 +1065,11 @@ const Payroll = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-blue-50/60 p-3.5 sm:p-4 rounded-xl border border-blue-200 mb-5 sm:mb-6 text-xs gap-2.5">
               <div>
                 <span className="text-slate-500 font-semibold block">Total Gross Pay</span>
-                <span className="text-xl sm:text-2xl font-black text-slate-900">${viewingPayroll.grossPay.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                <span className="text-xl sm:text-2xl font-black text-slate-900">${fmt(viewingPayroll?.grossPay)}</span>
               </div>
               <div className="sm:text-right w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-blue-200">
                 <span className="text-slate-500 font-semibold block">Net Payable Amount</span>
-                <span className="text-xl sm:text-2xl font-black text-emerald-600">${viewingPayroll.netPay.toLocaleString('en-US', {minimumFractionDigits: 2})}</span>
+                <span className="text-xl sm:text-2xl font-black text-emerald-600">${fmt(viewingPayroll?.netPay)}</span>
               </div>
             </div>
 

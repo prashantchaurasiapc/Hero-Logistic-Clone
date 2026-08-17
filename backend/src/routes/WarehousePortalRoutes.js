@@ -72,4 +72,10 @@ router.patch('/tasks/:taskId/status', ctrl.updateTaskStatus);
 router.put('/tasks/:taskId/status', ctrl.updateTaskStatus);
 router.post('/tasks/:taskId/complete', ctrl.completeTask);
 
+// 15. Issue Reporting
+router.get('/issues', ctrl.getReportedIssues);
+router.post('/issues', ctrl.reportIssue);
+router.post('/report-issue', ctrl.reportIssue);
+router.delete('/issues/:id', ctrl.resolveReportedIssue);
+
 module.exports = router;

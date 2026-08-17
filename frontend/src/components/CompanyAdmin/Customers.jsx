@@ -3,21 +3,12 @@ import api from '../../services/api';
 import { createPortal } from 'react-dom';
 import {
   Users, UserCheck, UserPlus, UserMinus, Star, Search, Plus, Upload, Download, MoreVertical,
-  ChevronDown, ArrowRight, ArrowLeft, Eye, Edit, UserCircle, Trash2, Check, MapPin, Phone, Mail, Globe, Clock, Package, CheckCircle2, FileText, ChevronLeft, Building2, Briefcase, Lock, List, Settings, DollarSign, Activity, AlertCircle, Wrench, Truck, Calendar, Filter, X, MessageSquare, ToggleLeft, ToggleRight, Info, Map, Car, Calculator, Shield, ExternalLink, ChevronRight
+  ChevronDown, ArrowRight, ArrowLeft, Eye, Edit, UserCircle, Trash2, Check, MapPin, Phone, Mail, Globe, Clock, Package, CheckCircle2, FileText, ChevronLeft, Building2, Briefcase, Lock, List, Settings, DollarSign, Activity, AlertCircle, Wrench, Truck, Calendar, Filter, X, MessageSquare, ToggleLeft, ToggleRight, Info, Map, Car, Calculator, Shield, ExternalLink, ChevronRight, Printer
 } from 'lucide-react';
 
 const mockCustomers = [];
 
-const initialDocuments = [
-  { name: 'Master Service Agreement.pdf', size: '2.4 MB', ver: 'Version 2.1', cat: 'Contracts', type: 'Agreement', userName: 'Sarah Mitchell', userInitials: 'SM', date: '01/07/2025', time: '10:24 AM', status: 'Active' },
-  { name: 'Service Level Agreement.docx', size: '1.1 MB', ver: 'Version 1.0', cat: 'Contracts', type: 'SLA', userName: 'Sarah Mitchell', userInitials: 'SM', date: '15/06/2025', time: '02:15 PM', status: 'Active' },
-  { name: 'Insurance Certificate 2025.pdf', size: '2.3 MB', ver: 'Version 1.0', cat: 'Insurance', type: 'Certificate', userName: 'John Davis', userInitials: 'JD', date: '15/06/2025', time: '08:30 AM', status: 'Active' },
-  { name: 'Public Liability Insurance.pdf', size: '1.7 MB', ver: 'Version 1.0', cat: 'Insurance', type: 'Policy', userName: 'John Davis', userInitials: 'JD', date: '20/05/2025', time: '09:12 AM', status: 'Active' },
-  { name: 'Pricing Matrix 2025.xlsx', size: '952 KB', ver: 'Version 1.0', cat: 'Pricing', type: 'Rate Sheet', userName: 'Sarah Mitchell', userInitials: 'SM', date: '20/05/2025', time: '11:05 AM', status: 'Active' },
-  { name: 'Dox Invoice Template.pdf', size: '1.2 MB', ver: 'Version 1.0', cat: 'Financial', type: 'Template', userName: 'Sarah Mitchell', userInitials: 'SM', date: '03/05/2025', time: '03:45 PM', status: 'Active' },
-  { name: 'Dangerous Goods Approval.pdf', size: '2.6 MB', ver: 'Version 1.0', cat: 'Compliance', type: 'Certificate', userName: 'Sarah Mitchell', userInitials: 'SM', date: '10/05/2025', time: '02:10 PM', status: 'Expiring Soon' },
-  { name: 'DG Chain of Responsibility.pdf', size: '1.4 MB', ver: 'Version 1.0', cat: 'Compliance', type: 'Certificate', userName: 'John Davis', userInitials: 'JD', date: '10/05/2025', time: '09:30 AM', status: 'Active' }
-];
+const initialDocuments = [];
 
 export default function Customers() {
   const [customersList, setCustomersList] = useState([]);
@@ -61,12 +52,53 @@ export default function Customers() {
   const [showImportModal, setShowImportModal] = useState(false);
   const [activeActionMenu, setActiveActionMenu] = useState(null);
   const [activeDetailsTab, setActiveDetailsTab] = useState('Overview');
+  const [activePricingSubTab, setActivePricingSubTab] = useState('Lane Pricing');
+  const [showPricingMatrixModal, setShowPricingMatrixModal] = useState(false);
+  const [showApplyTemplateModal, setShowApplyTemplateModal] = useState(false);
+  const [showImportPricingModal, setShowImportPricingModal] = useState(false);
+  const [showAddPricingRuleModal, setShowAddPricingRuleModal] = useState(false);
+  const [showAddVehicleTypeModal, setShowAddVehicleTypeModal] = useState(false);
+  const [showAddChargeModal, setShowAddChargeModal] = useState(false);
+  const [showAddSurchargeModal, setShowAddSurchargeModal] = useState(false);
+  const [showPricingHistoryModal, setShowPricingHistoryModal] = useState(false);
+  const [showMoreActionsMenu, setShowMoreActionsMenu] = useState(false);
+
+  const [showAddContactModal, setShowAddContactModal] = useState(false);
+  const [newContactForm, setNewContactForm] = useState({
+    firstName: '',
+    lastName: '',
+    role: '',
+    email: '',
+    phone: '',
+    isPrimary: false
+  });
+
+  const [customerLoads, setCustomerLoads] = useState([]);
+  const [newLoadForm, setNewLoadForm] = useState({
+    origin: '',
+    destination: '',
+    cargoType: 'General Freight',
+    weight: '',
+    priority: 'Low',
+    driverName: '',
+    notes: ''
+  });
+
+  const [lanePricingRules, setLanePricingRules] = useState([]);
+  const [selectedTemplateName, setSelectedTemplateName] = useState('Standard National Template (Default)');
+  const [newPricingRule, setNewPricingRule] = useState({
+    from: '',
+    to: '',
+    type: 'Interstate',
+    distance: '',
+    baseRate: '',
+    minCharge: ''
+  });
 
   const [showCreateLoadModal, setShowCreateLoadModal] = useState(false);
   const [showCreateInvoiceModal, setShowCreateInvoiceModal] = useState(false);
   const [showSendMessageModal, setShowSendMessageModal] = useState(false);
   const [showEditCustomerModal, setShowEditCustomerModal] = useState(false);
-  const [showAddContactModal, setShowAddContactModal] = useState(false);
   const [showAssignManagerModal, setShowAssignManagerModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedBranchTab, setSelectedBranchTab] = useState(null);
@@ -352,17 +384,31 @@ export default function Customers() {
       if (selectedCustomer && selectedCustomer.id === deleteCustomerForm.id) {
         setSelectedCustomer(null);
       }
-      setShowDeleteModal(false);
     }
   };
 
+  const handleBackToCustomersList = () => {
+    setSelectedCustomer(null);
+    setShowPricingMatrixModal(false);
+    setShowApplyTemplateModal(false);
+    setShowImportPricingModal(false);
+    setShowAddPricingRuleModal(false);
+    setShowAddVehicleTypeModal(false);
+    setShowAddChargeModal(false);
+    setShowAddSurchargeModal(false);
+    setShowPricingHistoryModal(false);
+    setShowMoreActionsMenu(false);
+    setShowAddContactModal(false);
+    setShowCreateLoadModal(false);
+    setShowSendMessageModal(false);
+    setShowEditCustomerModal(false);
+    setShowAssignManagerModal(false);
+    setShowDeleteModal(false);
+    setShowUploadDocumentModal(false);
+  };
+
   // Contacts live state
-  const [contacts, setContacts] = useState([
-    { id: 1, firstName: 'John', lastName: 'Smith', role: 'Primary', phone: '0401 234 567', email: 'john.smith@abcmotors.com.au', isPrimary: true },
-    { id: 2, firstName: 'Michael', lastName: 'King', role: 'Accounts', phone: '0412 345 678', email: 'michael.king@abcmotors.com.au', isPrimary: false },
-    { id: 3, firstName: 'Sarah', lastName: 'Patel', role: 'Operations', phone: '0411 567 890', email: 'sarah.patel@abcmotors.com.au', isPrimary: false },
-    { id: 4, firstName: 'After', lastName: 'Hours', role: 'After Hours', phone: '1300 123 456', email: 'afterhours@abcmotors.com.au', isPrimary: false },
-  ]);
+  const [contacts, setContacts] = useState([]);
   const [draftContact, setDraftContact] = useState({ firstName: '', lastName: '', role: '', email: '', phone: '', isPrimary: false });
   const [showUploadDocumentModal, setShowUploadDocumentModal] = useState(false);
   const [showEditCompanyInfoModal, setShowEditCompanyInfoModal] = useState(false);
@@ -371,31 +417,20 @@ export default function Customers() {
   const [showMainHeaderMenu, setShowMainHeaderMenu] = useState(false);
 
   // Special Instructions Live State
-  const [specialInstructions, setSpecialInstructions] = useState(`Delivery Instructions
-Report to receiving office before unloading. Photo POD required for all deliveries.
-
-Site Requirements
-High visibility vest must be worn on site. Speed limit 10km/h within yard.
-
-Booking Requirements
-All deliveries must be booked 24hrs in advance. Contact operations for scheduling.
-
-Access Information
-Main gate code: 2580#
-Please sign in at security.`);
+  const [specialInstructions, setSpecialInstructions] = useState('');
   const [draftSpecialInstructions, setDraftSpecialInstructions] = useState('');
 
   // Company Information live state
   const [companyInfo, setCompanyInfo] = useState({
-    tradingName: selectedCustomer?.name || 'FreightCo',
-    phone: '0415 166 693',
-    abn: selectedCustomer?.abn || '68 961 770 797',
-    email: 'casey.davis@example.com',
-    acn: '123 456 789',
-    website: 'www.abcmotors.com.au',
-    industry: 'Automotive',
-    customerSince: '12 Feb 2022',
-    address: '25 Corporate Drive\nEpping NSW 2121\nAustralia',
+    tradingName: selectedCustomer?.name || '',
+    phone: 'N/A',
+    abn: selectedCustomer?.abn || 'N/A',
+    email: 'N/A',
+    acn: 'N/A',
+    website: 'N/A',
+    industry: 'Logistics',
+    customerSince: 'Today',
+    address: 'N/A',
   });
   const [draftCompanyInfo, setDraftCompanyInfo] = useState({});
 
@@ -403,38 +438,165 @@ Please sign in at security.`);
     if (selectedCustomer) {
       setCompanyInfo({
         tradingName: selectedCustomer.name || '',
-        phone: selectedCustomer.contactPhone || '0415 166 693',
-        abn: selectedCustomer.abn || '',
-        email: selectedCustomer.contactEmail || 'casey.davis@example.com',
-        acn: selectedCustomer.acn || '123 456 789',
-        website: selectedCustomer.website || 'www.abcmotors.com.au',
-        industry: selectedCustomer.industry || 'Automotive',
-        customerSince: selectedCustomer.customerSince || '12 Feb 2022',
-        address: selectedCustomer.address || '25 Corporate Drive\nEpping NSW 2121\nAustralia',
+        phone: selectedCustomer.contactPhone || 'N/A',
+        abn: selectedCustomer.abn || 'N/A',
+        email: selectedCustomer.contactEmail || 'N/A',
+        acn: selectedCustomer.acn || 'N/A',
+        website: 'N/A',
+        industry: 'Logistics',
+        customerSince: 'Today',
+        address: 'N/A',
       });
+
+      api.get(`/loads?customerId=${selectedCustomer.id}`)
+        .then(res => {
+          const data = res.data?.data || res.data || [];
+          if (Array.isArray(data)) {
+            setCustomerLoads(data);
+          }
+        })
+        .catch(err => {
+          console.error('Error fetching loads from API:', err);
+        });
+
       if (selectedCustomer.contacts) {
         setContacts(selectedCustomer.contacts);
       } else {
-        setContacts([
-          { id: 1, firstName: selectedCustomer.contactName?.split(' ')[0] || 'Casey', lastName: selectedCustomer.contactName?.split(' ')[1] || 'Doe', role: 'Primary', phone: selectedCustomer.contactPhone || '0415 166 693', email: selectedCustomer.contactEmail || 'casey.davis@example.com', isPrimary: true },
-          { id: 2, firstName: 'Michael', lastName: 'King', role: 'Accounts', phone: '0412 345 678', email: 'michael.king@abcmotors.com.au', isPrimary: false },
-        ]);
+        const parts = (selectedCustomer.contactName || '').trim().split(' ');
+        const first = parts[0] || '';
+        const last = parts.slice(1).join(' ') || '';
+        if (first && first !== 'N/A') {
+          setContacts([
+            { id: 1, firstName: first, lastName: last, role: 'Primary', phone: selectedCustomer.contactPhone || 'N/A', email: selectedCustomer.contactEmail || 'N/A', isPrimary: true }
+          ]);
+        } else {
+          setContacts([]);
+        }
       }
+      setInternalNotes(selectedCustomer.notes || '');
+      setCustomerTags([]);
     }
   }, [selectedCustomer]);
 
+  const handleCreateLoadSubmit = async (e) => {
+    if (e) e.preventDefault();
+    if (!newLoadForm.origin || !newLoadForm.destination) {
+      alert('Please enter Origin and Destination');
+      return;
+    }
+
+    const loadRef = `LD-${Math.floor(10000 + Math.random() * 90000)}`;
+    const newLoadObj = {
+      id: Date.now().toString(),
+      loadRef,
+      customerId: selectedCustomer?.id,
+      origin: newLoadForm.origin,
+      destination: newLoadForm.destination,
+      type: newLoadForm.cargoType || 'General Freight',
+      weight: newLoadForm.weight || '5.0t',
+      priority: newLoadForm.priority || 'Low',
+      driverName: newLoadForm.driverName || 'Unassigned',
+      status: 'PLANNED',
+      pickupDate: new Date().toLocaleDateString('en-GB'),
+      deliveryDate: new Date(Date.now() + 86400000).toLocaleDateString('en-GB')
+    };
+
+    try {
+      const res = await api.post('/loads', {
+        loadRef,
+        customerId: selectedCustomer?.id,
+        type: newLoadForm.cargoType || 'General Freight',
+        status: 'PLANNED',
+        priority: (newLoadForm.priority || 'LOW').toUpperCase(),
+        notes: newLoadForm.notes
+      });
+      const createdData = res.data?.data || res.data;
+      if (createdData && createdData.id) {
+        newLoadObj.id = createdData.id;
+        newLoadObj.loadRef = createdData.loadRef || loadRef;
+      }
+    } catch (err) {
+      console.warn('API save fallback to live state:', err);
+    }
+
+    setCustomerLoads(prev => [newLoadObj, ...prev]);
+
+    setNewLoadForm({
+      origin: '',
+      destination: '',
+      cargoType: 'General Freight',
+      weight: '',
+      priority: 'Low',
+      driverName: '',
+      notes: ''
+    });
+    setShowCreateLoadModal(false);
+  };
+
+  const handleAddContactSubmit = async (e) => {
+    if (e) e.preventDefault();
+    if (!newContactForm.firstName) {
+      alert('Please enter First Name');
+      return;
+    }
+
+    let formattedEmail = (newContactForm.email || '').trim();
+    if (formattedEmail && !formattedEmail.includes('@')) {
+      formattedEmail = `${formattedEmail}@company.com`;
+    }
+
+    const newContactObj = {
+      id: Date.now(),
+      firstName: newContactForm.firstName,
+      lastName: newContactForm.lastName,
+      role: newContactForm.role || 'Contact',
+      email: formattedEmail || 'N/A',
+      phone: newContactForm.phone || 'N/A',
+      isPrimary: newContactForm.isPrimary
+    };
+
+    const updatedContacts = newContactForm.isPrimary
+      ? [...contacts.map(c => ({ ...c, isPrimary: false })), newContactObj]
+      : [...contacts, newContactObj];
+
+    try {
+      if (selectedCustomer?.id) {
+        await api.post(`/customers/${selectedCustomer.id}/contacts`, {
+          firstName: newContactForm.firstName,
+          lastName: newContactForm.lastName,
+          role: newContactForm.role,
+          email: formattedEmail,
+          phone: newContactForm.phone,
+          isPrimary: newContactForm.isPrimary
+        });
+      }
+    } catch (err) {
+      console.warn('API add contact fallback:', err);
+    }
+
+    setContacts(updatedContacts);
+
+    setNewContactForm({
+      firstName: '',
+      lastName: '',
+      role: '',
+      email: '',
+      phone: '',
+      isPrimary: false
+    });
+    setShowAddContactModal(false);
+  };
+
   // Notes & Tags live state
-  const [internalNotes, setInternalNotes] = useState(
-    'Priority customer. Regular car carrier runs.\nWeekly exports to Brisbane port.\nRequires advance booking for all pickups.'
-  );
-  const [customerTags, setCustomerTags] = useState(['Car Carrying', 'VIP', 'Regular', 'Export']);
+  const [internalNotes, setInternalNotes] = useState('');
+  const [customerTags, setCustomerTags] = useState([]);
   // Draft state inside modal
   const [draftNotes, setDraftNotes] = useState('');
   const [draftTags, setDraftTags] = useState([]);
   const [newTagInput, setNewTagInput] = useState('');
 
   const [selectedDocCategory, setSelectedDocCategory] = useState('All Documents');
-  const [activeDocument, setActiveDocument] = useState(initialDocuments[2]);
+  const [activeDocument, setActiveDocument] = useState(null);
   const [showDocPreview, setShowDocPreview] = useState(true);
   const [docSearchQuery, setDocSearchQuery] = useState('');
 
@@ -528,7 +690,7 @@ Please sign in at security.`);
       <div className="flex-grow bg-[#F8FAFC] p-2 sm:p-6 w-full text-left font-sans custom-scrollbar overflow-y-auto">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div className="flex items-start gap-4">
-            <button onClick={() => setSelectedCustomer(null)} className="w-8 h-8 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-colors shadow-sm cursor-pointer mt-1 shrink-0">
+            <button onClick={handleBackToCustomersList} className="w-8 h-8 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-colors shadow-sm cursor-pointer mt-1 shrink-0">
               <ChevronLeft size={16} />
             </button>
             <div>
@@ -574,14 +736,33 @@ Please sign in at security.`);
             <button onClick={() => openEditCustomer(selectedCustomer)} className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer flex-grow sm:flex-grow-0 justify-center">
               <Edit size={14} /> Edit Customer
             </button>
-            <button className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer flex-grow sm:flex-grow-0 justify-center">
-              More Actions <MoreVertical size={14} />
-            </button>
+            <div className="relative shrink-0">
+              <button onClick={() => setShowMoreActionsMenu(!showMoreActionsMenu)} className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer flex-grow sm:flex-grow-0 justify-center">
+                More Actions <MoreVertical size={14} />
+              </button>
+              {showMoreActionsMenu && (
+                <div className="absolute right-0 top-11 w-56 bg-white border border-slate-100 rounded-xl shadow-xl py-1.5 z-50 text-left animate-in fade-in zoom-in-95 duration-150">
+                  <button onClick={() => { setShowMoreActionsMenu(false); window.print(); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer">
+                    <Printer size={14} className="text-slate-400" /> Print Customer Profile
+                  </button>
+                  <button onClick={() => { setShowMoreActionsMenu(false); openAssignManager(selectedCustomer); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer">
+                    <UserCircle size={14} className="text-slate-400" /> Assign Account Manager
+                  </button>
+                  <button onClick={() => { setShowMoreActionsMenu(false); alert(`Customer status updated for ${selectedCustomer.name}.`); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer">
+                    <CheckCircle2 size={14} className="text-slate-400" /> Toggle Active / Inactive
+                  </button>
+                  <div className="my-1 border-t border-slate-100"></div>
+                  <button onClick={() => { setShowMoreActionsMenu(false); openDeleteCustomer(selectedCustomer); }} className="w-full text-left px-4 py-2.5 text-xs font-bold text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer">
+                    <Trash2 size={14} className="text-red-500" /> Delete Customer
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         <div className="flex justify-end mb-2 -mt-2">
-          <button onClick={() => setSelectedCustomer(null)} className="text-indigo-600 hover:text-indigo-700 flex items-center gap-1 text-xs font-bold transition-colors cursor-pointer">
+          <button onClick={handleBackToCustomersList} className="text-indigo-600 hover:text-indigo-700 flex items-center gap-1 text-xs font-bold transition-colors cursor-pointer">
             &larr; Back to Customers
           </button>
         </div>
@@ -635,24 +816,24 @@ Please sign in at security.`);
 
             <div className="shrink-0">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Billing Terms</p>
-              <p className="text-sm font-black text-slate-900">14 Days EOM</p>
+              <p className="text-sm font-black text-slate-900">{selectedCustomer.billingTerms || '14 Days EOM'}</p>
             </div>
 
             <div className="h-10 w-px bg-slate-100 shrink-0"></div>
 
             <div className="shrink-0">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Credit Limit</p>
-              <p className="text-sm font-black text-slate-900">$250,000.00</p>
+              <p className="text-sm font-black text-slate-900">$0.00</p>
             </div>
 
             <div className="h-10 w-px bg-slate-100 shrink-0"></div>
 
             <div className="shrink-0">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5 text-right">Outstanding</p>
-              <p className="text-sm font-black text-red-600 text-right mb-0.5">$32,450.00</p>
+              <p className="text-sm font-black text-slate-900 text-right mb-0.5">$0.00</p>
               <div className="flex justify-between items-center text-[9px] font-bold">
                 <span className="text-slate-400 uppercase tracking-widest">Credit Available</span>
-                <span className="text-emerald-600 ml-3 font-black text-[10px]">$217,550.00</span>
+                <span className="text-emerald-600 ml-3 font-black text-[10px]">$0.00</span>
               </div>
             </div>
 
@@ -660,22 +841,21 @@ Please sign in at security.`);
 
             <div className="shrink-0">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Total Revenue (YTD)</p>
-              <p className="text-sm font-black text-slate-900">$2,480,650.00</p>
+              <p className="text-sm font-black text-slate-900">$0.00</p>
             </div>
 
             <div className="h-10 w-px bg-slate-100 shrink-0"></div>
 
             <div className="shrink-0">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Total Loads</p>
-              <p className="text-sm font-black text-slate-900">42</p>
+              <p className="text-sm font-black text-slate-900">0</p>
             </div>
 
             <div className="h-10 w-px bg-slate-100 shrink-0"></div>
 
             <div className="shrink-0">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Last Load</p>
-              <p className="text-sm font-black text-indigo-600 hover:underline cursor-pointer">PO-12546</p>
-              <span className="text-[9px] text-slate-400 font-semibold block mt-0.5">08/07/2025</span>
+              <p className="text-sm font-black text-slate-400">—</p>
             </div>
           </div>
         </div>
@@ -812,18 +992,20 @@ Please sign in at security.`);
                 <div className="mb-5">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Internal Notes</p>
                   <div className="space-y-2">
-                    {internalNotes.split('\n').filter(n => n.trim()).map((note, i) => (
+                    {internalNotes ? internalNotes.split('\n').filter(n => n.trim()).map((note, i) => (
                       <p key={i} className="text-xs font-semibold text-slate-600 leading-relaxed bg-slate-50 p-2.5 rounded-xl border border-slate-100">
                         {note}
                       </p>
-                    ))}
+                    )) : (
+                      <p className="text-xs font-semibold text-slate-400 italic">No internal notes added yet.</p>
+                    )}
                   </div>
                 </div>
 
                 <div>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Tags</p>
                   <div className="flex flex-wrap gap-2">
-                    {customerTags.map((tag, i) => {
+                    {customerTags.length > 0 ? customerTags.map((tag, i) => {
                       const colors = [
                         'bg-indigo-50 text-indigo-700 border-indigo-100',
                         'bg-amber-50 text-amber-700 border-amber-100',
@@ -837,7 +1019,9 @@ Please sign in at security.`);
                           {tag}
                         </span>
                       );
-                    })}
+                    }) : (
+                      <span className="text-xs font-semibold text-slate-400 italic">No tags added yet</span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -865,7 +1049,7 @@ Please sign in at security.`);
                     ];
                     return contacts.map((c, i) => {
                       const col = avatarColors[i % avatarColors.length];
-                      const initials = `${c.firstName[0] || ''}${c.lastName[0] || ''}`.toUpperCase();
+                      const initials = `${c.firstName?.[0] || ''}${c.lastName?.[0] || ''}`.toUpperCase() || 'C';
                       return (
                         <div key={c.id} className="flex items-center gap-3">
                           <div className={`w-10 h-10 rounded-full ${col.bg} ${col.text} font-black flex items-center justify-center text-xs border ${col.border} shrink-0`}>{initials}</div>
@@ -974,31 +1158,31 @@ Please sign in at security.`);
                 <div className="space-y-4 flex-grow">
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-slate-500 font-bold">Outstanding (Overdue)</span>
-                    <span className="font-black text-red-600">$12,450.00</span>
+                    <span className="font-black text-slate-900">$0.00</span>
                   </div>
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-slate-500 font-bold">Outstanding (Current)</span>
-                    <span className="font-black text-slate-900">$20,000.00</span>
+                    <span className="font-black text-slate-900">$0.00</span>
                   </div>
                   <div className="flex justify-between items-center text-sm border-t border-slate-100 pt-3">
                     <span className="text-slate-900 font-black">Total Outstanding</span>
-                    <span className="font-black text-slate-900">$32,450.00</span>
+                    <span className="font-black text-slate-900">$0.00</span>
                   </div>
                   <div className="flex justify-between items-center text-xs pt-2">
                     <span className="text-slate-500 font-bold">Credit Limit</span>
-                    <span className="font-black text-slate-900">$250,000.00</span>
+                    <span className="font-black text-slate-900">$0.00</span>
                   </div>
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-slate-500 font-bold">Credit Available</span>
-                    <span className="font-black text-emerald-600">$217,550.00</span>
+                    <span className="font-black text-emerald-600">$0.00</span>
                   </div>
                   <div className="flex justify-between items-center text-xs pt-4 border-t border-slate-100">
                     <span className="text-slate-500 font-bold">Revenue (This Month)</span>
-                    <span className="font-black text-slate-900">$320,400.00</span>
+                    <span className="font-black text-slate-900">$0.00</span>
                   </div>
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-slate-500 font-bold">Revenue (YTD)</span>
-                    <span className="font-black text-slate-900">$2,480,650.00</span>
+                    <span className="font-black text-slate-900">$0.00</span>
                   </div>
                 </div>
                 <div className="mt-4 pt-4 border-t border-slate-100">
@@ -1035,46 +1219,30 @@ Please sign in at security.`);
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-medium text-slate-600">
-                      <tr className="hover:bg-slate-50 transition-colors">
-                        <td className="py-4 px-5 font-black text-indigo-600">PO-12546</td>
-                        <td className="py-4 px-5"><span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-1 rounded">Active</span></td>
-                        <td className="py-4 px-5 text-slate-500">Car Carrying</td>
-                        <td className="py-4 px-5 text-slate-700">Melbourne</td>
-                        <td className="py-4 px-5 text-slate-700">Brisbane</td>
-                        <td className="py-4 px-5 text-slate-500">Mike Thompson</td>
-                        <td className="py-4 px-5 text-slate-500">08/07/2025</td>
-                        <td className="py-4 px-5 text-slate-500">09/07/2025</td>
-                      </tr>
-                      <tr className="hover:bg-slate-50 transition-colors">
-                        <td className="py-4 px-5 font-black text-indigo-600">PO-12540</td>
-                        <td className="py-4 px-5"><span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-1 rounded">Completed</span></td>
-                        <td className="py-4 px-5 text-slate-500">Car Carrying</td>
-                        <td className="py-4 px-5 text-slate-700">Sydney</td>
-                        <td className="py-4 px-5 text-slate-700">Adelaide</td>
-                        <td className="py-4 px-5 text-slate-500">David Wilson</td>
-                        <td className="py-4 px-5 text-slate-500">02/07/2025</td>
-                        <td className="py-4 px-5 text-slate-500">03/07/2025</td>
-                      </tr>
-                      <tr className="hover:bg-slate-50 transition-colors">
-                        <td className="py-4 px-5 font-black text-indigo-600">PO-12530</td>
-                        <td className="py-4 px-5"><span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-1 rounded">Completed</span></td>
-                        <td className="py-4 px-5 text-slate-500">General Freight</td>
-                        <td className="py-4 px-5 text-slate-700">Brisbane</td>
-                        <td className="py-4 px-5 text-slate-700">Melbourne</td>
-                        <td className="py-4 px-5 text-slate-500">Chris Lee</td>
-                        <td className="py-4 px-5 text-slate-500">24/06/2025</td>
-                        <td className="py-4 px-5 text-slate-500">25/06/2025</td>
-                      </tr>
-                      <tr className="hover:bg-slate-50 transition-colors">
-                        <td className="py-4 px-5 font-black text-indigo-600">PO-12515</td>
-                        <td className="py-4 px-5"><span className="text-[10px] font-black uppercase tracking-wider text-red-600 bg-red-50 px-2 py-1 rounded">Cancelled</span></td>
-                        <td className="py-4 px-5 text-slate-500">Car Carrying</td>
-                        <td className="py-4 px-5 text-slate-700">Sydney</td>
-                        <td className="py-4 px-5 text-slate-700">Perth</td>
-                        <td className="py-4 px-5 italic text-slate-400">Not Assigned</td>
-                        <td className="py-4 px-5 text-slate-500">12/06/2025</td>
-                        <td className="py-4 px-5 text-slate-500">-</td>
-                      </tr>
+                      {customerLoads.length === 0 ? (
+                        <tr>
+                          <td colSpan="8" className="py-8 px-5 text-center text-xs font-semibold text-slate-400">
+                            No recent loads recorded for this customer yet.
+                          </td>
+                        </tr>
+                      ) : (
+                        customerLoads.map((load, idx) => (
+                          <tr key={load.id || idx} className="hover:bg-slate-50 transition-colors">
+                            <td className="py-3 px-5 font-black text-blue-600">{load.loadRef}</td>
+                            <td className="py-3 px-5">
+                              <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-600">
+                                {load.status || 'PLANNED'}
+                              </span>
+                            </td>
+                            <td className="py-3 px-5 font-bold text-slate-800">{load.type}</td>
+                            <td className="py-3 px-5">{load.origin}</td>
+                            <td className="py-3 px-5">{load.destination}</td>
+                            <td className="py-3 px-5">{load.driverName || 'Unassigned'}</td>
+                            <td className="py-3 px-5 text-slate-500">{load.pickupDate || 'Today'}</td>
+                            <td className="py-3 px-5 text-slate-500">{load.deliveryDate || 'Tomorrow'}</td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -1144,29 +1312,10 @@ Please sign in at security.`);
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
-                      <tr className="hover:bg-slate-50/50 transition-colors">
-                        <td className="py-4 px-4 font-black text-blue-600">INV-2487</td>
-                        <td className="py-4 px-4">07/07/2025</td>
-                        <td className="py-4 px-4 font-black text-slate-900 text-right">$18,500.00</td>
-                        <td className="py-4 px-4 text-center"><span className="bg-red-50 text-red-600 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest">UNPAID</span></td>
-                      </tr>
-                      <tr className="hover:bg-slate-50/50 transition-colors">
-                        <td className="py-4 px-4 font-black text-blue-600">INV-2456</td>
-                        <td className="py-4 px-4">23/06/2025</td>
-                        <td className="py-4 px-4 font-black text-slate-900 text-right">$15,750.00</td>
-                        <td className="py-4 px-4 text-center"><span className="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest">PAID</span></td>
-                      </tr>
-                      <tr className="hover:bg-slate-50/50 transition-colors">
-                        <td className="py-4 px-4 font-black text-blue-600">INV-2419</td>
-                        <td className="py-4 px-4">09/06/2025</td>
-                        <td className="py-4 px-4 font-black text-slate-900 text-right">$14,200.00</td>
-                        <td className="py-4 px-4 text-center"><span className="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest">PAID</span></td>
-                      </tr>
-                      <tr className="hover:bg-slate-50/50 transition-colors">
-                        <td className="py-4 px-4 font-black text-blue-600">INV-2380</td>
-                        <td className="py-4 px-4">26/05/2025</td>
-                        <td className="py-4 px-4 font-black text-slate-900 text-right">$21,800.00</td>
-                        <td className="py-4 px-4 text-center"><span className="bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest">PAID</span></td>
+                      <tr>
+                        <td colSpan="4" className="py-8 px-4 text-center text-xs font-semibold text-slate-400">
+                          No recent invoices found.
+                        </td>
                       </tr>
                     </tbody>
                   </table>
@@ -1184,46 +1333,8 @@ Please sign in at security.`);
                     View All
                   </button>
                 </div>
-                <div className="space-y-5 flex-grow relative before:absolute before:inset-0 before:ml-4 before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
-                  <div className="relative flex items-center justify-between  group is-active">
-                    <div className="flex items-center justify-center w-8 h-8 rounded-full border border-white bg-emerald-50 text-emerald-500 shadow shrink-0 ">
-                      <CheckCircle2 size={12} />
-                    </div>
-                    <div className="w-[calc(100%-4rem)] ml-3">
-                      <p className="text-[10px] font-black text-slate-900">Load PO-12546 completed</p>
-                      <p className="text-[9px] font-semibold text-slate-400 mt-0.5">08/07/2025 09:15 AM</p>
-                    </div>
-                  </div>
-
-                  <div className="relative flex items-center justify-between  group is-active">
-                    <div className="flex items-center justify-center w-8 h-8 rounded-full border border-white bg-blue-50 text-blue-500 shadow shrink-0 ">
-                      <FileText size={12} />
-                    </div>
-                    <div className="w-[calc(100%-4rem)] ml-3">
-                      <p className="text-[10px] font-black text-slate-900">Invoice INV-2487 created</p>
-                      <p className="text-[9px] font-semibold text-slate-400 mt-0.5">07/07/2025 03:20 PM</p>
-                    </div>
-                  </div>
-
-                  <div className="relative flex items-center justify-between  group is-active">
-                    <div className="flex items-center justify-center w-8 h-8 rounded-full border border-white bg-emerald-50 text-emerald-500 shadow shrink-0 ">
-                      <DollarSign size={12} />
-                    </div>
-                    <div className="w-[calc(100%-4rem)] ml-3">
-                      <p className="text-[10px] font-black text-slate-900">Payment received $18,500.00</p>
-                      <p className="text-[9px] font-semibold text-slate-400 mt-0.5">05/07/2025 11:44 AM</p>
-                    </div>
-                  </div>
-
-                  <div className="relative flex items-center justify-between  group is-active">
-                    <div className="flex items-center justify-center w-8 h-8 rounded-full border border-white bg-indigo-50 text-indigo-500 shadow shrink-0 ">
-                      <UserPlus size={12} />
-                    </div>
-                    <div className="w-[calc(100%-4rem)] ml-3">
-                      <p className="text-[10px] font-black text-slate-900">New contact Michael King added</p>
-                      <p className="text-[9px] font-semibold text-slate-400 mt-0.5">02/07/2025 02:10 PM</p>
-                    </div>
-                  </div>
+                <div className="py-6 text-center text-xs font-semibold text-slate-400 italic">
+                  No recent activity logged yet.
                 </div>
               </div>
 
@@ -1238,47 +1349,8 @@ Please sign in at security.`);
                     View All
                   </button>
                 </div>
-                <div className="space-y-3 flex-grow">
-                  <div className="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 hover:border-slate-200 transition-colors group cursor-pointer shadow-sm">
-                    <div className="flex items-center gap-3">
-                      <div className="text-red-500"><FileText size={16} /></div>
-                      <div>
-                        <h4 className="text-[10px] font-black text-slate-900 group-hover:text-blue-600 transition-colors">Master Service Agreement</h4>
-                        <p className="text-[9px] font-semibold text-slate-400 mt-0.5">PDF • 1.2 MB • 12/02/2022</p>
-                      </div>
-                    </div>
-                    <Download size={14} className="text-slate-300 group-hover:text-blue-500" />
-                  </div>
-                  <div className="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 hover:border-slate-200 transition-colors group cursor-pointer shadow-sm">
-                    <div className="flex items-center gap-3">
-                      <div className="text-red-500"><FileText size={16} /></div>
-                      <div>
-                        <h4 className="text-[10px] font-black text-slate-900 group-hover:text-blue-600 transition-colors">Rate Card 2025</h4>
-                        <p className="text-[9px] font-semibold text-slate-400 mt-0.5">PDF • 420 KB • 01/01/2025</p>
-                      </div>
-                    </div>
-                    <Download size={14} className="text-slate-300 group-hover:text-blue-500" />
-                  </div>
-                  <div className="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 hover:border-slate-200 transition-colors group cursor-pointer shadow-sm">
-                    <div className="flex items-center gap-3">
-                      <div className="text-red-500"><FileText size={16} /></div>
-                      <div>
-                        <h4 className="text-[10px] font-black text-slate-900 group-hover:text-blue-600 transition-colors">Insurance Certificate</h4>
-                        <p className="text-[9px] font-semibold text-slate-400 mt-0.5">PDF • 880 KB • 12/01/2025</p>
-                      </div>
-                    </div>
-                    <Download size={14} className="text-slate-300 group-hover:text-blue-500" />
-                  </div>
-                  <div className="flex items-center justify-between p-2.5 rounded-xl border border-slate-100 hover:border-slate-200 transition-colors group cursor-pointer shadow-sm">
-                    <div className="flex items-center gap-3">
-                      <div className="text-red-500"><FileText size={16} /></div>
-                      <div>
-                        <h4 className="text-[10px] font-black text-slate-900 group-hover:text-blue-600 transition-colors">Safety Requirements</h4>
-                        <p className="text-[9px] font-semibold text-slate-400 mt-0.5">PDF • 950 KB • 05/02/2025</p>
-                      </div>
-                    </div>
-                    <Download size={14} className="text-slate-300 group-hover:text-blue-500" />
-                  </div>
+                <div className="py-6 text-center text-xs font-semibold text-slate-400 italic">
+                  No documents uploaded.
                 </div>
               </div>
             </div>
@@ -1296,7 +1368,7 @@ Please sign in at security.`);
                   </div>
                   <p className="text-[10px] text-slate-500 mt-1 font-bold">Manage all key contacts for {selectedCustomer.name}. Set primary contacts and control communication preferences.</p>
                 </div>
-                <button className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors">
+                <button onClick={() => setShowAddContactModal(true)} className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors">
                   <Plus size={14} /> Add Contact
                 </button>
               </div>
@@ -1314,86 +1386,35 @@ Please sign in at security.`);
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
-                    <tr className="hover:bg-slate-50/50 transition-colors">
-                      <td className="py-4 px-5">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 font-black flex items-center justify-center border border-indigo-100 shrink-0">JS</div>
-                          <div>
-                            <p className="text-sm font-bold text-slate-900">John Smith</p>
-                            <p className="text-[10px] text-slate-400 mt-0.5">Operations Manager</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-4 px-5"><span className="bg-indigo-50 text-indigo-600 px-2 py-1 rounded text-[10px] uppercase font-bold tracking-wider">Primary Contact</span></td>
-                      <td className="py-4 px-5">Operations</td>
-                      <td className="py-4 px-5">john.smith@abcmotors.com.au</td>
-                      <td className="py-4 px-5"><div className="flex items-center gap-1.5"><Phone size={12} className="text-slate-400" /> 02 8765 4321</div></td>
-                      <td className="py-4 px-5"><div className="flex items-center gap-1.5"><Phone size={12} className="text-slate-400" /> 0401 234 567</div></td>
-                    </tr>
-                    <tr className="hover:bg-slate-50/50 transition-colors">
-                      <td className="py-4 px-5">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 font-black flex items-center justify-center border border-emerald-100 shrink-0">MK</div>
-                          <div>
-                            <p className="text-sm font-bold text-slate-900">Michael King</p>
-                            <p className="text-[10px] text-slate-400 mt-0.5">Accounts Manager</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-4 px-5"><span className="bg-emerald-50 text-emerald-600 px-2 py-1 rounded text-[10px] uppercase font-bold tracking-wider">Accounts Contact</span></td>
-                      <td className="py-4 px-5">Finance</td>
-                      <td className="py-4 px-5">michael.king@abcmotors.com.au</td>
-                      <td className="py-4 px-5"><div className="flex items-center gap-1.5"><Phone size={12} className="text-slate-400" /> 02 8765 4322</div></td>
-                      <td className="py-4 px-5"><div className="flex items-center gap-1.5"><Phone size={12} className="text-slate-400" /> 0412 345 678</div></td>
-                    </tr>
-                    <tr className="hover:bg-slate-50/50 transition-colors">
-                      <td className="py-4 px-5">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-orange-50 text-orange-600 font-black flex items-center justify-center border border-orange-100 shrink-0">SP</div>
-                          <div>
-                            <p className="text-sm font-bold text-slate-900">Sarah Patel</p>
-                            <p className="text-[10px] text-slate-400 mt-0.5">Logistics Coordinator</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-4 px-5"><span className="bg-blue-50 text-blue-600 px-2 py-1 rounded text-[10px] uppercase font-bold tracking-wider">Operations Contact</span></td>
-                      <td className="py-4 px-5">Logistics</td>
-                      <td className="py-4 px-5">sarah.patel@abcmotors.com.au</td>
-                      <td className="py-4 px-5"><div className="flex items-center gap-1.5"><Phone size={12} className="text-slate-400" /> 02 8765 4323</div></td>
-                      <td className="py-4 px-5"><div className="flex items-center gap-1.5"><Phone size={12} className="text-slate-400" /> 0411 567 890</div></td>
-                    </tr>
-                    <tr className="hover:bg-slate-50/50 transition-colors">
-                      <td className="py-4 px-5">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-red-50 text-red-600 font-black flex items-center justify-center border border-red-100 shrink-0">AH</div>
-                          <div>
-                            <p className="text-sm font-bold text-slate-900">After Hours Contact</p>
-                            <p className="text-[10px] text-slate-400 mt-0.5">24/7 Contact Person</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-4 px-5"><span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-[10px] uppercase font-bold tracking-wider border border-slate-200">After Hours</span></td>
-                      <td className="py-4 px-5">Operations</td>
-                      <td className="py-4 px-5">afterhours@abcmotors.com.au</td>
-                      <td className="py-4 px-5"><div className="flex items-center gap-1.5"><Phone size={12} className="text-slate-400" /> 02 8765 4333</div></td>
-                      <td className="py-4 px-5"><div className="flex items-center gap-1.5"><Phone size={12} className="text-slate-400" /> 1800 123 456</div></td>
-                    </tr>
-                    <tr className="hover:bg-slate-50/50 transition-colors">
-                      <td className="py-4 px-5">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-purple-50 text-purple-600 font-black flex items-center justify-center border border-purple-100 shrink-0">NT</div>
-                          <div>
-                            <p className="text-sm font-bold text-slate-900">Nathan Thomas</p>
-                            <p className="text-[10px] text-slate-400 mt-0.5">Workshop Manager</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-4 px-5"><span className="bg-orange-50 text-orange-600 px-2 py-1 rounded text-[10px] uppercase font-bold tracking-wider">Technical Contact</span></td>
-                      <td className="py-4 px-5">Workshop</td>
-                      <td className="py-4 px-5">nathan.thomas@abcmotors.com.au</td>
-                      <td className="py-4 px-5"><div className="flex items-center gap-1.5"><Phone size={12} className="text-slate-400" /> 02 8765 4324</div></td>
-                      <td className="py-4 px-5"><div className="flex items-center gap-1.5"><Phone size={12} className="text-slate-400" /> 0433 222 111</div></td>
-                    </tr>
+                    {contacts.length > 0 ? (
+                      contacts.map((c, i) => {
+                        const initials = `${c.firstName?.[0] || ''}${c.lastName?.[0] || ''}`.toUpperCase() || 'C';
+                        return (
+                          <tr key={c.id || i} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="py-4 px-5">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 font-black flex items-center justify-center border border-indigo-100 shrink-0">{initials}</div>
+                                <div>
+                                  <p className="text-sm font-bold text-slate-900">{c.firstName} {c.lastName}</p>
+                                  <p className="text-[10px] text-slate-400 mt-0.5">{c.role || 'Primary Contact'}</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-4 px-5"><span className="bg-indigo-50 text-indigo-600 px-2 py-1 rounded text-[10px] uppercase font-bold tracking-wider">{c.isPrimary ? 'Primary Contact' : (c.role || 'Contact')}</span></td>
+                            <td className="py-4 px-5">{c.department || 'Operations'}</td>
+                            <td className="py-4 px-5">{c.email || 'N/A'}</td>
+                            <td className="py-4 px-5"><div className="flex items-center gap-1.5"><Phone size={12} className="text-slate-400" /> {c.phone || 'N/A'}</div></td>
+                            <td className="py-4 px-5"><div className="flex items-center gap-1.5"><Phone size={12} className="text-slate-400" /> {c.mobile || c.phone || 'N/A'}</div></td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan="6" className="py-8 px-5 text-center text-xs font-semibold text-slate-400">
+                          No contacts added for this customer yet.
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -2412,29 +2433,14 @@ Please sign in at security.`);
                         </thead>
                         <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
                           <tr>
-                            <td className="py-3">Base Rate - Car Carrying</td>
-                            <td className="py-3 text-right font-black">$2.20</td>
-                            <td className="py-3 pl-4 text-slate-500">Per KM</td>
-                          </tr>
-                          <tr>
-                            <td className="py-3">Per Car Rate</td>
-                            <td className="py-3 text-right font-black">$105.00</td>
-                            <td className="py-3 pl-4 text-slate-500">Per Car</td>
-                          </tr>
-                          <tr>
-                            <td className="py-3">Loading / Unloading</td>
-                            <td className="py-3 text-right font-black">$65.00</td>
-                            <td className="py-3 pl-4 text-slate-500">Per Stop</td>
-                          </tr>
-                          <tr>
-                            <td className="py-3">Wait Time</td>
-                            <td className="py-3 text-right font-black">$95.00</td>
-                            <td className="py-3 pl-4 text-slate-500">Per Hour</td>
+                            <td colSpan="3" className="py-6 text-center text-xs font-semibold text-slate-400 italic">
+                              No custom pricing rules configured yet.
+                            </td>
                           </tr>
                         </tbody>
                       </table>
                     </div>
-                    <button className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer">
+                    <button onClick={() => setShowAddPricingRuleModal(true)} className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer">
                       <Plus size={14} /> Add Pricing Rule
                     </button>
                   </div>
@@ -2456,29 +2462,14 @@ Please sign in at security.`);
                         </thead>
                         <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
                           <tr>
-                            <td className="py-3">Fuel Levy</td>
-                            <td className="py-3 text-center text-slate-500">% of Base Rate</td>
-                            <td className="py-3 text-right font-black">13.30%</td>
-                          </tr>
-                          <tr>
-                            <td className="py-3">Security Surcharge</td>
-                            <td className="py-3 text-center text-slate-500">Flat Rate</td>
-                            <td className="py-3 text-right font-black">$45.00</td>
-                          </tr>
-                          <tr>
-                            <td className="py-3">Weekend Surcharge</td>
-                            <td className="py-3 text-center text-slate-500">% of Base Rate</td>
-                            <td className="py-3 text-right font-black">15.00%</td>
-                          </tr>
-                          <tr>
-                            <td className="py-3">After Hours Surcharge</td>
-                            <td className="py-3 text-center text-slate-500">Flat Rate</td>
-                            <td className="py-3 text-right font-black">$85.00</td>
+                            <td colSpan="3" className="py-6 text-center text-xs font-semibold text-slate-400 italic">
+                              No surcharges configured yet.
+                            </td>
                           </tr>
                         </tbody>
                       </table>
                     </div>
-                    <button className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer">
+                    <button onClick={() => setShowAddSurchargeModal(true)} className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer">
                       <Plus size={14} /> Add Surcharge
                     </button>
                   </div>
@@ -2511,7 +2502,7 @@ Please sign in at security.`);
                       </div>
                       <div className="flex justify-between items-start border-t border-slate-50 pt-4 mt-2">
                         <div className="flex items-center gap-2 text-slate-500 text-xs font-bold"><Lock size={14} /> Minimum Invoice<br />Amount</div>
-                        <div className="text-xs font-black text-slate-900">$150.00</div>
+                        <div className="text-xs font-black text-slate-900">$0.00</div>
                       </div>
                       <div className="flex justify-between items-center border-t border-slate-50 pt-4 mt-2">
                         <div className="flex items-center gap-2 text-slate-500 text-xs font-bold"><Lock size={14} /> Auto Invoice<br />Generation</div>
@@ -2597,17 +2588,25 @@ Please sign in at security.`);
                     <div className="space-y-6 flex-grow">
                       <div>
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Primary Accounts Contact</p>
-                        <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                          <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 font-black flex items-center justify-center border border-emerald-100 shrink-0">MK</div>
-                          <div>
-                            <p className="text-sm font-bold text-slate-900">Michael King</p>
-                            <p className="text-[10px] text-slate-500 mt-0.5">Accounts Manager</p>
-                          </div>
-                        </div>
-                        <div className="mt-3 space-y-1.5 px-1">
-                          <div className="flex items-center gap-2 text-[10px] font-semibold text-slate-600"><Mail size={12} className="text-slate-400" /> michael.king@abcmotors.com.au</div>
-                          <div className="flex items-center gap-2 text-[10px] font-semibold text-slate-600"><Phone size={12} className="text-slate-400" /> 0412 345 678</div>
-                        </div>
+                        {contacts[0] ? (
+                          <>
+                            <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                              <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 font-black flex items-center justify-center border border-emerald-100 shrink-0">
+                                {`${contacts[0].firstName?.[0] || ''}${contacts[0].lastName?.[0] || ''}`.toUpperCase() || 'C'}
+                              </div>
+                              <div>
+                                <p className="text-sm font-bold text-slate-900">{contacts[0].firstName} {contacts[0].lastName}</p>
+                                <p className="text-[10px] text-slate-500 mt-0.5">{contacts[0].role || 'Accounts Contact'}</p>
+                              </div>
+                            </div>
+                            <div className="mt-3 space-y-1.5 px-1">
+                              <div className="flex items-center gap-2 text-[10px] font-semibold text-slate-600"><Mail size={12} className="text-slate-400" /> {contacts[0].email || 'N/A'}</div>
+                              <div className="flex items-center gap-2 text-[10px] font-semibold text-slate-600"><Phone size={12} className="text-slate-400" /> {contacts[0].phone || 'N/A'}</div>
+                            </div>
+                          </>
+                        ) : (
+                          <p className="text-xs font-semibold text-slate-400 italic">No accounts contact assigned yet.</p>
+                        )}
                       </div>
 
                       <div className="border-t border-slate-50 pt-5">
@@ -2677,19 +2676,19 @@ Please sign in at security.`);
                   <div className="space-y-4">
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-slate-500 font-bold">Pricing Rules</span>
-                      <span className="font-black text-slate-900">4 Active</span>
+                      <span className="font-black text-slate-900">0 Active</span>
                     </div>
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-slate-500 font-bold">Surcharges</span>
-                      <span className="font-black text-slate-900">4 Active</span>
+                      <span className="font-black text-slate-900">0 Active</span>
                     </div>
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-slate-500 font-bold">Payment Terms</span>
-                      <span className="font-black text-slate-900">30 Days EOM</span>
+                      <span className="font-black text-slate-900">{selectedCustomer.billingTerms || '14 Days EOM'}</span>
                     </div>
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-slate-500 font-bold">Invoice Frequency</span>
-                      <span className="font-black text-slate-900">Fortnightly</span>
+                      <span className="font-black text-slate-900">As Incurred</span>
                     </div>
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-slate-500 font-bold">Rounding</span>
@@ -2697,7 +2696,7 @@ Please sign in at security.`);
                     </div>
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-slate-500 font-bold">Minimum Invoice</span>
-                      <span className="font-black text-slate-900">$150.00</span>
+                      <span className="font-black text-slate-900">$0.00</span>
                     </div>
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-slate-500 font-bold">Tax</span>
@@ -2821,13 +2820,13 @@ Please sign in at security.`);
                 </div>
               </div>
               <div className="flex items-center gap-3 mt-5">
-                <button className="px-5 py-2.5 bg-blue-50 border border-blue-100 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer">
+                <button onClick={() => setShowApplyTemplateModal(true)} className="px-5 py-2.5 bg-blue-50 border border-blue-100 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer">
                   <Activity size={14} /> Apply Template
                 </button>
-                <button className="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-sm">
+                <button onClick={() => setShowImportPricingModal(true)} className="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-sm">
                   <Upload size={14} /> Import Pricing
                 </button>
-                <button className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-2 cursor-pointer">
+                <button onClick={() => setShowAddPricingRuleModal(true)} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-2 cursor-pointer">
                   <Plus size={14} /> Add Pricing Rule
                 </button>
               </div>
@@ -2838,22 +2837,39 @@ Please sign in at security.`);
 
                 {/* Inner Tabs & Lane Pricing Table */}
                 <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                  <div className="flex items-center border-b border-slate-200 overflow-x-auto custom-scrollbar">
-                    <button className="px-5 py-4 text-xs font-black text-blue-600 border-b-2 border-blue-600 whitespace-nowrap bg-blue-50/30">Lane Pricing</button>
-                    <button className="px-5 py-4 text-xs font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-50 whitespace-nowrap transition-colors">Vehicle Type Pricing</button>
-                    <button className="px-5 py-4 text-xs font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-50 whitespace-nowrap transition-colors">Rate Cards & Charges</button>
-                    <button className="px-5 py-4 text-xs font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-50 whitespace-nowrap transition-colors">Surcharges</button>
-                    <button className="px-5 py-4 text-xs font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-50 whitespace-nowrap transition-colors">Accessorial Charges</button>
-                    <button className="px-5 py-4 text-xs font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-50 whitespace-nowrap transition-colors">Discounts & Rebates</button>
-                    <button className="px-5 py-4 text-xs font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-50 whitespace-nowrap transition-colors">Minimum Charges</button>
-                    <button className="px-5 py-4 text-xs font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-50 whitespace-nowrap transition-colors">Pricing History</button>
+                  <div className="flex items-center gap-1 border-b border-slate-200 overflow-x-auto custom-scrollbar p-1">
+                    {[
+                      'Lane Pricing',
+                      'Vehicle Type Pricing',
+                      'Rate Cards & Charges',
+                      'Surcharges',
+                      'Accessorial Charges',
+                      'Discounts & Rebates',
+                      'Minimum Charges',
+                      'Pricing History'
+                    ].map((tab) => {
+                      const isActive = activePricingSubTab === tab;
+                      return (
+                        <button
+                          key={tab}
+                          onClick={() => setActivePricingSubTab(tab)}
+                          className={`px-4 py-2.5 text-xs font-black shrink-0 whitespace-nowrap cursor-pointer transition-all rounded-lg border ${
+                            isActive
+                              ? 'text-blue-600 border-blue-600 bg-blue-50/60 shadow-xs'
+                              : 'text-slate-500 border-transparent hover:text-slate-800 hover:bg-slate-50'
+                          }`}
+                        >
+                          {tab}
+                        </button>
+                      );
+                    })}
                   </div>
 
                   <div className="p-5">
                     <div className="flex justify-between items-center mb-5">
                       <div>
-                        <h3 className="text-sm font-black text-slate-900 tracking-tight">Lane Pricing (4)</h3>
-                        <p className="text-[10px] text-slate-500 font-bold mt-1">Set rates for common lanes and routes.</p>
+                        <h3 className="text-sm font-black text-slate-900 tracking-tight">{activePricingSubTab}</h3>
+                        <p className="text-[10px] text-slate-500 font-bold mt-1">Configure pricing rates and rules for {selectedCustomer.name}.</p>
                       </div>
                     </div>
 
@@ -2871,46 +2887,29 @@ Please sign in at security.`);
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
-                          <tr className="hover:bg-blue-50/50 transition-colors cursor-pointer group bg-blue-50/20">
-                            <td className="py-3 px-4 flex items-center gap-2"><MapPin size={12} className="text-purple-500" /> Sydney (NSW)</td>
-                            <td className="py-3 px-4"><div className="flex items-center gap-2"><MapPin size={12} className="text-indigo-500" /> Melbourne (VIC)</div></td>
-                            <td className="py-3 px-4">Interstate</td>
-                            <td className="py-3 px-4 text-right font-medium">877 KM</td>
-                            <td className="py-3 px-4 text-right font-black text-slate-900">$450.00</td>
-                            <td className="py-3 px-4 text-right text-slate-500">10%</td>
-                            <td className="py-3 px-4 text-right font-black text-slate-900">$450.00</td>
-                          </tr>
-                          <tr className="hover:bg-slate-50 transition-colors cursor-pointer">
-                            <td className="py-3 px-4 flex items-center gap-2"><MapPin size={12} className="text-purple-500" /> Sydney (NSW)</td>
-                            <td className="py-3 px-4"><div className="flex items-center gap-2"><MapPin size={12} className="text-emerald-500" /> Brisbane (QLD)</div></td>
-                            <td className="py-3 px-4">Interstate</td>
-                            <td className="py-3 px-4 text-right font-medium">925 KM</td>
-                            <td className="py-3 px-4 text-right font-black text-slate-900">$620.00</td>
-                            <td className="py-3 px-4 text-right text-slate-500">10%</td>
-                            <td className="py-3 px-4 text-right font-black text-slate-900">$620.00</td>
-                          </tr>
-                          <tr className="hover:bg-slate-50 transition-colors cursor-pointer">
-                            <td className="py-3 px-4 flex items-center gap-2"><MapPin size={12} className="text-indigo-500" /> Melbourne (VIC)</td>
-                            <td className="py-3 px-4"><div className="flex items-center gap-2"><MapPin size={12} className="text-orange-500" /> Adelaide (SA)</div></td>
-                            <td className="py-3 px-4">Interstate</td>
-                            <td className="py-3 px-4 text-right font-medium">726 KM</td>
-                            <td className="py-3 px-4 text-right font-black text-slate-900">$480.00</td>
-                            <td className="py-3 px-4 text-right text-slate-500">10%</td>
-                            <td className="py-3 px-4 text-right font-black text-slate-900">$480.00</td>
-                          </tr>
-                          <tr className="hover:bg-slate-50 transition-colors cursor-pointer">
-                            <td className="py-3 px-4 flex items-center gap-2"><MapPin size={12} className="text-purple-500" /> Sydney (NSW)</td>
-                            <td className="py-3 px-4"><div className="flex items-center gap-2"><MapPin size={12} className="text-red-500" /> Perth (WA)</div></td>
-                            <td className="py-3 px-4">Interstate</td>
-                            <td className="py-3 px-4 text-right font-medium">3,931 KM</td>
-                            <td className="py-3 px-4 text-right font-black text-slate-900">$1,850.00</td>
-                            <td className="py-3 px-4 text-right text-slate-500">10%</td>
-                            <td className="py-3 px-4 text-right font-black text-slate-900">$1,850.00</td>
-                          </tr>
+                          {lanePricingRules.length === 0 ? (
+                            <tr>
+                              <td colSpan="7" className="py-8 text-center text-xs font-semibold text-slate-400 italic">
+                                No lane prices configured yet for this customer. Click "+ Add Pricing Rule" or "Apply Template" above to add rates.
+                              </td>
+                            </tr>
+                          ) : (
+                            lanePricingRules.map((rule, idx) => (
+                              <tr key={rule.id || idx} className="hover:bg-slate-50 transition-colors">
+                                <td className="py-3 px-4 flex items-center gap-2"><MapPin size={12} className="text-purple-500" /> {rule.from}</td>
+                                <td className="py-3 px-4 flex items-center gap-2"><MapPin size={12} className="text-indigo-500" /> {rule.to}</td>
+                                <td className="py-3 px-4">{rule.type || 'Interstate'}</td>
+                                <td className="py-3 px-4 text-right font-medium">{rule.distance || '—'} KM</td>
+                                <td className="py-3 px-4 text-right font-black text-slate-900">${rule.baseRate}</td>
+                                <td className="py-3 px-4 text-right text-slate-500">10%</td>
+                                <td className="py-3 px-4 text-right font-black text-slate-900">${rule.minCharge || rule.baseRate}</td>
+                              </tr>
+                            ))
+                          )}
                         </tbody>
                       </table>
                     </div>
-                    <button className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer mt-2">
+                    <button onClick={() => setShowAddPricingRuleModal(true)} className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer mt-2">
                       <Plus size={14} /> Add Lane Price
                     </button>
                   </div>
@@ -2922,10 +2921,10 @@ Please sign in at security.`);
                   <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm flex flex-col">
                     <div className="flex justify-between items-start mb-5">
                       <div>
-                        <h3 className="text-sm font-black text-slate-900 tracking-tight flex items-center gap-1.5">Vehicle Type Pricing - Sydney <ChevronRight size={14} className="text-slate-400" /> Melbourne</h3>
+                        <h3 className="text-sm font-black text-slate-900 tracking-tight flex items-center gap-1.5">Vehicle Type Pricing</h3>
                         <p className="text-[10px] text-slate-500 font-bold mt-1">Vehicle type rates override base lane price when applied.</p>
                       </div>
-                      <button className="text-[10px] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer bg-blue-50 px-2 py-1.5 rounded shrink-0">
+                      <button onClick={() => setShowAddVehicleTypeModal(true)} className="text-[10px] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer bg-blue-50 px-2 py-1.5 rounded shrink-0">
                         <Plus size={12} /> Add Vehicle Type
                       </button>
                     </div>
@@ -2939,47 +2938,24 @@ Please sign in at security.`);
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
-                          <tr className="hover:bg-slate-50 transition-colors">
-                            <td className="py-2.5 px-3 flex items-center gap-2"><Car size={14} className="text-slate-400" /> Sedan / Hatchback</td>
-                            <td className="py-2.5 px-3 text-right font-black text-slate-900">$450.00</td>
-                            <td className="py-2.5 px-3 text-right text-slate-400">-</td>
-                          </tr>
-                          <tr className="hover:bg-slate-50 transition-colors">
-                            <td className="py-2.5 px-3 flex items-center gap-2"><Car size={14} className="text-slate-400" /> SUV</td>
-                            <td className="py-2.5 px-3 text-right font-black text-slate-900">$500.00</td>
-                            <td className="py-2.5 px-3 text-right text-slate-400">-</td>
-                          </tr>
-                          <tr className="hover:bg-slate-50 transition-colors">
-                            <td className="py-2.5 px-3 flex items-center gap-2"><Car size={14} className="text-slate-400" /> 4WD / Ute</td>
-                            <td className="py-2.5 px-3 text-right font-black text-slate-900">$580.00</td>
-                            <td className="py-2.5 px-3 text-right text-red-600 font-bold">25%</td>
-                          </tr>
-                          <tr className="hover:bg-slate-50 transition-colors">
-                            <td className="py-2.5 px-3 flex items-center gap-2"><Car size={14} className="text-slate-400" /> Van / People Mover</td>
-                            <td className="py-2.5 px-3 text-right font-black text-slate-900">$560.00</td>
-                            <td className="py-2.5 px-3 text-right text-red-600 font-bold">20%</td>
-                          </tr>
-                          <tr className="hover:bg-slate-50 transition-colors">
-                            <td className="py-2.5 px-3 flex items-center gap-2"><Car size={14} className="text-slate-400" /> Luxury / Performance</td>
-                            <td className="py-2.5 px-3 text-right font-black text-slate-900">$680.00</td>
-                            <td className="py-2.5 px-3 text-right text-red-600 font-bold">50%</td>
+                          <tr>
+                            <td colSpan="3" className="py-6 text-center text-xs font-semibold text-slate-400 italic">
+                              No vehicle type pricing rules added yet.
+                            </td>
                           </tr>
                         </tbody>
                       </table>
                     </div>
-                    <button className="text-xs font-bold text-blue-600 hover:text-blue-700 mt-2 text-left cursor-pointer">
-                      View All Vehicle Types (15)
-                    </button>
                   </div>
 
                   {/* Rate Cards & Charges */}
                   <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm flex flex-col">
                     <div className="flex justify-between items-start mb-5">
                       <div>
-                        <h3 className="text-sm font-black text-slate-900 tracking-tight">Rate Cards & Charges (5)</h3>
+                        <h3 className="text-sm font-black text-slate-900 tracking-tight">Rate Cards & Charges</h3>
                         <p className="text-[10px] text-slate-500 font-bold mt-1">Standard chargeable items and rates.</p>
                       </div>
-                      <button className="text-[10px] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer bg-blue-50 px-2 py-1.5 rounded shrink-0">
+                      <button onClick={() => setShowAddChargeModal(true)} className="text-[10px] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer bg-blue-50 px-2 py-1.5 rounded shrink-0">
                         <Plus size={12} /> Add Charge
                       </button>
                     </div>
@@ -2994,42 +2970,14 @@ Please sign in at security.`);
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
-                          <tr className="hover:bg-slate-50 transition-colors">
-                            <td className="py-2.5 px-3 font-bold text-slate-900">Waiting Time</td>
-                            <td className="py-2.5 px-3 text-slate-500">Per 15 Min</td>
-                            <td className="py-2.5 px-3 text-right font-black text-slate-900">$25.00</td>
-                            <td className="py-2.5 px-3 text-right text-slate-500">10%</td>
-                          </tr>
-                          <tr className="hover:bg-slate-50 transition-colors">
-                            <td className="py-2.5 px-3 font-bold text-slate-900">Loading / Unloading</td>
-                            <td className="py-2.5 px-3 text-slate-500">Per Stop</td>
-                            <td className="py-2.5 px-3 text-right font-black text-slate-900">$65.00</td>
-                            <td className="py-2.5 px-3 text-right text-slate-500">10%</td>
-                          </tr>
-                          <tr className="hover:bg-slate-50 transition-colors">
-                            <td className="py-2.5 px-3 font-bold text-slate-900">Wash / Clean</td>
-                            <td className="py-2.5 px-3 text-slate-500">Per Vehicle</td>
-                            <td className="py-2.5 px-3 text-right font-black text-slate-900">$80.00</td>
-                            <td className="py-2.5 px-3 text-right text-slate-500">10%</td>
-                          </tr>
-                          <tr className="hover:bg-slate-50 transition-colors">
-                            <td className="py-2.5 px-3 font-bold text-slate-900">Re-delivery Fee</td>
-                            <td className="py-2.5 px-3 text-slate-500">Per Delivery</td>
-                            <td className="py-2.5 px-3 text-right font-black text-slate-900">$95.00</td>
-                            <td className="py-2.5 px-3 text-right text-slate-500">10%</td>
-                          </tr>
-                          <tr className="hover:bg-slate-50 transition-colors">
-                            <td className="py-2.5 px-3 font-bold text-slate-900">Inspection Fee</td>
-                            <td className="py-2.5 px-3 text-slate-500">Per Vehicle</td>
-                            <td className="py-2.5 px-3 text-right font-black text-slate-900">$35.00</td>
-                            <td className="py-2.5 px-3 text-right text-slate-500">10%</td>
+                          <tr>
+                            <td colSpan="4" className="py-6 text-center text-xs font-semibold text-slate-400 italic">
+                              No rate cards or charges configured yet.
+                            </td>
                           </tr>
                         </tbody>
                       </table>
                     </div>
-                    <button className="text-xs font-bold text-blue-600 hover:text-blue-700 mt-2 text-left cursor-pointer">
-                      View All Rate Cards & Charges (5)
-                    </button>
                   </div>
                 </div>
 
@@ -3065,46 +3013,46 @@ Please sign in at security.`);
                   <div className="space-y-4">
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-slate-500 font-bold">Lane Prices</span>
-                      <span className="font-black text-slate-900">4 Active</span>
+                      <span className="font-black text-slate-900">{lanePricingRules.length} Active</span>
                     </div>
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-slate-500 font-bold">Vehicle Type Rules</span>
-                      <span className="font-black text-slate-900">5 Active</span>
+                      <span className="font-black text-slate-900">0 Active</span>
                     </div>
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-slate-500 font-bold">Rate Cards / Charges</span>
-                      <span className="font-black text-slate-900">5 Active</span>
+                      <span className="font-black text-slate-900">0 Active</span>
                     </div>
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-slate-500 font-bold">Surcharges</span>
-                      <span className="font-black text-slate-900">4 Active</span>
+                      <span className="font-black text-slate-900">0 Active</span>
                     </div>
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-slate-500 font-bold">Accessorial Charges</span>
-                      <span className="font-black text-slate-900">6 Active</span>
+                      <span className="font-black text-slate-900">0 Active</span>
                     </div>
                     <div className="flex justify-between items-center text-xs border-t border-slate-50 pt-3 mt-1">
                       <span className="text-slate-500 font-bold">Discounts / Rebates</span>
-                      <span className="font-black text-slate-900">2 Active</span>
+                      <span className="font-black text-slate-900">0 Active</span>
                     </div>
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-slate-500 font-bold">Minimum Charges</span>
-                      <span className="font-black text-slate-900">3 Active</span>
+                      <span className="font-black text-slate-900">0 Active</span>
                     </div>
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-slate-500 font-bold">Pricing Overrides</span>
-                      <span className="font-black text-slate-900">1 Active</span>
+                      <span className="font-black text-slate-900">{lanePricingRules.length > 0 ? 1 : 0} Active</span>
                     </div>
                     <div className="flex justify-between items-center text-[10px] border-t border-slate-50 pt-4 mt-2">
                       <span className="text-slate-400 font-bold">Last Updated</span>
-                      <span className="font-bold text-slate-700">08/07/2025 10:24 AM</span>
+                      <span className="font-bold text-slate-700">—</span>
                     </div>
                     <div className="flex justify-between items-center text-[10px]">
                       <span className="text-slate-400 font-bold">Updated By</span>
-                      <span className="font-bold text-slate-900">Sarah Mitchell</span>
+                      <span className="font-bold text-slate-900">System</span>
                     </div>
                   </div>
-                  <button className="w-full mt-6 text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-sm">
+                  <button onClick={() => setShowPricingMatrixModal(true)} className="w-full mt-6 text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-sm">
                     <Eye size={14} /> View Full Pricing Matrix
                   </button>
                 </div>
@@ -3113,63 +3061,72 @@ Please sign in at security.`);
                 <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm flex-grow">
                   <h3 className="text-sm font-black text-slate-900 tracking-tight mb-4">Quick Actions</h3>
                   <div className="space-y-2">
-                    <button className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer">
+                    <button onClick={() => setShowAddPricingRuleModal(true)} className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer">
                       <div className="flex items-center gap-3">
                         <Plus size={14} className="text-blue-600" />
                         <span className="text-xs font-bold text-slate-700 group-hover:text-blue-700">Add Lane Price</span>
                       </div>
                       <ChevronRight size={14} className="text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-transform" />
                     </button>
-                    <button className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer">
+                    <button onClick={() => setShowAddVehicleTypeModal(true)} className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer">
                       <div className="flex items-center gap-3">
                         <Plus size={14} className="text-blue-600" />
                         <span className="text-xs font-bold text-slate-700 group-hover:text-blue-700">Add Vehicle Type Pricing</span>
                       </div>
                       <ChevronRight size={14} className="text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-transform" />
                     </button>
-                    <button className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer">
+                    <button onClick={() => setShowAddChargeModal(true)} className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer">
                       <div className="flex items-center gap-3">
                         <Plus size={14} className="text-blue-600" />
                         <span className="text-xs font-bold text-slate-700 group-hover:text-blue-700">Add Rate Card / Charge</span>
                       </div>
                       <ChevronRight size={14} className="text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-transform" />
                     </button>
-                    <button className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer">
+                    <button onClick={() => setShowAddSurchargeModal(true)} className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer">
                       <div className="flex items-center gap-3">
                         <Plus size={14} className="text-blue-600" />
                         <span className="text-xs font-bold text-slate-700 group-hover:text-blue-700">Add Surcharge</span>
                       </div>
                       <ChevronRight size={14} className="text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-transform" />
                     </button>
-                    <button className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer">
+                    <button onClick={() => setShowAddChargeModal(true)} className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer">
                       <div className="flex items-center gap-3">
                         <Plus size={14} className="text-blue-600" />
                         <span className="text-xs font-bold text-slate-700 group-hover:text-blue-700">Add Accessorial Charge</span>
                       </div>
                       <ChevronRight size={14} className="text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-transform" />
                     </button>
-                    <button className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer">
+                    <button onClick={() => setShowAddChargeModal(true)} className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer">
                       <div className="flex items-center gap-3">
                         <Plus size={14} className="text-blue-600" />
                         <span className="text-xs font-bold text-slate-700 group-hover:text-blue-700">Add Discount / Rebate</span>
                       </div>
                       <ChevronRight size={14} className="text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-transform" />
                     </button>
-                    <button className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer">
+                    <button onClick={() => setShowApplyTemplateModal(true)} className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer">
                       <div className="flex items-center gap-3">
                         <FileText size={14} className="text-blue-600" />
                         <span className="text-xs font-bold text-slate-700 group-hover:text-blue-700">Copy Prices from Another Customer</span>
                       </div>
                       <ChevronRight size={14} className="text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-transform" />
                     </button>
-                    <button className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer">
+                    <button onClick={() => setShowPricingHistoryModal(true)} className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer">
                       <div className="flex items-center gap-3">
                         <FileText size={14} className="text-blue-600" />
                         <span className="text-xs font-bold text-slate-700 group-hover:text-blue-700">Pricing History & Audit Log</span>
                       </div>
                       <ChevronRight size={14} className="text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-transform" />
                     </button>
-                    <button className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer">
+                    <button onClick={() => {
+                      const csvContent = "data:text/csv;charset=utf-8,Route,BaseRate\nSydney-Melbourne,450.00\nSydney-Brisbane,620.00";
+                      const encodedUri = encodeURI(csvContent);
+                      const link = document.createElement("a");
+                      link.setAttribute("href", encodedUri);
+                      link.setAttribute("download", `Pricing_${selectedCustomer.name}.csv`);
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }} className="w-full text-left p-3 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-colors flex items-center justify-between group cursor-pointer">
                       <div className="flex items-center gap-3">
                         <Download size={14} className="text-blue-600" />
                         <span className="text-xs font-bold text-slate-700 group-hover:text-blue-700">Export Pricing to Excel</span>
@@ -3645,29 +3602,14 @@ Please sign in at security.`);
                   </div>
 
                   <div className="space-y-2.5">
-                    {[
-                      { name: 'Insurance Certificate 2025', desc: 'Expires in 14 days', date: '15/07/2026', type: 'danger' },
-                      { name: 'Public Liability Insurance', desc: 'Expires in 32 days', date: '02/08/2026', type: 'warning' },
-                      { name: 'Dangerous Goods Approval', desc: 'Expires in 45 days', date: '15/08/2026', type: 'warning' },
-                      { name: 'Service Level Agreement', desc: 'Valid for 11 months', date: '15/06/2027', type: 'success' }
-                    ].map((alert, idx) => (
-                      <div key={idx} className="flex justify-between items-start p-2.5 bg-slate-50/50 border border-slate-100 rounded-xl">
-                        <div>
-                          <h4 className="text-[10px] font-black text-slate-800 truncate max-w-[130px]">{alert.name}</h4>
-                          <span className="text-[9px] text-slate-400 font-semibold block mt-0.5">{alert.date}</span>
-                        </div>
-                        <span className={`text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider ${alert.type === 'danger' ? 'bg-red-50 text-red-600' :
-                            alert.type === 'warning' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'
-                          }`}>
-                          {alert.desc}
-                        </span>
-                      </div>
-                    ))}
+                    <div className="py-8 text-center text-xs font-semibold text-slate-400 italic">
+                      No document expiry alerts for this customer.
+                    </div>
                   </div>
                 </div>
 
-                <button className="mt-4 text-[10px] font-black text-blue-600 hover:text-blue-700 transition-colors uppercase tracking-wider text-left flex items-center gap-1.5 cursor-pointer">
-                  View All Alerts (5) &rarr;
+                <button className="mt-4 text-[10px] font-black text-slate-400 cursor-not-allowed uppercase tracking-wider text-left flex items-center gap-1.5">
+                  View All Alerts (0) &rarr;
                 </button>
               </div>
 
@@ -3677,28 +3619,13 @@ Please sign in at security.`);
                   <h3 className="text-xs font-black text-slate-900 tracking-tight mb-4">Recent Activity</h3>
 
                   <div className="space-y-3.5">
-                    {[
-                      { user: 'Sarah Mitchell', initials: 'SM', action: 'uploaded', file: 'Master Service Agreement.pdf', time: '01/07/2026 10:24 AM' },
-                      { user: 'John Davis', initials: 'JD', action: 'updated', file: 'Insurance Certificate 2025.pdf', time: '29/06/2026 09:12 AM' },
-                      { user: 'Sarah Mitchell', initials: 'SM', action: 'uploaded', file: 'Pricing Matrix 2025.xlsx', time: '20/05/2026 11:30 AM' }
-                    ].map((act, idx) => (
-                      <div key={idx} className="flex gap-2.5 items-start">
-                        <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-black text-[9px] border border-white shadow-xs shrink-0 mt-0.5">
-                          {act.initials}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-[10px] font-semibold text-slate-600 leading-snug">
-                            <span className="font-black text-slate-800">{act.user}</span> {act.action}{' '}
-                            <span className="font-bold text-blue-600 hover:underline cursor-pointer break-all">{act.file}</span>
-                          </p>
-                          <span className="text-[8px] font-bold text-slate-400 block mt-0.5">{act.time}</span>
-                        </div>
-                      </div>
-                    ))}
+                    <div className="py-8 text-center text-xs font-semibold text-slate-400 italic">
+                      No recent document activity logged.
+                    </div>
                   </div>
                 </div>
 
-                <button className="mt-4 text-[10px] font-black text-blue-600 hover:text-blue-700 transition-colors uppercase tracking-wider text-left flex items-center gap-1.5 cursor-pointer">
+                <button className="mt-4 text-[10px] font-black text-slate-400 cursor-not-allowed uppercase tracking-wider text-left flex items-center gap-1.5">
                   View Full Activity Log &rarr;
                 </button>
               </div>
@@ -3795,15 +3722,15 @@ Please sign in at security.`);
               {/* Sub-tabs Row */}
               <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar flex-nowrap mt-5 border-t border-slate-50 pt-4">
                 {[
-                  { name: 'All Activity', count: 234, active: true },
-                  { name: 'Loads', count: 18 },
-                  { name: 'Invoices & Payments', count: 26 },
-                  { name: 'Messages', count: 12 },
-                  { name: 'Documents', count: 38 },
-                  { name: 'Pricing', count: 8 },
-                  { name: 'Billing Rules', count: 6 },
-                  { name: 'AI Reminders', count: 14 },
-                  { name: 'Audit Log', count: 131 }
+                  { name: 'All Activity', count: 0, active: true },
+                  { name: 'Loads', count: 0 },
+                  { name: 'Invoices & Payments', count: 0 },
+                  { name: 'Messages', count: 0 },
+                  { name: 'Documents', count: 0 },
+                  { name: 'Pricing', count: 0 },
+                  { name: 'Billing Rules', count: 0 },
+                  { name: 'AI Reminders', count: 0 },
+                  { name: 'Audit Log', count: 0 }
                 ].map((subTab, idx) => (
                   <button
                     key={idx}
@@ -3840,166 +3767,15 @@ Please sign in at security.`);
                   </div>
                 </div>
 
-                {/* Timeline Items */}
-                <div className="relative pl-6 border-l border-slate-100 ml-4 space-y-6">
-                  {/* Timeline Node 1 */}
-                  <div className="relative">
-                    <div className="absolute -left-[31px] top-1.5 w-2.5 h-2.5 rounded-full bg-red-500 border border-white ring-4 ring-red-50/50"></div>
-                    <div className="flex flex-col sm:flex-row gap-4 justify-between items-start bg-slate-50/40 hover:bg-slate-50/80 border border-slate-100/60 rounded-xl p-4 transition-colors">
-                      <div className="space-y-1.5 min-w-0 flex-grow">
-                        <div className="flex items-center flex-wrap gap-2">
-                          <span className="text-[9px] text-slate-400 font-bold">08 Jul 2025, 10:24 AM</span>
-                          <span className="bg-red-50 text-red-600 text-[8px] font-black px-1.5 py-0.5 rounded tracking-wide uppercase">AI ALERT</span>
-                        </div>
-                        <h4 className="text-xs font-black text-slate-800">Document Expired</h4>
-                        <p className="text-xs font-semibold text-slate-500">Insurance Certificate 2025.pdf has expired.</p>
-                        <div className="flex items-center gap-2 pt-1">
-                          <div className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-[8px] border border-white shadow-xs shrink-0">AI</div>
-                          <span className="text-[10px] text-slate-500 font-bold">System (AI)</span>
-                        </div>
-                      </div>
-                      <button className="text-[10px] font-black text-blue-600 hover:text-blue-700 transition-colors uppercase tracking-wider shrink-0 cursor-pointer self-end sm:self-center">View Alert</button>
-                    </div>
+                {/* Timeline Items - Clean Empty State */}
+                <div className="py-16 text-center">
+                  <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3 text-slate-400">
+                    <Activity size={28} />
                   </div>
-
-                  {/* Timeline Node 2 */}
-                  <div className="relative">
-                    <div className="absolute -left-[31px] top-1.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white ring-4 ring-emerald-50/50"></div>
-                    <div className="flex flex-col sm:flex-row gap-4 justify-between items-start bg-slate-50/40 hover:bg-slate-50/80 border border-slate-100/60 rounded-xl p-4 transition-colors">
-                      <div className="space-y-1.5 min-w-0 flex-grow">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[9px] text-slate-400 font-bold">08 Jul 2025, 08:15 AM</span>
-                          <span className="text-xs font-black text-emerald-600">$15,750.00</span>
-                        </div>
-                        <h4 className="text-xs font-black text-slate-800">Payment Received</h4>
-                        <p className="text-xs font-semibold text-slate-500">Payment of $15,750.00 received for INV-12496 via Direct Transfer.</p>
-                        <div className="flex items-center gap-2 pt-1">
-                          <div className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-[8px] border border-white shadow-xs shrink-0">JD</div>
-                          <span className="text-[10px] text-slate-500 font-bold">John Davis <span className="text-slate-400 font-medium">Accounts</span></span>
-                        </div>
-                      </div>
-                      <button className="text-[10px] font-black text-blue-600 hover:text-blue-700 transition-colors uppercase tracking-wider shrink-0 cursor-pointer self-end sm:self-center">View Payment</button>
-                    </div>
-                  </div>
-
-                  {/* Timeline Node 3 */}
-                  <div className="relative">
-                    <div className="absolute -left-[31px] top-1.5 w-2.5 h-2.5 rounded-full bg-blue-500 border border-white ring-4 ring-blue-50/50"></div>
-                    <div className="flex flex-col sm:flex-row gap-4 justify-between items-start bg-slate-50/40 hover:bg-slate-50/80 border border-slate-100/60 rounded-xl p-4 transition-colors">
-                      <div className="space-y-1.5 min-w-0 flex-grow">
-                        <span className="text-[9px] text-slate-400 font-bold block mb-1">07 Jul 2025, 04:32 PM</span>
-                        <h4 className="text-xs font-black text-slate-800">Load Completed</h4>
-                        <p className="text-xs font-semibold text-slate-500">Load LD-1087 completed by Driver #D-021 (Michael King).</p>
-                        <div className="flex items-center gap-2 pt-1">
-                          <div className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-[8px] border border-white shadow-xs shrink-0">MK</div>
-                          <span className="text-[10px] text-slate-500 font-bold">Michael King <span className="text-slate-400 font-medium">Driver</span></span>
-                        </div>
-                      </div>
-                      <button className="text-[10px] font-black text-blue-600 hover:text-blue-700 transition-colors uppercase tracking-wider shrink-0 cursor-pointer self-end sm:self-center">View Load</button>
-                    </div>
-                  </div>
-
-                  {/* Timeline Node 4 */}
-                  <div className="relative">
-                    <div className="absolute -left-[31px] top-1.5 w-2.5 h-2.5 rounded-full bg-purple-500 border border-white ring-4 ring-purple-50/50"></div>
-                    <div className="flex flex-col sm:flex-row gap-4 justify-between items-start bg-slate-50/40 hover:bg-slate-50/80 border border-slate-100/60 rounded-xl p-4 transition-colors">
-                      <div className="space-y-1.5 min-w-0 flex-grow">
-                        <span className="text-[9px] text-slate-400 font-bold block mb-1">07 Jul 2025, 02:18 PM</span>
-                        <h4 className="text-xs font-black text-slate-800">Message Sent</h4>
-                        <p className="text-xs font-semibold text-slate-500">Re: Delivery delay for LD-1086 - Updated ETA shared.</p>
-                        <div className="flex items-center gap-2 pt-1">
-                          <div className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-[8px] border border-white shadow-xs shrink-0">SM</div>
-                          <span className="text-[10px] text-slate-500 font-bold">Sarah Mitchell <span className="text-slate-400 font-medium">Dispatch</span></span>
-                        </div>
-                      </div>
-                      <button className="text-[10px] font-black text-blue-600 hover:text-blue-700 transition-colors uppercase tracking-wider shrink-0 cursor-pointer self-end sm:self-center">View Message</button>
-                    </div>
-                  </div>
-
-                  {/* Timeline Node 5 */}
-                  <div className="relative">
-                    <div className="absolute -left-[31px] top-1.5 w-2.5 h-2.5 rounded-full bg-amber-500 border border-white ring-4 ring-amber-50/50"></div>
-                    <div className="flex flex-col sm:flex-row gap-4 justify-between items-start bg-slate-50/40 hover:bg-slate-50/80 border border-slate-100/60 rounded-xl p-4 transition-colors">
-                      <div className="space-y-1.5 min-w-0 flex-grow">
-                        <span className="text-[9px] text-slate-400 font-bold block mb-1">07 Jul 2025, 11:05 AM</span>
-                        <h4 className="text-xs font-black text-slate-800">Pricing Rule Updated</h4>
-                        <p className="text-xs font-semibold text-slate-500">Lane Price: Sydney (NSW) &rarr; Melbourne (VIC) updated.</p>
-                        <div className="flex items-center gap-2 pt-1">
-                          <div className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-[8px] border border-white shadow-xs shrink-0">SM</div>
-                          <span className="text-[10px] text-slate-500 font-bold">Sarah Mitchell <span className="text-slate-400 font-medium">Admin</span></span>
-                        </div>
-                      </div>
-                      <button className="text-[10px] font-black text-blue-600 hover:text-blue-700 transition-colors uppercase tracking-wider shrink-0 cursor-pointer self-end sm:self-center">View Change</button>
-                    </div>
-                  </div>
-
-                  {/* Timeline Node 6 */}
-                  <div className="relative">
-                    <div className="absolute -left-[31px] top-1.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border border-white ring-4 ring-emerald-50/50"></div>
-                    <div className="flex flex-col sm:flex-row gap-4 justify-between items-start bg-slate-50/40 hover:bg-slate-50/80 border border-slate-100/60 rounded-xl p-4 transition-colors">
-                      <div className="space-y-1.5 min-w-0 flex-grow">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[9px] text-slate-400 font-bold">06 Jul 2025, 03:45 PM</span>
-                          <span className="text-xs font-black text-slate-800">$32,450.00</span>
-                        </div>
-                        <h4 className="text-xs font-black text-slate-800">Invoice Created</h4>
-                        <p className="text-xs font-semibold text-slate-500">Invoice INV-12450 created for Load LD-1083.</p>
-                        <div className="flex items-center gap-2 pt-1">
-                          <div className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-[8px] border border-white shadow-xs shrink-0">JD</div>
-                          <span className="text-[10px] text-slate-500 font-bold">John Davis <span className="text-slate-400 font-medium">Accounts</span></span>
-                        </div>
-                      </div>
-                      <button className="text-[10px] font-black text-blue-600 hover:text-blue-700 transition-colors uppercase tracking-wider shrink-0 cursor-pointer self-end sm:self-center">View Invoice</button>
-                    </div>
-                  </div>
-
-                  {/* Timeline Node 7 */}
-                  <div className="relative">
-                    <div className="absolute -left-[31px] top-1.5 w-2.5 h-2.5 rounded-full bg-indigo-500 border border-white ring-4 ring-indigo-50/50"></div>
-                    <div className="flex flex-col sm:flex-row gap-4 justify-between items-start bg-slate-50/40 hover:bg-slate-50/80 border border-slate-100/60 rounded-xl p-4 transition-colors">
-                      <div className="space-y-1.5 min-w-0 flex-grow">
-                        <span className="text-[9px] text-slate-400 font-bold block mb-1">05 Jul 2025, 01:22 PM</span>
-                        <h4 className="text-xs font-black text-slate-800">Document Uploaded</h4>
-                        <p className="text-xs font-semibold text-slate-500">Public Liability Insurance.pdf uploaded.</p>
-                        <div className="flex items-center gap-2 pt-1">
-                          <div className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-[8px] border border-white shadow-xs shrink-0">SM</div>
-                          <span className="text-[10px] text-slate-500 font-bold">Sarah Mitchell <span className="text-slate-400 font-medium">Admin</span></span>
-                        </div>
-                      </div>
-                      <button className="text-[10px] font-black text-blue-600 hover:text-blue-700 transition-colors uppercase tracking-wider shrink-0 cursor-pointer self-end sm:self-center">View Document</button>
-                    </div>
-                  </div>
-
-                  {/* Timeline Node 8 */}
-                  <div className="relative">
-                    <div className="absolute -left-[31px] top-1.5 w-2.5 h-2.5 rounded-full bg-slate-400 border border-white ring-4 ring-slate-100"></div>
-                    <div className="flex flex-col sm:flex-row gap-4 justify-between items-start bg-slate-50/40 hover:bg-slate-50/80 border border-slate-100/60 rounded-xl p-4 transition-colors">
-                      <div className="space-y-1.5 min-w-0 flex-grow">
-                        <span className="text-[9px] text-slate-400 font-bold block mb-1">03 Jul 2025, 09:00 AM</span>
-                        <h4 className="text-xs font-black text-slate-800">Support Ticket Updated</h4>
-                        <p className="text-xs font-semibold text-slate-500">Ticket #TKT-152 updated: Proof of Delivery not attached.</p>
-                        <div className="flex items-center gap-2 pt-1">
-                          <div className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-[8px] border border-white shadow-xs shrink-0">PS</div>
-                          <span className="text-[10px] text-slate-500 font-bold">Priya Sharma <span className="text-slate-400 font-medium">Support</span></span>
-                        </div>
-                      </div>
-                      <button className="text-[10px] font-black text-blue-600 hover:text-blue-700 transition-colors uppercase tracking-wider shrink-0 cursor-pointer self-end sm:self-center">View Ticket</button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Pagination */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 mt-6 border-t border-slate-100">
-                  <span className="text-xs font-bold text-slate-400">Showing 1 to 8 of 234 activities</span>
-                  <div className="flex items-center gap-1.5">
-                    <button className="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-xl text-slate-400 hover:bg-slate-50 cursor-pointer shadow-xs"><ChevronLeft size={14} /></button>
-                    <button className="w-8 h-8 flex items-center justify-center bg-blue-600 border border-blue-600 rounded-xl text-white font-black text-xs cursor-pointer shadow-md">1</button>
-                    <button className="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold text-xs cursor-pointer shadow-xs">2</button>
-                    <button className="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold text-xs cursor-pointer shadow-xs">3</button>
-                    <span className="text-slate-400 text-xs font-bold px-1">...</span>
-                    <button className="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 font-bold text-xs cursor-pointer shadow-xs">10</button>
-                    <button className="w-8 h-8 flex items-center justify-center bg-white border border-slate-200 rounded-xl text-slate-400 hover:bg-slate-50 cursor-pointer shadow-xs"><ChevronRight size={14} /></button>
-                  </div>
+                  <h4 className="text-sm font-black text-slate-800 mb-1">No Activity Recorded</h4>
+                  <p className="text-xs text-slate-400 font-semibold max-w-sm mx-auto">
+                    Activity timeline will automatically log loads, invoices, messages, and pricing updates for {selectedCustomer?.name}.
+                  </p>
                 </div>
               </div>
 
@@ -4016,7 +3792,7 @@ Please sign in at security.`);
                       </div>
                       <div>
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Loads</span>
-                        <span className="text-xl font-black text-slate-800 block mb-2">18</span>
+                        <span className="text-xl font-black text-slate-800 block mb-2">0</span>
                         <a href="#" className="text-[9px] font-black text-blue-600 hover:underline">View All</a>
                       </div>
                     </div>
@@ -4028,7 +3804,7 @@ Please sign in at security.`);
                       </div>
                       <div>
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Invoices</span>
-                        <span className="text-xl font-black text-slate-800 block mb-2">26</span>
+                        <span className="text-xl font-black text-slate-800 block mb-2">0</span>
                         <a href="#" className="text-[9px] font-black text-purple-600 hover:underline">View All</a>
                       </div>
                     </div>
@@ -4040,7 +3816,7 @@ Please sign in at security.`);
                       </div>
                       <div>
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Payments</span>
-                        <span className="text-xl font-black text-slate-800 block mb-2">12</span>
+                        <span className="text-xl font-black text-slate-800 block mb-2">0</span>
                         <a href="#" className="text-[9px] font-black text-emerald-600 hover:underline">View All</a>
                       </div>
                     </div>
@@ -4052,7 +3828,7 @@ Please sign in at security.`);
                       </div>
                       <div>
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Documents</span>
-                        <span className="text-xl font-black text-slate-800 block mb-2">38</span>
+                        <span className="text-xl font-black text-slate-800 block mb-2">0</span>
                         <a href="#" className="text-[9px] font-black text-indigo-600 hover:underline">View All</a>
                       </div>
                     </div>
@@ -4064,7 +3840,7 @@ Please sign in at security.`);
                       </div>
                       <div>
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Messages</span>
-                        <span className="text-xl font-black text-slate-800 block mb-2">12</span>
+                        <span className="text-xl font-black text-slate-800 block mb-2">0</span>
                         <a href="#" className="text-[9px] font-black text-purple-600 hover:underline">View All</a>
                       </div>
                     </div>
@@ -4076,7 +3852,7 @@ Please sign in at security.`);
                       </div>
                       <div>
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">AI Alerts</span>
-                        <span className="text-xl font-black text-red-600 block mb-2">14</span>
+                        <span className="text-xl font-black text-slate-800 block mb-2">0</span>
                         <a href="#" className="text-[9px] font-black text-red-600 hover:underline">View All</a>
                       </div>
                     </div>
@@ -4086,41 +3862,9 @@ Please sign in at security.`);
                 {/* Widget 2: Top Active Users */}
                 <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm">
                   <h3 className="text-xs font-black text-slate-900 tracking-tight mb-4">Top Active Users</h3>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-xs border border-white shadow-xs">SM</div>
-                        <div>
-                          <h4 className="text-xs font-black text-slate-800">Sarah Mitchell</h4>
-                          <span className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider block">Admin / Dispatch</span>
-                        </div>
-                      </div>
-                      <span className="text-xs font-black text-slate-800">88 actions</span>
-                    </div>
-
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-xs border border-white shadow-xs">JD</div>
-                        <div>
-                          <h4 className="text-xs font-black text-slate-800">John Davis</h4>
-                          <span className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider block">Accounts</span>
-                        </div>
-                      </div>
-                      <span className="text-xs font-black text-slate-800">54 actions</span>
-                    </div>
-
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-xs border border-white shadow-xs">MK</div>
-                        <div>
-                          <h4 className="text-xs font-black text-slate-800">Michael King</h4>
-                          <span className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider block">Driver</span>
-                        </div>
-                      </div>
-                      <span className="text-xs font-black text-slate-800">32 actions</span>
-                    </div>
+                  <div className="py-6 text-center text-xs font-semibold text-slate-400 italic">
+                    No user activity recorded yet.
                   </div>
-                  <button className="mt-4 w-full text-center text-[10px] font-black text-blue-600 hover:text-blue-700 transition-colors uppercase tracking-widest block pt-3 border-t border-slate-50 cursor-pointer">View All Users &rarr;</button>
                 </div>
 
                 {/* Widget 3: Quick Actions */}
@@ -4161,31 +3905,31 @@ Please sign in at security.`);
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
                 <div className="p-4 bg-slate-50/50 border border-slate-100 rounded-2xl">
                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Overdue Invoices</span>
-                  <span className="text-sm font-black text-red-600 block mb-0.5">$32,450.00</span>
-                  <span className="text-[9px] font-bold text-slate-400 block">5 Invoices</span>
+                  <span className="text-sm font-black text-slate-800 block mb-0.5">$0.00</span>
+                  <span className="text-[9px] font-bold text-slate-400 block">0 Invoices</span>
                 </div>
                 <div className="p-4 bg-slate-50/50 border border-slate-100 rounded-2xl">
                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Due This Week</span>
-                  <span className="text-sm font-black text-amber-500 block mb-0.5">$7,850.00</span>
-                  <span className="text-[9px] font-bold text-slate-400 block">2 Invoices</span>
+                  <span className="text-sm font-black text-slate-800 block mb-0.5">$0.00</span>
+                  <span className="text-[9px] font-bold text-slate-400 block">0 Invoices</span>
                 </div>
                 <div className="p-4 bg-slate-50/50 border border-slate-100 rounded-2xl">
                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Due Next 7 Days</span>
-                  <span className="text-sm font-black text-blue-500 block mb-0.5">$14,600.00</span>
-                  <span className="text-[9px] font-bold text-slate-400 block">3 Invoices</span>
+                  <span className="text-sm font-black text-slate-800 block mb-0.5">$0.00</span>
+                  <span className="text-[9px] font-bold text-slate-400 block">0 Invoices</span>
                 </div>
                 <div className="p-4 bg-slate-50/50 border border-slate-100 rounded-2xl flex flex-col justify-between">
                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Average Days to Pay</span>
                   <div className="flex items-center gap-1.5">
                     <Clock size={14} className="text-indigo-600" />
-                    <span className="text-sm font-black text-slate-800">28 Days</span>
+                    <span className="text-sm font-black text-slate-800">0 Days</span>
                   </div>
                 </div>
                 <div className="p-4 bg-slate-50/50 border border-slate-100 rounded-2xl flex flex-col justify-between">
                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Predicted Late Payers</span>
                   <div className="flex items-center gap-1.5">
                     <Users size={14} className="text-emerald-600" />
-                    <span className="text-sm font-black text-slate-800">3 Customers</span>
+                    <span className="text-sm font-black text-slate-800">0 Customers</span>
                   </div>
                 </div>
               </div>
@@ -4294,16 +4038,20 @@ Please sign in at security.`);
                         <span className="font-black text-slate-800">$32,450.00</span>
                       </div>
                       <div className="flex justify-between text-[10px] font-bold text-slate-600">
+                        <span>Current (0-30 days)</span>
+                        <span className="font-black text-slate-800">$0.00</span>
+                      </div>
+                      <div className="flex justify-between text-[10px] font-bold text-slate-600">
                         <span>31-60 days</span>
-                        <span className="font-black text-slate-800">$3,204.50</span>
+                        <span className="font-black text-slate-800">$0.00</span>
                       </div>
                       <div className="flex justify-between text-[10px] font-bold text-slate-600">
                         <span>61-90 days</span>
-                        <span className="font-black text-slate-800">$5,958.00</span>
+                        <span className="font-black text-slate-800">$0.00</span>
                       </div>
                       <div className="flex justify-between text-[10px] font-bold text-slate-600">
                         <span>90+ days</span>
-                        <span className="font-black text-slate-800">$1,238.00</span>
+                        <span className="font-black text-slate-800">$0.00</span>
                       </div>
                     </div>
                   </div>
@@ -4314,22 +4062,11 @@ Please sign in at security.`);
                 <div className="flex flex-col justify-between">
                   <div>
                     <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4">AI Insights</h4>
-                    <div className="space-y-3">
-                      {[
-                        'ABC Motors usually pays 7 days after due date.',
-                        '2 invoices are at risk of going 30+ days overdue.',
-                        'Best time to call is between 9-11 AM (based on history).',
-                        'Customer responded to email: 82% of the time.',
-                        'Consider a phone call for overdue invoices over 14 days.'
-                      ].map((insight, idx) => (
-                        <div key={idx} className="flex gap-2 items-start text-[10px] font-semibold text-slate-600 leading-relaxed">
-                          <div className="w-1 h-1 rounded-full bg-indigo-500 shrink-0 mt-1.5"></div>
-                          <span>{insight}</span>
-                        </div>
-                      ))}
+                    <div className="py-6 text-center text-xs font-semibold text-slate-400 italic">
+                      No payment insights available for this customer yet.
                     </div>
                   </div>
-                  <button className="mt-4 w-full text-center text-[10px] font-black text-indigo-600 hover:text-indigo-700 transition-colors uppercase tracking-widest block pt-3 border-t border-slate-100 cursor-pointer">View All AI Insights</button>
+                  <button className="mt-4 w-full text-center text-[10px] font-black text-slate-400 cursor-not-allowed uppercase tracking-widest block pt-3 border-t border-slate-100">View All AI Insights</button>
                 </div>
               </div>
             </div>
@@ -4341,14 +4078,14 @@ Please sign in at security.`);
       {/* Create New Load Modal */}
       {showCreateLoadModal && createPortal(
         <div className="fixed inset-0 bg-black/30 backdrop-blur-[1.5px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowCreateLoadModal(false)}>
-          <div className="bg-white rounded-2xl w-full max-w-[460px] max-h-[90vh] shadow-2xl flex flex-col overflow-hidden" onClick={e => e.stopPropagation()} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
+          <form onSubmit={handleCreateLoadSubmit} className="bg-white rounded-2xl w-full max-w-[460px] max-h-[90vh] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()} style={{ fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif" }}>
             {/* Header */}
             <div className="px-7 pt-7 pb-5 flex justify-between items-start border-b border-slate-100 shrink-0">
               <div>
                 <h3 className="text-[18px] font-extrabold text-slate-900 leading-tight">Create New Load</h3>
                 <p className="text-[13px] font-normal text-slate-400 mt-2 leading-snug">New loads will be created in the Draft queue.</p>
               </div>
-              <button onClick={() => setShowCreateLoadModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1"><X size={18} strokeWidth={2} /></button>
+              <button type="button" onClick={() => setShowCreateLoadModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer p-1"><X size={18} strokeWidth={2} /></button>
             </div>
 
             {/* Body */}
@@ -4356,28 +4093,59 @@ Please sign in at security.`);
               <div className="grid grid-cols-2 gap-5">
                 <div>
                   <label className="text-[13px] font-semibold text-slate-800 block mb-2">Origin *</label>
-                  <input type="text" placeholder="e.g. Sydney Depot" className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700" />
+                  <input 
+                    type="text" 
+                    value={newLoadForm.origin}
+                    onChange={e => setNewLoadForm({ ...newLoadForm, origin: e.target.value })}
+                    placeholder="e.g. Sydney Depot" 
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700" 
+                    required
+                  />
                 </div>
                 <div>
                   <label className="text-[13px] font-semibold text-slate-800 block mb-2">Destination *</label>
-                  <input type="text" placeholder="e.g. Canberra Branch" className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700" />
+                  <input 
+                    type="text" 
+                    value={newLoadForm.destination}
+                    onChange={e => setNewLoadForm({ ...newLoadForm, destination: e.target.value })}
+                    placeholder="e.g. Canberra Branch" 
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700" 
+                    required
+                  />
                 </div>
               </div>
 
               <div>
                 <label className="text-[13px] font-semibold text-slate-800 block mb-2">Cargo Type *</label>
-                <input type="text" placeholder="e.g. Beverages, Electronics, Dry Goods" className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700" />
+                <input 
+                  type="text" 
+                  value={newLoadForm.cargoType}
+                  onChange={e => setNewLoadForm({ ...newLoadForm, cargoType: e.target.value })}
+                  placeholder="e.g. Beverages, Electronics, Dry Goods" 
+                  className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700" 
+                  required
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-5">
                 <div>
                   <label className="text-[13px] font-semibold text-slate-800 block mb-2">Weight</label>
-                  <input type="text" placeholder="e.g. 6.2t" className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700" />
+                  <input 
+                    type="text" 
+                    value={newLoadForm.weight}
+                    onChange={e => setNewLoadForm({ ...newLoadForm, weight: e.target.value })}
+                    placeholder="e.g. 6.2t" 
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700" 
+                  />
                 </div>
                 <div>
                   <label className="text-[13px] font-semibold text-slate-800 block mb-2">Priority</label>
                   <div className="relative">
-                    <select className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer">
+                    <select 
+                      value={newLoadForm.priority}
+                      onChange={e => setNewLoadForm({ ...newLoadForm, priority: e.target.value })}
+                      className="appearance-none w-full border border-slate-200 rounded-lg pl-4 pr-10 py-2.5 text-[13px] font-medium text-slate-700 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all bg-white cursor-pointer"
+                    >
                       <option>Low</option>
                       <option>Medium</option>
                       <option>High</option>
@@ -4390,21 +4158,33 @@ Please sign in at security.`);
 
               <div>
                 <label className="text-[13px] font-semibold text-slate-800 block mb-2">Assign Driver</label>
-                <input type="text" placeholder="Driver name (optional)" className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700" />
+                <input 
+                  type="text" 
+                  value={newLoadForm.driverName}
+                  onChange={e => setNewLoadForm({ ...newLoadForm, driverName: e.target.value })}
+                  placeholder="Driver name (optional)" 
+                  className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700" 
+                />
               </div>
 
               <div>
                 <label className="text-[13px] font-semibold text-slate-800 block mb-2">Notes</label>
-                <textarea rows={3} placeholder="Additional notes..." className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700 resize-none"></textarea>
+                <textarea 
+                  rows={3} 
+                  value={newLoadForm.notes}
+                  onChange={e => setNewLoadForm({ ...newLoadForm, notes: e.target.value })}
+                  placeholder="Additional notes..." 
+                  className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-[13px] focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-100 transition-all placeholder-slate-300 text-slate-700 resize-none"
+                ></textarea>
               </div>
             </div>
 
             {/* Footer */}
             <div className="px-7 py-5 flex justify-end gap-3 border-t border-slate-100 shrink-0">
-              <button onClick={() => setShowCreateLoadModal(false)} className="px-5 py-2.5 border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white">Cancel</button>
-              <button onClick={() => setShowCreateLoadModal(false)} className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-indigo-200">Save</button>
+              <button type="button" onClick={() => setShowCreateLoadModal(false)} className="px-5 py-2.5 border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer bg-white">Cancel</button>
+              <button type="submit" className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-indigo-200">Save</button>
             </div>
-          </div>
+          </form>
         </div>,
         document.body
       )}
@@ -5890,6 +5670,483 @@ Please sign in at security.`);
               <button onClick={handleConfirmDelete} className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[13px] font-semibold transition-colors cursor-pointer shadow-lg shadow-red-200">Delete Customer</button>
             </div>
           </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Preview Pricing Matrix Modal */}
+      {showPricingMatrixModal && createPortal(
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowPricingMatrixModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-[750px] max-h-[85vh] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
+              <div>
+                <h3 className="text-base font-extrabold text-slate-900">Pricing Matrix Preview</h3>
+                <p className="text-xs text-slate-500 mt-0.5 font-medium">Active Rates & Pricing Rules for {selectedCustomer?.name}</p>
+              </div>
+              <button onClick={() => setShowPricingMatrixModal(false)} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg transition-colors cursor-pointer"><X size={18} /></button>
+            </div>
+            <div className="p-6 overflow-y-auto space-y-6 text-xs font-semibold text-slate-700">
+              <div className="p-4 bg-blue-50/60 border border-blue-100 rounded-xl flex items-center justify-between">
+                <div>
+                  <p className="font-extrabold text-blue-900">Applied Template: {selectedTemplateName}</p>
+                  <p className="text-[11px] text-blue-700 mt-0.5">Effective Date Range: 01/07/2025 – 30/06/2026</p>
+                </div>
+                <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">{lanePricingRules.length} Active Rules</span>
+              </div>
+              <div className="space-y-3">
+                <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">Configured Rates ({lanePricingRules.length})</h4>
+                {lanePricingRules.length === 0 ? (
+                  <div className="border border-slate-100 rounded-xl p-6 text-center text-slate-400 italic">
+                    No custom pricing rules added yet. Click "+ Add Pricing Rule" or "Apply Template" to configure rates.
+                  </div>
+                ) : (
+                  <div className="border border-slate-100 rounded-xl overflow-hidden">
+                    <table className="w-full text-left text-xs whitespace-nowrap">
+                      <thead>
+                        <tr className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                          <th className="py-2.5 px-4">FROM</th>
+                          <th className="py-2.5 px-4">TO</th>
+                          <th className="py-2.5 px-4">TYPE</th>
+                          <th className="py-2.5 px-4 text-right">BASE RATE</th>
+                          <th className="py-2.5 px-4 text-right">MIN CHARGE</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50 font-semibold text-slate-700">
+                        {lanePricingRules.map((rule, idx) => (
+                          <tr key={idx} className="hover:bg-slate-50/50">
+                            <td className="py-2.5 px-4">{rule.from}</td>
+                            <td className="py-2.5 px-4">{rule.to}</td>
+                            <td className="py-2.5 px-4 text-slate-500">{rule.type}</td>
+                            <td className="py-2.5 px-4 text-right font-bold text-slate-900">${rule.baseRate}</td>
+                            <td className="py-2.5 px-4 text-right font-bold text-slate-900">${rule.minCharge}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+              <button onClick={() => setShowPricingMatrixModal(false)} className="px-5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer">Close</button>
+              <button onClick={() => { setShowPricingMatrixModal(false); window.print(); }} className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm cursor-pointer">Print Matrix</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Apply Template Modal */}
+      {showApplyTemplateModal && createPortal(
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowApplyTemplateModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-[480px] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
+              <h3 className="text-base font-extrabold text-slate-900">Apply Pricing Template</h3>
+              <button onClick={() => setShowApplyTemplateModal(false)} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg transition-colors cursor-pointer"><X size={18} /></button>
+            </div>
+            <div className="p-6 space-y-4 text-xs font-semibold text-slate-700">
+              <div>
+                <label className="block text-slate-800 font-bold mb-2">Select Template</label>
+                <select 
+                  value={selectedTemplateName} 
+                  onChange={e => setSelectedTemplateName(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl p-3 text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500 bg-white cursor-pointer"
+                >
+                  <option value="Standard National Template (Default)">Standard National Template (3 Lanes)</option>
+                  <option value="Metropolitan Express Rate Card">Metropolitan Express Rate Card (2 Metro Routes)</option>
+                  <option value="Regional & Interstate Schedule">Regional & Interstate Schedule (2 Routes)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-slate-800 font-bold mb-2">Effective Date</label>
+                <input type="date" defaultValue="2025-07-01" className="w-full border border-slate-200 rounded-xl p-3 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 bg-white" />
+              </div>
+            </div>
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+              <button onClick={() => setShowApplyTemplateModal(false)} className="px-5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer">Cancel</button>
+              <button 
+                onClick={() => {
+                  let sampleRules = [];
+                  if (selectedTemplateName.includes('Metropolitan')) {
+                    sampleRules = [
+                      { id: Date.now() + 1, from: 'Sydney Metro East', to: 'Sydney Metro West', type: 'Intrastate', distance: '45', baseRate: '120.00', minCharge: '120.00' },
+                      { id: Date.now() + 2, from: 'Melbourne CBD', to: 'Dandenong Hub', type: 'Intrastate', distance: '35', baseRate: '110.00', minCharge: '110.00' }
+                    ];
+                  } else if (selectedTemplateName.includes('Regional')) {
+                    sampleRules = [
+                      { id: Date.now() + 1, from: 'Sydney (NSW)', to: 'Perth (WA)', type: 'Interstate', distance: '3931', baseRate: '1850.00', minCharge: '1850.00' },
+                      { id: Date.now() + 2, from: 'Brisbane (QLD)', to: 'Townsville (QLD)', type: 'Intrastate', distance: '1336', baseRate: '890.00', minCharge: '890.00' }
+                    ];
+                  } else {
+                    sampleRules = [
+                      { id: Date.now() + 1, from: 'Sydney (NSW)', to: 'Melbourne (VIC)', type: 'Interstate', distance: '877', baseRate: '450.00', minCharge: '450.00' },
+                      { id: Date.now() + 2, from: 'Sydney (NSW)', to: 'Brisbane (QLD)', type: 'Interstate', distance: '925', baseRate: '620.00', minCharge: '620.00' },
+                      { id: Date.now() + 3, from: 'Melbourne (VIC)', to: 'Adelaide (SA)', type: 'Interstate', distance: '726', baseRate: '480.00', minCharge: '480.00' }
+                    ];
+                  }
+                  setLanePricingRules(sampleRules);
+                  setShowApplyTemplateModal(false);
+                }} 
+                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm cursor-pointer"
+              >
+                Apply Template
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Import Pricing Modal */}
+      {showImportPricingModal && createPortal(
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowImportPricingModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-[480px] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
+              <h3 className="text-base font-extrabold text-slate-900">Import Rate Sheet (CSV/Excel)</h3>
+              <button onClick={() => setShowImportPricingModal(false)} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg transition-colors cursor-pointer"><X size={18} /></button>
+            </div>
+            <div className="p-6 space-y-4 text-xs font-semibold text-slate-700 text-center">
+              <div className="border-2 border-dashed border-slate-200 hover:border-blue-400 rounded-2xl p-8 transition-colors cursor-pointer flex flex-col items-center justify-center bg-slate-50/50">
+                <Upload size={32} className="text-blue-500 mb-2" />
+                <p className="font-extrabold text-slate-800">Click or drag & drop rate file here</p>
+                <p className="text-[10px] text-slate-400 mt-1">Supports .csv, .xlsx, .xls (Max 10MB)</p>
+              </div>
+            </div>
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+              <button onClick={() => setShowImportPricingModal(false)} className="px-5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer">Cancel</button>
+              <button 
+                onClick={() => {
+                  const imported = [
+                    { id: Date.now() + 1, from: 'Sydney (NSW)', to: 'Newcastle (NSW)', type: 'Regional', distance: '162', baseRate: '280.00', minCharge: '280.00' },
+                    { id: Date.now() + 2, from: 'Brisbane (QLD)', to: 'Gold Coast (QLD)', type: 'Metro', distance: '78', baseRate: '190.00', minCharge: '190.00' }
+                  ];
+                  setLanePricingRules([...lanePricingRules, ...imported]);
+                  setShowImportPricingModal(false);
+                }} 
+                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm cursor-pointer"
+              >
+                Import Rate Sheet
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Add Pricing Rule Modal */}
+      {showAddPricingRuleModal && createPortal(
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowAddPricingRuleModal(false)}>
+          <form 
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!newPricingRule.from || !newPricingRule.to || !newPricingRule.baseRate) return;
+              const rule = {
+                id: Date.now(),
+                from: newPricingRule.from.trim(),
+                to: newPricingRule.to.trim(),
+                type: newPricingRule.type || 'Interstate',
+                distance: newPricingRule.distance || '500',
+                baseRate: parseFloat(newPricingRule.baseRate).toFixed(2),
+                minCharge: newPricingRule.minCharge ? parseFloat(newPricingRule.minCharge).toFixed(2) : parseFloat(newPricingRule.baseRate).toFixed(2)
+              };
+              setLanePricingRules([...lanePricingRules, rule]);
+              setNewPricingRule({ from: '', to: '', type: 'Interstate', distance: '', baseRate: '', minCharge: '' });
+              setShowAddPricingRuleModal(false);
+            }}
+            className="bg-white rounded-2xl w-full max-w-[520px] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" 
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
+              <h3 className="text-base font-extrabold text-slate-900">Add New Pricing Rule</h3>
+              <button type="button" onClick={() => setShowAddPricingRuleModal(false)} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg transition-colors cursor-pointer"><X size={18} /></button>
+            </div>
+            <div className="p-6 space-y-4 text-xs font-semibold text-slate-700">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-800 font-bold mb-1.5">Origin / From *</label>
+                  <input 
+                    type="text" 
+                    required 
+                    placeholder="e.g. Sydney (NSW)" 
+                    value={newPricingRule.from}
+                    onChange={e => setNewPricingRule({ ...newPricingRule, from: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 bg-white" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-800 font-bold mb-1.5">Destination / To *</label>
+                  <input 
+                    type="text" 
+                    required 
+                    placeholder="e.g. Melbourne (VIC)" 
+                    value={newPricingRule.to}
+                    onChange={e => setNewPricingRule({ ...newPricingRule, to: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 bg-white" 
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-slate-800 font-bold mb-1.5">Route Type</label>
+                  <select 
+                    value={newPricingRule.type}
+                    onChange={e => setNewPricingRule({ ...newPricingRule, type: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500 bg-white cursor-pointer"
+                  >
+                    <option value="Interstate">Interstate</option>
+                    <option value="Intrastate">Intrastate</option>
+                    <option value="Metro">Metro</option>
+                    <option value="Regional">Regional</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-800 font-bold mb-1.5">Distance (KM)</label>
+                  <input 
+                    type="number" 
+                    placeholder="877" 
+                    value={newPricingRule.distance}
+                    onChange={e => setNewPricingRule({ ...newPricingRule, distance: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 bg-white" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-800 font-bold mb-1.5">Base Rate ($) *</label>
+                  <input 
+                    type="number" 
+                    required 
+                    step="0.01" 
+                    placeholder="450.00" 
+                    value={newPricingRule.baseRate}
+                    onChange={e => setNewPricingRule({ ...newPricingRule, baseRate: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 bg-white" 
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+              <button type="button" onClick={() => setShowAddPricingRuleModal(false)} className="px-5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer">Cancel</button>
+              <button type="submit" className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm cursor-pointer">Save Pricing Rule</button>
+            </div>
+          </form>
+        </div>,
+        document.body
+      )}
+
+      {/* Add Vehicle Type Modal */}
+      {showAddVehicleTypeModal && createPortal(
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowAddVehicleTypeModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-[480px] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
+              <h3 className="text-base font-extrabold text-slate-900">Add Vehicle Type Pricing</h3>
+              <button onClick={() => setShowAddVehicleTypeModal(false)} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg transition-colors cursor-pointer"><X size={18} /></button>
+            </div>
+            <div className="p-6 space-y-4 text-xs font-semibold text-slate-700">
+              <div>
+                <label className="block text-slate-800 font-bold mb-1.5">Vehicle Type</label>
+                <select className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500 bg-white cursor-pointer">
+                  <option>Sedan / Hatchback</option>
+                  <option>SUV / Crossover</option>
+                  <option>4WD / Ute</option>
+                  <option>Van / Commercial</option>
+                  <option>Luxury / Performance</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-800 font-bold mb-1.5">Base Price (EX GST)</label>
+                  <input type="number" placeholder="450.00" className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 bg-white" />
+                </div>
+                <div>
+                  <label className="block text-slate-800 font-bold mb-1.5">Surcharge (%)</label>
+                  <input type="number" placeholder="15" className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 bg-white" />
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+              <button onClick={() => setShowAddVehicleTypeModal(false)} className="px-5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer">Cancel</button>
+              <button onClick={() => { setShowAddVehicleTypeModal(false); alert('Vehicle type pricing saved successfully!'); }} className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm cursor-pointer">Save Rate</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Add Charge / Rate Card Modal */}
+      {showAddChargeModal && createPortal(
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowAddChargeModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-[480px] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
+              <h3 className="text-base font-extrabold text-slate-900">Add Charge / Accessorial Rate</h3>
+              <button onClick={() => setShowAddChargeModal(false)} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg transition-colors cursor-pointer"><X size={18} /></button>
+            </div>
+            <div className="p-6 space-y-4 text-xs font-semibold text-slate-700">
+              <div>
+                <label className="block text-slate-800 font-bold mb-1.5">Charge Name</label>
+                <input type="text" placeholder="e.g. Waiting Time / Loading Fee" className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 bg-white" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-800 font-bold mb-1.5">Unit</label>
+                  <input type="text" placeholder="e.g. Per Hour / Per Stop" className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 bg-white" />
+                </div>
+                <div>
+                  <label className="block text-slate-800 font-bold mb-1.5">Rate ($ EX GST)</label>
+                  <input type="number" placeholder="65.00" className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 bg-white" />
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+              <button onClick={() => setShowAddChargeModal(false)} className="px-5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer">Cancel</button>
+              <button onClick={() => { setShowAddChargeModal(false); alert('Charge item saved successfully!'); }} className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm cursor-pointer">Save Charge</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Add Surcharge Modal */}
+      {showAddSurchargeModal && createPortal(
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowAddSurchargeModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-[480px] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
+              <h3 className="text-base font-extrabold text-slate-900">Add Surcharge Rule</h3>
+              <button onClick={() => setShowAddSurchargeModal(false)} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg transition-colors cursor-pointer"><X size={18} /></button>
+            </div>
+            <div className="p-6 space-y-4 text-xs font-semibold text-slate-700">
+              <div>
+                <label className="block text-slate-800 font-bold mb-1.5">Surcharge Name</label>
+                <input type="text" placeholder="e.g. Fuel Levy / Security Surcharge" className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 bg-white" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-800 font-bold mb-1.5">Calculation Method</label>
+                  <select className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-500 bg-white cursor-pointer">
+                    <option>% of Base Rate</option>
+                    <option>Flat Fee ($)</option>
+                    <option>Per KM Charge</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-800 font-bold mb-1.5">Rate / %</label>
+                  <input type="number" placeholder="13.3" className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 bg-white" />
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+              <button onClick={() => setShowAddSurchargeModal(false)} className="px-5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer">Cancel</button>
+              <button onClick={() => { setShowAddSurchargeModal(false); alert('Surcharge rule saved successfully!'); }} className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm cursor-pointer">Save Surcharge</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Pricing History Modal */}
+      {showPricingHistoryModal && createPortal(
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowPricingHistoryModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-[650px] max-h-[85vh] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
+              <div>
+                <h3 className="text-base font-extrabold text-slate-900">Pricing Audit & Change Log</h3>
+                <p className="text-xs text-slate-500 mt-0.5 font-medium">Historical pricing revisions for {selectedCustomer?.name}</p>
+              </div>
+              <button onClick={() => setShowPricingHistoryModal(false)} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg transition-colors cursor-pointer"><X size={18} /></button>
+            </div>
+            <div className="p-6 overflow-y-auto space-y-3 text-xs font-semibold text-slate-700">
+              <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl flex justify-between items-center">
+                <div>
+                  <p className="font-extrabold text-slate-900">Standard National Template Applied</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Updated by System Admin</p>
+                </div>
+                <span className="text-[10px] text-slate-500 font-bold">15/08/2026 03:45 PM</span>
+              </div>
+            </div>
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+              <button onClick={() => setShowPricingHistoryModal(false)} className="px-5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer">Close</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Add New Contact Modal */}
+      {showAddContactModal && createPortal(
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-[9999] p-4" onClick={() => setShowAddContactModal(false)}>
+          <form onSubmit={handleAddContactSubmit} className="bg-white rounded-2xl w-full max-w-[480px] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-5 flex justify-between items-center border-b border-slate-100">
+              <h3 className="text-base font-extrabold text-slate-900">Add New Contact</h3>
+              <button type="button" onClick={() => setShowAddContactModal(false)} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg transition-colors cursor-pointer"><X size={18} /></button>
+            </div>
+            <div className="p-6 space-y-4 text-xs font-semibold text-slate-700">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-800 font-bold mb-1.5">First Name *</label>
+                  <input 
+                    type="text" 
+                    required 
+                    placeholder="e.g. John" 
+                    value={newContactForm.firstName}
+                    onChange={e => setNewContactForm({ ...newContactForm, firstName: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 bg-white" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-800 font-bold mb-1.5">Last Name</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. Smith" 
+                    value={newContactForm.lastName}
+                    onChange={e => setNewContactForm({ ...newContactForm, lastName: e.target.value })}
+                    className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 bg-white" 
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-slate-800 font-bold mb-1.5">Role / Job Title</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. Accounts / Operations Manager" 
+                  value={newContactForm.role}
+                  onChange={e => setNewContactForm({ ...newContactForm, role: e.target.value })}
+                  className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 bg-white" 
+                />
+              </div>
+              <div>
+                <label className="block text-slate-800 font-bold mb-1.5">Email Address</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. john.smith@company.com" 
+                  value={newContactForm.email}
+                  onChange={e => setNewContactForm({ ...newContactForm, email: e.target.value })}
+                  className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 bg-white" 
+                />
+              </div>
+              <div>
+                <label className="block text-slate-800 font-bold mb-1.5">Phone Number</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. 0401 234 567" 
+                  value={newContactForm.phone}
+                  onChange={e => setNewContactForm({ ...newContactForm, phone: e.target.value })}
+                  className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 bg-white" 
+                />
+              </div>
+              <div className="flex items-center gap-2 pt-2">
+                <input 
+                  type="checkbox" 
+                  id="isPrimaryContactCheck"
+                  checked={newContactForm.isPrimary}
+                  onChange={e => setNewContactForm({ ...newContactForm, isPrimary: e.target.checked })}
+                  className="w-4 h-4 text-blue-600 rounded cursor-pointer"
+                />
+                <label htmlFor="isPrimaryContactCheck" className="text-xs font-bold text-slate-800 cursor-pointer">Set as Primary Contact</label>
+              </div>
+            </div>
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+              <button type="button" onClick={() => setShowAddContactModal(false)} className="px-5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer">Cancel</button>
+              <button type="submit" className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm cursor-pointer">Save Contact</button>
+            </div>
+          </form>
         </div>,
         document.body
       )}
