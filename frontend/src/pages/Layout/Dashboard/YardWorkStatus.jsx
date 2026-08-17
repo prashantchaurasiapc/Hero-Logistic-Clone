@@ -108,7 +108,9 @@ export default function YardWorkStatus() {
           }));
           setTasks(fetchedTasks);
         } else {
-          setTasks([]); // Removed hardcoded fallback data
+
+          setTasks([]);
+
         }
       } catch (err) {
         console.error('Error fetching yard tasks', err);
@@ -136,7 +138,9 @@ export default function YardWorkStatus() {
     fetchActiveTimesheet();
   }, []);
 
-  // Notification states (Dynamic empty until API is added)
+
+  // Notification states initialized empty
+
   const [notifications, setNotifications] = useState([]);
 
   // Toast notifications state

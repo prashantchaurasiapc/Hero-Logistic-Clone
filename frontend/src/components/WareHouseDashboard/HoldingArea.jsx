@@ -33,21 +33,10 @@ export default function Holding({
   });
 
   // State for holding zones with live database sync
-  const [holdingZones, setHoldingZones] = useState([
-    { id: 'SA-01', name: 'Stage Area 1', units: 14, maxCapacity: 20, status: 'AVAILABLE' },
-    { id: 'SA-02', name: 'Stage Area 2', units: 8, maxCapacity: 20, status: 'AVAILABLE' },
-    { id: 'SA-03', name: 'Stage Area 3', units: 18, maxCapacity: 20, status: 'AVAILABLE' },
-    { id: 'SA-04', name: 'Stage Area 4', units: 12, maxCapacity: 20, status: 'AVAILABLE' },
-    { id: 'SA-05', name: 'Stage Area 5', units: 19, maxCapacity: 20, status: 'FULL' },
-    { id: 'SA-06', name: 'Stage Area 6', units: 6, maxCapacity: 20, status: 'AVAILABLE' }
-  ]);
+  const [holdingZones, setHoldingZones] = useState([]);
 
   // State for assets in holding
-  const [assets, setAssets] = useState([
-    { id: 'VIN-1', code: 'Toyota Camry (ABC123)', zone: 'Stage Area 1', date: '21/07/2026' },
-    { id: 'VIN-2', code: 'Mazda 3 (DEF456)', zone: 'Stage Area 1', date: '21/07/2026' },
-    { id: 'VIN-3', code: 'Honda Accord (GHI789)', zone: 'Stage Area 2', date: '21/07/2026' }
-  ]);
+  const [assets, setAssets] = useState([]);
 
   React.useEffect(() => {
     const fetchHolding = async () => {
@@ -55,19 +44,29 @@ export default function Holding({
         const apiMod = await import('../../services/api');
         const api = apiMod.default || apiMod;
         const res = await api.get('/warehouse-portal/holding-areas');
-        const rawAreas = res.data?.data?.holdingAreas || res.data?.data?.areas || (Array.isArray(res.data?.data) ? res.data.data : []);
-        if (Array.isArray(rawAreas) && rawAreas.length > 0) {
-          const formatted = rawAreas.map((h, idx) => ({
+
+        const data = res.data?.data || res.data;
+        if (data && data.holdingAreas) {
+          const formatted = data.holdingAreas.map((h, idx) => ({
             id: h.id || `SA-0${idx + 1}`,
             name: h.name || `Stage Area ${idx + 1}`,
-            units: h.stagedItems || h.occupancyCount || 10,
+            units: h.stagedItems || 0,
+
             maxCapacity: h.capacity || 20,
-            status: h.status === 'ACTIVE' ? 'AVAILABLE' : (h.status || 'AVAILABLE')
+            status: h.status === 'Active' ? 'AVAILABLE' : (h.status || 'AVAILABLE')
           }));
           setHoldingZones(formatted);
+          if (data.recentlyStaged) {
+            setAssets(data.recentlyStaged.map((item, i) => ({
+              id: item.id || `ST-${i}`,
+              code: item.title || item.ref || 'Item',
+              zone: item.area || 'Staging Area',
+              date: item.time || 'Today'
+            })));
+          }
         }
       } catch (err) {
-        console.warn('Using default holding areas data:', err.message);
+        console.warn('Error fetching holding areas data:', err.message);
       }
     };
     fetchHolding();

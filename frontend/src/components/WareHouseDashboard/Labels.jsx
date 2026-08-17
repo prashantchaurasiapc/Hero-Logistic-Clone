@@ -36,53 +36,35 @@ export default function Labels({
     actions: true
   });
 
-  // Mock Labels Data representing the rows from Image 13
-  const [labels, setLabels] = useState([
-    {
-      id: 'LBL-100',
-      barcode: 'VIN-7YV1HP82A81920',
-      vin: 'VIN-7YV1HP82A81920',
-      stockNo: 'STK-4401',
-      customer: 'Toyota Australia',
-      assetType: 'Vehicle',
-      location: 'Bay 3',
-      generated: '7/14/2026',
-      status: 'PRINTED'
-    },
-    {
-      id: 'LBL-101',
-      barcode: 'VIN-3YV1HP52X81254',
-      vin: 'VIN-3YV1HP52X81254',
-      stockNo: 'STK-4402',
-      customer: 'NSW Fleet Services',
-      assetType: 'Vehicle',
-      location: 'Holding Area B',
-      generated: '7/14/2026',
-      status: 'PENDING'
-    },
-    {
-      id: 'LBL-102',
-      barcode: 'VIN-5YV1HP12283951',
-      vin: 'VIN-5YV1HP12283951',
-      stockNo: 'STK-4403',
-      customer: 'Express Auto',
-      assetType: 'Vehicle',
-      location: 'Bay 1',
-      generated: '7/14/2026',
-      status: 'FAILED'
-    },
-    {
-      id: 'LBL-103',
-      barcode: 'VIN-8ZV9HK21W92110',
-      vin: 'VIN-8ZV9HK21W92110',
-      stockNo: 'STK-4404',
-      customer: 'Hertz Rental WA',
-      assetType: 'Vehicle',
-      location: 'Holding Area A',
-      generated: '7/14/2026',
-      status: 'REPRINTED'
-    }
-  ]);
+  // Labels data — populated from API
+  const [labels, setLabels] = useState([]);
+
+  React.useEffect(() => {
+    const fetchLabels = async () => {
+      try {
+        const apiMod = await import('../../services/api');
+        const api = apiMod.default || apiMod;
+        const res = await api.get('/warehouse-portal/labels');
+        if (res.data && res.data.success) {
+          const formatted = (res.data.data?.labels || res.data.data || []).map((l, idx) => ({
+            id: l.id || `LBL-${100 + idx}`,
+            barcode: l.barcode || l.sku || l.vin || '',
+            vin: l.vin || l.barcode || '',
+            stockNo: l.stockNo || l.id || '',
+            customer: l.customer || l.customerName || '—',
+            assetType: l.type || l.assetType || 'Vehicle',
+            location: l.location || l.locationDetail || '—',
+            generated: l.createdAt ? new Date(l.createdAt).toLocaleDateString() : '—',
+            status: l.printStatus || l.status || 'PENDING'
+          }));
+          setLabels(formatted);
+        }
+      } catch (err) {
+        console.warn('Failed to fetch labels:', err.message);
+      }
+    };
+    fetchLabels();
+  }, []);
 
   // Dynamic calculations for summary cards
   const totalLabels = labels.length;

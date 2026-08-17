@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import api from '../../../services/api';
 import {
   Search, Filter, Plus, ArrowRight, MoreVertical,
   CheckCircle2, Clock, AlertTriangle, Box, Truck,
@@ -7,126 +8,44 @@ import {
   Download, Send, FileText, User, ChevronDown
 } from 'lucide-react';
 
-const initialLoads = [
-  {
-    id: '1',
-    loadRef: 'LD-3985',
-    poRef: 'PO: 45001234',
-    customer: 'ABC Motors',
-    vehicle: 'TRK-101 / TRL-309',
-    vehicleType: 'Car Carrier',
-    driver: 'John Smith',
-    phone: '0411 111 111',
-    lane: 'Lane 1',
-    area: 'Main Yard',
-    readySince: '21/07/2026 10:45 AM',
-    status: 'Ready'
-  },
-  {
-    id: '2',
-    loadRef: 'LD-3986',
-    poRef: 'PO: 45001235',
-    customer: 'National Fleet',
-    vehicle: 'TRK-102 / TRL-310',
-    vehicleType: 'Car Carrier',
-    driver: 'Mark Davis',
-    phone: '0412 222 222',
-    lane: 'Lane 2',
-    area: 'Main Yard',
-    readySince: '21/07/2026 11:05 AM',
-    status: 'Awaiting Pickup'
-  },
-  {
-    id: '3',
-    loadRef: 'LD-3984',
-    poRef: 'PO: 45001236',
-    customer: 'XYZ Imports',
-    vehicle: 'TRK-103 / TRL-311',
-    vehicleType: 'Car Carrier',
-    driver: 'Peter Brown',
-    phone: '0403 333 333',
-    lane: 'Lane 3',
-    area: 'Main Yard',
-    readySince: '21/07/2026 11:20 AM',
-    status: 'Ready'
-  },
-  {
-    id: '4',
-    loadRef: 'LD-3987',
-    poRef: 'PO: 45001237',
-    customer: 'City Cars',
-    vehicle: 'TRK-104 / TRL-312',
-    vehicleType: 'Car Carrier',
-    driver: 'Michael Lee',
-    phone: '0414 444 444',
-    lane: 'Lane 4',
-    area: 'Overflow Yard',
-    readySince: '21/07/2026 11:40 AM',
-    status: 'Awaiting Pickup'
-  },
-  {
-    id: '5',
-    loadRef: 'LD-3990',
-    poRef: 'PO: 45001238',
-    customer: 'Tech Supplies',
-    vehicle: 'TRK-105',
-    vehicleType: 'General Freight',
-    driver: 'Ravi Patel',
-    phone: '0415 555 555',
-    lane: 'Lane 5',
-    area: 'DG Staging',
-    readySince: '21/07/2026 12:05 PM',
-    status: 'Hold'
-  },
-  {
-    id: '6',
-    loadRef: 'LD-3991',
-    poRef: 'PO: 45001239',
-    customer: 'Oceanic Freight',
-    vehicle: 'TRK-201 / TRL-408',
-    vehicleType: 'Container',
-    driver: 'Tom Wilson',
-    phone: '0415 666 666',
-    lane: 'Lane 6',
-    area: 'Container Bay',
-    readySince: '21/07/2026 12:25 PM',
-    status: 'Ready'
-  },
-  {
-    id: '7',
-    loadRef: 'LD-3992',
-    poRef: 'PO: 45001240',
-    customer: 'Hazchem Pty Ltd',
-    vehicle: 'TRK-106',
-    vehicleType: 'Dangerous Goods',
-    driver: 'Ahmed Khan',
-    phone: '0417 777 777',
-    lane: 'Lane 5',
-    area: 'DG Staging',
-    readySince: '21/07/2026 12:40 PM',
-    status: 'Hold'
-  },
-  {
-    id: '8',
-    loadRef: 'LD-3993',
-    poRef: 'PO: 45001241',
-    customer: 'Builders Hub',
-    vehicle: 'TRK-107',
-    vehicleType: '',
-    driver: 'Daniel Green',
-    phone: '0418 888 888',
-    lane: 'Lane 2',
-    area: 'Main Yard',
-    readySince: '21/07/2026 01:10 PM',
-    status: 'Ready'
-  }
-];
+const initialLoads = [];
 
 export default function WarehouseOutbound() {
   const navigate = useNavigate();
   const location = useLocation();
+  const isYard = location.pathname ? location.pathname.startsWith('/yard') : false;
 
-  const [loads, setLoads] = useState(initialLoads);
+  const [loads, setLoads] = useState([]);
+  const [summaryData, setSummaryData] = useState({
+    readyToDispatch: 0,
+    todaysDispatch: 0,
+    awaitingPickup: 0,
+    exceptions: 0
+  });
+
+  useEffect(() => {
+    const fetchDispatchReady = async () => {
+      try {
+        const res = await api.get('/warehouse-portal/dispatch-ready');
+        const data = res.data?.data || res.data;
+        if (data) {
+          if (data.loads) {
+            const mapped = data.loads.map(load => ({
+              ...load,
+              vehicle: load.trailerVehicle,
+              vehicleType: load.carrierType,
+              lane: load.loadLane
+            }));
+            setLoads(mapped);
+          }
+          if (data.summary) setSummaryData(data.summary);
+        }
+      } catch (err) {
+        console.error('Failed to fetch dispatch ready loads:', err);
+      }
+    };
+    fetchDispatchReady();
+  }, []);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [laneFilter, setLaneFilter] = useState('All');
@@ -136,7 +55,7 @@ export default function WarehouseOutbound() {
   const [showFilters, setShowFilters] = useState(false);
   const [createLoadModalOpen, setCreateLoadModalOpen] = useState(false);
   const [markDispatchedModalOpen, setMarkDispatchedModalOpen] = useState(false);
-  const [selectedLoadToDispatch, setSelectedLoadToDispatch] = useState('LD-3985');
+  const [selectedLoadToDispatch, setSelectedLoadToDispatch] = useState(null);
   const [toast, setToast] = useState(null);
 
   const showToast = (msg, type = 'success') => {
@@ -212,11 +131,19 @@ export default function WarehouseOutbound() {
     showToast(`✓ Exported ${exportData.length} dispatch ready records to CSV!`);
   };
 
-  const handleConfirmDispatch = (e) => {
+  const handleConfirmDispatch = async (e) => {
     e.preventDefault();
-    setLoads(loads.filter(l => l.loadRef !== selectedLoadToDispatch));
-    setMarkDispatchedModalOpen(false);
-    showToast(`✓ Load ${selectedLoadToDispatch} marked as Dispatched & departed!`);
+    if (!selectedLoadToDispatch) return;
+    try {
+      showToast(`Marking Load ${selectedLoadToDispatch} as Dispatched...`, 'info');
+      await api.post(`/warehouse-portal/dispatch-ready/${selectedLoadToDispatch}/dispatch`, {});
+      setLoads(loads.filter(l => l.id !== selectedLoadToDispatch));
+      setMarkDispatchedModalOpen(false);
+      showToast(`✓ Load ${selectedLoadToDispatch} marked as Dispatched & departed!`);
+    } catch (err) {
+      console.error('Failed to dispatch load:', err);
+      showToast('Failed to dispatch load: ' + (err.response?.data?.message || err.message), 'error');
+    }
   };
 
   const getStatusBadgeClass = (status) => {
@@ -815,7 +742,7 @@ export default function WarehouseOutbound() {
           </div>
           <div>
             <div className="wh-dp-stat-title">READY TO DISPATCH</div>
-            <div className="wh-dp-stat-num">18</div>
+            <div className="wh-dp-stat-num">{summaryData.readyToDispatch}</div>
             <div className="wh-dp-stat-sub">Loads ready</div>
           </div>
         </div>
@@ -826,7 +753,7 @@ export default function WarehouseOutbound() {
           </div>
           <div>
             <div className="wh-dp-stat-title">TODAY'S DISPATCH</div>
-            <div className="wh-dp-stat-num">12</div>
+            <div className="wh-dp-stat-num">{summaryData.todaysDispatch}</div>
             <div className="wh-dp-stat-sub">Scheduled today</div>
           </div>
         </div>
@@ -837,7 +764,7 @@ export default function WarehouseOutbound() {
           </div>
           <div>
             <div className="wh-dp-stat-title">AWAITING PICKUP</div>
-            <div className="wh-dp-stat-num">6</div>
+            <div className="wh-dp-stat-num">{summaryData.awaitingPickup}</div>
             <div className="wh-dp-stat-sub">Driver not arrived</div>
           </div>
         </div>
@@ -848,7 +775,7 @@ export default function WarehouseOutbound() {
           </div>
           <div>
             <div className="wh-dp-stat-title">EXCEPTIONS</div>
-            <div className="wh-dp-stat-num">2</div>
+            <div className="wh-dp-stat-num">{summaryData.exceptions}</div>
             <div className="wh-dp-stat-sub">Require attention</div>
           </div>
         </div>
@@ -1034,12 +961,11 @@ export default function WarehouseOutbound() {
                 Rows per page: <strong>10</strong>
               </div>
               <div>
-                1–{filteredLoads.length} of 18
+                1–{filteredLoads.length} of {loads.length}
               </div>
               <div className="wh-dp-pager">
                 <button className="wh-pager-btn"><ChevronLeft size={14} /></button>
                 <button className="wh-pager-btn active">1</button>
-                <button className="wh-pager-btn">2</button>
                 <button className="wh-pager-btn"><ChevronRight size={14} /></button>
               </div>
             </div>
@@ -1057,15 +983,10 @@ export default function WarehouseOutbound() {
             <div className="wh-donut-wrap">
               <div className="wh-donut-chart">
                 <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
-                  {/* Ready 56% */}
-                  <circle cx="18" cy="18" r="14" fill="none" stroke="#22C55E" strokeWidth="4" strokeDasharray="50 100" />
-                  {/* Awaiting Pickup 33% */}
-                  <circle cx="18" cy="18" r="14" fill="none" stroke="#3B82F6" strokeWidth="4" strokeDasharray="30 100" strokeDashoffset="-50" />
-                  {/* Hold 11% */}
-                  <circle cx="18" cy="18" r="14" fill="none" stroke="#F59E0B" strokeWidth="4" strokeDasharray="10 100" strokeDashoffset="-80" />
+                  <circle cx="18" cy="18" r="14" fill="none" stroke="#E2E8F0" strokeWidth="4" strokeDasharray="100 100" />
                 </svg>
                 <div className="wh-donut-center">
-                  <span style={{ fontSize: '13px', fontWeight: 900 }}>18</span>
+                  <span style={{ fontSize: '13px', fontWeight: 900 }}>{summaryData.readyToDispatch + summaryData.awaitingPickup + summaryData.exceptions}</span>
                   <span style={{ fontSize: '7px', color: '#64748B' }}>Total</span>
                 </div>
               </div>
@@ -1073,19 +994,15 @@ export default function WarehouseOutbound() {
               <div className="wh-legend-list">
                 <div className="wh-legend-item">
                   <div className="wh-legend-dot" style={{ background: '#22C55E' }} />
-                  <span>Ready <strong>10 (56%)</strong></span>
+                  <span>Ready <strong>{summaryData.readyToDispatch}</strong></span>
                 </div>
                 <div className="wh-legend-item">
                   <div className="wh-legend-dot" style={{ background: '#3B82F6' }} />
-                  <span>Awaiting Pickup <strong>6 (33%)</strong></span>
-                </div>
-                <div className="wh-legend-item">
-                  <div className="wh-legend-dot" style={{ background: '#F59E0B' }} />
-                  <span>Hold <strong>2 (11%)</strong></span>
+                  <span>Awaiting Pickup <strong>{summaryData.awaitingPickup}</strong></span>
                 </div>
                 <div className="wh-legend-item">
                   <div className="wh-legend-dot" style={{ background: '#EF4444' }} />
-                  <span>Exceptions <strong>0 (0%)</strong></span>
+                  <span>Exceptions <strong>{summaryData.exceptions}</strong></span>
                 </div>
               </div>
             </div>
@@ -1106,38 +1023,22 @@ export default function WarehouseOutbound() {
             </div>
 
             <div style={{ marginTop: '8px' }}>
-              <div className="wh-pickup-row">
-                <div className="wh-pickup-header">
-                  <span className="wh-driver-name">John Smith</span>
-                  <span className="wh-pickup-time">11:00 AM</span>
-                </div>
-                <div className="wh-pickup-sub flex justify-between">
-                  <span>LD-3985 • Lane 1</span>
-                  <span className="text-green-600 font-extrabold">On Time</span>
-                </div>
-              </div>
-
-              <div className="wh-pickup-row">
-                <div className="wh-pickup-header">
-                  <span className="wh-driver-name">Mark Davis</span>
-                  <span className="wh-pickup-time">01:30 PM</span>
-                </div>
-                <div className="wh-pickup-sub flex justify-between">
-                  <span>LD-3986 • Lane 2</span>
-                  <span className="text-blue-600 font-extrabold">Due Soon</span>
-                </div>
-              </div>
-
-              <div className="wh-pickup-row">
-                <div className="wh-pickup-header">
-                  <span className="wh-driver-name">Michael Lee</span>
-                  <span className="wh-pickup-time">02:00 PM</span>
-                </div>
-                <div className="wh-pickup-sub flex justify-between">
-                  <span>LD-3987 • Lane 4</span>
-                  <span className="text-blue-600 font-extrabold">Due Soon</span>
-                </div>
-              </div>
+              {loads.filter(l => l.status === 'Awaiting Pickup').slice(0, 3).length === 0 ? (
+                <p style={{ fontSize: '11px', color: '#94A3B8', textAlign: 'center', padding: '12px 0' }}>No upcoming pickups</p>
+              ) : (
+                loads.filter(l => l.status === 'Awaiting Pickup').slice(0, 3).map((l, i) => (
+                  <div className="wh-pickup-row" key={i}>
+                    <div className="wh-pickup-header">
+                      <span className="wh-driver-name">{l.driver || '—'}</span>
+                      <span className="wh-pickup-time">{l.readySince || '—'}</span>
+                    </div>
+                    <div className="wh-pickup-sub flex justify-between">
+                      <span>{l.loadRef} • {l.lane}</span>
+                      <span className="text-green-600 font-extrabold">On Time</span>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
@@ -1155,7 +1056,10 @@ export default function WarehouseOutbound() {
               <span>Move to Load Lane</span>
             </button>
 
-            <button className="wh-qa-btn" onClick={() => setMarkDispatchedModalOpen(true)}>
+            <button className="wh-qa-btn" onClick={() => {
+              setMarkDispatchedModalOpen(true);
+              if (loads.length > 0) setSelectedLoadToDispatch(loads[0].id);
+            }}>
               <CheckCircle2 size={14} className="text-green-500" />
               <span>Mark as Dispatched</span>
             </button>
@@ -1238,7 +1142,7 @@ export default function WarehouseOutbound() {
                   className="w-full h-8 px-2 border border-slate-300 rounded text-xs font-semibold outline-none"
                 >
                   {loads.map(l => (
-                    <option key={l.id} value={l.loadRef}>{l.loadRef} - {l.customer} ({l.lane})</option>
+                    <option key={l.id} value={l.id}>{l.loadRef} - {l.customer} ({l.lane})</option>
                   ))}
                 </select>
               </div>

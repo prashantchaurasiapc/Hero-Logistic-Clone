@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../../services/api';
 import { useLocation } from 'react-router-dom';
 
 const WarehouseScanning = () => {
@@ -11,6 +12,7 @@ const WarehouseScanning = () => {
   const [decoderInput, setDecoderInput] = useState('');
   const [activeTriggerBtn, setActiveTriggerBtn] = useState(null); // 'scan-in', 'scan-out', 'barcode', 'qr', 'manual'
   const [toast, setToast] = useState(null);
+  const [scannedItem, setScannedItem] = useState(null);
 
   // Manual Ingestion Form State
   const [manualForm, setManualForm] = useState({
@@ -61,25 +63,76 @@ const WarehouseScanning = () => {
     });
   };
 
-  const handleSimulateScan = () => {
-    const inputMsg = decoderInput.trim() ? ` [${decoderInput.trim()}]` : '';
-    showToast(`Decoder successfully processed: ${modalMode}${inputMsg}.`);
+  const handleSimulateScan = async () => {
+    const val = decoderInput.trim();
+    if (!val) {
+      showToast('Please enter a barcode value manually', 'warn');
+      return;
+    }
+    try {
+      const res = await api.post('/warehouse-portal/stock/scan', { code: val });
+      const data = res.data?.data;
+      setScannedItem(data);
+      showToast(`✓ Decoder success: ${modalMode}. Item: ${data?.nameCategory || 'Scanned Item'} [${data?.code}]`);
+    } catch (err) {
+      showToast(`Error scanning: ${err.response?.data?.error?.message || err.message}`);
+    }
     handleCloseModal();
   };
 
-  const handleManualSubmit = (e) => {
+  const handleManualSubmit = async (e) => {
     e.preventDefault();
-    showToast('Asset manually ingested successfully.');
-    handleCloseManualModal();
+    if (!manualForm.vin || !manualForm.stock) {
+      showToast('⚠️ VIN and Stock Reference are required for ingestion!');
+      return;
+    }
+    try {
+      const res = await api.post('/warehouse-portal/inbound/receive', {
+        inboundNo: manualForm.stock || `MAN-${Date.now()}`,
+        supplier: manualForm.customer || 'Manual Ingestion Client',
+        referenceNote: 'Manually ingested from Scanner Terminal',
+        transportType: 'Truck',
+        driverName: 'Yard Attendant',
+        vehicleRef: manualForm.rego || 'N/A',
+        items: [{
+          vin: manualForm.vin,
+          rego: manualForm.rego || 'N/A',
+          stockRef: manualForm.stock,
+          make: manualForm.makeModel.split(' ')[0] || 'Generic',
+          model: manualForm.makeModel.split(' ').slice(1).join(' ') || 'Asset',
+          year: 2026,
+          color: 'White',
+          vehicleType: 'Vehicle',
+          zone: manualForm.location.split(' ')[0] || 'Zone A',
+          row: manualForm.location.split(' ').slice(1).join(' ') || 'Row 1',
+          bay: 'Bay 1'
+        }]
+      });
+      if (res.data?.success) {
+        showToast('✓ Asset manually ingested and saved to database successfully.');
+        handleCloseManualModal();
+      }
+    } catch (err) {
+      console.error('Ingest error:', err);
+      showToast('Failed to ingest asset: ' + err.message);
+    }
   };
 
-  const handleDirectScanSubmit = (e) => {
+  const handleDirectScanSubmit = async (e) => {
     e.preventDefault();
-    if (!barcodeValue.trim()) {
+    const val = barcodeValue.trim();
+    if (!val) {
       showToast('Please enter a valid barcode or QR tag code.');
       return;
     }
-    showToast(`Direct Input Scan Processed: "${barcodeValue.trim()}".`);
+    try {
+      const res = await api.post('/warehouse-portal/stock/scan', { code: val });
+      const data = res.data?.data;
+      setScannedItem(data);
+      showToast(`✓ Direct Input Scan: "${data?.code}". Type: ${data?.nameCategory || 'Unknown'}`);
+    } catch (err) {
+      showToast(`Error scanning direct code: ${err.response?.data?.error?.message || err.message}`);
+    }
     setBarcodeValue('');
   };
 
@@ -184,6 +237,25 @@ const WarehouseScanning = () => {
                 SCANNER ONLINE &bull; READY TO SCAN
               </div>
             </div>
+            
+            {scannedItem && (
+              <div style={{ marginTop: '24px', background: '#f8fafc', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                <h4 style={{ fontSize: '13px', fontWeight: 'bold', color: '#0f172a', marginBottom: '12px' }}>Latest Scan Result</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '12px' }}>
+                  <div style={{ color: '#64748b' }}>Item:</div>
+                  <div style={{ fontWeight: 'bold', color: '#0f172a' }}>{scannedItem.nameCategory}</div>
+                  
+                  <div style={{ color: '#64748b' }}>Identifier:</div>
+                  <div style={{ fontWeight: 'bold', color: '#0f172a' }}>{scannedItem.identifier}</div>
+                  
+                  <div style={{ color: '#64748b' }}>Status:</div>
+                  <div style={{ fontWeight: 'bold', color: '#16a34a' }}>{scannedItem.status}</div>
+                  
+                  <div style={{ color: '#64748b' }}>Location:</div>
+                  <div style={{ fontWeight: 'bold', color: '#0f172a' }}>{scannedItem.zoneBinSlot}</div>
+                </div>
+              </div>
+            )}
 
             <p style={S.statusFooter}>
               * Scanning operations automatically update inventory locations and log movements history.

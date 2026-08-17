@@ -2,13 +2,6 @@ require('dotenv').config();
 const { PrismaClient } = require('@prisma/client');
 const { PrismaMariaDb } = require('@prisma/adapter-mariadb');
 
-// Clear require cache for @prisma/client to ensure generated schema changes are loaded
-Object.keys(require.cache).forEach((key) => {
-  if (key.includes('@prisma')) {
-    delete require.cache[key];
-  }
-});
-
 let prisma;
 
 try {
@@ -20,9 +13,10 @@ try {
     host,
     port: Number(urlObj.port) || 3306,
     user: urlObj.username || 'root',
-    password: urlObj.password || '',
+    password: urlObj.password !== undefined ? urlObj.password : 'root',
     database: urlObj.pathname ? urlObj.pathname.replace(/^\//, '') : 'hero-logistic',
-    connectionLimit: 20
+    connectionLimit: 20,
+    allowPublicKeyRetrieval: true
   });
 
   prisma = new PrismaClient({ adapter });
