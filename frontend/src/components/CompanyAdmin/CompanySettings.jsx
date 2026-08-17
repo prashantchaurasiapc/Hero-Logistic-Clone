@@ -421,7 +421,7 @@ export default function CompanySettings() {
   const fetchCompanySettings = useCallback(async () => {
     setLoadingSettings(true);
     try {
-      const [settingsRes, usersRes, rolesRes, auditRes, rulesRes, integrationsRes, aiModelsRes, templatesRes, notifRulesRes, recipientGroupsRes] = await Promise.allSettled([
+      const [settingsRes, usersRes, rolesRes, auditRes, rulesRes, integrationsRes, aiModelsRes, templatesRes, notifRulesRes, recipientGroupsRes, branchesRes] = await Promise.allSettled([
         api.get('/company-admin/settings'),
         api.get('/users'),
         api.get('/custom-roles'),
@@ -431,7 +431,8 @@ export default function CompanySettings() {
         api.get('/ai-models'),
         api.get('/notification-templates'),
         api.get('/notification-rules'),
-        api.get('/recipient-groups')
+        api.get('/recipient-groups'),
+        api.get('/company-admin/branches')  // Fetch real branches scoped to this company
       ]);
 
       if (settingsRes.status === 'fulfilled') {
@@ -520,6 +521,19 @@ export default function CompanySettings() {
         setSelectedUser(prev => prev || mappedUsers[0] || null);
       } else {
         setUsersList([]);
+      }
+
+      // Load real branches for this company
+      if (branchesRes.status === 'fulfilled') {
+        const bData = branchesRes.value.data?.data || branchesRes.value.data;
+        const bList = Array.isArray(bData) ? bData : (bData?.items || []);
+        setBranchesList(bList);
+        // Default new user form to first branch if available
+        if (bList.length > 0) {
+          setNewUserForm(prev => ({ ...prev, branchId: prev.branchId || bList[0].id }));
+        }
+      } else {
+        setBranchesList([]);
       }
 
       if (rolesRes.status === 'fulfilled') {
@@ -817,6 +831,7 @@ export default function CompanySettings() {
   const [activeRowMenuId, setActiveRowMenuId] = useState(null);
 
   const [usersList, setUsersList] = useState([]);
+  const [branchesList, setBranchesList] = useState([]); // Real branches from DB scoped to this company
 
   const [selectedUser, setSelectedUser] = useState(null);
 
@@ -824,7 +839,7 @@ export default function CompanySettings() {
     name: '',
     email: '',
     role: 'Admin',
-    branch: 'Sydney',
+    branchId: '',   // real UUID from DB
     status: 'Active',
     phone: ''
   });
@@ -834,7 +849,7 @@ export default function CompanySettings() {
     name: '',
     email: '',
     role: 'Admin',
-    branch: 'Sydney',
+    branchId: '',   // real UUID from DB
     status: 'Active',
     phone: ''
   });
@@ -1637,11 +1652,15 @@ export default function CompanySettings() {
     }
 
     try {
+      // Resolve the selected branch name for display
+      const selectedBranchObj = branchesList.find(b => b.id === newUserForm.branchId);
+      const branchDisplayName = selectedBranchObj?.name || 'Unassigned';
+
       const res = await api.post('/users', {
         name: newUserForm.name,
         email: newUserForm.email,
         role: newUserForm.role,
-        branch: newUserForm.branch,
+        branchId: newUserForm.branchId || null,  // send real UUID
         phone: newUserForm.phone,
         status: newUserForm.status
       });
@@ -1654,11 +1673,12 @@ export default function CompanySettings() {
         email: createdData.email || newUserForm.email,
         role: newUserForm.role,
         roleColor: getRoleBadgeColor(newUserForm.role),
-        branch: newUserForm.branch || 'Sydney',
+        branch: branchDisplayName,
+        branchId: newUserForm.branchId || null,
         status: newUserForm.status || 'Active',
         lastLogin: 'Never',
         joined: 'Just Now',
-        phone: createdData.phone || newUserForm.phone || '+61 400 000 000',
+        phone: createdData.phone || newUserForm.phone || '',
         avatar: initials,
         avatarBg: 'bg-[#2563EB]'
       };
@@ -1666,7 +1686,8 @@ export default function CompanySettings() {
       setUsersList(prev => [newEntry, ...prev]);
       setSelectedUser(newEntry);
       setIsAddModalOpen(false);
-      setNewUserForm({ name: '', email: '', role: 'Admin', branch: 'Sydney', status: 'Active', phone: '' });
+      const defaultBranchId = branchesList[0]?.id || '';
+      setNewUserForm({ name: '', email: '', role: 'Admin', branchId: defaultBranchId, status: 'Active', phone: '' });
       triggerToast(`User "${newEntry.name}" created successfully!`);
     } catch (err) {
       console.error('Error creating user:', err);
@@ -1676,12 +1697,14 @@ export default function CompanySettings() {
   };
 
   const handleOpenEditModal = (userObj) => {
+    // Try to resolve branchId from branchesList using the stored branch name or branchId
+    const matchedBranch = branchesList.find(b => b.id === userObj.branchId || b.name === userObj.branch);
     setEditUserForm({
       id: userObj.id,
       name: userObj.name,
       email: userObj.email,
       role: userObj.role,
-      branch: userObj.branch,
+      branchId: matchedBranch?.id || userObj.branchId || '',
       status: userObj.status,
       phone: userObj.phone
     });
@@ -1696,7 +1719,7 @@ export default function CompanySettings() {
         name: editUserForm.name,
         email: editUserForm.email,
         role: editUserForm.role,
-        branch: editUserForm.branch,
+        branchId: editUserForm.branchId || null,  // send real UUID
         phone: editUserForm.phone,
         status: editUserForm.status
       });
@@ -1705,13 +1728,15 @@ export default function CompanySettings() {
 
       const updatedList = usersList.map(u => {
         if (u.id === editUserForm.id) {
+          const editedBranchObj = branchesList.find(b => b.id === editUserForm.branchId);
           const updated = {
             ...u,
             name: editUserForm.name,
             email: editUserForm.email,
             role: editUserForm.role,
             roleColor: getRoleBadgeColor(editUserForm.role),
-            branch: editUserForm.branch,
+            branch: editedBranchObj?.name || u.branch || 'Unassigned',
+            branchId: editUserForm.branchId || null,
             status: editUserForm.status,
             phone: editUserForm.phone,
             avatar: initials
@@ -8148,15 +8173,17 @@ export default function CompanySettings() {
                 <div>
                   <label className="text-xs font-bold text-slate-700 block mb-1">Branch Access</label>
                   <select
-                    value={newUserForm.branch}
-                    onChange={e => setNewUserForm({ ...newUserForm, branch: e.target.value })}
+                    value={newUserForm.branchId}
+                    onChange={e => setNewUserForm({ ...newUserForm, branchId: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 cursor-pointer"
                   >
-                    <option value="All Branches">All Branches</option>
-                    <option value="Sydney">Sydney</option>
-                    <option value="Melbourne">Melbourne</option>
-                    <option value="Brisbane">Brisbane</option>
-                    <option value="Perth">Perth</option>
+                    <option value="">All Branches</option>
+                    {branchesList.map(b => (
+                      <option key={b.id} value={b.id}>{b.name}{b.location ? ` (${b.location})` : ''}</option>
+                    ))}
+                    {branchesList.length === 0 && (
+                      <option disabled value="">No branches configured yet</option>
+                    )}
                   </select>
                 </div>
               </div>
@@ -8269,15 +8296,17 @@ export default function CompanySettings() {
                 <div>
                   <label className="text-xs font-bold text-slate-700 block mb-1">Branch Access</label>
                   <select
-                    value={editUserForm.branch}
-                    onChange={e => setEditUserForm({ ...editUserForm, branch: e.target.value })}
+                    value={editUserForm.branchId}
+                    onChange={e => setEditUserForm({ ...editUserForm, branchId: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 cursor-pointer"
                   >
-                    <option value="All Branches">All Branches</option>
-                    <option value="Sydney">Sydney</option>
-                    <option value="Melbourne">Melbourne</option>
-                    <option value="Brisbane">Brisbane</option>
-                    <option value="Perth">Perth</option>
+                    <option value="">All Branches</option>
+                    {branchesList.map(b => (
+                      <option key={b.id} value={b.id}>{b.name}{b.location ? ` (${b.location})` : ''}</option>
+                    ))}
+                    {branchesList.length === 0 && (
+                      <option disabled value="">No branches configured yet</option>
+                    )}
                   </select>
                 </div>
               </div>
