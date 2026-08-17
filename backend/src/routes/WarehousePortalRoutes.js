@@ -75,6 +75,7 @@ router.post('/report-issue', ctrl.reportIssue);
 router.delete('/issues/:id', ctrl.resolveReportedIssue);
 
 // 12.5 Shifts & Timesheets
+router.get('/shift/status', ctrl.getShiftStatus);
 router.post('/shift/clock-in', ctrl.clockIn);
 router.post('/shift/clock-out', ctrl.clockOut);
 

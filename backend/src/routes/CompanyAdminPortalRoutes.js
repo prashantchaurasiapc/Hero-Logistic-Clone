@@ -43,9 +43,12 @@ router.post('/drivers', ctrl.createDriver);
 router.get('/vehicles', ctrl.getVehicles);
 router.post('/vehicles', ctrl.createVehicle);
 
-// 6. Branches
+// 6. Branches — full CRUD
 router.get('/branches', ctrl.getBranches);
 router.post('/branches', ctrl.createBranch);
+router.put('/branches/:id', ctrl.updateBranch);
+router.delete('/branches/:id', ctrl.deleteBranch);
+
 
 // 7. Assets
 router.get('/assets', ctrl.getAssets);
