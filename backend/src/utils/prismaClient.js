@@ -27,7 +27,7 @@ try {
     host,
     port,
     user,
-    ...(password ? { password } : {}),
+    password: password || '',
     database
   }, { useTextProtocol: true });
 
